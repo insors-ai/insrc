@@ -18,17 +18,19 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { basename, join } from 'node:path';
 
+import { ApprovalWriterBusyError, withBuildWriter } from './approval-owner.js';
 import { getEffectiveHld } from './amendments/effective.js';
 import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
-import { assertStoredReviewInputCurrent } from './code-review/input-fingerprint.js';
+import { BUILD_APPROVAL_IDENTITY_EXCLUSIONS, canonicalReviewBuild, canonicalReviewJson, readStoredReviewFreshness } from './code-review/input-fingerprint.js';
 import { enforceCodeReviewGate } from './code-review/gate.js';
+import type { ReviewFreshnessResult } from './code-review/input-fingerprint.js';
 import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
@@ -87,7 +89,7 @@ export class ArtifactNotApprovedError extends Error {
  *  override reason was supplied. Carries the findings summary so callers
  *  can show what to fix. */
 export class ReviewBlockedError extends Error {
-	constructor(msg: string, readonly summary: string) {
+	constructor(msg: string, readonly summary: string, readonly freshness?: Extract<ReviewFreshnessResult, { status: 'stale-review' }> | undefined) {
 		super(msg);
 		this.name = 'ReviewBlockedError';
 	}
@@ -524,6 +526,8 @@ export interface ApprovalResult {
  * casting at its own read site.
  */
 export interface ApprovableArtifactMeta {
+ readonly epicHash?: string | undefined;
+ readonly storyId?: string | undefined;
 	readonly workflow?:   string | undefined;
 	readonly approvedAt?: string | undefined;
 	readonly rejectedAt?: string | undefined;
@@ -579,10 +583,65 @@ function headFullSha(cwd: string): string | undefined {
 	}
 }
 
+export type { ReviewFreshnessResult } from './code-review/input-fingerprint.js';
+/** Canonical path and BUILD metadata bind the same target before any override or write. */
+export function checkBuildReviewFreshness(jsonPath: string, buildMeta: unknown): ReviewFreshnessResult {
+ const ref = parseBuildArtifactRef(jsonPath), parent = dirname(jsonPath), repo = dirname(dirname(parent));
+ const invalid = (message: string, recorded?: import('./code-review/types.js').ReviewInputFingerprint): ReviewFreshnessResult => ({ status: 'stale-review', reason: 'invalid', message: `${message}; run a new independent review`, ...(recorded !== undefined ? { recorded } : {}) });
+ if (ref === undefined || basename(parent) !== 'artifacts' || basename(dirname(parent)) !== '.insrc') return invalid('BUILD is outside its canonical artifact store');
+ const identity = readStoredReviewFreshness(repo, ref.epicHash, ref.storyId);
+ const meta = typeof buildMeta === 'object' && buildMeta !== null && !Array.isArray(buildMeta) ? buildMeta as Record<string, unknown> : undefined;
+ if (meta === undefined || meta['workflow'] !== 'build' || meta['epicHash'] !== ref.epicHash || meta['storyId'] !== ref.storyId) {
+  // Never hide a fingerprinted review behind conflicting metadata or an alias target.
+  if (identity.status !== 'legacy') return invalid('BUILD metadata conflicts with its artifact identity', identity.recorded);
+  if (meta !== undefined && typeof meta['epicHash'] === 'string' && typeof meta['storyId'] === 'string') {
+   const alternate = readStoredReviewFreshness(repo, meta['epicHash'], meta['storyId']);
+   if (alternate.status !== 'legacy') return invalid('BUILD metadata points at a different reviewed target', alternate.recorded);
+  }
+  return identity; // explicit legacy metadata policy, never a newly verified identity
+ }
+ if (identity.status !== 'legacy' && meta['repoPath'] !== undefined) {
+  try { if (typeof meta['repoPath'] !== 'string' || realpathSync(meta['repoPath']) !== realpathSync(repo)) return invalid('BUILD repository metadata conflicts with its canonical store', identity.recorded); }
+  catch { return invalid('BUILD repository metadata cannot be verified', identity.recorded); }
+ }
+ if (identity.status === 'fresh') {
+  const gap = otherPartyReviewGap(jsonPath, meta);
+  if (gap !== undefined) return invalid(gap.message, identity.recorded);
+ }
+ return identity;
+}
+function assertFreshBuildReview(result: ReviewFreshnessResult): void {
+ if (result.status === 'stale-review') throw new ReviewBlockedError(`stale-review: ${result.message}`, 'stale-review', result);
+}
+
 /** Mark an artifact approved by writing `meta.approvedAt` into its
  *  JSON. Works generically for any workflow — the artifact's JSON
  *  path is passed in verbatim. */
-export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly overrideReview?: string }): ApprovalResult {
+export interface ApprovalWriteDeps {
+ /** Synchronous test seams around the final identity/write boundary. Never tool arguments. */
+ readonly beforeWrite?: (() => void) | undefined;
+ readonly afterWrite?: (() => void) | undefined;
+}
+function staleApproval(reason: 'invalid' | 'unavailable' | 'mismatch', detail: string): ReviewBlockedError {
+ const freshness = { status: 'stale-review' as const, reason, message: `${detail}; run a new independent review` };
+ return new ReviewBlockedError(`stale-review: ${freshness.message}`, 'stale-review', freshness);
+}
+export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly overrideReview?: string }, deps: ApprovalWriteDeps = {}): ApprovalResult {
+ if (isTestRecordJsonPath(jsonPath)) throw new NotApprovableError(jsonPath);
+ if (!existsSync(jsonPath)) throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
+ const physical = realpathSync(jsonPath);
+ if (isTestRecordJsonPath(physical)) throw new NotApprovableError(jsonPath);
+ let build = parseBuildArtifactRef(physical) !== undefined;
+ if (!build) { try { build = (JSON.parse(readFileSync(physical, 'utf8')) as { meta?: { workflow?: unknown } }).meta?.workflow === 'build'; } catch { /* the normal parser reports malformed artifacts */ } }
+ if (!build) return approveArtifactOwned(jsonPath, opts, deps, false);
+ try {
+  const result = withBuildWriter(physical, () => approveArtifactOwned(physical, opts, deps, true));
+  return { ...result, path: basename(jsonPath) === basename(physical) && basename(dirname(jsonPath)) === 'artifacts' && basename(dirname(dirname(jsonPath))) === '.insrc' ? jsonPath : physical };
+ }
+ catch (err) { if (err instanceof ApprovalWriterBusyError) throw new ReviewBlockedError(err.message, 'approval writer busy'); throw err; }
+}
+
+function approveArtifactOwned(jsonPath: string, opts: { readonly overrideReview?: string } | undefined, deps: ApprovalWriteDeps, build: boolean): ApprovalResult {
 	// A test record is a record, not an approvable artifact. Refused HERE because
 	// this is the function every approval goes through, the TUI's included.
 	if (isTestRecordJsonPath(jsonPath)) throw new NotApprovableError(jsonPath);
@@ -590,12 +649,13 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
 	}
 	const raw = readFileSync(jsonPath, 'utf8');
-	const artifact = JSON.parse(raw) as { meta?: ApprovableArtifactMeta };
+	let artifact: { meta?: ApprovableArtifactMeta };
+ try { artifact = JSON.parse(raw) as { meta?: ApprovableArtifactMeta }; } catch (err) { if (build) assertFreshBuildReview(checkBuildReviewFreshness(jsonPath, undefined)); throw err; }
+ if (build) assertFreshBuildReview(checkBuildReviewFreshness(jsonPath, artifact.meta));
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
-	const buildRef = parseBuildArtifactRef(jsonPath);
- const assertBuildIdentity = (): void => { if (buildRef !== undefined) assertStoredReviewInputCurrent(dirname(dirname(dirname(jsonPath))), buildRef.epicHash, buildRef.storyId); };
+	const assertBuildIdentity = (): void => { if (build) assertFreshBuildReview(checkBuildReviewFreshness(jsonPath, artifact.meta)); };
  assertBuildIdentity();
  // Review gate: refuses approval while any HIGH/MED finding is UNRESOLVED
 	// (the effective verdict, after the interactive resolutions in R3), unless
@@ -654,9 +714,39 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	// Clear any prior rejection if we're re-approving.
 	delete nextMeta.rejectedAt;
 	delete nextMeta.rejectReason;
-	const next = { ...artifact, meta: nextMeta };
+	let next = { ...artifact, meta: nextMeta };
+ deps.beforeWrite?.();
+ let priorApproval: Record<string, unknown> | undefined;
+ if (build) {
+  const latest = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: ApprovableArtifactMeta };
+  assertFreshBuildReview(checkBuildReviewFreshness(jsonPath, latest.meta));
+  if (canonicalReviewJson(canonicalReviewBuild(latest)) !== canonicalReviewJson(canonicalReviewBuild(artifact))) throw staleApproval('mismatch', 'BUILD changed before approval write');
+  priorApproval = { ...(latest.meta as Record<string, unknown>) };
+  next = { ...latest, meta: { ...latest.meta, approvedAt, ...(reviewOverride !== undefined ? { reviewOverride } : {}) } };
+  delete next.meta.rejectedAt; delete next.meta.rejectReason;
+ }
  assertBuildIdentity();
-	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+ writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+ deps.afterWrite?.();
+ if (build) {
+  let latest: { meta?: ApprovableArtifactMeta } | undefined;
+  try { latest = JSON.parse(readFileSync(jsonPath, 'utf8')); } catch { /* cannot overwrite a foreign unreadable replacement */ }
+  const identity = checkBuildReviewFreshness(jsonPath, latest?.meta);
+  const changed = latest === undefined || canonicalReviewJson(canonicalReviewBuild(latest)) !== canonicalReviewJson(canonicalReviewBuild(next));
+  if (identity.status === 'stale-review' || changed) {
+   // Restore only our approval fields, never a concurrent BUILD body/source edit.
+   if (latest !== undefined && typeof latest.meta === 'object' && latest.meta !== null && priorApproval !== undefined) {
+    const restored: Record<string, unknown> = { ...latest.meta }, written = next.meta as Record<string, unknown>;
+    for (const key of BUILD_APPROVAL_IDENTITY_EXCLUSIONS) {
+     if (canonicalReviewJson([restored[key]]) !== canonicalReviewJson([written[key]])) continue;
+     if (Object.hasOwn(priorApproval, key)) restored[key] = priorApproval[key]; else delete restored[key];
+    }
+    writeAtomic(jsonPath, JSON.stringify({ ...latest, meta: restored }, null, 2) + '\n');
+   }
+   if (identity.status === 'stale-review') assertFreshBuildReview(identity);
+   throw staleApproval('mismatch', 'BUILD changed during approval publication');
+  }
+ }
 	return { workflow: (nextMeta['workflow'] as string | undefined) ?? 'unknown', path: jsonPath, approvedAt };
 }
 
@@ -762,15 +852,14 @@ export interface WorkflowApproveRequest {
  *  review's `body.verdict`, never the design-artifact review. The `overrideReason`
  *  / `at` arm carries the OVERRIDE audit on `status === 'overridden'` so the
  *  presented outcome records a bypass, not only the stamped `approvedAt`. */
-export interface CodeReviewApprovalOutcome {
-	readonly path:    string;
-	readonly storyId: string;
-	readonly status:  CodeReviewGateResult['status'];
-	readonly message?: string;
-	readonly counts?:  { readonly high: number; readonly med: number; readonly low: number };
-	readonly overrideReason?: string;
-	readonly at?:     string;
-}
+export type CodeReviewApprovalOutcome = { readonly path: string; readonly storyId: string } & (
+ | { readonly status: 'no-review' }
+ | { readonly status: 'pass'; readonly counts: import('./code-review/gate.js').GateCounts }
+ | { readonly status: 'warn'; readonly counts: import('./code-review/gate.js').GateCounts; readonly message: string; readonly advisory?: boolean | undefined }
+ | { readonly status: 'blocked'; readonly counts: import('./code-review/gate.js').GateCounts; readonly message: string }
+ | { readonly status: 'overridden'; readonly counts: import('./code-review/gate.js').GateCounts; readonly overrideReason: string; readonly at: string }
+ | Extract<ReviewFreshnessResult, { status: 'stale-review' }>
+);
 
 /** A post-approval seam outcome, recorded when a COMPLETED artifact triggered a
  *  follow-on side effect (e.g. the bugfix chain advancing past an approved issue,
@@ -855,9 +944,10 @@ export async function approveWorkflowTarget(
 			const gate = enforceCodeReviewGate(req.repoPath, meta.epicHash, meta.storyId, {
 				...(req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : {}),
 				...(opts?.enforce !== undefined ? { enforce: opts.enforce } : {}),
+    checkFreshness: parseBuildArtifactRef(jsonPath) !== undefined,
 			});
 			codeReview.push(projectGateOutcome(jsonPath, meta.storyId, gate));
-			if (gate.status === 'blocked') {
+			if (gate.status === 'blocked' || gate.status === 'stale-review') {
 				skipped.push({ path: jsonPath, reason: gate.message });
 				return;   // withhold completion — no meta.review approve, no approvedAt
 			}
@@ -871,6 +961,11 @@ export async function approveWorkflowTarget(
 			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
+    if (err.freshness !== undefined) {
+     const storyId = parseBuildArtifactRef(jsonPath)?.storyId ?? err.freshness.recorded?.storyId ?? '<invalid>';
+     const projected = projectGateOutcome(jsonPath, storyId, err.freshness), at = codeReview.findIndex(r => r.path === jsonPath);
+     if (at < 0) codeReview.push(projected); else codeReview[at] = projected;
+    }
 				skipped.push({ path: jsonPath, reason: err.summary });
 			} else {
 				throw err;   // ArtifactMissingError / no-meta — surface, not skip
@@ -950,18 +1045,20 @@ function buildRefFor(jsonPath: string): { epicHash: string; storyId: string } | 
  *  {@link CodeReviewApprovalOutcome}, carrying `message`/`counts` where the arm
  *  has them and the override audit (`overrideReason`/`at`) on `overridden`. */
 function projectGateOutcome(path: string, storyId: string, gate: CodeReviewGateResult): CodeReviewApprovalOutcome {
-	const base = { path, storyId, status: gate.status };
+	const base = { path, storyId };
 	switch (gate.status) {
+		case 'stale-review':
+   return { ...base, status: gate.status, reason: gate.reason, message: gate.message, ...(gate.recorded !== undefined ? { recorded: gate.recorded } : {}) };
 		case 'no-review':
-			return base;
+			return { ...base, status: gate.status };
 		case 'pass':
-			return { ...base, counts: gate.counts };
+			return { ...base, status: gate.status, counts: gate.counts };
 		case 'warn':
-			return { ...base, counts: gate.counts, message: gate.message };
+			return { ...base, status: gate.status, counts: gate.counts, message: gate.message };
 		case 'blocked':
-			return { ...base, counts: gate.counts, message: gate.message };
+			return { ...base, status: gate.status, counts: gate.counts, message: gate.message };
 		case 'overridden':
-			return { ...base, counts: gate.counts, overrideReason: gate.overrideReason, at: gate.at };
+			return { ...base, status: gate.status, counts: gate.counts, overrideReason: gate.overrideReason, at: gate.at };
 	}
 }
 
@@ -974,6 +1071,11 @@ export interface RejectionResult {
 
 /** Same as `approveArtifactByJsonPath` but records a rejection. */
 export function rejectArtifactByJsonPath(jsonPath: string, reason: string): RejectionResult {
+ if (!existsSync(jsonPath)) throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
+ const physical = realpathSync(jsonPath);
+ return parseBuildArtifactRef(physical) === undefined ? rejectArtifactOwned(jsonPath, reason) : withBuildWriter(physical, () => rejectArtifactOwned(physical, reason));
+}
+function rejectArtifactOwned(jsonPath: string, reason: string): RejectionResult {
 	if (isTestRecordJsonPath(jsonPath)) throw new NotApprovableError(jsonPath);
 	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);

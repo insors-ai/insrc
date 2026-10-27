@@ -18,6 +18,7 @@
  * docs/plans/PLAN-build-ledger-plan-driven-builds-today-S001.md.
  */
 
+import { withBuildWriter } from '../../approval-owner.js';
 import { isDeepStrictEqual } from 'node:util';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -320,6 +321,10 @@ function storyCommit(repoPath: string, epicHash: string, storyId: string): strin
 }
 
 export function persistBuildRecord(repoPath: string, rec: BuildRecord, options: { readonly mode?: 'validate' | 'completion' | undefined } = {}): { md: string; json: string } {
+ const jsonPath = artifactJsonPath(repoPath, buildArtifactId(rec.meta.epicHash, rec.meta.storyId));
+ return withBuildWriter(jsonPath, () => persistBuildRecordOwned(repoPath, rec, options));
+}
+function persistBuildRecordOwned(repoPath: string, rec: BuildRecord, options: { readonly mode?: 'validate' | 'completion' | undefined }): { md: string; json: string } {
 	// The json path is hash-flat (identity-free), so resolve + merge FIRST, then
 	// key the nested md folder on the MERGED record. mergeWithPrior preserves the
 	// original createdAt across an upsert, and for a Trivial standalone (no LLD)

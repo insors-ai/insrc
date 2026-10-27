@@ -12,10 +12,12 @@
  * existing block-or-override enforcement (`ReviewBlockedError`/
  * `approveArtifactByJsonPath`) but on the CODE review's `body.verdict`, NEVER on
  * `meta.review` (the design-artifact review) — the two review kinds stay
- * distinct. The gate is strictly ADDITIVE + fail-open:
+ * distinct. Fingerprint-bearing reviews fail closed on stale, invalid, or unavailable identity.
+ * Legacy records retain the verdict policy:
  *   - no CR record (a pre-existing Story, or one whose review never ran) ⇒
  *     `no-review` ⇒ completion behaves exactly as before this Story;
- *   - a malformed / unknown-verdict record ⇒ `no-review` (never a spurious block);
+ *   - an unknown-verdict legacy record ⇒ `no-review`; malformed JSON cannot
+ *     establish legacy identity and returns non-overridable `stale-review`;
  *   - only a PRESENT, readable `block` verdict, with enforcement ON and no
  *     override, withholds completion (`blocked`);
  *   - enforcement OFF demotes a block to a NON-BLOCKING advisory `warn`
@@ -29,7 +31,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
 import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
-import { assertStoredReviewInputCurrent } from './input-fingerprint.js';
+import { readStoredReviewFreshness } from './input-fingerprint.js';
+import type { ReviewFreshnessResult } from './input-fingerprint.js';
 import type { ReviewVerdict } from '../review/types.js';
 
 const log = getLogger('code-review:gate');
@@ -42,10 +45,11 @@ export interface GateCounts {
 }
 
 /** The gate's discriminated outcome. The caller presents it before approval and
- *  withholds completion ONLY on `blocked`. `overrideReview`-bearing options turn
+ *  withholds completion on `blocked` or non-overridable `stale-review`. `overrideReview`-bearing options turn
  *  a would-be `blocked` into `overridden`; enforcement-off turns it into an
  *  advisory `warn` (`advisory:true`). */
 export type CodeReviewGateResult =
+ | Extract<ReviewFreshnessResult, { status: 'stale-review' }>
 	| { readonly status: 'no-review' }
 	| { readonly status: 'pass';       readonly counts: GateCounts }
 	| { readonly status: 'warn';       readonly counts: GateCounts; readonly message: string; readonly advisory?: boolean }
@@ -53,10 +57,12 @@ export type CodeReviewGateResult =
 	| { readonly status: 'overridden'; readonly verdict: 'block'; readonly counts: GateCounts; readonly overrideReason: string; readonly at: string };
 
 export interface CodeReviewGateOpts {
+ /** Non-BUILD approval retains its existing verdict-only policy. The common BUILD boundary always rechecks identity. */
+ readonly checkFreshness?: boolean | undefined;
 	/** An explicit reason that bypasses a `block` verdict (records the override). */
 	readonly overrideReview?: string | undefined;
 	/** Overrides the `codeReview.enforce` config flag (defaults to the config
-	 *  value; injected in tests). When false/absent-and-config-off the gate never blocks. */
+	 *  value; injected in tests). When false/absent-and-config-off verdict blocks are advisory; stale identity still refuses. */
 	readonly enforce?: boolean | undefined;
 }
 
@@ -70,7 +76,7 @@ export function enforceCodeReviewGate(
 	storyId:  string,
 	opts?:    CodeReviewGateOpts,
 ): CodeReviewGateResult {
-	assertStoredReviewInputCurrent(repoPath, epicHash, storyId);
+ if (opts?.checkFreshness !== false) { const identity = readStoredReviewFreshness(repoPath, epicHash, storyId); if (identity.status === 'stale-review') return identity; }
  const jsonPath = artifactJsonPath(repoPath, codeReviewArtifactId(epicHash, storyId));
 
 	// Absent record ⇒ no-review (strictly additive; completion unchanged).

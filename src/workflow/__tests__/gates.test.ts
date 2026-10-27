@@ -267,7 +267,7 @@ function seedGitArtifact(meta: Record<string, unknown>): { repo: string; json: s
 	writeFileSync(join(repo, 'f.ts'), 'export const f = 1;\n');
 	git('add', '.'); git('commit', '-qm', 'base');
 	const head = git('rev-parse', 'HEAD');
-	const json = join(repo, '.insrc', 'artifacts', 'ART-test.json');
+	const json = join(repo, '.insrc', 'artifacts', meta['workflow'] === 'build' ? `BUILD-${HASH}-s1.json` : 'ART-test.json');
 	mkdirSync(dirname(json), { recursive: true });
 	writeFileSync(json, JSON.stringify({ meta, body: {} }, null, 2) + '\n');
 	return { repo, json, head, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
@@ -293,7 +293,7 @@ test('t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp
 	for (const workflow of ['define', 'design.epic', 'amendment', 'build']) {
 		const s = seedGitArtifact({ workflow, epicHash: HASH, storyId: 's1', createdAt: CREATED });
 		try {
-			approveArtifactByJsonPath(s.json);
+			approveArtifactByJsonPath(s.json, workflow === 'build' ? { overrideReview: 'legacy fixture tests range-base stamping only' } : undefined);
 			const m = metaOf(s.json);
 			assert.equal(typeof m['approvedAt'], 'string', `${workflow}: still approved`);
 			assert.ok(!('rangeBase' in m), `${workflow}: must NOT be stamped — no build reads it`);

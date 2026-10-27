@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T12:03:50.535Z",
+    "updatedAt": "2026-10-27T13:23:40.321Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -2341,8 +2341,8 @@
       },
       {
         "taskId": "t19",
-        "commit": "2e042cd47",
-        "ranAt": "2026-10-27T12:03:50.535Z",
+        "commit": "5231da536",
+        "ranAt": "2026-10-27T13:23:40.321Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2392,6 +2392,11 @@
                 "file": "src/mcp/__tests__/controller-review.test.ts",
                 "title": "DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess",
                 "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice",
+                "result": "pass"
               }
             ],
             "files": []
@@ -2420,7 +2425,7 @@
             "file": "src/mcp/__tests__/controller-review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 22668,
+            "durationMs": 11706,
             "titles": [
               {
                 "title": "DIFF-CONTROLLER-LARGE: actual helper dispatches complete explicit task metadata/schema through fresh isolated CLI/OAuth boundary",
@@ -2456,6 +2461,10 @@
               },
               {
                 "title": "DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon-authored git Story through isolated CLI calls only",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice",
                 "result": "pass"
               }
             ],

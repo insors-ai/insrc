@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 108 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 109 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -557,7 +557,7 @@ Run at 2026-10-27T11:30:05.856Z on commit `91496c91d`. Tests check: **passed**. 
 
 ## t19
 
-Run at 2026-10-27T12:03:50.535Z on commit `2e042cd47`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T13:23:40.321Z on commit `5231da536`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: DIFF-CONTROLLER-LARGE**
 
@@ -575,6 +575,7 @@ Run at 2026-10-27T12:03:50.535Z on commit `2e042cd47`. Tests check: **passed**. 
 | pass | DIFF-CONTROLLER-TIME: expiry kills owned CLI work and refuses late structured output | `src/mcp/__tests__/controller-review.test.ts` |
 | pass | DIFF-CONTROLLER-TIME: serial helper handoff starts the next identified call once without returning evidence into chat | `src/mcp/__tests__/controller-review.test.ts` |
 | pass | DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice | `src/mcp/__tests__/controller-review.test.ts` |
 
 **integration: DIFF-CONTROLLER-ADMISSION**
 
@@ -587,4 +588,4 @@ Run at 2026-10-27T12:03:50.535Z on commit `2e042cd47`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/mcp/__tests__/controller-review.test.ts` | 0 | 9 | 22.7 s |  |
+| `src/mcp/__tests__/controller-review.test.ts` | 0 | 10 | 11.7 s |  |

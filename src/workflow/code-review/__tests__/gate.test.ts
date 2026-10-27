@@ -108,9 +108,9 @@ test('absent CR record => { status:no-review } (strictly additive; completion un
 
 // ---- fail-open: malformed + unknown-verdict => no-review ----
 
-test('a malformed CR json => { status:no-review } (fail-open, never a spurious block)', () => {
+test('malformed CR JSON cannot establish legacy identity and returns stale-review', () => {
 	const res = run('{ this is not valid json', { enforce: true });
-	assert.equal(res.status, 'no-review');
+	assert.equal(res.status, 'stale-review');
 });
 
 test('a CR record whose verdict is outside the ReviewVerdict union => { status:no-review } (fail-open)', () => {

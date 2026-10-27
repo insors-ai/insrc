@@ -241,13 +241,15 @@ test('T7 for a BUILD record too, an unknown author or reviewer does not withhold
 	} finally { r.cleanup(); }
 });
 
-test('T7 a code review that cannot be read is no code review', async () => {
+test('T7 a malformed code review cannot establish legacy identity', async () => {
 	const r = repo();
 	try {
 		const p = build(r.dir, 'controller');
 		writeFileSync(join(r.dir, `CR-${HASH}-S001.json`), '{ not json');
 		const out = await approveWorkflowTarget({ repoPath: r.root, artifactPath: p }, { enforce: false });
-		assert.deepEqual(out.skipped.map(s => s.reason), ['completion requires a code review; none was run']);
+		assert.equal(out.skipped.length, 1);
+		assert.equal(out.codeReview[0]?.status, 'stale-review');
+		assert.match(out.skipped[0]!.reason, /identity is unreadable or malformed/);
 	} finally { r.cleanup(); }
 });
 

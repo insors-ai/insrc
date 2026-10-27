@@ -19,6 +19,7 @@ import { testRecordState } from '../runners/build/test-record.js';
 import type { BuildRecord } from '../runners/build/standalone-record.js';
 import { authorPartyOf } from '../review/party.js';
 import { testRecordView } from './dimensions/test-record-view.js';
+import { CODE_REVIEW_SCHEMA_VERSION } from './types.js';
 import type { CodeReviewSubject, ReviewInputFingerprint } from './types.js';
 
 export const BUILD_APPROVAL_IDENTITY_EXCLUSIONS = Object.freeze(['approvedAt', 'rejectedAt', 'rejectReason', 'reviewOverride'] as const);
@@ -159,18 +160,37 @@ export function compareReviewInputFingerprint(recorded: unknown, repo: string, e
  } catch { return { status: 'stale-review', reason: 'unavailable', message: 'Current review input identity is unavailable; run a new independent review' }; }
 }
 
-/** Early publication-safety guard; task20 supplies the full approval outcome/race contract. */
-export function assertStoredReviewInputCurrent(repo: string, epic: string, story: string): void {
+/** Legacy is explicit: only a missing CR or genuinely absent fingerprint fields. */
+export type ReviewFreshnessResult =
+ | { readonly status: 'legacy' }
+ | { readonly status: 'fresh'; readonly recorded: ReviewInputFingerprint }
+ | { readonly status: 'stale-review'; readonly reason: 'invalid' | 'unavailable' | 'mismatch'; readonly message: string; readonly recorded?: ReviewInputFingerprint | undefined };
+export function readStoredReviewFreshness(repo: string, epic: string, story: string): ReviewFreshnessResult {
  const path = artifactJsonPath(repo, codeReviewArtifactId(epic, story));
- if (!existsSync(path)) return;
+ let raw: string;
+ try { raw = readFileSync(path, 'utf8'); }
+ catch (err) { return (err as NodeJS.ErrnoException).code === 'ENOENT' ? { status: 'legacy' } : { status: 'stale-review', reason: 'unavailable', message: 'Code review identity cannot be read; run a new independent review' }; }
  let record: unknown;
- try { record = JSON.parse(readFileSync(path, 'utf8')); } catch { return; } // genuine legacy malformed-record policy
- const meta = object(record) && object(record['meta']) ? record['meta'] : undefined;
- if (meta === undefined) return;
+ try { record = JSON.parse(raw); } catch { return { status: 'stale-review', reason: 'invalid', message: 'Code review identity is unreadable or malformed; run a new independent review' }; }
+ if (!object(record)) return { status: 'stale-review', reason: 'invalid', message: 'Invalid code review record; run a new independent review' };
+ const meta = record['meta'];
+ if (meta === undefined) return { status: 'legacy' };
+ if (!object(meta)) return { status: 'stale-review', reason: 'invalid', message: 'Invalid code review metadata; run a new independent review' };
  const hasFingerprint = Object.hasOwn(meta, 'reviewInputFingerprint'), hasVersion = Object.hasOwn(meta, 'reviewInputSchemaVersion');
- if (!hasFingerprint && !hasVersion) return;
- const checked = !hasFingerprint || !hasVersion || meta['reviewInputSchemaVersion'] !== REVIEW_INPUT_SCHEMA_VERSION
-  ? { status: 'stale-review' as const, message: 'Invalid or partial review identity; run a new independent review' }
-  : compareReviewInputFingerprint(meta['reviewInputFingerprint'], repo, epic, story);
- if (checked.status !== 'fresh') throw new ReviewBlockedError(`stale-review: ${checked.message}`, 'stale-review');
+ if (!hasFingerprint && !hasVersion) return { status: 'legacy' };
+ const fp = meta['reviewInputFingerprint'];
+ const invalid = (message: string): ReviewFreshnessResult => ({ status: 'stale-review', reason: 'invalid', message: `${message}; run a new independent review`, ...(isReviewInputFingerprint(fp) ? { recorded: fp } : {}) });
+ if (!hasFingerprint || !hasVersion || meta['reviewInputSchemaVersion'] !== REVIEW_INPUT_SCHEMA_VERSION || !isReviewInputFingerprint(fp)) return invalid('Invalid, partial or unsupported review input identity');
+ if (fp.epicHash !== epic || fp.storyId !== story || meta['epicHash'] !== epic || meta['storyId'] !== story || meta['repoPath'] !== fp.repoPath || meta['workflow'] !== 'code-review' || meta['schemaVersion'] !== CODE_REVIEW_SCHEMA_VERSION) return invalid('Review repository or target identity conflicts');
+ const reviewer = meta['reviewedBy'];
+ if ((reviewer !== 'controller' && reviewer !== 'daemon') || reviewer === fp.author || (reviewer === 'controller' && fp.author !== 'daemon')) return invalid('Review was not completed by the independent party');
+ const body = record['body'];
+ if (!object(body) || body['kind'] !== 'code-review' || body['epicHash'] !== epic || body['storyId'] !== story || !['pass', 'warn', 'block'].includes(String(body['verdict'])) || !['full', 'degraded'].includes(String(body['groundingMode']))) return invalid('Invalid fingerprinted code review verdict or target');
+ const compared = compareReviewInputFingerprint(fp, repo, epic, story);
+ return compared.status === 'fresh' ? { status: 'fresh', recorded: fp } : { ...compared, recorded: fp };
+}
+/** Compatibility guard for existing internal callers; new gates consume the union. */
+export function assertStoredReviewInputCurrent(repo: string, epic: string, story: string): void {
+ const checked = readStoredReviewFreshness(repo, epic, story);
+ if (checked.status === 'stale-review') throw new ReviewBlockedError(`stale-review: ${checked.message}`, 'stale-review', checked);
 }

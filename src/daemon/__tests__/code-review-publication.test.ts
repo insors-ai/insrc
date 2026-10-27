@@ -92,7 +92,7 @@ test('DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted complet
   const artifact = JSON.parse(readFileSync(f.path('CR'), 'utf8'));
   assert.equal(compareReviewInputFingerprint(artifact.meta.reviewInputFingerprint, f.repo, epicHash, storyId).status, 'stale-review');
   for (const overrideReview of [undefined, 'accept findings']) {
-   assert.throws(() => enforceCodeReviewGate(f.repo, epicHash, storyId, { enforce: false, overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
+   assert.equal(enforceCodeReviewGate(f.repo, epicHash, storyId, { enforce: false, overrideReview }).status, 'stale-review');
    const before = readFileSync(f.path('BUILD'));
    assert.throws(() => approveArtifactByJsonPath(f.path('BUILD'), overrideReview === undefined ? {} : { overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
    assert.ok(readFileSync(f.path('BUILD')).equals(before));
@@ -157,7 +157,7 @@ test('DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before 
   const artifact = JSON.parse(readFileSync(f.path('CR'), 'utf8'));
   assert.equal(compareReviewInputFingerprint(artifact.meta.reviewInputFingerprint, f.repo, epicHash, storyId).status, 'stale-review');
   for (const overrideReview of [undefined, 'accept findings']) {
-   assert.throws(() => enforceCodeReviewGate(f.repo, epicHash, storyId, { enforce: false, overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
+   assert.equal(enforceCodeReviewGate(f.repo, epicHash, storyId, { enforce: false, overrideReview }).status, 'stale-review');
    const before = readFileSync(f.path('BUILD'));
    assert.throws(() => approveArtifactByJsonPath(f.path('BUILD'), overrideReview === undefined ? {} : { overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
    assert.ok(readFileSync(f.path('BUILD')).equals(before));

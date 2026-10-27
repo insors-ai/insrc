@@ -508,6 +508,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Plan explicit verification — One task checks the invariants resting on k2-k5 against the code. _(2026-10-27T14:38:04.394Z)_
 - `q54a04be8` — sbdry4 (partial): test file names in the test strategy are proposals, not existing files.
   - **resolved**: Resolve names during planning — Each test maps to an existing file or a named new file. _(2026-10-27T14:40:12.116Z)_
+- `qf649066e` — src/workflow/tracker/attach.ts:55 and the signoff commit-and-push are taken by s10; the three runGit calls in src/workflow/team/signoff.ts stay with s9.
+  - **resolved**: Keep the stated split _(2026-10-27T14:42:09.048Z)_
 
 ## Citations
 

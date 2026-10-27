@@ -111,6 +111,12 @@
         "choice": "Resolve names during planning",
         "rationale": "Each test maps to an existing file or a named new file.",
         "resolvedAt": "2026-10-27T14:40:12.116Z"
+      },
+      "qf649066e": {
+        "question": "src/workflow/tracker/attach.ts:55 and the signoff commit-and-push are taken by s10; the three runGit calls in src/workflow/team/signoff.ts stay with s9.",
+        "status": "resolved",
+        "choice": "Keep the stated split",
+        "resolvedAt": "2026-10-27T14:42:09.048Z"
       }
     }
   },

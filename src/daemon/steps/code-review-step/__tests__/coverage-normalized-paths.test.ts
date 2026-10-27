@@ -27,7 +27,8 @@ setGraphStorePath(join(STORE_DIR, 'graph.lmdb'));
 after(async () => { await closeGraphStore(); rmSync(STORE_DIR, { recursive: true, force: true }); });
 
 import type { IpcStreamMessage, LLMMessage, LLMProvider } from '../../../../shared/types.js';
-import { handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
+import type { CodeReviewStepDeps } from '../handler.js';
+import { fixtureCodeReviewClient as handleCodeReviewStep, controllerFixtureFrames } from './controller-client.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import type { CodeReviewStepOutput } from '../types.js';
 import { judgeCoverage } from '../../../../workflow/code-review/dimensions/coverage.js';
@@ -82,11 +83,13 @@ test('on both the controller and daemon paths a lowered graph-gap finding is LOW
 	};
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(start.next === 'emit_judgements', JSON.stringify(start));
-	const controllerPrompt = (start.prompts as readonly (readonly LLMMessage[])[])
-		.find(p => (p.find(m => m.role === 'system')?.content as string).includes('judging COVERAGE'))!;
+
 	const judgements = { judgements: BASE_DIMS.map((d): DimensionResult => ({ dimension: d, findings: d === 'coverage' ? [GRAPH_GAP] : [] })) };
 	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements, state: start.state }, deps));
 	assert.ok(done.next === 'done', JSON.stringify(done));
+	const coverageFrame = controllerFixtureFrames.filter(f => f.next === 'emit_judgements' && f.call?.['dimension'] === 'coverage').at(-1)!;
+	assert.ok(coverageFrame.next === 'emit_judgements');
+	const controllerPrompt = coverageFrame.prompts[0]!;
 	const controllerRecord = JSON.parse(writes.find(w => w.path.endsWith('.json'))!.content) as CodeReviewArtifact;
 
 	// Daemon path: the real coverage judge over the same grounding, same model answer.

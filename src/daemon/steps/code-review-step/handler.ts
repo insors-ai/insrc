@@ -25,6 +25,11 @@
  *     byte-identical to the daemon-driven path.
  */
 
+import { validateFinding } from '../../../workflow/code-review/controller-validation.js';
+import { AtomTooLargeError } from '../../../workflow/review-pipeline/pack-into-batches.js';
+import { startControllerCodeReview, resumeControllerCodeReview, ControllerCodeReviewError } from './controller.js';
+import { ReviewBudgetError } from '../../../workflow/review-pipeline/budget.js';
+import { ReviewStateRefused } from '../../threads/review-state-contract.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
@@ -45,13 +50,7 @@ import { codeReviewArtifactPaths } from '../../../workflow/storage.js';
 import { codeReviewSubjectPathArgs } from '../../../workflow/code-review/subject-paths.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../../../workflow/runners/build/changed-files.js';
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
-import { buildAdherencePrompt } from '../../../workflow/code-review/dimensions/adherence.js';
-import { buildConventionsPrompt } from '../../../workflow/code-review/dimensions/conventions.js';
-import { buildCoveragePrompt, normalizeCoverageFindings, prepareCoverageGrounding } from '../../../workflow/code-review/dimensions/coverage.js';
-import { buildQualityPrompt } from '../../../workflow/code-review/dimensions/quality.js';
-import { buildFunctionalCoveragePrompt } from '../../../workflow/code-review/dimensions/functional-coverage.js';
-import { buildDiagramPrompt } from '../../../workflow/code-review/dimensions/diagram/index.js';
-import { buildUxPrompt } from '../../../workflow/code-review/dimensions/ux/index.js';
+import { normalizeCoverageFindings, prepareCoverageGrounding } from '../../../workflow/code-review/dimensions/coverage.js';
 import { computeExpectedDimensions } from '../../../workflow/code-review/expected-dimensions.js';
 import type {
 	CodeReviewFallbackReason,
@@ -61,13 +60,15 @@ import type {
 	DimensionResult,
 	ReviewDimension,
 } from '../../../workflow/code-review/types.js';
-import { stepClient, stepEnvRepo } from '../../../shared/step-context.js';
+import { requireReviewOwnerContext } from '../../../shared/review-owner-context.js';
+import { currentStepContext, stepClient, stepEnvRepo } from '../../../shared/step-context.js';
 import { StateTokenNotFound, loadState, releaseState, saveState } from './state-store.js';
 import { repoSchemaRefusal } from '../../repo-schema-guard.js';
 import type {
 	CodeReviewStepError,
 	CodeReviewStepInput,
 	CodeReviewStepMcpEnvelope,
+	CodeReviewStepStatePayload,
 	CodeReviewStepOutput,
 } from './types.js';
 
@@ -231,6 +232,14 @@ async function dispatch(input: unknown, deps: CodeReviewStepDeps): Promise<CodeR
 				);
 		}
 	} catch (err) {
+		if (err instanceof AtomTooLargeError) return errorResult('required-context-over-budget', 'required-context-over-budget', true);
+		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', 'review-job-timeout', false);
+		if (err instanceof ControllerCodeReviewError) return errorResult(err.code, err.code, true);
+		if (err instanceof ReviewBudgetError) {
+			const refused = errorResult(err.code, err.code, true);
+			return { ...refused, error: { ...refused.error, ...(err.breakdown ? { budget: err.breakdown } : {}) } };
+		}
+		if (err instanceof ReviewStateRefused) return errorResult(err.reason, err.reason, false);
 		if (err instanceof StateTokenNotFound) {
 			return errorResult('state-not-found', err.message, false);
 		}
@@ -251,6 +260,7 @@ async function handleStart(
 	// A resume past a confirm_wait carries the opaque state token (which holds the
 	// subject + identity). An initial start resolves the subject fresh.
 	const resuming = typeof step.state === 'string' && step.state.length > 0;
+	if (resuming && step.reply !== undefined) return resumeControllerCodeReview(step, deps, finalizeControllerJudgements);
 
 	let repo:     string;
 	let epicHash: string;
@@ -259,6 +269,8 @@ async function handleStart(
 
 	if (resuming) {
 		const payload = await loadState(step.state!);   // throws StateTokenNotFound → caught in dispatch
+		if (!payload) throw new ReviewBudgetError('review-budget-state-stale');
+		if (payload.controller !== undefined || authorOf(payload.repo, payload.epicHash, payload.storyId, deps) === 'daemon') return resumeControllerCodeReview(step, deps, finalizeControllerJudgements);
 		repo = payload.repo; epicHash = payload.epicHash; storyId = payload.storyId;
 		subject = payload.subject;
 
@@ -269,7 +281,7 @@ async function handleStart(
 		// graph review.
 		if (step.proceed !== true) {
 			await releaseState(step.state!);
-			return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'declined' });
+			return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'declined' }, step.reviewBudget);
 		}
 	} else {
 		if (typeof step.epicHash !== 'string' || step.epicHash.length === 0) {
@@ -295,6 +307,8 @@ async function handleStart(
 		}
 		subject = resolved.subject;
 	}
+
+	if (authorOf(repo, epicHash, storyId, deps) === 'daemon') return startControllerCodeReview(subject, step.reviewBudget, deps, { repo, epicHash, storyId });
 
 	// 1b. INDEXING-READINESS GATE (s9) — BEFORE grounding. Grounding must never be
 	//     assembled against a stale graph (empty grounding.symbols = the S001
@@ -327,7 +341,7 @@ async function handleStart(
 					inFlight:             f.inFlight,
 					pendingCodeIndexJobs: f.pendingCodeIndexJobs,
 					staleFiles:           [...f.staleFiles],
-				});
+				}, step.reviewBudget);
 			}
 			await deps.sleep(POLL_INTERVAL_MS);
 		}
@@ -361,7 +375,7 @@ async function handleStart(
 	// DIFF-ONLY (degraded) review over the changed-file diff instead. Runs only on
 	// a successful fetch (g.ok), so it never masks a real grounding failure.
 	if (g.grounding.symbols.length === 0) {
-		return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'hollow-grounding' });
+		return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'hollow-grounding' }, step.reviewBudget);
 	}
 	const grounding = g.grounding;
 
@@ -371,14 +385,8 @@ async function handleStart(
 		return await reviewByDaemon(subject, 'full', deps);
 	}
 
-	// 3. Save opaque state + hand the controller the four prompts + the schema.
-	const token = await saveState({
-		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-		startedAtMs: Date.now(),
-		repo, epicHash, storyId, subject, grounding,
-	});
-
-	return emitJudgementsResult(subject, grounding, token, 'full');
+	// Recheck routing after asynchronous grounding; an author change must never expose a legacy bundle.
+	return startControllerCodeReview(subject, step.reviewBudget, deps, { repo, epicHash, storyId });
 }
 
 /**
@@ -398,6 +406,7 @@ async function beginDiffOnlyReview(
 	subject:  CodeReviewSubject,
 	deps:     CodeReviewStepDeps,
 	reason:   CodeReviewFallbackReason,
+	declaration?: import('../../../shared/review-budget.js').ReviewControllerBudgetDeclaration,
 ): Promise<CodeReviewStepOutput> {
 	// The author is read HERE, at the point a review is about to start, so it is
 	// read on every route into a diff review, including the resumed call. Code the
@@ -407,85 +416,9 @@ async function beginDiffOnlyReview(
 		return await reviewByDaemon(subject, 'degraded', deps, reason);
 	}
 
-	let grounding: CodeReviewGrounding;
-	let changedFiles: readonly string[];
-	let scoped: Pick<CodeReviewSubject, 'changeSetAttribution' | 'sharedWithExcluded' | 'excludedFromScope'>;
-	try {
-		// The same base and the same ledger exclusion the graph path's subject uses
-		// (ISSUE-5f7a7cb9), so the two paths review the same Story range. `undefined`
-		// for the seams keeps the assembler's own default.
-		const diff = await deps.assembleDiffGrounding(repo, undefined, {
-			base:         resolveStoryRangeBase(repo, subject.epicHash, subject.storyId),
-			excludeGlobs: LEDGER_EXCLUDE_GLOBS,
-			storyKey:     `${subject.epicHash}/${subject.storyId}`,
-		});
-		grounding = diff.grounding;
-		changedFiles = diff.changedFiles;
-		scoped = { changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded, excludedFromScope: diff.excludedFromScope };
-	} catch (err) {
-		if (err instanceof DiffUnavailableError) {
-			return errorResult('diff-unavailable', `insrc_code_review_step: could not read the changed-file diff — ${err.message}.`, true);
-		}
-		throw err;
-	}
-
-	// An empty Story scope has nothing to review: the same decline the subject
-	// gives, before any judge runs or any record is written (ISSUE-b97752e9).
-	if (changedFiles.length === 0) {
-		return errorResult('no-subject', 'insrc_code_review_step: cannot review — no-build-record (the Story\'s change set is empty).', false);
-	}
-
-	// Re-key the subject to the diff-derived changed set and to how the diff scoped
-	// it (ISSUE-b47dadc7), including what it left out (ISSUE-b97752e9).
-	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };
-
-	const token = await saveState({
-		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-		startedAtMs: Date.now(),
-		repo, epicHash, storyId, subject: diffSubject, grounding,
-		groundingMode: 'degraded',
-		fallbackReason: reason,
-	});
-
-	return emitJudgementsResult(diffSubject, grounding, token, 'degraded');
+	return startControllerCodeReview(subject, declaration, deps, { repo, epicHash, storyId }, { degraded: true, reason });
 }
 
-/** Build the emit_judgements frame — the four per-dimension charges over the
- *  grounding + the judgements schema. Shared by the fresh graph path and the s10
- *  diff-only path (the four prompt builders consume grounding.symbols unchanged). */
-function emitJudgementsResult(
-	subject:       CodeReviewSubject,
-	grounding:     CodeReviewGrounding,
-	token:         string,
-	groundingMode: 'full' | 'degraded',
-): CodeReviewStepOutput {
-	const dims = expectedDimensions(subject);
-	// Prompts are keyed off the COMPUTED dims (not the content predicates) so a
-	// declared-but-uncontented dimension (via the recorded adherence selection) still
-	// gets its charge, and the prompts stay aligned with the judgements schema.
-	const prompts = [
-		buildAdherencePrompt(subject, grounding, undefined),
-		buildConventionsPrompt(subject, grounding, undefined),
-		// The same prepared symbol list the daemon's coverage judge sees (ISSUE-b47dadc7).
-		buildCoveragePrompt(subject, prepareCoverageGrounding(subject, grounding, groundingMode), undefined, { groundingMode }),
-		buildQualityPrompt(subject, grounding, undefined),
-		...(dims.includes('functional-coverage') ? [buildFunctionalCoveragePrompt(subject, grounding, undefined)] : []),
-		...(dims.includes('diagram') ? [buildDiagramPrompt(subject, grounding, undefined)] : []),
-		...(dims.includes('ux') ? [buildUxPrompt(subject, grounding, undefined)] : []),
-	];
-	return {
-		next:     'emit_judgements',
-		guidance: `Judge each of the ${dims.length} dimensions (${dims.join(', ')}) over the grounding below, ` +
-			'then call phase=\'judgements\' with judgements=<your JSON> + state. Emit one DimensionResult per dimension; each ' +
-			'finding\'s location must be a `file:line` inside the Story\'s changed set.',
-		prompts,
-		schema:    buildJudgementsSchema(dims),
-		grounding,
-		state:     token,
-	};
-}
-
-/** Build a `confirm_wait` result relaying the stale-file list + how to resume. */
 function confirmWaitResult(
 	staleFiles:   readonly string[],
 	isProcessing: boolean,
@@ -510,15 +443,12 @@ function confirmWaitResult(
 // judgements
 // ---------------------------------------------------------------------------
 
-async function handleJudgements(
-	step: CodeReviewStepInput & { phase: 'judgements' },
-	deps: CodeReviewStepDeps,
-): Promise<CodeReviewStepOutput> {
-	if (typeof step.state !== 'string' || step.state.length === 0) {
-		return errorResult('bad-input', 'insrc_code_review_step: `state` is required for phase=judgements.', false);
-	}
-	const payload = await loadState(step.state);   // throws StateTokenNotFound → caught in dispatch
+async function handleJudgements(step: CodeReviewStepInput & { phase: 'judgements' }, deps: CodeReviewStepDeps): Promise<CodeReviewStepOutput> {
+	if (typeof step.state !== 'string' || step.state.length === 0) return errorResult('bad-input', 'state is required', false);
+	return resumeControllerCodeReview(step, deps, finalizeControllerJudgements);
+}
 
+async function finalizeControllerJudgements(payload: CodeReviewStepStatePayload, judgements: readonly DimensionResult[], deps: CodeReviewStepDeps): Promise<CodeReviewStepOutput> {
 	// A judgements turn always resumes an emit_judgements state, which carries the
 	// fetched grounding. A confirm_wait state (grounding not yet fetched) is not a
 	// valid judgements resume — guard rather than deref undefined.
@@ -531,17 +461,25 @@ async function handleJudgements(
 	// the controller wrote. `start` already sends such code to the daemon; this
 	// holds the rule at the point of the stamp, whatever led here.
 	if (authorOf(payload.repo, payload.epicHash, payload.storyId, deps) === 'controller') {
-		await releaseState(step.state);
 		return errorResult('same-party-review', new SamePartyReviewError('controller', `the code of Story ${payload.storyId}`).message, false);
 	}
 
 	// Validate the controller's judgements BEFORE driving the runner. A fault
 	// returns an error frame and writes nothing (ac5).
-	const validated = validateJudgements(step.judgements?.judgements, payload.subject);
+	const validated = validateJudgements(judgements, payload.subject);
 	if (!validated.ok) {
 		return errorResult('bad-judgements', `insrc_code_review_step: ${validated.message}`, true);
 	}
 	const byDimension = validated.byDimension;
+	// These results came from server-side adapters, not raw controller arrays.
+	// Keep their deterministic provenance after the final scope/exact-set check.
+	for (const dimension of judgements) {
+		const checked = byDimension.get(dimension.dimension)!;
+		byDimension.set(dimension.dimension, { ...checked,
+			...(dimension.lowered !== undefined ? { lowered: dimension.lowered } : {}),
+			...(dimension.pipelineCalls !== undefined ? { pipelineCalls: dimension.pipelineCalls } : {}),
+		});
+	}
 	const degraded = payload.groundingMode === 'degraded';
 
 	// Coverage HIGHs are normalised against the same prepared grounding the daemon
@@ -572,11 +510,11 @@ async function handleJudgements(
 	// marked degraded and a clean fold can never register a pass. The graph path
 	// passes neither (⇒ 'full', uncapped) — byte-identical to s9.
 
-	return await driveRunner(step.state, payload.subject, injected, deps, degraded, payload.fallbackReason);
+	return await driveRunner(undefined, payload.subject, injected, deps, degraded, payload.fallbackReason);
 }
 
 async function driveRunner(
-	token:    string,
+	token:    string | undefined,
 	subject:  CodeReviewSubject,
 	injected: CodeReviewRunnerDeps,
 	deps:     CodeReviewStepDeps,
@@ -588,14 +526,14 @@ async function driveRunner(
 		subject,
 		DUMMY_PROVIDER,
 		degraded
-			? { runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
-			: { runId, modelLabel: 'client', reviewedBy: 'controller' },
+			? { runId, signal: deps.signal, onProgress: () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).assertActive(), modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
+			: { runId, signal: deps.signal, onProgress: () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).assertActive(), modelLabel: 'client', reviewedBy: 'controller' },
 		injected,
 	);
 	if (!outcome.ok) {
 		return errorResult('fold-failed', `insrc_code_review_step: ${outcome.error}`, true);
 	}
-	await releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
+	if (token !== undefined) await releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
 	const cra = codeReviewSubjectPathArgs(subject);
 	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.epicCreatedAt, cra.workItemKind, cra.epicSlug);
 	// ISSUE-11e4fa88 — say so when findings were dropped. The operator reads this
@@ -691,24 +629,7 @@ export function validateJudgements(raw: readonly DimensionResult[] | undefined, 
 	return { ok: true, byDimension };
 }
 
-/** Returns an error message if the finding is malformed, else null. */
-function validateFinding(f: unknown, dimension: ReviewDimension): string | null {
-	if (typeof f !== 'object' || f === null) return `dimension '${dimension}' has a non-object finding.`;
-	const o = f as Record<string, unknown>;
-	if (o['severity'] !== 'HIGH' && o['severity'] !== 'MED' && o['severity'] !== 'LOW') {
-		return `dimension '${dimension}' has a finding with severity '${String(o['severity'])}' (expected HIGH|MED|LOW).`;
-	}
-	if (typeof o['location'] !== 'string' || !o['location'].includes(':')) {
-		return `dimension '${dimension}' has a finding whose location '${String(o['location'])}' is not a \`file:line\`.`;
-	}
-	if (typeof o['message'] !== 'string' || o['message'].length === 0) {
-		return `dimension '${dimension}' has a finding with no message.`;
-	}
-	return null;
-}
 
-/** Extract the repo-relative file from a `file:line` location (mirrors the
- *  dimension modules' private `fileOf`). */
 function fileOf(location: string): string {
 	const i = location.indexOf(':');
 	return i >= 0 ? location.slice(0, i) : location;

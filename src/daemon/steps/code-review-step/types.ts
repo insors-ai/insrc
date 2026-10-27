@@ -19,6 +19,10 @@
  * Loop: start → emit_judgements → judgements → done  (or error at any turn).
  */
 
+import type { ReviewControllerBudgetDeclaration, ReviewBudgetBreakdown } from '../../../shared/review-budget.js';
+import type { ControllerReviewReply } from '../../../workflow/review-pipeline/controller.js';
+import type { ControllerCodeReviewState } from './controller.js';
+import type { ReviewCompletionReceipt } from '../../threads/review-state-contract.js';
 import type { LLMMessage } from '../../../shared/types.js';
 import type { ReviewVerdict } from '../../../workflow/review/types.js';
 import type { CodeReviewFallbackReason, CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../../workflow/code-review/types.js';
@@ -40,6 +44,8 @@ export type CodeReviewStepPhase = 'start' | 'judgements';
  *  call (no `state`/`proceed`) is unchanged. */
 export interface CodeReviewStepInputStart {
 	readonly phase:    'start';
+	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
+	readonly reply?: ControllerReviewReply | undefined;
 	readonly epicHash?: string | undefined;
 	readonly storyId?:  string | undefined;
 	readonly repo?:    string | undefined;
@@ -53,7 +59,9 @@ export interface CodeReviewStepInputStart {
  *  dimension), carried back with the opaque state token. */
 export interface CodeReviewStepInputJudgements {
 	readonly phase:      'judgements';
-	readonly judgements: { readonly judgements?: readonly DimensionResult[] | undefined };
+	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
+	readonly reply?: ControllerReviewReply | undefined;
+	readonly judgements?: { readonly judgements?: readonly DimensionResult[] | undefined };
 	readonly state:      string;
 }
 
@@ -73,6 +81,8 @@ export interface CodeReviewStepCounts {
 }
 
 export interface CodeReviewStepEmitJudgements {
+	readonly call?: Readonly<Record<string, string | number>> | undefined;
+	readonly timing?: Readonly<Record<string, string | number>> | undefined;
 	readonly next:     'emit_judgements';
 	readonly guidance: string;
 	/** The four per-dimension prompts (buildAdherence/Conventions/Coverage/Quality),
@@ -81,7 +91,7 @@ export interface CodeReviewStepEmitJudgements {
 	/** JSON Schema the controller's `{ judgements: DimensionResult[] }` must match. */
 	readonly schema:   Record<string, unknown>;
 	/** The daemon-served grounding — the controller's read-only ground truth. */
-	readonly grounding: CodeReviewGrounding;
+	readonly grounding?: CodeReviewGrounding | undefined;
 	readonly state:    string;
 }
 
@@ -90,6 +100,8 @@ export interface CodeReviewStepEmitJudgements {
  *  `proceed:true` (wait) or `proceed:false` (abort). Returned both on the initial
  *  stale detection and as the timeout re-prompt. */
 export interface CodeReviewStepConfirmWait {
+	readonly call?: Readonly<Record<string, string | number>> | undefined;
+	readonly timing?: Readonly<Record<string, string | number>> | undefined;
 	readonly next:         'confirm_wait';
 	readonly guidance:     string;
 	/** The changed files whose index watermark is behind their mtime. */
@@ -134,6 +146,7 @@ export interface CodeReviewStepError {
 		readonly code:      string;
 		readonly message:   string;
 		readonly retryable: boolean;
+		readonly budget?: ReviewBudgetBreakdown | undefined;
 	};
 }
 
@@ -141,6 +154,7 @@ export type CodeReviewStepOutput =
 	| CodeReviewStepEmitJudgements
 	| CodeReviewStepConfirmWait
 	| CodeReviewStepDone
+	| { readonly next: 'already_completed'; readonly receipt: ReviewCompletionReceipt }
 	| CodeReviewStepError;
 
 // ---------------------------------------------------------------------------
@@ -148,6 +162,7 @@ export type CodeReviewStepOutput =
 // ---------------------------------------------------------------------------
 
 export interface CodeReviewStepStatePayload {
+	readonly controller?: ControllerCodeReviewState | undefined;
 	readonly runId:       string;
 	readonly startedAtMs: number;
 	readonly repo:        string;

@@ -21,6 +21,7 @@
  * is configured.
  */
 
+import { reviewBudgetDeclarationSchema, reviewReplySchema } from './review-budget-schema.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { resolveRepoPath } from './resolve-repo.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -737,7 +738,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'CR-<epic>-<story>, and completing the Story (approving its BUILD record) ' +
 				'REQUIRES one, done by the other party.\n\n' +
 				'When the daemon is the reviewer, phase=\'start\' asks the daemon, waits (up to ' +
-				'30 minutes) and returns { next: \'done\', verdict, counts, path, jsonPath, ' +
+				'the configured outer wait) and returns { next: \'done\', verdict, counts, path, jsonPath, ' +
 				'reviewedBy: \'daemon\', groundingMode }. A stale index first returns ' +
 				'{ next: \'confirm_wait\', staleFiles, state }: ask the user, then call ' +
 				'phase=\'start\' again with that state and `proceed` (true = wait for a fresh ' +
@@ -745,20 +746,17 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'`warn` at best. If the daemon review does not complete, it returns ' +
 				'next:\'error\' naming the cause and stamps nothing; it never falls back to a ' +
 				'review by you.\n\n' +
-				'Your multi-turn loop (daemon-written code only):\n\n' +
-				'  1. phase=\'start\' with { epicHash, storyId, repo? }. Server resolves the ' +
-				'subject (declines with an error if there is no approved contract / build) ' +
-				'and fetches grounding, returning { next: \'emit_judgements\', prompts, ' +
-				'schema, grounding, state } — `prompts` are the four per-dimension charges, ' +
-				'`grounding` is the ground truth you judge against.\n' +
-				'  2. Emit the judgements JSON ({ judgements: DimensionResult[] } — one per ' +
-				'dimension, each finding a `file:line` location), then phase=\'judgements\' ' +
-				'with judgements=<your JSON> + state. Server folds + persists and returns ' +
-				'{ next: \'done\', verdict, counts, path, jsonPath }. When findings were dropped because their file is outside ' +
-				'the Story\'s changed set, the frame also carries `scopeDropped` { count, changedFiles, byDimension }: those findings ' +
-				'are NOT in `verdict`/`counts`; they are kept on the record as each dimension\'s `outOfScope`.\n\n' +
-				'Preserve `state` verbatim between calls; a malformed turn returns a ' +
-				'next:\'error\' frame naming the fault (nothing is written).',
+				'Controller loop (daemon-written code): supply reviewBudget={version:1,profile,hostContextReserveTokens} ' +
+				'with an explicit controller-reserved profile and a fresh host-context estimate on every turn. ' +
+				'The server pins its own cap/profile, budgets the complete response, and returns one assigned request in prompts, ' +
+				'its versioned reply schema, call metadata, timing and state. Do not append whole grounding. ' +
+				'Execute that request and submit phase=\'judgements\' with reply={version:1,generation,callId,answer}, state and reviewBudget. ' +
+				'Repeat until done; all dimension/chunk/obligation calls must finish before persistence. ' +
+				'A controller confirm_wait resumes phase=\'start\' with the same versioned reply and answer={proceed:true|false}. ' +
+				'Old raw judgement arrays and old controller tokens refuse explicitly. A completed final-call replay returns already_completed. ' +
+				'Host context is declared/reserved, never measured or a verified hard native ceiling. ' +
+				'Scope-dropped findings remain on the record and are excluded from verdict/counts.',
+
 			annotations: {
 				readOnlyHint:   false,   // writes the CR record
 				idempotentHint: false,
@@ -776,6 +774,8 @@ export function buildInsrcMcpServerWithRegistry(): {
 				repo: z.string()
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
+				reviewBudget: reviewBudgetDeclarationSchema.optional().describe('Required for controller review: refreshed host-context estimate and explicit controller-reserved profile.'),
+				reply: reviewReplySchema.optional().describe('Versioned reply for the single pending call; required for controller continuations.'),
 				judgements: z.object({ judgements: z.array(z.record(z.string(), z.unknown())).optional() })
 					.passthrough()
 					.describe('Only for phase=judgements. The four DimensionResult judgements your LLM emitted (matches the emit_judgements schema).')

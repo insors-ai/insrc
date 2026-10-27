@@ -222,7 +222,12 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 			if (spec.skip !== undefined) return outputs['skip'] as DimensionResult;
 			// Divided: the chunks' own findings, the first part gather.merge joins (and filters) with the rest.
 			if (ctx.divided) return { dimension: spec.dimension, findings: chunkFindings(outputs, spec.dimension) };
-			return spec.toResult(singleAnswer(outputs, 'judge', spec.dimension, false) as O, grounding, groundingMode);
+			const answer = singleAnswer(outputs, 'judge', spec.dimension, false) as O;
+			const judged = spec.toResult(answer, grounding, groundingMode);
+			if (path !== 'controller') return judged;
+			const outside = ((answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? [])
+				.filter(f => !changed.has(fileOfLocation(f.location))).map(f => ({ ...f, dimension: spec.dimension }));
+			return { ...judged, findings: [...judged.findings, ...outside] };
 		},
 	};
 }

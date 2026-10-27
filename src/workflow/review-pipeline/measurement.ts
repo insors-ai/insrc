@@ -12,6 +12,9 @@ import { envelopeMessages, envelopeSchema } from './envelope.js';
 import type { ChunkPrompt } from './types.js';
 
 export function requestBudget(policy: ReviewBudgetPolicy, messages: readonly LLMMessage[], schema: StructuredSchema, phase: 'planning' | 'dispatch') {
+	if (policy.executionKind === 'controller') {
+		return measureReviewBudget(policy, { promptChars: JSON.stringify(messages).length, wireSchemaJson: reviewWireSchemaJson(policy.profile, schema), phase, hostContextReserveTokens: 0 });
+	}
 	const wireMessages = policy.executionKind === 'reviewer-session' && policy.profile.promptDialect === 'ollama-chat-v1'
 		? [{ role: 'user' as const, content: serialiseMessages(messages) }] : messages;
 	return measureReviewBudget(policy, { promptChars: reviewPromptChars(policy.profile, wireMessages), wireSchemaJson: reviewWireSchemaJson(policy.profile, schema), phase });

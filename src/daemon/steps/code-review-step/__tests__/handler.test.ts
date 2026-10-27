@@ -10,7 +10,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
+import { validateJudgements, type CodeReviewStepDeps } from '../handler.js';
+import { fixtureCodeReviewClient as handleCodeReviewStep, rawControllerCall, CONTROLLER_DECLARATION } from './controller-client.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import { runCodeReview } from '../../../../workflow/code-review/runner.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../../../../workflow/runners/build/changed-files.js';
@@ -112,7 +113,7 @@ async function runFullFlow(
 	const { deps, writes } = makeDeps(depsOverrides);
 	const startEnv = await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps);
 	const start = parse(startEnv);
-	assert.equal(start.next, 'emit_judgements');
+	assert.equal(start.next, 'emit_judgements', JSON.stringify(start));
 	const state = start.next === 'emit_judgements' ? start.state : '';
 	const doneEnv = await handleCodeReviewStep({ phase: 'judgements', judgements: j, state }, deps);
 	return { start, done: parse(doneEnv), writes };
@@ -123,18 +124,17 @@ const reset = (): Promise<void> => _clearCodeReviewStateStoreForTests();
 
 // ---- ac1: start => emit_judgements ----
 
-test('start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)', async () => {
+test('start emits one assigned prompt and versioned answer schema without whole grounding (ac1)', async () => {
 	await reset();
 	const { deps } = makeDeps();
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
-	assert.equal(start.next, 'emit_judgements');
+	assert.equal(start.next, 'emit_judgements', JSON.stringify(start));
 	assert.ok(start.next === 'emit_judgements');
-	assert.equal(start.prompts.length, 4, 'the four per-dimension prompts');
+	assert.equal(start.prompts.length, 1, 'one admitted request per turn');
 	assert.ok(typeof start.state === 'string' && start.state.length > 0, 'an opaque token');
-	assert.deepEqual(start.grounding, grounding);
+	assert.equal(start.grounding, undefined, 'whole grounding is retained server-side, not appended to the frame');
 	// the schema pins the finding location
-	const findingProps = (start.schema as { properties: { judgements: { items: { properties: { findings: { items: { properties: Record<string, unknown> } } } } } } })
-		.properties.judgements.items.properties.findings.items.properties;
+	const findingProps = (start.schema as { properties: { answer: { properties: { findings: { items: { properties: Record<string, unknown> } } } } } }).properties.answer.properties.findings.items.properties;
 	assert.ok('location' in findingProps && 'severity' in findingProps);
 });
 
@@ -189,7 +189,7 @@ test('fetchGrounding (injected) is the sole grounding source; the emit_judgement
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(start.next === 'emit_judgements');
 	assert.equal(fetchCalls, 1, 'grounding fetched exactly once, over the injected IPC seam');
-	assert.deepEqual(start.grounding, grounding);
+	assert.equal(start.grounding, undefined, 'whole grounding is retained server-side, not appended to the frame');
 });
 
 // ---- vacuous pass: all-empty judgements ----
@@ -212,7 +212,7 @@ test('ac5: non-object input / unknown phase / missing state / unknown token => n
 	assert.equal(parse(await handleCodeReviewStep({ phase: 'nope' }, deps)).next, 'error');
 	assert.equal(parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements() }, deps)).next, 'error'); // missing state
 	const unknownTok = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: 'nope' }, deps));
-	assert.ok(unknownTok.next === 'error' && unknownTok.error.code === 'state-not-found');
+	assert.ok(unknownTok.next === 'error' && unknownTok.error.code === 'review-budget-state-stale');
 	assert.equal(writes.length, 0);
 });
 
@@ -230,8 +230,9 @@ test('ac5: missing/empty judgements, wrong-dimension set, malformed finding, mal
 		const { deps, writes } = makeDeps();
 		const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 		assert.ok(start.next === 'emit_judgements');
-		const out = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: c.j, state: start.state }, deps));
-		assert.ok(out.next === 'error' && out.error.code === 'bad-judgements', `${c.label} => bad-judgements`);
+		assert.equal(validateJudgements((c.j as { judgements: DimensionResult[] }).judgements, subject()).ok, false, `${c.label} fails final exact-set/finding validation`);
+		const out = parse(await rawControllerCall({ phase: 'judgements', judgements: c.j, state: start.state, reviewBudget: CONTROLLER_DECLARATION }, deps));
+		assert.ok(out.next === 'error' && out.error.code === 'controller-budget-incompatible', `${c.label}: legacy raw arrays cannot bypass the versioned envelope`);
 		assert.equal(writes.length, 0, `${c.label} writes nothing`);
 	}
 });
@@ -260,7 +261,7 @@ test('resending the same judgements token after done fails loadState (no double-
 	assert.equal(first.next, 'done');
 	const writesAfterFirst = writes.length;
 	const second = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: start.state }, deps));
-	assert.ok(second.next === 'error' && second.error.code === 'state-not-found');
+	assert.ok(second.next === 'error' && second.error.code === 'review-budget-state-stale');
 	assert.equal(writes.length, writesAfterFirst, 'no second write on the consumed token');
 });
 
@@ -273,12 +274,8 @@ test("a superseded code-review token fails with today's not-found message", asyn
 	assert.equal(first.next, 'done');
 	const resend = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: start.state }, deps));
 	assert.ok(resend.next === 'error');
-	assert.equal(resend.error.code, 'state-not-found');
-	assert.equal(
-		resend.error.message,
-		`code-review state token '${start.state}' not found: the insrc daemon was restarted (runs are held in its memory and a restart loses them), `
-			+ `the token went unused for an hour, or the run was already completed. Start the run again with phase='start'.`,
-	);
+	assert.equal(resend.error.code, 'review-budget-state-stale');
+	assert.equal(resend.error.message, 'review-budget-state-stale');
 });
 
 // ---------------------------------------------------------------------------
@@ -363,7 +360,8 @@ test('S001: proceed:true that never becomes fresh before the timeout auto-falls-
 	const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
 	assert.ok(out.next === 'emit_judgements', 'timeout => diff-only emit_judgements, not confirm_wait');
 	assert.equal(diffCalls, 1, 'the diff grounding was assembled on timeout');
-	assert.deepEqual(out.grounding, diffGrounding, 'the emit_judgements frame carries the diff grounding (degraded)');
+	assert.equal(out.grounding, undefined, 'only assigned prompt evidence is exposed');
+	assert.match(JSON.stringify(out.prompts), /new/);
 	assert.equal(writes.length, 0, 'nothing written yet — the write happens on the judgements turn');
 });
 
@@ -384,7 +382,7 @@ test('S001: the timeout auto-diff releases the confirm_wait token before the dif
 	assert.ok(out.next === 'emit_judgements');
 	// resending the now-consumed confirm_wait token fails loadState
 	const resend = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
-	assert.ok(resend.next === 'error' && resend.error.code === 'state-not-found', 'the confirm_wait token was released');
+	assert.ok(resend.next === 'error' && resend.error.code === 'review-budget-state-stale', 'the confirm_wait token was released');
 });
 
 // S001 ac2: a FRESH index whose grounding is hollow (symbols:[]) auto-falls-back
@@ -399,7 +397,8 @@ test('S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the dif
 	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(out.next === 'emit_judgements', 'hollow grounding => diff-only emit_judgements');
 	assert.equal(diffCalls, 1, 'the diff grounding was assembled for the hollow case');
-	assert.deepEqual(out.grounding, diffGrounding, 'the frame carries the diff grounding, not the empty full grounding');
+	assert.equal(out.grounding, undefined, 'only assigned prompt evidence is exposed');
+	assert.match(JSON.stringify(out.prompts), /new/);
 });
 
 // S001 ac2 (regression): a FRESH index with real (non-empty) grounding still
@@ -456,7 +455,8 @@ test('s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_
 	const declined = await declineTo(deps);
 	assert.ok(declined.next === 'emit_judgements', 'decline => diff-only emit_judgements, not an error');
 	assert.equal(diffCalls, 1, 'the diff grounding was assembled');
-	assert.deepEqual(declined.grounding, diffGrounding, 'the emit_judgements frame carries the diff grounding');
+	assert.equal(declined.grounding, undefined, 'only assigned prompt evidence is exposed');
+	assert.match(JSON.stringify(declined.prompts), /new/);
 });
 
 // ac3 + ac4: the degraded judgements turn drives runReview with the degraded+cap opts and persists a record.
@@ -574,8 +574,8 @@ async function droppedFlow(): Promise<{ done: CodeReviewStepOutput; writes: { pa
 	await reset();
 	return runFullFlow({}, judgements({
 		adherence: [
-			{ dimension: 'adherence', severity: 'MED',  location: 'src/elsewhere.ts:12', message: 'breaks the contract' },
-			{ dimension: 'adherence', severity: 'HIGH', location: 'src/elsewhere.ts:40', message: 'a | piped message' },
+			{ dimension: 'adherence', severity: 'MED', confidence: 'breach', location: 'src/elsewhere.ts:12', message: 'breaks the contract' },
+			{ dimension: 'adherence', severity: 'HIGH', confidence: 'breach', location: 'src/elsewhere.ts:40', message: 'a | piped message' },
 		],
 		coverage: [
 			{ dimension: 'coverage', severity: 'LOW', location: 'src/a.ts:3',      message: 'kept' },
@@ -599,8 +599,8 @@ test('11e4fa88 — dropped findings are carried on the record as outOfScope, ver
 
 	assert.deepEqual(dim('adherence').findings, [], 'nothing in scope for adherence');
 	assert.deepEqual(dim('adherence').outOfScope, [
-		{ dimension: 'adherence', severity: 'MED',  location: 'src/elsewhere.ts:12', message: 'breaks the contract' },
-		{ dimension: 'adherence', severity: 'HIGH', location: 'src/elsewhere.ts:40', message: 'a | piped message' },
+		{ dimension: 'adherence', severity: 'MED', confidence: 'breach', location: 'src/elsewhere.ts:12', message: 'breaks the contract' },
+		{ dimension: 'adherence', severity: 'HIGH', confidence: 'breach', location: 'src/elsewhere.ts:40', message: 'a | piped message' },
 	], 'both dropped findings are on the record exactly as submitted');
 	assert.deepEqual(dim('coverage').findings.map(f => f.location), ['src/a.ts:3']);
 	assert.deepEqual(dim('coverage').outOfScope?.map(f => f.location), ['src/gone.ts:7']);
@@ -757,4 +757,105 @@ test('src/daemon/steps/code-review-step/__tests__/handler.test.ts: with proceed:
 	const r = await finish(t.deps, t.writes, t.out);
 	assert.equal(r.body.groundingMode, 'degraded');
 	assert.deepEqual(r.body.fallbackReason, { kind: 'freshness-timeout', waitedMs: 3000, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'] });
+});
+
+test('full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption', async () => {
+	const { getStepStateStore } = await import('../../../threads/step-state.js');
+	const { admitControllerFrame, controllerPolicy } = await import('../../../../workflow/review-pipeline/controller.js');
+	const { saveState } = await import('../state-store.js');
+	const largeGrounding: CodeReviewGrounding = { symbols: [{ ...grounding.symbols[0]!, signature: 'required source '.repeat(7000) }] };
+	const { policy } = controllerPolicy(CONTROLLER_DECLARATION);
+	for (const mode of ['full', 'degraded'] as const) {
+		await reset();
+		let release!: () => void, entered!: () => void;
+		const gate = new Promise<void>(resolve => { release = resolve; });
+		const writing = new Promise<void>(resolve => { entered = resolve; });
+		const { deps, writes } = makeDeps({
+			fetchGrounding: async () => ({ ok: true, grounding: largeGrounding }),
+			fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: mode === 'degraded' ? ['src/a.ts'] : [] }),
+			assembleDiffGrounding: async () => ({ grounding: largeGrounding, changedFiles: CHANGED }),
+			runReview: async (...args) => { entered(); await gate; return runCodeReview(...args); },
+		});
+		const initial = { phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' };
+		const missing = parse(await rawControllerCall(initial, deps));
+		assert.ok(missing.next === 'error' && missing.error.code === 'controller-budget-required');
+		assert.equal(writes.length, 0);
+		const unqualified = parse(await rawControllerCall({ ...initial, reviewBudget: { ...CONTROLLER_DECLARATION, profile: { ...CONTROLLER_DECLARATION.profile, qualification: 'managed-estimate' } } }, deps));
+		assert.ok(unqualified.next === 'error');
+		let env = await rawControllerCall({ ...initial, reviewBudget: CONTROLLER_DECLARATION }, deps);
+		let frame = parse(env);
+		if (mode === 'degraded') {
+			assert.ok(frame.next === 'confirm_wait');
+			const resume = { phase: 'start', state: frame.state, reply: { version: 1, generation: frame.call!['generation'], callId: frame.call!['callId'], answer: { proceed: false } } };
+			const refused = parse(await rawControllerCall(resume, deps));
+			assert.ok(refused.next === 'error' && refused.error.code === 'controller-budget-required');
+			env = await rawControllerCall({ ...resume, reviewBudget: CONTROLLER_DECLARATION }, deps); frame = parse(env);
+		}
+		assert.ok(frame.next === 'emit_judgements');
+		assert.equal(frame.prompts.length, 1); assert.equal(frame.grounding, undefined);
+		const measured = admitControllerFrame(frame, policy, CONTROLLER_DECLARATION);
+		assert.equal(measured.promptChars, JSON.stringify(env).length, 'the actual returned MCP envelope, escaping and schema are accounted');
+		assert.equal(measured.schemaTokens, 0, 'embedded schema is counted once inside the complete frame');
+		assert.throws(() => admitControllerFrame({ ...frame, prompts: Array.from({ length: 4 }, () => frame.next === 'emit_judgements' ? frame.prompts[0] : []) }, policy, CONTROLLER_DECLARATION), /review-budget-exceeded/, 'four individually admitted requests do not form an admitted aggregate');
+		let current: Extract<CodeReviewStepOutput, { next: 'emit_judgements' }> = frame;
+		const requestFor = () => ({ phase: 'judgements', state: current.state, reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: current.call!['generation'], callId: current.call!['callId'], answer: { findings: [] } } });
+		const wrongProfile = parse(await rawControllerCall({ ...requestFor(), reviewBudget: { ...CONTROLLER_DECLARATION, profile: { ...CONTROLLER_DECLARATION.profile, providerId: 'changed-host' } } }, deps));
+		assert.ok(wrongProfile.next === 'error' && wrongProfile.error.code === 'budget-profile-mismatch');
+		const overflow = parse(await rawControllerCall({ ...requestFor(), reviewBudget: { ...CONTROLLER_DECLARATION, hostContextReserveTokens: 1_000_000 } }, deps));
+		assert.ok(overflow.next === 'error' && overflow.error.code === 'review-budget-exceeded');
+		const invalid = parse(await rawControllerCall({ ...requestFor(), reply: { ...requestFor().reply, answer: {} } }, deps));
+		assert.ok(invalid.next === 'error' && invalid.error.code === 'controller-budget-incompatible');
+		const malformed = parse(await rawControllerCall({ ...requestFor(), reply: { ...requestFor().reply, answer: { findings: [{ severity: 'HIGH', confidence: 'breach', location: 'src/a.ts', message: 'missing line' }] } } }, deps));
+		assert.ok(malformed.next === 'error' && malformed.error.code === 'controller-budget-incompatible', 'record-level finding validation precedes call consumption');
+		assert.equal(writes.length, 0, 'no rejected declaration/reply consumes work or persists');
+		const seen = new Set<string>();
+		for (;;) {
+			seen.add(String(current.call!['dimension']));
+			const request = requestFor();
+			if (current.call!['dimension'] === 'quality') {
+				const first = rawControllerCall(request, deps);
+				await writing;
+				assert.equal(writes.length, 0);
+				const duplicate = parse(await rawControllerCall(request, deps));
+				assert.ok(duplicate.next === 'error' && duplicate.error.code === 'review-state-busy', 'exclusive final claim spans awaited persistence');
+				release(); const done = parse(await first); assert.equal(done.next, 'done');
+				const n = writes.length; assert.ok(n > 0);
+				const replay = parse(await rawControllerCall(request, deps)); assert.equal(replay.next, 'already_completed');
+				assert.equal(writes.length, n, 'final replay has a receipt and cannot write twice');
+				break;
+			}
+			const next = parse(await rawControllerCall(request, deps));
+			assert.ok(next.next === 'emit_judgements', JSON.stringify(next));
+			assert.notEqual(next.state, current.state, 'central commit rotates the consumed code-review token');
+			const stale = parse(await rawControllerCall(request, deps)); assert.ok(stale.next === 'error' && stale.error.code === 'review-budget-state-stale');
+			current = next;
+		}
+		assert.deepEqual([...seen], ['adherence', 'conventions', 'coverage', 'quality']);
+		const legacy = await saveState({ runId: 'legacy', startedAtMs: 0, repo: '/repo', epicHash: EPIC, storyId: STORY, subject: subject(), grounding });
+		const old = parse(await rawControllerCall({ ...requestFor(), state: legacy }, deps));
+		assert.ok(old.next === 'error' && old.error.code === 'review-budget-state-stale');
+		assert.equal((await getStepStateStore().read('code-review', legacy))?.token, legacy, 'legacy refusal does not consume other state');
+	}
+	// Real source partitioning plus refreshed host reserves uses the existing planner.
+	await reset();
+	let clock = 0;
+	const symbols = Array.from({ length: 20 }, (_, i) => ({ ...grounding.symbols[0]!, entityId: `sym-${i}`, file: `src/f${i}.ts`, name: `f${i}`, signature: `source-${i}-` + 'evidence '.repeat(2500) }));
+	const chunked = makeDeps({ now: () => clock, resolveSubject: async () => ({ ok: true, subject: { ...subject(), changedFiles: symbols.map(s => s.file) } }), fetchGrounding: async () => ({ ok: true, grounding: { symbols } }) });
+	const reserve = { ...CONTROLLER_DECLARATION, hostContextReserveTokens: 50_000 };
+	const chunkFrame = parse(await rawControllerCall({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo', reviewBudget: reserve }, chunked.deps));
+	assert.ok(chunkFrame.next === 'emit_judgements', JSON.stringify(chunkFrame));
+	assert.equal(chunkFrame.prompts.length, 1);
+	const stored = (await getStepStateStore().read<import('../types.js').CodeReviewStepStatePayload>('code-review', chunkFrame.state))!.payload.controller!;
+	const leaves = stored.job!.workUnits.filter(unit => !unit.replaced).length;
+	assert.ok(leaves > 1, 'material and host reserve force real whole-atom partitioning');
+	assert.equal(stored.job!.deadlineBudgetMs, leaves * 600_000);
+	assert.equal(new Set(stored.job!.plan.chunks.flatMap(chunk => chunk.atomIds)).size, 20, 'every source atom remains in the plan');
+	admitControllerFrame(chunkFrame, stored.policy, reserve);
+	clock = stored.job!.deadlineAt! + 1;
+	const lateRequest = { phase: 'judgements', state: chunkFrame.state, reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: chunkFrame.call!['generation'], callId: chunkFrame.call!['callId'], answer: {} } };
+	const late = parse(await rawControllerCall(lateRequest, chunked.deps));
+	assert.ok(late.next === 'error' && late.error.code === 'review-job-timeout');
+	const cannotRevive = parse(await rawControllerCall(lateRequest, chunked.deps));
+	assert.ok(cannotRevive.next === 'error' && cannotRevive.error.code === 'review-state-uncertain');
+	assert.equal(chunked.writes.length, 0);
 });

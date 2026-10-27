@@ -105,11 +105,13 @@ export function measureReviewBudget(policy: ReviewBudgetPolicy, input: {
 	/** Provider-final manifest for managed turns; absent uses the pinned planning manifest. */
 	readonly declaredToolsJson?: string | undefined;
 	readonly hostContextReserveTokens?: number | undefined;
+	/** Controller frames already contain their response schemas. */
+	readonly schemaEmbedded?: true | undefined;
 }): ReviewBudgetBreakdown {
 	validateReviewBudgetPolicy(policy);
 	integer(input.promptChars);
 	if (typeof input.wireSchemaJson !== 'string' || !['planning', 'dispatch'].includes(input.phase)) throw new ReviewBudgetError('invalid-budget-policy');
-	jsonContainer(input.wireSchemaJson);
+	if (!(policy.executionKind === 'controller' && input.schemaEmbedded === true && input.wireSchemaJson === '')) jsonContainer(input.wireSchemaJson);
 	const host = input.hostContextReserveTokens ?? 0;
 	integer(host);
 	if (policy.executionKind === 'controller' && input.hostContextReserveTokens === undefined) throw new ReviewBudgetError('controller-budget-required');

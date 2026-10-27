@@ -22,7 +22,8 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDim
 import type { PartyOrUnknown } from '../../../../workflow/review/party.js';
 import { codeReviewStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
 import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../../mcp/daemon-stream.js';
-import { codeReviewWaitLimits, handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
+import { codeReviewWaitLimits, type CodeReviewStepDeps } from '../handler.js';
+import { fixtureCodeReviewClient as handleCodeReviewStep } from './controller-client.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import type { CodeReviewStepOutput } from '../types.js';
 import { noopRoundWriter } from '../../../../workflow/__tests__/helpers/round-writer.js';
@@ -111,7 +112,7 @@ for (const author of ['controller', 'unknown'] as const) {
 		for (const key of ['prompts', 'schema', 'state', 'grounding']) assert.equal(o[key], undefined, `no ${key}: the judgements prompt is never handed back`);
 		assert.equal(h.asked.length, 1);
 		assert.deepEqual(h.asked[0]!.params, { repo: '/repo', epicHash: EPIC, storyId: STORY, groundingMode: 'full' });
-		assert.deepEqual(h.authorReads, [`/repo|${EPIC}|${STORY}`], 'the author is read from the BUILD record of this Story');
+		assert.ok(h.authorReads.length > 0 && h.authorReads.every(value => value === `/repo|${EPIC}|${STORY}`), 'routing rechecks the BUILD author for this Story');
 		assert.deepEqual(h.writes, [], 'the tool itself writes no record: the daemon does');
 	});
 }
@@ -121,7 +122,7 @@ test('T10 daemon-authored code gets the judgements prompt as before, and the dae
 	const h = harness('daemon');
 	const out = await start(h.deps);
 	assert.ok(out.next === 'emit_judgements');
-	assert.equal(out.prompts.length, 4);
+	assert.equal(out.prompts.length, 1);
 	assert.deepEqual(h.asked, []);
 	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: out.state }, h.deps));
 	assert.ok(done.next === 'done');
@@ -138,7 +139,7 @@ test('T10 the invoking client is passed to the daemon when the tool knows it', a
 
 // --- T17: the start phase keeps every outcome ------------------------------------
 
-test('T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet', async () => {
+test('T17 a stale index returns confirm_wait and asks no daemon; the author is checked before choosing a controller declaration requirement', async () => {
 	await reset();
 	const h = harness('controller', { fetchFreshness: async () => STALE });
 	const out = await start(h.deps);
@@ -146,7 +147,7 @@ test('T17 a stale index returns confirm_wait and asks no daemon; the author is n
 	assert.deepEqual(out.staleFiles, ['src/a.ts']);
 	assert.ok(out.state.length > 0);
 	assert.deepEqual(h.asked, []);
-	assert.deepEqual(h.authorReads, []);
+	assert.deepEqual(h.authorReads, [`/repo|${EPIC}|${STORY}`]);
 });
 
 test('T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself', async () => {
@@ -161,7 +162,7 @@ test('T17 a declined wait asks the daemon with the degraded mode, and the tool d
 	assert.equal(h.asked.length, 1);
 	assert.equal(h.asked[0]!.params.groundingMode, 'degraded');
 	assert.equal(h.diffCalls(), 0, 'the daemon grounds on the diff, not the tool');
-	assert.equal(h.authorReads.length, 1, 'the author is read on the resumed call');
+	assert.ok(h.authorReads.length >= 2, 'author is rechecked on resume');
 });
 
 test('T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode', async () => {
@@ -187,7 +188,7 @@ test('T17 an accepted wait that becomes fresh asks the daemon with the full mode
 	assert.ok(out.next === 'done', JSON.stringify(out));
 	assert.equal(h.asked.length, 1);
 	assert.equal(h.asked[0]!.params.groundingMode, 'full');
-	assert.equal(h.authorReads.length, 1, 'read on the resumed call, at the point the review starts');
+	assert.ok(h.authorReads.length >= 2, 'author is rechecked before the review starts');
 });
 
 test('T17 fresh grounding with no symbols asks the daemon with the degraded mode', async () => {

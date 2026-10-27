@@ -18,7 +18,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
+import type { CodeReviewStepDeps } from '../handler.js';
+import { fixtureCodeReviewClient as handleCodeReviewStep } from './controller-client.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import { runCodeReview } from '../../../../workflow/code-review/runner.js';
 import type { CodeReviewStepOutput } from '../types.js';
@@ -79,16 +80,17 @@ function judgements(dims: readonly ReviewDimension[], perDim: Partial<Record<Rev
 const UX_DIMS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality', 'ux'];
 const BASE_DIMS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
 
-test('start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux', async () => {
+test('a uxDefinition subject completes all five dimensions through one-call continuations', async () => {
 	await _clearCodeReviewStateStoreForTests();
-	const { deps } = makeDeps(subject({ uxDefinition: validUx }));
-	return handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps).then(env => {
+	const { deps, writes } = makeDeps(subject({ uxDefinition: validUx }));
+	return handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps).then(async env => {
 		const start = parse(env);
 		assert.ok(start.next === 'emit_judgements');
-		assert.equal(start.prompts.length, 5, 'base four + ux');
-		const enumVals = (start.schema as { properties: { judgements: { items: { properties: { dimension: { enum: string[] } } } } } })
-			.properties.judgements.items.properties.dimension.enum;
-		assert.ok(enumVals.includes('ux'));
+		assert.equal(start.prompts.length, 1, 'one assigned request');
+		const done = parse(await handleCodeReviewStep({ phase: 'judgements', state: start.state, judgements: judgements(UX_DIMS) }, deps));
+		assert.equal(done.next, 'done');
+		const record = JSON.parse(writes.find(w => w.path.endsWith('.json'))!.content) as { body: { dimensions: DimensionResult[] } };
+		assert.deepEqual(record.body.dimensions.map(d => d.dimension), UX_DIMS);
 	});
 });
 
@@ -119,7 +121,7 @@ test('start: a subject with neither uxDefinition nor adherence → the base four
 	const { deps } = makeDeps(subject({}));
 	const start = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(start.next === 'emit_judgements');
-	assert.equal(start.prompts.length, 4, 'exactly the base four');
+	assert.equal(start.prompts.length, 1, 'one request, then the remaining base dimensions');
 	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(BASE_DIMS), state: start.state }, deps));
 	assert.ok(done.next === 'done');
 	assert.equal(done.verdict, 'pass');

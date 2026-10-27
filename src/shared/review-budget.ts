@@ -70,7 +70,7 @@ export interface ReviewControllerBudgetDeclaration {
 export type ReviewBudgetErrorCode =
 	| 'invalid-budget-policy' | 'native-budget-unqualified' | 'budget-profile-mismatch'
 	| 'review-budget-exceeded' | 'required-context-over-budget' | 'correction-budget-exceeded'
-	| 'controller-budget-required' | 'controller-budget-incompatible';
+	| 'controller-budget-required' | 'controller-budget-incompatible' | 'review-budget-state-stale';
 
 /** Review-only request metadata. Optional on existing provider calls. */
 export interface ReviewExecutionBudget {

@@ -288,3 +288,55 @@ test('a Story file whose path has multibyte characters is in the Story set, the 
 		assert.match(sig(res, FILE), /^\+UNSTAGED-EDIT$/m);
 	} finally { rmSync(r, { recursive: true, force: true }); }
 });
+
+test('Story-attributed graph and diff subjects exclude generated sidecars before freshness', async () => {
+	const r = repo();
+	const git = (...args: string[]): string => execFileSync('git', args, { cwd: r.repo, encoding: 'utf8' }).trim();
+	const histories = ['.insrc/artifacts/LLD-x.log.jsonl', '.insrc/artifacts/LLD-x.feedback.jsonl'];
+	const nested = ['.insrc/artifacts/templates/user.jsonl', '.insrc/artifacts/formats/user.jsonl'];
+	try {
+		git('checkout', '-q', r.base);
+		assert.equal(stampBuildStart(r.repo, EPIC, STORY), 'stamped');
+		git('checkout', '-q', 'main');
+		for (const file of [...histories, ...nested]) {
+			mkdirSync(dirname(join(r.repo, file)), { recursive: true });
+			writeFileSync(join(r.repo, file), 'committed\n');
+		}
+		git('add', '-A'); git('commit', '-qm', `feat: review fixtures\n\nInsrc-Story: ${KEY}`);
+		for (const file of [...histories, ...nested]) writeFileSync(join(r.repo, file), 'committed\nstaged\n');
+		git('add', '-A');
+		for (const file of [...histories, ...nested]) writeFileSync(join(r.repo, file), 'committed\nstaged\nunstaged\n');
+		const expected = [...nested, 'src/mine.ts', 'src/shared.ts'].sort();
+		const missing = (): never => { throw new ArtifactMissingError('none'); };
+		const resolveSubject = () => resolveCodeReviewSubject(r.repo, EPIC, STORY, {
+			requireApprovedLld: missing, requireApprovedPlan: missing, changedFiles,
+			resolveRangeBase: () => r.base, readBuildRecord: () => null, readTestRecord: () => null,
+		});
+		const subject = await resolveSubject();
+		assert.ok(subject.ok);
+		assert.deepEqual([...subject.subject.changedFiles].sort(), expected);
+		const diff = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: KEY });
+		assert.deepEqual([...diff.changedFiles].sort(), expected);
+		assert.ok(diff.grounding.symbols.every(s => !histories.includes(s.file)));
+		for (const full of [true, false]) {
+			await _clearCodeReviewStateStoreForTests();
+			let freshnessCalls = 0;
+			const deps: CodeReviewStepDeps = {
+				resolveSubject,
+				fetchFreshness: async params => {
+					freshnessCalls++;
+					assert.deepEqual([...params.changedFiles].sort(), expected);
+					return { ok: true, isProcessing: false, staleFiles: [] };
+				},
+				fetchGrounding: async () => ({ ok: true, grounding: { symbols: full ? [{ entityId: 'mine', file: 'src/mine.ts', kind: 'function', name: 'mine', signature: 'mine()', callers: [], callees: [], testsReaching: [] }] : [] } }),
+				assembleDiffGrounding: assembleDiffCodeReviewGrounding, runReview: runCodeReview, write: () => {},
+				sleep: async () => {}, now: () => 0, freshnessTimeoutMs: () => 120000, readBuildAuthor: () => 'daemon',
+			};
+			const response = await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: r.repo }, deps);
+			const output = JSON.parse(response.content[0]!.text) as CodeReviewStepOutput;
+			assert.equal(output.next, 'emit_judgements', JSON.stringify(output));
+			assert.equal(freshnessCalls, 1);
+			for (const file of histories) assert.ok(!JSON.stringify(output).includes(file), 'generated history never enters emitted grounding');
+		}
+	} finally { await _clearCodeReviewStateStoreForTests(); r.cleanup(); }
+});

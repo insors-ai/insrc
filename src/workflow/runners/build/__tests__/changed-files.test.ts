@@ -439,6 +439,8 @@ test('t4: an exclusion path OUTSIDE the repo is left alone rather than relativis
 const LEDGER_KEPT = [
 	'.insrc/artifacts/formats/f.md',
 	'.insrc/artifacts/templates/t.json',
+	'.insrc/artifacts/templates/user.jsonl',
+	'.insrc/artifacts/formats/user.jsonl',
 	'.insrc/conventions/c.md',
 	'.insrc/feedback/fb.md',
 	'.insrc/templates/tp.md',
@@ -447,6 +449,8 @@ const LEDGER_KEPT = [
 ];
 const LEDGER_DROPPED = [
 	'.insrc/artifacts/LLD-x.json',
+	'.insrc/artifacts/LLD-x.log.jsonl',
+	'.insrc/artifacts/LLD-x.feedback.jsonl',
 	'.insrc/build-start/x-s1.json',
 	'docs/epics/e/s1/LLD.md',
 	'docs/standalone/s/s1/BUILD.md',
@@ -476,8 +480,8 @@ test('T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('T26: the constant is exactly the four globs, and frozen', () => {
-	assert.deepEqual([...LEDGER_EXCLUDE_GLOBS], ['.insrc/artifacts/*.json', '.insrc/build-start/**', 'docs/epics/**', 'docs/standalone/**']);
+test('T26: the constant is exactly the five globs, and frozen', () => {
+	assert.deepEqual([...LEDGER_EXCLUDE_GLOBS], ['.insrc/artifacts/*.json', '.insrc/artifacts/*.jsonl', '.insrc/build-start/**', 'docs/epics/**', 'docs/standalone/**']);
 	assert.ok(Object.isFrozen(LEDGER_EXCLUDE_GLOBS));
 });
 
@@ -828,4 +832,21 @@ test('on a clean tree, a pre-trailer Story with a BUILD record whose commit is b
 		assert.deepEqual([...await changedFiles(repo, { base, storyKey: STORY_KEY })], ['src/legacy.ts']);
 		assert.deepEqual([...await changedFiles(repo, { base })].sort(), ['docs/later.md', 'src/legacy.ts'], 'unbounded without the key');
 	} finally { cleanup(); }
+});
+
+
+test('generated flat JSONL exclusion preserves nested user files across staged unstaged and range changes', async () => {
+	const { repo, base } = mkLedgerRepo();
+	try {
+		const paths = [...LEDGER_KEPT, ...LEDGER_DROPPED];
+		const before = new Map(paths.map(f => [f, readFileSync(join(repo, f), 'utf8')]));
+		assert.deepEqual([...await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS })].sort(), [...LEDGER_KEPT].sort());
+		for (const f of paths) writeFileSync(join(repo, f), before.get(f)! + 'staged\n');
+		execFileSync('git', ['add', '-A'], { cwd: repo });
+		assert.deepEqual([...await changedFiles(repo, { excludeGlobs: LEDGER_EXCLUDE_GLOBS })].sort(), [...LEDGER_KEPT].sort());
+		for (const f of paths) writeFileSync(join(repo, f), before.get(f)! + 'staged\nunstaged\n');
+		assert.deepEqual([...await changedFiles(repo, { excludeGlobs: LEDGER_EXCLUDE_GLOBS })].sort(), [...LEDGER_KEPT].sort());
+		assert.deepEqual([...await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS })].sort(), [...LEDGER_KEPT].sort());
+		for (const f of paths) assert.equal(readFileSync(join(repo, f), 'utf8'), before.get(f)! + 'staged\nunstaged\n', 'selection never rewrites or removes files');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

@@ -45,9 +45,9 @@ export class NoBuildChangesError extends Error {
  * The workflow's OWN ledger files, as repo-root globs in git's glob-pathspec
  * dialect (`*` stops at a directory separator, `**` does not).
  *
- * These are records ABOUT the work — artifact json, the build-start stamps, and
+ * These are records ABOUT the work — artifact JSON and JSONL histories, the build-start stamps, and
  * the rendered documents — not the work itself, so a code review leaves them out.
- * The first glob is deliberately flat: `.insrc/artifacts/templates/` and
+ * The artifact globs are deliberately flat: `.insrc/artifacts/templates/` and
  * `.insrc/artifacts/formats/` hold USER-authored files that a Story may change
  * and that must stay reviewable, as must `.insrc/templates|feedback|conventions`.
  *
@@ -56,6 +56,7 @@ export class NoBuildChangesError extends Error {
  */
 export const LEDGER_EXCLUDE_GLOBS: readonly string[] = Object.freeze([
 	'.insrc/artifacts/*.json',
+	'.insrc/artifacts/*.jsonl',
 	'.insrc/build-start/**',
 	'docs/epics/**',
 	'docs/standalone/**',

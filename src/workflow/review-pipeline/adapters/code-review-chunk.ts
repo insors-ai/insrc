@@ -142,7 +142,7 @@ const OUTPUT: Record<ChunkSpec['kind'], string> = {
 export function chunkCall(spec: ChunkSpec, chunk: ReviewChunk, material: ReviewMaterial, execution: ExecutionMode): { readonly messages: LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode } {
 	const system = [
 		spec.framing, DIVIDED, ...RULES[spec.kind],
-		...((spec.diffParents?.length ?? 0) > 0 ? ['For EVERY carried diff fragment write exactly one notes entry: key is diff-file-quality:<its parentId>, atomIds contains only that fragment entityId, and note states concrete local facts/assumptions and source coordinates needed to judge the whole parent file. Empty findings never excuse missing notes. A fragment is partial evidence, not a complete JSON/document.'] : []),
+		...((spec.diffParents?.length ?? 0) > 0 ? ['For EVERY carried diff fragment write exactly one notes entry: key is diff-file-quality:<its parentId>, atomIds contains only that fragment entityId, and note states concrete local facts/assumptions, duplication-relevant behavior/potential counterparts and source coordinates needed to judge the whole parent file. For duplication use original source file or file:line as counterpartRef, never fragment IDs. Empty findings never excuse missing notes. A fragment is partial evidence, not a complete JSON/document.'] : []),
 		'Use only the keys listed and only the entityIds of the symbols in this chunk. Reason only over the structured symbol summaries provided.',
 	].join('\n');
 	const user = [

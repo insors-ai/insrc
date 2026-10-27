@@ -31,7 +31,7 @@ import type { DimensionFinding, DimensionResult, ReviewDimension } from '../../c
 import { envelopeMessages, envelopeSchema, promptChars } from '../envelope.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { EvidenceNote, ExecutionMode, GatherAnswer, GatherPlan, ReviewAtom, ReviewCall, ReviewMaterial, ReviewObligation } from '../types.js';
-import { compactParentNotes, DIFF_PARENT_QUALITY, parentFindingReasons, validateParentEvidence } from './diff-parent-evidence.js';
+import { compactParentNotes, diffQualityNotes, DIFF_DUPLICATION, isDiffEvidenceKey, parentFindingReasons, validateParentEvidence } from './diff-parent-evidence.js';
 import { chunkNotesFrom, type ChunkSpec } from './code-review-chunk.js';
 import { neighbourSummary } from './code-review-material.js';
 
@@ -160,12 +160,12 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const obligation = material.obligations.find(o => o.key === key);
 		if (obligation === undefined) throw new Error(`code review ${dimension}: no obligation ${key}`);
 		const ref = expectationRefOf(obligation);
-		const parent = key.startsWith(DIFF_PARENT_QUALITY);
+		const parent = isDiffEvidenceKey(key);
 		if (parent) validateParentEvidence(key, evidence, material, true);
 		const rule = parent ? 'Locate findings in the original parent file at a source line; do not add expectationRef' : refRule(ref);
 		const system = [
 			chunk.obligationFraming ?? chunk.framing,
-			parent ? 'Judge the WHOLE parent file jointly from validated notes covering EVERY fragment. Combine facts across fragments even when each local findings array is empty. Compact ranges preserve complete source provenance; do not treat fragments as independent valid documents.' : 'This review was DIVIDED into chunks. You judge ONE obligation, once, on the evidence notes every chunk wrote about it and on its own context below. The notes are the whole evidence: a part of the change no note mentions did not bear on this obligation.',
+			key === DIFF_DUPLICATION ? 'Judge DUPLICATED LOGIC across original parent files and nonfragment changed evidence, on the complete validated notes/descriptions. Preserve source scope and counterpart references. Do not enumerate sibling fragment pairs.' : parent ? 'Judge the WHOLE parent file jointly from validated notes covering EVERY fragment. Combine facts across fragments even when each local findings array is empty. Compact ranges preserve complete source provenance; do not treat fragments as independent valid documents.' : 'This review was DIVIDED into chunks. You judge ONE obligation, once, on the evidence notes every chunk wrote about it and on its own context below. The notes are the whole evidence: a part of the change no note mentions did not bear on this obligation.',
 			chunk.judge ?? '',
 			`${rule}, and is located at \`file:line\` in one of the Story's changed files (prefer the file of a symbol the notes name), never at an evidence note id.`,
 			'If the obligation is met, return an EMPTY findings array. Never manufacture findings.',
@@ -196,7 +196,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const user = [
 			`## Obligation ${key}`,
 			'## Notes to condense',
-			'```json', JSON.stringify(key.startsWith(DIFF_PARENT_QUALITY) ? compactParentNotes(key, batch, args.material()) : batch.map(n => ({ noteId: n.noteId, atomIds: n.atomIds, note: n.text })), null, 2), '```',
+			'```json', JSON.stringify(isDiffEvidenceKey(key) ? compactParentNotes(key, batch, args.material()) : batch.map(n => ({ noteId: n.noteId, atomIds: n.atomIds, note: n.text })), null, 2), '```',
 			'## Output',
 			`Return { "text": "the one condensed note, at most ${cap} characters" }.`,
 		].join('\n');
@@ -246,7 +246,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		obligationCall,
 		reduceCall,
 		noteCapChars: Math.floor(args.limitChars / 4),
-		notesFrom: chunkNotesFrom,
+		notesFrom: answer => diffQualityNotes(answer, args.material(), chunkNotesFrom(answer)),
 		validate: (answer, call) => [...locationReasons(answer, call), ...obligationReasons(answer, call, args.material()), ...relationReasons(answer, call, args.material()), ...parentFindingReasons(call.carries.key ?? '', answer, args.material())],
 		...(chunk.relation !== undefined ? { relationCall } : {}),
 		partOf: (g: GatherAnswer): DimensionResult => ({

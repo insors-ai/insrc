@@ -33,6 +33,11 @@ test('DIFF-FITS-ONE-CALL: fragmented quality still validates notes and gathers t
 	assert.ok(parent); assert.match(parent.carries.key!, /^diff-file-quality:/);
 	assert.deepEqual(parent.carries.atomIds.slice().sort(), material.atoms.map(a => a.id).sort());
 	next = applyOutput(next, adapter, parent.callId, { callId: parent.callId, answer: { findings: [] } });
+	while (next.phase !== 'done') {
+		const call = nextCalls(next, adapter)[0]!;
+		assert.equal(call.carries.key, 'diff-duplication');
+		next = applyOutput(next, adapter, call.callId, { callId: call.callId, answer: { findings: [] } });
+	}
 	assert.equal(next.phase, 'done');
 });
 
@@ -67,6 +72,8 @@ test('DIFF-PARENT-QUALITY: bounded reduction preserves separate fragment facts f
 		if (call.role === 'reduce') {
 			reductions++;
 			answer = { text: [text.includes('FACT_ALPHA') ? 'FACT_ALPHA' : '', text.includes('FACT_BETA') ? 'FACT_BETA' : '', 'condensed local evidence'].join(' ') };
+		} else if (call.role === 'obligation' && call.carries.key === 'diff-duplication') {
+			answer = { findings: [] };
 		} else if (call.role === 'obligation') {
 			parents++; assert.match(text, /FACT_ALPHA/); assert.match(text, /FACT_BETA/);
 			assert.match(text, /parentDigest/); assert.match(text, /ranges/);

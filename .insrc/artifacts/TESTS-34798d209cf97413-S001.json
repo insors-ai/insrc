@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T08:15:04.584Z",
+    "updatedAt": "2026-10-27T08:27:08.158Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -620,6 +620,81 @@
               },
               {
                 "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "deea66b58",
+        "ranAt": "2026-10-27T08:27:08.158Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-GATHER",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts",
+                "title": "DIFF-PARENT-QUALITY: bounded reduction preserves separate fragment facts for parent-only correctness judgment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-PARENT-QUALITY",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts",
+                "title": "DIFF-PARENT-QUALITY: missing, duplicate, foreign and mismatched fragment notes cannot complete a chunk",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts",
+                "title": "DIFF-PARENT-QUALITY: bounded reduction preserves separate fragment facts for parent-only correctness judgment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-FITS-ONE-CALL",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts",
+                "title": "DIFF-FITS-ONE-CALL: fragmented quality still validates notes and gathers the parent when all input fits one primary call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 954,
+            "titles": [
+              {
+                "title": "DIFF-FITS-ONE-CALL: fragmented quality still validates notes and gathers the parent when all input fits one primary call",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PARENT-QUALITY: missing, duplicate, foreign and mismatched fragment notes cannot complete a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PARENT-QUALITY: bounded reduction preserves separate fragment facts for parent-only correctness judgment",
                 "result": "pass"
               }
             ],

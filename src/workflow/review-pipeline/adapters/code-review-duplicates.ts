@@ -66,15 +66,36 @@ const sentChars = (messages: readonly LLMMessage[], schema: StructuredSchema): n
 /** A chunk id's place in the plan's order (c1 before c2 before c10). */
 const order = (chunkId: string): number => Number.parseInt(chunkId.replace(/\D/g, ''), 10) || 0;
 
+const materialIndexes = new WeakMap<ReviewMaterial, ReadonlyMap<string, ReviewAtom>>();
+function atomIndex(material: ReviewMaterial): ReadonlyMap<string, ReviewAtom> {
+	let found = materialIndexes.get(material);
+	if (found === undefined) { found = new Map(material.atoms.map(a => [a.id, a])); materialIndexes.set(material, found); }
+	return found;
+}
+const fragmentFlags = new WeakMap<ReviewAtom, boolean>();
+function isFragment(a: ReviewAtom): boolean {
+	let value = fragmentFlags.get(a);
+	if (value === undefined) { value = (JSON.parse(a.text) as { diffFragment?: unknown }).diffFragment !== undefined; fragmentFlags.set(a, value); }
+	return value;
+}
+type Descriptions = Map<string, { readonly owner: string; readonly d: Described }>;
+const descriptionIndexes = new WeakMap<StageOutputs, Map<ReviewMaterial, Map<string, Descriptions>>>();
+
 /** Each described symbol, with the chunk that described it. */
 function descriptionsOf(prior: StageOutputs, stage: string, material: ReviewMaterial): Map<string, { readonly owner: string; readonly d: Described }> {
-	const out = new Map<string, { owner: string; d: Described }>();
+	let materials = descriptionIndexes.get(prior);
+	if (materials === undefined) { materials = new Map(); descriptionIndexes.set(prior, materials); }
+	let stages = materials.get(material);
+	if (stages === undefined) { stages = new Map(); materials.set(material, stages); }
+	const cached = stages.get(stage); if (cached !== undefined) return cached;
+	const out: Descriptions = new Map();
 	for (const a of (prior[stage] ?? []) as readonly StageAnswer[]) {
 		for (const d of (a.answer as { descriptions?: readonly { atomId: string; description: string }[] }).descriptions ?? []) {
-			const atom = material.atoms.find(x => x.id === d.atomId);
-			if (atom !== undefined && a.chunkId !== undefined) out.set(d.atomId, { owner: a.chunkId, d: { atomId: d.atomId, symbol: atom.label, description: d.description } });
+			const atom = atomIndex(material).get(d.atomId);
+			if (atom !== undefined && !isFragment(atom) && a.chunkId !== undefined) out.set(d.atomId, { owner: a.chunkId, d: { atomId: d.atomId, symbol: atom.label, description: d.description } });
 		}
 	}
+	stages.set(stage, out);
 	return out;
 }
 
@@ -196,7 +217,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 		singleCalls: () => [],
 		chunkCalls: (chunk: ReviewChunk, prior: StageOutputs) => {
 			const material = args.material();
-			const byId = new Map(material.atoms.map(x => [x.id, x] as const));
+			const byId = atomIndex(material);
 			const described = descriptionsOf(prior, args.chunkStage, material);
 			const seen = new Set<string>();
 			const calls: ChunkPrompt[] = [];
@@ -206,6 +227,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 					seen.add(`${c.a}|${c.b}`);
 					const a = byId.get(c.a), b = byId.get(c.b);
 					if (a === undefined || b === undefined) continue;
+					if (isFragment(a) || isFragment(b)) throw new Error('Diff fragments cannot enter symbol duplicate pair checks');
 					const both = build([a, b], undefined, [a, b]);
 					if (sentChars(both.messages, both.schema) <= args.limitChars) { calls.push(both); continue; }
 					calls.push(...halves(a, b, args.limitChars, x => described.get(x.id)?.d.description ?? x.label));
@@ -220,6 +242,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 			const material = args.material();
 			const a = material.atoms.find(x => x.id === ids?.[0]), b = material.atoms.find(x => x.id === ids?.[1]);
 			if (a === undefined || b === undefined) throw new Error(`code review quality: the refused pair call names no known pair (${call.carries.key ?? ''})`);
+			if (isFragment(a) || isFragment(b)) throw new Error('Diff fragments cannot enter symbol duplicate pair checks');
 			if (isHalf(call.carries.key)) {
 				const full = /\|half:([^|]+)$/.exec(call.carries.key!)![1]!;
 				throw new AtomTooLargeError(`${(full === a.id ? a : b).label} (in the duplicate check of ${a.label} and ${b.label})`, call.chars, maxChars);

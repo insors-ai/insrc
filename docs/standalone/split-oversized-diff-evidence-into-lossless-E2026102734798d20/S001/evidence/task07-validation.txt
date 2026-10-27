@@ -1,0 +1,5 @@
+Task 7 focused verification
+Node 22.23.2 TypeScript --noEmit: pass.
+Review pipeline suite: 101 tests, 98 pass, 3 gated live skips, zero failures.
+New integration fixture: 266 primary chunks, no fragment compare/pair calls; parent and cross-parent obligations retain complete provenance; within-parent, cross-parent and fragment/nonfragment findings asserted.
+Daemon task validation follows this commit.

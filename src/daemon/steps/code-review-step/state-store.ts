@@ -13,6 +13,9 @@
  */
 
 import { getStepStateStore } from '../../threads/step-state.js';
+import { codeReviewOperations } from '../../code-review-operations.js';
+import type { CodeReviewOperationRegistry } from '../../code-review-operations.js';
+import type { CodeReviewPendingState } from './types.js';
 import type { CodeReviewStepStatePayload } from './types.js';
 
 // The entries live in the daemon's shared step-state store (Epic 86197ac6
@@ -33,12 +36,26 @@ export async function loadState(token: string): Promise<CodeReviewStepStatePaylo
 	return entry.payload;
 }
 
+const leases = new Map<string, () => void>();
+export async function savePendingState(payload: CodeReviewPendingState, registry: CodeReviewOperationRegistry = codeReviewOperations): Promise<string> {
+ const store = getStepStateStore();
+ const token = await store.mint('code-review', payload, Number.MAX_SAFE_INTEGER);
+ try {
+  const unsubscribe = registry.watchLease(payload.reviewHandle, payload, until => {
+   void store.pin('code-review', token, until).catch(() => { leases.get(token)?.(); leases.delete(token); });
+  }, () => { leases.delete(token); void store.release('code-review', token); });
+  leases.set(token, unsubscribe);
+  return token;
+ } catch (err) { await store.release('code-review', token); throw err; }
+}
 export function releaseState(token: string): Promise<void> {
+ leases.get(token)?.(); leases.delete(token);
 	return getStepStateStore().release('code-review', token);
 }
 
 export function _clearCodeReviewStateStoreForTests(): Promise<void> {
-	return getStepStateStore().clearForTests('code-review');
+	for (const unsubscribe of leases.values()) unsubscribe(); leases.clear();
+ return getStepStateStore().clearForTests('code-review');
 }
 
 export function _codeReviewStateStoreSize(): Promise<number> {

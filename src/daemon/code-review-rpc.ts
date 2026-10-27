@@ -19,7 +19,7 @@
  */
 
 import { realpathSync } from 'node:fs';
-import { CodeReviewOperationRegistry, codeReviewOperations, CODE_REVIEW_CONTROL_WAIT_MS, ReviewOperationError } from './code-review-operations.js';
+import { CodeReviewOperationRegistry, codeReviewOperationIdleMs, codeReviewOperations, CODE_REVIEW_CONTROL_WAIT_MS, ReviewOperationError } from './code-review-operations.js';
 import type { CodeReviewProgress as OperationProgress } from '../workflow/code-review/runner.js';
 import { assertReviewFingerprintCurrent } from '../workflow/code-review/publication.js';
 import { getLogger } from '../shared/logger.js';
@@ -302,7 +302,7 @@ async function codeReviewControlStart(params: CodeReviewRunParams & { readonly r
    if (fingerprint === undefined) throw new ReviewOperationError('review-input-unavailable', 'Owned reviews require an admitted input fingerprint');
    if (waiterSignal.aborted) throw Object.assign(new Error('Review admission aborted'), { name: 'AbortError' });
    if (Date.now() - requestStarted >= CODE_REVIEW_CONTROL_WAIT_MS) throw new ReviewOperationError('review-admission-timeout', 'Review admission exceeded the bounded request wait; no review was started');
-   handle = registry.start({ fingerprint, inputKey: JSON.stringify({ fingerprint: fingerprint.digest, mode: params.groundingMode ?? 'full', fallbackReason: params.fallbackReason ?? null }), startedAt: requestStarted,
+   handle = registry.start({ idleMs: codeReviewOperationIdleMs(), fingerprint, inputKey: JSON.stringify({ fingerprint: fingerprint.digest, mode: params.groundingMode ?? 'full', fallbackReason: params.fallbackReason ?? null }), startedAt: requestStarted,
     validateDone: () => assertReviewFingerprintCurrent(fingerprint, 'daemon'),
     execute: async (ownerSignal, progress) => {
      let terminal: IpcStreamMessage | undefined;

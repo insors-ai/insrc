@@ -114,7 +114,7 @@ const PAYLOADS: Readonly<Record<StepKind, unknown>> = {
 	} satisfies ReviewStepStatePayload,
 	'code-review': {
 		runId: 'cr-1', startedAtMs: 1000, repo: '/repo', epicHash: 'e2c6705fd105d4ac', storyId: 's1',
-		subject: { files: ['src/a.ts'], commits: ['abc'], range: { base: 'a', head: 'b' } } as unknown as CodeReviewStepStatePayload['subject'],
+		subject: { files: ['src/a.ts'], commits: ['abc'], range: { base: 'a', head: 'b' } } as unknown as import('../../steps/code-review-step/types.js').CodeReviewJudgementsState['subject'],
 		groundingMode: 'degraded',
 	} satisfies CodeReviewStepStatePayload,
 };
@@ -156,4 +156,24 @@ test('step state minted in one worker is read in another after the first exits',
 	} finally {
 		await second.worker.terminate();
 	}
+});
+
+
+test('DIFF-WAIT-RESUME: shared and hub leases protect all active entries from TTL/LRU and expire at a fixed terminal deadline', async () => {
+ let now = 1000;
+ const store = new LocalStepStateStore(() => now);
+ const tokens: string[] = [];
+ for (let i = 0; i < 105; i++) tokens.push(await store.mint('code-review', { active: i }, 10 * HOUR));
+ assert.equal(await store.sizeForTests('code-review'), 105, 'active operations may exceed the unpinned LRU cap');
+ now = 2 * HOUR;
+ await store.mint('code-review', { unrelated: true });
+ for (const token of tokens) assert.notEqual(await store.read('code-review', token), undefined);
+ const { worker, ask } = connect(store)();
+ try {
+  const token = tokens[0]!;
+  assert.equal((await ask({ op: 'pin', kind: 'code-review', token, until: now + 1000 }))['ok'], true);
+  now += 999; assert.notEqual(await store.read('code-review', token), undefined);
+  now += 1; assert.equal(await store.read('code-review', token), undefined, 'reads never extend fixed terminal grace');
+  assert.notEqual(await store.read('code-review', tokens[1]!), undefined);
+ } finally { await worker.terminate(); }
 });

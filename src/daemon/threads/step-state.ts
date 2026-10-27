@@ -13,7 +13,9 @@ import { assertNoSessionPersistence } from '../../shared/connection-persistence.
  * Each kind keeps today's lifecycle: a 100-entry cap evicting the least
  * recently touched, a 1-hour idle TTL swept on every mint, a read that
  * refreshes the expiry, and its own update rule. State is still lost when the
- * daemon restarts. Payloads are stored as a structured clone, the same copy a
+ * daemon restarts. Active operation leases bypass idle TTL/LRU until their
+ * fixed owner deadline plus terminal grace. Leased reads never extend that expiry.
+ * Payloads are stored as a structured clone, the same copy a
  * worker's payload becomes when it crosses threads.
  */
 
@@ -45,13 +47,14 @@ export interface StepLifecycle {
 
 export interface SharedStepStateStore {
 	lifecycle(kind: StepKind): StepLifecycle;
-	mint<P>(kind: StepKind, payload: P): Promise<string>;
+	mint<P>(kind: StepKind, payload: P, pinnedUntil?: number): Promise<string>;
 	read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined>;
 	/**
 	 * Returns the token to use next: the same one for a stable-token kind (whose
 	 * token must exist), a new one otherwise (the old one, if any, is released).
 	 */
 	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string>;
+	pin(kind: StepKind, token: string, until: number): Promise<void>;
 	release(kind: StepKind, token: string): Promise<void>;
 	/** ONLY for tests. */
 	clearForTests(kind: StepKind): Promise<void>;
@@ -73,7 +76,7 @@ export class StepStateNotFound extends Error {
 	}
 }
 
-interface Entry { payload: unknown; readonly createdAt: number; touchedAt: number; }
+interface Entry { payload: unknown; readonly createdAt: number; touchedAt: number; pinnedUntil?: number | undefined; }
 
 function mintToken(): string {
 	return randomBytes(16).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -87,14 +90,15 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 
-	async mint<P>(kind: StepKind, payload: P): Promise<string> {
-		assertNoSessionPersistence(); return this.mintSync(kind, payload);
+	async mint<P>(kind: StepKind, payload: P, pinnedUntil?: number): Promise<string> {
+		assertNoSessionPersistence(); return this.mintSync(kind, payload, pinnedUntil);
 	}
 
 	async read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> {
 		assertNoSessionPersistence();
 		const entry = this.map(kind).get(token);
 		if (entry === undefined) return undefined;
+		if (entry.pinnedUntil !== undefined && this.now() >= entry.pinnedUntil) { this.map(kind).delete(token); return undefined; }
 		entry.touchedAt = this.now();
 		return { token, kind, payload: entry.payload as P, touchedAt: entry.touchedAt };
 	}
@@ -113,6 +117,13 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		return next;
 	}
 
+	async pin(kind: StepKind, token: string, until: number): Promise<void> {
+  assertNoSessionPersistence();
+  if (!Number.isSafeInteger(until) || until < 0) throw new Error('Invalid step-state lease');
+  const entry = this.map(kind).get(token);
+  if (entry === undefined) throw new StepStateNotFound(kind, token);
+  entry.pinnedUntil = until;
+ }
 	async release(kind: StepKind, token: string): Promise<void> {
 		assertNoSessionPersistence(); this.map(kind).delete(token);
 	}
@@ -129,17 +140,18 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		return m;
 	}
 
-	private mintSync(kind: StepKind, payload: unknown): string {
+	private mintSync(kind: StepKind, payload: unknown, pinnedUntil?: number): string {
+  if (pinnedUntil !== undefined && (!Number.isSafeInteger(pinnedUntil) || pinnedUntil < this.now())) throw new Error('Invalid initial step-state lease');
 		const store = this.map(kind);
 		const { maxEntries, ttlMs } = LIFECYCLES[kind];
 		const now = this.now();
-		for (const [k, v] of store) if (now - v.touchedAt > ttlMs) store.delete(k);
+		for (const [k, v] of store) if (v.pinnedUntil !== undefined ? now >= v.pinnedUntil : now - v.touchedAt > ttlMs) store.delete(k);
 		if (store.size >= maxEntries) {
-			const oldest = [...store.entries()].sort((a, b) => a[1].touchedAt - b[1].touchedAt);
+			const oldest = [...store.entries()].filter(([, entry]) => entry.pinnedUntil === undefined).sort((a, b) => a[1].touchedAt - b[1].touchedAt);
 			while (store.size >= maxEntries && oldest.length > 0) store.delete(oldest.shift()![0]);
 		}
 		const token = mintToken();
-		store.set(token, { payload: structuredClone(payload), createdAt: now, touchedAt: now });
+		store.set(token, { payload: structuredClone(payload), createdAt: now, touchedAt: now, ...(pinnedUntil !== undefined ? { pinnedUntil } : {}) });
 		if (store.size >= maxEntries / 2) log.warn({ kind, size: store.size, cap: maxEntries }, 'step-state store: entries approaching cap');
 		return token;
 	}
@@ -151,11 +163,12 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 /** The main thread's hub services for the step-state store. */
 export function stepStateHubHandlers(store: SharedStepStateStore): HubHandlers {
-	type A = { kind: StepKind; token?: string; payload?: unknown };
+	type A = { kind: StepKind; token?: string; payload?: unknown; until?: number };
 	return {
-		'step.mint':    a => store.mint((a as A).kind, (a as A).payload),
+		'step.mint':    a => store.mint((a as A).kind, (a as A).payload, (a as A).until),
 		'step.read':    a => store.read((a as A).kind, (a as A).token!),
 		'step.update':  a => store.update((a as A).kind, (a as A).token, (a as A).payload),
+		'step.pin': a => store.pin((a as A).kind, (a as A).token!, (a as A).until!),
 		'step.release': a => store.release((a as A).kind, (a as A).token!),
 		'step.clear':   a => store.clearForTests((a as A).kind),
 		'step.size':    a => store.sizeForTests((a as A).kind),
@@ -166,8 +179,8 @@ export function stepStateHubHandlers(store: SharedStepStateStore): HubHandlers {
 export class HubStepStateStore implements SharedStepStateStore {
 	constructor(private readonly hub: HubClient) {}
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
-	mint<P>(kind: StepKind, payload: P): Promise<string> {
-		assertNoSessionPersistence(); return this.hub.request('step.mint', { kind, payload });
+	mint<P>(kind: StepKind, payload: P, pinnedUntil?: number): Promise<string> {
+		assertNoSessionPersistence(); return this.hub.request('step.mint', { kind, payload, until: pinnedUntil });
 	}
 	read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> {
 		assertNoSessionPersistence(); return this.hub.request('step.read', { kind, token });
@@ -175,6 +188,9 @@ export class HubStepStateStore implements SharedStepStateStore {
 	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> {
 		assertNoSessionPersistence(); return this.hub.request('step.update', { kind, token, payload });
 	}
+	pin(kind: StepKind, token: string, until: number): Promise<void> {
+  assertNoSessionPersistence(); return this.hub.request('step.pin', { kind, token, until });
+ }
 	release(kind: StepKind, token: string): Promise<void> {
 		assertNoSessionPersistence(); return this.hub.request('step.release', { kind, token });
 	}

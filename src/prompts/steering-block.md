@@ -380,7 +380,16 @@ routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
 
 - **You wrote the code (a build you drove with `insrc_build_step`), or the
   author is not recorded:** the tool asks the daemon to review and returns
-  `done` with its verdict. If the index is stale it first returns
+  `done` with its verdict, or `review_pending` with an opaque `state`, handle,
+  daemon epoch and progress. Each turn waits at most200 seconds. Resume with
+  `phase:'start'` and that SAME state; do not relaunch, poll the host or reset
+  deadlines. The daemon owns the review across disconnected turns. Its fixed
+  total budget is10 minutes per initial primary chunk; status polls grant no
+  additional time. With a `review_pending` state, `proceed:false` explicitly
+  cancels owned work; failed/cancelled/lost operations claim no completed CR.
+  Active tokens survive the normal1h TTL and LRU pressure, then expire after
+  terminal grace. Daemon restart loses handles: start a new review only when
+  the tool reports loss. If the index is stale it first returns
   `confirm_wait`: ask the user, then call `start` again with that `state` and
   `proceed` (true = wait for a fresh index, false = review the diff instead). A
   review of the diff is recorded as `degraded` and can be `warn` at best. If the

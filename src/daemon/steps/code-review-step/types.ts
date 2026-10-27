@@ -36,16 +36,17 @@ export type CodeReviewStepPhase = 'start' | 'judgements';
  *  changed files it returns a `confirm_wait` result carrying an opaque `state`.
  *  The caller resumes by re-calling `start` with that `state` plus `proceed`:
  *  `proceed:true` begins the bounded block-and-poll (wait for a fresh index);
- *  `proceed:false` aborts the review (fail-closed, no verdict). A plain start
+ *  `proceed:false` chooses a degraded diff review. Pending owned reviews instead
+ *  resume by the same token; proceed:false cancels their owned operation. A plain start
  *  call (no `state`/`proceed`) is unchanged. */
 export interface CodeReviewStepInputStart {
 	readonly phase:    'start';
 	readonly epicHash?: string | undefined;
 	readonly storyId?:  string | undefined;
 	readonly repo?:    string | undefined;
-	/** Resume past a `confirm_wait`: true = wait for a fresh index, false = abort. */
+	/** With confirm_wait: true waits for fresh indexing, false reviews the diff. With review_pending: false cancels; otherwise resume/status. */
 	readonly proceed?: boolean | undefined;
-	/** The opaque state token returned by a prior `confirm_wait` turn. */
+	/** The opaque token returned by confirm_wait or review_pending; preserve verbatim. */
 	readonly state?:   string | undefined;
 }
 
@@ -137,7 +138,17 @@ export interface CodeReviewStepError {
 	};
 }
 
+export interface CodeReviewStepPending {
+ readonly next: 'review_pending';
+ readonly state: string;
+ readonly reviewHandle: string;
+ readonly daemonEpoch: string;
+ readonly guidance: string;
+ readonly progress: readonly import('../../../workflow/code-review/runner.js').CodeReviewProgress[];
+ readonly timing?: import('../../../workflow/code-review/types.js').ReviewTimingPlan | undefined;
+}
 export type CodeReviewStepOutput =
+ | CodeReviewStepPending
 	| CodeReviewStepEmitJudgements
 	| CodeReviewStepConfirmWait
 	| CodeReviewStepDone
@@ -147,7 +158,8 @@ export type CodeReviewStepOutput =
 // Server-side run state (held under an opaque token in the state-store)
 // ---------------------------------------------------------------------------
 
-export interface CodeReviewStepStatePayload {
+export interface CodeReviewJudgementsState {
+ readonly kind?: 'judgements' | undefined;
  readonly reviewInputFingerprint?: ReviewInputFingerprint | undefined;
 	readonly runId:       string;
 	readonly startedAtMs: number;
@@ -180,3 +192,18 @@ export interface CodeReviewStepMcpEnvelope {
 	readonly isError?: boolean;
 	readonly [key: string]: unknown;
 }
+
+/** Small operation continuation; no grounding or resolved subject is retained. */
+export interface CodeReviewPendingState {
+ readonly kind: 'daemon-review-pending';
+ readonly repo: string;
+ readonly epicHash: string;
+ readonly storyId: string;
+ readonly reviewHandle: string;
+ readonly daemonEpoch: string;
+ readonly mode: 'full' | 'degraded';
+ readonly fallbackReason?: CodeReviewFallbackReason | undefined;
+ readonly reviewInputFingerprint?: ReviewInputFingerprint | undefined;
+ readonly paths: { readonly md: string; readonly json: string };
+}
+export type CodeReviewStepStatePayload = CodeReviewJudgementsState | CodeReviewPendingState;

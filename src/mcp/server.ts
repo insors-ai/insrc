@@ -718,8 +718,8 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'Either way the result is a block/warn/pass CodeReviewArtifact at ' +
 				'CR-<epic>-<story>, and completing the Story (approving its BUILD record) ' +
 				'REQUIRES one, done by the other party.\n\n' +
-				'When the daemon is the reviewer, phase=\'start\' asks the daemon, waits (up to ' +
-				'30 minutes) and returns { next: \'done\', verdict, counts, path, jsonPath, ' +
+				'When the daemon is the reviewer, each turn waits at most200 seconds. A running review returns ' +
+                '{ next: \'review_pending\', state, reviewHandle, daemonEpoch, progress, timing? }. Resume phase=\'start\' with the SAME state; this polls the same owned review without resetting its deadline. Do not poll the host or relaunch. proceed:false with a review_pending state explicitly cancels that operation. Only a completed review returns { next: \'done\', verdict, counts, path, jsonPath, ' +
 				'reviewedBy: \'daemon\', groundingMode }. A stale index first returns ' +
 				'{ next: \'confirm_wait\', staleFiles, state }: ask the user, then call ' +
 				'phase=\'start\' again with that state and `proceed` (true = wait for a fresh ' +
@@ -766,9 +766,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Opaque continuation token from the prior response. Required after phase=start.')
 					.optional(),
 				proceed: z.boolean()
-					.describe('Only when resuming a phase=start `confirm_wait` (the index was stale). ' +
-						'true = wait for a fresh index (block-and-poll); false = abort the review (no verdict). ' +
-						'Pass together with the `state` from the confirm_wait turn.')
+					.describe('With confirm_wait state: true waits for fresh indexing, false chooses a degraded diff review. With review_pending state: omit or true resumes/status; false explicitly cancels the owned review. Always preserve the same state.')
 					.optional(),
 			},
 		},

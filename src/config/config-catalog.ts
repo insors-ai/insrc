@@ -119,7 +119,7 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },
 		{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting', group: 'Workflow & review' },
 		{ path: 'codeReview.daemonReviewCeilingMs', type: 'number', default: 14400000, desc: 'max ms insrc_code_review_step waits in total for a daemon code review, progress or not', group: 'Workflow & review' },
-		{ path: 'codeReview.daemonReviewIdleMs', type: 'number', default: 1200000,  desc: 'max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)', group: 'Workflow & review' },
+		{ path: 'codeReview.daemonReviewIdleMs', type: 'number', default: 1200000,  desc: 'max ms a daemon code review may go without owner progress; independent of the chunk-derived total budget (legacy streams clamp to their ceiling)', group: 'Workflow & review' },
 		// Design-review template (src/workflow/review/template.ts). Provisional defaults —
 		// no design review may exceed 30 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
 		{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks', group: 'Workflow & review' },

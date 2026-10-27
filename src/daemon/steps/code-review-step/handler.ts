@@ -33,8 +33,10 @@ import type { LLMProvider } from '../../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../../workflow/code-review/subject.js';
-import { CEILING_TIMEOUT, IDLE_TIMEOUT, ReviewStreamError } from '../../../shared/review-stream.js';
-import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../shared/review-stream.js';
+import { codeReviewControlResult, CEILING_TIMEOUT, IDLE_TIMEOUT, ReviewStreamError } from '../../../shared/review-stream.js';
+import type { CodeReviewControlParams, CodeReviewControlResult, CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../shared/review-stream.js';
+import { codeReviewOperations } from '../../code-review-operations.js';
+import type { CodeReviewOperationRegistry } from '../../code-review-operations.js';
 import { stepDaemonClient } from '../daemon-client.js';
 import type { StepDaemonClient } from '../daemon-client.js';
 import { buildAuthorParty } from '../../../workflow/code-review/author.js';
@@ -63,8 +65,9 @@ import type {
 	ReviewDimension,
 } from '../../../workflow/code-review/types.js';
 import { stepClient, stepEnvRepo } from '../../../shared/step-context.js';
-import { StateTokenNotFound, loadState, releaseState, saveState } from './state-store.js';
+import { StateTokenNotFound, loadState, releaseState, saveState, savePendingState } from './state-store.js';
 import type {
+	CodeReviewPendingState,
 	CodeReviewStepError,
 	CodeReviewStepInput,
 	CodeReviewStepMcpEnvelope,
@@ -87,6 +90,8 @@ export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewD
  *  (deterministic block-and-poll under test) and `freshnessTimeoutMs` (the poll
  *  bound, from config). */
 export interface CodeReviewStepDeps {
+ readonly reviewControl?: ((params: CodeReviewControlParams, opts: ReviewStreamOpts) => Promise<CodeReviewControlResult>) | undefined;
+ readonly operations?: CodeReviewOperationRegistry | undefined;
  readonly captureInput?: ((subject: CodeReviewSubject) => ReviewInputFingerprint) | undefined;
 	readonly resolveSubject: typeof resolveCodeReviewSubject;
 	readonly fetchGrounding: StepDaemonClient['fetchCodeReviewGrounding'];
@@ -132,6 +137,7 @@ function readFreshnessTimeoutMs(): number {
 }
 
 export const DEFAULT_DEPS: CodeReviewStepDeps = {
+ reviewControl: (params, opts) => stepDaemonClient().codeReviewControl(params, opts),
  captureInput: captureReviewInputFingerprint,
 	resolveSubject: resolveCodeReviewSubject,
 	fetchGrounding: (params) => stepDaemonClient().fetchCodeReviewGrounding(params),
@@ -260,6 +266,10 @@ async function handleStart(
 
 	if (resuming) {
 		const payload = await loadState(step.state!);   // throws StateTokenNotFound → caught in dispatch
+  if (payload.kind === 'daemon-review-pending') {
+   if ((step.repo !== undefined && step.repo !== payload.repo) || (step.epicHash !== undefined && step.epicHash !== payload.epicHash) || (step.storyId !== undefined && step.storyId !== payload.storyId)) return errorResult('review-target-mismatch', 'Pending continuation target cannot be changed.', false);
+   return resumeDaemonReview(payload, step.state!, deps, step.proceed === false);
+  }
 		repo = payload.repo; epicHash = payload.epicHash; storyId = payload.storyId;
 		subject = payload.subject;
 
@@ -523,6 +533,7 @@ async function handleJudgements(
 		return errorResult('bad-input', 'insrc_code_review_step: `state` is required for phase=judgements.', false);
 	}
 	const payload = await loadState(step.state);   // throws StateTokenNotFound → caught in dispatch
+ if (payload.kind === 'daemon-review-pending') return errorResult('bad-state', 'A pending daemon review accepts start/status or explicit cancellation, never controller judgements.', false);
 
 	// A judgements turn always resumes an emit_judgements state, which carries the
 	// fetched grounding. A confirm_wait state (grounding not yet fetched) is not a
@@ -781,6 +792,7 @@ async function reviewByDaemon(
 	reason?: CodeReviewFallbackReason | undefined,
 ): Promise<CodeReviewStepOutput> {
 	const { repoPath: repo, epicHash, storyId } = subject;
+ if (deps.reviewControl !== undefined) return startDaemonReview(subject, mode, deps, reason);
 	const limits = (deps.waitLimits ?? codeReviewWaitLimits)();
 	log.info({ repo, epicHash, storyId, mode, ...limits }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
 	try {
@@ -837,6 +849,56 @@ async function reviewByDaemon(
 			RETRYABLE_DAEMON_FAILURES.has(failure),
 		);
 	}
+}
+
+function controlOpts(deps: CodeReviewStepDeps): ReviewStreamOpts {
+ return { timeoutMs: 200_000, ...(deps.signal !== undefined ? { signal: deps.signal } : {}), ...(deps.progress !== undefined ? { onFrame: (_stream, data) => deps.progress!(data) } : {}) };
+}
+function pendingResult(payload: CodeReviewPendingState, state: string, reply?: Extract<CodeReviewControlResult, { status: 'pending' }>): CodeReviewStepOutput {
+ return { next: 'review_pending', state, reviewHandle: payload.reviewHandle, daemonEpoch: payload.daemonEpoch, progress: reply?.progress ?? [], ...(reply?.timing !== undefined ? { timing: reply.timing } : {}),
+  guidance: "The daemon still owns this review. Call phase='start' again with this SAME state to resume/status; each wait is at most200s. Do not relaunch, poll the host, or reset the chunk-derived deadline. Use proceed:false with this state only to cancel the owned review. No completed CR is claimed while pending." };
+}
+async function consumeControlReply(reply: CodeReviewControlResult, payload: CodeReviewPendingState, token: string | undefined, deps: CodeReviewStepDeps): Promise<CodeReviewStepOutput> {
+ if (reply.daemonEpoch !== payload.daemonEpoch || reply.reviewHandle !== payload.reviewHandle) {
+  if (token !== undefined) await releaseState(token);
+  return errorResult('review-operation-lost', 'The daemon epoch or review handle changed. Start a new review.', false);
+ }
+ if (reply.status === 'pending') {
+  const state = token ?? await savePendingState(payload, deps.operations ?? codeReviewOperations);
+  return pendingResult(payload, state, reply);
+ }
+ if (token !== undefined) await releaseState(token);
+ if (reply.status === 'failed') return errorResult(reply.reason, reply.error, false);
+ if (reply.status === 'cancelled') return errorResult('review-cancelled', 'The owned review was cancelled. No completed CR is claimed.', false);
+ const res = reply.result;
+ if (res.artifact.body.groundingMode !== payload.mode || res.artifact.meta.reviewedBy !== 'daemon' || (payload.reviewInputFingerprint !== undefined && payload.reviewInputFingerprint.digest !== res.artifact.meta.reviewInputFingerprint?.digest)) return errorResult('review-input-changed', 'The final review does not match its admitted inputs and mode.', false);
+ return { next: 'done', verdict: res.artifact.body.verdict, counts: res.artifact.body.counts, path: payload.paths.md, jsonPath: payload.paths.json, reviewedBy: 'daemon', groundingMode: payload.mode,
+  ...(res.artifact.body.fallbackReason !== undefined ? { fallbackReason: res.artifact.body.fallbackReason } : {}), ...(res.artifact.meta.model !== undefined ? { model: res.artifact.meta.model } : {}) };
+}
+async function startDaemonReview(subject: CodeReviewSubject, mode: 'full' | 'degraded', deps: CodeReviewStepDeps, reason?: CodeReviewFallbackReason): Promise<CodeReviewStepOutput> {
+ const params: CodeReviewControlParams = { operation: 'start', repo: subject.repoPath, epicHash: subject.epicHash, storyId: subject.storyId, groundingMode: mode, ...(reason !== undefined ? { fallbackReason: reason } : {}), ...(deps.client !== undefined ? { client: deps.client } : {}) };
+ try {
+  const fingerprint = deps.captureInput?.(subject), cra = codeReviewSubjectPathArgs(subject);
+  const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
+  const reply = codeReviewControlResult(await deps.reviewControl!(params, controlOpts(deps)), params);
+  const payload: CodeReviewPendingState = { kind: 'daemon-review-pending', repo: subject.repoPath, epicHash: subject.epicHash, storyId: subject.storyId, reviewHandle: reply.reviewHandle, daemonEpoch: reply.daemonEpoch, mode, paths,
+   ...(reason !== undefined ? { fallbackReason: reason } : {}), ...(fingerprint !== undefined ? { reviewInputFingerprint: fingerprint } : {}) };
+  return await consumeControlReply(reply, payload, undefined, deps);
+ } catch (err) {
+  const failure = err instanceof ReviewStreamError ? err.failure : 'failed';
+  return errorResult(`daemon-review-${failure}`, `Review admission/wait did not return a handle: ${err instanceof Error ? err.message : String(err)}. Retry the same start; the daemon joins existing identical inputs.`, RETRYABLE_DAEMON_FAILURES.has(failure));
+ }
+}
+async function resumeDaemonReview(payload: CodeReviewPendingState, token: string, deps: CodeReviewStepDeps, cancel: boolean): Promise<CodeReviewStepOutput> {
+ const params: CodeReviewControlParams = { operation: cancel ? 'cancel' : 'status', repo: payload.repo, epicHash: payload.epicHash, storyId: payload.storyId, reviewHandle: payload.reviewHandle };
+ try {
+  const reply = codeReviewControlResult(await (deps.reviewControl ?? stepDaemonClient().codeReviewControl)(params, controlOpts(deps)), params);
+  return await consumeControlReply(reply, payload, token, deps);
+ } catch (err) {
+  if (err instanceof ReviewStreamError && (RETRYABLE_DAEMON_FAILURES.has(err.failure) || err.failure === 'aborted')) return pendingResult(payload, token);
+  await releaseState(token);
+  return errorResult(err instanceof ReviewStreamError ? (err.reason ?? `daemon-review-${err.failure}`) : 'review-operation-lost', err instanceof Error ? err.message : String(err), false);
+ }
 }
 
 function errorResult(code: string, message: string, retryable: boolean): CodeReviewStepError {

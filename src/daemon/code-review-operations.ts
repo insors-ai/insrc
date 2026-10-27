@@ -1,5 +1,7 @@
 /** Daemon-memory ownership for resumable code reviews. Request waiters never own model execution. */
 import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { PATHS } from '../shared/paths.js';
 import type { CodeReviewControlResult, CodeReviewStreamResult } from '../shared/review-stream.js';
 import type { CodeReviewProgress } from '../workflow/code-review/runner.js';
 import type { ReviewInputFingerprint, ReviewTimingPlan } from '../workflow/code-review/types.js';
@@ -19,10 +21,13 @@ interface StartOperation {
  readonly fingerprint: ReviewInputFingerprint;
  readonly inputKey?: string | undefined;
  readonly startedAt: number;
+ readonly idleMs?: number | undefined;
  readonly execute: (signal: AbortSignal, progress: (frame: CodeReviewProgress) => void) => Promise<CodeReviewStreamResult>;
  readonly validateDone?: (() => void) | undefined;
 }
 interface Operation {
+ readonly idleMs: number;
+ readonly leases: Map<(until: number) => void, (() => void) | undefined>;
  readonly handle: string;
  readonly key: string;
  readonly inputKey: string;
@@ -82,8 +87,10 @@ export class CodeReviewOperationRegistry {
    if (prior.inputKey === inputKey && prior.fingerprint.digest === input.fingerprint.digest && (prior.terminal === undefined || prior.terminal.status === 'done')) return prior.handle;
    if (prior.terminal === undefined) throw new ReviewOperationError('review-conflict', 'This target has an active independent review of different inputs');
   }
+  const idleMs = input.idleMs ?? this.idleMs;
+  if (!Number.isSafeInteger(idleMs) || idleMs <= 0) throw new ReviewOperationError('review-protocol', 'Invalid operation idle limit');
   const handle = `${this.epoch}.${randomUUID()}`;
-  const op: Operation = { handle, key, inputKey, fingerprint: Object.freeze(structuredClone(input.fingerprint)), controller: new AbortController(), startedAt: input.startedAt,
+  const op: Operation = { idleMs, leases: new Map(), handle, key, inputKey, fingerprint: Object.freeze(structuredClone(input.fingerprint)), controller: new AbortController(), startedAt: input.startedAt,
    progress: [], lastProgressAt: this.now(), cancelRequested: false, work: Promise.resolve(), ...(input.validateDone !== undefined ? { validateDone: input.validateDone } : {}) };
   this.operations.set(handle, op); this.targets.set(key, op); this.arm(op);
   // The registry, rather than the initiating request, retains this promise and AbortController.
@@ -98,7 +105,7 @@ export class CodeReviewOperationRegistry {
     op.terminal = op.cancelRequested ? { daemonEpoch: this.epoch, status: 'cancelled', reviewHandle: handle } : { daemonEpoch: this.epoch, status: 'failed', reviewHandle: handle, error: message(op.stopReason ?? err), reason: reason(op.stopReason ?? err) };
    } finally {
     if (op.timer !== undefined) this.clearTimer(op.timer);
-    op.terminalAt = this.now();
+    op.terminalAt = this.now(); this.notifyLease(op);
     op.timer = this.setTimer(() => this.sweep(), CODE_REVIEW_TERMINAL_GRACE_MS);
    }
   });
@@ -113,17 +120,17 @@ export class CodeReviewOperationRegistry {
    op.timing ??= structuredClone(plan);
   }
   op.progress = [...op.progress.slice(-31), { phase: frame.phase, ...(frame.dimension !== undefined ? { dimension: frame.dimension } : {}), ...(frame.detail !== undefined ? { detail: frame.detail } : {}) }];
-  op.lastProgressAt = this.now(); this.arm(op);
+  op.lastProgressAt = this.now(); this.arm(op); this.notifyLease(op);
  }
  private arm(op: Operation): void {
   if (op.timer !== undefined) this.clearTimer(op.timer);
-  const end = Math.min(op.lastProgressAt + this.idleMs, op.timing?.deadlineAt ?? Infinity);
+  const end = Math.min(op.lastProgressAt + op.idleMs, op.timing?.deadlineAt ?? Infinity);
   const delay = reviewTimerSlice(end, this.now());
   op.timer = this.setTimer(() => {
    if (op.terminal !== undefined || op.controller.signal.aborted) return;
    const now = this.now();
    if (op.timing !== undefined && now >= op.timing.deadlineAt) this.stop(op, new ReviewOperationError('review-deadline', 'Code review exhausted its fixed chunk-derived deadline'));
-   else if (now >= op.lastProgressAt + this.idleMs) this.stop(op, new ReviewOperationError('review-idle', 'Code review made no progress before its idle limit'));
+   else if (now >= op.lastProgressAt + op.idleMs) this.stop(op, new ReviewOperationError('review-idle', 'Code review made no progress before its idle limit'));
    else this.arm(op);
   }, delay);
  }
@@ -134,6 +141,16 @@ export class CodeReviewOperationRegistry {
   if (op.key !== keyOf(target)) throw new ReviewOperationError('review-target-mismatch', 'Review handle does not belong to this repository and Story');
   return op;
  }
+ /** Subscribe to owner lifecycle, not polling, so tokens remain pinned without client traffic. */
+ watchLease(handle: string, target: ReviewOperationTarget, listener: (until: number) => void, expired?: () => void): () => void {
+  const op = this.get(handle, target); op.leases.set(listener, expired);
+  listener(this.leaseUntil(op));
+  return () => { op.leases.delete(listener); };
+ }
+ private leaseUntil(op: Operation): number {
+  return Math.min(Number.MAX_SAFE_INTEGER, (op.terminalAt ?? op.timing?.deadlineAt ?? (op.lastProgressAt + op.idleMs)) + CODE_REVIEW_TERMINAL_GRACE_MS);
+ }
+ private notifyLease(op: Operation): void { for (const listener of op.leases.keys()) listener(this.leaseUntil(op)); }
  status(handle: string, target: ReviewOperationTarget): CodeReviewOperationResult {
   const op = this.get(handle, target);
   if (op.terminal?.status === 'done') {
@@ -164,7 +181,7 @@ export class CodeReviewOperationRegistry {
  private sweep(): void {
   const now = this.now();
   for (const [handle, op] of this.operations) if (op.terminalAt !== undefined && now >= op.terminalAt + CODE_REVIEW_TERMINAL_GRACE_MS) {
-   if (op.timer !== undefined) this.clearTimer(op.timer); this.operations.delete(handle); if (this.targets.get(op.key) === op) this.targets.delete(op.key);
+   if (op.timer !== undefined) this.clearTimer(op.timer); for (const expire of op.leases.values()) expire?.(); op.leases.clear(); this.operations.delete(handle); if (this.targets.get(op.key) === op) this.targets.delete(op.key);
   }
  }
  async close(): Promise<void> {
@@ -173,7 +190,16 @@ export class CodeReviewOperationRegistry {
   // These promises settle owned work; they do not initiate or overlap provider calls.
   for (const op of this.operations.values()) await op.work;
   for (const op of this.operations.values()) if (op.timer !== undefined) this.clearTimer(op.timer);
+  for (const op of this.operations.values()) { for (const expire of op.leases.values()) expire?.(); op.leases.clear(); }
   this.operations.clear(); this.targets.clear();
  }
 }
 export const codeReviewOperations = new CodeReviewOperationRegistry();
+
+/** New owned route keeps the idle watchdog independent of the legacy total ceiling. */
+export function codeReviewOperationIdleMs(config?: unknown): number {
+ let raw = config;
+ if (raw === undefined) { try { raw = existsSync(PATHS.config) ? JSON.parse(readFileSync(PATHS.config, 'utf8')) : {}; } catch { raw = {}; } }
+ const idle = (raw as { codeReview?: { daemonReviewIdleMs?: unknown } } | null)?.codeReview?.daemonReviewIdleMs;
+ return typeof idle === 'number' && Number.isSafeInteger(idle) && idle > 0 ? idle : DEFAULT_IDLE_MS;
+}

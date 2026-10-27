@@ -60,6 +60,12 @@ class PerRepoSection(
 
     override fun isModified(): Boolean = model.isModified()
 
+    /** Set when a write of the last apply was saved with the daemon's restartRequired. */
+    @Volatile
+    private var restartRequired = false
+
+    override fun takeRestartRequired(): Boolean = restartRequired.also { restartRequired = false }
+
     override fun reset() {
         model.revert()
         rebuild()
@@ -79,7 +85,10 @@ class PerRepoSection(
                 WriteOp.Clear -> gateway.clearSetting(pw.segments)
             }
             when (result) {
-                is SaveResult.Saved -> model.onSaved(pw.segments)
+                is SaveResult.Saved -> {
+                    model.onSaved(pw.segments)
+                    if (result.restartRequired) restartRequired = true
+                }
                 is SaveResult.Rejected -> failures.add("$label: ${result.message}")
                 is SaveResult.Unavailable -> failures.add("$label: ${result.reason}")
             }

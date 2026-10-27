@@ -1,6 +1,7 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.ConfigOptionDto
+import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
 import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.PerRepoOverridesResult
@@ -8,12 +9,14 @@ import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
+import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
@@ -132,6 +135,7 @@ class InsrcSettingsConfigurable : Configurable {
         val gateway = service<DaemonGatewayService>()
         val saved = mutableListOf<String>()
         val failures = mutableListOf<String>()
+        var restartRequired = false
         ProgressManager.getInstance().runProcessWithProgressSynchronously({
             for (pw in dirty) {
                 val path = pw.segments.joinToString(".")
@@ -140,7 +144,10 @@ class InsrcSettingsConfigurable : Configurable {
                     WriteOp.Clear -> gateway.clearSetting(pw.segments)
                 }
                 when (result) {
-                    is SaveResult.Saved -> saved.add(path)
+                    is SaveResult.Saved -> {
+                        saved.add(path)
+                        if (result.restartRequired) restartRequired = true
+                    }
                     is SaveResult.Rejected -> failures.add("$path: ${result.message}")
                     is SaveResult.Unavailable -> failures.add("$path: ${result.reason}")
                 }
@@ -153,14 +160,36 @@ class InsrcSettingsConfigurable : Configurable {
                     // deprecated ConfigurationException.getMessage() — same text.
                     e.localizedMessage?.let { failures.add(it) }
                 }
+                if (section.takeRestartRequired()) restartRequired = true
             }
         }, "Saving insrc Settings…", false, null)
 
         for (path in saved) m?.onSaved(path)
         refreshTables()
-        if (failures.isNotEmpty()) {
-            throw ConfigurationException("Some settings could not be saved:\n" + failures.joinToString("\n"))
-        }
+        // Back on the EDT, outside the save loop: one restart offer, then the failures.
+        finishApply(restartRequired, failures) { offerRestart(gateway) }
+    }
+
+    /**
+     * Offer one daemon restart for saved settings that need it (Epic ce99b72065d03b1b s7).
+     * Yes restarts the daemon under a progress indicator and confirms it answers; the
+     * outcome is reported.
+     */
+    private fun offerRestart(gateway: DaemonGateway) {
+        val answer = Messages.showYesNoDialog(
+            "Some saved settings take effect after a daemon restart. Restart the insrc daemon now?",
+            "insrc",
+            "Restart Daemon",
+            "Later",
+            Messages.getQuestionIcon(),
+        )
+        if (answer != Messages.YES) return
+        var failure: String? = null
+        ProgressManager.getInstance().runProcessWithProgressSynchronously({
+            failure = DaemonRestart({ DaemonLifecycleCommandRunner.production().run(it) }, gateway).restart()
+        }, "Restarting the insrc daemon…", false, null)
+        val reason = failure
+        if (reason == null) Messages.showInfoMessage("The insrc daemon restarted.", "insrc") else Messages.showErrorDialog(reason, "insrc")
     }
 
     /** Revert every field + section to its last-saved value and re-seed the tables. */

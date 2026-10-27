@@ -58,6 +58,14 @@ interface SettingsSection {
     fun isModified(): Boolean
     fun apply()
     fun reset()
+
+    /**
+     * Whether a write of the last [apply] was saved with the daemon's restartRequired
+     * (Epic ce99b72065d03b1b s7); reading it clears it. The page collects it from every
+     * section and offers one daemon restart per Apply. False for a section that writes
+     * nothing that needs one.
+     */
+    fun takeRestartRequired(): Boolean = false
 }
 
 object SettingsView {

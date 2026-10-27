@@ -73,3 +73,7 @@ test('ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family
 test("ModelCheckFlowTest: approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read", LONG, () => {
 	junitCase('settings.ModelCheckFlowTest', "approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read");
 });
+
+test('InsrcSettingsConfigurableRestartTest: one prompt when any write needed a restart, also with a failure, none otherwise', LONG, () => {
+	junitCase('settings.InsrcSettingsConfigurableRestartTest', 'one prompt when any write needed a restart, also with a failure, none otherwise');
+});

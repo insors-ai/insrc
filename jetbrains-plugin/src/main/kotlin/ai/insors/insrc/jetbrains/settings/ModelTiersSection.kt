@@ -67,6 +67,12 @@ class ModelTiersSection(
 
     override fun isModified(): Boolean = model?.isModified() ?: false
 
+    /** Set when a write of the last apply was saved with the daemon's restartRequired. */
+    @Volatile
+    private var restartRequired = false
+
+    override fun takeRestartRequired(): Boolean = restartRequired.also { restartRequired = false }
+
     override fun reset() {
         model?.revert()
         reseedUnderGuard()
@@ -89,7 +95,10 @@ class ModelTiersSection(
                 WriteOp.Clear -> gateway.clearSetting(pw.segments)
             }
             when (result) {
-                is SaveResult.Saved -> m.onSaved(tier)
+                is SaveResult.Saved -> {
+                    m.onSaved(tier)
+                    if (result.restartRequired) restartRequired = true
+                }
                 is SaveResult.Rejected -> failuresByTier[tier] = result.message
                 is SaveResult.Unavailable -> failuresByTier[tier] = result.reason
             }

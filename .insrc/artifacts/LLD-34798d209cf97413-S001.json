@@ -1,0 +1,719 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793076977701-80y26b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-27T05:09:56.523Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 818818,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "34798d209cf97413",
+    "epicSlug": "split-oversized-diff-evidence-into-lossless",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793076977701-80y26b",
+    "hldEffectiveHash": "34798d209cf97413a8a6409abf6c191bab4244d2c68930f3e60794bf7779031f",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Split oversized diff evidence into lossless bounded review units"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "summary": {
+      "audience": "technical",
+      "prose": "Large diff files become ordered, attributable review spans that feed the existing serial chunk and gather pipeline. Every diff-review call stays within128000 estimated input tokens, including its envelopes, schema, context, carried notes/history and repair instructions. The daemon still reviews controller-authored code, and diff-only results retain their degraded coverage limit."
+    },
+    "contractDetails": {
+      "summary": {
+        "audience": "technical",
+        "prose": "Large diff files become ordered, attributable review spans that feed the existing serial chunk and gather pipeline. Every diff-review call stays within128000 estimated input tokens, including its envelopes, schema, context, carried notes/history and repair instructions. The daemon still reviews controller-authored code, and diff-only results retain their degraded coverage limit."
+      },
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "buildDiffSymbols",
+          "signature": "buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[]",
+          "parameters": [
+            {
+              "name": "diff",
+              "type": "DiffResult",
+              "purpose": "Frozen per-file diff evidence and truncation/binary metadata.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChangedSymbolSummary[]",
+            "meaning": "Small files retain one legacy row. Larger textual diffs produce ordered file-fragment rows with unique IDs and lossless source spans; binary markers remain unchanged."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Fragment metadata cannot represent original evidence consistently; no partial review material is returned."
+            }
+          ],
+          "preconditions": [
+            "Diff evidence is captured once by the existing changed-set reader."
+          ],
+          "postconditions": [
+            "Parent file -> ordered fragments is one-to-many; each fragment belongs to exactly one parent. Text ranges partition the captured diff with no gaps/overlap, and concatenation reproduces it exactly.",
+            "Use a conservative16Ki-character maximum raw span, preferring complete diff lines; a longer line uses Unicode-safe continuation spans with exact offsets. Repeated bounded header/context metadata is separate from the original evidence ranges.",
+            "Deduplicate changedFiles in first-seen order; findings retain the original file path and old/new line/column or explicit diff-offset coordinates.",
+            "Existing truncation/missing-hunk markers remain honest; fragmenting never changes incomplete input into complete evidence."
+          ]
+        },
+        {
+          "name": "codeReviewMaterial",
+          "signature": "codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMaterial",
+          "parameters": [
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "Existing symbol rows or attributed diff-fragment rows.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewMaterial",
+            "meaning": "Unique review atoms and relations that preserve parent provenance and feed the existing chunk/gather contract."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Duplicate IDs, invalid fragment order, missing/overlapping ranges or mismatched parent provenance."
+            }
+          ],
+          "preconditions": [
+            "Graph symbol rows remain compatible and keep their existing identity."
+          ],
+          "postconditions": [
+            "Fragment siblings retain parent identity and ordered adjacency; avoid a quadratic all-pairs relation expansion between fragments of one file.",
+            "Gather considers every fragment's findings/notes under the existing obligations; a file-level finding is not dismissed merely because its evidence spans several chunks.",
+            "No source fragment is shortened or replaced by a summary before at least one chunk reviews its complete captured text."
+          ]
+        },
+        {
+          "name": "promptChars",
+          "signature": "promptChars(messages: readonly LLMMessage[], schema?: StructuredSchema): number",
+          "parameters": [
+            {
+              "name": "messages",
+              "type": "readonly LLMMessage[]",
+              "purpose": "Complete supplied message sequence, including system/user/assistant history and explicit context/notes.",
+              "optional": false
+            },
+            {
+              "name": "schema",
+              "type": "StructuredSchema | undefined",
+              "purpose": "Actual enveloped output schema supplied to the provider, counted in addition to any schema text already present in messages.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "number",
+            "meaning": "Conservative serialized complete-call input size under the existing3characters/token contract."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Input/schema cannot be serialized or bounded accurately."
+            }
+          ],
+          "preconditions": [
+            "All framework-added context is explicit; no resumed conversation is used."
+          ],
+          "postconditions": [
+            "Planning, retries, gather, relation/duplicate calls and final issue/send checks use the same complete-input measurement.",
+            "Role separators, call identifier envelopes, actual schema serialization, examples, context and carried history all consume the same limit; provider-specific schema expansion is checked before spawning."
+          ]
+        },
+        {
+          "name": "modelDimensionAdapter",
+          "signature": "modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars?: number, path?: ReviewPath): ReviewAdapter<DimensionResult>",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "ModelDimensionSpec<O>",
+              "purpose": "Existing dimension prompts, schema and gather obligations.",
+              "optional": false
+            },
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Story and original changed-file set.",
+              "optional": false
+            },
+            {
+              "name": "snapshot",
+              "type": "ReviewMaterialSnapshot",
+              "purpose": "Immutable evidence snapshot and full/degraded grounding mode.",
+              "optional": false
+            },
+            {
+              "name": "limitChars",
+              "type": "number",
+              "purpose": "Existing configured limit, capped at384000 characters for this diff-review path.",
+              "optional": true
+            },
+            {
+              "name": "path",
+              "type": "ReviewPath",
+              "purpose": "Existing daemon/controller execution path; no reviewer-role change.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ReviewAdapter<DimensionResult>",
+            "meaning": "Existing adapter over bounded diff atoms and complete-call input measurement."
+          },
+          "errors": [
+            {
+              "type": "AtomTooLargeError",
+              "condition": "Required fixed context/schema or an indivisible non-diff item cannot fit even without optional summaries."
+            }
+          ],
+          "preconditions": [
+            "Use the existing serial prepare -> review -> gather flow; no alternate review bypass."
+          ],
+          "postconditions": [
+            "Diff-review limit is min(configured limit,384000); budget is never raised automatically.",
+            "Every fragment is reviewed; gather retains provenance and existing degraded result cap, scope filtering and independent reviewer stamp."
+          ]
+        },
+        {
+          "name": "runReviewJob",
+          "signature": "runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, provider: LLMProvider, opts?: RunReviewJobOpts): Promise<unknown>",
+          "parameters": [
+            {
+              "name": "job",
+              "type": "ReviewPipelineJob",
+              "purpose": "Existing serial job with measured complete-call hard limit.",
+              "optional": false
+            },
+            {
+              "name": "adapter",
+              "type": "ReviewAdapter<unknown>",
+              "purpose": "Existing chunk and gather producer.",
+              "optional": false
+            },
+            {
+              "name": "provider",
+              "type": "LLMProvider",
+              "purpose": "Existing configured provider through CLI OAuth abstraction.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "RunReviewJobOpts",
+              "purpose": "Cancellation, timing and progress.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<unknown>",
+            "meaning": "Existing review result after all required chunks and gather stages finish."
+          },
+          "errors": [
+            {
+              "type": "InputTooLargeError",
+              "condition": "The final serialized call, including any newly added schema/context/repair content, exceeds the job limit; subdivide/reduce using existing pipeline semantics, never send it unchanged."
+            },
+            {
+              "type": "Error",
+              "condition": "Required isolated structured-call semantics cannot be enforced by the selected provider."
+            }
+          ],
+          "preconditions": [
+            "Each code-review model call is a fresh structured request with explicit supplied context; no CLI resume, ambient conversation history, tool-driven context growth or unmeasured project-instruction injection is allowed in the bounded diff path."
+          ],
+          "postconditions": [
+            "Recheck complete size immediately before every provider submission; no LLM calls run in parallel.",
+            "A retry includes only explicitly rendered bounded repair/history content; if it cannot fit, redivide/reduce or fail without stamping a completed review.",
+            "Provider/system protocol overhead is conservatively accounted at the existing application input-estimation boundary; do not claim exact native-token counting. Any extra application-controlled CLI instructions/schema are included or disabled."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "ChangedSymbolSummary diff-fragment metadata",
+          "change": "field-add",
+          "details": "Add optional fragment provenance for file rows: parentId, part index/count, half-open UTF16 source offsets, original file identity, source/diff line-column coordinates and parent/content digests. Metadata describes original evidence, not a new source entity. One file owns1..N ordered fragments; each fragment belongs to one file. Graph symbol rows and small file rows remain unchanged; coverageEligible remains false for diff evidence. No IPC method or persisted user database schema changes.",
+          "callSites": [
+            "src/workflow/code-review/types.ts:105",
+            "src/workflow/code-review/grounding.ts:318",
+            "src/workflow/review-pipeline/adapters/code-review-material.ts:30"
+          ]
+        },
+        {
+          "entity": "Review-call complete-input accounting",
+          "change": "invariant-change",
+          "details": "The same128000-token default estimate covers all supplied messages plus actual schema/envelopes, context, prior notes/history and retry content. Diff jobs cap larger configured budgets at128000; lower budgets remain honored. Job, gather and duplicate planners share the measurement and a final provider dispatch guard. Existing opt-out measurement signatures remain source-compatible only where no schema is supplied; actual review send paths always supply it.",
+          "callSites": [
+            "src/workflow/review-pipeline/envelope.ts:46",
+            "src/workflow/review-pipeline/job.ts",
+            "src/workflow/review-pipeline/driver.ts:42",
+            "src/workflow/review-pipeline/adapters/code-review-gather.ts",
+            "src/workflow/review-pipeline/adapters/code-review-duplicates.ts"
+          ]
+        },
+        {
+          "entity": "Bounded structured review transport",
+          "change": "field-add",
+          "details": "An additive internal structured-completion option carries the complete-call limit and isolation requirement from the review driver into the provider. Existing non-review completions retain defaults. The bounded diff path must not accumulate unmeasured CLI session/project/tool context; unsupported isolation is an explicit refusal. Cloud access remains solely via locally installed claude/codex CLI OAuth, with no REST provider or global config mutation.",
+          "callSites": [
+            "src/workflow/review-pipeline/driver.ts:42",
+            "src/agent/providers/cli-provider.ts:187"
+          ]
+        }
+      ],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ChangedSymbolSummary diff-fragment metadata",
+        "change": "field-add",
+        "details": "Add optional fragment provenance for file rows: parentId, part index/count, half-open UTF16 source offsets, original file identity, source/diff line-column coordinates and parent/content digests. Metadata describes original evidence, not a new source entity. One file owns1..N ordered fragments; each fragment belongs to one file. Graph symbol rows and small file rows remain unchanged; coverageEligible remains false for diff evidence. No IPC method or persisted user database schema changes.",
+        "callSites": [
+          "src/workflow/code-review/types.ts:105",
+          "src/workflow/code-review/grounding.ts:318",
+          "src/workflow/review-pipeline/adapters/code-review-material.ts:30"
+        ]
+      },
+      {
+        "entity": "Review-call complete-input accounting",
+        "change": "invariant-change",
+        "details": "The same128000-token default estimate covers all supplied messages plus actual schema/envelopes, context, prior notes/history and retry content. Diff jobs cap larger configured budgets at128000; lower budgets remain honored. Job, gather and duplicate planners share the measurement and a final provider dispatch guard. Existing opt-out measurement signatures remain source-compatible only where no schema is supplied; actual review send paths always supply it.",
+        "callSites": [
+          "src/workflow/review-pipeline/envelope.ts:46",
+          "src/workflow/review-pipeline/job.ts",
+          "src/workflow/review-pipeline/driver.ts:42",
+          "src/workflow/review-pipeline/adapters/code-review-gather.ts",
+          "src/workflow/review-pipeline/adapters/code-review-duplicates.ts"
+        ]
+      },
+      {
+        "entity": "Bounded structured review transport",
+        "change": "field-add",
+        "details": "An additive internal structured-completion option carries the complete-call limit and isolation requirement from the review driver into the provider. Existing non-review completions retain defaults. The bounded diff path must not accumulate unmeasured CLI session/project/tool context; unsupported isolation is an explicit refusal. Cloud access remains solely via locally installed claude/codex CLI OAuth, with no REST provider or global config mutation.",
+        "callSites": [
+          "src/workflow/review-pipeline/driver.ts:42",
+          "src/agent/providers/cli-provider.ts:187"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Captured diff is incomplete or truncated before span creation.",
+          "detection": "Existing reader truncation/missing-hunk markers or captured byte totals show unavailable evidence.",
+          "response": "Recover complete per-file evidence through the existing reader where possible; otherwise stop before a completed review and name the affected file/read limit. Never present omitted entries as reviewed.",
+          "userImpact": "Review remains pending until evidence can be read completely; no inventory or release-gate changes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Fragment ranges are missing, duplicated, reordered or inconsistent with the captured parent.",
+          "detection": "Validate parent digest, part count/order and contiguous half-open offsets; reassembly digest differs from the original.",
+          "response": "Reject material before model calls; no partial review artifact.",
+          "userImpact": "A concrete evidence-integrity error identifies the parent file.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Complete call becomes larger than the128K budget after schema, context, history or repair additions.",
+          "detection": "The shared measurer and final normalized provider check exceed min(configured limit,384000 characters) for the actual call.",
+          "response": "Use existing redivision/reduction to create smaller complete calls; if fixed required context/schema itself cannot fit, fail explicitly. Never drop required context, resend unchanged or raise the budget.",
+          "userImpact": "More bounded serial calls, or an explicit irreducible-input error with no review stamped.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Provider cannot prevent unmeasured session/project/tool context in bounded structured mode.",
+          "detection": "The provider lacks a verified isolation capability or cannot normalize/count its supplied instructions/schema before spawn.",
+          "response": "Refuse that bounded execution mode before the model call; do not claim the128K invariant was enforced.",
+          "userImpact": "Select/update a supported CLI adapter; ordinary completions outside this mode retain existing behavior.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Cancellation, missing chunk answer or gather validation failure.",
+          "detection": "Existing signal/deadline checks or provenance validation notice unfinished required calls/notes.",
+          "response": "Preserve existing stop/fail semantics; no fabricated complete verdict and no parallel retry.",
+          "userImpact": "Review stays pending with its actual failure cause.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Empty diff, binary file or small ordinary text file.",
+          "expected": "Existing markers and single-file row behavior remain compatible; no invented graph coverage."
+        },
+        {
+          "input": "Pretty/minified JSON, one line far larger than a call, CRLF, emoji and non-ASCII paths.",
+          "expected": "Unicode-safe span continuation preserves the exact evidence string, coordinates and deterministic ordered IDs; later chunks never treat an isolated fragment as a whole valid JSON document."
+        },
+        {
+          "input": "Added/deleted/renamed files or lines existing only on the old side.",
+          "expected": "Original old/new paths and coordinates remain attributable; changedFiles is unique and findings stay within the original Story scope."
+        },
+        {
+          "input": "Many fragments in the same file/module.",
+          "expected": "Sparse sibling connectivity and parent gather avoid new quadratic fragment-pair generation while retaining all fragment notes/provenance."
+        },
+        {
+          "input": "Existing configured review limit above128K or below it.",
+          "expected": "Diff calls use the lower of configured limit and128K; schema/context reserve consumes that budget rather than increasing it."
+        },
+        {
+          "input": "A final gather or correction contains large prior notes/history.",
+          "expected": "Existing bounded reduction/gather plans include those actual notes/history in measurement; no hidden accumulated transcript is resumed."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Original changed-file scope, independent daemon reviewer and degraded diff result cap stay intact.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing source-symbol identities and eligible graph coverage remain unchanged; fragment rows carry no invented call/test edges.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing serial prepare/review/gather, cancellation and complete failure semantics are reused.",
+          "source": "c3"
+        },
+        {
+          "text": "All supplied input under one128K estimate includes envelopes, schema, explicit context and history; no budget increase is an implementation workaround.",
+          "source": "c2"
+        },
+        {
+          "text": "S003 evidence contents and disabled release state remain unchanged; its earlier foundation/service coverage is not silently cleared.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict via Node22/tsx; extend the existing code-review and review-pipeline *.test.ts suites identified in s1. CLI transport isolation uses subprocess fixtures rather than a live model for deterministic limit checks.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove complete evidence partition and attribution, including a minified line larger than the128K call budget.",
+          "subjects": [
+            "DIFF-SPANS: added/modified/deleted/renamed text and binary/small-file compatibility; reassembly equals original diff exactly",
+            "DIFF-COORDS: CRLF, emoji, Unicode and giant-line continuations preserve offsets/old-new source locations and unique changedFiles",
+            "DIFF-INTEGRITY: duplicate/missing/reordered span and digest mismatches reject before calls"
+          ],
+          "fixturesNeeded": [
+            "Deterministic multi-megabyte pretty/minified inventory-style JSON and mixed unified diffs; do not rewrite the real S003 audit data."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove the128K limit covers the entire sent call and all accumulated supplied context/history.",
+          "subjects": [
+            "DIFF-BUDGET: at/below/above128000×3 with message role separators, call envelope, actual schema, examples, neighbour context and assistant/history content",
+            "DIFF-REPAIR: added correction/history causes smaller redivision/reduction or an explicit refusal; no oversized call is sent",
+            "DIFF-TRANSPORT: provider normalization/schema expansion and isolated fresh-call mode are measured; unmeasured project/tool/session additions are disabled or refused"
+          ],
+          "fixturesNeeded": [
+            "Independent captured stdin/schema and invocation-argument assertions for configured CLI adapters; include sentinel project/history inputs and a no-child-spawn oversized control."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise existing prepare/review/gather across every fragment and final bounded call.",
+          "subjects": [
+            "DIFF-LARGE: S003-sized inventory evidence produces multiple serial review calls under384000 complete-input characters; every source span is carried by a completed chunk",
+            "DIFF-GATHER: gather combines findings and provenance across parent-file fragments; no fragment omitted, out-of-scope finding promoted, or graph coverage invented",
+            "DIFF-SCALE: many fragments retain sparse sibling connectivity and avoid new quadratic material construction",
+            "DIFF-COMPAT: source-symbol and small-file review parity, cancellation, retries, gather/reduction, duplicate comparisons, and lower configured budgets remain supported"
+          ],
+          "fixturesNeeded": [
+            "Scripted structured model records actual complete calls and emits bounded valid chunk/gather answers; no fake PASS from missing evidence."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Demonstrate the filed reproduction is unblocked at the original default budget on the approved built runtime.",
+          "subjects": [
+            "DIFF-S003-RETRY: rebuild under Node22 then run the actual independent daemon diff review for484fcef7efaf229e/s3 with128000-token setting; record actual verdict/degraded mode and any remaining errors"
+          ],
+          "fixturesNeeded": [
+            "Existing S003 approved contract/build/evidence. No automatic user-daemon restart, release enablement, evidence deletion or override approval; report runtime reload needs honestly."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "DIFF-SPANS",
+            "DIFF-COORDS",
+            "DIFF-INTEGRITY"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "DIFF-BUDGET",
+            "DIFF-REPAIR",
+            "DIFF-TRANSPORT"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "DIFF-LARGE",
+            "DIFF-GATHER",
+            "DIFF-SCALE"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "DIFF-COMPAT"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "DIFF-S003-RETRY"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "s1 locates buildDiffSymbols emitting a file-level review summary, codeReviewMaterial turning each row into an indivisible atom, and the existing serial planChunks/runReviewJob pipeline. promptChars callers span job, gather and duplicate planning. The filed S003 reproduction exceeds the current per-call budget before a review is recorded; the original128000 setting has been restored.",
+      "stateAfter": "Fresh diff-review jobs hold complete ordered evidence spans and use the existing bounded serial chunk/gather pipeline. Complete calls include their schema and all supplied context/history under at most128000 estimated tokens. Existing public IPC method names, source-symbol reviews, provider OAuth ownership, S003 historical evidence and disabled release state are preserved.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add optional diff-fragment provenance and normalize captured large text into complete ordered source spans; preserve small/binary behavior and deduplicate original changed files.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Integrate span material, sparse sibling relationships and provenance-aware gather into the existing adapters; start new review jobs rather than resuming an old oversized pending call.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Apply common complete-call accounting to planning, correction/redivision, gather and final dispatch. Add bounded isolated structured-completion capability with safe defaults for unrelated callers; no global budget/config change.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run only relevant tests during implementation, then one combined Node22 build and focused review/provider regression sweep. Where existing production-source audit checks require refreshed hashes/classifications for changed review code, update only reviewed source metadata under this fix; retain S003's original measurements and pending proofs. Do not compact/delete/split the audit datasets as a workaround.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "After approved runtime activation is available, retry the actual S003 independent diff review at128000. Do not restart an in-use daemon automatically; retain any runtime-activation or review error as pending evidence.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Internal additive metadata/options only. Rows without fragment provenance retain legacy semantics, and graph-based source-symbol identities and existing review result shapes remain compatible. No new IPC method or persistent domain schema. Existing pending jobs with old whole-file snapshots are restarted as new jobs; no in-place job rewrite or fabricated continuation. Non-review CLI completions retain defaults; bounded diff calls fail explicitly if isolation cannot be enforced.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Attributable diff spans in the existing chunk pipeline",
+        "oneLineSummary": "Represent file diffs as ordered bounded source spans, then reuse existing chunk review and gather with complete-call size checks.",
+        "approach": "Keep one parent file identity and add complete ordered diff-span metadata to its review rows. Plain text, JSON, additions and removals use the same evidence contract; no file must be a single indivisible atom. Every span retains original evidence and source coordinates, and file-level gather judges across span notes. All context and carried history enter explicitly constructed, freshly measured calls under the128K budget; no ambient conversational transcript is carried. Existing source-symbol graph reviews and independent reviewer selection remain intact.",
+        "pros": [
+          "Smallest complete change at the broken file-to-atom boundary.",
+          "Works for pretty and minified JSON and other text without inventing a format-specific semantic parser.",
+          "Reuses serial review, gather, retries and degraded-coverage reporting."
+        ],
+        "cons": [
+          "Continuation spans must expose clear context and offsets, especially for a single very long line.",
+          "All file-level consumers must handle one-to-many rows and preserve attribution/completeness."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "JSON entry review units with a generic diff fallback",
+        "oneLineSummary": "Give JSON object/array entries explicit semantic units and use source spans for non-JSON or oversized values.",
+        "approach": "Model JSON parent containers and entry identities explicitly, with source coordinates and before/after evidence; review entries independently and gather at the parent. Other diff text and oversized scalar values require the generic bounded-span contract as a fallback. Both paths measure complete rendered calls including schema, context, notes and correction/history under128K, and retain independent degraded review.",
+        "pros": [
+          "Semantic JSON keys make inventory-entry context clearer.",
+          "Per-container gather can express relationships among generated entries."
+        ],
+        "cons": [
+          "Adds parsing and before/after correspondence rules for arbitrary JSON, duplicate keys and malformed inputs.",
+          "Still needs generic spans for giant strings, minified values and non-JSON diffs, creating two attribution paths."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Also meets the constraints but adds a JSON-specific data model while still requiring generic spans for minified giant values; more implementation and compatibility risk without additional requested capability."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "diff-review-complete-input-budget",
+      "narrative": "The sequence shows where complete diff evidence is divided and where all supplied context/history/schema must be counted before a serial model call. Parent-file provenance flows through every chunk into gather; the budget guard can stop a call without dropping evidence.",
+      "participants": [
+        {
+          "id": "snapshot",
+          "label": "Frozen diff snapshot",
+          "description": "Owns original per-file text and change-set provenance; no source is reread mid-review."
+        },
+        {
+          "id": "spans",
+          "label": "Attributed diff spans",
+          "description": "Partitions each large captured file into ordered lossless ranges and original source coordinates."
+        },
+        {
+          "id": "planner",
+          "label": "Existing chunk planner",
+          "description": "Groups complete spans and explicit neighbour/context notes into measurable calls."
+        },
+        {
+          "id": "guard",
+          "label": "Complete-input guard",
+          "description": "Counts envelopes, actual schema, context, history and correction content against the128K cap."
+        },
+        {
+          "id": "provider",
+          "label": "Isolated structured provider call",
+          "description": "One fresh CLI-backed request at a time; no unmeasured conversational or tool history."
+        },
+        {
+          "id": "gather",
+          "label": "Existing provenance-aware gather",
+          "description": "Collects all fragment findings and notes, reduces bounded context and preserves degraded review semantics."
+        }
+      ],
+      "messages": [
+        {
+          "from": "snapshot",
+          "to": "spans",
+          "label": "Capture complete original file evidence and parent identity",
+          "description": "Read limits/incomplete evidence cannot be hidden by chunking."
+        },
+        {
+          "from": "spans",
+          "to": "planner",
+          "label": "Supply complete ordered spans plus file/line metadata",
+          "description": "The parent owns every span; source ranges reconstruct the captured diff."
+        },
+        {
+          "from": "planner",
+          "to": "guard",
+          "label": "Render full chunk request including supplied context and schema",
+          "description": "Payload-only size is insufficient; all added material consumes the same cap."
+        },
+        {
+          "from": "guard",
+          "to": "provider",
+          "label": "Submit only when complete normalized input fits128K",
+          "description": "Oversized calls are redivided/reduced or refused before dispatch."
+        },
+        {
+          "from": "provider",
+          "to": "gather",
+          "label": "Return bounded findings and provenance for this chunk",
+          "kind": "return",
+          "description": "All required chunks must finish before a completed review can be stamped."
+        },
+        {
+          "from": "gather",
+          "to": "planner",
+          "label": "Build bounded reduction/obligation calls over carried notes",
+          "description": "Prior notes/history are explicit input and are measured again."
+        },
+        {
+          "from": "planner",
+          "to": "guard",
+          "label": "Check complete gather or correction request",
+          "description": "The same guard applies to every later call, not only initial chunks."
+        },
+        {
+          "from": "guard",
+          "to": "provider",
+          "label": "Run next fresh bounded call serially",
+          "description": "No opaque session transcript is resumed."
+        },
+        {
+          "from": "provider",
+          "to": "gather",
+          "label": "Return final obligation findings",
+          "kind": "return",
+          "description": "Keep parent-file attribution and existing independent/degraded verdict limits."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:266-338",
+      "quotedText": "assembleDiffCodeReviewGrounding builds ChangedSymbolSummary rows through buildDiffSymbols; current diff rows are file evidence rather than graph symbols."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/envelope.ts:44-53",
+      "quotedText": "promptChars measures the serialized supplied messages; complete-call accounting must also cover the actual supplied schema and later context."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/driver.ts:42-98",
+      "quotedText": "runReviewJob drives calls serially with cancellation, explicit execution modes and pipeline-owned retries."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/adapters/code-review-material.ts:30-85",
+      "quotedText": "Each grounding row becomes an atom with file/module ownership and relations; duplicate entity IDs are rejected."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E202610265384820a/ISSUE.md"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "User instruction 2026-10-27",
+      "quotedText": "128K chunk limit including any added context/history; use the already filed bug."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md:27",
+      "quotedText": "Prepare uses review.chunkTokens with the default128000-token limit and fixed3characters/token estimate."
+    }
+  ]
+}

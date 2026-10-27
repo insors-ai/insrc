@@ -5,7 +5,8 @@
 
 /**
  * The Story's cross-cutting proof (Epic 86197ac6, Story s2, t17), with the
- * real router and workers on a temporary HOME: while an indexing pass runs
+ * real router and workers on a temporary HOME and socket — every request goes
+ * through an IpcServer and its JSON framing, as a client's does: while an indexing pass runs
  * and another worker keeps an LMDB write transaction open, the admin methods
  * answer within 100 ms (p99 over 50 calls each) and a session request on the
  * main thread is answered.
@@ -17,6 +18,9 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { connect } from 'node:net';
+import type { Socket } from 'node:net';
+import { once } from 'node:events';
 import { join } from 'node:path';
 
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-latency-'));
@@ -27,7 +31,7 @@ const { closeGraphStore, declareLiveStoreOwner } = await import('../../../db/gra
 const { closeLanceConn } = await import('../../../db/lance/conn.js');
 const { getDb, initDb } = await import('../../../db/client.js');
 const { addRepo } = await import('../../../db/repos.js');
-const { directDispatch } = await import('../../server.js');
+const { IpcServer, directDispatch } = await import('../../server.js');
 const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 const { ThreadServices } = await import('../main-services.js');
 const { methodClasses } = await import('../method-class.js');
@@ -35,7 +39,6 @@ const { Router } = await import('../router.js');
 const { Supervisor } = await import('../supervisor.js');
 const { startIndexingWorkers } = await import('../indexing-workers.js');
 const { IndexingPortClient } = await import('../indexing-port.js');
-import type { ReplyEnvelope, RequestEnvelope } from '../channel.js';
 import type { StartedWorker } from '../workers.js';
 
 const FILES = 1500;
@@ -51,11 +54,17 @@ const supervisor = new Supervisor({ services, router, shutdown: () => assert.fai
 let indexing: ReturnType<typeof startIndexingWorkers>;
 let writer: StartedWorker;
 
+const SOCK = join(HOME, 'latency.sock');
+let server: InstanceType<typeof IpcServer>;
+let client: Socket;
+const waiting = new Map<number, (r: { result?: unknown; error?: string }) => void>();
 let seq = 0;
-function ask(method: string, params: unknown): Promise<ReplyEnvelope> {
-	const requestId = `l${++seq}`;
+/** One request over the daemon socket, as a client sends it; resolves with the reply line. */
+function ask(method: string, params: unknown): Promise<{ result?: unknown; error?: string }> {
+	const id = ++seq;
 	return new Promise(resolve => {
-		router.forward({ kind: 'request', requestId, method, params, stream: false } satisfies RequestEnvelope, e => resolve(e as ReplyEnvelope));
+		waiting.set(id, resolve);
+		client.write(JSON.stringify({ id, method, params }) + '\n');
 	});
 }
 async function until(cond: () => boolean, what: string, ms = 60_000): Promise<void> {
@@ -93,6 +102,21 @@ before(async () => {
 		shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined,
 	});
 	local = directDispatch(runtime.rpcHandlers, runtime.streamHandlers);
+	server = new IpcServer(router.forward, Date.now, SOCK);
+	await server.listen();
+	client = connect(SOCK);
+	let pending = '';
+	client.on('data', d => {
+		pending += d.toString();
+		let end: number;
+		while ((end = pending.indexOf('\n')) >= 0) {
+			const reply = JSON.parse(pending.slice(0, end)) as { id: number; result?: unknown; error?: string };
+			pending = pending.slice(end + 1);
+			waiting.get(reply.id)?.(reply);
+			waiting.delete(reply.id);
+		}
+	});
+	await once(client, 'connect');
 	indexing = startIndexingWorkers(supervisor, services.indexingBlock);
 	await indexing.ready;
 	await supervisor.start({ name: 'admin', cls: 'admin', script: 'admin-worker' });
@@ -104,6 +128,8 @@ before(async () => {
 	}
 });
 after(async () => {
+	client.destroy();
+	await server.close();
 	await indexing.stop();
 	await supervisor.terminateAll();
 	await closeLanceConn();

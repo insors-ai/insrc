@@ -49,6 +49,13 @@ interface Owner {
 }
 const envelope = (value: unknown, isError = false): StepMcpEnvelope => ({ content: [{ type: 'text', text: JSON.stringify(value) }], ...(isError ? { isError: true } : {}) });
 const error = (code: string, message: string): StepMcpEnvelope => envelope({ next: 'error', error: { code, message, retryable: false } }, true);
+// These request rejections do not invalidate the server's owned review state.
+const recoverableRequestErrors = new Set(['bad-input', 'bad-phase', 'bad-state', 'bad-call-result', 'review-target-mismatch', 'conflicting-call-replay']);
+function recoverableRequestError(value: Record<string, unknown> | undefined): boolean {
+ const detail = value?.['error'];
+ return value?.['next'] === 'error' && typeof detail === 'object' && detail !== null && recoverableRequestErrors.has(String((detail as Record<string, unknown>)['code']));
+}
+
 function body(reply: StepMcpEnvelope): Record<string, unknown> | undefined {
  try { const value: unknown = JSON.parse(reply.content[0]?.text ?? ''); return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : undefined; } catch { return undefined; }
 }
@@ -153,6 +160,7 @@ export class ControllerReviewHelper {
   if (args['callResult'] !== undefined) return error('unsupported-bounded-controller', 'Bounded callResult must be produced by the verified isolated helper, never by inherited chat output');
   const state = typeof args['state'] === 'string' ? args['state'] : undefined;
   const existing = state === undefined ? undefined : this.owners.get(state);
+  if (existing !== undefined && args['phase'] !== 'start') return error('bad-call-result', 'An owned isolated controller call accepts start/status or explicit cancellation; chat judgements cannot replace its result');
   if (args['phase'] === 'start' && args['proceed'] === false && existing !== undefined) {
    existing.controller.abort(); await existing.work; if (this.owners.get(existing.state) === existing) this.owners.delete(existing.state); this.admissions.delete(existing.state);
    return forward(raw, { ...extra, controllerReview: existing.admission });
@@ -173,6 +181,7 @@ export class ControllerReviewHelper {
   const reply = await forward(raw, { ...extra, ...(admitted !== undefined ? { controllerReview: admitted.admission } : {}) });
   const value = body(reply);
   if (value?.['next'] !== 'emit_review_call') {
+   if (state !== undefined && admitted !== undefined && recoverableRequestError(value)) return reply;
    if (value?.['next'] === 'confirm_wait' && typeof value['state'] === 'string' && admitted !== undefined) this.admissions.set(value['state'], { ...admitted, expiresAt: this.now() + 3_600_000 });
    if (existing !== undefined && value?.['next'] === 'error' && (value['error'] as { retryable?: unknown } | undefined)?.retryable === true) return this.pending(existing);
    if (existing !== undefined && value?.['next'] !== 'review_pending') { existing.controller.abort(); await existing.work; if (this.owners.get(existing.state) === existing) this.owners.delete(existing.state); }
@@ -210,6 +219,7 @@ export class ControllerReviewHelper {
   }
   const continued = await forward({ phase: 'judgements', state: owner.state, callResult: settled }, { ...extra, controllerReview: owner.admission });
   const continuation = body(continued);
+  if (recoverableRequestError(continuation)) return continued; // Keep the settled result for an exact retry, never rerun its CLI call.
   if (continuation?.['next'] !== 'error' || (continuation['error'] as { retryable?: unknown } | undefined)?.retryable !== true) { if (this.owners.get(owner.state) === owner) this.owners.delete(owner.state); }
   if (continuation?.['next'] === 'done' || (continuation?.['next'] === 'error' && (continuation['error'] as { retryable?: unknown } | undefined)?.retryable !== true)) this.admissions.delete(owner.state);
   if (continuation?.['next'] === 'emit_review_call') {

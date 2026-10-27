@@ -937,7 +937,10 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'`approved[]` — relay both arrays to the user. An ISSUE, SPEC or PLAN needs no ' +
 				'review. Stamp-only: it does NOT ' +
 				'gh-push or commit (that stays with the TUI approve). Pass `overrideReview` ' +
-				'to approve past a missing, same-party or blocking review with a recorded reason. `repo` falls back ' +
+				'to approve past a missing, same-party or blocking legacy review with a recorded reason. ' +
+				'A fingerprinted BUILD review must match current source, contracts, BUILD and TESTS: ' +
+				'`stale-review` in `codeReview[]` withholds approval even with overrides or enforcement off; ' +
+				'run a new independent review. `repo` falls back ' +
 				'to the session workspace / INSRC_REPO (required only for an epicHash batch).',
 			annotations: {
 				readOnlyHint:   false,   // stamps approvedAt into the artifact JSON
@@ -955,7 +958,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Absolute repo path; falls back to the session workspace / INSRC_REPO. Required only for an epicHash batch.')
 					.optional(),
 				overrideReview: z.string()
-					.describe('Optional review-override reason — approves past a HIGH/MED review block and records the reason on the artifact.')
+					.describe('Optional review-override reason — accepts a HIGH/MED review block with a recorded reason; cannot bypass stale fingerprinted review identity.')
 					.optional(),
 			},
 		},

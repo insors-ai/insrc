@@ -689,7 +689,7 @@
 	{
 		"name": "insrc_workflow_approve",
 		"title": "insrc workflow approve (in-CLI, controller-driven gate)",
-		"description": "Approve a workflow artifact WITHOUT leaving this session — the in-CLI approval gate. Call this ONLY after you have PRESENTED the artifact summary to the user and they have said yes in chat (the human still authorizes; this just executes it). Approve a SINGLE artifact with `artifactPath`, or a BATCH with `epicHash` (every review-clean, still-pending DEF/HLD/LLD/PLAN artifact under that epic). Exactly one of artifactPath | epicHash.\n\nStamps `approvedAt` and ENFORCES the review rule: a DEF, HLD or LLD needs a review, and a BUILD record needs a code review of its Story, each done by the party that did NOT author the work; a blocking verdict also withholds. A withheld artifact comes back in `skipped[]` {path,reason}, never `approved[]` — relay both arrays to the user. An ISSUE, SPEC or PLAN needs no review. Stamp-only: it does NOT gh-push or commit (that stays with the TUI approve). Pass `overrideReview` to approve past a missing, same-party or blocking review with a recorded reason. `repo` falls back to the session workspace / INSRC_REPO (required only for an epicHash batch).",
+		"description": "Approve a workflow artifact WITHOUT leaving this session — the in-CLI approval gate. Call this ONLY after you have PRESENTED the artifact summary to the user and they have said yes in chat (the human still authorizes; this just executes it). Approve a SINGLE artifact with `artifactPath`, or a BATCH with `epicHash` (every review-clean, still-pending DEF/HLD/LLD/PLAN artifact under that epic). Exactly one of artifactPath | epicHash.\n\nStamps `approvedAt` and ENFORCES the review rule: a DEF, HLD or LLD needs a review, and a BUILD record needs a code review of its Story, each done by the party that did NOT author the work; a blocking verdict also withholds. A withheld artifact comes back in `skipped[]` {path,reason}, never `approved[]` — relay both arrays to the user. An ISSUE, SPEC or PLAN needs no review. Stamp-only: it does NOT gh-push or commit (that stays with the TUI approve). Pass `overrideReview` to approve past a missing, same-party or blocking legacy review with a recorded reason. A fingerprinted BUILD review must match current source, contracts, BUILD and TESTS: `stale-review` in `codeReview[]` withholds approval even with overrides or enforcement off; run a new independent review. `repo` falls back to the session workspace / INSRC_REPO (required only for an epicHash batch).",
 		"inputSchema": {
 			"type": "object",
 			"properties": {
@@ -707,7 +707,7 @@
 				},
 				"overrideReview": {
 					"type": "string",
-					"description": "Optional review-override reason — approves past a HIGH/MED review block and records the reason on the artifact."
+					"description": "Optional review-override reason — accepts a HIGH/MED review block with a recorded reason; cannot bypass stale fingerprinted review identity."
 				}
 			},
 			"$schema": "http://json-schema.org/draft-07/schema#"

@@ -15,6 +15,14 @@
         ],
         [
           "provider-adapter",
+          "boundedClaudeArgs"
+        ],
+        [
+          "provider-adapter",
+          "boundedClaudeEnv"
+        ],
+        [
+          "provider-adapter",
           "classifyInputTooLarge"
         ],
         [
@@ -24,6 +32,10 @@
         [
           "provider-adapter",
           "claudeReviewSessionArgs"
+        ],
+        [
+          "provider-adapter",
+          "cliExitError"
         ],
         [
           "provider-adapter",
@@ -71,6 +83,10 @@
         ],
         [
           "provider-adapter",
+          "codexStrictSchema"
+        ],
+        [
+          "provider-adapter",
           "delay"
         ],
         [
@@ -91,6 +107,10 @@
         ],
         [
           "provider-adapter",
+          "InputTooLargeError"
+        ],
+        [
+          "provider-adapter",
           "isAbortError"
         ],
         [
@@ -104,6 +124,10 @@
         [
           "provider-adapter",
           "isTransientCliError"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
         ],
         [
           "serialization",
@@ -194,6 +218,14 @@
           "mkdtempSync"
         ],
         [
+          "filesystem-open",
+          "mkdtempSync"
+        ],
+        [
+          "provider-adapter",
+          "ModelResponseShapeError"
+        ],
+        [
           "provider-adapter",
           "ModelResponseShapeError"
         ],
@@ -232,6 +264,14 @@
         [
           "provider-adapter",
           "ReviewSessionTimeoutError"
+        ],
+        [
+          "provider-adapter",
+          "ReviewSessionTimeoutError"
+        ],
+        [
+          "filesystem-write",
+          "rmSync"
         ],
         [
           "filesystem-write",
@@ -275,6 +315,10 @@
         ],
         [
           "provider-adapter",
+          "serialiseMessages"
+        ],
+        [
+          "provider-adapter",
           "sizeRefusalOr"
         ],
         [
@@ -300,6 +344,14 @@
         [
           "provider-adapter",
           "super"
+        ],
+        [
+          "provider-adapter",
+          "this.completeBoundedStructured"
+        ],
+        [
+          "provider-use",
+          "this.completeBoundedStructured"
         ],
         [
           "provider-adapter",
@@ -378,6 +430,14 @@
           "this.modelArgs"
         ],
         [
+          "provider-adapter",
+          "this.modelArgs"
+        ],
+        [
+          "provider-use",
+          "this.modelArgs"
+        ],
+        [
           "provider-use",
           "this.modelArgs"
         ],
@@ -512,10 +572,26 @@
         [
           "provider-adapter",
           "transienceText"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
         ],
         [
           "provider-adapter",
           "validateCodexReply"
+        ],
+        [
+          "provider-adapter",
+          "validateCodexReply"
+        ],
+        [
+          "provider-adapter",
+          "verifyBoundedCli"
         ],
         [
           "provider-adapter",
@@ -550,9 +626,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 135,
-      "sitesDigest": "88a6f6016f8174c03db04faf1e424336dac358f908a274c0f94371c113af3c47",
-      "sourceDigest": "64aa7f1c873d48cb083f6ac361349ff0c7bdf8b08a9271ec942481f8c120258f",
+      "siteCount": 154,
+      "sitesDigest": "930f0fbe7631ff968c19ad91f4b2d4e5db03ff644f75cee8a1163df4ab0b9001",
+      "sourceDigest": "0b4d572eabe305796057618bbfdde4dc5ccfbeac6704e1e50645039991e00fe7",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -7706,6 +7782,14 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
           "serialization",
           "JSON.stringify"
         ],
@@ -7728,6 +7812,18 @@
         [
           "serialization",
           "Math.random().toString"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
         ],
         [
           "serialization",
@@ -7770,11 +7866,12 @@
           "send"
         ]
       ],
-      "siteCount": 20,
-      "sitesDigest": "adbbb31091a5d08d7bfd0be0fc33489c5bae8a6d71fefa6d56f1ee2aae7005b4",
-      "sourceDigest": "b399d07cbab2e1e40d0193455d51bd95a436a0e9a0577b7b8bd4f44e6e7babd0",
+      "siteCount": 25,
+      "sitesDigest": "892cc923da032f9a9b2d9d956f002ebd7a7209e1dffd761d69a09115c660b0ec",
+      "sourceDigest": "8adce3bdd94d040c6670cc6910d6ad9af16dc005c89c7eeeff232cc333daa706",
       "boundaries": [
         "diagnostic",
+        "filesystem-read",
         "provider-factory",
         "serialization",
         "unresolved-call"
@@ -13194,6 +13291,10 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "storage-call",
           "initDb"
         ],
@@ -13212,10 +13313,6 @@
         [
           "storage-call",
           "listRepos"
-        ],
-        [
-          "diagnostic",
-          "log.error"
         ],
         [
           "diagnostic",
@@ -13363,8 +13460,8 @@
         ]
       ],
       "siteCount": 66,
-      "sitesDigest": "dc08f1859373c36269cc212c17eed799a303ec32da4d2cd27bc7e8d771ab55a0",
-      "sourceDigest": "91eedf10f298f7412db22e58cd9b92dbfc07e11e7199a424ca83488d3588b12e",
+      "sitesDigest": "01c65e021f0cc5b336b0f1b25d1b013da57dead37e47bd005a9fc7ba26ca72ca",
+      "sourceDigest": "d85bd789e81b3688cbf1d8ed48e95b16b0735f162650c4571cd49528d3683800",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -14710,10 +14807,6 @@
           "Math.random().toString"
         ],
         [
-          "serialization",
-          "Math.random().toString"
-        ],
-        [
           "filesystem-read",
           "readFileSync"
         ],
@@ -14722,9 +14815,9 @@
           "readFileSync"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "93f57032004252219e6324f3084b6c7765bb6a9c5eb6acbc9db4d8ee5e2b01aa",
-      "sourceDigest": "27ce32fdb8c62dde024f4b21be955084c334f546e2abf7107e2c28ea0e681b4a",
+      "siteCount": 13,
+      "sitesDigest": "68d80e625e3af71114c80d0a74b1122a626caa36f1b2d47f8eb3d2894174f549",
+      "sourceDigest": "8d6590eb9738a713eba2d0ec8eee5393ad79cd2ae115b63d4eb1973d23039be2",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14748,8 +14841,12 @@
           "log.warn"
         ],
         [
-          "serialization",
-          "send"
+          "filesystem-open",
+          "mkdtempSync"
+        ],
+        [
+          "filesystem-write",
+          "rmSync"
         ],
         [
           "serialization",
@@ -14758,13 +14855,24 @@
         [
           "serialization",
           "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "provider-adapter",
+          "verifyBoundedCli"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "e18bbae6eb9f58e20fdfafaed305bcadf8c05c153984eac339e7b1d101f1a330",
-      "sourceDigest": "c78820cbe618f374768ff868858ad980cc2f23d1cb076792a2e43e32c46d137d",
+      "siteCount": 9,
+      "sitesDigest": "a014ddff3ca06d569de329e28b86795b1267875d458337985a0a39e56a96118d",
+      "sourceDigest": "621e43773d1f746d8826ebba8d83e5dff2a5be781344ec5a7c0d70c534507e35",
       "boundaries": [
         "diagnostic",
+        "filesystem-open",
+        "filesystem-write",
+        "provider-adapter",
         "serialization"
       ]
     },
@@ -15799,8 +15907,48 @@
           "assertNoSessionPersistence"
         ],
         [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "diagnostic",
@@ -15811,9 +15959,9 @@
           "randomBytes(16).toString"
         ]
       ],
-      "siteCount": 15,
-      "sitesDigest": "508ac3b4e2cb05433c2f4b795329af5936d9be6fc14c6b9cc8ede0ce576bd679",
-      "sourceDigest": "de32e58d6bee15c9b46e51f7e4fc234ea4691ecef5dbf35a9ebfad67357d4ef2",
+      "siteCount": 25,
+      "sitesDigest": "ad9107631af9be198b0f31a597f8e86737ec09bbd063cb623d7c3512a4dccb81",
+      "sourceDigest": "d3a974286875261ab5d8f1d032cc24faa462f9777a22401eabab0175b33bf891",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -23659,7 +23807,7 @@
         ],
         [
           "storage-call",
-          "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string\u2192buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = guardGraphHandles(store);\n\t\treturn _instance;\n\t})"
+          "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string→buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = guardGraphHandles(store);\n\t\treturn _instance;\n\t})"
         ],
         [
           "storage-call",
@@ -30840,7 +30988,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "ec3321264249fb3f9c9d11d564422c5a5cfed11d58080aac59c184c8135e27a7",
-      "sourceDigest": "9984b0501fba65e93b42c1ed996b00806353b0a1bcf8bad813bb84e869b541c7",
+      "sourceDigest": "3e8d7bff04c978326e03addc3316a4ab1609eee9066396d9991a45d3fc84bdde",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -30910,7 +31058,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "e0cc3517c7a04cf149c5b91914b89b9a0e5da5738a884c868ad994cb8c97c6b6",
-      "sourceDigest": "6143cd827d39bc38e5b9ed327fd933015f402da876b242f1d6eba539b2930013",
+      "sourceDigest": "88d89db8028c47e86039c2c6de52b4206ef4ddf11358e081cfd322d8ad34e5b0",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31000,7 +31148,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a8ce25ee55e92f906c493216e179e3b5abc04a91e9e75964b94f8da3d38d913b",
-      "sourceDigest": "75e5c60102596ed6630ab579c5eef15f361a6b35c484894b30f770c6f537c549",
+      "sourceDigest": "50c85fff94eca5a94d318cea3ac5f8646684201a1b3c01bb62fece79156272af",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31359,7 +31507,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "f5463792f7442de1b6667602cae5523983ee3eaac5853d02b5079c5c61c9b9e0",
-      "sourceDigest": "679939b321f1167fd3e05c9863dcf59371446d16399461dfc525ce768f5ccf16",
+      "sourceDigest": "09bd2ffa77bb5979ff9eb53c69667e7fc3c3967434ccf2810b4b422cc4565053",
       "boundaries": [
         "unresolved-call"
       ]
@@ -32481,7 +32629,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "78c4e278c2caabedc2c3550343a35e402810bac3845aaec616f79b9479ad00ba",
-      "sourceDigest": "d3d02d667af2b991a886f24b5557a46d209837b41b6331000c5956cfdac57c5a",
+      "sourceDigest": "7082cecc9b77d5ace5d1c721581c0af5bb293f7f316c8176099c5c9f71978bf8",
       "boundaries": [
         "serialization"
       ]
@@ -32505,7 +32653,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "55cf8b0027467abcb5ec8798faa335fe95b58380169c89117fba05c8d41a024c",
-      "sourceDigest": "9b0aeec301f7c27b4d1edb0f3b1bc8ae89c55e40b6ee959dc6d06a728979570b",
+      "sourceDigest": "7b4754bd306e8909704d23f009e1ff5c0ed5ba9f68e23e111cb1882b3f45d06a",
       "boundaries": [
         "serialization"
       ]
@@ -32529,7 +32677,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "65927e95b1ec4241b9d28dba7342f3b55a2b77df6902756cc80a212c68210cfb",
-      "sourceDigest": "469c3309f285acfae00b4dbc449cee3f8297f125b4029e3e3e492de84638d2df",
+      "sourceDigest": "6edce9d803ddf36827b80fc0902260f7afe36c325a573fe9191e5f9d9227ce63",
       "boundaries": [
         "serialization"
       ]
@@ -32553,7 +32701,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "b227535063f94a310b0583fe7ee2ad400081df4687c4ba28e5e775fe3f8bbf99",
-      "sourceDigest": "71f2662e1d0d167b21c2dc0991f897679b7b073cb870172ea27708e128224cd5",
+      "sourceDigest": "bb7eccd5dda261b013b9a7062dc6f2dfda1de5b4bfa0df5054bdb211ee0e7f97",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -32574,7 +32722,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "c10d1a6fb7aac2ebe58943decebbd405258d170d56df4d80cee271800c62c113",
-      "sourceDigest": "6dbbaf2390d0ec97040cc932e01115fd785c8101a8d2a1431f3e34871542b00e",
+      "sourceDigest": "20423e62786b9231f2148bf17c0fde66e8e3a82b005b859870781a88a881fa37",
       "boundaries": [
         "serialization"
       ]
@@ -32590,7 +32738,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "dfece8e5da2340c6d185d9625d83ba41a3a3cb90b648d4b8da286bb6844a15dc",
-      "sourceDigest": "d2af765d81be2d30a43536df165b12a5217a1d90e690255e270679dcc57f33cc",
+      "sourceDigest": "268bbbf85a1159c75604b9366af6fec8fdcaebbfda1862df5c71ee89923aa827",
       "boundaries": [
         "serialization"
       ]
@@ -32606,7 +32754,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "4ffaa56b7112bc2f8dc353078e336d87dd908540fc77be23e4c7c733d74e5200",
-      "sourceDigest": "e8abdc857cb85008b7dad920b948795b568e7c3124f94251eef12f91dfe91d7d",
+      "sourceDigest": "71ab222c8f0f76a98b9cdbc2e8ab34f57201046a2a3d32a947fc9c9881e45532",
       "boundaries": [
         "serialization"
       ]
@@ -32697,7 +32845,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "d4b1d87d4bbbf5cd0aa63190d14345d04ccdc0e070a048138c495ef5a8a1cf7c",
-      "sourceDigest": "8c0e41fb97ac07f077529cb5df8d7dfec6320ca077bcc8624f65c092441b35b8",
+      "sourceDigest": "836aabf6911050d283377f9a9ea65ba310192084dc61114e9ed9dfcaece860b7",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -32807,7 +32955,7 @@
       ],
       "siteCount": 24,
       "sitesDigest": "c0b3b24e015693af786b0fe032120924efecc30e60a177a226fe0a1480c224f8",
-      "sourceDigest": "a0659c8a8995667ebd9cd529cbbfa6dcd1ce36cfc814bd8a6e2df5815c8e5adb",
+      "sourceDigest": "b8c2dedd018a33fe01023994d63094d0bed23cb678b6e7de8650b8e02d699735",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -32860,6 +33008,10 @@
           "emit"
         ],
         [
+          "serialization",
+          "emit"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -32876,9 +33028,9 @@
           "log.warn"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "01d6b419d73141dac02c66590842a55e6e3e8cfd6141f8c9e46a7ad5fdf854b2",
-      "sourceDigest": "51632e42c71a0b4eeed74ee9278bd00af66a98c1b61c88b86fa6bf475d721039",
+      "siteCount": 15,
+      "sitesDigest": "fac32eecb569bfe12782c1ded7bdc48ac0e7ec4ca53865f1c64f7b97adb9c252",
+      "sourceDigest": "7dcfdeac5c1ca02f667e246cbb7b413070e85a35cb4a80b6e94877f81bebaec3",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -33142,6 +33294,22 @@
         ],
         [
           "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
           "JSON.stringify"
         ],
         [
@@ -33219,6 +33387,38 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "serialization",
+          "writeAtomic"
         ],
         [
           "serialization",
@@ -33241,9 +33441,9 @@
           "writeAtomic"
         ]
       ],
-      "siteCount": 38,
-      "sitesDigest": "e6481023dc064ca258d17fdadc98ed4733d8c30dba6a8c9d7614f5c45ae8869e",
-      "sourceDigest": "b06dd55b3c8f5b7504f07172996df9a53cccf0a83759f8a987047af5cc42cef7",
+      "siteCount": 50,
+      "sitesDigest": "c3ad8253a7d77d0812a7889351f874785e616fb868f7b11fb473673e0df9247f",
+      "sourceDigest": "92681ade01639cad130fd66f362de2e20dd161c74c679b93932af6e2d621bb16",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -33932,7 +34132,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "a12e70bee71df5168fe8d95dbb86b9532665fc74f176f7b7e2f2b93582582273",
-      "sourceDigest": "72a960395d1e2c21070696db0a0351c04a5249a648dac3ab73912b9325d131e6",
+      "sourceDigest": "2b44f27e2b0d78a67eee664f74897be873d35d7cb9dea062c85ecad2489c159c",
       "boundaries": [
         "serialization"
       ]
@@ -33955,6 +34155,10 @@
         ],
         [
           "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
           "JSON.stringify"
         ],
         [
@@ -33962,9 +34166,9 @@
           "JSON.stringify"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "aae01bc46c04e715d6bd7b8c9c744d9e9282873c55d7c079c0c070439439a816",
-      "sourceDigest": "0b290f7a2403886790dd898e17388e1708877c446fd1d6c64d47b61acf5d55c4",
+      "siteCount": 6,
+      "sitesDigest": "3407aade5e80ff2510aecf9817136dcb01293463900d5ffc10c101fab8e5f05c",
+      "sourceDigest": "0fc667d996264e00cd83af956ad2e42cb874e538388c1a4a37e9bb9c0e04129d",
       "boundaries": [
         "serialization"
       ]
@@ -34040,7 +34244,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "150cb75f64770a11b96ede4658443520193b228df9362cae721a6ad36fa601c4",
-      "sourceDigest": "c7b46d9fccdc608c8e33da6db663daf0292474f8243e7509905021f10940bef1",
+      "sourceDigest": "c734e7e48d849649e0cc5b8694046b60b377ce9ce7a7ae266970f00fcb735f05",
       "boundaries": [
         "serialization"
       ]
@@ -34068,7 +34272,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "7f60ab64c94657386f8c9e2439b1ece6a396803acdee2ae5a894d34af5a63fc8",
-      "sourceDigest": "397df4ec67b3c48e9f11c6bfb04668fa507a7d340cfe7d2a803c43ffc98d087f",
+      "sourceDigest": "180b4db31061f162b0234ef346a5667767200ed3daaf8e7eec80c6d0182e0013",
       "boundaries": [
         "serialization"
       ]
@@ -34120,6 +34324,14 @@
         ],
         [
           "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
           "JSON.stringify"
         ],
         [
@@ -34133,11 +34345,15 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "32f1b02108a517b8068c0d257f2c0c9eb4943d05520c29b81b2404bf41f807e6",
-      "sourceDigest": "c9788f94c0f6d39211cd1ccec92d13dfdfea8d5533b2ad99c9c00decf14c1e67",
+      "siteCount": 9,
+      "sitesDigest": "55cd1f85d577e3445d8010c3ade6167727de829a921dc8783f7bc7768a6d1d11",
+      "sourceDigest": "d54ccddecaf0b971dd8bfdb5d174160238a844e92e64eb1d2d0efa564311b36a",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -34151,6 +34367,10 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "provider-adapter",
+          "InputTooLargeError"
         ],
         [
           "diagnostic",
@@ -34167,13 +34387,22 @@
         [
           "serialization",
           "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "a4ec1d8fbb6cf23efc2bb49ac67e3dfd1b664e8f971a6b0c75c0eec08e9db92c",
-      "sourceDigest": "1ba9aba3955f53dfb74fb5d9357c418f79da40828fe0c4f064daf2d18a2f09d5",
+      "siteCount": 8,
+      "sitesDigest": "8ae25b5587abb4b59aa201048ef59b93560a5b28cb8142bb0b85f578ed860609",
+      "sourceDigest": "6b18d187433c3b415badf96bbdd767f0f1d157a6603f610056584c4c051d480a",
       "boundaries": [
         "diagnostic",
+        "provider-adapter",
         "provider-use",
         "serialization"
       ]
@@ -34189,7 +34418,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "0c6033fcd4889c0b8e1e7b9de2035380a8bc4ae8ecf56e8636c4dc3a4aedbdab",
-      "sourceDigest": "8c85e9ab6f44030dfd2cd0ad38241e4f5023ab2179f88bff92a2934940375287",
+      "sourceDigest": "d9b6be777494cc889a4f7a269880cf1ce004743d47e95d79196bf0f4807b81e4",
       "boundaries": [
         "serialization"
       ]
@@ -34243,10 +34472,6 @@
           "log.warn"
         ],
         [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "provider-adapter",
           "ReviewSessionTimeoutError"
         ],
@@ -34259,9 +34484,9 @@
           "validateAgainstSchema"
         ]
       ],
-      "siteCount": 15,
-      "sitesDigest": "ccef776aa85a3f4635295be9a54b6942a5cef2cd6d875604bed0209ee18a9c39",
-      "sourceDigest": "ecdb620ff7619606219ba0cceca4c28a91ac3fa2a7b99f50c513b790279bdf4a",
+      "siteCount": 14,
+      "sitesDigest": "e834091f40f2ebbf30121644e120989312b495844cac6b90ef3c811f5cc1252c",
+      "sourceDigest": "370462f9b6af47c707832ab5f9e93fe12cdea3873a6f0123ef4b47ec3881f2bd",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -34678,15 +34903,20 @@
           "getLogger"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
           "diagnostic",
           "log.warn"
         ]
       ],
-      "siteCount": 2,
-      "sitesDigest": "b8d53a3181920f5797676d17fd7b75f418d095a670a88da43a2d6dda946519cd",
-      "sourceDigest": "b6697e77855911c2ddead233e1889e3eaadf25fb4040572924e18ac1e7a434bb",
+      "siteCount": 3,
+      "sitesDigest": "4c86eb80f469f8d3e04dd2510930e85b85e338165b7461045fca716d5136b277",
+      "sourceDigest": "8763eb68f2beb04379b5916afe14b59d367681d851fc1d0554cf3a5dadd6a338",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/workflow/runners/build/completion-record.ts": {
@@ -34708,7 +34938,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "0453141f2ff76b01ebef83d7436a2153d08ab2ec914f2ce8a1e8d0bd2cabccee",
-      "sourceDigest": "eb29f688b148f3837f8e687ce106d2a22dde082dcac5950750c8e55fe48b31ac",
+      "sourceDigest": "690110eb9fb80bfc8cd0bd6849837d893380cd5ecb834ba8a2c30fa0647adc09",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -34838,6 +35068,14 @@
           "persistBuildRecord"
         ],
         [
+          "serialization",
+          "persistBuildRecordOwned"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
           "filesystem-read",
           "readFileSync"
         ],
@@ -34852,11 +35090,19 @@
         [
           "serialization",
           "writeAtomic"
+        ],
+        [
+          "serialization",
+          "writeAtomic"
+        ],
+        [
+          "serialization",
+          "writeCompletionIfChanged"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "5a27231ef443d168cd8131a40abdc313d00fc2fe431efb0fc081501ac8cb3cae",
-      "sourceDigest": "7d0a977397b58bc5795489dd8c60b8421f18ac6cb3e58241c7c5c58304009711",
+      "siteCount": 15,
+      "sitesDigest": "1fdcbf2723c812ab96c78ce245e1d54ba027d525b364a44c310d74180755c7b6",
+      "sourceDigest": "568eb92fcc7091e2788d0dc39a954305abe9f405453c5bb05adaf8f66ff5f691",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -36524,7 +36770,7 @@
     "src/config/config-catalog.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "7abdd6365037c6a42c3fe16ddb849fade1dccd2f4fa65a869f39f6357adde847",
+      "sourceDigest": "a2346eb4f0a6c2da1de95cef864e284b24ed3ccc594600712f917734b3baeb2a",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36820,7 +37066,7 @@
     "src/daemon/steps/code-review-step/state-store.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "054be5f70b4666c81bf3e99f411418f26fbc74e3fadc0171756f2246f0d313db",
+      "sourceDigest": "37cc88d1db7c74692ac04b8ba57087b0461272a5091754b9454ebe339212eca2",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36828,7 +37074,7 @@
     "src/daemon/steps/code-review-step/types.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "73b061106661296f6f0c58478ccb58bab2f77349af3d713a3209895811669d27",
+      "sourceDigest": "d8146f66c4f30bda37f75dd70511bf68bdab1a8cb7f24f869cb75b13883b802d",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36836,7 +37082,7 @@
     "src/daemon/steps/daemon-client.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "986d91562dffa6f539a78bad4108f0706188df5a4dc2417186832ddb2f53ad35",
+      "sourceDigest": "b33786dca598bae576dc9181ad1f47739e359c55a9b34ac8419efb7c3df2291d",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -37858,12 +38104,24 @@
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "src/shared/review-stream.ts": {
-      "classification": "no-boundary-sites",
-      "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "83d5a0b34187694343e9b5bf372c52380f1f0e8bbbdd7043f6f45fc3a853288f",
-      "sites": [],
-      "siteCount": 0,
-      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "classification": "forbidden-session-service",
+      "rationale": "Validates persistent review IPC target and input identity with canonical repository reads. Temporary session methods cannot dispatch workflow review and gain no authority from this codec.",
+      "sourceDigest": "916e39560a39c530b6520b20ce20f48fbcaf928869389a3282b4206fde6c5d28",
+      "sites": [
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "f9695560ea558fe3fdc9c3de77cb9d6cace76c2d049fac6765a5284e48a5b837",
+      "boundaries": [
+        "filesystem-read"
+      ]
     },
     "src/shared/scope-classes.ts": {
       "classification": "no-boundary-sites",
@@ -37892,7 +38150,7 @@
     "src/shared/types.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "a371eddf9dd13d5611374df6495d15d54d7d0d2b2713e16e4c6bffc345638ad9",
+      "sourceDigest": "c3a9a516ded45a69ccb626872e2fb59d8e4b3cea8b993008bf8352efbf85e898",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -38268,7 +38526,7 @@
     "src/workflow/code-review/types.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "41b339b53e5a214842c7a3bd90d637d9555301699a7608b823712faf94ab28c4",
+      "sourceDigest": "d3715c1a21e4c95346f8f709c8be255c890fe54e13bcebf2d8d8513c96b7aaf0",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -38484,7 +38742,7 @@
     "src/workflow/review-pipeline/types.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "e8f4860dd691b90eb9e4e087125d900bc976fc0fc04df69d32ff82bba87c75cd",
+      "sourceDigest": "8e5fcd06a504653949589d195c093c08a2ad8caf743dea540da25372fd8c08c4",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -38696,10 +38954,488 @@
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "src/agent/providers/bounded-input.ts": {
+      "classification": "provider-admission",
+      "rationale": "Bounded CLI normalization and isolation flags are provider admission, not temporary privacy proof. Temporary consumers still require the existing identity-bound local service policy; this capability cannot enable a temporary route.",
+      "sites": [
+        [
+          "provider-adapter",
+          "boundedClaudeEnv"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "57ae9faf71200d1ea24048fdff39e6702c6aa17ac536d70de02c0ad830c87ff1",
+      "sourceDigest": "f6b9bca76ea0ddf8f52f6bb3be466277a01b6ae796926b5f7fb9d13d44bead0e",
+      "boundaries": [
+        "provider-adapter",
+        "serialization"
+      ]
+    },
+    "src/daemon/code-review-operations.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "BigInt(ordinal).toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "cec93d03b90f27715967b787fb84cda8557bccdd97c56b3554a1eae3554f5b83",
+      "sourceDigest": "7b95692e103fc674d9da96137b0912f1a7da127ff20e77223b8849125c29f71b",
+      "boundaries": [
+        "filesystem-read",
+        "serialization"
+      ]
+    },
+    "src/daemon/steps/code-review-step/controller-pipeline.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "c1e5b2b07a437320253c91bd120194e6e168d3bf6d9f580123117c7c5a9c51b4",
+      "sourceDigest": "656fdf95764568d8aaf270113e6daa94beedb1884a72fcc1d8db6f7c5c1729aa",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/mcp/controller-review.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "The helper submits persistent workflow review evidence to an isolated CLI and serializes task/results. Temporary session routes cannot dispatch this workflow; isolated CLI context is not local privacy proof and grants no temporary authorization.",
+      "sites": [
+        [
+          "provider-adapter",
+          "admitted.execution.provider.completeStructured"
+        ],
+        [
+          "provider-use",
+          "admitted.execution.provider.completeStructured"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "provider-adapter",
+          "InputTooLargeError"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-open",
+          "mkdtempSync"
+        ],
+        [
+          "filesystem-write",
+          "rmSync"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "verifyBoundedCli"
+        ]
+      ],
+      "siteCount": 32,
+      "sitesDigest": "d5b45e8558de7e22ee1af15f72ec667fa80ea337f4078b04744eec08810cffd5",
+      "sourceDigest": "582efa54416aa7926ed9bdf3de5c22dfe55a3e3d41101820889931b13bf4d760",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-open",
+        "filesystem-write",
+        "provider-adapter",
+        "provider-use",
+        "serialization"
+      ]
+    },
+    "src/shared/controller-review.ts": {
+      "classification": "no-boundary-sites",
+      "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
+      "sourceDigest": "362fe5df629f3a5f054d38803aa5f384701673fc71876611927dbd21e291bd17",
+      "sites": [],
+      "siteCount": 0,
+      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "src/shared/review-input-identity.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Serializes persistent review input identity for validation only. It does not authorize temporary content persistence, provider use or any session route.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "35aeab25e24e8fe514c5e29dd34a82ea83989eb404a1567ef8f60422e1a6a504",
+      "sourceDigest": "88f67b21cd5d57e20b960aba840f8d4e8b7628a435a1a8c7c0e6ecd925cb381f",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/shared/structured-input.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Serializes complete persistent review messages and schema for bounded provider calls. Temporary callers remain subject to provider admission; a measured prompt is not a temporary privacy proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "ccf5ec5e390b25924727081427d3d92247f12b648c3eb61e0d4786b3b219bd53",
+      "sourceDigest": "3840bd12f581ab53350e17c1598b0f70f4efa8078b6e74db66a25a75af2d8834",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/workflow/approval-owner.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-write",
+          "mkdirSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "ef1d0420c66a68c107291bdb7574188a78c239681fc3a63d0d417f361a32ca2f",
+      "sourceDigest": "95e555c3eb3e9634126ea626340fe34ebc57061b0a03e93aed7e418215bffd0d",
+      "boundaries": [
+        "filesystem-read",
+        "filesystem-write",
+        "serialization"
+      ]
+    },
+    "src/workflow/code-review/diff-spans.ts": {
+      "classification": "no-boundary-sites",
+      "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
+      "sourceDigest": "0bb80be8b23fe1b679c32a2c939dc58101aa1d57fbd67a8564c6bdcd507fe39e",
+      "sites": [],
+      "siteCount": 0,
+      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "src/workflow/code-review/input-fingerprint.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "before.toString"
+        ],
+        [
+          "serialization",
+          "buffer.toString"
+        ],
+        [
+          "serialization",
+          "buildBytes.toString"
+        ],
+        [
+          "serialization",
+          "git(repo, ['rev-parse', '--show-toplevel']).toString"
+        ],
+        [
+          "serialization",
+          "git(repo, ['rev-parse', '--verify', 'HEAD']).toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ]
+      ],
+      "siteCount": 15,
+      "sitesDigest": "57be849bcf593c5c394e010622b2a4883d0a042e11b243edcb37b92d3c32d7ac",
+      "sourceDigest": "3415f43db4721b007a4aa452e6ffed7412001a3826a3b929b1dfbcc20029ec34",
+      "boundaries": [
+        "filesystem-read",
+        "serialization"
+      ]
+    },
+    "src/workflow/code-review/publication.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "BigInt(fingerprint.storyId.slice(1)).toString"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "5eaeb226f1fe16e8c89d45c713322036af7eb91bae4b19d63f0cab858e4a02d5",
+      "sourceDigest": "e0fa14157025a6db4a8ed465704c5939f880fc38cb2d6eda7972b360650385d2",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/workflow/review-pipeline/adapters/diff-fragments.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "0bbaad36ccc3dd4b2014cab7d86e7cac648c8771e5b91b85c87d0ac492a7b8be",
+      "sourceDigest": "0d7b27c2ce0c61ead9d4a3a038c7a1fda2c384acb40d7a5cddc8f182c52444af",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/workflow/review-pipeline/adapters/diff-parent-evidence.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 4,
+      "sitesDigest": "966b2f1ddd34bb57e8a04cacd434b85ccadbb860a48df55e20f6ad14d1c79cbf",
+      "sourceDigest": "c659127bae0d3023eaabbe5f86671f497acd69e403602a1aff6308be063512e6",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/workflow/review-pipeline/timing.ts": {
+      "classification": "no-boundary-sites",
+      "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
+      "sourceDigest": "dad8f8e806b9c7cab46dd10de3efa7a25adc917a99cf1b6b30c0e76539099d94",
+      "sites": [],
+      "siteCount": 0,
+      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
   },
   "productionFiles": {
-    "agent/providers/cli-provider.ts": "64aa7f1c873d48cb083f6ac361349ff0c7bdf8b08a9271ec942481f8c120258f",
+    "agent/providers/cli-provider.ts": "0b4d572eabe305796057618bbfdde4dc5ccfbeac6704e1e50645039991e00fe7",
     "agent/providers/model-call-error.ts": "5eb92f16c47602f910503b66df7aa6c8bcb1f7ca978efe46b7768413bf8a95fe",
     "agent/providers/ollama.ts": "0f9f6a3391a2f2ef46a3a8cb9a8ea30a22153e9c87dac5f84ccd8c7c9b5b01d8",
     "agent/providers/onnx-embedder.ts": "2bf7d15fad38b5d66e9ce53c186f70989ff5a1a638d8dbca5bb46208e64ab521",
@@ -38879,7 +39615,7 @@
     "cli/ui/widgets.tsx": "714008c0afaff9919593a15fcb585cd5a4af6e726230dd4551abf2065ab592de",
     "config/analyze.ts": "8b6860414a2be3c9745eefd034de544de0cd5b0f4d6c674cd8d04fd95b5d7c40",
     "config/config-catalog-loader.ts": "5cdffc3c9d879c90d8ea3f277b7c90c6ca18f5f14e3cf33e74864cdb2a2c9f8b",
-    "config/config-catalog.ts": "7abdd6365037c6a42c3fe16ddb849fade1dccd2f4fa65a869f39f6357adde847",
+    "config/config-catalog.ts": "a2346eb4f0a6c2da1de95cef864e284b24ed3ccc594600712f917734b3baeb2a",
     "config/core-floor-guard.ts": "8af919db8255d1f6560d0381342649f7bc432aacc48f4931454a0e1c30bf6ae2",
     "config/feedback.ts": "7f0f085ce11de39cdbc1cc54cd982947a9aa475fe44818d695a41a2b2773831a",
     "config/frontmatter.ts": "c74726e3abfeb4cc09f622734f2f9ceb9c2cb9403058ec05335fba15924f9969",
@@ -38902,7 +39638,7 @@
     "daemon/backup.ts": "754105eff73fc276d84090f611d906fa3d5c7fb18629947a97f9c611ebdeb3c5",
     "daemon/chat-handler.ts": "826c8d536e950912f13978b2ea38bf5257b5eef49f7e3023bac4d1cf821b0e65",
     "daemon/chat-sessions.ts": "9c8b4d8f3f29a666b59ce5ab887ad57ccba8cb74738babfeb12842f9497d2ee1",
-    "daemon/code-review-rpc.ts": "b399d07cbab2e1e40d0193455d51bd95a436a0e9a0577b7b8bd4f44e6e7babd0",
+    "daemon/code-review-rpc.ts": "8adce3bdd94d040c6670cc6910d6ad9af16dc005c89c7eeeff232cc333daa706",
     "daemon/config-write.ts": "987c61104e13449702cb45304a8367eb3beddf137bf7ea4ecd49ea312d3dd8ce",
     "daemon/connection-management-rpc.ts": "25bc62b2ceab6822bad57fb918147ce894a36b38e41d823e0a8ea6d59c400430",
     "daemon/connection-session-rpc.ts": "798693d787c6a713946de6ee4817decee4fc48f178e299a6673bc60df1a193d0",
@@ -38988,7 +39724,7 @@
     "daemon/fatal.ts": "1c0ce24c8b2428adae95366bf6d1d8c214a79436df323c596cddb87172a98cd8",
     "daemon/guide-sections.ts": "733ad3b1b6c36fa7b9776a613fde72daa7b1562f21656fe83becf0dab5cf604f",
     "daemon/handler-runtime.ts": "4348700af965b3e1aade2e76d43761ba65737737b19cea2f41528f149b5c6f26",
-    "daemon/index.ts": "91eedf10f298f7412db22e58cd9b92dbfc07e11e7199a424ca83488d3588b12e",
+    "daemon/index.ts": "d85bd789e81b3688cbf1d8ed48e95b16b0735f162650c4571cd49528d3683800",
     "daemon/installed-commit.ts": "23da21de4ba77f7071db157509001d521982c250d5dc221b5bd214a8f30c3adb",
     "daemon/lifecycle.ts": "6cd4c5950151af2d1f8a07942e0df4f47f25599ef27410f93a5b2e9f97f498b6",
     "daemon/list-models.ts": "431bc61a8c6ee96f1ef08b3e223fd4f97e909a8d8916eb026c5c392d17d67ab3",
@@ -39032,11 +39768,11 @@
     "daemon/steps/build-step/types.ts": "0af43e18a99b3ab3112ae0f94cc25f2a0a45adcb7baf74219bb0ca94499c6c23",
     "daemon/steps/build-step/validation-checks.ts": "0cacaaa6f03cca00be039286e804dd58750182b49a92ea18e0a3859ddafaeb2e",
     "daemon/steps/bundle-md.ts": "82c191a1a043b6c9f2fc67d92dd4f01129d3776b3dfcc5dc0be74b9e52073fbc",
-    "daemon/steps/code-review-step/handler.ts": "27ce32fdb8c62dde024f4b21be955084c334f546e2abf7107e2c28ea0e681b4a",
-    "daemon/steps/code-review-step/state-store.ts": "054be5f70b4666c81bf3e99f411418f26fbc74e3fadc0171756f2246f0d313db",
-    "daemon/steps/code-review-step/types.ts": "73b061106661296f6f0c58478ccb58bab2f77349af3d713a3209895811669d27",
-    "daemon/steps/daemon-client.ts": "986d91562dffa6f539a78bad4108f0706188df5a4dc2417186832ddb2f53ad35",
-    "daemon/steps/host.ts": "c78820cbe618f374768ff868858ad980cc2f23d1cb076792a2e43e32c46d137d",
+    "daemon/steps/code-review-step/handler.ts": "8d6590eb9738a713eba2d0ec8eee5393ad79cd2ae115b63d4eb1973d23039be2",
+    "daemon/steps/code-review-step/state-store.ts": "37cc88d1db7c74692ac04b8ba57087b0461272a5091754b9454ebe339212eca2",
+    "daemon/steps/code-review-step/types.ts": "d8146f66c4f30bda37f75dd70511bf68bdab1a8cb7f24f869cb75b13883b802d",
+    "daemon/steps/daemon-client.ts": "b33786dca598bae576dc9181ad1f47739e359c55a9b34ac8419efb7c3df2291d",
+    "daemon/steps/host.ts": "621e43773d1f746d8826ebba8d83e5dff2a5be781344ec5a7c0d70c534507e35",
     "daemon/steps/resolve-repo.ts": "7d811baffdd1ad40c68b7fade4d31165e98bab3f7f77c0ed5028f0b68412bcad",
     "daemon/steps/review-step/handler.ts": "2a8087bc7dbe58c547c5c74a310c95831176d917b1f527eaa306f0c902901f07",
     "daemon/steps/review-step/phases/claims.ts": "29aed8cabddf75cd6064aeb6e03cd4775ea7d8b542f02c858d12da5b0be5c4b4",
@@ -39077,7 +39813,7 @@
     "daemon/threads/registry.ts": "f430f000242b2036a29709daecf80b80b0ab64cc5563ff860780d2cdf79a5191",
     "daemon/threads/router.ts": "ab2fc5e751260b58afeaef859448576e9196d7596bd916fffb024e64f3fe5b4d",
     "daemon/threads/status-board.ts": "6ed43d08d6a94bd99c357af24ab03d0bcc12dd74d96f978ae1e3921a0a4f8a5f",
-    "daemon/threads/step-state.ts": "de32e58d6bee15c9b46e51f7e4fc234ea4691ecef5dbf35a9ebfad67357d4ef2",
+    "daemon/threads/step-state.ts": "d3a974286875261ab5d8f1d032cc24faa462f9777a22401eabab0175b33bf891",
     "daemon/threads/store-health-hub.ts": "a099cefdf8fb03cfb6de0d8e37c90587919341119949e396f947033d82165256",
     "daemon/threads/summary-link.ts": "7f4021c9e8ce2e8ff1637f85e6938611ac0f4627df129165c688443f9b1bf922",
     "daemon/threads/summary-worker.ts": "f81d1ecedfd67b3db39210cf1b2599165baa8643d047b8c311f392eded438b34",
@@ -39309,17 +40045,17 @@
     "indexer/target-resolution/resolver.ts": "97a0707d2aad71f60ce81427c1e7127f513cefd686a99c9c73bf80f49c01a275",
     "indexer/target-resolution/types.ts": "5c9930fabd98977f7ac9444bca0e643c1f6668b5dca447d85d5b244c216f9dfb",
     "indexer/watcher.ts": "9ba97fbd8e67b5c074863871716a165e50174da76e870d29cb08a65dc9e0b81a",
-    "mcp/daemon-stream.ts": "9984b0501fba65e93b42c1ed996b00806353b0a1bcf8bad813bb84e869b541c7",
+    "mcp/daemon-stream.ts": "3e8d7bff04c978326e03addc3316a4ab1609eee9066396d9991a45d3fc84bdde",
     "mcp/deploy-step/types.ts": "c3b379dc07afd980f0bf93d66a907f8dcc09f94bd45e9f434555e6feb30f6a69",
     "mcp/docgen/handler.ts": "0648eedb29149f81cd8bac24da2896c79f7539b1adc9c00a8c57e6e245737224",
-    "mcp/forward-step.ts": "6143cd827d39bc38e5b9ed327fd933015f402da876b242f1d6eba539b2930013",
+    "mcp/forward-step.ts": "88d89db8028c47e86039c2c6de52b4206ef4ddf11358e081cfd322d8ad34e5b0",
     "mcp/guide/handler.ts": "a6c0fd3f99897e096896d54628779638baa37d66ed40dae251bc88fbabd18391",
     "mcp/guide/schema.ts": "531bfc2dd9b53869657012fbb742a10a928ac15ed62c170ed3ee02051f8c5e8c",
     "mcp/progress-forward.ts": "6e3bfa8eec83682643a42036d431bd5e0e917b1e6a4ca81e6f0c974f134850e9",
     "mcp/resolve-repo.ts": "669a0119a34022c189c88d061eb698fa4d8cbe119ff8c8ed086fb0cb41e2e906",
     "mcp/schema/handler.ts": "889e5dea76ec5930373793d35658e08b488cac2f6aa1356eb63f57e9099d2656",
     "mcp/schema/schema.ts": "b212da027d93444b3038abb680e104bd78fb12b092a55e5a226e9f7c55c6b02f",
-    "mcp/server.ts": "75e5c60102596ed6630ab579c5eef15f361a6b35c484894b30f770c6f537c549",
+    "mcp/server.ts": "50c85fff94eca5a94d318cea3ac5f8646684201a1b3c01bb62fece79156272af",
     "mcp/session-bootstrap.ts": "62e536b3749dfd41753d2323e98c36d15ebf2897373281ff303c4290ad56bd34",
     "shared/access.ts": "7780385b64a768a5eb48bbc9888c6bff60281a3909248e74bcfcbb987de70959",
     "shared/agent-registry.ts": "7ab045dc9021cd4624aa8d8fbbf77705be8e4ee96d6d1e72e3d9b83e507e5102",
@@ -39347,13 +40083,13 @@
     "shared/process-group.ts": "e22f9166039ab514a0c6cf9b9e8dbef0d3bd1844db716eebd0f194d0856d73a2",
     "shared/repo-namespaces.ts": "6553ca1f9f3627ee71a0ce2e78ce876654ddddb09a441878d4c8b5c411a402f8",
     "shared/resolve-repo-core.ts": "776efd602ed88f33e196242867f4c3045bf8e99a84c40161108bc015f8e6b162",
-    "shared/review-stream.ts": "83d5a0b34187694343e9b5bf372c52380f1f0e8bbbdd7043f6f45fc3a853288f",
+    "shared/review-stream.ts": "916e39560a39c530b6520b20ce20f48fbcaf928869389a3282b4206fde6c5d28",
     "shared/scope-classes.ts": "acec53dd1037ab9ddd519023f75ef53c932bb0fead846d6d39db720cd501958c",
     "shared/slash-commands.ts": "50705691d7d97c3871c634ac13ad3c8e7a56411e40985be6d213cb5d0ba1bcc0",
-    "shared/step-context.ts": "679939b321f1167fd3e05c9863dcf59371446d16399461dfc525ce768f5ccf16",
+    "shared/step-context.ts": "09bd2ffa77bb5979ff9eb53c69667e7fc3c3967434ccf2810b4b422cc4565053",
     "shared/system-info.ts": "3c27334e2d736cee30335cb41092e77e58bc9d42f3274e11289c7b3bcdbd8ab9",
     "shared/todos.ts": "8417e774c2fc200a459e8075cec1baaf100443a272798e26213cf875312696f2",
-    "shared/types.ts": "a371eddf9dd13d5611374df6495d15d54d7d0d2b2713e16e4c6bffc345638ad9",
+    "shared/types.ts": "c3a9a516ded45a69ccb626872e2fb59d8e4b3cea8b993008bf8352efbf85e898",
     "shared/understanding.ts": "9887f8eafe5a0a80bbd54e5532803ba2887af169a6ad823db93c0a5f23dc34be",
     "understanding/identity.ts": "9f29b4d03cd47af7d8288642c0447da02440b7748c2b149819defa81c58def7a",
     "understanding/privacy.ts": "4569e918c97f7c25bf552f925541143f7ebad633c16b643806ae3945e3071913",
@@ -39418,27 +40154,27 @@
     "workflow/bugfix/types.ts": "367f55231c5a3ac8846171b2d99312b5b70f44c27fe7c0bb19c0996d77fe7c16",
     "workflow/chain.ts": "c4c53ab465bc74751979cf93ed6b938949a88b359d93b410d355145ea647f068",
     "workflow/code-review/author.ts": "d4da096ca00aeab77899ce9e38b8fff9e87e0ff792afb51cec26a0538d689c1a",
-    "workflow/code-review/dimensions/adherence.ts": "d3d02d667af2b991a886f24b5557a46d209837b41b6331000c5956cfdac57c5a",
-    "workflow/code-review/dimensions/conventions.ts": "9b0aeec301f7c27b4d1edb0f3b1bc8ae89c55e40b6ee959dc6d06a728979570b",
-    "workflow/code-review/dimensions/coverage.ts": "469c3309f285acfae00b4dbc449cee3f8297f125b4029e3e3e492de84638d2df",
+    "workflow/code-review/dimensions/adherence.ts": "7082cecc9b77d5ace5d1c721581c0af5bb293f7f316c8176099c5c9f71978bf8",
+    "workflow/code-review/dimensions/conventions.ts": "7b4754bd306e8909704d23f009e1ff5c0ed5ba9f68e23e111cb1882b3f45d06a",
+    "workflow/code-review/dimensions/coverage.ts": "6edce9d803ddf36827b80fc0902260f7afe36c325a573fe9191e5f9d9227ce63",
     "workflow/code-review/dimensions/diagram/handlers/component.ts": "021d33be6154cdaa08d90930c4e5ef6f14d446fa19c1f870d9ccd6a6d16ddde7",
     "workflow/code-review/dimensions/diagram/handlers/er.ts": "77e548f32482ea36074e09587643ba49ffdc3116d7745796b5df2d6d533e895c",
     "workflow/code-review/dimensions/diagram/handlers/sequence.ts": "19352bef4e3b04fd1ec5c021bbe95017b6cbb458cb0450431f747d73e8f97c08",
-    "workflow/code-review/dimensions/diagram/index.ts": "71f2662e1d0d167b21c2dc0991f897679b7b073cb870172ea27708e128224cd5",
+    "workflow/code-review/dimensions/diagram/index.ts": "bb7eccd5dda261b013b9a7062dc6f2dfda1de5b4bfa0df5054bdb211ee0e7f97",
     "workflow/code-review/dimensions/diagram/registry.ts": "1aa936a6bc2b44e9355a033866011be1e208c68f057347f68bc007e82c00a64e",
-    "workflow/code-review/dimensions/functional-coverage.ts": "6dbbaf2390d0ec97040cc932e01115fd785c8101a8d2a1431f3e34871542b00e",
-    "workflow/code-review/dimensions/quality.ts": "d2af765d81be2d30a43536df165b12a5217a1d90e690255e270679dcc57f33cc",
+    "workflow/code-review/dimensions/functional-coverage.ts": "20423e62786b9231f2148bf17c0fde66e8e3a82b005b859870781a88a881fa37",
+    "workflow/code-review/dimensions/quality.ts": "268bbbf85a1159c75604b9366af6fec8fdcaebbfda1862df5c71ee89923aa827",
     "workflow/code-review/dimensions/test-record-view.ts": "f833018da51628a5c77f10abd484f563052636a6111047c998c7b5fcde712912",
-    "workflow/code-review/dimensions/ux/index.ts": "e8abdc857cb85008b7dad920b948795b568e7c3124f94251eef12f91dfe91d7d",
+    "workflow/code-review/dimensions/ux/index.ts": "71ab222c8f0f76a98b9cdbc2e8ab34f57201046a2a3d32a947fc9c9881e45532",
     "workflow/code-review/expected-dimensions.ts": "adc72b2d084635a626c4776a6ad969404420a8190ac64d18c6f5e491b47044dd",
     "workflow/code-review/freshness.ts": "b779bf29e936741234db6f06057b308c9d95cc5d4f84ea3a0bf6530474b82504",
-    "workflow/code-review/gate.ts": "8c0e41fb97ac07f077529cb5df8d7dfec6320ca077bcc8624f65c092441b35b8",
-    "workflow/code-review/grounding.ts": "a0659c8a8995667ebd9cd529cbbfa6dcd1ce36cfc814bd8a6e2df5815c8e5adb",
+    "workflow/code-review/gate.ts": "836aabf6911050d283377f9a9ea65ba310192084dc61114e9ed9dfcaece860b7",
+    "workflow/code-review/grounding.ts": "b8c2dedd018a33fe01023994d63094d0bed23cb678b6e7de8650b8e02d699735",
     "workflow/code-review/pack-into-batches.ts": "d5bc09e77a10f59df113dda047ae4a178b06402fdb99d6f82d29565c92f372cb",
-    "workflow/code-review/runner.ts": "51632e42c71a0b4eeed74ee9278bd00af66a98c1b61c88b86fa6bf475d721039",
+    "workflow/code-review/runner.ts": "7dcfdeac5c1ca02f667e246cbb7b413070e85a35cb4a80b6e94877f81bebaec3",
     "workflow/code-review/subject-paths.ts": "5e28a4bca4345ca05013e1efd70fbe559eae080d242f98dc9be0d79f73f5debc",
     "workflow/code-review/subject.ts": "114d9856034c772ff57d8d421f5e1c39234274bd6125a86bf64894bb1cb6743a",
-    "workflow/code-review/types.ts": "41b339b53e5a214842c7a3bd90d637d9555301699a7608b823712faf94ab28c4",
+    "workflow/code-review/types.ts": "d3715c1a21e4c95346f8f709c8be255c890fe54e13bcebf2d8d8513c96b7aaf0",
     "workflow/config/github.ts": "f274364f43f44aeaf22577f567e7a4c77c16cda0a8037ef3c1fb175fc02f7442",
     "workflow/delivery/currency.ts": "073c24a42c8e40e1afe14864afbd9c6b47b3783e7fc3797f71e4be6c17b26032",
     "workflow/delivery/describe.ts": "51562b9e3591e55af1f7c92411d09055d3cfe8dd24f14752e9d0841a9a045ae7",
@@ -39454,7 +40190,7 @@
     "workflow/delivery/types.ts": "1803812c1f65eac26ea333e84e01fc4f002b76ce44101ed320a4f67b5564d43c",
     "workflow/draft-deps.ts": "bce2fa80ed78dc9340e9de6b7a1100f2cc59cb5032efda2d0da78dd0f3cd37a9",
     "workflow/executor.ts": "6143e8665a230fc552d57619ac2b317464628c34823c52ac33370723b47d231b",
-    "workflow/gates.ts": "b06dd55b3c8f5b7504f07172996df9a53cccf0a83759f8a987047af5cc42cef7",
+    "workflow/gates.ts": "92681ade01639cad130fd66f362de2e20dd161c74c679b93932af6e2d621bb16",
     "workflow/hash.ts": "3f572c463243d00c8c1eb75358e1a01ef6016236fa2890c78694a6ad7d1578b0",
     "workflow/id.ts": "af98a510093b227fcd0a655db007003b8413c8a3dd0bfdd67b520f466046e9f1",
     "workflow/index.ts": "25e8a94d6a381e1eabf20b9ef50d018b82e1a157941fe2f1273ae8bb0d2c13a9",
@@ -39488,30 +40224,30 @@
     "workflow/review/verdict.ts": "876b13052a9f49c77377e0945f0a9891bacb89bb618aa12ffe01237e5a8eaf69",
     "workflow/review/verify.ts": "9e7f787f206cd1e47f4bc5b4a6a57a9066fa9949b3de1dfb3a390b43fd012834",
     "workflow/review-decision.ts": "b9d89cc729cec1327c97b43667a45dd2d12dbe52fdbbdc06b9b3bbb4b1620745",
-    "workflow/review-pipeline/adapters/code-review-chunk.ts": "72a960395d1e2c21070696db0a0351c04a5249a648dac3ab73912b9325d131e6",
-    "workflow/review-pipeline/adapters/code-review-duplicates.ts": "0b290f7a2403886790dd898e17388e1708877c446fd1d6c64d47b61acf5d55c4",
-    "workflow/review-pipeline/adapters/code-review-gather.ts": "c7b46d9fccdc608c8e33da6db663daf0292474f8243e7509905021f10940bef1",
-    "workflow/review-pipeline/adapters/code-review-material.ts": "397df4ec67b3c48e9f11c6bfb04668fa507a7d340cfe7d2a803c43ffc98d087f",
+    "workflow/review-pipeline/adapters/code-review-chunk.ts": "2b44f27e2b0d78a67eee664f74897be873d35d7cb9dea062c85ecad2489c159c",
+    "workflow/review-pipeline/adapters/code-review-duplicates.ts": "0fc667d996264e00cd83af956ad2e42cb874e538388c1a4a37e9bb9c0e04129d",
+    "workflow/review-pipeline/adapters/code-review-gather.ts": "c734e7e48d849649e0cc5b8694046b60b377ce9ce7a7ae266970f00fcb735f05",
+    "workflow/review-pipeline/adapters/code-review-material.ts": "180b4db31061f162b0234ef346a5667767200ed3daaf8e7eec80c6d0182e0013",
     "workflow/review-pipeline/adapters/code-review-obligations.ts": "7f81d957665b210801c765c0626f3b159ac525726b309ddfccbd9910d602762a",
-    "workflow/review-pipeline/code-review.ts": "c9788f94c0f6d39211cd1ccec92d13dfdfea8d5533b2ad99c9c00decf14c1e67",
+    "workflow/review-pipeline/code-review.ts": "d54ccddecaf0b971dd8bfdb5d174160238a844e92e64eb1d2d0efa564311b36a",
     "workflow/review-pipeline/design-review.ts": "c851fd71c28168a061acfa628b2f01631308b70a02127008fecaeeedb0c827f4",
-    "workflow/review-pipeline/driver.ts": "1ba9aba3955f53dfb74fb5d9357c418f79da40828fe0c4f064daf2d18a2f09d5",
-    "workflow/review-pipeline/envelope.ts": "8c85e9ab6f44030dfd2cd0ad38241e4f5023ab2179f88bff92a2934940375287",
-    "workflow/review-pipeline/job.ts": "ecdb620ff7619606219ba0cceca4c28a91ac3fa2a7b99f50c513b790279bdf4a",
+    "workflow/review-pipeline/driver.ts": "6b18d187433c3b415badf96bbdd767f0f1d157a6603f610056584c4c051d480a",
+    "workflow/review-pipeline/envelope.ts": "d9b6be777494cc889a4f7a269880cf1ce004743d47e95d79196bf0f4807b81e4",
+    "workflow/review-pipeline/job.ts": "370462f9b6af47c707832ab5f9e93fe12cdea3873a6f0123ef4b47ec3881f2bd",
     "workflow/review-pipeline/limit.ts": "d0699ef1bbc256cb7b5eac110cb0e8d5f5039f1cab54e0d3213b866622e4a263",
     "workflow/review-pipeline/pack-into-batches.ts": "4a9a0adc423fc1f796317db45d00c949181269c207dd64fd4e4c3a7471161dd3",
     "workflow/review-pipeline/prepare.ts": "c776fcb2211a22e665d98d40e52ca7677cd4a6b3ec38a4da8fb1c41bb4e1f84e",
-    "workflow/review-pipeline/types.ts": "e8f4860dd691b90eb9e4e087125d900bc976fc0fc04df69d32ff82bba87c75cd",
+    "workflow/review-pipeline/types.ts": "8e5fcd06a504653949589d195c093c08a2ad8caf743dea540da25372fd8c08c4",
     "workflow/runners/brainstorm/index.ts": "b41319af4caca77b3dff1a18aca61c6958123935272126321c2cecaba760456b",
     "workflow/runners/brainstorm/schemas.ts": "a1a676eb9b2b43035fc33c32bf9ddf284b109c6c56be8669bae83a2ebe08e387",
     "workflow/runners/brainstorm/standalone.ts": "58ebdf128352b1a731ab9ee632f9234fa881efe4d3a34aedb8a4317c1452f36a",
     "workflow/runners/build/admission.ts": "a3b3f1aeb22d547baf91c41e58929c90c0805d06c8ab871c1db888199a3c71bb",
-    "workflow/runners/build/changed-files.ts": "b6697e77855911c2ddead233e1889e3eaadf25fb4040572924e18ac1e7a434bb",
-    "workflow/runners/build/completion-record.ts": "eb29f688b148f3837f8e687ce106d2a22dde082dcac5950750c8e55fe48b31ac",
+    "workflow/runners/build/changed-files.ts": "8763eb68f2beb04379b5916afe14b59d367681d851fc1d0554cf3a5dadd6a338",
+    "workflow/runners/build/completion-record.ts": "690110eb9fb80bfc8cd0bd6849837d893380cd5ecb834ba8a2c30fa0647adc09",
     "workflow/runners/build/own-files.ts": "dd953fa9bef901feb4e2ef0caeaee111dfd9917c5f0fcfbb8024706eaa882bac",
     "workflow/runners/build/range-base.ts": "c70eee8f24807dba383f232ad108404b95f8300a2c51c4513273fd9691db6f6f",
     "workflow/runners/build/schemas.ts": "72d4c4ecd525f22a102b5ff4d335e108b504a8a5c79831c9a3ca5868ca220d7c",
-    "workflow/runners/build/standalone-record.ts": "7d0a977397b58bc5795489dd8c60b8421f18ac6cb3e58241c7c5c58304009711",
+    "workflow/runners/build/standalone-record.ts": "568eb92fcc7091e2788d0dc39a954305abe9f405453c5bb05adaf8f66ff5f691",
     "workflow/runners/build/story-commits.ts": "2eb2856c44dc3fce42c4be04f43a401942eafeeede0a359ec7de9a10f3aa2c31",
     "workflow/runners/build/test-record.ts": "6fb70f8bb559ff1280b0a98f8fad73518bd1621858b95540915369f534270420",
     "workflow/runners/define/index.ts": "2b2f7f994819250e0c60807d1003408a2d4762248392a9e8fd507a2599352061",
@@ -39557,6 +40293,20 @@
     "workflow/tracker-auto.ts": "7402fa200f4aeec7def851dd4eb772218c274283c98e119bae6bc5b517a9035d",
     "workflow/triage/classify.ts": "879549f682fe05e6be75f01e7483b9ebca35c9850e7a8567a49f5c914617881f",
     "workflow/triage/types.ts": "8b1786eb3b88152cc38d1005fc7f982e04b80fb9ae2b9871892763f1a08d832a",
-    "workflow/types.ts": "aa457e5e82bd7f13ecdfbafcd3a66add8608a667a598f9d8856614c9f3a67eb1"
+    "workflow/types.ts": "aa457e5e82bd7f13ecdfbafcd3a66add8608a667a598f9d8856614c9f3a67eb1",
+    "agent/providers/bounded-input.ts": "f6b9bca76ea0ddf8f52f6bb3be466277a01b6ae796926b5f7fb9d13d44bead0e",
+    "daemon/code-review-operations.ts": "7b95692e103fc674d9da96137b0912f1a7da127ff20e77223b8849125c29f71b",
+    "daemon/steps/code-review-step/controller-pipeline.ts": "656fdf95764568d8aaf270113e6daa94beedb1884a72fcc1d8db6f7c5c1729aa",
+    "mcp/controller-review.ts": "582efa54416aa7926ed9bdf3de5c22dfe55a3e3d41101820889931b13bf4d760",
+    "shared/controller-review.ts": "362fe5df629f3a5f054d38803aa5f384701673fc71876611927dbd21e291bd17",
+    "shared/review-input-identity.ts": "88f67b21cd5d57e20b960aba840f8d4e8b7628a435a1a8c7c0e6ecd925cb381f",
+    "shared/structured-input.ts": "3840bd12f581ab53350e17c1598b0f70f4efa8078b6e74db66a25a75af2d8834",
+    "workflow/approval-owner.ts": "95e555c3eb3e9634126ea626340fe34ebc57061b0a03e93aed7e418215bffd0d",
+    "workflow/code-review/diff-spans.ts": "0bb80be8b23fe1b679c32a2c939dc58101aa1d57fbd67a8564c6bdcd507fe39e",
+    "workflow/code-review/input-fingerprint.ts": "3415f43db4721b007a4aa452e6ffed7412001a3826a3b929b1dfbcc20029ec34",
+    "workflow/code-review/publication.ts": "e0fa14157025a6db4a8ed465704c5939f880fc38cb2d6eda7972b360650385d2",
+    "workflow/review-pipeline/adapters/diff-fragments.ts": "0d7b27c2ce0c61ead9d4a3a038c7a1fda2c384acb40d7a5cddc8f182c52444af",
+    "workflow/review-pipeline/adapters/diff-parent-evidence.ts": "c659127bae0d3023eaabbe5f86671f497acd69e403602a1aff6308be063512e6",
+    "workflow/review-pipeline/timing.ts": "dad8f8e806b9c7cab46dd10de3efa7a25adc917a99cf1b6b30c0e76539099d94"
   }
 }

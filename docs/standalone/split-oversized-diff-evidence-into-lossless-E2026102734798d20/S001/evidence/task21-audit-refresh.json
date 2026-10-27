@@ -1,0 +1,279 @@
+{
+  "changed": [
+    {
+      "file": "src/agent/providers/bounded-input.ts",
+      "classification": "provider-admission",
+      "siteCount": 5
+    },
+    {
+      "file": "src/agent/providers/cli-provider.ts",
+      "classification": "provider-admission",
+      "siteCount": 154
+    },
+    {
+      "file": "src/config/config-catalog.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/daemon/code-review-operations.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 7
+    },
+    {
+      "file": "src/daemon/code-review-rpc.ts",
+      "classification": "daemon-admission-boundary",
+      "siteCount": 25
+    },
+    {
+      "file": "src/daemon/index.ts",
+      "classification": "daemon-admission-boundary",
+      "siteCount": 66
+    },
+    {
+      "file": "src/daemon/steps/code-review-step/controller-pipeline.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 1
+    },
+    {
+      "file": "src/daemon/steps/code-review-step/handler.ts",
+      "classification": "forbidden-session-workflow",
+      "siteCount": 13
+    },
+    {
+      "file": "src/daemon/steps/code-review-step/state-store.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/daemon/steps/code-review-step/types.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/daemon/steps/daemon-client.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/daemon/steps/host.ts",
+      "classification": "trusted-step-host",
+      "siteCount": 9
+    },
+    {
+      "file": "src/daemon/threads/step-state.ts",
+      "classification": "routing-background-boundary",
+      "siteCount": 25
+    },
+    {
+      "file": "src/mcp/controller-review.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 32
+    },
+    {
+      "file": "src/mcp/daemon-stream.ts",
+      "classification": "mcp-client-boundary",
+      "siteCount": 15
+    },
+    {
+      "file": "src/mcp/forward-step.ts",
+      "classification": "mcp-client-boundary",
+      "siteCount": 8
+    },
+    {
+      "file": "src/mcp/server.ts",
+      "classification": "mcp-client-boundary",
+      "siteCount": 9
+    },
+    {
+      "file": "src/shared/controller-review.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/shared/review-input-identity.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 1
+    },
+    {
+      "file": "src/shared/review-stream.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 2
+    },
+    {
+      "file": "src/shared/step-context.ts",
+      "classification": "shared-transport-foundation",
+      "siteCount": 1
+    },
+    {
+      "file": "src/shared/structured-input.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 1
+    },
+    {
+      "file": "src/shared/types.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/workflow/approval-owner.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 7
+    },
+    {
+      "file": "src/workflow/code-review/diff-spans.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/workflow/code-review/dimensions/adherence.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 3
+    },
+    {
+      "file": "src/workflow/code-review/dimensions/conventions.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 3
+    },
+    {
+      "file": "src/workflow/code-review/dimensions/coverage.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 3
+    },
+    {
+      "file": "src/workflow/code-review/dimensions/diagram/index.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 3
+    },
+    {
+      "file": "src/workflow/code-review/dimensions/functional-coverage.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 2
+    },
+    {
+      "file": "src/workflow/code-review/dimensions/quality.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 1
+    },
+    {
+      "file": "src/workflow/code-review/dimensions/ux/index.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 1
+    },
+    {
+      "file": "src/workflow/code-review/gate.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 7
+    },
+    {
+      "file": "src/workflow/code-review/grounding.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 24
+    },
+    {
+      "file": "src/workflow/code-review/input-fingerprint.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 15
+    },
+    {
+      "file": "src/workflow/code-review/publication.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 2
+    },
+    {
+      "file": "src/workflow/code-review/runner.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 15
+    },
+    {
+      "file": "src/workflow/code-review/types.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/workflow/gates.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 50
+    },
+    {
+      "file": "src/workflow/review-pipeline/adapters/code-review-chunk.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 4
+    },
+    {
+      "file": "src/workflow/review-pipeline/adapters/code-review-duplicates.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 6
+    },
+    {
+      "file": "src/workflow/review-pipeline/adapters/code-review-gather.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 16
+    },
+    {
+      "file": "src/workflow/review-pipeline/adapters/code-review-material.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 4
+    },
+    {
+      "file": "src/workflow/review-pipeline/adapters/diff-fragments.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 3
+    },
+    {
+      "file": "src/workflow/review-pipeline/adapters/diff-parent-evidence.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 4
+    },
+    {
+      "file": "src/workflow/review-pipeline/code-review.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 9
+    },
+    {
+      "file": "src/workflow/review-pipeline/driver.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 8
+    },
+    {
+      "file": "src/workflow/review-pipeline/envelope.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 1
+    },
+    {
+      "file": "src/workflow/review-pipeline/job.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 14
+    },
+    {
+      "file": "src/workflow/review-pipeline/timing.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/workflow/review-pipeline/types.ts",
+      "classification": "no-boundary-sites",
+      "siteCount": 0
+    },
+    {
+      "file": "src/workflow/runners/build/changed-files.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 3
+    },
+    {
+      "file": "src/workflow/runners/build/completion-record.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 3
+    },
+    {
+      "file": "src/workflow/runners/build/standalone-record.ts",
+      "classification": "forbidden-session-service",
+      "siteCount": 15
+    }
+  ],
+  "retainedHistoricalDesignSources": {
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/consumer-sites-before.json": "fffd44ea49300d0575f8e1414e097d84515cab688853d0afc56fd0838b44618a",
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/consumer-diagnostic-sites-before.json": "bebdbc94a552d331ebcc6bdd8550cb0ba642eba7e043bc282ca409fda677d0de"
+  },
+  "releaseGate": "unchanged ready:false/scopes:[]"
+}

@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T13:23:40.321Z",
+    "updatedAt": "2026-10-27T13:55:42.003Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -2465,6 +2465,162 @@
               },
               {
                 "title": "DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t20",
+        "commit": "e777060ff",
+        "ranAt": "2026-10-27T13:55:42.003Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-PUBLISH-GATE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-PUBLISH-GATE: stale review is a distinct non-overridable outcome with reason and no fabricated findings/counts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-APPROVE-COMMON",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-COMMON: direct approval and reapproval preserve reviewed identity while stale source/BUILD/TESTS cannot be overridden",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-APPROVE-WORKFLOW",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-WORKFLOW: single and batch approval project stale identity and leave fresh siblings approvable with no completion side effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-APPROVE-TUI",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-TUI: the actual TUI service rejects stale identity before tracker/commit work even with override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-APPROVE-IDENTITY",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-IDENTITY: invalid/partial/unsupported/unreadable identities fail closed while genuinely unrecorded fingerprint fields remain explicitly legacy",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-IDENTITY: canonical BUILD path, metadata, repository and independent author must agree; file aliases cannot bypass checks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-APPROVE-RACE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-RACE: prewrite changes stamp nothing; postwrite TESTS/source changes roll back only this approval metadata and preserve foreign BUILD edits",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-RACE: framework BUILD writers share synchronous ownership and cannot overwrite a concurrent approval transaction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-APPROVE-TESTS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+                "title": "DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/build-review-freshness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16975,
+            "titles": [
+              {
+                "title": "DIFF-APPROVE-COMMON: direct approval and reapproval preserve reviewed identity while stale source/BUILD/TESTS cannot be overridden",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-GATE: stale review is a distinct non-overridable outcome with reason and no fabricated findings/counts",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-WORKFLOW: single and batch approval project stale identity and leave fresh siblings approvable with no completion side effects",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-TUI: the actual TUI service rejects stale identity before tracker/commit work even with override",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-IDENTITY: invalid/partial/unsupported/unreadable identities fail closed while genuinely unrecorded fingerprint fields remain explicitly legacy",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-IDENTITY: canonical BUILD path, metadata, repository and independent author must agree; file aliases cannot bypass checks",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-RACE: prewrite changes stamp nothing; postwrite TESTS/source changes roll back only this approval metadata and preserve foreign BUILD edits",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-RACE: framework BUILD writers share synchronous ownership and cannot overwrite a concurrent approval transaction",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source",
                 "result": "pass"
               }
             ],

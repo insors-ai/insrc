@@ -306,7 +306,10 @@ the code-review-gated completion act. A Story with NO code review, or one
 reviewed by the party that wrote the code, is always withheld into `skipped[]`.
 A code review whose verdict is `block` withholds completion under
 `codeReview.enforce` (config, off / advisory by default). Either is passed only
-with an explicit `overrideReview`.
+with an explicit `overrideReview`. A fingerprinted BUILD review additionally
+requires unchanged source, contracts, BUILD and TESTS. A `stale-review` outcome
+in `codeReview[]` withholds approval even with an override or enforcement off;
+run a new independent review.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Builders keep affected artifacts aligned with the implementation.

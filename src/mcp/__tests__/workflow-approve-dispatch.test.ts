@@ -96,3 +96,14 @@ test('handleWorkflowApprove: the daemon result (incl. codeReview[]) is relayed v
 		await daemon.close();
 	}
 });
+
+test('DIFF-COMPAT: workflow approval relays stale-review and its reason without inventing approval or finding totals', async () => {
+ const path = '/x/.insrc/artifacts/BUILD-abc-s1.json';
+ const canned = { approved: [], skipped: [{ path, reason: 'Review inputs changed; run a new independent review' }], codeReview: [{ path, storyId: 's1', status: 'stale-review', reason: 'mismatch', message: 'Review inputs changed; run a new independent review' }] };
+ const daemon = fakeDaemon(canned); await listen(daemon.server, daemon.path);
+ try {
+  const out = await handleWorkflowApprove({ artifactPath: path, repo: '/x', overrideReview: 'cannot bypass identity' }, { connect: () => createConnection(daemon.path) });
+  assert.notEqual(out.isError, true); const relayed = JSON.parse(text(out)); assert.deepEqual(relayed, canned);
+  assert.equal(relayed.approved.length, 0); assert.equal('counts' in relayed.codeReview[0], false); assert.equal('followOn' in relayed, false);
+ } finally { await daemon.close(); }
+});

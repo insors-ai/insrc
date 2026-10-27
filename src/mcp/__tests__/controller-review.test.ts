@@ -245,3 +245,33 @@ test('DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner
   assert.equal(f.captures().filter(c => c.stdin.includes('next-overlap-call')).length, 1);
  } finally { release?.(); await f.cleanup(); }
 });
+
+test('DIFF-COMPAT: rejected continuation requests preserve the active isolated call and exact result retry without a second subprocess', async () => {
+ const f = fixture({ gated: true, waitMs: 5 }), task = frame('recoverable-owner'), h = forwarding(task);
+ let rejectedResult = false, submissions = 0;
+ const forward: ControllerReviewForward = async (raw, extra) => {
+  const args = raw as Record<string, unknown>;
+  if (args['repo'] === '/foreign-review-target') return env({ next: 'error', error: { code: 'review-target-mismatch', retryable: false } });
+  if (typeof args['requestError'] === 'string') return env({ next: 'error', error: { code: args['requestError'], retryable: false } });
+  if (args['phase'] === 'judgements') { submissions++; if (!rejectedResult) { rejectedResult = true; return env({ next: 'error', error: { code: 'bad-call-result', retryable: false } }); } }
+  return h.forward(raw, extra);
+ };
+ try {
+  const first = parse(await f.helper.forward({ phase: 'start', repo: f.dir }, { client: 'claude' }, forward)); assert.equal(first.next, 'controller_call_pending');
+  await until(() => f.captures().length === 1); const pid = f.captures()[0].pid, before = h.requests.length;
+  const legacy = parse(await f.helper.forward({ phase: 'judgements', state: task.state, judgements: [] }, { client: 'claude' }, forward));
+  assert.equal(legacy.error.code, 'bad-call-result'); assert.equal(h.requests.length, before, 'reject inherited chat judgements before RPC');
+  const foreign = parse(await f.helper.forward({ phase: 'start', state: task.state, repo: '/foreign-review-target' }, { client: 'claude' }, forward)); assert.equal(foreign.error.code, 'review-target-mismatch');
+  for (const code of ['bad-input', 'bad-phase', 'bad-state', 'bad-call-result', 'conflicting-call-replay']) {
+   const invalid = parse(await f.helper.forward({ phase: 'start', state: task.state, requestError: code }, { client: 'claude' }, forward)); assert.equal(invalid.error.code, code);
+  }
+  assert.equal(dead(pid), false, 'request rejection must not cancel owned work');
+  const rejoin = parse(await f.helper.forward({ phase: 'start', state: task.state }, { client: 'claude' }, forward)); assert.equal(rejoin.callId, first.callId); assert.equal(f.captures().length, 1);
+  writeFileSync(f.gate, 'release'); await until(() => existsSync(f.closed));
+  let out: ReturnType<typeof parse> = {};
+  for (let i = 0; i < 30; i++) { out = parse(await f.helper.forward({ phase: 'start', state: task.state }, { client: 'claude' }, forward)); if (out.next === 'error') break; await new Promise(resolve => setTimeout(resolve, 10)); }
+  assert.equal(out.error.code, 'bad-call-result');
+  const done = parse(await f.helper.forward({ phase: 'start', state: task.state }, { client: 'claude' }, forward)); assert.equal(done.next, 'done');
+  assert.equal(submissions, 2); assert.equal(f.captures().length, 1, 'retry forwards the same settled answer instead of executing another CLI call');
+ } finally { await f.cleanup(); }
+});

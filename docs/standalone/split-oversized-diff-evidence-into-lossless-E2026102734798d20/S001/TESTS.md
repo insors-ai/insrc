@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 109 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 118 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -589,3 +589,57 @@ Run at 2026-10-27T13:23:40.321Z on commit `5231da536`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/mcp/__tests__/controller-review.test.ts` | 0 | 10 | 11.7 s |  |
+
+## t20
+
+Run at 2026-10-27T13:55:42.003Z on commit `e777060ff`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-PUBLISH-GATE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-PUBLISH-GATE: stale review is a distinct non-overridable outcome with reason and no fabricated findings/counts | `src/workflow/__tests__/build-review-freshness.test.ts` |
+
+**integration: DIFF-APPROVE-COMMON**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-APPROVE-COMMON: direct approval and reapproval preserve reviewed identity while stale source/BUILD/TESTS cannot be overridden | `src/workflow/__tests__/build-review-freshness.test.ts` |
+
+**integration: DIFF-APPROVE-WORKFLOW**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-APPROVE-WORKFLOW: single and batch approval project stale identity and leave fresh siblings approvable with no completion side effects | `src/workflow/__tests__/build-review-freshness.test.ts` |
+
+**integration: DIFF-APPROVE-TUI**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-APPROVE-TUI: the actual TUI service rejects stale identity before tracker/commit work even with override | `src/workflow/__tests__/build-review-freshness.test.ts` |
+
+**integration: DIFF-APPROVE-IDENTITY**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-APPROVE-IDENTITY: invalid/partial/unsupported/unreadable identities fail closed while genuinely unrecorded fingerprint fields remain explicitly legacy | `src/workflow/__tests__/build-review-freshness.test.ts` |
+| pass | DIFF-APPROVE-IDENTITY: canonical BUILD path, metadata, repository and independent author must agree; file aliases cannot bypass checks | `src/workflow/__tests__/build-review-freshness.test.ts` |
+
+**integration: DIFF-APPROVE-RACE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-APPROVE-RACE: prewrite changes stamp nothing; postwrite TESTS/source changes roll back only this approval metadata and preserve foreign BUILD edits | `src/workflow/__tests__/build-review-freshness.test.ts` |
+| pass | DIFF-APPROVE-RACE: framework BUILD writers share synchronous ownership and cannot overwrite a concurrent approval transaction | `src/workflow/__tests__/build-review-freshness.test.ts` |
+
+**integration: DIFF-APPROVE-TESTS**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source | `src/workflow/__tests__/build-review-freshness.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/__tests__/build-review-freshness.test.ts` | 0 | 9 | 17 s |  |

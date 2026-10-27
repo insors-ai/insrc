@@ -30,8 +30,7 @@ async function harness(ignore?: readonly string[]): Promise<Harness> {
   watcher.onEvents(e => { events.push(...e); });
   if (ignore === undefined) await watcher.addRepo(root); else await watcher.addRepo(root, ignore);
   cleanups.push(async () => { await watcher.close(); rmSync(base, { recursive: true, force: true }); });
-  await new Promise(r => setTimeout(r, 300));          // let the subscription settle before the test writes
-  return {
+  const h: Harness = {
     root, watcher, events,
     seen: (path, type) => events.some(e => e.path === path && (type === undefined || e.type === type)),
     async until(p, what) {
@@ -42,6 +41,34 @@ async function harness(ignore?: readonly string[]): Promise<Harness> {
       }
     },
   };
+  // the subscription is live once a file written into the existing root is reported
+  writeFileSync(join(root, 'ready.ts'), 'x\n');
+  await h.until(() => h.seen(join(root, 'ready.ts')), 'the subscription to become live');
+  events.length = 0;
+  return h;
+}
+
+/** A second watcher on the same directory, used as a control: when it has seen a write, the write happened and was observable. */
+async function control(root: string): Promise<Harness> {
+  const watcher = new Watcher();
+  const events: FileEvent[] = [];
+  watcher.onEvents(e => { events.push(...e); });
+  await watcher.addRepo(root);
+  cleanups.push(() => watcher.close());
+  const h: Harness = {
+    root, watcher, events,
+    seen: (path, type) => events.some(e => e.path === path && (type === undefined || e.type === type)),
+    async until(p, what) {
+      const end = Date.now() + WAIT_MS;
+      while (!p()) {
+        if (Date.now() > end) throw new Error(`timed out waiting for ${what}`);
+        await new Promise(r => setTimeout(r, 50));
+      }
+    },
+  };
+  writeFileSync(join(root, 'control-ready.ts'), 'x\n');
+  await h.until(() => h.seen(join(root, 'control-ready.ts')), 'the control subscription to become live');
+  return h;
 }
 
 test('src/indexer/__tests__/watcher-new-directories.test.ts: after addRepo, mkdir -p a/b/c with a file written in it at once yields a create event for that file, and a second file written in a/b/c three seconds later yields an event too (the case that produced no event before the fix)', async () => {
@@ -82,12 +109,12 @@ test('src/indexer/__tests__/watcher-new-directories.test.ts: files inside a new 
   writeFileSync(join(proj, 'out', 'gen', 'in-out.ts'), 'x\n');
   writeFileSync(join(proj, 'src', 'deep', 'kept.ts'), 'x\n');
   await h.until(() => h.seen(join(proj, 'src', 'deep', 'kept.ts'), 'create'), 'the event for the kept file');
-  await new Promise(r => setTimeout(r, 1000));
   writeFileSync(join(ignoredTop, 'later.ts'), 'x\n');                  // written later into the ignored tree
   writeFileSync(join(proj, 'out', 'gen', 'later.ts'), 'x\n');
-  writeFileSync(join(proj, 'src', 'deep', 'sentinel.ts'), 'x\n');       // arrives after the ignored writes would have
+  writeFileSync(join(proj, 'src', 'deep', 'sentinel.ts'), 'x\n');       // written after the ignored writes
   await h.until(() => h.seen(join(proj, 'src', 'deep', 'sentinel.ts')), 'the sentinel event');
-  await new Promise(r => setTimeout(r, 500));
+  writeFileSync(join(proj, 'src', 'deep', 'sentinel2.ts'), 'x\n');      // a second sentinel: anything earlier has been delivered by now
+  await h.until(() => h.seen(join(proj, 'src', 'deep', 'sentinel2.ts')), 'the second sentinel event');
   assert.deepEqual(h.events.filter(e => /node_modules|\/out\//.test(e.path)), [], 'no event from an ignored directory');
 });
 
@@ -103,13 +130,13 @@ test('src/indexer/__tests__/watcher-new-directories.test.ts: after a new nested 
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'two.ts'), 'x\n');
   await h.until(() => h.seen(join(dir, 'two.ts'), 'create'), 'the file written at once after re-creating the directory');
-  await new Promise(r => setTimeout(r, 1500));
   writeFileSync(join(dir, 'three.ts'), 'x\n');
   await h.until(() => h.seen(join(dir, 'three.ts')), 'the file written later after re-creating the directory');
 });
 
 test("src/indexer/__tests__/watcher-new-directories.test.ts: after close() no handler is called for later writes, and after removeRepo() the repo's per-directory subscriptions deliver nothing", async () => {
   const closing = await harness();
+  const watching = await control(closing.root);
   const dirA = join(closing.root, 'q', 'r');
   mkdirSync(dirA, { recursive: true });
   writeFileSync(join(dirA, 'before.ts'), 'x\n');
@@ -119,10 +146,11 @@ test("src/indexer/__tests__/watcher-new-directories.test.ts: after close() no ha
   writeFileSync(join(dirA, 'after-close.ts'), 'x\n');
   mkdirSync(join(closing.root, 'm', 'n'), { recursive: true });
   writeFileSync(join(closing.root, 'm', 'n', 'new.ts'), 'x\n');
-  await new Promise(r => setTimeout(r, 1500));
+  await watching.until(() => watching.seen(join(closing.root, 'm', 'n', 'new.ts')) && watching.seen(join(dirA, 'after-close.ts')), 'the control watcher to see the writes after close');
   assert.deepEqual(closing.events, [], 'nothing is delivered after close()');
 
   const removing = await harness();
+  const watchingToo = await control(removing.root);
   const dirB = join(removing.root, 's', 't');
   mkdirSync(dirB, { recursive: true });
   writeFileSync(join(dirB, 'before.ts'), 'x\n');
@@ -130,6 +158,6 @@ test("src/indexer/__tests__/watcher-new-directories.test.ts: after close() no ha
   await removing.watcher.removeRepo(removing.root);
   removing.events.length = 0;
   writeFileSync(join(dirB, 'after-remove.ts'), 'x\n');
-  await new Promise(r => setTimeout(r, 1500));
+  await watchingToo.until(() => watchingToo.seen(join(dirB, 'after-remove.ts')), 'the control watcher to see the write after removeRepo');
   assert.deepEqual(removing.events, [], 'the directory subscription delivers nothing after removeRepo()');
 });

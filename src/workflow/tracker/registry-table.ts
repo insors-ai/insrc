@@ -46,7 +46,7 @@ export function workflowToolDeps(repoPath: string, overrides: Partial<ToolDeps> 
 
 export type Call<D> = { readonly ok: true; readonly data: D } | { readonly ok: false; readonly toolId: string; readonly failure: ToolFailure };
 
-async function run<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<Call<Static<T['outputSchema']>>> {
+export async function run<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<Call<Static<T['outputSchema']>>> {
 	const r: TypedToolResult<Static<T['outputSchema']>> = await callTool(tool, input, deps);
 	return r.success ? { ok: true, data: r.data } : { ok: false, toolId: tool.id, failure: r.error };
 }

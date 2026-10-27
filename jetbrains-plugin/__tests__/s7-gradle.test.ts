@@ -45,3 +45,7 @@ const LONG = { timeout: 600_000 };
 test('SettingsWriteGatewayTest: Saved(restartRequired) and Rejected(reason, detail) from config-write', LONG, () => {
 	junitCase('daemon.SettingsWriteGatewayTest', 'Saved(restartRequired) and Rejected(reason, detail) from config-write');
 });
+
+test("UnixSocketDaemonRpcParseTest: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged", LONG, () => {
+	junitCase('daemon.UnixSocketDaemonRpcParseTest', "parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged");
+});

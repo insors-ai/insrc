@@ -792,6 +792,14 @@ interface DaemonGateway {
  */
 interface DaemonRpc {
     fun call(method: String, params: Map<String, Any?>): DaemonResult
+
+    /**
+     * As [call], but with [resultErrorIsFailure] false a non-empty `result.error` stays
+     * in [DaemonResult.data] instead of making the reply `ok=false` — for a request whose
+     * answer carries its own `error` field (models.check's ModelCheckResult). A top-level
+     * error still fails. The default ignores the flag, so a fake keeps working.
+     */
+    fun call(method: String, params: Map<String, Any?>, resultErrorIsFailure: Boolean): DaemonResult = call(method, params)
 }
 
 /**

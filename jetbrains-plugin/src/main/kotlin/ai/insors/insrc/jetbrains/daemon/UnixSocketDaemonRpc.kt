@@ -37,7 +37,9 @@ class UnixSocketDaemonRpc(
     private val log = logger<UnixSocketDaemonRpc>()
     private val ids = AtomicLong(0)
 
-    override fun call(method: String, params: Map<String, Any?>): DaemonResult {
+    override fun call(method: String, params: Map<String, Any?>): DaemonResult = call(method, params, resultErrorIsFailure = true)
+
+    override fun call(method: String, params: Map<String, Any?>, resultErrorIsFailure: Boolean): DaemonResult {
         val request = JsonObject().apply {
             addProperty("jsonrpc", "2.0")
             addProperty("id", ids.incrementAndGet())
@@ -60,7 +62,7 @@ class UnixSocketDaemonRpc(
                 throw DaemonUnavailableException("unix domain sockets unsupported on this platform", e)
             }
 
-        return parse(reply)
+        return parse(reply, resultErrorIsFailure)
     }
 
     private fun readLine(channel: SocketChannel): String {
@@ -101,8 +103,10 @@ class UnixSocketDaemonRpc(
      *     structured error would read as an empty success and (for
      *     workflow.pending) render as "nothing awaiting review" — the exact
      *     silent-empty-list the feature forbids (S001 / ac2).
+     *     With [resultErrorIsFailure] false (a caller whose answer has its own
+     *     `error` field, e.g. models.check) the object is returned whole instead.
      */
-    internal fun parse(reply: String): DaemonResult {
+    internal fun parse(reply: String, resultErrorIsFailure: Boolean = true): DaemonResult {
         if (reply.isBlank()) {
             log.warn("insrc: empty daemon reply")
             return DaemonResult(ok = false, error = "empty daemon reply")
@@ -130,7 +134,7 @@ class UnixSocketDaemonRpc(
         // Structured failure convention: a non-empty string `result.error`.
         val structuredError = result.get("error")
             ?.takeIf { it.isJsonPrimitive }?.asString?.takeIf { it.isNotEmpty() }
-        if (structuredError != null) {
+        if (structuredError != null && resultErrorIsFailure) {
             return DaemonResult(ok = false, error = structuredError)
         }
 

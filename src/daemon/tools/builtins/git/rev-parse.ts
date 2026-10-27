@@ -9,6 +9,7 @@ import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import type { ToolDeps, ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
+import { parseOutput } from './parsers.js';
 import { GitRevParseDataSchema } from './schemas.js';
 import type { GitRevParseData } from './schemas.js';
 
@@ -50,7 +51,9 @@ export const gitRevParseTool = {
 
     const read = await readGit('git_rev_parse', argv, cwd, 10_000, deps?.signal);
     if (!read.ok) { return read.failure; }
-    const values = read.r.stdout.split('\n').filter(l => l !== '');
+    const parsed = parseOutput('git_rev_parse', read.r, raw => raw.split('\n').filter(l => l !== ''));   // a cut capture is a failure
+    if (!parsed.ok) { return parsed.failure; }
+    const values = parsed.value;
     const data: GitRevParseData = { values };
     return { output: values.join('\n') || '(nothing)', format: 'text', success: true, data };
   },

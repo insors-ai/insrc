@@ -6,6 +6,7 @@ import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
+import { parseOutput } from './parsers.js';
 import { GitHashObjectDataSchema } from './schemas.js';
 import type { GitHashObjectData } from './schemas.js';
 
@@ -25,7 +26,9 @@ export const gitHashObjectTool = {
     assertSafeArg(path, 'path');
     const read = await readGit('git_hash_object', ['git', 'hash-object', '--', path], cwd, 15_000);
     if (!read.ok) { return read.failure; }
-    const sha = read.r.stdout.trim();
+    const cut = parseOutput('git_hash_object', read.r, raw => raw.trim());   // a cut capture is a failure, before the name check
+    if (!cut.ok) { return cut.failure; }
+    const sha = cut.value;
     if (!/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/.test(sha)) { return rejectInput('git_hash_object', `git printed no object name: ${JSON.stringify(sha.slice(0, 80))}`); }
     const data: GitHashObjectData = { sha };
     return { output: sha, format: 'text', success: true, data };

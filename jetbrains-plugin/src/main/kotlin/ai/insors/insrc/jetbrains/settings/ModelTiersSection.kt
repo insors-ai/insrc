@@ -3,8 +3,10 @@ package ai.insors.insrc.jetbrains.settings
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
+import ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.ui.JBColor
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -20,26 +22,30 @@ import javax.swing.JList
 import javax.swing.JPanel
 
 /**
- * The global model-tiers sub-section (Epic ba132c185fe45860 / S004), plugged into
- * the sc3 [SettingsSection] seam. A thin Swing shell of one row per tier — a runner
- * (provider) chooser + a provider-filtered, NON-editable model dropdown (k4) — plus
- * a shared Refresh button, bound to the pure [ModelTiersModel]. All the k7 logic
- * (dropdown / empty+Refresh / '(current, not in catalog)' / clear-on-switch /
- * idempotent no-op) lives in the model; this shell only renders + pushes edits +
- * applies via sc2 (config.write). It imports no cloud/HTTP client and reaches the
- * daemon only through the injected [gateway] (k1/k3).
+ * The global model-tiers sub-section (Epic ba132c185fe45860 / S004; Epic
+ * ce99b72065d03b1b, Story s7), plugged into the sc3 [SettingsSection] seam. A thin Swing
+ * shell of one row per tier — a runner chooser, a NON-editable model dropdown and an
+ * effort dropdown, all filled from the daemon's model definitions through the pure
+ * [ModelTiersModel] — plus a shared Refresh button. It reaches the daemon only through
+ * the injected [gateway] and keeps no runner, model or effort list of its own.
  *
- * [apply] runs OFF the EDT (the host's modal ProgressManager block): it touches only
- * the model + [gateway] (no Swing), so no EDT/data race. It throws
- * [ConfigurationException] listing the tiers whose write was not Saved, preserving
- * their pending intent. [Refresh] re-queries every provider off the EDT and re-seeds
- * the combos (the model list is never fetched on the EDT).
+ * When the definitions cannot be read the section shows the classified failure and no
+ * editable rows; Refresh re-reads them off the EDT. [apply] runs OFF the EDT (the host's
+ * modal ProgressManager block): it touches only the model + [gateway] (no Swing). Each
+ * changed tier is written whole; a tier the model refuses to save (an unlisted or
+ * missing model) or the daemon refuses keeps its pending edit, and [apply] throws
+ * [ConfigurationException] naming it with the reason and the daemon's detail.
  */
 class ModelTiersSection(
-    private val model: ModelTiersModel,
+    private val catalog: SettingsCatalogDto,
+    initial: ModelDefinitionsResult,
     private val gateway: DaemonGateway,
 ) : SettingsSection {
 
+    private var model: ModelTiersModel? = (initial as? ModelDefinitionsResult.Loaded)?.let { ModelTiersModel(catalog, it.definitions) }
+    private var status: String? = (initial as? ModelDefinitionsResult.Failed)?.failure?.text
+
+    private val body = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
     private val rowRefreshers = mutableListOf<() -> Unit>()
     private var suppressEdits = false
 
@@ -49,176 +55,192 @@ class ModelTiersSection(
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
         panel.border = BorderFactory.createTitledBorder(title)
-        rowRefreshers.clear()
-        for (tier in ModelTiersModel.TIERS) panel.add(tierRow(tier))
+        body.alignmentX = Component.LEFT_ALIGNMENT
+        rebuildBody()
+        panel.add(body)
         panel.add(refreshRow())
         return panel
     }
 
-    override fun isModified(): Boolean = model.isModified()
+    override fun isModified(): Boolean = model?.isModified() ?: false
 
     override fun reset() {
-        model.revert()
+        model?.revert()
         reseedUnderGuard()
     }
 
     /**
-     * Persist the dirty tier runner/model edits via sc2, grouped per tier. Runs OFF
-     * the EDT (host modal block). A tier's baseline is advanced (onSaved) only when
-     * ALL of its writes Saved; a tier with any failure keeps its pending intent.
-     * Throws ConfigurationException naming the failed tiers.
+     * Persist the changed tiers via sc2, one whole-tier write each. Runs OFF the EDT (host
+     * modal block). A tier's baseline is advanced (onSaved) only when its write Saved; a
+     * refused or failed tier keeps its pending edit. Throws ConfigurationException naming
+     * the failed tiers.
      */
     override fun apply() {
-        val failuresByTier = LinkedHashMap<String, MutableList<String>>()
-        val touched = LinkedHashSet<String>()
-        for (pw in model.collectWrites()) {
-            val tier = pw.segments[2] // ["models","tiers",tier,leaf]
-            touched.add(tier)
+        val m = model ?: return
+        val failuresByTier = LinkedHashMap<String, String>()
+        for ((tier, reason) in m.unsavable()) failuresByTier[tier] = reason
+        for (pw in m.collectWrites()) {
+            val tier = pw.segments[2] // ["models","tiers",tier]
             val result = when (val op = pw.op) {
                 is WriteOp.Set -> gateway.writeSetting(pw.segments, op.value)
                 WriteOp.Clear -> gateway.clearSetting(pw.segments)
             }
             when (result) {
-                is SaveResult.Saved -> {}
-                is SaveResult.Rejected -> failuresByTier.getOrPut(tier) { mutableListOf() }.add(result.message)
-                is SaveResult.Unavailable -> failuresByTier.getOrPut(tier) { mutableListOf() }.add(result.reason)
+                is SaveResult.Saved -> m.onSaved(tier)
+                is SaveResult.Rejected -> failuresByTier[tier] = result.message
+                is SaveResult.Unavailable -> failuresByTier[tier] = result.reason
             }
         }
-        for (tier in touched) {
-            if (!failuresByTier.containsKey(tier)) model.onSaved(tier)
-        }
         if (failuresByTier.isNotEmpty()) {
-            val lines = failuresByTier.entries.map { (tier, reasons) -> "$tier: ${reasons.joinToString("; ")}" }
+            val lines = failuresByTier.entries.map { (tier, reason) -> "$tier: $reason" }
             throw ConfigurationException("Some model-tier settings could not be saved:\n" + lines.joinToString("\n"))
         }
     }
 
     // --- rendering ------------------------------------------------------------
 
-    private fun tierRow(tier: String): JComponent {
+    /** The rows for a loaded model, or the failure message; called on the EDT. */
+    private fun rebuildBody() {
+        body.removeAll()
+        rowRefreshers.clear()
+        status?.let { text ->
+            body.add(JLabel(text).apply {
+                foreground = JBColor.RED
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+        }
+        model?.let { m -> for (tier in ModelTiersModel.TIERS) body.add(tierRow(m, tier)) }
+        body.revalidate()
+        body.repaint()
+    }
+
+    private fun tierRow(m: ModelTiersModel, tier: String): JComponent {
+        val block = JPanel()
+        block.layout = BoxLayout(block, BoxLayout.Y_AXIS)
+        block.alignmentX = Component.LEFT_ALIGNMENT
+
         val row = JPanel(BorderLayout())
         row.alignmentX = Component.LEFT_ALIGNMENT
         row.add(JLabel(tier), BorderLayout.WEST)
 
         val controls = JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0))
 
-        val runnerCombo = JComboBox(model.runnerOptions().toTypedArray())
-        runnerCombo.selectedItem = model.currentRunner(tier)
+        val runnerCombo = JComboBox(m.runnerOptions().toTypedArray())
+        runnerCombo.isEditable = false
+        runnerCombo.renderer = labelRenderer { (it as? String)?.let(m::runnerLabel) ?: "" }
 
         val modelCombo = JComboBox<ModelChoice>()
         modelCombo.isEditable = false // dropdown-only (k4): no free-text model entry.
-        modelCombo.renderer = object : DefaultListCellRenderer() {
-            override fun getListCellRendererComponent(
-                list: JList<*>?,
-                value: Any?,
-                index: Int,
-                isSelected: Boolean,
-                cellHasFocus: Boolean,
-            ): Component {
-                val text = (value as? ModelChoice)?.label ?: ""
-                return super.getListCellRendererComponent(list, text, index, isSelected, cellHasFocus)
-            }
-        }
-        seedModelCombo(modelCombo, tier)
+        modelCombo.renderer = labelRenderer { (it as? ModelChoice)?.label ?: "" }
 
-        // The tier's reasoning effort, shown only when the daemon's catalog declares it.
-        val efforts = model.effortOptions(tier)
-        val effortCombo = JComboBox(efforts.toTypedArray())
+        val effortCombo = JComboBox<String>()
         effortCombo.isEditable = false
-        effortCombo.renderer = object : DefaultListCellRenderer() {
-            override fun getListCellRendererComponent(
-                list: JList<*>?,
-                value: Any?,
-                index: Int,
-                isSelected: Boolean,
-                cellHasFocus: Boolean,
-            ): Component {
-                val text = (value as? String)?.ifEmpty { "CLI default" } ?: ""
-                return super.getListCellRendererComponent(list, text, index, isSelected, cellHasFocus)
-            }
-        }
+        effortCombo.renderer = labelRenderer { (it as? String)?.ifEmpty { "CLI default" } ?: "" }
         effortCombo.toolTipText = "Reasoning effort passed to the tier's CLI"
-        effortCombo.selectedItem = model.currentEffort(tier)
-        effortCombo.addActionListener {
-            if (suppressEdits) return@addActionListener
-            val sel = effortCombo.selectedItem as? String ?: return@addActionListener
-            model.selectEffort(tier, sel)
+
+        val note = JLabel().apply {
+            foreground = JBColor.GRAY
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+
+        // Fill the three combos and the note from the model (the caller guards edits).
+        val seed = {
+            runnerCombo.selectedItem = m.currentRunner(tier)
+            modelCombo.removeAllItems()
+            for (choice in m.modelOptions(tier)) modelCombo.addItem(choice)
+            modelCombo.selectedItem = m.selectedModelChoice(tier)
+            effortCombo.removeAllItems()
+            for (effort in m.effortOptions(tier)) effortCombo.addItem(effort)
+            effortCombo.selectedItem = m.currentEffort(tier)
+            val text = m.note(tier)
+            note.text = text ?: ""
+            note.isVisible = text != null
         }
 
         runnerCombo.addActionListener {
             if (suppressEdits) return@addActionListener
             val sel = runnerCombo.selectedItem as? String ?: return@addActionListener
-            model.selectRunner(tier, sel)
-            // A provider switch clears + re-filters the model combo (ac4).
-            reseedModelUnderGuard(modelCombo, tier)
+            // A runner switch takes the family's default model and effort.
+            m.selectRunner(tier, sel)
+            underGuard(seed)
         }
         modelCombo.addActionListener {
             if (suppressEdits) return@addActionListener
-            when (val sel = modelCombo.selectedItem) {
-                is ModelChoice.Model -> model.selectModel(tier, sel.id)
-                // A sentinel / current-not-in-catalog is non-selectable: re-seed to the
-                // model's own selection so the pending state is unchanged.
-                else -> reseedModelUnderGuard(modelCombo, tier)
-            }
+            // A sentinel / current-not-listed marker is non-selectable: re-seeding restores the model's selection.
+            (modelCombo.selectedItem as? ModelChoice.Model)?.let { m.selectModel(tier, it.id) }
+            underGuard(seed)
+        }
+        effortCombo.addActionListener {
+            if (suppressEdits) return@addActionListener
+            val sel = effortCombo.selectedItem as? String ?: return@addActionListener
+            m.selectEffort(tier, sel)
         }
 
-        rowRefreshers.add {
-            runnerCombo.selectedItem = model.currentRunner(tier)
-            seedModelCombo(modelCombo, tier)
-            effortCombo.selectedItem = model.currentEffort(tier)
-        }
+        underGuard(seed)
+        rowRefreshers.add(seed)
 
         controls.add(runnerCombo)
         controls.add(modelCombo)
-        if (efforts.isNotEmpty()) controls.add(effortCombo)
+        controls.add(effortCombo)
         row.add(controls, BorderLayout.EAST)
         row.maximumSize = Dimension(Int.MAX_VALUE, row.preferredSize.height)
-        return row
+        block.add(row)
+        block.add(note)
+        return block
+    }
+
+    private fun labelRenderer(text: (Any?) -> String) = object : DefaultListCellRenderer() {
+        override fun getListCellRendererComponent(
+            list: JList<*>?,
+            value: Any?,
+            index: Int,
+            isSelected: Boolean,
+            cellHasFocus: Boolean,
+        ): Component = super.getListCellRendererComponent(list, text(value), index, isSelected, cellHasFocus)
     }
 
     private fun refreshRow(): JComponent {
         val row = JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0))
         row.alignmentX = Component.LEFT_ALIGNMENT
         val refresh = JButton("Refresh").apply {
-            toolTipText = "Re-query the daemon for each provider's available models"
-            addActionListener { refreshLists() }
+            toolTipText = "Re-read the daemon's model definitions"
+            addActionListener { refreshDefinitions() }
         }
         row.add(refresh)
         row.maximumSize = Dimension(Int.MAX_VALUE, row.preferredSize.height)
         return row
     }
 
-    /** Re-read the daemon's model definitions off the EDT, update the model, and re-seed the combos. */
-    private fun refreshLists() {
+    /**
+     * Re-read the daemon's model definitions off the EDT. Loaded: the model is built (or
+     * updated, keeping pending edits) and the failure cleared. Failed: the failure is shown;
+     * a model already loaded stays editable.
+     */
+    private fun refreshDefinitions() {
         var fresh: ModelDefinitionsResult? = null
         ProgressManager.getInstance().runProcessWithProgressSynchronously({
             fresh = gateway.modelDefinitions()
         }, "Refreshing the model definitions…", false, null)
-        (fresh as? ModelDefinitionsResult.Loaded)?.let { model.updateDefinitions(it.definitions) }
-        reseedUnderGuard()
+        when (val r = fresh) {
+            is ModelDefinitionsResult.Loaded -> {
+                val m = model
+                if (m == null) model = ModelTiersModel(catalog, r.definitions) else m.updateDefinitions(r.definitions)
+                status = null
+            }
+            is ModelDefinitionsResult.Failed -> status = r.failure.text
+            null -> status = "the model definitions could not be read"
+        }
+        underGuard(::rebuildBody)
     }
 
-    private fun seedModelCombo(combo: JComboBox<ModelChoice>, tier: String) {
-        combo.removeAllItems()
-        for (choice in model.modelOptions(tier)) combo.addItem(choice)
-        combo.selectedItem = model.selectedModelChoice(tier)
-    }
-
-    private fun reseedModelUnderGuard(combo: JComboBox<ModelChoice>, tier: String) {
+    private fun underGuard(action: () -> Unit) {
         suppressEdits = true
         try {
-            seedModelCombo(combo, tier)
+            action()
         } finally {
             suppressEdits = false
         }
     }
 
-    private fun reseedUnderGuard() {
-        suppressEdits = true
-        try {
-            for (refresh in rowRefreshers) refresh()
-        } finally {
-            suppressEdits = false
-        }
-    }
+    private fun reseedUnderGuard() = underGuard { for (refresh in rowRefreshers) refresh() }
 }

@@ -63,3 +63,9 @@ test("ModelTiersModelTest: choices exactly from a fake definitions answer, curre
 test('ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused', LONG, () => {
 	junitCase('settings.ModelTiersModelTest', 'runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused');
 });
+
+test('ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh', LONG, () => {
+	junitCase('settings.ModelTiersWiringSourceScanTest', 'no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh');
+	junitCase('settings.ModelTiersWiringSourceScanTest', "apply writes whole tiers and keeps a failed tier's pending edit with the reason and detail");
+	junitCase('settings.ModelTiersWiringSourceScanTest', 'the section and the pure model import no cloud or HTTP client and reach the daemon only via the gateway');
+});

@@ -215,18 +215,15 @@ class InsrcSettingsConfigurable : Configurable {
             sections.clear()
             tableModels.clear()
 
-            // S004: the dedicated Model-tiers section over the pure ModelTiersModel + the
-            // pre-fetched per-provider lists. Registered first so it heads the sub-sections.
+            // The dedicated Model-tiers section over the daemon's model definitions (Epic
+            // ce99b72065d03b1b s7); a failed read shows its message in the section, with
+            // Refresh. Registered first so it heads the sub-sections.
+            sections.add(ModelTiersSection(fullCatalog, definitions, gateway))
+
             // Build the override sub-sections (unchanged S004/S005 wiring); a section
             // is registered only when its read is Loaded. Unavailable reads become a
             // placeholder note under the tree rather than a node.
             val placeholders = mutableListOf<String>()
-            when (definitions) {
-                is ModelDefinitionsResult.Loaded ->
-                    sections.add(ModelTiersSection(ModelTiersModel(fullCatalog, definitions.definitions), gateway))
-                is ModelDefinitionsResult.Failed ->
-                    placeholders.add("Model tiers are unavailable — ${definitions.failure.text}")
-            }
             when (overrides) {
                 is PerRoleOverridesResult.Loaded -> sections.add(
                     PerRoleSection(PerRoleOverridesModel(catalog.roles, catalog.tierNames, overrides.overrides), gateway),

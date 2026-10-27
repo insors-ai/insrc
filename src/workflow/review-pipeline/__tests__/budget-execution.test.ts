@@ -83,7 +83,7 @@ test('successful failed and cancelled calls have exactly one content-free termin
 	}
 });
 
-test('effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced', async () => {
+test('effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced', async t => {
 	const { profile, adapter, job } = fixture();
 	assert.equal(new ReviewStreamError('timeout', 'wait', 'ceiling').timeoutKind, 'external-review-transport');
 	assert.equal(new ReviewStreamError('timeout', 'wait', 'idle').timeoutKind, 'external-review-idle');
@@ -117,4 +117,15 @@ test('effective attempt timer remaining-time clamp and transport-ceiling diagnos
 	assert.equal(deterministicSignal?.aborted, true, 'deadline cancels deterministic tool waits');
 	await assert.rejects(runReviewJob(limited, adapter, provider, { onCallEvent: e => events.push(e) }), e => (e as { timeoutKind: string }).timeoutKind === 'review-attempt');
 	assert.equal(events.at(-1)?.errorCode, 'attempt-timeout');
+	// Production initial deterministic path: no invented model budget, but no unbounded local wait.
+	const deterministic = createReviewJob(blocked, 'daemon', job.snapshot, 384000, { budgetPolicy: job.budgetPolicy });
+	assert.equal(deterministic.deadlineAt, undefined);
+	assert.equal(deterministic.workUnits.length, 0);
+	t.mock.timers.enable({ apis: ['setTimeout'] });
+	const stalled = runReviewJob(deterministic, blocked, provider);
+	t.mock.timers.tick(600_001);
+	await assert.rejects(stalled, e => (e as { timeoutKind: string }).timeoutKind === 'review-stage');
+	t.mock.timers.reset();
+	assert.equal(deterministicSignal?.aborted, true);
+
 });

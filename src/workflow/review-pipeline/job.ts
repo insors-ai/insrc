@@ -106,6 +106,7 @@ export function createReviewJob(
 		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], relationPlan: {}, gatherLevels: {}, contextReduced: {}, notes: [], noteProvenance: {}, notJudged: [],
 		issuedHashes: [], counts: { single: 0, chunk: 0, reduce: 0, obligation: 0, relation: 0, merge: 0 },
 		materialHash: materialHash(adapter.material()), seq: 0, workSeq: 0, workUnits: [],
+		...(stages.some(stage => stage.kind === 'model') ? { executionStartedAt: opts.now ?? Date.now() } : {}),
 	};
 	return enterStage(job, adapter, 0, opts.now ?? Date.now());
 }
@@ -418,8 +419,11 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 	throwIfAborted(opts.signal);
 	const deadlineController = new AbortController();
 	const signal = opts.signal === undefined ? deadlineController.signal : AbortSignal.any([opts.signal, deadlineController.signal]);
-	const remaining = job.deadlineAt === undefined ? undefined : job.deadlineAt - (opts.now?.() ?? Date.now());
-	const timer = remaining === undefined ? undefined : setTimeout(() => deadlineController.abort(), remaining);
+	const stageStartedAt = opts.now?.() ?? Date.now();
+	// Deterministic-only jobs grant zero model work, but their local/tool wait still has a bounded watchdog.
+	const remaining = job.deadlineAt === undefined ? REVIEW_WORK_UNIT_MS : job.deadlineAt - stageStartedAt;
+	const stageTimeout = (): Error => job.deadlineAt === undefined ? Object.assign(new ReviewSessionTimeoutError(remaining), { timeoutKind: 'review-stage', limitMs: remaining }) : deadlineError(job, adapter);
+	const timer = setTimeout(() => deadlineController.abort(), remaining);
 	let output: unknown;
 	let next = job;
 	try {
@@ -427,7 +431,7 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 		output = await untilAborted(stage.run(job.outputs, job.snapshot, signal), signal);
 	} catch (err) {
 		throwIfAborted(opts.signal);
-		if (deadlineController.signal.aborted) throw deadlineError(job, adapter);
+		if (deadlineController.signal.aborted) throw stageTimeout();
 		if (err instanceof Error && err.name === 'AbortError') throw err;
 		const detail = err instanceof Error ? err.message : String(err);
 		if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, 'stage-error', detail);
@@ -438,6 +442,7 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 	}
 	throwIfAborted(opts.signal);
 	const completedAt = opts.now?.() ?? Date.now();
+	if (completedAt >= stageStartedAt + remaining) throw stageTimeout();
 	assertDeadline(job, adapter, completedAt);
 	return commit(next, adapter, stage, output, completedAt);
 }

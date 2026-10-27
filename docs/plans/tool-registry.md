@@ -470,7 +470,8 @@ s7 t1 to t11 are built and gated; t12 is this note. Tasks passed the build gate 
 **Hand-over**
 - **s9** builds the sending side of the shared deadline signal (`src/workflow/team/policy-refresh.ts` and `git-async.ts`) and moves the workflow-library and daemon sites; s7 only made the git tools honour `deps.signal` and the remaining time.
 - **s10** moves the tracker, `src/cli/services/workflow.ts` and the remaining callers, deletes the old wrappers (`workflow/tracker/github.ts`, the direct spawns), and switches the scan to failing mode (`--fail`).
-- The DEF still needs its s7 revision (title, size L, five criteria; user's option 3); the HLD keeps the whole-cutover text.
+- The DEF's s7 revision (title, size L, five criteria; user's option 3) is done: DEF revision 5, written by hand and approved with an override on 2026-10-27 (the define workflow has no revise path). The HLD keeps the whole-cutover text.
+- s7 BUILD approved with an override on 2026-10-27: its daemon code review could not run because `gh-tracker-family.test.ts` needs a 391043-character review prompt against the 384000 limit (a future story with a test file this large hits the same limit).
 
 **Decisions and known gaps**
 - **t4 override (user, 2026-10-27, "option 1"):** the `child_process` inventory test exempts test code, which is the LLD's meaning; the build gate read the acceptance text as "any file". The BUILD approval carries this as an override reason.

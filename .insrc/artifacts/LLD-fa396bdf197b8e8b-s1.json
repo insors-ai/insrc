@@ -85,6 +85,13 @@
         "choice": "Use the confirmed LLD baseline",
         "rationale": "Same decision the user gave on 2026-10-27 for the earlier wording: LLD ac1 to ac9 govern acceptance; the Story record stays without criteria.",
         "resolvedAt": "2026-10-27T07:40:34.059Z"
+      },
+      "qb61bbcfb": {
+        "question": "Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent and the user's decision on the watcher; the user confirmed this basis on 2026-10-27.",
+        "status": "resolved",
+        "choice": "Proceed with the confirmed basis",
+        "rationale": "Same decision the user gave on 2026-10-27 for the earlier wording: the approved issue's fix intent and the user's watcher decision are the scoring basis; the audit stays graded partial.",
+        "resolvedAt": "2026-10-27T07:41:12.085Z"
       }
     }
   },

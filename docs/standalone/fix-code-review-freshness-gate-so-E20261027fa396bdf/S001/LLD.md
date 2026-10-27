@@ -369,6 +369,8 @@ On a create event for a directory with subdirectories, the Watcher unsubscribes 
 
 - `qfa21e2bd` — Graded partial in the audit (ts1): the Story record has no acceptance criteria; ac1 to ac9 were written in this LLD from the approved issue, the review rounds and the user's decision to bring the watcher into scope. The user confirmed the LLD as the acceptance baseline on 2026-10-27.
   - **resolved**: Use the confirmed LLD baseline — Same decision the user gave on 2026-10-27 for the earlier wording: LLD ac1 to ac9 govern acceptance; the Story record stays without criteria. _(2026-10-27T07:40:34.059Z)_
+- `qb61bbcfb` — Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent and the user's decision on the watcher; the user confirmed this basis on 2026-10-27.
+  - **resolved**: Proceed with the confirmed basis — Same decision the user gave on 2026-10-27 for the earlier wording: the approved issue's fix intent and the user's watcher decision are the scoring basis; the audit stays graded partial. _(2026-10-27T07:41:12.085Z)_
 
 ## Citations
 

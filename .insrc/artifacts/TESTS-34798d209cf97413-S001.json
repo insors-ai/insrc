@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T08:43:16.365Z",
+    "updatedAt": "2026-10-27T08:48:00.264Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -777,6 +777,139 @@
               },
               {
                 "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "deedc5f2c",
+        "ranAt": "2026-10-27T08:48:00.264Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-LARGE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-FACTORY-LIMIT",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts",
+                "title": "DIFF-FACTORY-LIMIT: all five model and two deterministic factories share the provider cap through preparation and dispatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-FITS-ONE-CALL",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts",
+                "title": "DIFF-FITS-ONE-CALL: fragmented quality still validates notes and gathers the parent when all input fits one primary call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-TIME-PLAN",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts",
+                "title": "DIFF-TIME-PLAN: the runner prepares all effective dimensions before execution and uses the identical prepared jobs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1098,
+            "titles": [
+              {
+                "title": "DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 560,
+            "titles": [
+              {
+                "title": "DIFF-FITS-ONE-CALL: fragmented quality still validates notes and gathers the parent when all input fits one primary call",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PARENT-QUALITY: missing, duplicate, foreign and mismatched fragment notes cannot complete a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PARENT-QUALITY: bounded reduction preserves separate fragment facts for parent-only correctness judgment",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 533,
+            "titles": [
+              {
+                "title": "DIFF-FACTORY-LIMIT: all five model and two deterministic factories share the provider cap through preparation and dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-PLAN: the runner prepares all effective dimensions before execution and uses the identical prepared jobs",
                 "result": "pass"
               }
             ],

@@ -156,8 +156,24 @@ export interface ChangedSymbolSummary {
 /** How far the graph and the Story's test record show a symbol is exercised. */
 export type CoverageEvidence = 'reached-passing' | 'reached-not-passing' | 'no-edge-story-tests-pass' | 'no-edge-no-tests';
 
+/** Frozen root budget measured from admission through grounding/preparation and execution. */
+export interface ReviewTimingPlan {
+ readonly startedAt: number;
+ readonly budgetMs: number;
+ readonly deadlineAt: number;
+ readonly chunkCount: number;
+ readonly dimensions: readonly {
+  readonly dimension: ReviewDimension;
+  readonly primaryChunkCount: number;
+  readonly primaryChunkIds: readonly string[];
+  readonly budgetMs: number;
+ }[];
+}
+
 /** What every judge slot is told about the run (ISSUE-b47dadc7). */
 export interface JudgeContext {
+ readonly timing?: ReviewTimingPlan | undefined;
+ readonly now?: (() => number) | undefined;
 	/** 'degraded' when the grounding is the diff, not the graph. */
 	readonly groundingMode: 'full' | 'degraded';
 	/** The review's snapshot, taken once by runCodeReview (Epic 8315a11f); absent: the judge takes it. */

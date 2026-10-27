@@ -45,6 +45,7 @@ import type {
 	DimensionResult,
 	JudgeContext,
 	ReviewDimension,
+ ReviewTimingPlan,
 } from './types.js';
 import { CODE_REVIEW_SCHEMA_VERSION } from './types.js';
 import { assembleCodeReviewGrounding, realGroundingDeps } from './grounding.js';
@@ -57,6 +58,7 @@ import { judgeDiagram, prepareDiagram } from './dimensions/diagram/index.js';
 import { judgeUx, prepareUx } from './dimensions/ux/index.js';
 import { computeExpectedDimensions } from './expected-dimensions.js';
 import { codeReviewSnapshot, executeDimensionJob, type PreparedDimensionReview } from '../review-pipeline/code-review.js';
+import { assertReviewTime, createReviewTimingPlan } from '../review-pipeline/timing.js';
 import type { Party } from '../review/party.js';
 
 const log = getLogger('code-review:runner');
@@ -97,6 +99,7 @@ export interface CodeReviewRunnerDeps {
 /** Run options — mirrors workflow-rpc's run opts. `modelLabel` is the resolved
  *  high-tier label stamped on meta; `onProgress` emits CodeReviewProgress frames. */
 export interface RunCodeReviewOpts {
+ readonly now?: (() => number) | undefined;
 	readonly runId:       string;
 	readonly modelLabel:  string;
 	readonly signal?:     AbortSignal | undefined;
@@ -121,9 +124,10 @@ export interface RunCodeReviewOpts {
 
 /** Incremental progress frame streamed through `onProgress`. */
 export interface CodeReviewProgress {
-	readonly phase:      'grounding' | 'dimension-start' | 'call' | 'dimension-done' | 'finalize' | 'done' | 'error';
+	readonly phase:      'grounding' | 'timing' | 'dimension-start' | 'call' | 'dimension-done' | 'finalize' | 'done' | 'error';
 	readonly dimension?: ReviewDimension | undefined;
 	readonly detail?:    string | undefined;
+ readonly timing?: ReviewTimingPlan | undefined;
 }
 
 /** The shipped judges, in fixed evaluation order. The trailing conditionals —
@@ -178,7 +182,8 @@ export async function runCodeReview(
 	opts:     RunCodeReviewOpts,
 	deps:     CodeReviewRunnerDeps = DEFAULT_DEPS,
 ): Promise<CodeReviewOutcome> {
-	const startedAtMs = Date.now();
+	const now = opts.now ?? Date.now;
+ const startedAtMs = now();
 	const emit = (f: CodeReviewProgress): void => opts.onProgress?.(f);
 
 	try {
@@ -196,13 +201,16 @@ export async function runCodeReview(
 		// One snapshot for the whole review (Epic 8315a11f): the grounding and every
 		// companion file's existence, taken now; no judge reads the disk afterwards.
 		const groundingMode = opts.groundingMode ?? 'full';
-		const ctx: JudgeContext = { groundingMode, snapshot: codeReviewSnapshot(subject, grounding, groundingMode), signal: opts.signal };
+		const ctx: JudgeContext = { groundingMode, snapshot: codeReviewSnapshot(subject, grounding, groundingMode), signal: opts.signal, now };
 		const prepared = new Map<JudgeSlot, PreparedDimensionReview>();
   for (const slot of judges) {
    if (opts.signal?.aborted) return fail('aborted', emit);
    if ((slot.prepare === undefined) !== (slot.execute === undefined)) throw new Error(`Incomplete preparation contract for ${slot.dimension}`);
    if (slot.prepare !== undefined) prepared.set(slot, slot.prepare(subject, grounding, provider, ctx));
   }
+  const timing = createReviewTimingPlan([...prepared.values()], startedAtMs);
+  assertReviewTime(timing, now());
+  emit({ phase: 'timing', timing });
   const dimensions: DimensionResult[] = [];
 		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);
@@ -213,7 +221,7 @@ export async function runCodeReview(
 				emit({ phase: 'call', dimension: slot.dimension, detail: `${call.stage} ${call.role} #${++calls}` });
 			const ready = prepared.get(slot);
    const result = ready !== undefined && slot.execute !== undefined
-    ? await slot.execute(ready, provider, { ...ctx, onCall })
+    ? await slot.execute(ready, provider, { ...ctx, timing, onCall })
     : await slot.judge(subject, grounding, provider, { ...ctx, onCall });
 			dimensions.push(result);
 			emit({ phase: 'dimension-done', dimension: slot.dimension });
@@ -298,7 +306,7 @@ function buildArtifact(
 		repoPath:      subject.repoPath,
 		createdAt:     new Date(startedAtMs).toISOString(),
 		model:         opts.modelLabel,
-		elapsedMs:     Date.now() - startedAtMs,
+		elapsedMs:     (opts.now ?? Date.now)() - startedAtMs,
 		repoIndexedAt: null,
 		schemaVersion: CODE_REVIEW_SCHEMA_VERSION,
 		epicHash:      subject.epicHash,

@@ -1,0 +1,5 @@
+Task 9 focused verification
+Node 22 TypeScript --noEmit: pass.
+Affected pipeline/dimension/runner suites: 221 tests, 218 pass, 3 gated live skips, zero failures.
+Real 1/5/20-primary plans produce exact 600000*N budgets. Tests cover five-model aggregate plus deterministic zero, frozen IDs, safe arithmetic/timer slices, delayed serial child activation, retry/redivision/gather deadline preservation, and preparation elapsed exhausting the root before dispatch.
+Dispatch cancellation enforcement is task11. Full sweep deferred to task22. Daemon validation follows commit.

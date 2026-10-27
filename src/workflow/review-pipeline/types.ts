@@ -272,7 +272,16 @@ export interface PipelineCalls {
 	readonly merge:      number;
 }
 
+export interface ReviewJobTiming {
+ readonly primaryChunkCount: number;
+ readonly budgetMs: number;
+ readonly startedAt: number;
+ readonly deadlineAt: number;
+ readonly rootDeadlineAt: number;
+}
+
 export interface ReviewPipelineJob {
+ readonly timing?: ReviewJobTiming | undefined;
 	readonly reviewId:   string;
 	readonly path:       ReviewPath;
 	readonly snapshot:   ReviewMaterialSnapshot;

@@ -35,6 +35,7 @@ import type { DimensionObligations } from './adapters/code-review-obligations.js
 import { runReviewJob } from './driver.js';
 import { getLogger } from '../../shared/logger.js';
 import { createReviewJob, immutableReviewSnapshot, pipelineCallsOf, withCorrectionNote } from './job.js';
+import { activateDimensionTiming, createReviewTimingPlan } from './timing.js';
 import { reviewLimitChars } from './limit.js';
 import { structuredLimits } from '../review/call-limits.js';
 import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
@@ -268,6 +269,8 @@ export interface PreparedDimensionReview {
  readonly adapter: ReviewAdapter<unknown>;
  readonly job: ReviewPipelineJob;
  readonly primaryChunkCount: number;
+ readonly primaryChunkIds: readonly string[];
+ readonly preparedAt: number;
  readonly subject: CodeReviewSubject;
 }
 
@@ -282,18 +285,23 @@ export function prepareDimensionJob(
  build: (snapshot: ReviewMaterialSnapshot, effectiveLimitChars: number) => ReviewAdapter<DimensionResult>,
  subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined,
 ): PreparedDimensionReview {
+ const preparedAt = (ctx?.now ?? Date.now)();
  const snapshot = immutableReviewSnapshot(ctx?.snapshot ?? codeReviewSnapshot(subject, grounding, ctx?.groundingMode ?? 'full'));
  const limit = effectiveDimensionLimit(provider, ctx?.groundingMode ?? 'full');
  const adapter = build(snapshot, limit) as unknown as ReviewAdapter<unknown>;
- const job = createReviewJob(adapter, 'daemon', snapshot, limit);
+ const job = createReviewJob(adapter, 'daemon', snapshot, limit, { now: preparedAt });
  const model = adapter.stagesFor('daemon').some(stage => stage.kind === 'model');
  const primaryChunkCount = model ? Math.max(1, job.plan.chunks.length) : 0;
+ const primaryChunkIds = Object.freeze(primaryChunkCount === 0 ? [] : job.plan.single || job.plan.chunks.length === 0 ? [`${job.dimension}:single`] : job.plan.chunks.map(c => `${job.dimension}:${c.id}`));
  logPlan('prepared', job, subject);
- return Object.freeze({ dimension: job.dimension as ReviewDimension, snapshot: job.snapshot, adapter, job, primaryChunkCount, subject });
+ return Object.freeze({ dimension: job.dimension as ReviewDimension, snapshot: job.snapshot, adapter, job, primaryChunkCount, primaryChunkIds, preparedAt, subject });
 }
 
 export async function executeDimensionJob(prepared: PreparedDimensionReview, provider: LLMProvider, ctx?: JudgeContext): Promise<DimensionResult> {
- return await runReviewJob(prepared.job, prepared.adapter, provider, { signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, prepared.subject) }) as DimensionResult;
+ const now = ctx?.now ?? Date.now;
+ const root = ctx?.timing ?? createReviewTimingPlan([prepared], prepared.preparedAt);
+ const job = activateDimensionTiming(prepared, root, now());
+ return await runReviewJob(job, prepared.adapter, provider, { now, signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, prepared.subject) }) as DimensionResult;
 }
 
 /** Compatibility entry point for callers running one dimension directly. */

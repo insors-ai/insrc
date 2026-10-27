@@ -70,19 +70,39 @@ export async function withRequestHold<T>(run: () => Promise<T>): Promise<HoldOut
 }
 
 /**
- * A background write (a timer, an indexing job): waits for maintenance, then runs under a
- * shared hold. Each wait is bounded (`timeoutMs`, so no wait is unbounded); a maintenance
- * that outlasts it is waited for again, so the work runs after it rather than failing.
+ * Background work that must not be lost (an indexing job, a settle pass, a summary job, a
+ * store publication): waits for maintenance, then runs under a shared hold. Each wait is
+ * bounded (`timeoutMs`); a maintenance that outlasts it is logged and waited for again, so
+ * the work runs after it rather than failing. Only the wait for the hold is retried: a
+ * failure of `run` itself (a lock timeout inside it included) is never retried.
  */
 export async function withBackgroundHold<T>(run: () => Promise<T>, timeoutMs: number = BACKGROUND_WAIT_MS): Promise<T> {
 	if (!enabled || holdsMaintenanceLock()) return run();
 	for (;;) {
+		let started = false;
 		try {
-			return await getLockManager().request(MAINTENANCE_LOCK, { mode: 'shared', timeoutMs }, () => run());
+			return await getLockManager().request(MAINTENANCE_LOCK, { mode: 'shared', timeoutMs }, () => { started = true; return run(); });
 		} catch (err) {
-			if (!(err instanceof LockTimeoutError)) throw err;
+			if (started || !(err instanceof LockTimeoutError)) throw err;
 			log.warn({ waitedMs: timeoutMs, holders: err.holders }, 'maintenance lock: background work still waiting for maintenance; waiting again');
 		}
+	}
+}
+
+/**
+ * A timer's periodic run (the prune sweep, the todo-retention sweep): waits for maintenance
+ * for at most `timeoutMs`, then runs under a shared hold. At the bound this tick is skipped
+ * and logged (undefined is returned); the next tick tries again.
+ */
+export async function withTimerHold<T>(run: () => Promise<T>, timeoutMs: number = BACKGROUND_WAIT_MS): Promise<T | undefined> {
+	if (!enabled || holdsMaintenanceLock()) return run();
+	let started = false;
+	try {
+		return await getLockManager().request(MAINTENANCE_LOCK, { mode: 'shared', timeoutMs }, () => { started = true; return run(); });
+	} catch (err) {
+		if (started || !(err instanceof LockTimeoutError)) throw err;
+		log.warn({ waitedMs: timeoutMs, holders: err.holders }, 'maintenance lock: a timer run waited its bound for maintenance; skipping this tick');
+		return undefined;
 	}
 }
 

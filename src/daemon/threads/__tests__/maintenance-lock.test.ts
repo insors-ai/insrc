@@ -38,8 +38,8 @@ const { closeLanceConn } = await import('../../../db/lance/conn.js');
 const { getDb, initDb } = await import('../../../db/client.js');
 const { addRepo } = await import('../../../db/repos.js');
 const { getSessionById, saveSession } = await import('../../../db/conversations.js');
-const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
-const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK, withBackgroundHold } = await import('../../../shared/locks/maintenance-lock.js');
+const { getLockManager, LockTimeoutError } = await import('../../../shared/locks/lock-manager.js');
+const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK, withBackgroundHold, withTimerHold } = await import('../../../shared/locks/maintenance-lock.js');
 const { IpcServer, directDispatch } = await import('../../server.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { runPruneSweep } = await import('../../prune-timer.js');
@@ -77,12 +77,15 @@ function holdMaintenance(activity = COMPACTION_ACTIVITY): { granted: Promise<voi
 	let isGranted = false;
 	let work: (() => Promise<void>) | undefined;
 	let workDone!: () => void;
-	const ran = new Promise<void>(r => { workDone = r; });
+	let workFailed!: (err: unknown) => void;
+	const ran = new Promise<void>((r, j) => { workDone = r; workFailed = j; });
 	const done = getLockManager().request(MAINTENANCE_LOCK, { mode: 'exclusive', metadata: { activity, reason: REASON }, timeoutMs: 120_000 }, async () => {
 		isGranted = true;
 		grant();
 		await gate;
-		if (work !== undefined) { await work(); workDone(); }
+		if (work !== undefined) {
+			try { await work(); workDone(); } catch (err) { workFailed(err); throw err; }
+		}
 	});
 	return {
 		granted, isGranted: () => isGranted, done,
@@ -533,4 +536,36 @@ test('background work that is still waiting when its bounded wait runs out waits
 	await work;
 	assert.equal(failed, undefined);
 	assert.equal(ran, true, 'the background work ran after maintenance');
+});
+
+test("a timer run that is still waiting for maintenance at its bound skips this tick (undefined) without running; one that gets the hold runs", { timeout: 30_000 }, async () => {
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	let ran = 0;
+	try {
+		assert.equal(await withTimerHold(async () => { ran++; return 'ran'; }, 100), undefined, 'skipped at its bound');
+		assert.equal(ran, 0, 'the skipped tick did not run');
+	} finally {
+		maintenance.release();
+		await maintenance.done;
+	}
+	assert.equal(await withTimerHold(async () => { ran++; return 'ran'; }, 100), 'ran');
+	assert.equal(ran, 1);
+});
+
+test('a lock timeout thrown by the background work itself is not retried: it rejects after one run', { timeout: 30_000 }, async () => {
+	let runs = 0;
+	await assert.rejects(
+		() => withBackgroundHold(async () => { runs++; throw new LockTimeoutError('other.lock', 5, []); }, 100),
+		(e: unknown) => e instanceof LockTimeoutError && e.lockName === 'other.lock',
+	);
+	assert.equal(runs, 1, 'the work ran once');
+});
+
+test("maintenance work played by the test that fails rejects run() with its error instead of leaving it pending", { timeout: 30_000 }, async () => {
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	const done = maintenance.done.catch((err: unknown) => err);
+	await assert.rejects(() => maintenance.run(async () => { throw new Error('compaction failed'); }), /compaction failed/);
+	assert.match(String(await done), /compaction failed/);
 });

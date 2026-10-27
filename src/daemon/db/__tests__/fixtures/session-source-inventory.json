@@ -13749,7 +13749,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "8f213e2d42c99230b6af9a04ee11f2f4b552aee20a4de5ebd78db8a290ee1271",
-      "sourceDigest": "e4624cd21f4197d4d8b8f723073f478297f8e76d58423121f4ed3f0c98338388",
+      "sourceDigest": "271e0edd3912b537c6c442660bc432f2bbd03738d0c53a507bea1d0ae06289fd",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -16391,7 +16391,7 @@
       ],
       "siteCount": 70,
       "sitesDigest": "86a00cade709b3e940c520653f3f0f862a3d2ba1615bf2889733d73f4921e02d",
-      "sourceDigest": "4fe90b578efac0d1300d78d3ba800e5a91686ab023e262ce640662ffdeaf7a99",
+      "sourceDigest": "962558b2708ae5117e79c088c23fcc92914ca64c1b0efba8cb810c1192934c96",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -31343,11 +31343,15 @@
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ]
       ],
-      "siteCount": 2,
-      "sitesDigest": "48fcfea2d80fdf5d456ce7c509c417400be1b46ca5f0a520b54a15b4d75b73a4",
-      "sourceDigest": "d28caf037dedcb2b326bf4febe64953d3178e4d72f5214f44392991c885ada65",
+      "siteCount": 3,
+      "sitesDigest": "bcf548fe27a1f69e9e81a3d54378f285283f5ca3d4a587635d8a58ba783c844b",
+      "sourceDigest": "b5cd20b5fcb6a54b71ddcc86cc24eb9cdf34f85941e548f47eaa1dd8683193ba",
       "boundaries": [
         "diagnostic"
       ]
@@ -36399,7 +36403,7 @@
       ],
       "siteCount": 39,
       "sitesDigest": "711052aab8e5968e1896be4f12b6257aee15db72a75a0731bb317bd7341033e4",
-      "sourceDigest": "a804a6473f91c7deca81c577704de6d9ca381e0f6f17ef24dd685638c4e3c931",
+      "sourceDigest": "5cd65fbad9fd9bad12a4e4ebb3ec1355d781c2346f41be73ae76d1ef09803013",
       "boundaries": [
         "diagnostic",
         "filesystem-open",

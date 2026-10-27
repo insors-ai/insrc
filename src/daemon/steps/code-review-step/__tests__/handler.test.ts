@@ -746,7 +746,11 @@ test('src/daemon/steps/code-review-step/__tests__/handler.test.ts: with proceed:
 	const t = await timedOutFallback({ inFlight: false, pendingCodeIndexJobs: 0 }, {
 		// idle queue, the same stale file on every poll, requested once and never indexed
 		fetchFreshness: async () => { asked.push(1); return { ok: true, isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'], unindexedFiles: [] } as never; },
-		fetchGrounding: async () => { groundingFetches++; return { ok: true, grounding }; },   // the other files have symbols
+		// the other changed file (src/b.ts) has symbols; only the stale file (src/a.ts) has none
+		fetchGrounding: async () => {
+			groundingFetches++;
+			return { ok: true, grounding: { symbols: [{ entityId: 'sym:src/b.ts#g', file: 'src/b.ts', kind: 'function', name: 'g', signature: 'g(): void', callers: [], callees: [], testsReaching: [] }] } };
+		},
 	});
 	assert.ok(asked.length > 2, 'the wait kept polling until the time-out');
 	assert.equal(groundingFetches, 0, 'no full review grounding was assembled');

@@ -46,6 +46,7 @@ const { runPruneSweep } = await import('../../prune-timer.js');
 const { emitTodosEvent, scheduleTodosRetention, subscribe: subscribeTodos } = await import('../../todos-rpc.js');
 const { IndexerService } = await import('../../../indexer/index.js');
 const { IndexQueue } = await import('../../queue.js');
+const { DEFAULT_MAINTENANCE_CONFIG, MaintenanceController } = await import('../maintenance.js');
 const { createUnderstandingRoutes } = await import('../../understanding-rpc.js');
 const { UnderstandingService } = await import('../../../understanding/service.js');
 const { ThreadServices } = await import('../main-services.js');
@@ -214,12 +215,26 @@ test("an exclusive maintenance request that becomes pending while a session requ
 	let open!: () => void;
 	const gate = new Promise<void>(r => { open = r; });
 	let router!: InstanceType<typeof Router>;
+	let maintenance: ReturnType<typeof holdMaintenance> | undefined;
+	let pendingWhileNestedRan = false;
+	let nestedSent!: () => void;
+	const sent = new Promise<void>(r => { nestedSent = r; });
+	let maintenanceAsked!: () => void;
+	const asked = new Promise<void>(r => { maintenanceAsked = r; });
 	const rpc: RpcHandlers = {
 		'step.reindex': async () => {
 			entered = true;
 			await gate;
-			const client = createInDaemonClient(rpc, {}, { route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) } });
+			// The nested call reaches the code-indexing worker only once maintenance (asked from outside this
+			// request) is pending, so the worker serves it while an exclusive request waits for the lock.
+			const route = async (cls: MethodClass, method: string, params: unknown): Promise<unknown> => {
+				nestedSent();
+				await asked;
+				return router.request(cls, method, params);
+			};
+			const client = createInDaemonClient(rpc, {}, { route: { classOf: methodClasses.classOf, routed, request: route } });
 			const result = await client.request('repo.reindex', { path: REPO });
+			pendingWhileNestedRan = maintenance !== undefined && !maintenance.isGranted();
 			order.push('nested');
 			return result;
 		},
@@ -231,12 +246,15 @@ test("an exclusive maintenance request that becomes pending while a session requ
 
 	const outer = ask(router, 'step.reindex').then(r => { order.push('outer'); return r; });
 	await until(() => entered, 'the session request running');
-	const maintenance = holdMaintenance();
-	void maintenance.granted.then(() => order.push('maintenance'));
-	await tick();
-	assert.equal(maintenance.isGranted(), false, 'maintenance is pending');
 	open();
+	await sent;
+	maintenance = holdMaintenance();
+	void maintenance.granted.then(() => order.push('maintenance'));
+	await until(() => getLockManager().query().pending.some(l => l.name === MAINTENANCE_LOCK && l.mode === 'exclusive'), 'maintenance pending');
+	maintenanceAsked();
 	const reply = await outer;
+	assert.ok(maintenance !== undefined);
+	assert.equal(pendingWhileNestedRan, true, 'maintenance became pending while the nested call ran on the worker, and stayed pending until it completed');
 	assert.equal(reply.error, undefined, `the nested repo.reindex ran on the worker under the outer hold: ${reply.error}`);
 	assert.deepEqual(reply.result, { ok: true });
 	await maintenance.granted;
@@ -297,7 +315,14 @@ test('an open understanding.watch stream does not prevent idle detection or main
 	const scope: AssessmentScope = { repoId: 'repo', worktreeId: 'worktree', baseOid: null, stagedTreeOid: 'a'.repeat(40), commitMode: 'normal', parentOids: [], learnerKey: 'learner', policyRevision: 'p', evidenceRevision: 'e' };
 	let service: InstanceType<typeof UnderstandingService> | undefined;
 	const routes = createUnderstandingRoutes({ service: () => service!, owner: async () => owner });
-	const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(), local: directDispatch(routes.rpc, routes.streams) });
+	// Idle detection as the daemon wires it: the router reports every request to the controller.
+	const idle = new MaintenanceController({
+		config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 60_000 },
+		lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined,
+		workers: { live: () => [], created: () => 0 },
+		compact: async () => assert.fail('no compaction in this test'),
+	});
+	const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(), local: directDispatch(routes.rpc, routes.streams), onRequest: (method, cls) => idle.requestArrived(method, cls) });
 	const sock = join(HOME, 'watch.sock');
 	const server = new IpcServer(router.forward, Date.now, sock);
 	await server.listen();
@@ -318,6 +343,14 @@ test('an open understanding.watch stream does not prevent idle detection or main
 		await until(() => frames.length > 0, 'the first snapshot');
 		assert.equal(frames[0]!.data.revision, 1);
 
+		// The open stream is not activity: the daemon's idle time keeps growing while it is open.
+		const idleBefore = idle.idleForMs();
+		await tick(250);
+		assert.ok(idle.idleForMs() >= idleBefore + 200, `idle keeps growing with the stream open (${idleBefore} -> ${idle.idleForMs()} ms)`);
+		// (An ordinary request would reset it: shown for contrast.)
+		const end = idle.requestArrived('x.write', 'session');
+		assert.equal(idle.idleForMs(), 0, 'a running ordinary request is activity');
+		end();
 		// The open stream holds no lock: maintenance is granted at once.
 		assert.deepEqual(getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK), [], 'the stream holds nothing');
 		const maintenance = holdMaintenance();

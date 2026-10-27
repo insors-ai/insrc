@@ -465,3 +465,45 @@ test('a cancelled stream with no request lifetime keeps its maintenance hold unt
 	finish();
 	await until(() => heldShared() === 0, 'the hold released at the terminal frame');
 });
+
+test('an understanding.watch opened during maintenance waits for it before its first store read, then delivers its first snapshot', { timeout: 60_000 }, async () => {
+	const owner: Owner = { ownerPrincipal: 'owner', learner: { key: 'learner', source: 'git', authority: 'git-email', subject: 'private', assurance: 'local-config', aliases: [] } };
+	const scope: AssessmentScope = { repoId: 'repo', worktreeId: 'worktree', baseOid: null, stagedTreeOid: 'b'.repeat(40), commitMode: 'normal', parentOids: [], learnerKey: 'learner', policyRevision: 'p', evidenceRevision: 'e' };
+	let service: InstanceType<typeof UnderstandingService> | undefined;
+	let ownerReads = 0;
+	const routes = createUnderstandingRoutes({ service: () => service!, owner: async () => { ownerReads++; return owner; } });
+	const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(), local: directDispatch(routes.rpc, routes.streams) });
+	const sock = join(HOME, 'watch-open.sock');
+	const server = new IpcServer(router.forward, Date.now, sock);
+	await server.listen();
+	service = await UnderstandingService.open(sock);
+	let socket: Socket | undefined;
+	try {
+		const id = (await service.prepare(owner, scope, randomUUID())).view.id;
+		const maintenance = holdMaintenance();
+		await maintenance.granted;
+		const readsBefore = ownerReads;
+		socket = connect(sock);
+		const frames: { stream: string; data: { type?: string } }[] = [];
+		let pending = '';
+		socket.on('data', d => {
+			pending += d.toString();
+			let end: number;
+			while ((end = pending.indexOf('\n')) >= 0) { frames.push(JSON.parse(pending.slice(0, end))); pending = pending.slice(end + 1); }
+		});
+		await once(socket, 'connect');
+		socket.write(JSON.stringify({ id: 11, method: 'understanding.watch', params: { assessmentId: id }, stream: true }) + '\n');
+		await tick(300);
+		assert.equal(ownerReads, readsBefore, 'no store read while maintenance holds the lock');
+		assert.deepEqual(frames, [], 'nothing delivered yet');
+		maintenance.release();
+		await maintenance.done;
+		await until(() => frames.length > 0, 'the first snapshot after maintenance');
+		assert.equal(frames[0]!.data.type, 'snapshot');
+	} finally {
+		socket?.destroy();
+		routes.stop();
+		service?.stop();
+		await server.close();
+	}
+});

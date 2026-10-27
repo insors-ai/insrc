@@ -8,7 +8,7 @@
 
 import { Type } from '@sinclair/typebox';
 import { ghConvert } from './convert.js';
-import { csv, defineGhFamily, field, lit, on, onOff, pos, last, rep, spread, val } from './op-table.js';
+import { csv, defineGhFamily, field, lit, on, onOff, pos, last, rejectInput, rep, spread, val } from './op-table.js';
 import type { BuildContext, OpDef } from './op-table.js';
 import { parseConfigList } from './parsers.js';
 
@@ -165,14 +165,45 @@ async function buildAuthStatus(c: BuildContext) {
   return { hosts: conv.value?.hosts ?? [] };
 }
 
+/** The largest `gh auth status --json hosts` output the hosts op accepts, in bytes. */
+const MAX_HOSTS_BYTES = 256 * 1024;
+
+/** One signed-in account: state and login are what the identity lookup reads, any other field gh prints is kept. */
+const AuthHostAccount = Type.Object({ state: Type.String(), login: Type.String() }, { additionalProperties: true });
+const AuthHostsSchema = Type.Record(Type.String(), Type.Array(AuthHostAccount));
+
+/** hosts: gh's own JSON, parsed with no model call. Refuses a cut or over-size output, non-JSON, and an account without a string state and login. */
+async function buildAuthHosts(c: BuildContext) {
+  const fail = (msg: string) => rejectInput('gh_auth', msg);
+  if (c.truncated || Buffer.byteLength(c.stdout, 'utf8') > MAX_HOSTS_BYTES) { return fail(`gh auth status --json hosts printed more than ${MAX_HOSTS_BYTES / 1024} KB`); }
+  let parsed: unknown;
+  try { parsed = JSON.parse(c.stdout); } catch { return fail('gh auth status --json hosts did not print JSON'); }
+  const hosts = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? (parsed as Record<string, unknown>)['hosts'] : undefined;
+  if (typeof hosts !== 'object' || hosts === null || Array.isArray(hosts)) { return fail('gh auth status --json hosts printed no hosts object'); }
+  for (const [host, accounts] of Object.entries(hosts)) {
+    if (!Array.isArray(accounts)) { return fail(`gh auth status --json hosts: the accounts of ${host} are not a list`); }
+    for (const a of accounts) {
+      const acc = a as Record<string, unknown> | null;
+      if (typeof acc !== 'object' || acc === null || typeof acc['state'] !== 'string' || typeof acc['login'] !== 'string') {
+        return fail(`gh auth status --json hosts: an account of ${host} has no string state and login`);
+      }
+    }
+  }
+  return { hosts: hosts as Record<string, Array<{ state: string; login: string }>> };
+}
+
 const hostUser = { hostname: field.str('Host name of the GitHub instance.'), user: field.str('The account.') } as const;
 
 export const ghAuthTool = defineGhFamily({
-  id: 'gh_auth', dashSafe: true, description: 'Authentication state: status of the signed-in hosts and accounts, switch the active account, log an account out.',
+  id: 'gh_auth', dashSafe: true, description: 'Authentication state: status of the signed-in hosts and accounts (as text, or as gh\'s JSON with hosts), switch the active account, log an account out.',
   ops: [
     {
       name: 'status', command: ['auth', 'status'], cls: 'none', limitS: 30, fields: { hostname: hostUser.hostname }, args: [val('-h', 'hostname')],
       out: { kind: 'custom', shape: { hosts: HostsSchema.properties.hosts }, build: buildAuthStatus },
+    },
+    {
+      name: 'hosts', command: ['auth', 'status'], cls: 'none', limitS: 15, args: [lit('--json', 'hosts')],
+      out: { kind: 'custom', shape: { hosts: AuthHostsSchema }, build: buildAuthHosts },
     },
     { name: 'switch', command: ['auth', 'switch'], cls: 'common', limitS: 30, fields: hostUser, required: ['hostname', 'user'], args: [val('-h', 'hostname'), val('-u', 'user')], out: { kind: 'mutation' }, target: i => `${String(i['user'])}@${String(i['hostname'])}` },
     { name: 'logout', command: ['auth', 'logout'], cls: 'destructive', limitS: 30, fields: hostUser, required: ['hostname', 'user'], args: [val('-h', 'hostname'), val('-u', 'user')], out: { kind: 'mutation' }, target: i => `${String(i['user'])}@${String(i['hostname'])}` },

@@ -87,6 +87,9 @@ test('gh-parser.test.ts: every op\'s argv with --help as its own final token par
 					const withHelp = [...argv, '--help'];
 					const r = help(withHelp, dead);
 					checked += 1;
+					// gh_auth.hosts runs `auth status --json hosts`; a gh older than the --json form of auth status (2.46.0 here) refuses the
+					// flag, which is the failure the op reports on that gh (LLD add-json-hosts-form-gh-auth). Any newer gh must parse it.
+					if (tool.id === 'gh_auth' && def.name === 'hosts' && /unknown flag: --json/.test(`${r.stderr}${r.stdout}`)) { continue; }
 					if (r.status !== 0 || !/USAGE/.test(r.stdout) || /unknown flag|unknown command|accepts at most|requires at least/.test(`${r.stderr}${r.stdout}`)) {
 						bad.push(`${tool.id}.${def.name}: gh ${withHelp.join(' ')} => ${(r.stderr || r.stdout).split('\n')[0]}`);
 					}

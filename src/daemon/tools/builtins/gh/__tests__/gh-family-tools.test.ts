@@ -205,3 +205,12 @@ test('gh-family-tools.test.ts: codespace create always passes --default-permissi
 	const other = await ghCodespaceTool.buildApprovalGate!({ op: 'edit', codespace: 'cs1', displayName: 'n' });
 	assert.doesNotMatch(other.content, /accepted without a further question/);
 });
+
+test('gh-family-tools.test.ts: the family sweep exercises gh_auth.hosts from the hosts case in _family-rows.ts (JSON stdout, exact argv, class none, 15 s limit) and gh-output-schemas.test.ts validates its output', () => {
+	const row = ROWS3.find(r => r[0] === ghAuthTool && r[1]['op'] === 'hosts');
+	assert.ok(row, 'ROWS3 has a hosts case');
+	assert.equal(row![2], 'auth status --json hosts');
+	assert.equal(row![4], 'none');
+	assert.equal(row![5], 15);
+	assert.doesNotThrow(() => JSON.parse(row![3]));
+});

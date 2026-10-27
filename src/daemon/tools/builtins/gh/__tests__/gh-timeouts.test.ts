@@ -104,3 +104,9 @@ test('gh-timeouts.test.ts: a fake gh that outlives its limit ends with timed-out
 		assert.ok(!/timeoutMs/.test(readFileSync(join(dir, file), 'utf8')), `${file} names no timeoutMs`);
 	}
 });
+
+test('gh-timeouts.test.ts: the limit table has gh_auth.hosts at 15 s', async () => {
+	await import('../account.js');   // defining the family registers its limits
+	assert.equal(ghTimeoutMs({ toolId: 'gh_auth', op: 'hosts' }), 15_000);
+	assert.equal(ghTimeoutMs({ toolId: 'gh_auth', op: 'status' }), 30_000);
+});

@@ -87,3 +87,13 @@ test('gh-coverage.test.ts: the plan note lists the tools s7 built, marks the cal
 	assert.match(built, /\*\*s10\*\* moves the tracker/);
 	assert.match(built, /switches the scan to failing mode/);
 });
+
+test('gh-coverage.test.ts: the existing coverage check passes with the hosts op recorded for the command auth status, and all 69 tools are still registered', () => {
+	registerBuiltinTools();
+	const row = GH_COVERAGE.find(r => r.command === 'auth status');
+	assert.equal(row?.op, 'status,hosts');
+	assert.equal(GH_COVERAGE.filter(r => r.command === 'auth status').length, 1, 'one row per command');
+	const tool = getTool('gh_auth') as ({ ops?: Array<{ name: string; command: readonly string[] }> } & object) | undefined;
+	assert.equal(tool?.ops?.find(o => o.name === 'hosts')?.command.join(' '), 'auth status');
+	assert.equal(listTools().filter(t => t.id.startsWith('gh')).length, 69);
+});

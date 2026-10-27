@@ -161,6 +161,7 @@ export const ROWS3: Row3[] = [
 	[ghExtensionTool, { op: 'list' }, 'extension list', 'gh copilot\tgithub/gh-copilot\tv1\n', 'none', 30],
 	[ghExtensionTool, { op: 'search', query: 'copilot', owner: ['github'], license: ['mit'], sort: 'stars', order: 'desc', limit: 3 }, 'extension search --license mit -L 3 --order desc --owner github --sort stars --json createdAt', '[]', 'none', 60],
 	[ghAuthTool, { op: 'status', hostname: 'github.com' }, 'auth status -h github.com', AUTH_TEXT, 'none', 30, { hosts: [{ host: 'github.com', login: 'octocat', active: true, state: 'logged-in' }] }],
+	[ghAuthTool, { op: 'hosts' }, 'auth status --json hosts', '{"hosts":{"github.com":[{"state":"success","login":"octocat","active":true}]}}', 'none', 15],
 	[ghRulesetTool, { op: 'list', org: 'acme', parents: false, limit: 5 }, 'ruleset list -o acme --parents=false -L 5 -R', RULESETS, 'none', 30, { items: [{ id: '123', name: 'main protection' }, { id: '456', name: 'release rules' }] }],
 ];
 

@@ -92,3 +92,11 @@ test('gh-output-schemas.test.ts: every output of a family tool carries the liter
 		for (const op of id.ops) { assert.ok(ops.has(`${id.id}.${op.name}`), `${id.id}.${op.name} is exercised`); }
 	}
 });
+
+test('gh-output-schemas.test.ts: the hosts output schema validates a real-shape sample and rejects a sample without login', async () => {
+	const { ghAuthTool } = await import('../account.js');
+	const good = { op: 'hosts', hosts: { 'github.com': [{ state: 'success', login: 'octocat', active: true, tokenSource: 'keyring' }] } };
+	assert.ok(Value.Check(ghAuthTool.outputSchema!, good));
+	assert.ok(Value.Check(ghAuthTool.outputSchema!, { op: 'hosts', hosts: {} }));
+	assert.ok(!Value.Check(ghAuthTool.outputSchema!, { op: 'hosts', hosts: { 'github.com': [{ state: 'success' }] } }));
+});

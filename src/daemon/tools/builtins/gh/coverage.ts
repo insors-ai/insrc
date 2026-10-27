@@ -19,7 +19,7 @@ export const GH_COVERAGE: readonly GhCoverageRow[] = [
   { command: "auth logout", owner: "covered", toolIds: ["gh_auth"], op: "logout" },
   { command: "auth refresh", owner: "excluded", reason: "Interactive credential refresh (accepted 2026-10-25)." },
   { command: "auth setup-git", owner: "excluded", reason: "Changes the git credential configuration (accepted 2026-10-25)." },
-  { command: "auth status", owner: "covered", toolIds: ["gh_auth"], op: "status" },
+  { command: "auth status", owner: "covered", toolIds: ["gh_auth"], op: "status,hosts" },
   { command: "auth switch", owner: "covered", toolIds: ["gh_auth"], op: "switch" },
   { command: "auth token", owner: "excluded", reason: "Prints the access token (accepted 2026-10-25)." },
   { command: "browse", owner: "excluded", reason: "Opens a browser (accepted 2026-10-25)." },

@@ -618,6 +618,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 					const ms = typeof li === 'number' ? li : Date.parse(String(li));
 					return Number.isFinite(ms) ? ms : 0;
 				},
+				requestedAt: () => undefined,   // replaced by the request map in the next task
 				...graphDeps,
 			});
 			// The FreshnessResult is the reply: { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles }.

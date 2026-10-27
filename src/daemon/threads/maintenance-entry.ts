@@ -80,23 +80,33 @@ export function holdingForward(forward: ForwardRequest): ForwardRequest {
 }
 
 /**
- * A subscription: admitted with a no-wait shared request, then run unheld. Refused
- * at once (the busy error, as an error frame) while maintenance holds or waits for the lock.
+ * A subscription: admitted with a no-wait shared request, then started unheld. Refused at once
+ * (the busy error, as an error frame) while maintenance holds or waits for the lock.
+ *
+ * The stream is started after the admission hold is released and outside its async context:
+ * started inside it, work the stream began would see the hold as its own (holdsMaintenanceLock)
+ * and skip taking one, then go on running after admission released it. Each of its store reads
+ * takes its own hold (or refuses, or skips) as any request or refresh does.
  */
 function admitted(forward: ForwardRequest, request: Parameters<ForwardRequest>[0], deliver: DeliverEnvelope): () => void {
 	let cancel: (() => void) | undefined;
 	let cancelled = false;
-	void withRequestHold(async () => {
-		// Started inside the admission hold, which ends when this returns: the stream itself runs unheld.
-		if (!cancelled) cancel = forward(request, deliver);
-	}).then(outcome => {
-		if (outcome.ran || cancelled) return;
+	const fail = (error: string): void => {
 		try {
 			deliver(request.stream
-				? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error: outcome.busy, recoverable: true } } }
-				: { kind: 'reply', requestId: request.requestId, error: outcome.busy });
+				? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } }
+				: { kind: 'reply', requestId: request.requestId, error });
 		} finally { request.lifetime?.complete(); }
-	}).catch(() => { request.lifetime?.complete(); });
+	};
+	// The continuation runs in the context `.then` was called from: this one, which holds nothing.
+	void withRequestHold(async () => {}).then(outcome => {
+		if (cancelled) return;
+		if (!outcome.ran) { fail(outcome.busy); return; }
+		cancel = forward(request, deliver);
+	}).catch((err: unknown) => {
+		if (!cancelled) fail(err instanceof Error ? err.message : String(err));
+		else request.lifetime?.complete();
+	});
 	return () => {
 		cancelled = true;
 		if (cancel) cancel();

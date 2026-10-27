@@ -39,7 +39,7 @@ const { getDb, initDb } = await import('../../../db/client.js');
 const { addRepo } = await import('../../../db/repos.js');
 const { getSessionById, saveSession } = await import('../../../db/conversations.js');
 const { getLockManager, LockTimeoutError } = await import('../../../shared/locks/lock-manager.js');
-const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK, withBackgroundHold, withTimerHold } = await import('../../../shared/locks/maintenance-lock.js');
+const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK, holdsMaintenanceLock, withBackgroundHold, withTimerHold } = await import('../../../shared/locks/maintenance-lock.js');
 const { IpcServer, directDispatch } = await import('../../server.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { runPruneSweep } = await import('../../prune-timer.js');
@@ -566,4 +566,29 @@ test("maintenance work played by the test that fails rejects run() with its erro
 	const done = maintenance.done.catch((err: unknown) => err);
 	await assert.rejects(() => maintenance.run(async () => { throw new Error('compaction failed'); }), /compaction failed/);
 	assert.match(String(await done), /compaction failed/);
+});
+
+test("an admitted subscription starts outside the admission hold: work it begins does not see that hold as its own", { timeout: 30_000 }, async () => {
+	const seen: boolean[] = [];
+	let later: Promise<void> | undefined;
+	const forward = holdingForward((_r, _d) => {
+		seen.push(holdsMaintenanceLock());
+		// Work the stream starts now and continues later, as a subscription's setup read does.
+		later = (async () => { await tick(20); seen.push(holdsMaintenanceLock()); })();
+		return () => {};
+	});
+	forward({ kind: 'request', requestId: 'watch-ctx', method: 'understanding.watch', params: {}, stream: true }, () => {});
+	await until(() => later !== undefined, 'the subscription to start');
+	await later;
+	assert.deepEqual(seen, [false, false], 'neither the start nor its continuation holds the lock through admission');
+	assert.equal(getLockManager().query().held.some(l => l.name === MAINTENANCE_LOCK), false);
+});
+
+test('a subscription whose start throws is answered with an error frame, not left waiting', { timeout: 30_000 }, async () => {
+	const frames: { stream: string; data: { error?: string } }[] = [];
+	const forward = holdingForward(() => { throw new Error('the subscription could not start'); });
+	forward({ kind: 'request', requestId: 'todos-throw', method: 'todos.subscribe', params: {}, stream: true }, e => frames.push((e as FrameEnvelope).frame as { stream: string; data: { error?: string } }));
+	await until(() => frames.length > 0, 'the error frame', 5_000);
+	assert.equal(frames[0]!.stream, 'error');
+	assert.equal(frames[0]!.data.error, 'the subscription could not start');
 });

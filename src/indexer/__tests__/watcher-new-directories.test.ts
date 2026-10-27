@@ -77,7 +77,9 @@ test('src/indexer/__tests__/watcher-new-directories.test.ts: after addRepo, mkdi
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'first.ts'), 'export const a = 1;\n');
   await h.until(() => h.seen(join(dir, 'first.ts'), 'create'), 'the create event for the file written at once');
-  await new Promise(r => setTimeout(r, 3000));          // the scenario: a later write into the same directory
+  // the scenario: a write three seconds after the directory appeared; the clock is polled, not slept
+  const writtenAt = Date.now();
+  await h.until(() => Date.now() - writtenAt >= 3000, 'three seconds to pass since the first file');
   writeFileSync(join(dir, 'second.ts'), 'export const b = 2;\n');
   await h.until(() => h.seen(join(dir, 'second.ts')), 'an event for the file written three seconds later');
 });

@@ -210,7 +210,9 @@
       "reviewedAt": "2026-10-27T07:00:15.769Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-10-27T07:09:15.836Z",
+    "rangeBase": "c17638686ba5807843cdd1016d98edb14c94c030"
   },
   "body": {
     "hldContextSlice": {

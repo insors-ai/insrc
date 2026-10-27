@@ -1,0 +1,1058 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793084978161-7yb88n",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-27T07:12:39.105Z",
+    "epicCreatedAt": "2026-10-27T05:09:56.523Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 180921,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "34798d209cf97413",
+    "epicSlug": "split-oversized-diff-evidence-into-lossless",
+    "storyId": "S001",
+    "lldRunId": "wf-1793076977701-80y26b",
+    "lldEffectiveHash": "34798d209cf97413a8a6409abf6c191bab4244d2c68930f3e60794bf7779031f",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build lossless diff evidence and enforce the128K complete-input cap through serial chunk review and parent gathering. Freeze a ten-minute-per-primary-chunk deadline and resume the same independent review across bounded host waits, including controller-owned review. Verify source, contracts, BUILD and TESTS identities before publication and approval, preserve unchanged completion records, then run the full sweep after all implementation tasks and retry S003 on an approved active runtime."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Complete-input measurement",
+        "summary": "Count actual messages, role framing, envelopes, schema and explicit context/history/repair at all job/gather/duplicate planning and send boundaries.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "One measurer includes actual enveloped schema; lower limits respected and irreducible fixed framing refused."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-BUDGET"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-REPAIR"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Verified bounded CLI transport",
+        "summary": "Add optional shared boundedInput/capability/isolated execution intent and enforcing CLI normalization/isolation admission; ordinary completions keep defaults.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "No model spawn for unsupported isolation or over-budget normalized input; OAuth stays CLI-owned; terminal unsupported error."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-TRANSPORT"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-ADMISSION"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Complete diff reader capture",
+        "summary": "Recover full Story-scoped per-file diff beyond ordinary capture limits or refuse incomplete/truncated/missing hunks before reviewing.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Never review a bounded slice as complete; original inventories and scope/ledger exclusions preserved."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-READER"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Lossless attributed diff spans",
+        "summary": "Add optional fragment metadata and Unicode-safe <=16Ki staging spans, exact offsets/digests/coordinates, unique IDs and stable deduplicated changed files.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Reassembly exactly matches parent; graph/small/binary compatibility and coverageEligible:false."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DIFF-SPANS"
+          },
+          {
+            "level": "unit",
+            "name": "DIFF-COORDS"
+          },
+          {
+            "level": "unit",
+            "name": "DIFF-INTEGRITY"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Budget-aware material fitting",
+        "summary": "Implement measured per-dimension fitDiffMaterial and sparse parent ownership before primary planning; recursively split staging ranges to authoritative cap.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Fixed context fits but16Ki span exceeds12000 cap: all evidence fits after subdivision; no gaps/overlap or nonprogress recursion."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DIFF-INTEGRITY"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-LARGE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-SCALE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-LOW-CAP"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Parent quality notes and gather",
+        "summary": "Add required per-fragment notes, exact validation, parent check-item obligations and forced chunk mode even when one call fits; adjudicate cross-fragment facts.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Missing/foreign/duplicate notes fail; parent correctness requires both separately carried facts; bounded reduction retains provenance."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-GATHER"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-PARENT-QUALITY"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-FITS-ONE-CALL"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Parent-aware duplication coverage",
+        "summary": "Exclude diff fragments from symbol Cartesian compare/pair stages and add bounded parent/global duplication obligations including nonfragment context.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "No quadratic sibling comparison growth; within/cross-parent duplication remains judged with valid counterpart attribution; graph comparisons compatible."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-SCALE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-SCALE-DUPLICATES"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Prepared dimension orchestration",
+        "summary": "Split prepare/execute seams and update all five model/two deterministic factories to share exact snapshot/adapter/effective cap; prepare all before models.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t2",
+          "t5",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Same prepared job IDs/material execute serially; deterministic/no-call dimensions count zero and wrappers remain compatible."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-LARGE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-FACTORY-LIMIT"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-FITS-ONE-CALL"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-PLAN"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Frozen chunk-derived timing",
+        "summary": "Create aggregate and per-child timing plans, primary N and600000*N budgets, safe absolute clock/timer arithmetic and child activation semantics.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "1/5/20 primary chunks yield10/50/200minutes; preparation counts; later serial child not starved by admission-time clock; retry/gather never extend."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-PLAN"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-FIXED"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Refused singleton revision recovery",
+        "summary": "On lower provider refusal derive complete descendant material revision, discard affected dimension outputs/closures, reprepare only it under original N/deadlines.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t5",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Strictly shrinking revisions preserve original bytes and audit lineage; no stale notes, duplicate dispatch or budget credits; irreducible/time-exhausted stop."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-REPAIR"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-FIXED"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-REFUSAL-SPAN"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Timed serial dispatch and shutdown",
+        "summary": "Apply size/capability checks and min(per-call,child/root remaining) to structured/session calls and deterministic boundaries; own cancellation shutdown and reject late outputs.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t2",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "All bounded chunk/gather/repair calls carry exact input cap; timeout/cancel aborts and settles owned process, no late completed result."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-BUDGET"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-REPAIR"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-ADMISSION"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-LARGE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-FIXED"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-OUTER"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Canonical review input identity",
+        "summary": "Capture consistent source/diff/contracts/BUILD and ordered TESTS states/content/view fingerprints with explicit version/canonical exclusions and synchronous comparator.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "TESTS-only changes incl ranAt/order/malformed/absence alter identity; unchanged approval fields do not; inconsistent/unavailable reads fail closed."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-FINGERPRINT-SNAPSHOT"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-IDENTITY-TESTS"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Idempotent completion writer",
+        "summary": "Add completion-specific no-op reconciliation through real completion/changed-files/standalone writers, preserve prior times/authors/versions/order and skip identical writes.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Real unchanged completion preserves fingerprint/bytes; semantic changes persist and stale old review; genuine validate behavior and TESTS ranAt unchanged."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-APPROVE-IDENTITY"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-COMPLETION-NOOP"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-COMPLETION-CHANGE"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Publication freshness and ownership",
+        "summary": "Require real daemon/controller prepublication source/contract/BUILD/TESTS identity+author hook, record fingerprint metadata and recheck after publication.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Edits/rebuild/TESTS mutation without second start prevent new CR; narrow postcheck race yields unusable stale record, never accepted completion."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-PUBLISH-SOURCE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-PUBLISH-BUILD"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-IDENTITY-TESTS"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Daemon-owned review operation lifecycle",
+        "summary": "Add scoped in-memory start/join/status/cancel ownership with prepared timing, immutable fingerprint, conflict rules, detached waiters and terminal grace.",
+        "size": "M",
+        "order": 15,
+        "dependsOn": [
+          "t9",
+          "t14"
+        ],
+        "acceptanceChecks": [
+          "Same target/input joins one execution; changed inputs conflict; explicit cancel/deadline stops owner; restart/lost handle never succeeds; no fixed total cap."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-OUTER"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-WAIT-RESUME"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Shared control transport contracts",
+        "summary": "Extend codeReview.run serializers and add discriminated control results/helper in socket and actual in-daemon clients; keep legacy final-only streams.",
+        "size": "M",
+        "order": 16,
+        "dependsOn": [
+          "t15"
+        ],
+        "acceptanceChecks": [
+          "Start/status/cancel fields survive both transports; pending has no artifact; malformed final refused; every control waiter returns within200s without killing operation."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-TIME-OUTER"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-WAIT-COMPAT"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-WAIT-TRANSPORT"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Resumable step state and help",
+        "summary": "Wire pending operation continuations, pin active TTL/LRU state, exact cancellation semantics versus freshness fallback and update public schema/help/guide.",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t16"
+        ],
+        "acceptanceChecks": [
+          "Repeated polling does not relaunch/reset deadlines; active >1h state retained; lost/expired/cancelled yields no CR; legacy/session routing intact."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-WAIT-RESUME"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-WAIT-COMPAT"
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Controller bounded pipeline protocol",
+        "summary": "Replace degraded whole-grounding emit_judgements with serial emit_review_call/callResult state machine, real applyOutput/failure/gather, atomic replay and fixed deadlines.",
+        "size": "M",
+        "order": 18,
+        "dependsOn": [
+          "t8",
+          "t10",
+          "t11",
+          "t12",
+          "t14",
+          "t17"
+        ],
+        "acceptanceChecks": [
+          "Daemon-authored oversized diff never emits/accepts aggregate unbounded verdict; all original spans covered; no daemon LLM judgments; reviewedBy:controller and warn cap."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-CONTROLLER-LARGE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-CONTROLLER-VALIDATE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-CONTROLLER-TIME"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-IDENTITY-TESTS"
+          }
+        ]
+      },
+      {
+        "id": "t19",
+        "title": "Isolated controller-side execution helper",
+        "summary": "Implement trusted MCP client helper using enforcing local CliProvider, not inherited chat transcript; capability admission, one-call ownership/cancel and bounded envelope dispatch.",
+        "size": "M",
+        "order": 19,
+        "dependsOn": [
+          "t2",
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "Unverified/self-declared flags fail before evidence; actual fresh CLI args/stdin/schema verified; same pending call not relaunched and expiry enforced."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-CONTROLLER-LARGE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-CONTROLLER-TIME"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-CONTROLLER-ADMISSION"
+          }
+        ]
+      },
+      {
+        "id": "t20",
+        "title": "Shared BUILD freshness approval gate",
+        "summary": "Enforce synchronous identity at common direct/TUI approval and workflow wrapper, new stale-review result projections, nonoverride identity and safe pre/postwrite checks.",
+        "size": "M",
+        "order": 20,
+        "dependsOn": [
+          "t12",
+          "t13",
+          "t14"
+        ],
+        "acceptanceChecks": [
+          "Direct/TUI/single/batch refuse stale TESTS/source/BUILD even with override/enforcement off; no tracker/commit/follow-on; unchanged approval/reapproval works."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-PUBLISH-GATE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-APPROVE-COMMON"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-APPROVE-WORKFLOW"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-APPROVE-TUI"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-APPROVE-IDENTITY"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-APPROVE-RACE"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-APPROVE-TESTS"
+          }
+        ]
+      },
+      {
+        "id": "t21",
+        "title": "Public contract and audit integration",
+        "summary": "Reconcile changed IPC/tool/types/help consumers, compatibility regressions and legitimately refresh review-source audit metadata where required; keep historical S003 datasets/proofs.",
+        "size": "M",
+        "order": 21,
+        "dependsOn": [
+          "t17",
+          "t19",
+          "t20"
+        ],
+        "acceptanceChecks": [
+          "No unknown-status success branch or omitted control fields; compatible legacy paths; no minification/deletion/splitting evidence or release enablement."
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-COMPAT"
+          }
+        ]
+      },
+      {
+        "id": "t22",
+        "title": "Combined build, focused regression and full repository sweep",
+        "summary": "After all t1-t21 implementation and focused per-task checks finish, run one Node22 build, combined affected-area regression suites and full repository test sweep, preserving source snapshot and exact outcomes.",
+        "size": "M",
+        "order": 22,
+        "dependsOn": [
+          "t21"
+        ],
+        "acceptanceChecks": [
+          "No full sweep during individual tasks; final full sweep runs only after all implementation is built, with baseline failures, live-service skips and pending evidence reported accurately; resolve introduced regressions before independent code review."
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DIFF-FINAL-REGRESSION: combined affected-area suites after all implementation"
+          },
+          {
+            "level": "integration",
+            "name": "DIFF-FULL-SWEEP: complete Node22 repository test sweep with exact source identity and skips/failures"
+          }
+        ]
+      },
+      {
+        "id": "t23",
+        "title": "Actual S003 runtime reproduction",
+        "summary": "On approved activated built runtime retry independent daemon degraded review for484fcef7efaf229e/s3 at128000; record verdict/errors and provenance. This is external runtime validation after implementation/sweep; if runtime activation is unavailable, retain pending status and request the necessary activation explicitly instead of restarting automatically.",
+        "size": "S",
+        "order": 23,
+        "dependsOn": [
+          "t22"
+        ],
+        "acceptanceChecks": [
+          "No automatic daemon restart or release changes; if activation unavailable preserve pending proof honestly, never script a fake review success."
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "DIFF-S003-RETRY"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "DIFF-SPANS: added/modified/deleted/renamed text and binary/small-file compatibility; reassembly equals original diff exactly",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-COORDS: CRLF, emoji, Unicode and giant-line continuations preserve offsets/old-new source locations and unique changedFiles",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-INTEGRITY: duplicate/missing/reordered span and digest mismatches reject before calls",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-BUDGET: at/below/above128000×3 with message role separators, call envelope, actual schema, examples, neighbour context and assistant/history content",
+        "coveredByTaskIds": [
+          "t1",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-REPAIR: added correction/history causes smaller redivision/reduction or an explicit refusal; no oversized call is sent",
+        "coveredByTaskIds": [
+          "t1",
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-TRANSPORT: provider normalization/schema expansion and isolated fresh-call mode are measured; unmeasured project/tool/session additions are disabled or refused",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-ADMISSION: absent/false boundedStructuredInput support yields zero completion calls; declared support receives the exact shared boundedInput shape and authoritative job.plan.limitChars for all chunk/gather/repair requests.",
+        "coveredByTaskIds": [
+          "t2",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-LARGE: S003-sized inventory evidence produces multiple serial review calls under384000 complete-input characters; every source span is carried by a completed chunk",
+        "coveredByTaskIds": [
+          "t5",
+          "t8",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-GATHER: gather combines findings and provenance across parent-file fragments; no fragment omitted, out-of-scope finding promoted, or graph coverage invented",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-SCALE: many fragments retain sparse sibling connectivity and avoid new quadratic material construction",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-COMPAT: source-symbol and small-file review parity, cancellation, retries, gather/reduction, duplicate comparisons, and lower configured budgets remain supported",
+        "coveredByTaskIds": [
+          "t21"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-PARENT-QUALITY: no chunk emits a local finding; a parent correctness finding is produced only when gather receives facts from two separate fragments. Reject missing/foreign/duplicate parent notes and prove reduction preserves both facts and provenance.",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-READER: through DiffGroundingDeps/git-diff reader, recover truncated per-file input completely or refuse unrecoverable truncation/missing hunks before any model call or completed artifact. Replace the legacy tests that explicitly allow truncated bounded-slice reviews.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-FACTORY-LIMIT: for each of the five model-dimension factories, a provider cap below configured review size reaches adapter reduction/duplicate budgets, createJob.plan.limitChars and every boundedInput.maxInputChars unchanged. Cover the two deterministic callers without introducing a separate budget.",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-FITS-ONE-CALL: a file larger than16Ki with complete prompt below128K still forces quality chunk mode, validates one note per fragment and executes parent gather. Ordinary non-fragment input remains single-call compatible.",
+        "coveredByTaskIds": [
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-S003-RETRY: rebuild under Node22 then run the actual independent daemon diff review for484fcef7efaf229e/s3 with128000-token setting; record actual verdict/degraded mode and any remaining errors",
+        "coveredByTaskIds": [
+          "t23"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-TIME-PLAN: 1/5/20 primary chunks yield 600000/3000000/12000000ms; five model dimensions aggregate correctly, deterministic slots count zero, fitting single-call counts one; all prepared before first completion and execution uses identical job IDs/snapshot/caps.",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-TIME-FIXED: root includes grounding/preparation, later serial child receives its own allowance capped by root remaining; repair/retry/gather/duplicates/redivision never extend either clock; structured and reviewer-session dispatch receive min(per-call,remaining); late output produces no CR.",
+        "coveredByTaskIds": [
+          "t9",
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-TIME-OUTER: healthy >20/30min and >4h derived jobs survive outer waiting caps under fake time; idle/stall and explicit cancel still abort owned execution; integer overflow/invalid counts and timer overflow handled safely.",
+        "coveredByTaskIds": [
+          "t11",
+          "t15",
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-WAIT-RESUME: >300s review returns pending within200s and repeated status/resume/start joins one execution; disconnect does not cancel, explicit cancel does, stale/lost handle never succeeds; changed source conflicts, active state survives1h TTL/LRU, terminal grace cleans up and exactly one valid CR is written.",
+        "coveredByTaskIds": [
+          "t15",
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-WAIT-COMPAT: legacy stream without operation, freshness proceed:false diff fallback, pending proceed:false cancellation, session refusal, target authorization and independent-review routing remain intact.",
+        "coveredByTaskIds": [
+          "t16",
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-LOW-CAP: 16384-character staging span with effective12000 complete-input cap and fitting fixed context is subdivided before preparation; every call fits, reconstruction exact, initial N reflects final fitted primary plan. A fixed-context-too-large control refuses without calls.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-REFUSAL-SPAN: singleton provider size refusal creates smaller descendant revision, discards old dimension outputs/notes and rebuilds all obligations/closures, then completes all original bytes; original timing N/deadlines unchanged. Repeated no-progress refusal and exhausted time fail with no CR. Include emoji boundaries and cross-fragment correctness regression after repartition.",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-SCALE-DUPLICATES: drive actual quality compare/pair/gather for hundreds of fragments: no fragment IDs enter symbol pair comparisons and no quadratic fragment candidates/calls are generated. Existing graph symbol pair behavior preserved. Within-parent and cross-parent duplication only detectable from separate notes is found with correct provenance, including fragmented versus nonfragment evidence.",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-WAIT-TRANSPORT: both shared serializer and real socket/in-daemon clients carry start/status/cancel+handle unchanged; pending has no artifact, done.result preserves existing validation, failed/cancelled/malformed variants cannot stamp; waiter timeout detaches and explicit cancel stops the one operation.",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-CONTROLLER-LARGE: daemon-authored oversized diff, admitted isolated controller adapter, serial emit_review_call/callResult loop through all primary/reduction/parent/global duplication stages; every complete task <=effective cap, every original range covered, no whole grounding in responses, zero daemon LLM calls, final reviewedBy:controller and warn cap.",
+        "coveredByTaskIds": [
+          "t18",
+          "t19"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-CONTROLLER-VALIDATE: reject legacy full-dimension degraded submission, foreign/stale/out-of-order/missing/duplicate notes and mismatched call envelopes; retry corrections and singleton refused-range replacement preserve provenance and fixed timing N/deadlines. Atomic replay returns same continuation without duplicate model task or final write.",
+        "coveredByTaskIds": [
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-CONTROLLER-TIME: fake clock covers waiting across client turns, activated child/per-call expiry, repeated start with same callID/deadline, explicit cancel, token TTL/lost daemon, changed source/author and late valid answer; none can publish CR.",
+        "coveredByTaskIds": [
+          "t18",
+          "t19"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-CONTROLLER-ADMISSION: unsupported/unverified/self-declared isolated host capability returns unsupported-bounded-controller before any evidence/task emission. Verified fresh adapter rejects sentinel conversation/project/history and oversized complete envelope/schema; legacy full graph behavior remains compatible.",
+        "coveredByTaskIds": [
+          "t19"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-PUBLISH-SOURCE: change a reviewed file, uncommitted diff, HEAD/range or effective approved contract during daemon execution without another start call; real runner hook returns review-input-changed, no new CR write, no done verdict and prior artifact preserved.",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-PUBLISH-BUILD: replace BUILD content/author during daemon execution without another start; even same path/mtime is detected, independent author check fails and no CR written. Repeat on controller continuation/finalization.",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-PUBLISH-GATE: unchanged fingerprinted inputs permit existing gate evaluation, edit after pre-write check or after successful completion causes stale-review refusal; unavailable identity also refuses. Verify post-publication race reports no accepted completion and legacy unfingerprinted artifacts retain documented compatibility.",
+        "coveredByTaskIds": [
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-FINGERPRINT-SNAPSHOT: deterministic canonical content identity, capture detects edits during reads, identical source matches, distinct mode/rename/binary/build/contract identity differs; no model call or stamp on inconsistent capture.",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-APPROVE-COMMON: through real approveArtifactByJsonPath, a stale/malformed/partial/unsupported fingerprint or unavailable identity refuses before any write. Repeat with overrideReview and enforcement off; neither bypasses stale-review. Unchanged fingerprinted input and genuine legacy CR exercise their documented policies.",
+        "coveredByTaskIds": [
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-APPROVE-WORKFLOW: through approveWorkflowTarget single and batch routes, stale-review appears in skipped/codeReview outcomes with reason, no approvedAt or follow-on; a sibling fresh artifact may still follow existing batch policy. Type projections/renderers preserve the new status rather than treating nonblocked as success.",
+        "coveredByTaskIds": [
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-APPROVE-TUI: call real cli/services/workflow.approve with stale review and overrides; common check refuses, tracker/commit/follow-on spies see zero calls, artifact unchanged. Fresh input still follows existing approval behavior.",
+        "coveredByTaskIds": [
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-APPROVE-IDENTITY: successful approval and reapproval do not invalidate BUILD identity solely through exact approval/audit fields; substantive BUILD/author/contract/rangeBase/source edits do. No-op completion merge stays stable; substantive completion merge requires a new review.",
+        "coveredByTaskIds": [
+          "t13",
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-APPROVE-RACE: mutate source between wrapper preflight and common boundary, and between common check/write; return stale-review without accepted completion or side effects, preserve current body/foreign edits and remove only owned new approval metadata. Recheck stale identity on later gate consumption.",
+        "coveredByTaskIds": [
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-IDENTITY-TESTS: daemon and controller review fixture changes only TESTS after admission: pass->fail, absent->present, present->absent, malformed/unreadable replacement, builder-reported result/evidence and ranAt-only selection change all prevent publication. Preserve task/file array order and failure-tie semantics; no BUILD/source edit or repeated start required.",
+        "coveredByTaskIds": [
+          "t12",
+          "t14",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-APPROVE-TESTS: fingerprinted CR then TESTS-only mutation refuses common approval, approveWorkflowTarget and real TUI approve, including override/enforcement off. Unchanged TESTS identity succeeds under existing verdict policy; unreadable current input fails closed.",
+        "coveredByTaskIds": [
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-COMPLETION-NOOP: using real collectBuildChangeLog -> ensureBuildRecordOnCompletion -> persistBuildRecord/mergeWithPrior on an existing reviewed BUILD at later fake time, unchanged semantics retains exact prior updatedAt/changeLog author/timestamp/version/order and stable fingerprint, then real workflow approval/reapproval succeeds. Assert no JSON/MD write for byte-identical no-op.",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "DIFF-COMPLETION-CHANGE: real writer with changed task result, scoped file membership/version, Story commit or folder identity persists a substantive update and invalidates old CR. Completion cannot erase known version/author, mutate TESTS ranAt or hide source-byte changes. Validate-mode writes retain their existing genuine-run behavior.",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved contractDetails APIs promptChars/runReviewJob and data model complete-input accounting, bounded structured provider transport."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved lossless attributed diff spans, reader recovery/refusal, budget-aware fit and singleton descendant revision contracts."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved quality fragment note validation, forced parent gather and parent/global duplication adjudication."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved prepared dimension orchestration, fixed initial primary counts, ten-minute per-chunk root/child deadlines and serial execution."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved canonical source/contracts/BUILD/TESTS fingerprint, publication revalidation and common BUILD approval freshness."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved completion-specific no-op preservation in completion-record/changed-files/standalone writers, exact timestamp/body retention and real writer regressions."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved daemon operation ownership, shared control serializer/result transport, bounded status waits and active-state TTL/lifecycle."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved controller-owned bounded per-call protocol, isolated MCP-side CLI helper and admission/independence guarantees."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md",
+      "quotedText": "Approved migration/test strategy: focused tests per task, final build/sweep and actual S003 independent review retry without inventory/release/automatic daemon restart changes."
+    }
+  ]
+}

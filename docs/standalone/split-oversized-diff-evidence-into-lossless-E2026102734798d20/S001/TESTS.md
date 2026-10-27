@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 133 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 135 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -682,3 +682,25 @@ Run at 2026-10-27T14:03:49.041Z on commit `87a1d6675`. Tests check: **passed**. 
 | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` | 0 | 6 | 1.1 s |  |
 | `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts` | 0 | 7 | 0.6 s |  |
 | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` | 0 | 5 | 0.8 s |  |
+
+## t22
+
+Run at 2026-10-27T14:55:06.829Z on commit `acf8a99fa`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-FINAL-REGRESSION: combined affected-area suites after all implementation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-FINAL-REGRESSION: archived combined affected-area run preserves complete log, exact outcomes and zero introduced failures | `src/workflow/__tests__/final-review-verification.test.ts` |
+
+**integration: DIFF-FULL-SWEEP: complete Node22 repository test sweep with exact source identity and skips/failures**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-FULL-SWEEP: archived complete sweep binds every source byte and test file to its Git snapshot and retains failures/skips/pending evidence honestly | `src/workflow/__tests__/final-review-verification.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/__tests__/final-review-verification.test.ts` | 0 | 2 | 0.7 s |  |

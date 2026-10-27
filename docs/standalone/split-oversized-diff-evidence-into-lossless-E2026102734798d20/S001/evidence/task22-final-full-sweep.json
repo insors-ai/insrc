@@ -3586,5 +3586,6 @@
       "evidence": "This exact failing title is recorded in S003 task34-final-source-sweep.json at snapshot8743a8f70a364afa21a55859b06499050654aca0. The final review regression suite has no failure; this pre-existing store/lock refusal failure remains unresolved."
     }
   ],
-  "assessment": "Complete full sweep is not green: two actual failures and one cancellation are retained explicitly. All introduced review integration regressions were resolved; the final affected-area run has758 passes,4 optional live skips,no failures/cancellations. Runtime reproduction and independent code review remain pending activation."
+  "assessment": "Complete full sweep is not green: two actual failures and one cancellation are retained explicitly. All introduced review integration regressions were resolved; the final affected-area run has758 passes,4 optional live skips,no failures/cancellations. Runtime reproduction and independent code review remain pending activation.",
+  "oracleRecheckEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task22-oracle-recheck.json"
 }

@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T14:03:49.041Z",
+    "updatedAt": "2026-10-27T14:55:06.829Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -3088,6 +3088,59 @@
               },
               {
                 "title": "DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t22",
+        "commit": "acf8a99fa",
+        "ranAt": "2026-10-27T14:55:06.829Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-FINAL-REGRESSION: combined affected-area suites after all implementation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/final-review-verification.test.ts",
+                "title": "DIFF-FINAL-REGRESSION: archived combined affected-area run preserves complete log, exact outcomes and zero introduced failures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-FULL-SWEEP: complete Node22 repository test sweep with exact source identity and skips/failures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/final-review-verification.test.ts",
+                "title": "DIFF-FULL-SWEEP: archived complete sweep binds every source byte and test file to its Git snapshot and retains failures/skips/pending evidence honestly",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/final-review-verification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 668,
+            "titles": [
+              {
+                "title": "DIFF-FINAL-REGRESSION: archived combined affected-area run preserves complete log, exact outcomes and zero introduced failures",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-FULL-SWEEP: archived complete sweep binds every source byte and test file to its Git snapshot and retains failures/skips/pending evidence honestly",
                 "result": "pass"
               }
             ],

@@ -1,0 +1,24 @@
+{
+  "snapshotCommit": "69df880c890ecd62c6fd59692184b7e195831b5a",
+  "argv": [
+    "/opt/homebrew/opt/node@22/bin/node",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-timeout=300000",
+    "src/daemon/db/__tests__/oracle-live-probe.test.ts"
+  ],
+  "startedAt": "2026-10-27T14:53:27.133829+00:00",
+  "log": "/tmp/cm-chunk-oracle-recheck.log",
+  "exitCode": 1,
+  "outerTimeout": false,
+  "finishedAt": "2026-10-27T14:56:27.913963+00:00",
+  "logSha256": "676426e155367f66ac3ecfc010f723f44e0bd3500c737c428d024b6982d8b3a7",
+  "archivedLog": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task22-oracle-recheck-output.txt",
+  "assessment": "Standalone rerun also failed after180seconds with docker stop reporting the disposable container unavailable. Oracle actual-service coverage remains unresolved; no success or product defect fix is claimed.",
+  "cleanupInspection": {
+    "containerId": "0f75dc5fc44b00b2ba895376300541909126048637107eba813720e8472de2df",
+    "result": "docker inspect: no such object",
+    "stillRunning": false
+  }
+}

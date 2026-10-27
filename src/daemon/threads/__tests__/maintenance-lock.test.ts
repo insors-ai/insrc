@@ -39,7 +39,7 @@ const { getDb, initDb } = await import('../../../db/client.js');
 const { addRepo } = await import('../../../db/repos.js');
 const { getSessionById, saveSession } = await import('../../../db/conversations.js');
 const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
-const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
+const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK, withBackgroundHold } = await import('../../../shared/locks/maintenance-lock.js');
 const { IpcServer, directDispatch } = await import('../../server.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { runPruneSweep } = await import('../../prune-timer.js');
@@ -516,4 +516,21 @@ test('an understanding.watch or todos.subscribe opened during maintenance is ref
 		service?.stop();
 		await server.close();
 	}
+});
+
+test('background work that is still waiting when its bounded wait runs out waits again and runs after maintenance, instead of failing', { timeout: 30_000 }, async () => {
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	let ran = false;
+	let failed: unknown;
+	// A 100 ms wait, against maintenance held for several of them.
+	const work = withBackgroundHold(async () => { ran = true; }, 100).catch((err: unknown) => { failed = err; });
+	await tick(450);
+	assert.equal(failed, undefined, 'the background work did not fail on its wait running out');
+	assert.equal(ran, false, 'the background work does not run during maintenance');
+	maintenance.release();
+	await maintenance.done;
+	await work;
+	assert.equal(failed, undefined);
+	assert.equal(ran, true, 'the background work ran after maintenance');
 });

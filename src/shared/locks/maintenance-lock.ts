@@ -24,8 +24,11 @@
 
 import { threadId } from 'node:worker_threads';
 
-import { getLockManager } from './lock-manager.js';
+import { getLogger } from '../logger.js';
+import { getLockManager, LockTimeoutError } from './lock-manager.js';
 import type { LockInfo, LockMetadata } from './lock-manager.js';
+
+const log = getLogger('maintenance-lock');
 
 export const MAINTENANCE_LOCK = 'daemon.maintenance';
 /** The activity maintenance names in its metadata while it compacts the graph store. */
@@ -66,10 +69,21 @@ export async function withRequestHold<T>(run: () => Promise<T>): Promise<HoldOut
 		lock === null ? { ran: false, busy: busyMessage(blockedBy) } as const : { ran: true, value: await run() } as const);
 }
 
-/** A background write (a timer, an indexing job): waits for maintenance (bounded), then runs under a shared hold. */
+/**
+ * A background write (a timer, an indexing job): waits for maintenance, then runs under a
+ * shared hold. Each wait is bounded (`timeoutMs`, so no wait is unbounded); a maintenance
+ * that outlasts it is waited for again, so the work runs after it rather than failing.
+ */
 export async function withBackgroundHold<T>(run: () => Promise<T>, timeoutMs: number = BACKGROUND_WAIT_MS): Promise<T> {
 	if (!enabled || holdsMaintenanceLock()) return run();
-	return getLockManager().request(MAINTENANCE_LOCK, { mode: 'shared', timeoutMs }, () => run());
+	for (;;) {
+		try {
+			return await getLockManager().request(MAINTENANCE_LOCK, { mode: 'shared', timeoutMs }, () => run());
+		} catch (err) {
+			if (!(err instanceof LockTimeoutError)) throw err;
+			log.warn({ waitedMs: timeoutMs, holders: err.holders }, 'maintenance lock: background work still waiting for maintenance; waiting again');
+		}
+	}
 }
 
 /** A subscription's refresh: runs under a shared hold taken with no wait; skipped (undefined) during maintenance. */

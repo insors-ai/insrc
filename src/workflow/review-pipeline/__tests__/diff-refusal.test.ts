@@ -110,3 +110,33 @@ test('DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during
   else { assert.ok(attempts >= 3); assert.equal(completedRevisions.length, 2, 'two successful descendants precede irreducibility'); }
  }
 });
+
+
+test('DIFF-REFUSAL-SPAN: unfragmented text singleton is splittable after a lower refusal and retains original parent attribution', async () => {
+ let active: ReviewCall, current: PreparedDimensionReview, calls = 0;
+ const small = { symbols: buildDiffSymbols({ files: [{ path: 'data.json', change: 'added', insertions: 1, deletions: 0 }], body: `diff --git a/data.json b/data.json\n@@ -0,0 +1 @@\n+${'x'.repeat(10_000)}\n`, truncated: false }) };
+ assert.equal(small.symbols.length, 1); assert.equal(small.symbols[0]!.diffFragment, undefined);
+ const provider = { inputBudgetChars: 384_000, capabilities: { boundedStructuredInput: true }, completeStructured: async (_m: unknown, schema: unknown) => {
+  calls++;
+  if (calls === 1) throw new InputTooLargeError('lower singleton cap', '', { maxChars: 9000 });
+  if (active.role === 'reduce') return enveloped(schema, { text: 'local behavior' });
+  if (active.role === 'obligation') return enveloped(schema, { findings: [] });
+  const rows = new Map(current.adapter.material().atoms.map(a => [a.id, JSON.parse(a.text) as ChangedSymbolSummary]));
+  return enveloped(schema, { findings: [], descriptions: active.carries.atomIds.map(atomId => ({ atomId, description: 'local' })), notes: active.carries.atomIds.map(id => ({ key: `diff-file-quality:${rows.get(id)!.diffFragment!.parentId}`, atomIds: [id], note: 'local' })) });
+ } } as unknown as LLMProvider;
+ const initial = prepareQuality(subject, small, provider, { groundingMode: 'degraded', now: () => 1000 }); current = initial;
+ assert.equal(initial.job.plan.single, true);
+ const wrapped = { ...initial, reprepare: (limit: number, at: number) => {
+  current = initial.reprepare(limit, at);
+  const rows = current.adapter.material().atoms.map(a => JSON.parse(a.text) as ChangedSymbolSummary); validateDiffFragments(rows);
+  assert.ok(rows.every(r => r.diffFragment?.parentId === small.symbols[0]!.entityId));
+  assert.ok(rows.map(r => r.signature).join('') === small.symbols[0]!.signature);
+  return current;
+ } };
+ const output = await executeDimensionJob(wrapped, provider, { groundingMode: 'degraded', now: () => 1000, onCall: c => { active = c as ReviewCall; } });
+ assert.equal(output.materialRevisions!.length, 1);
+ const revision = output.materialRevisions![0]!;
+ assert.equal(revision.initialPrimary[0]!.ranges.length, 1); assert.ok(revision.descendantRanges.length > 1);
+ assert.ok(revision.descendantRanges.every(r => r.parentDigest === revision.initialPrimary[0]!.ranges[0]!.parentDigest));
+ assert.equal(revision.timing.primaryChunkCount, 1); assert.ok(calls > 1);
+});

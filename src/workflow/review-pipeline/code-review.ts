@@ -28,7 +28,8 @@ import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-mat
 import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
 import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
 import { DIFF_PARENT_QUALITY, withDiffParents } from './adapters/diff-parent-evidence.js';
-import { fitDiffMaterial } from './adapters/diff-fragments.js';
+import { diffDigest } from '../code-review/diff-spans.js';
+import { fitDiffMaterial, isTextDiffRow } from './adapters/diff-fragments.js';
 import { envelopeMessages, envelopeSchema, promptChars } from './envelope.js';
 import { codeReviewGather } from './adapters/code-review-gather.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
@@ -312,7 +313,7 @@ export async function executeDimensionJob(prepared: PreparedDimensionReview, pro
   onMaterialRefusal: (old, adapter, call, reported, at) => {
    if (ctx?.groundingMode !== 'degraded' || call.stage !== 'judge' || (call.role !== 'single' && call.role !== 'chunk')) return undefined;
    const carried = new Set(call.role === 'single' ? adapter.material().atoms.map(a => a.id) : call.carries.atomIds);
-   const text = adapter.material().atoms.some(a => carried.has(a.id) && (JSON.parse(a.text) as ChangedSymbolSummary).diffFragment !== undefined);
+   const text = adapter.material().atoms.some(a => carried.has(a.id) && isTextDiffRow(JSON.parse(a.text) as ChangedSymbolSummary));
    if (!text) return undefined;
    assertReviewTime({ deadlineAt: old.timing!.deadlineAt }, at);
    const limit = Math.min(old.plan.limitChars - 1, reported ?? Math.floor(call.chars / 2), call.chars - 1);
@@ -338,7 +339,7 @@ export async function executeDimensionJob(prepared: PreparedDimensionReview, pro
 function diffRanges(material: ReviewMaterial): DiffRevisionRange[] {
  return material.atoms.flatMap(a => {
   const row = JSON.parse(a.text) as ChangedSymbolSummary, part = row.diffFragment;
-  return part === undefined ? [] : [{ atomId: a.id, parentId: part.parentId, startOffset: part.startOffset, endOffset: part.endOffset, parentDigest: part.parentDigest }];
+  return part === undefined ? isTextDiffRow(row) ? [{ atomId: a.id, parentId: a.id, startOffset: 0, endOffset: row.signature.length, parentDigest: diffDigest(row.signature) }] : [] : [{ atomId: a.id, parentId: part.parentId, startOffset: part.startOffset, endOffset: part.endOffset, parentDigest: part.parentDigest }];
  });
 }
 

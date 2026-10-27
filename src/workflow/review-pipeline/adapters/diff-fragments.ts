@@ -3,6 +3,8 @@ import { diffDigest, MAX_DIFF_SPAN_CHARS, splitDiffRow, validateDiffFragments } 
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { ReviewAtom, ReviewMaterial } from '../types.js';
 
+export const isTextDiffRow = (row: ChangedSymbolSummary): boolean => row.diffFragment !== undefined || (row.kind === 'file' && /(^|\n)diff --git /.test(row.signature));
+
 /** Fitting changes only a derived view; the captured parent evidence is immutable. */
 export function fitDiffMaterial(
 	grounding: CodeReviewGrounding, limitChars: number,
@@ -11,7 +13,7 @@ export function fitDiffMaterial(
 ): ReviewMaterial {
 	if (!Number.isSafeInteger(limitChars) || limitChars <= 0) throw new Error('Invalid complete review input limit');
 	validateDiffFragments(grounding.symbols);
-	const textParents = new Set(grounding.symbols.filter(row => row.diffFragment !== undefined || (row.kind === 'file' && /(^|\n)diff --git /.test(row.signature))).map(row => row.diffFragment?.parentId ?? row.entityId));
+	const textParents = new Set(grounding.symbols.filter(isTextDiffRow).map(row => row.diffFragment?.parentId ?? row.entityId));
 	const grouped = new Map<string, ChangedSymbolSummary[]>();
 	for (const row of grounding.symbols) {
 		const key = row.diffFragment?.parentId ?? row.entityId;

@@ -43,6 +43,7 @@ const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK } = await import('../../../shared/
 const { IpcServer, directDispatch } = await import('../../server.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { runPruneSweep } = await import('../../prune-timer.js');
+const { emitTodosEvent, scheduleTodosRetention, subscribe: subscribeTodos } = await import('../../todos-rpc.js');
 const { createUnderstandingRoutes } = await import('../../understanding-rpc.js');
 const { UnderstandingService } = await import('../../../understanding/service.js');
 const { ThreadServices } = await import('../main-services.js');
@@ -336,5 +337,50 @@ test('an open understanding.watch stream does not prevent idle detection or main
 		routes.stop();
 		service?.stop();
 		await server.close();
+	}
+});
+
+test('the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it', { timeout: 60_000 }, async () => {
+	const db = await getDb();
+	const shared = countSharedRequests();
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	let stop: (() => void) | undefined;
+	try {
+		// Fires once at once (as at boot): its sweep asks for the lock shared and waits.
+		stop = scheduleTodosRetention(db);
+		await until(() => shared.count() > 0, 'the retention sweep to ask for the maintenance lock');
+		const waiting = (): number => getLockManager().query().pending.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+		await tick(300);
+		assert.equal(waiting(), 1, 'the sweep waits for maintenance');
+		maintenance.release();
+		await maintenance.done;
+		await until(() => waiting() === 0 && !getLockManager().query().held.some(l => l.name === MAINTENANCE_LOCK), 'the sweep to run and release after maintenance');
+	} finally {
+		stop?.();
+		shared.restore();
+	}
+});
+
+test('a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered', { timeout: 60_000 }, async () => {
+	const sent: { stream: string; data: unknown }[] = [];
+	const aborter = new AbortController();
+	const stream = subscribeTodos({}, m => { sent.push({ stream: m.stream, data: m.data }); }, aborter.signal);
+	const list = { id: `list-${randomUUID()}` } as unknown as Parameters<typeof emitTodosEvent>[1];
+	try {
+		assert.deepEqual(getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK), [], 'the open stream holds nothing');
+		const maintenance = holdMaintenance();
+		await maintenance.granted;
+		emitTodosEvent('listUpdated', list);
+		await tick(300);
+		assert.equal(sent.filter(m => m.stream === 'todos').length, 0, 'no push during maintenance');
+		maintenance.release();
+		await maintenance.done;
+		emitTodosEvent('listUpdated', list);
+		await until(() => sent.some(m => m.stream === 'todos'), 'the push after maintenance');
+		assert.equal(sent.filter(m => m.stream === 'todos').length, 1, 'only the push after maintenance was delivered');
+	} finally {
+		aborter.abort();
+		await stream;
 	}
 });

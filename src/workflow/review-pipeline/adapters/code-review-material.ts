@@ -13,6 +13,7 @@
 
 import { posix } from 'node:path';
 
+import { validateDiffFragments } from '../../code-review/diff-spans.js';
 import type { CodeReviewGrounding } from '../../code-review/types.js';
 import type { ReviewAtom, ReviewMaterial, ReviewRelation } from '../types.js';
 
@@ -28,6 +29,7 @@ export function moduleOf(file: string): string {
  * entityId: carries and provenance would be ambiguous.
  */
 export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMaterial {
+	validateDiffFragments(grounding.symbols);
 	const atoms: ReviewAtom[] = [];
 	const labelById = new Map<string, string>();
 	for (const row of grounding.symbols) {
@@ -57,8 +59,9 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 	// Calls: B is among A's callees, or A among B's callers. A name matching several rows relates to each.
 	const idsByName = new Map<string, string[]>();
 	// Appended in place: copying the bucket per row was quadratic in a repeated name.
-	for (const row of grounding.symbols) { const ids = idsByName.get(row.name); if (ids === undefined) idsByName.set(row.name, [row.entityId]); else ids.push(row.entityId); }
+	for (const row of grounding.symbols) { if (row.diffFragment !== undefined) continue; const ids = idsByName.get(row.name); if (ids === undefined) idsByName.set(row.name, [row.entityId]); else ids.push(row.entityId); }
 	for (const row of grounding.symbols) {
+		if (row.diffFragment !== undefined) continue;
 		for (const callee of row.callees) for (const id of idsByName.get(callee) ?? []) relate(row.entityId, id, 'calls');
 		for (const caller of row.callers) for (const id of idsByName.get(caller) ?? []) relate(id, row.entityId, 'calls');
 	}
@@ -69,10 +72,23 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 	// Every atom built above carries its module; the key only satisfies the type.
 	const moduleKey = (a: ReviewAtom): string => a.module ?? '';
 	const byModule = new Map<string, number[]>();
-	atoms.forEach((a, i) => { const g = byModule.get(moduleKey(a)); if (g === undefined) byModule.set(moduleKey(a), [i]); else g.push(i); });
+	const siblings = new Map<string, ReviewAtom[]>();
+	const representatives: number[] = [];
+	grounding.symbols.forEach((row, i) => {
+		const parent = row.diffFragment?.parentId;
+		if (parent === undefined) { representatives.push(i); return; }
+		const group = siblings.get(parent);
+		if (group === undefined) { siblings.set(parent, [atoms[i]!]); representatives.push(i); }
+		else group.push(atoms[i]!);
+	});
+	for (const group of siblings.values()) for (let i = 1; i < group.length; i++) {
+		relate(group[i - 1]!.id, group[i]!.id, 'same-file');
+		relate(group[i - 1]!.id, group[i]!.id, 'same-module');
+	}
+	representatives.forEach(i => { const a = atoms[i]!; const g = byModule.get(moduleKey(a)); if (g === undefined) byModule.set(moduleKey(a), [i]); else g.push(i); });
 	const place = new Map<number, number>();
 	for (const g of byModule.values()) g.forEach((i, k) => place.set(i, k));
-	for (let i = 0; i < atoms.length; i++) {
+	for (const i of representatives) {
 		const a = atoms[i]!;
 		const group = byModule.get(moduleKey(a))!;
 		for (let k = place.get(i)! + 1; k < group.length; k++) {

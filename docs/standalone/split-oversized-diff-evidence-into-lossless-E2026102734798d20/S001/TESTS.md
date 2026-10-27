@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -53,3 +53,54 @@ Run at 2026-10-27T07:41:52.432Z on commit `bcb286d2c`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/agent/providers/__tests__/bounded-input.test.ts` | 0 | 4 | 0.7 s |  |
+
+## t3
+
+Run at 2026-10-27T07:59:04.809Z on commit `bd52e723e`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-READER**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-READER: unrecoverable truncated input refuses before any grounding is returned | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+| pass | DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+| pass | T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+| pass | DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+| pass | DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+| pass | DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file | `src/workflow/code-review/__tests__/diff-grounding.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/diff-grounding.test.ts` | 0 | 29 | 2.1 s |  |
+
+## t4
+
+Run at 2026-10-27T08:07:02.430Z on commit `cdafce8c3`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: DIFF-SPANS**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-SPANS: large text is a deterministic lossless ordered partition; small and binary rows keep legacy identity | `src/workflow/code-review/__tests__/diff-spans.test.ts` |
+| pass | DIFF-SPANS: staging rows retain original file order and unique changed paths | `src/workflow/code-review/__tests__/diff-spans.test.ts` |
+
+**unit: DIFF-COORDS**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-COORDS: continuation spans preserve UTF16 diff/source coordinates and renamed-file ownership | `src/workflow/code-review/__tests__/diff-spans.test.ts` |
+
+**unit: DIFF-INTEGRITY**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered spans/coordinates are rejected | `src/workflow/code-review/__tests__/diff-spans.test.ts` |
+| pass | DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid | `src/workflow/code-review/__tests__/diff-spans.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/diff-spans.test.ts` | 0 | 5 | 0.6 s |  |

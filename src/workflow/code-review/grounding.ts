@@ -366,6 +366,7 @@ export function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
 			? `[binary file changed — no textual hunks]`
 			: (byFile.get(f.path) ?? byFile.get(f.origPath ?? '') ?? `[no hunk text for ${f.path}]`);
 		const row: ChangedSymbolSummary = {
+			...(f.origPath !== undefined ? { diffOriginalPath: f.origPath } : {}),
 			entityId:      `diff:${f.path}`,
 			file:          f.path,
 			kind:          'file',

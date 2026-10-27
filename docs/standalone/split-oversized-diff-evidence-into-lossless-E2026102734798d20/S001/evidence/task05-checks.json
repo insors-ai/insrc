@@ -1,0 +1,16 @@
+{
+  "task": "t5",
+  "tests": {
+    "total": 82,
+    "passed": 82,
+    "failed": 0,
+    "log": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task05-fit-tests.txt"
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "behavior": "Fitted derived material uses actual enveloped chunk schema/context under authoritative adapter cap, Unicode-safe parent repartition and minimum framing refusal. Original snapshot retained; renamed small files preserve original path. Sparse parent chains and parent representatives prevent fragment clique material.",
+  "scopeLimits": "Quality parent notes/gather and actual duplicate-stage filtering are later t6/t7. Factory/provider cap propagation is t8. S003-size test uses scripted serial pipeline answers, not a real independent reviewer verdict.",
+  "fullSweep": "Deferred until all implementation tasks finish",
+  "pending": "Daemon task validation"
+}

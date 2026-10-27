@@ -27,6 +27,8 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, Dimensio
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
 import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
 import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
+import { fitDiffMaterial } from './adapters/diff-fragments.js';
+import { envelopeMessages, envelopeSchema, promptChars } from './envelope.js';
 import { codeReviewGather } from './adapters/code-review-gather.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
@@ -162,9 +164,19 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 	let built: ReviewMaterial | undefined;
 	const material = (): ReviewMaterial => {
 		if (built !== undefined) return built;
-		const base = codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding);
-		const own = spec.obligations?.(base);
-		built = own === undefined ? base : { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+		const source = spec.materialGrounding?.(grounding, groundingMode) ?? grounding;
+		const assemble = (view: CodeReviewGrounding): ReviewMaterial => {
+			const base = codeReviewMaterial(view), own = spec.obligations?.(base);
+			return own === undefined ? base : { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+		};
+		const chunk = spec.chunk;
+		built = groundingMode === 'degraded' && chunk !== undefined && spec.skip === undefined
+			? fitDiffMaterial(source, limitChars, assemble, (atom, view) => {
+				// The exact singleton call: its complete context and schema, without unrelated row scans.
+				const prompt = chunkCall(chunk, { id: 'c0000', atomIds: [atom.id], neighbours: [], chars: 0 }, { ...view, atoms: [atom] }, execution);
+				const id = '00000000-0000-0000-0000-000000000000';
+				return promptChars(envelopeMessages(id, prompt.messages), envelopeSchema(id, prompt.schema));
+			}) : assemble(source);
 		return built;
 	};
 	const singleSchema = JSON.stringify(spec.schema);

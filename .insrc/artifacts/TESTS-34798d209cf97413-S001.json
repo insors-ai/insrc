@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T07:41:52.432Z",
+    "updatedAt": "2026-10-27T08:07:02.430Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -254,6 +254,267 @@
               },
               {
                 "title": "DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "bd52e723e",
+        "ranAt": "2026-10-27T07:59:04.809Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-READER",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "DIFF-READER: unrecoverable truncated input refuses before any grounding is returned",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+                "title": "DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2143,
+            "titles": [
+              {
+                "title": "assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-READER: unrecoverable truncated input refuses before any grounding is returned",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a working-tree git failure propagates (DiffUnavailableError)",
+                "result": "pass"
+              },
+              {
+                "title": "assembler: a range git failure propagates at once — no step-down to the working tree or a last commit",
+                "result": "pass"
+              },
+              {
+                "title": "assembler (integration): a real repo with no base is refused, and the assembler is read-only",
+                "result": "pass"
+              },
+              {
+                "title": "a base and no globs: the range then the working tree, with no excludeGlobs argument",
+                "result": "pass"
+              },
+              {
+                "title": "a base and globs: the RANGE is read first, then the working tree, both with the globs",
+                "result": "pass"
+              },
+              {
+                "title": "a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope",
+                "result": "pass"
+              },
+              {
+                "title": "T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported",
+                "result": "pass"
+              },
+              {
+                "title": "seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not a diff failure propagates at once",
+                "result": "pass"
+              },
+              {
+                "title": "T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "integration, real git: with no base and a clean tree nothing is reviewed in the Story's place",
+                "result": "pass"
+              },
+              {
+                "title": "the range diff carries full hunks for the Story files and none for merged-in files",
+                "result": "pass"
+              },
+              {
+                "title": "a file changed by both a Story commit and the merge carries only the Story's own hunks",
+                "result": "pass"
+              },
+              {
+                "title": "edits folded into a merge commit are reviewed and marked",
+                "result": "pass"
+              },
+              {
+                "title": "a range with no Story change gives an empty grounding without calling git_diff",
+                "result": "pass"
+              },
+              {
+                "title": "a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first",
+                "result": "pass"
+              },
+              {
+                "title": "without hunksByFile buildDiffSymbols splits the body as before",
+                "result": "pass"
+              },
+              {
+                "title": "the range diff applies the exclusions to every per-unit call",
+                "result": "pass"
+              },
+              {
+                "title": "a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "cdafce8c3",
+        "ranAt": "2026-10-27T08:07:02.430Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-SPANS",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-spans.test.ts",
+                "title": "DIFF-SPANS: large text is a deterministic lossless ordered partition; small and binary rows keep legacy identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diff-spans.test.ts",
+                "title": "DIFF-SPANS: staging rows retain original file order and unique changed paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-COORDS",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-spans.test.ts",
+                "title": "DIFF-COORDS: continuation spans preserve UTF16 diff/source coordinates and renamed-file ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-INTEGRITY",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-spans.test.ts",
+                "title": "DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered spans/coordinates are rejected",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/diff-spans.test.ts",
+                "title": "DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/diff-spans.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 566,
+            "titles": [
+              {
+                "title": "DIFF-SPANS: large text is a deterministic lossless ordered partition; small and binary rows keep legacy identity",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-COORDS: continuation spans preserve UTF16 diff/source coordinates and renamed-file ownership",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered spans/coordinates are rejected",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-SPANS: staging rows retain original file order and unique changed paths",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid",
                 "result": "pass"
               }
             ],

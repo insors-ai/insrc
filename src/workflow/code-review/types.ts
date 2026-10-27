@@ -130,6 +130,8 @@ export interface DiffFragment {
 /** A structured summary of one changed symbol, assembled from the graph. */
 export interface ChangedSymbolSummary {
 	readonly diffFragment?: DiffFragment | undefined;
+	/** Original path for a small renamed diff that may be subdivided at a lower cap. */
+	readonly diffOriginalPath?: string | undefined;
 	/** Stable identity of the graph entity (the internal id, stringified). */
 	readonly entityId:  string;
 	readonly file:      string;

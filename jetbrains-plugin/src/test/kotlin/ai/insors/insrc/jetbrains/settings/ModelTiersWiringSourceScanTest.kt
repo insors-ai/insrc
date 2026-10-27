@@ -62,7 +62,11 @@ class ModelTiersWiringSourceScanTest {
         assertTrue(section.contains("runProcessWithProgressSynchronously"), "Refresh runs off the EDT")
         assertTrue(section.contains("is ModelDefinitionsResult.Failed -> status = r.failure.text"), "a failed Refresh shows its message")
         assertTrue(section.contains("(initial as? ModelDefinitionsResult.Failed)?.failure?.text"), "a failed first read shows its message")
-        assertTrue(section.contains("model?.let { m -> for (tier in ModelTiersModel.TIERS) body.add(tierRow(m, tier)) }"), "rows only with a loaded model")
+        assertTrue(
+            section.contains("if (status == null) model?.let { m -> for (tier in ModelTiersModel.TIERS) body.add(tierRow(m, tier)) }"),
+            "rows only with a loaded model and no failure — a failed Refresh hides them too",
+        )
+        assertTrue(Regex("is ModelDefinitionsResult\\.Failed -> status = r\\.failure\\.text[\\s\\S]*underGuard\\(::rebuildBody\\)").containsMatchIn(section), "a failed Refresh rebuilds the body")
         assertTrue(section.contains("modelCombo.isEditable = false"), "the model combo is non-editable (k4)")
         assertFalse(Regex("isEditable\\s*=\\s*true").containsMatchIn(section), "no free-text combo")
     }

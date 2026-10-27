@@ -99,7 +99,11 @@ class ModelTiersSection(
 
     // --- rendering ------------------------------------------------------------
 
-    /** The rows for a loaded model, or the failure message; called on the EDT. */
+    /**
+     * The rows for a loaded model, or — whenever the latest read failed — only the failure
+     * message, with no editable rows; called on the EDT. A model loaded earlier is kept with
+     * its pending edits and shown again after a successful Refresh.
+     */
     private fun rebuildBody() {
         body.removeAll()
         rowRefreshers.clear()
@@ -109,7 +113,7 @@ class ModelTiersSection(
                 alignmentX = Component.LEFT_ALIGNMENT
             })
         }
-        model?.let { m -> for (tier in ModelTiersModel.TIERS) body.add(tierRow(m, tier)) }
+        if (status == null) model?.let { m -> for (tier in ModelTiersModel.TIERS) body.add(tierRow(m, tier)) }
         body.revalidate()
         body.repaint()
     }
@@ -213,8 +217,8 @@ class ModelTiersSection(
 
     /**
      * Re-read the daemon's model definitions off the EDT. Loaded: the model is built (or
-     * updated, keeping pending edits) and the failure cleared. Failed: the failure is shown;
-     * a model already loaded stays editable.
+     * updated, keeping pending edits) and the failure cleared. Failed: the failure is shown
+     * and the rows are hidden until a Refresh succeeds.
      */
     private fun refreshDefinitions() {
         var fresh: ModelDefinitionsResult? = null

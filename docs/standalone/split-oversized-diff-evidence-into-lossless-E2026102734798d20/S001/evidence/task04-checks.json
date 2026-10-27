@@ -11,5 +11,10 @@
   },
   "invariants": "Ordered half-open UTF16 offsets; deterministic IDs/digests; exact reassembly; no surrogate-pair cuts; original source/diff coordinates; legacy small/binary behavior; changedFiles deduplicated. No graph/test edges invented.",
   "fullSweep": "Deferred until all implementation completes",
-  "pending": "Daemon build validation"
+  "pending": "Daemon build validation",
+  "initialDaemonValidation": {
+    "passed": false,
+    "reason": "Single-file test did not actually exercise assembler changedFiles order/deduplication."
+  },
+  "correction": "DIFF-SPANS now calls the actual assembler with two fragmented files in nonalphabetical order plus a small file, asserts exact changedFiles output and complete source-order row groups."
 }

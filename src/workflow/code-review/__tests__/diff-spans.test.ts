@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { diffDigest, MAX_DIFF_SPAN_CHARS, splitDiffRow, validateDiffFragments } from '../diff-spans.js';
-import { buildDiffSymbols } from '../grounding.js';
+import { assembleDiffCodeReviewGrounding, buildDiffSymbols } from '../grounding.js';
 import type { ChangedSymbolSummary } from '../types.js';
 
 const row = (signature: string): ChangedSymbolSummary => ({ entityId: 'diff:src/data.json', file: 'src/data.json', name: 'src/data.json', kind: 'file', signature, callers: [], callees: [], testsReaching: [], coverageEligible: false });
@@ -55,11 +55,24 @@ test('DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered sp
 	]) assert.throws(() => validateDiffFragments(bad), /diff fragment/);
 });
 
-test('DIFF-SPANS: staging rows retain original file order and unique changed paths', () => {
-	const text = `diff --git a/a.json b/a.json\n@@ -0,0 +1 @@\n+${'x'.repeat(50_000)}\n`;
-	const parts = buildDiffSymbols({ files: [{ path: 'a.json', change: 'added', insertions: 1, deletions: 0 }], body: text, truncated: false });
-	assert.ok(parts.length > 1); assert.deepEqual([...new Set(parts.map(p => p.file))], ['a.json']);
-	assert.equal(parts.map(p => p.signature).join(''), text.replace(/\n$/, ''));
+test('DIFF-SPANS: staging rows retain original file order and unique changed paths', async () => {
+	const files = ['b.json', 'a.json', 'small.ts'];
+	const sections = files.map((path, i) => `diff --git a/${path} b/${path}\n@@ -0,0 +1 @@\n+${'x'.repeat(i < 2 ? 50_000 : 10)}\n`);
+	const result = await assembleDiffCodeReviewGrounding('/repo', {
+		rangeDiff: async () => ({ files: files.map(path => ({ path, change: 'added', insertions: 1, deletions: 0 })), body: sections.join(''), truncated: false }),
+		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
+	}, { base: 'base' });
+	assert.deepEqual(result.changedFiles, files, 'assembler preserves first occurrence order, without repeated fragment paths');
+	const rows = result.grounding.symbols;
+	for (const [index, path] of files.entries()) {
+		const parts = rows.filter(p => p.file === path);
+		assert.equal(parts.map(p => p.signature).join(''), sections[index]!.replace(/\n$/, ''));
+		assert.ok(index < 2 ? parts.length > 1 : parts.length === 1);
+	}
+	assert.deepEqual(rows.map(p => p.file), [
+		...Array(rows.filter(p => p.file === 'b.json').length).fill('b.json'),
+		...Array(rows.filter(p => p.file === 'a.json').length).fill('a.json'), 'small.ts',
+	], 'file groups retain source order rather than sorting');
 });
 
 test('DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid', () => {

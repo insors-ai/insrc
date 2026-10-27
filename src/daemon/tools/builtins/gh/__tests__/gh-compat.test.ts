@@ -37,13 +37,21 @@ const CHANGED_SINCE_SNAPSHOT: Record<string, unknown> = {
 	'gh:project:item-delete': projectItemSchema({}),
 };
 
+// Story s10: gh_pr_view gained the optional jsonFields input; every other property is the snapshot's.
+const PR_VIEW_JSON_FIELDS = {
+	description: 'Extra gh JSON fields to return besides the default ones: state, mergedAt, reviewDecision, reviews, headRefName, url.',
+	type: 'array',
+	items: { anyOf: ['state', 'mergedAt', 'reviewDecision', 'reviews', 'headRefName', 'url'].map(c => ({ const: c, type: 'string' })) },
+};
+const withJsonFields = (schema: unknown) => { const s = schema as { properties: Record<string, unknown> }; return { ...s, properties: { ...s.properties, jsonFields: PR_VIEW_JSON_FIELDS } }; };
+
 test("gh-compat.test.ts: issue and pr tools' input schemas serialise identically to the snapshot", () => {
 	const tools = [...converted(issue), ...converted(pr)];
 	assert.equal(tools.length, 20, 'eight issue tools and twelve pr tools');
 	for (const tool of tools) {
 		const row = snapshot.find(s => s.id === tool.id);
 		assert.ok(row, `${tool.id} is in the snapshot`);
-		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), row.inputSchema, tool.id);
+		assert.deepEqual(JSON.parse(JSON.stringify(tool.inputSchema)), tool.id === 'gh_pr_view' ? withJsonFields(row.inputSchema) : row.inputSchema, tool.id);
 		assert.ok(tool.outputSchema !== undefined, `${tool.id} declares an output schema`);
 	}
 });

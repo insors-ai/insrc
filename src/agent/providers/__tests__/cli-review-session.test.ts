@@ -478,6 +478,10 @@ test('provider profile and normalized enveloped wire schema agree before plannin
 					policy, admitted: admitReviewBudget(policy, { promptChars: 6, wireSchemaJson: wireSchema, phase: 'planning' }),
 					outputAllowanceTokens: 8192, reviewId: 'budget-review', callId: 'budget-call', stage: 'review', role: 'single', attempt: 1,
 				};
+				const missingProfile = { ...budget, policy: { ...policy, profile: undefined } } as unknown as ReviewExecutionBudget;
+				await assert.rejects(() => provider.completeStructured([{ role: 'user', content: 'review' }], schema, { reviewBudget: missingProfile, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'native-budget-unqualified');
+				await assert.rejects(() => provider.runReviewSession('review', schema, { cwd: f.dir, deadlineMs: 5000, reviewBudget: missingProfile, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'native-budget-unqualified');
+				assert.equal(f.calls().length, 0, 'missing production profile never spawns a CLI');
 				const config = join(f.dir, 'config.json');
 				writeFileSync(config, '{"unchanged":true}');
 				if (executionKind === 'structured') {

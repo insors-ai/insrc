@@ -15,6 +15,7 @@
  * never executed; the model is told the tool is not available.
  */
 
+import type { ReviewExecutionBudget } from '../shared/review-budget.js';
 import { assertExplicitConnectionExecution, ConnectionExecutionError } from '../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../shared/step-context.js';
 import { isAbsolute, resolve } from 'node:path';
@@ -40,6 +41,7 @@ export interface GatheredToolOutput {
 }
 
 export interface ReadOnlyToolLoopArgs {
+	readonly reviewBudget?: ReviewExecutionBudget | undefined;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider: LLMProvider;
 	readonly messages: readonly LLMMessage[];
@@ -113,6 +115,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		// The signal goes into the call AND bounds the wait for it, so a provider
 		// that is between attempts (a retry backoff) cannot hold the loop past it.
 		const work = args.provider.complete(convo, {
+			...(args.reviewBudget !== undefined ? { reviewBudget: args.reviewBudget } : {}),
 			tools:           [...args.tools],
 			toolChoice:      'auto',
 			disableThinking: true,
@@ -161,6 +164,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 }
 
 export interface StructuredAnswerArgs {
+	readonly reviewBudget?: ReviewExecutionBudget | undefined;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider:    LLMProvider;
 	/** The conversation so far (typically a tool loop's messages). */
@@ -188,6 +192,7 @@ export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promi
 	throwIfAborted(signal);
 	const messages: LLMMessage[] = [...args.messages, { role: 'user', content: args.instruction }];
 	const work = args.provider.completeStructured<T>(messages, args.schema, {
+		...(args.reviewBudget !== undefined ? { reviewBudget: args.reviewBudget } : {}),
 		// Critical for qwen3.6 (memory: qwen3_6_needs_think_false); harmless elsewhere.
 		disableThinking: true,
 		...(args.maxAttempts !== undefined ? { maxAttempts: args.maxAttempts } : {}),

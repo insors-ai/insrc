@@ -692,6 +692,11 @@ export class OllamaProvider implements LLMProvider {
    * `opts.signal` cancels it with AbortError.
    */
   async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    if (opts.reviewBudget) {
+      const profile = this.getReviewBudgetProfile('reviewer-session');
+      const messages: LLMMessage[] = [{ role: 'user', content: prompt }];
+      preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(toOllamaMessages(messages)).length, reviewWireSchemaJson(profile, schema));
+    }
     const deadlineAt = Date.now() + opts.deadlineMs;
     const timer = new AbortController();
     const handle = setTimeout(() => timer.abort(), opts.deadlineMs);
@@ -699,6 +704,7 @@ export class OllamaProvider implements LLMProvider {
     const timedOut = (): boolean => timer.signal.aborted && opts.signal?.aborted !== true;
     try {
       const loop = await runReadOnlyToolLoop({
+        ...(opts.reviewBudget !== undefined ? { reviewBudget: opts.reviewBudget } : {}),
         provider: this,
         messages: [{ role: 'user', content: prompt }],
         tools:    getReadOnlyTools(),
@@ -713,6 +719,7 @@ export class OllamaProvider implements LLMProvider {
       // Out of turns: the model still answers from what it has read.
       if (!loop.done) log.warn({ model: this.model, turns: REVIEW_SESSION_MAX_TURNS }, 'ollama review session: tool turns ran out; asking for the answer');
       return await emitStructuredAnswer<T>({
+        ...(opts.reviewBudget !== undefined ? { reviewBudget: opts.reviewBudget } : {}),
         provider:    this,
         messages:    loop.messages,
         // Structural reference trails the prompt.

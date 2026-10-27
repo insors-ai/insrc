@@ -449,6 +449,11 @@ test('explicit managed profile and unsupported native-hard qualification refusal
 		const messages: LLMMessage[] = [{ role: 'user', content: 'review' }];
 		const wireSchemaJson = reviewWireSchemaJson(profile, schema);
 		const budget = { policy, admitted: admitReviewBudget(policy, { promptChars: 100, wireSchemaJson, phase: 'planning' }), outputAllowanceTokens: 8192, reviewId: 'review', callId: 'call', stage: 'review', role: 'single', attempt: 1 };
+		const missingProfile = { ...budget, policy: { ...policy, profile: undefined } } as unknown as import('../../../shared/review-budget.js').ReviewExecutionBudget;
+		await assert.rejects(() => fixture.provider.completeStructured(messages, schema, { reviewBudget: missingProfile, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'native-budget-unqualified');
+		await assert.rejects(() => fixture.provider.runReviewSession('review', schema, { cwd: '/tmp', deadlineMs: 5000, reviewBudget: missingProfile, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'native-budget-unqualified');
+		await assert.rejects(() => fixture.provider.runReviewSession('review', schema, { cwd: '/tmp', deadlineMs: 5000, reviewBudget: { ...budget, policy: { ...policy, profile: { ...session, transportVersion: 'mismatch' } } }, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
+		assert.equal(fixture.bodies.length, 0, 'missing and mismatched reviewer profiles refuse before the tool loop');
 		assert.deepEqual(await fixture.provider.completeStructured(messages, schema, { reviewBudget: budget, internalRetry: false }), { ok: true });
 		assert.equal(fixture.bodies.length, 1);
 		assert.deepEqual((fixture.bodies[0] as unknown as { format: unknown }).format, schema);
@@ -457,5 +462,14 @@ test('explicit managed profile and unsupported native-hard qualification refusal
 		assert.equal(fixture.bodies.length, 1, 'profile mismatch refuses before HTTP');
 		await assert.rejects(() => fixture.provider.completeStructured(messages, schema, { reviewBudget: budget, maxTokens: 8193, internalRetry: false }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
 		assert.equal(fixture.bodies.length, 1, 'output cannot exceed the reserved allowance');
+		const sessionPolicy = createReviewBudgetPolicy(session, 'reviewer-session');
+		const sessionBudget = { ...budget, policy: sessionPolicy, admitted: admitReviewBudget(sessionPolicy, { promptChars: 100, wireSchemaJson, phase: 'planning' }) };
+		const complete = fixture.provider.complete.bind(fixture.provider);
+		fixture.provider.complete = async (turns, opts) => {
+			assert.equal(opts?.reviewBudget, sessionBudget, 'reviewer tool-loop receives the immutable contract');
+			return complete(turns, opts);
+		};
+		assert.deepEqual(await fixture.provider.runReviewSession('review', schema, { cwd: '/tmp', deadlineMs: 5000, reviewBudget: sessionBudget, internalRetry: false }), { ok: true });
+		assert.equal(fixture.bodies.length, 3, 'one budgeted inspection turn and one budgeted final answer');
 	} finally { await fixture.close(); }
 });

@@ -62,6 +62,36 @@ import type { StartedWorker } from '../workers.js';
 // ---------------------------------------------------------------------------
 
 describe('unit', () => {
+	test('lane work that starts and ends between two ticks restarts the idle window: the board records when a lane was last busy', async () => {
+		const { StatusBoard } = await import('../status-board.js');
+		let clock = 1_000;
+		const board = new StatusBoard(() => clock);
+		assert.equal(board.lastLaneActivityAt(), undefined, 'no lane work yet');
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 60_000 },
+			now: () => clock, lanesIdle: () => board.snapshot().indexing.idle, laneActivityAt: () => board.lastLaneActivityAt(),
+			healthy: () => true, reclaimable: () => undefined,
+			workers: { live: () => [], created: () => 0 },
+			compact: () => assert.fail('no compaction below the thresholds'),
+		});
+		clock += 50_000;
+		// Between two ticks: a job runs and ends.
+		board.publishLane('index', { depth: 1, processing: true });
+		clock += 5_000;
+		board.publishLane('index', { depth: 0, processing: false });
+		assert.equal(board.lastLaneActivityAt(), 56_000, 'the publish that ended the work');
+		clock += 20_000;
+		assert.equal(board.snapshot().indexing.idle, true);
+		assert.equal(await c.tick(), 'not-idle', 'idle counts from the end of the lane work, not from boot');
+		assert.equal(c.idleForMs(), 20_000);
+		clock += 40_000;
+		assert.equal(await c.tick(), 'below-threshold');
+		// An idle publish while idle is not activity.
+		board.publishLane('summary', { depth: 0, processing: false });
+		assert.equal(board.lastLaneActivityAt(), 56_000);
+		await c.stop();
+	});
+
 	test('with idleMs 0, a non-admin request in flight or a busy lane still means not idle: tick does not compact', async () => {
 		let lanesIdle = true;
 		let compactions = 0;

@@ -301,6 +301,7 @@ async function main(): Promise<void> {
 		maintenance = new MaintenanceController({
 			config: maintenanceConfig(),
 			lanesIdle: () => threadServices.board.snapshot().indexing.idle,
+			laneActivityAt: () => threadServices.board.lastLaneActivityAt(),
 			healthy: () => getStoreHealth().state === 'ok',
 			reclaimable: graphStoreReclaimable,
 			workers: { live: () => workers.liveWorkers(), created: () => workers.createdCount() },

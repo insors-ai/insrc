@@ -62,6 +62,8 @@ export interface MaintenanceDeps {
 	readonly now?: (() => number) | undefined;
 	/** Both indexing lanes idle (the status board). */
 	readonly lanesIdle: () => boolean;
+	/** When a lane was last seen with work (the status board), on the `now` clock: lane work is activity. */
+	readonly laneActivityAt?: (() => number | undefined) | undefined;
 	/** The graph store's health is ok. */
 	readonly healthy: () => boolean;
 	readonly reclaimable: () => Reclaimable | undefined;
@@ -126,6 +128,9 @@ export class MaintenanceController {
 	 * Busy lane work is activity: the idle window starts again when it is seen.
 	 */
 	private busy(): boolean {
+		// Lane work that started and ended between two ticks is activity too.
+		const lane = this.deps.laneActivityAt?.();
+		if (lane !== undefined && lane > this.lastActivity) this.lastActivity = lane;
 		if (this.inFlight > 0) return true;
 		if (this.deps.lanesIdle()) return false;
 		this.lastActivity = this.now();

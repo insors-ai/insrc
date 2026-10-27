@@ -77,9 +77,21 @@ export class StatusBoard {
 	private clients: readonly AttachedClientSnapshot[] = [];
 	private store: StoreStatusSnapshot = { publishedAt: 0 };
 	private indexRunList: readonly IndexRunView[] = [];
+	private laneBusyAt: number | undefined;
+
+	constructor(private readonly now: () => number = Date.now) {}
 
 	publish(status: ThreadStatus): void { this.threads.set(status.threadId, status); }
-	publishIndexing(status: IndexingStatus): void { this.indexing = status; }
+	publishIndexing(status: IndexingStatus): void { this.setIndexing(status); }
+	/**
+	 * When an indexing lane was last seen with work (a publish while busy, or the one that
+	 * ended its work): work that came and went between two reads of the board still shows.
+	 */
+	lastLaneActivityAt(): number | undefined { return this.laneBusyAt; }
+	private setIndexing(next: IndexingStatus): void {
+		if (!this.indexing.idle || !next.idle) this.laneBusyAt = this.now();
+		this.indexing = next;
+	}
 	/**
 	 * One indexing worker publishes only its own lane (an additive sc4 method
 	 * delivered by s2): the board keeps both, the summary lane's publisher also
@@ -90,7 +102,7 @@ export class StatusBoard {
 		const summary = lane === 'summary' ? status : this.indexing.summary;
 		const kept = lane === 'summary' ? sweep : this.indexing.sweep;
 		const idle = index.depth === 0 && !index.processing && summary.depth === 0 && !summary.processing;
-		this.indexing = { index, summary, idle, ...(kept !== undefined ? { sweep: kept } : {}) };
+		this.setIndexing({ index, summary, idle, ...(kept !== undefined ? { sweep: kept } : {}) });
 	}
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.clients = clients; }
 	publishStore(store: StoreStatusSnapshot): void { this.store = store; }

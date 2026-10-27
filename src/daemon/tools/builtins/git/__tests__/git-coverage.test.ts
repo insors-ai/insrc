@@ -248,3 +248,10 @@ test('git_config, git_ls_remote, git_update_ref and git_rm are marked as built b
 	}
 	assert.match(renderCoverageTable(), /\| config \|  \| covered \| git_config \(built by s7\) \|/);
 });
+
+test('git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes', async () => {
+	const { gitLsFilesTool } = await import('../ls-files.js');
+	assert.ok('maxBytes' in (gitLsFilesTool.inputSchema as { properties: Record<string, unknown> }).properties, 'the input lists maxBytes');
+	const row = GIT_COVERAGE.find(r => r.command === 'ls-files');
+	assert.deepEqual(row?.toolIds, ['git_ls_files']);
+});

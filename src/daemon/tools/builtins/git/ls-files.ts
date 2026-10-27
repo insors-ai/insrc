@@ -10,6 +10,9 @@ import { parseNulList, parseOutput } from './parsers.js';
 import { GitLsFilesDataSchema } from './schemas.js';
 import type { GitLsFilesData } from './schemas.js';
 
+/** The largest budget a caller may ask for: 50 MiB, what the repository ignore filter allowed before it used this tool. */
+const MAX_LISTING_BYTES = 50 * 1024 * 1024;
+
 export const gitLsFilesTool = {
   id: 'git_ls_files',
   description: 'List files: the tracked ones (default), the untracked ones (others), or the ignored ones; optionally limited to paths. Names are returned exactly, whatever characters they hold.',
@@ -19,6 +22,7 @@ export const gitLsFilesTool = {
     cached: Type.Optional(Type.Boolean({ description: 'Files in the index (the default when nothing else is asked).' })),
     others: Type.Optional(Type.Boolean({ description: 'Untracked files, without those git ignores.' })),
     ignored: Type.Optional(Type.Boolean({ description: 'Only files git ignores (with others: untracked ignored files; otherwise tracked ones that match an ignore rule).' })),
+    maxBytes: Type.Optional(Type.Integer({ minimum: 1, maximum: MAX_LISTING_BYTES, description: 'The most output the listing may hold, in bytes (default 10 MiB). A listing over it fails; it is never returned cut.' })),
   }, { additionalProperties: false }),
   outputSchema: GitLsFilesDataSchema,
 
@@ -37,7 +41,8 @@ export const gitLsFilesTool = {
     if (others || ignored) { argv.push('--exclude-standard'); }
     if (paths.length > 0) { argv.push('--', ...paths); }
 
-    const read = await readGit('git_ls_files', argv, cwd, 30_000);
+    const maxBytes = typeof input['maxBytes'] === 'number' ? input['maxBytes'] : undefined;
+    const read = await readGit('git_ls_files', argv, cwd, 30_000, undefined, maxBytes);
     if (!read.ok) { return read.failure; }
     const parsed = parseOutput('git_ls_files', read.r, parseNulList);
     if (!parsed.ok) { return parsed.failure; }

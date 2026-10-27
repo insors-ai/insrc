@@ -101,9 +101,9 @@ export function conflictFailure(result: ToolResult, r: ShellResult): ToolResult 
 
 /** A read-only git command run for a tool's answer: its result, or the failure to return when it could not give one. */
 export async function readGit(
-  label: string, argv: readonly string[], cwd: string, timeoutMs: number, signal?: AbortSignal,
+  label: string, argv: readonly string[], cwd: string, timeoutMs: number, signal?: AbortSignal, maxBytes?: number,
 ): Promise<{ ok: true; r: ShellResult } | { ok: false; failure: ToolResult }> {
-  const r = await runShell(argv, { cwd, timeoutMs, signal });
+  const r = await runShell(argv, { cwd, timeoutMs, signal, ...(maxBytes !== undefined ? { maxBytes } : {}) });
   if (r.spawnError) { return { ok: false, failure: spawnFail(label, r.stderr) }; }
   if (r.code !== 0) { return { ok: false, failure: fail(label, r) }; }
   return { ok: true, r };

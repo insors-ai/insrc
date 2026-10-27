@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793117560378-wg1qo6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-27T16:13:16.061Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 35681,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "6d73bf1602816c8f",
+    "epicSlug": "refuse-path-shaped-session-ids-before",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Refuse path-shaped session ids before purging a session's tmp directory",
+    "reproduction": "With the daemon running, send `session.delete` with `{ \"sessionId\": \"..\" }` over the daemon socket. The id passes the only check (a non-empty string), and the purge removes `~/.insrc` (the parent of `~/.insrc/tmp`) recursively instead of a session's own tmp directory. Ids such as `a/../..` reach further up. Expected: the request is refused as invalid input and nothing outside `~/.insrc/tmp/<sessionId>` is removed. The same unchecked join is reached by `session.deleteBulk` and by the expiry/cap purge loop, which pass stored or caller-supplied ids to the same purge.",
+    "rootCause": "The session purge pipeline (`purgeSession`, src/daemon/handler-runtime.ts:169) builds the session's tmp directory as `join(PATHS.tmp, sessionId)` (src/daemon/handler-runtime.ts:243) with the raw id and removes it with `rmSync(tmpDir, { recursive: true, force: true })` (src/daemon/handler-runtime.ts:250). `join` resolves `..` and separators, so an id that is not a single path segment names a directory outside the tmp root (`PATHS.tmp` is `~/.insrc/tmp`, src/shared/paths.ts:48). `session.delete` (src/daemon/handler-runtime.ts:788) only rejects a missing or empty id (src/daemon/handler-runtime.ts:794) before calling the purge (src/daemon/handler-runtime.ts:796); the bulk and expiry paths (src/daemon/handler-runtime.ts:774, src/daemon/handler-runtime.ts:820) call it with no check at all. The code predates Epic 86197ac6 s2, whose task t1 moved it unchanged from src/daemon/index.ts into the handler runtime.",
+    "fixIntent": "A session id that is not a single path segment (empty, `.`, `..`, or containing `/`, `\\` or NUL) is refused by `session.delete` with its existing invalid-input answer before anything is purged, and the purge, on every path that reaches it, removes a tmp directory only when it is a direct child of the tmp root, logging and skipping otherwise. Session ids that are single segments keep today's behaviour."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:169",
+      "quotedText": "const purgeSession = async (sessionId: string, opts: { compact: boolean }) => {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:243",
+      "quotedText": "const tmpDir = join(PATHS.tmp, sessionId);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:250",
+      "quotedText": "rmSync(tmpDir, { recursive: true, force: true });"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:794",
+      "quotedText": "return { deleted: false, reason: 'invalid-input', message: 'sessionId required' };"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/paths.ts:48",
+      "quotedText": "tmp:         join(INSRC_DIR, 'tmp'),"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:820",
+      "quotedText": "await purgeSession(id, { compact: false });"
+    }
+  ]
+}

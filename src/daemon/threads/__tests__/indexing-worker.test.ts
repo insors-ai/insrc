@@ -113,11 +113,12 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 	try {
 		const calls: [string, unknown][] = [
 			['repo.stats', {}],
+			// Before any work is queued: a backup copies the live LanceDB directory, which a running index pass writes to.
+			['daemon.backup', { path: join(backupDir, 'b') }],
 			['repo.reindex', { path: REPO }],
 			['index.file', { filePath: join(REPO, 'src', 'a.ts'), event: 'update' }],
 			['config.enqueue', { filePath: join(HOME, 'none.md'), scope: { kind: 'global' }, event: 'update' }],
 			['config.reindex', { scope: { kind: 'global' } }],
-			['daemon.backup', { path: join(backupDir, 'b') }],
 			['docSummary.restoreFromBackup', { backupPath: 42 }],
 			['daemon.compact', undefined],
 			['repo.add', { path: SECOND }],

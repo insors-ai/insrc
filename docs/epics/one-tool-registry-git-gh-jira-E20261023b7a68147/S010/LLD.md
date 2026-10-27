@@ -520,6 +520,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Targeted extension _(2026-10-27T14:47:31.998Z)_
 - `q22f76c0e` — gh_pr_view is extended additively here (jsonFields allowlist) because readSignoffState needs mergedAt, reviewDecision and reviews; the owner of s5 can object, in which case the field list moves to a back-flow before the build.
   - **resolved**: Extend gh_pr_view in s10 _(2026-10-27T14:48:26.968Z)_
+- `qad6f946b` — git_push gains the additive input configured here, and the owner of s4's tools can object; in that case the push parity moves to a back-flow before the build.
+  - **resolved**: Add here, back-flow on objection _(2026-10-27T14:48:55.712Z)_
 
 ## Citations
 

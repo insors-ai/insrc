@@ -5,7 +5,8 @@ import { join } from 'node:path';
 
 import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
 import { codeReviewRunStart } from '../../../daemon/code-review-rpc.js';
-import { DEFAULT_DEPS as STEP_DEFAULT_DEPS, handleCodeReviewStep } from '../../../daemon/steps/code-review-step/handler.js';
+import { fixtureCodeReviewClient as handleCodeReviewStep } from '../../../daemon/steps/code-review-step/__tests__/controller-client.js';
+import { DEFAULT_DEPS as STEP_DEFAULT_DEPS } from '../../../daemon/steps/code-review-step/handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../../../daemon/steps/code-review-step/state-store.js';
 import { runCodeReview, writeRecordFile as DEFAULT_WRITE } from '../../code-review/runner.js';
 import type { CodeReviewRunnerDeps } from '../../code-review/runner.js';

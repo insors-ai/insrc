@@ -7,6 +7,9 @@ const log = getLogger('watcher');
 
 export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
+/** A directory subscription; `settled` resolves once a pending subscribe has finished and, if it was released meanwhile, been undone. */
+interface DirEntry { repo: string; sub: parcelWatcher.AsyncSubscription | null; settled: Promise<void> }
+
 export type EventHandler = (events: FileEvent[]) => void;
 /** The subscribe function the Watcher uses; tests replace it to force a failure. */
 export type SubscribeFn = typeof parcelWatcher.subscribe;
@@ -44,7 +47,7 @@ export class Watcher {
    * directory created together with its parent (mkdir -p a/b) but never watches the nested ones, so files written
    * there produce no event. A value of null marks a subscription being created.
    */
-  private readonly dirSubscriptions: Map<string, { repo: string; sub: parcelWatcher.AsyncSubscription | null }> = new Map();
+  private readonly dirSubscriptions: Map<string, DirEntry> = new Map();
   private debounceTimer:          ReturnType<typeof setTimeout> | null = null;
   private pendingEvents:          FileEvent[] = [];
 
@@ -141,16 +144,19 @@ export class Watcher {
       if (!lstatSync(dir).isDirectory()) return;          // lstat: a symbolic link is not a directory here
       if (this.hasWatchableSubdirectory(repoPath, dir)) {
         const ignore = this.repoIgnore.get(repoPath) ?? IGNORE_DIRS;
-        const entry: { repo: string; sub: parcelWatcher.AsyncSubscription | null } = { repo: repoPath, sub: null };
+        const entry: DirEntry = { repo: repoPath, sub: null, settled: Promise.resolve() };
         this.dirSubscriptions.set(dir, entry);
-        try {
-          const sub = await this.subscribe(dir, (_err, events) => this.onBackendEvents(repoPath, events), { ignore: [...ignore] });
-          if (this.dirSubscriptions.get(dir) === entry && this.repoIgnore.has(repoPath)) entry.sub = sub;
-          else await sub.unsubscribe();                     // the repo or the directory went away meanwhile
-        } catch (err) {
-          this.dirSubscriptions.delete(dir);
-          log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'could not watch a new directory; its files are scanned once');
-        }
+        entry.settled = (async () => {
+          try {
+            const sub = await this.subscribe(dir, (_err, events) => this.onBackendEvents(repoPath, events), { ignore: [...ignore] });
+            if (this.dirSubscriptions.get(dir) === entry && this.repoIgnore.has(repoPath)) entry.sub = sub;
+            else await sub.unsubscribe();                   // the repo or the directory went away meanwhile
+          } catch (err) {
+            if (this.dirSubscriptions.get(dir) === entry) this.dirSubscriptions.delete(dir);
+            log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'could not watch a new directory; its files are scanned once');
+          }
+        })();
+        await entry.settled;
       }
       if (!this.repoIgnore.has(repoPath)) return;
       for (const file of this.filesUnder(repoPath, dir)) this.pendingEvents.push({ type: 'create', path: file });
@@ -166,6 +172,7 @@ export class Watcher {
     for (const [key, entry] of [...this.dirSubscriptions]) {
       if (key !== dir && !(includeNested && key.startsWith(prefix))) continue;
       this.dirSubscriptions.delete(key);
+      await entry.settled;                                  // a subscribe still in progress finishes and undoes itself first
       try { await entry.sub?.unsubscribe(); } catch { /* already gone */ }
     }
   }

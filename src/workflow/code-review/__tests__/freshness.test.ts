@@ -15,13 +15,13 @@ import type { FileSelection } from '../../../indexer/file-selection.js';
  *  watermark (null = no indexed entities); `mtime` the file mtime; `repo` the
  *  repo-level lastIndexed fallback; `processing` the queue flag. */
 function deps(opts: {
-	watermark?: Record<string, number | null>;
-	mtime?:     Record<string, number>;
-	repo?:      number;
-	processing?: boolean;
-	selection?: Record<string, FileSelection>;
-	requested?: Record<string, number>;
-	onReindex?: () => void;
+	watermark?: Record<string, number | null> | undefined;
+	mtime?:     Record<string, number> | undefined;
+	repo?:      number | undefined;
+	processing?: boolean | undefined;
+	selection?: Record<string, FileSelection> | undefined;
+	requested?: Record<string, number> | undefined;
+	onReindex?: () => void | undefined;
 }): FreshnessDeps {
 	return {
 		selection: async (_r, f) => opts.selection?.[f] ?? 'selected',

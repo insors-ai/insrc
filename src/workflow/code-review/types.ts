@@ -26,7 +26,7 @@ import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import type { BuildRecord } from '../runners/build/standalone-record.js';
 import type { TestRecord } from '../runners/build/test-record.js';
-import type { PipelineCalls, ReviewMaterialSnapshot } from '../review-pipeline/types.js';
+import type { DiffMaterialRevision, PipelineCalls, ReviewMaterialSnapshot } from '../review-pipeline/types.js';
 
 // ---------------------------------------------------------------------------
 // sc3 — the per-dimension finding vocabulary (owned here, emitted by s2-s5)
@@ -72,6 +72,7 @@ export interface LoweredFinding {
 
 /** All findings one dimension produced for a Story. */
 export interface DimensionResult {
+ readonly materialRevisions?: readonly DiffMaterialRevision[] | undefined;
 	readonly dimension: ReviewDimension;
 	readonly findings:  readonly DimensionFinding[];
 	/**

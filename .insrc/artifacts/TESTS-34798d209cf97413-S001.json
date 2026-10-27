@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T08:53:02.435Z",
+    "updatedAt": "2026-10-27T08:55:25.019Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -919,8 +919,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "2092cd6d7",
-        "ranAt": "2026-10-27T08:53:02.435Z",
+        "commit": "a1a58f0cf",
+        "ranAt": "2026-10-27T08:55:25.019Z",
         "testsPassed": true,
         "tests": [
           {
@@ -960,7 +960,7 @@
             "file": "src/workflow/review-pipeline/__tests__/diff-timing.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 471,
+            "durationMs": 460,
             "titles": [
               {
                 "title": "DIFF-TIME-PLAN: real primary plans freeze 1/5/20 chunk budgets and aggregate five model dimensions with deterministic zero counts",

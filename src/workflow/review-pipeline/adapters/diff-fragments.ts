@@ -1,5 +1,5 @@
 import type { ChangedSymbolSummary, CodeReviewGrounding } from '../../code-review/types.js';
-import { MAX_DIFF_SPAN_CHARS, splitDiffRow, validateDiffFragments } from '../../code-review/diff-spans.js';
+import { diffDigest, MAX_DIFF_SPAN_CHARS, splitDiffRow, validateDiffFragments } from '../../code-review/diff-spans.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { ReviewAtom, ReviewMaterial } from '../types.js';
 
@@ -23,10 +23,11 @@ export function fitDiffMaterial(
 		const { diffFragment, ...rest } = first;
 		return { row: { ...rest, entityId: id, signature: parts.map(p => p.signature).join('') }, oldFile: diffFragment.oldFile };
 	});
+	const revisionDigest = diffDigest(JSON.stringify({ limitChars, parents: originals.map(({ row }) => [row.entityId, diffDigest(row.signature)]) }));
 	const limits = new Map(originals.map(({ row }) => [row.entityId, MAX_DIFF_SPAN_CHARS]));
 	for (;;) {
 		const symbols = originals.flatMap(({ row, oldFile }) => textParents.has(row.entityId)
-			? splitDiffRow(row, oldFile, limits.get(row.entityId)!) : [row]);
+			? splitDiffRow(row, oldFile, limits.get(row.entityId)!).map(part => part.diffFragment === undefined ? part : { ...part, entityId: `${part.entityId}:revision:${revisionDigest}` }) : [row]);
 		const material = build({ ...grounding, symbols });
 		const changed = new Set<string>();
 		for (const atom of material.atoms) {

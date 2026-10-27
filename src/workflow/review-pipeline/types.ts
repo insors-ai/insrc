@@ -280,7 +280,27 @@ export interface ReviewJobTiming {
  readonly rootDeadlineAt: number;
 }
 
+export interface DiffRevisionRange {
+ readonly atomId: string;
+ readonly parentId: string;
+ readonly startOffset: number;
+ readonly endOffset: number;
+ readonly parentDigest: string;
+}
+export interface DiffMaterialRevision {
+ readonly fromReviewId: string;
+ readonly toReviewId: string;
+ readonly fromMaterialHash: string;
+ readonly toMaterialHash: string;
+ readonly refusedCallId: string;
+ readonly limitChars: number;
+ readonly timing: ReviewJobTiming;
+ readonly initialPrimary: readonly { readonly id: string; readonly ranges: readonly DiffRevisionRange[] }[];
+ readonly descendantRanges: readonly DiffRevisionRange[];
+}
+
 export interface ReviewPipelineJob {
+ readonly materialRevisions?: readonly DiffMaterialRevision[] | undefined;
  readonly timing?: ReviewJobTiming | undefined;
 	readonly reviewId:   string;
 	readonly path:       ReviewPath;

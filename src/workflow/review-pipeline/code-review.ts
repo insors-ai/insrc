@@ -23,7 +23,7 @@ import { isAbsolute, join } from 'node:path';
 import { buildRetryNote } from '../../agent/providers/structured-output.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, ChangedSymbolSummary, DimensionFinding, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
 import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
 import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
@@ -35,10 +35,10 @@ import type { DimensionObligations } from './adapters/code-review-obligations.js
 import { runReviewJob } from './driver.js';
 import { getLogger } from '../../shared/logger.js';
 import { createReviewJob, immutableReviewSnapshot, pipelineCallsOf, withCorrectionNote } from './job.js';
-import { activateDimensionTiming, createReviewTimingPlan } from './timing.js';
+import { activateDimensionTiming, assertReviewTime, createReviewTimingPlan } from './timing.js';
 import { reviewLimitChars } from './limit.js';
 import { structuredLimits } from '../review/call-limits.js';
-import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
+import type { DiffRevisionRange, AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
 
 const log = getLogger('review-pipeline:code-review');
 
@@ -272,6 +272,7 @@ export interface PreparedDimensionReview {
  readonly primaryChunkIds: readonly string[];
  readonly preparedAt: number;
  readonly subject: CodeReviewSubject;
+ readonly reprepare: (limitChars: number, now: number) => PreparedDimensionReview;
 }
 
 /** The cap is selected once, before material fitting and any model work. */
@@ -284,24 +285,61 @@ export function effectiveDimensionLimit(provider: LLMProvider, mode: 'full' | 'd
 export function prepareDimensionJob(
  build: (snapshot: ReviewMaterialSnapshot, effectiveLimitChars: number) => ReviewAdapter<DimensionResult>,
  subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined,
+ replacementLimit?: number,
 ): PreparedDimensionReview {
  const preparedAt = (ctx?.now ?? Date.now)();
  const snapshot = immutableReviewSnapshot(ctx?.snapshot ?? codeReviewSnapshot(subject, grounding, ctx?.groundingMode ?? 'full'));
- const limit = effectiveDimensionLimit(provider, ctx?.groundingMode ?? 'full');
+ const limit = replacementLimit ?? effectiveDimensionLimit(provider, ctx?.groundingMode ?? 'full');
  const adapter = build(snapshot, limit) as unknown as ReviewAdapter<unknown>;
  const job = createReviewJob(adapter, 'daemon', snapshot, limit, { now: preparedAt });
  const model = adapter.stagesFor('daemon').some(stage => stage.kind === 'model');
  const primaryChunkCount = model ? Math.max(1, job.plan.chunks.length) : 0;
  const primaryChunkIds = Object.freeze(primaryChunkCount === 0 ? [] : job.plan.single || job.plan.chunks.length === 0 ? [`${job.dimension}:single`] : job.plan.chunks.map(c => `${job.dimension}:${c.id}`));
  logPlan('prepared', job, subject);
- return Object.freeze({ dimension: job.dimension as ReviewDimension, snapshot: job.snapshot, adapter, job, primaryChunkCount, primaryChunkIds, preparedAt, subject });
+ return Object.freeze({ dimension: job.dimension as ReviewDimension, snapshot: job.snapshot, adapter, job, primaryChunkCount, primaryChunkIds, preparedAt, subject,
+  reprepare: (lower: number, at: number) => {
+   if (!Number.isSafeInteger(lower) || lower <= 0 || lower >= limit) throw new Error('Diff material replacement must lower the input cap');
+   return prepareDimensionJob(build, subject, grounding, provider, { ...ctx, snapshot, now: () => at, groundingMode: ctx?.groundingMode ?? 'full' }, lower);
+  } });
 }
 
 export async function executeDimensionJob(prepared: PreparedDimensionReview, provider: LLMProvider, ctx?: JudgeContext): Promise<DimensionResult> {
  const now = ctx?.now ?? Date.now;
  const root = ctx?.timing ?? createReviewTimingPlan([prepared], prepared.preparedAt);
  const job = activateDimensionTiming(prepared, root, now());
- return await runReviewJob(job, prepared.adapter, provider, { now, signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, prepared.subject) }) as DimensionResult;
+ let completed: ReviewPipelineJob | undefined;
+ const output = await runReviewJob(job, prepared.adapter, provider, { now, signal: ctx?.signal, onCall: ctx?.onCall,
+  onMaterialRefusal: (old, adapter, call, reported, at) => {
+   if (ctx?.groundingMode !== 'degraded' || call.stage !== 'judge' || (call.role !== 'single' && call.role !== 'chunk')) return undefined;
+   const carried = new Set(call.carries.atomIds);
+   const text = adapter.material().atoms.some(a => carried.has(a.id) && (JSON.parse(a.text) as ChangedSymbolSummary).diffFragment !== undefined);
+   if (!text) return undefined;
+   assertReviewTime({ deadlineAt: old.timing!.deadlineAt }, at);
+   const limit = Math.min(old.plan.limitChars - 1, reported ?? Math.floor(call.chars / 2), call.chars - 1);
+   const rebuilt = prepared.reprepare(limit, at);
+   assertReviewTime({ deadlineAt: old.timing!.deadlineAt }, now());
+   const descendantRanges = diffRanges(rebuilt.adapter.material());
+   const originalRanges = new Map(diffRanges(prepared.adapter.material()).map(r => [r.atomId, r]));
+   const initialPrimary = prepared.job.plan.chunks.length === 0
+    ? [{ id: prepared.primaryChunkIds[0]!, ranges: [...originalRanges.values()] }]
+    : prepared.job.plan.chunks.map(c => ({ id: `${prepared.dimension}:${c.id}`, ranges: c.atomIds.flatMap(id => originalRanges.has(id) ? [originalRanges.get(id)!] : []) }));
+   const revision = { fromReviewId: old.reviewId, toReviewId: rebuilt.job.reviewId, fromMaterialHash: old.materialHash,
+    toMaterialHash: rebuilt.job.materialHash, refusedCallId: call.callId, limitChars: limit, timing: old.timing!, initialPrimary, descendantRanges };
+   if (old.materialHash === rebuilt.job.materialHash) throw new Error('Diff refusal replacement made no material progress');
+   log.info({ dimension: old.dimension, from: old.reviewId, to: rebuilt.job.reviewId, limitChars: limit }, 'review pipeline: restarting dimension from complete descendant diff material');
+   return { adapter: rebuilt.adapter, job: { ...rebuilt.job, timing: old.timing, deadlineAt: old.deadlineAt, deadlineBudgetMs: old.deadlineBudgetMs,
+    materialRevisions: [...(old.materialRevisions ?? []), revision] } };
+  },
+  onDone: done => { completed = done; logPlan('finished', done, prepared.subject); },
+ }) as DimensionResult;
+ return completed?.materialRevisions === undefined ? output : { ...output, materialRevisions: completed.materialRevisions };
+}
+
+function diffRanges(material: ReviewMaterial): DiffRevisionRange[] {
+ return material.atoms.flatMap(a => {
+  const row = JSON.parse(a.text) as ChangedSymbolSummary, part = row.diffFragment;
+  return part === undefined ? [] : [{ atomId: a.id, parentId: part.parentId, startOffset: part.startOffset, endOffset: part.endOffset, parentDigest: part.parentDigest }];
+ });
 }
 
 /** Compatibility entry point for callers running one dimension directly. */

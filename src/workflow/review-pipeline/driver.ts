@@ -21,6 +21,7 @@ import { UnsupportedBoundedInputError } from '../../agent/providers/bounded-inpu
 import { ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
+import { AtomTooLargeError } from './pack-into-batches.js';
 import { promptChars } from './envelope.js';
 import { applyFailure, applyOutput, deadlineError, nextCalls, result, runStage } from './job.js';
 import type { FailureCause, ReviewAdapter, ReviewCall, ReviewPipelineJob } from './types.js';
@@ -28,6 +29,8 @@ import type { FailureCause, ReviewAdapter, ReviewCall, ReviewPipelineJob } from 
 const log = getLogger('review-pipeline:driver');
 
 export interface RunReviewJobOpts {
+ /** A size refusal that cannot split existing atoms may replace a derived material view. */
+ readonly onMaterialRefusal?: ((job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, call: ReviewCall, maxChars: number | undefined, now: number) => { job: ReviewPipelineJob; adapter: ReviewAdapter<unknown> } | undefined) | undefined;
 	/** Cancels the review at once, including the call in flight. */
 	readonly signal?: AbortSignal | undefined;
 	/** The clock the deadline is read against. Default: Date.now. */
@@ -67,7 +70,14 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
 			const failure = classify(err);
 			log.warn({ dimension: job.dimension, stage: call.stage, role: call.role, attempt: call.attempt, cause: failure.cause, detail: failure.detail }, 'review pipeline: a call did not complete');
-			job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.detail, now: now(), ...(failure.reasons !== undefined ? { reasons: failure.reasons } : {}) });
+			try {
+    job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.detail, now: now(), ...(failure.reasons !== undefined ? { reasons: failure.reasons } : {}) });
+   } catch (refusal) {
+    const replacement = failure.cause === 'size-refusal' && refusal instanceof AtomTooLargeError
+     ? opts.onMaterialRefusal?.(job, adapter, call, failure.maxChars, now()) : undefined;
+    if (replacement === undefined) throw refusal;
+    job = replacement.job; adapter = replacement.adapter;
+   }
 			continue;
 		}
 		// An answer that arrives after a cancel is not applied.

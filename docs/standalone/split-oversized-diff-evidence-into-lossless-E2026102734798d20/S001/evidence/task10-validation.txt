@@ -1,0 +1,5 @@
+Task 10 focused verification
+Node 22 TypeScript --noEmit: pass.
+Affected pipeline/dimension/runner suites: 223 tests, 220 pass, 3 gated live skips, zero failures.
+Scripted singleton refusal after an accepted primary restarts quality from the same immutable snapshot at a lower cap, reassigns fragment IDs with a revision digest, preserves complete Unicode-safe evidence and initial timing, discards stale findings/notes, and persists original-primary/descendant range lineage on the dimension result. Irreducible and expired replacement fixtures reject.
+Full sweep deferred to task22; dispatch cancellation enforcement remains task11. Daemon validation follows commit.

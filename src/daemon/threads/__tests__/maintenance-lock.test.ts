@@ -61,6 +61,7 @@ import type { ReplyEnvelope, RequestEnvelope, FrameEnvelope, MethodClass } from 
 import type { RpcHandlers, StreamHandlers } from '../../server.js';
 import type { Owner } from '../../../understanding/service.js';
 import type { AssessmentScope } from '../../../shared/understanding.js';
+import { stopWorker } from './helpers/stop-worker.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-maintenance-lock-repo-')));
@@ -134,10 +135,7 @@ before(async () => {
 after(async () => {
 	if (codeWorker !== undefined) {
 		const { worker, port } = codeWorker;
-		const drained = new Promise<void>(resolve => worker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); }));
-		pushToWorker(port, INDEXING_STOP_OP, null);
-		await drained;
-		await worker.terminate();
+		await stopWorker(worker, () => pushToWorker(port, INDEXING_STOP_OP, null), INDEXING_DRAINED);
 	}
 	await closeLanceConn();
 	await closeGraphStore();

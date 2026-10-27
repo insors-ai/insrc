@@ -42,6 +42,7 @@ const { pushToWorker } = await import('../channel.js');
 const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
 const { MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
 import type { ReplyEnvelope, RequestEnvelope } from '../channel.js';
+import { stopWorker } from './helpers/stop-worker.js';
 
 // Real paths: the watcher reports events under the real path (/private/var on macOS).
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-indexing-worker-repo-')));
@@ -127,12 +128,8 @@ before(async () => {
 });
 after(async () => {
 	// Stop the worker's queue and watcher (its native subscription) before it ends, as shutdown does.
-	for (const w of workers) {
-		const drained = new Promise<void>(resolve => w.on('message', m => { if (m === INDEXING_DRAINED) resolve(); }));
-		pushToWorker(indexingPort, INDEXING_STOP_OP, null);
-		await drained;
-		await w.terminate();
-	}
+	// Stopped as shutdown stops it: an exit first, or no drained report within 30 s, fails the teardown.
+	for (const w of workers) await stopWorker(w, () => pushToWorker(indexingPort, INDEXING_STOP_OP, null), INDEXING_DRAINED);
 	await closeLanceConn();
 	await closeGraphStore();
 	for (const d of [HOME, REPO, SECOND]) rmSync(d, { recursive: true, force: true });

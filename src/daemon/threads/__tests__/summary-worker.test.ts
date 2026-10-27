@@ -43,6 +43,7 @@ const { INDEXING_DRAINED, INDEXING_PORT, INDEXING_STOP_OP } = await import('../i
 const { pushToWorker } = await import('../channel.js');
 import type { SummariseDocResult } from '../../../analyze/summariser/index.js';
 import type { Entity } from '../../../shared/types.js';
+import { stopWorker } from './helpers/stop-worker.js';
 
 const SECTIONS = 25;
 const FIXTURE = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-summary-fixture-')));
@@ -103,11 +104,8 @@ before(async () => {
 	codePort = code.port;
 });
 after(async () => {
-	const drained = new Promise<void>(resolve => codeWorker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); }));
-	pushToWorker(codePort, INDEXING_STOP_OP, null);
-	await drained;
-	await summaryWorker.terminate();
-	await codeWorker.terminate();
+	try { await stopWorker(codeWorker, () => pushToWorker(codePort, INDEXING_STOP_OP, null), INDEXING_DRAINED); }
+	finally { await summaryWorker.terminate(); }
 	await closeLanceConn();
 	await closeGraphStore();
 	for (const d of [HOME, FIXTURE]) rmSync(d, { recursive: true, force: true });

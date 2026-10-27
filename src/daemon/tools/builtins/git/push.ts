@@ -35,6 +35,7 @@ export const gitPushTool = {
     forceToMain: Type.Optional(Type.Boolean({ description: 'Allow force push to main / master / release/*. Use with extreme care.' })),
     tags: Type.Optional(Type.Boolean({ description: 'Pass --follow-tags to include annotated tags.' })),
     dryRun: Type.Optional(Type.Boolean({ description: 'Don\'t actually push; just report what would happen.' })),
+    configured: Type.Optional(Type.Boolean({ description: 'Run a plain `git push` so the remote, refspec and upstream come from the repository\'s own git configuration. Cannot be combined with remote, ref, setUpstream or any force input.' })),
   }, { additionalProperties: false }),
   outputSchema: GitPushDataSchema,
 
@@ -49,6 +50,13 @@ export const gitPushTool = {
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = String(input['cwd'] ?? process.cwd());
+    if (input['configured'] === true) {
+      return {
+        title: 'git_push',
+        content: [`Repo: \`${cwd}\``, 'Push as the repository\'s git configuration says (plain `git push`).', ...(input['dryRun'] === true ? ['Dry run -- no refs will be updated.'] : [])].join('\n'),
+        actions: [{ name: 'approve', label: 'Approve' }, { name: 'skip', label: 'Skip' }],
+      };
+    }
     const remote = String(input['remote'] ?? 'origin');
     let ref = str(input, 'ref');
     if (!ref) {
@@ -82,6 +90,7 @@ export const gitPushTool = {
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
+    if (input['configured'] === true) { return pushConfigured(input, cwd); }
     const remote = str(input, 'remote') ?? 'origin';
     assertSafeArg(remote, 'ref');
     let ref = str(input, 'ref');
@@ -152,3 +161,19 @@ export const gitPushTool = {
     return { output: body, format: 'markdown', success: true, data };
   },
 } satisfies TypedTool;
+
+/** configured: a plain `git push`, so git's own configuration picks the remote, the refspec and the upstream. */
+async function pushConfigured(input: ToolInput, cwd: string): Promise<ToolResult> {
+  const clash = ['remote', 'ref', 'setUpstream', 'force', 'forceRaw', 'forceToMain'].filter(k => input[k] !== undefined && input[k] !== false);
+  if (clash.length > 0) { return rejectInput('git_push', `configured cannot be combined with ${clash.join(', ')}`); }
+  const dryRun = input['dryRun'] === true;
+  const argv = ['git', 'push'];
+  if (dryRun) { argv.push('--dry-run'); }
+  if (input['tags'] === true) { argv.push('--follow-tags'); }
+  const result = await runShell(argv, { cwd, timeoutMs: 120_000 });
+  if (result.spawnError) { return spawnFail('git_push', result.stderr); }
+  if (result.code !== 0) { return fail('git_push', result, { network: true, mutating: true }); }
+  const data: GitPushData = { remote: '(configured)', ref: '(configured)', pushed: !dryRun, shortSha: '', forceMode: 'none' };
+  const body = [dryRun ? 'Dry-run OK -- would push as configured.' : 'Pushed as configured.', '', '```', result.stdout.trim() || result.stderr.trim(), '```'].join('\n');
+  return { output: body, format: 'markdown', success: true, data };
+}

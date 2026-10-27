@@ -25,7 +25,168 @@
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers the filed oversized-diff defect and the subsequent chunk-derived timing requirement while preserving the stated non-goals.",
+          "evidence": "The approved ISSUE requires complete attributable evidence, unchanged configured limits, independent degraded review, preservation of S003 evidence/release state, and an actual reproduction retry. The timing proposal specifies 600000 milliseconds per initial primary chunk, excluding retries/gather from additional budget credits. Sections 2–7 design these behaviors, including low-cap fitting, refusal recovery, fixed deadlines, resumable waits and the S003 smoke test. [files: .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/time-budget-proposal.json, src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/limit.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Current diff grounding creates one indivisible file atom and permits explicitly marked truncated evidence.",
+          "evidence": "buildDiffSymbols maps each file to entityId `diff:${f.path}`, stores its hunks in signature, and sets coverageEligible:false. Its truncation marker says '[diff truncated — reviewed over a bounded slice]'. codeReviewMaterial serializes each complete row into one atom. Existing diff-grounding tests expressly accept the truncation marker. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts]",
+          "action": "None; the proposed recovery/refusal tests correctly identify an intentional behavior change.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Current measurement omits the separately supplied schema, and current pipeline deadlines apply specifically to reviewer-session calls.",
+          "evidence": "promptChars accepts only messages and counts serialized text/headings/separators. job.sentChars measures envelopeMessages without envelopeSchema. withDeadline filters pending calls to execution.mode==='reviewer-session'; nextCalls returns pending calls unchanged when no reviewer-session call is present. The driver submits structured calls serially without a complete-input dispatch guard. [files: src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts]",
+          "action": "None; the design explicitly identifies the accounting and structured-deadline extensions.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing gather/reduction and duplicate stages are reusable, but fragment-parent obligations and adjudication require the additions described.",
+          "evidence": "GatherPlan already supports keyed notes, obligation calls, reduction calls and provenance; ReviewObligation already permits kind:'check-item'. Current quality chunks require findings/descriptions and have no required notes. relationCall returns [] for non-calls relations. Duplicate compareCalls explicitly forms every pair of description batches. Thus sparse adjacency alone would not supply parent correctness or avoid fragment duplication comparisons; the design adds both missing mechanisms. [files: src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts, src/workflow/review-pipeline/job.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The adapter-budget callback change identifies all seven production runDimensionJob callers.",
+          "evidence": "Direct search confirms five model callers—adherence, conventions, coverage, quality and functional-coverage—and two deterministic callers—diagram and UX. Currently runDimensionJob invokes build(snapshot), then independently passes reviewLimitChars() to createReviewJob; modelDimensionAdapter also has its own default. The proposed second callback argument closes this actual propagation gap. Analyzer relationship coverage was incomplete, so caller enumeration was checked directly. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/diagram/index.ts, src/workflow/code-review/dimensions/ux/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Extending enforceCodeReviewGate alone prevents every existing BUILD approval route from consuming a stale fingerprinted review.",
+          "evidence": "The TUI approve service directly executes `const approval = approveArtifactByJsonPath(...)`. That lower-level function calls otherPartyReviewGap, whose BUILD branch reads the CR and assigns `reviewer = reviewerPartyOf(cr.meta)`; it checks existence and reviewer party, but never calls enforceCodeReviewGate. Only approveWorkflowTarget calls enforceCodeReviewGate, and its current refusal branch is `if (gate.status === 'blocked')`. Section 3.13 omits src/workflow/gates.ts from its change sites and does not extend the common approval boundary. As written, stale fingerprinted CRs can still authorize BUILD approval through the TUI. [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/workflow/code-review/gate.ts, src/workflow/__tests__/other-party-review-gate.test.ts, src/workflow/__tests__/approve-codereview-gate.test.ts]",
+          "action": "Add freshness enforcement at the shared BUILD approval boundary used by approveArtifactByJsonPath, and update the workflow approval outcome handling as needed. Specify stale-review and override behavior explicitly. Add regressions through both approveWorkflowTarget and the TUI approve service.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Optional fragment/provider/fingerprint fields and explicit state invalidation can preserve legacy records and opted-out transport behavior without a database rewrite.",
+          "evidence": "ChangedSymbolSummary, StructuredCompletionOpts and ProviderCapabilities are shared TypeScript contracts that support the proposed optional additions. CR validation does not reject additional metadata. Current step state is in-memory opaque payload data, copied with structuredClone, rather than a persistent domain table. The design explicitly retains legacy final-only streams and unfingerprinted records, and requires restart for old degraded snapshots instead of fabricating an in-place conversion. [files: src/workflow/code-review/types.ts, src/shared/types.ts, src/shared/review-stream.ts, src/workflow/code-review/runner.ts, src/daemon/threads/step-state.ts, src/daemon/steps/code-review-step/state-store.ts]",
+          "action": "None; implement the stated legacy branches explicitly.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed daemon/controller split preserves existing independent-review ownership and CLI-based cloud access.",
+          "evidence": "codeReviewRunStart refuses daemon-authored BUILD records before resolving a provider. beginDiffOnlyReview routes non-daemon authors to reviewByDaemon and currently emits controller judgments for daemon-authored code. The design replaces that degraded controller protocol while retaining this routing. CliProvider already owns local claude/codex subprocess invocation; the proposed helper reuses that boundary and introduces no direct cloud REST provider. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/author.ts, src/agent/providers/cli-provider.ts, AGENTS.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The relationship documentation and linked companion adequately explain the proposed evidence ownership and interaction boundaries.",
+          "evidence": "The design specifies file-to-fragment ownership, ordered partitioning, parent obligations, global duplication ownership and revision compatibility in prose. I inspected the canonical sequence definition, generated HTML source and saved rendered screenshot. The HTML SHA256 matches the render record, 259c7a8a6dadb1292ee2a0f5b9eeb14773e2e2bba3af3c7223debafe64f59cfb. The six participants and nine messages are readable and consistent with the described capture/fit/review/gather flow. This verifies the saved static rendering; no fresh browser render or interactive-control verification was performed. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle2-round3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle2-round3.png]",
+          "action": "No additional ERD or UX mock is necessary. Optionally add controller-helper and status-wait lifelines for easier navigation; their ownership is already specified in prose.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Incomplete capture, oversized singleton fragments and invalid parent evidence have explicit detection and failure/recovery contracts.",
+          "evidence": "The real reader exposes truncation and git_diff has a 256KiB default and 2MiB hard capture cap. Existing pipeline redivision repacks atom IDs; it cannot split a singleton's text. The design addresses those distinct limits through reader recovery-or-refusal, measured Unicode-safe repartition, no-progress termination and immutable revision provenance. It also requires missing parent/global notes to fail before adjudication instead of using the existing NO_EVIDENCE path. [files: src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design explicitly separates waiter detachment, operation cancellation, deadline expiry and unsupported bounded execution.",
+          "evidence": "Currently runReviewStream invokes transport.cancel on timeout/abort, and the in-daemon transport aborts its handler signal. Current code-review tokens also share one-hour TTL/LRU eviction. Sections 3.8–3.12 explicitly replace these behaviors for opted-in operations: separate operation ownership, pinned active state, immutable deadlines, terminal capability refusal, late-answer rejection and cancellation of owned execution. Legacy request cancellation remains separately defined. [files: src/shared/review-stream.ts, src/daemon/steps/daemon-client.ts, src/daemon/threads/step-state.ts, src/workflow/review-pipeline/driver.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each listed acceptance criterion maps to concrete proposed tests using appropriate existing test seams.",
+          "evidence": "The ac1–ac6 mapping covers partition/reader integrity, complete-input transport, gather/duplication, compatibility/publication identity, the actual S003 retry, and timing/resumable ownership. Existing divided-review tests exercise production adapters/runner with scripted providers; review-stream tests use real Unix sockets and manual timers; diff-grounding tests provide injectable readers and temporary git repositories. These support the proposed test approach. This is verification of the test design, not a claim that the new tests exist or pass. [files: src/workflow/review-pipeline/__tests__/code-review-divided.test.ts, src/mcp/__tests__/review-stream.test.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/__tests__/other-party-review-gate.test.ts, package.json]",
+          "action": "Extend DIFF-PUBLISH-GATE with both approval-entry-point regressions identified under change-sites.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 0,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-27T06:36:47.683Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "hldContextSlice": {
@@ -559,7 +720,7 @@
         {
           "entity": "Resumable code-review wait ownership",
           "change": "field-add",
-          "details": "Extend existing codeReview.run IPC request additively with operation?:start|status|cancel and reviewHandle?:string. Omission preserves legacy streaming behavior; the new step path uses operation:start. Admission resolves scope, source fingerprint and independent reviewer before creating an in-memory daemon-owned operation with opaque unguessable handle, daemon epoch, AbortController, prepared timing plan, progress and eventual outcome. One target/source fingerprint owns at most one active review: repeated start joins it; different source fingerprint for the same active target returns review-conflict instead of competing artifact writers. Operation owns model execution, not a socket/request AbortSignal. Socket/host timeout detaches only the waiter. Explicit cancel aborts the operation and prevents final publication. status/cancel require handle plus matching repo/target; handles carry no source text or credentials. Status is read-only and never reexecutes models or replans. Every control request returns a terminal stream frame within 200 seconds: {status:pending,reviewHandle,progress,timing?} or cached existing final outcome/error. Timing is absent while preparation is incomplete and shown once frozen. insrc_code_review_step keeps phase:start and adds a discriminated pending-review state variant containing the handle/target/epoch; returns next:review_pending,state and guidance to call start with that state. In pending-review state proceed:false means explicit cancellation; in existing freshness state proceed:false retains degraded diff fallback. Update schema/help/guide with this distinction; no session-bound review gate bypass. Poll once per bounded tool turn; no duplicate start on host timeout. Active operation handles are held in the runtime registry independent of the shared one-hour step token TTL/LRU. Pending continuation tokens are pinned/refreshed until operation deadline plus a 10-minute terminal grace; during preparation idle watchdog bounds lifetime. Terminal outcomes are retained for that grace then evicted, active operations are never LRU-evicted. Daemon restart reports lost operation, never completion; new review requires fresh explicit start. Only the existing validated final run writes CR, once, under ownership and signal/deadline checks. No persistent DB or new general workflow runner. [c21] [c22] In src/shared/review-stream.ts retain CodeReviewStreamResult {runId,artifact} for legacy streams, add CodeReviewControlParams as a discriminated union: start carries operation:start plus normal target/grounding fields; status/cancel carry operation and reviewHandle plus matching repo/epicHash/storyId. Extend codeReviewRequestParams to preserve validated operation/reviewHandle rather than reconstructing and dropping them. Add CodeReviewControlResult = {status:pending,reviewHandle,progress,timing?} | {status:done,reviewHandle,result:CodeReviewStreamResult} | {status:failed,reviewHandle,error,reason} | {status:cancelled,reviewHandle}. Add codeReviewControl(params,opts):Promise<CodeReviewControlResult> alongside codeReviewStream in both StepDaemonClient and socket exports; both use the same serializer and discriminate/validate terminal frame data at runtime. The existing legacy codeReviewStream remains final-only. The step switches on status: only done.result enters existing artifact/independent-review validation; pending returns continuation, failed/cancelled report no CR. runReviewStream transport cancel still closes/aborts the request waiter, but the operation-mode handler deliberately detaches this signal from operation execution; legacy stream cancellation stays unchanged. Both transports test the same request/reply fixtures, pending requires no artifact, and malformed done cannot be accepted.",
+          "details": "Extend existing codeReview.run IPC request additively with operation?:start|status|cancel and reviewHandle?:string. Omission preserves legacy streaming behavior; the new step path uses operation:start. Admission resolves scope, source fingerprint and independent reviewer before creating an in-memory daemon-owned operation with opaque unguessable handle, daemon epoch, AbortController, prepared timing plan, progress and eventual outcome. One target/source fingerprint owns at most one active review: repeated start joins it; different source fingerprint for the same active target returns review-conflict instead of competing artifact writers. Operation owns model execution, not a socket/request AbortSignal. Socket/host timeout detaches only the waiter. Explicit cancel aborts the operation and prevents final publication. status/cancel require handle plus matching repo/target; handles carry no source text or credentials. Status is read-only and never reexecutes models or replans. Every control request returns a terminal stream frame within 200 seconds: {status:pending,reviewHandle,progress,timing?} or cached existing final outcome/error. Timing is absent while preparation is incomplete and shown once frozen. insrc_code_review_step keeps phase:start and adds a discriminated pending-review state variant containing the handle/target/epoch; returns next:review_pending,state and guidance to call start with that state. In pending-review state proceed:false means explicit cancellation; in existing freshness state proceed:false retains degraded diff fallback. Update schema/help/guide with this distinction; no session-bound review gate bypass. Poll once per bounded tool turn; no duplicate start on host timeout. Active operation handles are held in the runtime registry independent of the shared one-hour step token TTL/LRU. Pending continuation tokens are pinned/refreshed until operation deadline plus a 10-minute terminal grace; during preparation idle watchdog bounds lifetime. Terminal outcomes are retained for that grace then evicted, active operations are never LRU-evicted. Daemon restart reports lost operation, never completion; new review requires fresh explicit start. Only the existing validated final run writes CR, once, under ownership and signal/deadline checks. No persistent DB or new general workflow runner. [c21] [c22] In src/shared/review-stream.ts retain CodeReviewStreamResult {runId,artifact} for legacy streams, add CodeReviewControlParams as a discriminated union: start carries operation:start plus normal target/grounding fields; status/cancel carry operation and reviewHandle plus matching repo/epicHash/storyId. Extend codeReviewRequestParams to preserve validated operation/reviewHandle rather than reconstructing and dropping them. Add CodeReviewControlResult = {status:pending,reviewHandle,progress,timing?} | {status:done,reviewHandle,result:CodeReviewStreamResult} | {status:failed,reviewHandle,error,reason} | {status:cancelled,reviewHandle}. Add codeReviewControl(params,opts):Promise<CodeReviewControlResult> alongside codeReviewStream in both StepDaemonClient and socket exports; both use the same serializer and discriminate/validate terminal frame data at runtime. The existing legacy codeReviewStream remains final-only. The step switches on status: only done.result enters existing artifact/independent-review validation; pending returns continuation, failed/cancelled report no CR. runReviewStream transport cancel still closes/aborts the request waiter, but the operation-mode handler deliberately detaches this signal from operation execution; legacy stream cancellation stays unchanged. Both transports test the same request/reply fixtures, pending requires no artifact, and malformed done cannot be accepted. Final publication additionally requires fresh source/approved-contract/BUILD fingerprint and author revalidation through the mandatory production hook; see Review input identity and publication revalidation. An unchanged start handle is not proof that inputs remained current.",
           "callSites": [
             "src/daemon/code-review-rpc.ts",
             "src/daemon/code-review-operations.ts",
@@ -596,6 +757,40 @@
             "src/workflow/review-pipeline/adapters/code-review-chunk.ts",
             "src/workflow/review-pipeline/adapters/code-review-duplicates.ts",
             "src/workflow/review-pipeline/adapters/code-review-gather.ts"
+          ]
+        },
+        {
+          "entity": "Bounded controller-owned diff review protocol",
+          "change": "field-add",
+          "details": "Replace the daemon-authored-code degraded branch of beginDiffOnlyReview with beginControllerPipeline; never call emitJudgementsResult over whole diff grounding. Reuse prepareDimensionJob, exact fitted material, initial timing plan, modelDimensionAdapter(path:controller), requiresChunking, note validation, parent/global duplication gather and replacement revisions. Daemon prepares and validates deterministically but executes ZERO LLM judgments for this branch. Store controller-pipeline state with subject/source fingerprint, immutable snapshot, prepared jobs, serial cursor, timing, current call, revision and accepted-result ledger. Rebuild adapters from stored immutable inputs/explicit revision; verify material hash before reuse. Drive runStage for deterministic stages and expose only nextCalls()[0] from one dimension/stage at a time. Add next:emit_review_call output {state,call:{callId,dimension,stage,role,messages,schema,limitChars,expiresAt},timing}; do not return full grounding, other pending prompts or accumulated raw prior outputs. Include only the bounded explicit context/notes in that identified call. The existing judgements phase gains callResult?:{callId:string,answer?:unknown,failure?:{cause:size-refusal|invalid-answer|transient|stall,detail:string,maxChars?:number}} mutually exclusive with legacy judgements. For controller-pipeline state require exactly one callResult, exact current callId and either enveloped answer or failure; reject a complete DimensionResult[] even if valid under legacy schema. For legacy full graph state retain old whole-dimension protocol; old legacy degraded states are invalidated with restart-required and cannot bypass the new route. MCP/daemon input validation discriminates state kind and rejects mixed/foreign payloads. Apply answer through applyOutput, enforcing actual envelope/schema and semantic checks, never directly inject client verdicts as a substitute for unfinished pipeline work. Apply failure through applyFailure with bounded validated lower maxChars and existing retry rules, using singleton revision recovery when needed. Run deterministic stages to next call or complete dimension, then the next serial dimension. Advance state atomically using expected state revision/current call ID; consumed answer replay returns the cached continuation, and conflicting duplicate/foreign/out-of-order/late answers cannot rerun or overwrite work. Repeating start with controller-pipeline state returns the SAME current call and deadline, not a new call/count. Only final pipeline-derived DimensionResults may enter existing runner validation/scope filters/fold/publication, with reviewedBy:controller, client model attribution, degraded grounding/fallback reason and warn cap. No daemon provider call is used for independent controller judgment or to fill missing evidence. Recheck source author and target/fingerprint at every continuation/finalization; source changes terminate rather than silently review a new snapshot. Cancel through start/state/proceed:false, reject deadline/stale/lost states without CR; pin active state until root deadline plus terminal grace. Root clock includes controller turn waiting, child clock activates once at dimension start and per-call expiresAt=min(existing per-call allowance from first emission,child/root remaining); replay/poll never renews it. Controller has no daemon-owned subprocess to abort, so expiry revokes the call and rejects late answers. [c27] Complete-input admission also applies to controller execution: measure the entire emitted task envelope including metadata/guidance/state identifiers, messages and actual schema, reserving its framing before fit/pack; never append a second full grounding. This bounds application-provided task input, not an unknown host transcript. A bounded controller runner must use a verified fresh isolated client invocation, with no inherited conversation/project/tool context, through its locally installed CLI/OAuth abstraction. Add optional start controllerInput:{mode:isolated-structured,maxInputChars:number,adapterId:string}; this is an admission request, not proof. Resolve adapterId against a locally verified controller execution capability (same enforcing CLI isolation/normalization boundary, client-owned invocation), and use min(configured,384000,declared/verified adapter caps). Refuse unsupported-bounded-controller BEFORE returning evidence/prompts if the host cannot provide that isolation; never treat a self-declared flag or current chat history as enforcement. The daemon never substitutes its own review on this refusal. Legacy unbounded controller sessions cannot claim128K compliance. CallResult is produced by the admitted isolated controller invocation; explicit bounded history/notes are counted, and tool schema/help/guide teaches this contract. The current chat host may therefore report this route as unsupported until its verified isolated adapter is available; that is an honest pending capability, not a completed review. Concrete client enforcement lives in new src/mcp/controller-review.ts: allowlisted adapterId is cli-codex or cli-claude, implemented by the shared CliProvider enforcing fresh bounded mode. This controller-side helper verifies installed CLI isolation support, normalizes/measures the exact task and invokes that CLI locally; it never forwards the task into an existing chat/session. It drives one emitted call then sends its enveloped callResult, through the existing MCP-to-daemon step forwarding boundary. A capability descriptor comes from this actual helper, not arbitrary user JSON; unsupported hosts without the helper fail closed. Adapter selection follows the invoking controller client family and existing role/model policy; no global config mutation or direct REST. The helper stores only opaque pending controller call metadata and cancellation state, reports provider failures through the defined callResult path, and applies the same expiry/input guards before each local dispatch. It owns/aborts its subprocess on cancellation/deadline; ordinary step status waits do not relaunch it. Keep trusted helper-generated admission separate from raw tool arguments in src/mcp/server.ts and src/mcp/forward-step.ts; bypass attempts with a raw controllerInput flag cannot register a verified capability. Tests exercise this actual helper/CLI boundary with captured stdin/schema/arguments, not merely a mocked capability flag. The daemon still checks independently that the BUILD author is daemon; helper use cannot change reviewer routing.",
+          "callSites": [
+            "src/daemon/steps/code-review-step/handler.ts",
+            "src/daemon/steps/code-review-step/types.ts",
+            "src/daemon/steps/code-review-step/state-store.ts",
+            "src/daemon/steps/code-review-step/controller-pipeline.ts",
+            "src/workflow/review-pipeline/code-review.ts",
+            "src/workflow/review-pipeline/job.ts",
+            "src/workflow/code-review/runner.ts",
+            "src/mcp/server.ts",
+            "src/prompts/steering-block.md",
+            "src/mcp/controller-review.ts",
+            "src/mcp/forward-step.ts",
+            "src/agent/providers/cli-provider.ts"
+          ]
+        },
+        {
+          "entity": "Review input identity and publication revalidation",
+          "change": "field-add",
+          "details": "At admission capture a canonical ReviewInputFingerprint with schemaVersion and digest over resolved target/repo identity, Story range base and HEAD, complete scoped diff content plus path/status/mode/rename/binary identities, changed-file contents needed by the grounding snapshot, effective approved contract/plan identities and content digests, and BUILD artifact content digest including authoredBy/build revision. Hash deterministic structured inputs; exclude timestamps/progress-only noise explicitly rather than substituting mtime for content. Snapshot capture must be consistent: compare pre/post identity while reading and retry or refuse source-changed; do not attach a fingerprint for different bytes than the snapshot. Store the admitted fingerprint and expected author in the daemon operation and controller state. Both review routes re-resolve/recompute source/contract/BUILD identity immediately before final publication even if no second start request occurs. Require author still matches independent reviewer routing; same filenames with different BUILD content, contract edits, source edits, new commits, changed uncommitted bytes or changed Story ownership all invalidate. A mismatch terminates with review-input-changed, cancels/settles owned work and writes no new CR; no auto-rebase/restart, no false completed response. Add a runner pre-publication validation hook supplied by the real RPC/controller handler (required for new timed/bounded review paths), invoked after dimension completion and immediately before the existing atomic artifact writer, under per-target operation ownership and remaining deadline/signal checks. Legacy injected direct-runner callers retain their defaults, but production new routes cannot omit the hook. Persist optional meta.reviewInputFingerprint plus reviewInputSchemaVersion on CR, required for all newly bounded/timed reviews. Do not mutate the historical S003 evidence as part of this identity. Extend enforceCodeReviewGate to recompute/compare any recorded fingerprint against current source/approved contracts/BUILD; mismatch or unavailable identity refuses the gate as stale-review even if verdict/counts are otherwise acceptable. Legacy CR without fingerprint retains explicit legacy compatibility; it is not relabeled as newly verified. This gate check closes edits after the final pre-write check, including edits between check and atomic rename, and keeps later source edits from reusing a verdict. Recheck after publication before reporting done; if identity changed in that narrow interval report stale-review/no accepted completion, leaving the fingerprinted record unusable by the gate rather than deleting another owner’s artifact. Existing previous CR is not overwritten on a mismatch detected before writing; per-target ownership prevents competing review writers. This is content identity verification, not a new index-freshness dependency. [c29]",
+          "callSites": [
+            "src/daemon/code-review-rpc.ts",
+            "src/daemon/code-review-operations.ts",
+            "src/daemon/steps/code-review-step/handler.ts",
+            "src/workflow/code-review/input-fingerprint.ts",
+            "src/workflow/code-review/types.ts",
+            "src/workflow/code-review/runner.ts",
+            "src/workflow/code-review/gate.ts",
+            "src/workflow/storage.ts"
           ]
         }
       ],
@@ -708,7 +903,7 @@
       {
         "entity": "Resumable code-review wait ownership",
         "change": "field-add",
-        "details": "Extend existing codeReview.run IPC request additively with operation?:start|status|cancel and reviewHandle?:string. Omission preserves legacy streaming behavior; the new step path uses operation:start. Admission resolves scope, source fingerprint and independent reviewer before creating an in-memory daemon-owned operation with opaque unguessable handle, daemon epoch, AbortController, prepared timing plan, progress and eventual outcome. One target/source fingerprint owns at most one active review: repeated start joins it; different source fingerprint for the same active target returns review-conflict instead of competing artifact writers. Operation owns model execution, not a socket/request AbortSignal. Socket/host timeout detaches only the waiter. Explicit cancel aborts the operation and prevents final publication. status/cancel require handle plus matching repo/target; handles carry no source text or credentials. Status is read-only and never reexecutes models or replans. Every control request returns a terminal stream frame within 200 seconds: {status:pending,reviewHandle,progress,timing?} or cached existing final outcome/error. Timing is absent while preparation is incomplete and shown once frozen. insrc_code_review_step keeps phase:start and adds a discriminated pending-review state variant containing the handle/target/epoch; returns next:review_pending,state and guidance to call start with that state. In pending-review state proceed:false means explicit cancellation; in existing freshness state proceed:false retains degraded diff fallback. Update schema/help/guide with this distinction; no session-bound review gate bypass. Poll once per bounded tool turn; no duplicate start on host timeout. Active operation handles are held in the runtime registry independent of the shared one-hour step token TTL/LRU. Pending continuation tokens are pinned/refreshed until operation deadline plus a 10-minute terminal grace; during preparation idle watchdog bounds lifetime. Terminal outcomes are retained for that grace then evicted, active operations are never LRU-evicted. Daemon restart reports lost operation, never completion; new review requires fresh explicit start. Only the existing validated final run writes CR, once, under ownership and signal/deadline checks. No persistent DB or new general workflow runner. [c21] [c22] In src/shared/review-stream.ts retain CodeReviewStreamResult {runId,artifact} for legacy streams, add CodeReviewControlParams as a discriminated union: start carries operation:start plus normal target/grounding fields; status/cancel carry operation and reviewHandle plus matching repo/epicHash/storyId. Extend codeReviewRequestParams to preserve validated operation/reviewHandle rather than reconstructing and dropping them. Add CodeReviewControlResult = {status:pending,reviewHandle,progress,timing?} | {status:done,reviewHandle,result:CodeReviewStreamResult} | {status:failed,reviewHandle,error,reason} | {status:cancelled,reviewHandle}. Add codeReviewControl(params,opts):Promise<CodeReviewControlResult> alongside codeReviewStream in both StepDaemonClient and socket exports; both use the same serializer and discriminate/validate terminal frame data at runtime. The existing legacy codeReviewStream remains final-only. The step switches on status: only done.result enters existing artifact/independent-review validation; pending returns continuation, failed/cancelled report no CR. runReviewStream transport cancel still closes/aborts the request waiter, but the operation-mode handler deliberately detaches this signal from operation execution; legacy stream cancellation stays unchanged. Both transports test the same request/reply fixtures, pending requires no artifact, and malformed done cannot be accepted.",
+        "details": "Extend existing codeReview.run IPC request additively with operation?:start|status|cancel and reviewHandle?:string. Omission preserves legacy streaming behavior; the new step path uses operation:start. Admission resolves scope, source fingerprint and independent reviewer before creating an in-memory daemon-owned operation with opaque unguessable handle, daemon epoch, AbortController, prepared timing plan, progress and eventual outcome. One target/source fingerprint owns at most one active review: repeated start joins it; different source fingerprint for the same active target returns review-conflict instead of competing artifact writers. Operation owns model execution, not a socket/request AbortSignal. Socket/host timeout detaches only the waiter. Explicit cancel aborts the operation and prevents final publication. status/cancel require handle plus matching repo/target; handles carry no source text or credentials. Status is read-only and never reexecutes models or replans. Every control request returns a terminal stream frame within 200 seconds: {status:pending,reviewHandle,progress,timing?} or cached existing final outcome/error. Timing is absent while preparation is incomplete and shown once frozen. insrc_code_review_step keeps phase:start and adds a discriminated pending-review state variant containing the handle/target/epoch; returns next:review_pending,state and guidance to call start with that state. In pending-review state proceed:false means explicit cancellation; in existing freshness state proceed:false retains degraded diff fallback. Update schema/help/guide with this distinction; no session-bound review gate bypass. Poll once per bounded tool turn; no duplicate start on host timeout. Active operation handles are held in the runtime registry independent of the shared one-hour step token TTL/LRU. Pending continuation tokens are pinned/refreshed until operation deadline plus a 10-minute terminal grace; during preparation idle watchdog bounds lifetime. Terminal outcomes are retained for that grace then evicted, active operations are never LRU-evicted. Daemon restart reports lost operation, never completion; new review requires fresh explicit start. Only the existing validated final run writes CR, once, under ownership and signal/deadline checks. No persistent DB or new general workflow runner. [c21] [c22] In src/shared/review-stream.ts retain CodeReviewStreamResult {runId,artifact} for legacy streams, add CodeReviewControlParams as a discriminated union: start carries operation:start plus normal target/grounding fields; status/cancel carry operation and reviewHandle plus matching repo/epicHash/storyId. Extend codeReviewRequestParams to preserve validated operation/reviewHandle rather than reconstructing and dropping them. Add CodeReviewControlResult = {status:pending,reviewHandle,progress,timing?} | {status:done,reviewHandle,result:CodeReviewStreamResult} | {status:failed,reviewHandle,error,reason} | {status:cancelled,reviewHandle}. Add codeReviewControl(params,opts):Promise<CodeReviewControlResult> alongside codeReviewStream in both StepDaemonClient and socket exports; both use the same serializer and discriminate/validate terminal frame data at runtime. The existing legacy codeReviewStream remains final-only. The step switches on status: only done.result enters existing artifact/independent-review validation; pending returns continuation, failed/cancelled report no CR. runReviewStream transport cancel still closes/aborts the request waiter, but the operation-mode handler deliberately detaches this signal from operation execution; legacy stream cancellation stays unchanged. Both transports test the same request/reply fixtures, pending requires no artifact, and malformed done cannot be accepted. Final publication additionally requires fresh source/approved-contract/BUILD fingerprint and author revalidation through the mandatory production hook; see Review input identity and publication revalidation. An unchanged start handle is not proof that inputs remained current.",
         "callSites": [
           "src/daemon/code-review-rpc.ts",
           "src/daemon/code-review-operations.ts",
@@ -745,6 +940,40 @@
           "src/workflow/review-pipeline/adapters/code-review-chunk.ts",
           "src/workflow/review-pipeline/adapters/code-review-duplicates.ts",
           "src/workflow/review-pipeline/adapters/code-review-gather.ts"
+        ]
+      },
+      {
+        "entity": "Bounded controller-owned diff review protocol",
+        "change": "field-add",
+        "details": "Replace the daemon-authored-code degraded branch of beginDiffOnlyReview with beginControllerPipeline; never call emitJudgementsResult over whole diff grounding. Reuse prepareDimensionJob, exact fitted material, initial timing plan, modelDimensionAdapter(path:controller), requiresChunking, note validation, parent/global duplication gather and replacement revisions. Daemon prepares and validates deterministically but executes ZERO LLM judgments for this branch. Store controller-pipeline state with subject/source fingerprint, immutable snapshot, prepared jobs, serial cursor, timing, current call, revision and accepted-result ledger. Rebuild adapters from stored immutable inputs/explicit revision; verify material hash before reuse. Drive runStage for deterministic stages and expose only nextCalls()[0] from one dimension/stage at a time. Add next:emit_review_call output {state,call:{callId,dimension,stage,role,messages,schema,limitChars,expiresAt},timing}; do not return full grounding, other pending prompts or accumulated raw prior outputs. Include only the bounded explicit context/notes in that identified call. The existing judgements phase gains callResult?:{callId:string,answer?:unknown,failure?:{cause:size-refusal|invalid-answer|transient|stall,detail:string,maxChars?:number}} mutually exclusive with legacy judgements. For controller-pipeline state require exactly one callResult, exact current callId and either enveloped answer or failure; reject a complete DimensionResult[] even if valid under legacy schema. For legacy full graph state retain old whole-dimension protocol; old legacy degraded states are invalidated with restart-required and cannot bypass the new route. MCP/daemon input validation discriminates state kind and rejects mixed/foreign payloads. Apply answer through applyOutput, enforcing actual envelope/schema and semantic checks, never directly inject client verdicts as a substitute for unfinished pipeline work. Apply failure through applyFailure with bounded validated lower maxChars and existing retry rules, using singleton revision recovery when needed. Run deterministic stages to next call or complete dimension, then the next serial dimension. Advance state atomically using expected state revision/current call ID; consumed answer replay returns the cached continuation, and conflicting duplicate/foreign/out-of-order/late answers cannot rerun or overwrite work. Repeating start with controller-pipeline state returns the SAME current call and deadline, not a new call/count. Only final pipeline-derived DimensionResults may enter existing runner validation/scope filters/fold/publication, with reviewedBy:controller, client model attribution, degraded grounding/fallback reason and warn cap. No daemon provider call is used for independent controller judgment or to fill missing evidence. Recheck source author and target/fingerprint at every continuation/finalization; source changes terminate rather than silently review a new snapshot. Cancel through start/state/proceed:false, reject deadline/stale/lost states without CR; pin active state until root deadline plus terminal grace. Root clock includes controller turn waiting, child clock activates once at dimension start and per-call expiresAt=min(existing per-call allowance from first emission,child/root remaining); replay/poll never renews it. Controller has no daemon-owned subprocess to abort, so expiry revokes the call and rejects late answers. [c27] Complete-input admission also applies to controller execution: measure the entire emitted task envelope including metadata/guidance/state identifiers, messages and actual schema, reserving its framing before fit/pack; never append a second full grounding. This bounds application-provided task input, not an unknown host transcript. A bounded controller runner must use a verified fresh isolated client invocation, with no inherited conversation/project/tool context, through its locally installed CLI/OAuth abstraction. Add optional start controllerInput:{mode:isolated-structured,maxInputChars:number,adapterId:string}; this is an admission request, not proof. Resolve adapterId against a locally verified controller execution capability (same enforcing CLI isolation/normalization boundary, client-owned invocation), and use min(configured,384000,declared/verified adapter caps). Refuse unsupported-bounded-controller BEFORE returning evidence/prompts if the host cannot provide that isolation; never treat a self-declared flag or current chat history as enforcement. The daemon never substitutes its own review on this refusal. Legacy unbounded controller sessions cannot claim128K compliance. CallResult is produced by the admitted isolated controller invocation; explicit bounded history/notes are counted, and tool schema/help/guide teaches this contract. The current chat host may therefore report this route as unsupported until its verified isolated adapter is available; that is an honest pending capability, not a completed review. Concrete client enforcement lives in new src/mcp/controller-review.ts: allowlisted adapterId is cli-codex or cli-claude, implemented by the shared CliProvider enforcing fresh bounded mode. This controller-side helper verifies installed CLI isolation support, normalizes/measures the exact task and invokes that CLI locally; it never forwards the task into an existing chat/session. It drives one emitted call then sends its enveloped callResult, through the existing MCP-to-daemon step forwarding boundary. A capability descriptor comes from this actual helper, not arbitrary user JSON; unsupported hosts without the helper fail closed. Adapter selection follows the invoking controller client family and existing role/model policy; no global config mutation or direct REST. The helper stores only opaque pending controller call metadata and cancellation state, reports provider failures through the defined callResult path, and applies the same expiry/input guards before each local dispatch. It owns/aborts its subprocess on cancellation/deadline; ordinary step status waits do not relaunch it. Keep trusted helper-generated admission separate from raw tool arguments in src/mcp/server.ts and src/mcp/forward-step.ts; bypass attempts with a raw controllerInput flag cannot register a verified capability. Tests exercise this actual helper/CLI boundary with captured stdin/schema/arguments, not merely a mocked capability flag. The daemon still checks independently that the BUILD author is daemon; helper use cannot change reviewer routing.",
+        "callSites": [
+          "src/daemon/steps/code-review-step/handler.ts",
+          "src/daemon/steps/code-review-step/types.ts",
+          "src/daemon/steps/code-review-step/state-store.ts",
+          "src/daemon/steps/code-review-step/controller-pipeline.ts",
+          "src/workflow/review-pipeline/code-review.ts",
+          "src/workflow/review-pipeline/job.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/mcp/server.ts",
+          "src/prompts/steering-block.md",
+          "src/mcp/controller-review.ts",
+          "src/mcp/forward-step.ts",
+          "src/agent/providers/cli-provider.ts"
+        ]
+      },
+      {
+        "entity": "Review input identity and publication revalidation",
+        "change": "field-add",
+        "details": "At admission capture a canonical ReviewInputFingerprint with schemaVersion and digest over resolved target/repo identity, Story range base and HEAD, complete scoped diff content plus path/status/mode/rename/binary identities, changed-file contents needed by the grounding snapshot, effective approved contract/plan identities and content digests, and BUILD artifact content digest including authoredBy/build revision. Hash deterministic structured inputs; exclude timestamps/progress-only noise explicitly rather than substituting mtime for content. Snapshot capture must be consistent: compare pre/post identity while reading and retry or refuse source-changed; do not attach a fingerprint for different bytes than the snapshot. Store the admitted fingerprint and expected author in the daemon operation and controller state. Both review routes re-resolve/recompute source/contract/BUILD identity immediately before final publication even if no second start request occurs. Require author still matches independent reviewer routing; same filenames with different BUILD content, contract edits, source edits, new commits, changed uncommitted bytes or changed Story ownership all invalidate. A mismatch terminates with review-input-changed, cancels/settles owned work and writes no new CR; no auto-rebase/restart, no false completed response. Add a runner pre-publication validation hook supplied by the real RPC/controller handler (required for new timed/bounded review paths), invoked after dimension completion and immediately before the existing atomic artifact writer, under per-target operation ownership and remaining deadline/signal checks. Legacy injected direct-runner callers retain their defaults, but production new routes cannot omit the hook. Persist optional meta.reviewInputFingerprint plus reviewInputSchemaVersion on CR, required for all newly bounded/timed reviews. Do not mutate the historical S003 evidence as part of this identity. Extend enforceCodeReviewGate to recompute/compare any recorded fingerprint against current source/approved contracts/BUILD; mismatch or unavailable identity refuses the gate as stale-review even if verdict/counts are otherwise acceptable. Legacy CR without fingerprint retains explicit legacy compatibility; it is not relabeled as newly verified. This gate check closes edits after the final pre-write check, including edits between check and atomic rename, and keeps later source edits from reusing a verdict. Recheck after publication before reporting done; if identity changed in that narrow interval report stale-review/no accepted completion, leaving the fingerprinted record unusable by the gate rather than deleting another owner’s artifact. Existing previous CR is not overwritten on a mismatch detected before writing; per-target ownership prevents competing review writers. This is content identity verification, not a new index-freshness dependency. [c29]",
+        "callSites": [
+          "src/daemon/code-review-rpc.ts",
+          "src/daemon/code-review-operations.ts",
+          "src/daemon/steps/code-review-step/handler.ts",
+          "src/workflow/code-review/input-fingerprint.ts",
+          "src/workflow/code-review/types.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/workflow/code-review/gate.ts",
+          "src/workflow/storage.ts"
         ]
       }
     ],
@@ -798,6 +1027,20 @@
           "detection": "Daemon-owned operation registry validates handle, epoch, target and source fingerprint.",
           "response": "Detach waiter without cancelling the review; same source joins, changed source conflicts. Missing/restarted operation is explicitly lost, never a fabricated success. Explicit cancel stops the real operation.",
           "userImpact": "Resume the same review through returned state; start afresh only after terminal/lost state is reported.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Controller review host cannot enforce fresh bounded execution or submits a legacy whole-dimension verdict for fragmented diff.",
+          "detection": "Verified isolated adapter admission, state-kind dispatch, call identity/schema/provenance and deadline checks.",
+          "response": "Refuse unsupported host before evidence emission; otherwise reject invalid result and retain only valid pipeline state under original deadline. Never reroute daemon-authored code to daemon judgment.",
+          "userImpact": "Controller review remains pending with exact capability or validation cause; no false128K claim or CR.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Source, approved contract or BUILD identity/author changes while review is running or before its gate is consumed.",
+          "detection": "Canonical admitted content identity is compared at final publication and gate evaluation; no second start is necessary.",
+          "response": "Before writing, terminate review-input-changed without a new CR. If the source changes after publication check, fingerprint validation refuses stale gate consumption and post-publication check reports no accepted completion.",
+          "userImpact": "Fresh independent review is required for the changed inputs; the old verdict cannot authorize the current Story.",
           "recoverable": true
         }
       ],
@@ -939,6 +1182,32 @@
           "fixturesNeeded": [
             "Real pipeline/adapter stage fixtures plus shared serializer, socket and in-daemon scripted transport fixtures, fake timers, small provider cap and scripted refusal."
           ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove independent controller review cannot bypass bounded fitted pipeline execution.",
+          "subjects": [
+            "DIFF-CONTROLLER-LARGE: daemon-authored oversized diff, admitted isolated controller adapter, serial emit_review_call/callResult loop through all primary/reduction/parent/global duplication stages; every complete task <=effective cap, every original range covered, no whole grounding in responses, zero daemon LLM calls, final reviewedBy:controller and warn cap.",
+            "DIFF-CONTROLLER-VALIDATE: reject legacy full-dimension degraded submission, foreign/stale/out-of-order/missing/duplicate notes and mismatched call envelopes; retry corrections and singleton refused-range replacement preserve provenance and fixed timing N/deadlines. Atomic replay returns same continuation without duplicate model task or final write.",
+            "DIFF-CONTROLLER-TIME: fake clock covers waiting across client turns, activated child/per-call expiry, repeated start with same callID/deadline, explicit cancel, token TTL/lost daemon, changed source/author and late valid answer; none can publish CR.",
+            "DIFF-CONTROLLER-ADMISSION: unsupported/unverified/self-declared isolated host capability returns unsupported-bounded-controller before any evidence/task emission. Verified fresh adapter rejects sentinel conversation/project/history and oversized complete envelope/schema; legacy full graph behavior remains compatible."
+          ],
+          "fixturesNeeded": [
+            "Real controller-path handler and pipeline with scripted isolated client answers, noDaemonProvider assertion, fake clocks, retained opaque state and capability-admission fixtures."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prevent stale independent review publication or later gate reuse when inputs change.",
+          "subjects": [
+            "DIFF-PUBLISH-SOURCE: change a reviewed file, uncommitted diff, HEAD/range or effective approved contract during daemon execution without another start call; real runner hook returns review-input-changed, no new CR write, no done verdict and prior artifact preserved.",
+            "DIFF-PUBLISH-BUILD: replace BUILD content/author during daemon execution without another start; even same path/mtime is detected, independent author check fails and no CR written. Repeat on controller continuation/finalization.",
+            "DIFF-PUBLISH-GATE: unchanged fingerprinted inputs permit existing gate evaluation, edit after pre-write check or after successful completion causes stale-review refusal; unavailable identity also refuses. Verify post-publication race reports no accepted completion and legacy unfingerprinted artifacts retain documented compatibility.",
+            "DIFF-FINGERPRINT-SNAPSHOT: deterministic canonical content identity, capture detects edits during reads, identical source matches, distinct mode/rename/binary/build/contract identity differs; no model call or stamp on inconsistent capture."
+          ],
+          "fixturesNeeded": [
+            "Real RPC/controller-to-runner-to-gate fixture with mutable temp git repo and actual BUILD/contract artifacts, controlled pre-publication hook barriers, captured atomic writes and fake clock."
+          ]
         }
       ],
       "acceptanceMapping": [
@@ -960,7 +1229,9 @@
             "DIFF-ADMISSION",
             "DIFF-FACTORY-LIMIT",
             "DIFF-LOW-CAP",
-            "DIFF-REFUSAL-SPAN"
+            "DIFF-REFUSAL-SPAN",
+            "DIFF-CONTROLLER-LARGE",
+            "DIFF-CONTROLLER-ADMISSION"
           ]
         },
         {
@@ -971,13 +1242,18 @@
             "DIFF-SCALE",
             "DIFF-PARENT-QUALITY",
             "DIFF-FITS-ONE-CALL",
-            "DIFF-SCALE-DUPLICATES"
+            "DIFF-SCALE-DUPLICATES",
+            "DIFF-CONTROLLER-VALIDATE"
           ]
         },
         {
           "criterionId": "ac4",
           "provingTests": [
-            "DIFF-COMPAT"
+            "DIFF-COMPAT",
+            "DIFF-PUBLISH-SOURCE",
+            "DIFF-PUBLISH-BUILD",
+            "DIFF-PUBLISH-GATE",
+            "DIFF-FINGERPRINT-SNAPSHOT"
           ]
         },
         {
@@ -994,7 +1270,8 @@
             "DIFF-TIME-OUTER",
             "DIFF-WAIT-RESUME",
             "DIFF-WAIT-COMPAT",
-            "DIFF-WAIT-TRANSPORT"
+            "DIFF-WAIT-TRANSPORT",
+            "DIFF-CONTROLLER-TIME"
           ]
         }
       ]
@@ -1034,7 +1311,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "Internal additive metadata/options only. Rows without fragment provenance retain legacy semantics, and graph-based source-symbol identities and existing review result shapes remain compatible. No new IPC method or persistent domain schema. Existing codeReview.run gains optional operation/handle fields and control-frame responses for opted-in clients; absent operation retains legacy streaming. Existing step phases stay unchanged; pending-review next/state is additive and its cancellation semantics are documented. Existing pending jobs with old whole-file snapshots are restarted as new jobs; no in-place job rewrite or fabricated continuation. Non-review CLI completions retain defaults; bounded diff calls fail explicitly if isolation cannot be enforced.",
+      "backwardCompat": "Internal additive metadata/options only. Rows without fragment provenance retain legacy semantics, and graph-based source-symbol identities and existing review result shapes remain compatible. No new IPC method or persistent domain schema. Existing codeReview.run gains optional operation/handle fields and control-frame responses for opted-in clients; absent operation retains legacy streaming. Existing step phases stay unchanged; pending-review next/state is additive and its cancellation semantics are documented. Existing pending jobs with old whole-file snapshots are restarted as new jobs; no in-place job rewrite or fabricated continuation. Non-review CLI completions retain defaults; bounded diff calls fail explicitly if isolation cannot be enforced. For daemon-authored degraded reviews, new emit_review_call/callResult variants replace emit_judgements; old degraded tokens require restart and cannot accept direct dimension verdicts. Legacy full-graph controller review remains compatible. Bounded controller execution requires a verified isolated host adapter or fails before evidence emission. New bounded/timed CRs carry an optional additive content fingerprint checked by the existing gate; legacy records without it retain legacy behavior and are not represented as satisfying the new identity guarantee.",
       "zeroDowntime": false,
       "dataRewriteRequired": false
     },
@@ -1076,7 +1353,7 @@
     "openQuestions": [],
     "sequenceDefinition": {
       "id": "diff-review-complete-input-budget",
-      "narrative": "The sequence shows where complete diff evidence is divided and where all supplied context/history/schema must be counted before a serial model call. Parent-file provenance flows through every chunk into gather; the budget guard can stop a call without dropping evidence. Preparation freezes primary chunk counts and 10-minute-per-chunk budgets before any model call; all later work consumes the same deadline. A daemon-owned operation outlives a bounded status waiter.",
+      "narrative": "The sequence shows where complete diff evidence is divided and where all supplied context/history/schema must be counted before a serial model call. Parent-file provenance flows through every chunk into gather; the budget guard can stop a call without dropping evidence. Preparation freezes primary chunk counts and 10-minute-per-chunk budgets before any model call; all later work consumes the same deadline. A daemon-owned operation outlives a bounded status waiter. For daemon-authored code, the controller supplies each identified bounded answer instead of the CLI-provider lifeline; the daemon only prepares/validates that serial protocol, preserves controller authorship and refuses a host without verified isolated execution.",
       "participants": [
         {
           "id": "snapshot",
@@ -1328,6 +1605,28 @@
       "id": "c26",
       "kind": "prior-artifact",
       "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-timing-cycle1-round2.json"
+    },
+    {
+      "id": "c27",
+      "kind": "code",
+      "ref": "src/daemon/steps/code-review-step/handler.ts:387-584",
+      "quotedText": "beginDiffOnlyReview currently emits whole-grounding dimension prompts, and handleJudgements injects supplied dimension results. The bounded controller protocol replaces this degraded route."
+    },
+    {
+      "id": "c28",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-timing-cycle2-round1.json"
+    },
+    {
+      "id": "c29",
+      "kind": "code",
+      "ref": "src/workflow/code-review/runner.ts:172-242",
+      "quotedText": "Current runner writes CR after judgments and shape validation, without final source or BUILD identity revalidation; gate must not treat that old snapshot as current."
+    },
+    {
+      "id": "c30",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-timing-cycle2-round2.json"
     }
   ]
 }

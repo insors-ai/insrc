@@ -1,0 +1,177 @@
+{
+  "review": {
+    "artifact": "design.story",
+    "stage": "design.story",
+    "verdict": "block",
+    "findings": [
+      {
+        "claimId": "coverage-of-intent.1",
+        "ref": "coverage-of-intent",
+        "item": "coverage-of-intent",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design covers the filed oversized-diff defect without truncating evidence or changing S003 inventory contents and release state.",
+        "evidence": "The approved ISSUE requires complete attributable units, preserved limits, independent degraded review and an actual S003 retry. The reproduction records 443605- and 1838027-character atoms, restoredReviewChunkTokens:128000 and releaseEnabled:false. The proposed partitioning, attribution, refusal behavior and smoke test address these requirements. Insrc analyze timed out after 300 seconds; verification continued through direct source and document reads. [files: .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-review-blocker.json, src/workflow/code-review/grounding.ts]",
+        "action": "Retain the evidence-preservation restrictions and report runtime activation or smoke-test blockers honestly.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "coverage-of-intent.2",
+        "ref": "coverage-of-intent",
+        "item": "coverage-of-intent",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The timing design covers the recorded ten-minutes-per-initial-primary-chunk requirement.",
+        "evidence": "The timing proposal requires initial primary counts, aggregated dimension budgets, preparation time, fixed deadlines across retries and resumable waits. Sections 3.7\u20133.10 specify these. The real runner currently captures grounding once and executes effective judge slots serially, supporting the proposed preparation/execution seam. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/time-budget-proposal.json, src/workflow/code-review/runner.ts, src/workflow/review-pipeline/job.ts]",
+        "action": "Preserve the identical prepared jobs and frozen counts throughout execution and replacement revisions.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "current-behaviour.1",
+        "ref": "current-behaviour",
+        "item": "current-behaviour",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Current diff grounding produces one indivisible review atom per file and permits truncated evidence.",
+        "evidence": "buildDiffSymbols maps each file to entityId `diff:${f.path}`, places hunks in signature, supplies empty graph edges and sets coverageEligible:false. codeReviewMaterial serializes each row into one atom. The existing test explicitly states 'a truncated diff still yields a valid grounding ... review proceeds'. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts]",
+        "action": "Replace the truncated-review expectation with the specified recovery/refusal regressions.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "current-behaviour.2",
+        "ref": "current-behaviour",
+        "item": "current-behaviour",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Current input accounting omits schema, and current pipeline deadlines apply only to reviewer-session calls.",
+        "evidence": "promptChars accepts messages only; job, gather and duplicate sizing use that measurement. withDeadline filters pending calls by execution.mode === 'reviewer-session', and nextCalls leaves structured calls unadjusted. The driver forwards structured calls with their existing per-call timeout. [files: src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts]",
+        "action": "Apply schema-aware measurement and timed structured-call enforcement at planning and final dispatch, as specified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "new-versus-reuse.1",
+        "ref": "new-versus-reuse",
+        "item": "new-versus-reuse",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Parent-file quality adjudication is new, while keyed notes, obligation gathering and bounded reduction are reusable.",
+        "evidence": "Quality chunks currently require findings/descriptions and no notes; qualitySpec supplies no obligations. chunkNotesFrom already extracts keyed notes, and startGather/requestNoteCall gather and reduce them. relationCall returns no calls for same-file or same-module relations, confirming that sibling adjacency alone cannot adjudicate a parent. [files: src/workflow/code-review/dimensions/quality.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/job.ts]",
+        "action": "Keep explicit parent/global obligations and mandatory evidence coverage validation before gather.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "new-versus-reuse.2",
+        "ref": "new-versus-reuse",
+        "item": "new-versus-reuse",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Existing atom redivision cannot substitute for the proposed subdivision of singleton diff ranges.",
+        "evidence": "planChunks throws AtomTooLargeError when a singleton's rendered call exceeds hard. redivide repacks existing atom IDs rather than splitting their text. modelDimensionAdapter caches material, and readMaterial rejects a changed material hash. The specified rebuilt adapter/job revision is therefore necessary. [files: src/workflow/review-pipeline/prepare.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/code-review.ts]",
+        "action": "Discard prior dimension outputs and rebuild material-dependent closures when replacing a refused range.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "change-sites.1",
+        "ref": "change-sites",
+        "item": "change-sites",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The adapter-factory budget propagation inventory covers all seven production runDimensionJob callers.",
+        "evidence": "Search and function reads confirm five model callers\u2014adherence, conventions, coverage, quality and functional-coverage\u2014and two deterministic callers, UX and diagram. runDimensionJob currently calls build(snapshot), then independently creates its job with reviewLimitChars(). The proposed second callback argument addresses that actual budget split. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/ux/index.ts, src/workflow/code-review/dimensions/diagram/index.ts]",
+        "action": "Forward the effective limit through all five model factories and retain compatibility for both deterministic factories.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "change-sites.2",
+        "ref": "change-sites",
+        "item": "change-sites",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design identifies and replaces the existing degraded controller review bypass.",
+        "evidence": "beginDiffOnlyReview currently emits whole-grounding prompts through emitJudgementsResult. handleJudgements subsequently injects judges returning supplied DimensionResults, bypassing chunk validation/gather. Section 3.12 explicitly replaces this branch with identified pipeline calls and applyOutput/applyFailure, and names the MCP server/forwarder boundaries that currently forward raw arguments. [files: src/daemon/steps/code-review-step/handler.ts, src/daemon/steps/code-review-step/types.ts, src/workflow/review-pipeline/job.ts, src/mcp/server.ts, src/mcp/forward-step.ts]",
+        "action": "Preserve the state-kind discrimination and reject direct degraded DimensionResult submissions on the new route.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "data-compatibility.1",
+        "ref": "data-compatibility",
+        "item": "data-compatibility",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The proposed metadata and control transport can be additive without migrating persistent domain records.",
+        "evidence": "ChangedSymbolSummary is review grounding data. Review jobs hold serializable snapshots, and step tokens use an in-memory shared store with one-hour TTL and 100-entry eviction. The design preserves legacy rows/results, introduces a distinct control-result union, explicitly updates the serializer and both transports, restarts incompatible jobs and pins active continuation state. [files: src/workflow/code-review/types.ts, src/workflow/review-pipeline/types.ts, src/shared/review-stream.ts, src/daemon/threads/step-state.ts, src/daemon/steps/daemon-client.ts, src/mcp/daemon-stream.ts]",
+        "action": "Implement runtime control-frame validation and keep pending responses separate from final-only CodeReviewStreamResult.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "boundaries.1",
+        "ref": "boundaries",
+        "item": "boundaries",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design preserves reviewer routing, degraded verdict semantics and CLI-owned cloud access.",
+        "evidence": "codeReviewRunStart rejects daemon-authored builds before provider resolution. The controller handler owns that review route, and the runner raises a degraded clean verdict to warn. Provider execution goes through LLMProvider/CliProvider. The proposed isolated helper retains those ownership boundaries and introduces no direct cloud REST access. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts, src/agent/providers/cli-provider.ts]",
+        "action": "Keep independent author validation mandatory on both daemon and controller routes.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "boundaries.2",
+        "ref": "boundaries",
+        "item": "boundaries",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Relationship ownership and the supplied sequence companion adequately document the proposed internal evidence model.",
+        "evidence": "The design states file-to-fragment ownership/cardinality, parent obligations, note provenance and compatibility. I inspected the generated Mermaid source and saved browser render: six participants and nine messages are visible and consistent with the described evidence flow. The HTML SHA256 matches the render record, 34ea11104d93ed5ff663ce4e1b4bb44a78b7428cb2f2354384c8bb5ee478011a. Pan/zoom controls were not exercised. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle2-round2.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle2-round2.png]",
+        "action": "No additional ERD is required for the documented ownership model. An operation/controller sequence would be an optional clarification.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "error-paths.1",
+        "ref": "error-paths",
+        "item": "error-paths",
+        "kind": "semantic",
+        "severity": "HIGH",
+        "premise": "Source changes during a daemon-owned review are handled sufficiently to prevent publication of a stale review for the current Story.",
+        "evidence": "Section 3.9 checks fingerprints at admission/repeated start, but specifies final publication only 'under ownership and signal/deadline checks'. Unlike section 3.12's controller route, it does not require daemon-side source/BUILD-author revalidation before publication. The real RPC checks author once before execution. The runner later writes CR-<epic>-<story>; its saved subject contains changedFiles but no reviewed source/build fingerprint, and enforceCodeReviewGate reads verdict/counts without source validation. Editing or rebuilding the Story during a long daemon operation, without issuing another start, can therefore publish an old-snapshot verdict that the current Story's gate accepts. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, src/daemon/code-review-rpc.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/types.ts, src/workflow/code-review/gate.ts, src/workflow/storage.ts]",
+        "action": "Require daemon-side revalidation of the admitted source/contract fingerprint and BUILD author immediately before publication. A mismatch must terminate without writing CR. Add regressions for source edits and BUILD replacement during execution without a second start request.",
+        "fixability": "manual",
+        "outcome": "does-not-hold"
+      },
+      {
+        "claimId": "tests.1",
+        "ref": "tests",
+        "item": "tests",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The recorded acceptance requirements have explicit planned proving tests tied to the real implementation seams.",
+        "evidence": "The mapping covers lossless evidence/coordinates, complete-call limits, gather/duplication, compatibility, the actual S003 retry and fixed timing/resumable waits. Existing grounding, pipeline, provider and transport seams support these fixtures. DIFF-READER explicitly replaces the current truncated-review expectation. These are planned tests; implementation and runtime smoke success were not claimed or verified. [files: .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/time-budget-proposal.json, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/review-pipeline/driver.ts, src/shared/review-stream.ts, src/agent/providers/cli-provider.ts]",
+        "action": "Add the daemon source-change publication regression identified above, then execute the planned focused suites and approved-runtime S003 retry during implementation.",
+        "fixability": "manual",
+        "outcome": "holds"
+      }
+    ],
+    "counts": {
+      "high": 1,
+      "med": 0,
+      "low": 12,
+      "unverified": 0
+    },
+    "template": "design-spec",
+    "reviewedAt": "2026-10-27T06:28:24.304Z",
+    "model": "cli-codex:gpt-6.1-sol",
+    "reviewedBy": "daemon"
+  },
+  "hostResult": "MCP300s timeout; daemon continued and stamped result.",
+  "cycleRound": 2
+}

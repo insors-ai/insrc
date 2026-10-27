@@ -115,6 +115,7 @@ export class Watcher {
 
   /** Events from the repo subscription or from one of its directory subscriptions. */
   private onBackendEvents(repoPath: string, events: readonly parcelWatcher.Event[]): void {
+    if (!this.repoIgnore.has(repoPath)) return;     // the repo was removed or the watcher closed: a late subscription delivers nothing
     for (const e of events) {
       this.pendingEvents.push({ type: e.type as FileEventType, path: e.path });
       if (e.type === 'create') void this.adoptDirectory(repoPath, e.path);
@@ -180,7 +181,10 @@ export class Watcher {
   private filesUnder(repoPath: string, dir: string): string[] {
     const files: string[] = [];
     let entries;
-    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return files; }
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch (err) {
+      log.debug({ dir, err: err instanceof Error ? err.message : String(err) }, 'directory not scanned');
+      return files;
+    }
     for (const e of entries) {
       const path = join(dir, e.name);
       if (e.isSymbolicLink() || this.isIgnored(repoPath, path)) continue;

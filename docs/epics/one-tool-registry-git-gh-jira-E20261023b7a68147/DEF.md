@@ -228,11 +228,11 @@ Every git command a person or a program can run unattended is reachable through 
 - **ac4:** Given an operation of this family can destroy work or overwrite a file (clean, restore of the worktree, rm with force, prune, deleting a ref, removing notes, overwriting an archive or patch), when the registry is read, then that operation is marked destructive so the approval story applies.
 - **ac5:** Given the git commands covered by Stories s4 and s4b together, when the coverage table is read, then every command of the recorded git command list is covered or excluded with a reason that a reviewer can check, and the only exclusions are those the user accepted.
 
-### 6.9 STORY-b7a68147dcf72034-s9 — Move the workflow library's and the daemon's direct git and gh calls onto the registry
+### 6.9 STORY-b7a68147dcf72034-s9 — Move the workflow library's and the daemon's direct git and gh calls onto the registry and remove the old paths
 
 **User value:**
 
-The build runners, the gates, the team policy code, the identity lookup and the design corpus reader follow the same approval, hook and result-check rules as agents, and no site in them can run git or gh around the registry.
+The build runners, the gates, the team policy code, the identity lookup and the design corpus reader follow the same approval, hook and result-check rules as agents, and no site in them can run git or gh around the registry, and once the last site has moved the old wrappers and seams are gone so no code can run git or gh around the registry.
 
 **Acceptance criteria:**
 
@@ -242,21 +242,23 @@ The build runners, the gates, the team policy code, the identity lookup and the 
 - **ac4:** Given the identity lookup and the design corpus reader, when they run through the registry, then their multi-host and multi-account semantics, their public options, their validation results and their error codes are unchanged, except the recorded identity behaviour on gh versions without `gh auth status --json`.
 - **ac5:** Given a moved site whose call needs approval under the effective approval mode and finds no client, or whose approval expires, when the call is denied, then the calling stage fails with the denial reported and does not continue.
 - **ac6:** Given the list of sites taken from a complete search of the source, including direct calls of a tool's execute, when the change is complete, then every site has an entry in the replacement table, a test that runs through the registry with a recorded executor, and an entry in the migration record.
+- **ac7:** Given the old paths runGit, runGitAsync, runGh, commitAndPushArtifacts, the other github.ts wrappers, createGitRunner and the _setTrackerExecForTests seam, when the change is complete and every site of Stories s9 and s10 has moved, then they no longer exist, the forbidden-spawn scan runs in failing mode in the build chain and finds nothing outside the exemptions (the daemon self-update and src/indexer/index.ts), and the 25 test files that used the seams run through the recorded executor.
+- **ac8:** Given the migration record and the origin/main session source inventory baseline, when the change is complete, then both are regenerated, every site has an entry, and the full sweep passes with no new skipped tests.
 
-### 6.10 STORY-b7a68147dcf72034-s10 — Move the tracker and the terminal client onto the registry and remove the old paths
+### 6.10 STORY-b7a68147dcf72034-s10 — Move the tracker and the terminal client onto the registry
 
 **User value:**
 
-Every tracker, commit-and-push and terminal-client git or gh call follows the registry's approval, hook and result-check rules, and the old wrappers and seams are gone so no code can run git or gh around the registry.
+Every tracker, commit-and-push and terminal-client git or gh call follows the registry's approval, hook and result-check rules, and the terminal client reaches the team and workflow code that needs the daemon's registry through the daemon instead of running it in its own process.
 
 **Acceptance criteria:**
 
 - **ac1:** Given each caller of the functions in src/workflow/tracker/github.ts (questions, resolve-comment, bugfix/tracker, config/github, tracker-auto, github-adapter, setup, sync) and each of the five callers of commitAndPushArtifacts, when the change is complete, then it performs the operation by calling a registry tool through callTool and the executor, using the replacement table that maps every github.ts wrapper to a registry tool, and commit-and-push becomes a sequence of git tool calls that returns the same result and the same reasons as before.
-- **ac2:** Given the terminal client's workflow service in src/cli/services/workflow.ts, when it runs git or gh, then it does so through the daemon's tools.call request with the caller set, and no longer spawns git or gh itself.
+- **ac2:** Given the terminal client's services in src/cli/services (workflow.ts, team.ts and any other service a complete search finds that runs git or gh, or workflow code that does), when they run that operation, then they reach it through the daemon, by its tools.call request for one registry tool and by a daemon method for a whole workflow operation such as the team policy refresh, with the caller set, and no longer spawn git or gh or run that workflow code in the client process.
 - **ac3:** Given a tracker push, sync, setup, question or comment-resolution run, when it runs after the change, then it creates and updates the same issues, sub-issues, milestones, comments and labels as before and records the same results.
 - **ac4:** Given a moved call that needs approval under the effective approval mode and finds no client, or whose approval expires, when the call is denied, then the calling stage fails with the denial reported and does not continue.
-- **ac5:** Given the old paths runGit, runGitAsync, runGh, commitAndPushArtifacts, the other github.ts wrappers, createGitRunner and the _setTrackerExecForTests seam, when the change is complete, then they no longer exist, the forbidden-spawn scan runs in failing mode in the build chain and finds nothing outside the exemptions (the daemon self-update and src/indexer/index.ts), and the 25 test files that used the seams run through the recorded executor.
-- **ac6:** Given the migration record and the origin/main session source inventory baseline, when the change is complete, then both are regenerated, every site has an entry, and the full sweep passes with no new skipped tests.
+- **ac5:** Given the old paths runGit, runGitAsync, runGh, commitAndPushArtifacts, the other github.ts wrappers, createGitRunner and the _setTrackerExecForTests seam, which Story s9 still needs for its own sites, when this Story is complete, then they remain in place and unchanged, the forbidden-spawn scan stays in report mode, and nothing in this Story depends on their removal.
+- **ac6:** Given the list of this Story's sites taken from a complete search of the source (the callers of the github.ts wrappers, the five callers of commitAndPushArtifacts and the terminal client services), when the change is complete, then every site has an entry in the replacement table and a test that runs through the registry with a recorded executor, and its rows are in the migration record.
 
 ## 7. References
 

@@ -21,18 +21,18 @@
     "epicHash": "b7a68147dcf72034",
     "epicSlug": "one-tool-registry-git-gh-jira",
     "authoredBy": "controller",
-    "revision": 5,
+    "revision": 6,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "2b0200a88a1d410f43b8eeb6ec24f6d8497d55d8c3dcb71c33ecc42d17792656",
-        "at": "2026-10-27T10:23:49.276Z",
+        "number": 6,
+        "contentHash": "c3a5665c38a38a64754ab19e95ac8acb582215e672a58a8486f420e670156661",
+        "at": "2026-10-27T13:19:46.570Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -714,8 +714,8 @@
       },
       {
         "id": "s9",
-        "title": "Move the workflow library's and the daemon's direct git and gh calls onto the registry",
-        "userValue": "The build runners, the gates, the team policy code, the identity lookup and the design corpus reader follow the same approval, hook and result-check rules as agents, and no site in them can run git or gh around the registry.",
+        "title": "Move the workflow library's and the daemon's direct git and gh calls onto the registry and remove the old paths",
+        "userValue": "The build runners, the gates, the team policy code, the identity lookup and the design corpus reader follow the same approval, hook and result-check rules as agents, and no site in them can run git or gh around the registry, and once the last site has moved the old wrappers and seams are gone so no code can run git or gh around the registry.",
         "acceptanceCriteria": [
           {
             "id": "ac1",
@@ -758,13 +758,27 @@
             "when": "the change is complete",
             "then": "every site has an entry in the replacement table, a test that runs through the registry with a recorded executor, and an entry in the migration record",
             "operationalizes": []
+          },
+          {
+            "id": "ac7",
+            "given": "the old paths runGit, runGitAsync, runGh, commitAndPushArtifacts, the other github.ts wrappers, createGitRunner and the _setTrackerExecForTests seam",
+            "when": "the change is complete and every site of Stories s9 and s10 has moved",
+            "then": "they no longer exist, the forbidden-spawn scan runs in failing mode in the build chain and finds nothing outside the exemptions (the daemon self-update and src/indexer/index.ts), and the 25 test files that used the seams run through the recorded executor",
+            "operationalizes": []
+          },
+          {
+            "id": "ac8",
+            "given": "the migration record and the origin/main session source inventory baseline",
+            "when": "the change is complete",
+            "then": "both are regenerated, every site has an entry, and the full sweep passes with no new skipped tests",
+            "operationalizes": []
           }
         ]
       },
       {
         "id": "s10",
-        "title": "Move the tracker and the terminal client onto the registry and remove the old paths",
-        "userValue": "Every tracker, commit-and-push and terminal-client git or gh call follows the registry's approval, hook and result-check rules, and the old wrappers and seams are gone so no code can run git or gh around the registry.",
+        "title": "Move the tracker and the terminal client onto the registry",
+        "userValue": "Every tracker, commit-and-push and terminal-client git or gh call follows the registry's approval, hook and result-check rules, and the terminal client reaches the team and workflow code that needs the daemon's registry through the daemon instead of running it in its own process.",
         "acceptanceCriteria": [
           {
             "id": "ac1",
@@ -775,9 +789,9 @@
           },
           {
             "id": "ac2",
-            "given": "the terminal client's workflow service in src/cli/services/workflow.ts",
-            "when": "it runs git or gh",
-            "then": "it does so through the daemon's tools.call request with the caller set, and no longer spawns git or gh itself",
+            "given": "the terminal client's services in src/cli/services (workflow.ts, team.ts and any other service a complete search finds that runs git or gh, or workflow code that does)",
+            "when": "they run that operation",
+            "then": "they reach it through the daemon, by its tools.call request for one registry tool and by a daemon method for a whole workflow operation such as the team policy refresh, with the caller set, and no longer spawn git or gh or run that workflow code in the client process",
             "operationalizes": []
           },
           {
@@ -796,16 +810,16 @@
           },
           {
             "id": "ac5",
-            "given": "the old paths runGit, runGitAsync, runGh, commitAndPushArtifacts, the other github.ts wrappers, createGitRunner and the _setTrackerExecForTests seam",
-            "when": "the change is complete",
-            "then": "they no longer exist, the forbidden-spawn scan runs in failing mode in the build chain and finds nothing outside the exemptions (the daemon self-update and src/indexer/index.ts), and the 25 test files that used the seams run through the recorded executor",
+            "given": "the old paths runGit, runGitAsync, runGh, commitAndPushArtifacts, the other github.ts wrappers, createGitRunner and the _setTrackerExecForTests seam, which Story s9 still needs for its own sites",
+            "when": "this Story is complete",
+            "then": "they remain in place and unchanged, the forbidden-spawn scan stays in report mode, and nothing in this Story depends on their removal",
             "operationalizes": []
           },
           {
             "id": "ac6",
-            "given": "the migration record and the origin/main session source inventory baseline",
+            "given": "the list of this Story's sites taken from a complete search of the source (the callers of the github.ts wrappers, the five callers of commitAndPushArtifacts and the terminal client services)",
             "when": "the change is complete",
-            "then": "both are regenerated, every site has an entry, and the full sweep passes with no new skipped tests",
+            "then": "every site has an entry in the replacement table and a test that runs through the registry with a recorded executor, and its rows are in the migration record",
             "operationalizes": []
           }
         ]

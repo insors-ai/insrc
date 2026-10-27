@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-27T06:28:52.033Z  ·  **Updated:** 2026-10-27T06:29:25.184Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-27T06:28:52.033Z  ·  **Updated:** 2026-10-27T07:37:38.351Z
 
-**Commit:** ec9ea015a
+**Commit:** 9bf7fecf5
 
 ## Scope
 
@@ -23,3 +23,8 @@ The shipped definitions list qwen3.8:27b in the Ollama family (no efforts, 32768
 - ✓ `S001`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
+
+## Changes
+
+- `src/assets/models/cloud-model-catalog.json` — **insrc-build** (2026-10-27T07:37:38.351Z)
+- `src/daemon/__tests__/model-catalog-asset.test.ts` — **insrc-build** (2026-10-27T07:37:38.351Z)

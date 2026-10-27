@@ -9,12 +9,13 @@
     "authoredBy": "controller",
     "triageRationale": "One data entry added to one shipped file (src/assets/models/cloud-model-catalog.json).",
     "epicCreatedAt": "2026-10-27T06:28:52.033Z",
-    "updatedAt": "2026-10-27T06:29:25.184Z"
+    "updatedAt": "2026-10-27T07:37:38.351Z",
+    "approvedAt": "2026-10-27T07:37:38.559Z"
   },
   "body": {
     "focus": "Add the local Ollama model qwen3.8:27b to the shipped model definitions (src/assets/models/cloud-model-catalog.json, the ollama family's models), next to qwen3.6:27b, with displayName 'Qwen 3.8 27B', efforts [], inputLimit {unit:'tokens', max:32768} (the same context window the shipped local model uses) and memoryMb sized for its 17 GB Q4_K_M weights. The user's cheap tier is configured to ollama/qwen3.8:27b, which is installed but not listed, so the daemon currently falls back to the default family's cheap tier. The toolLoopModel stays qwen3.6:27b.",
     "producesLld": false,
-    "commit": "ec9ea015a",
+    "commit": "9bf7fecf5",
     "tasks": [
       {
         "id": "S001",
@@ -25,6 +26,21 @@
     "testRecord": {
       "md": "docs/standalone/b268706068c7a342-E20261027b2687060/S001/TESTS.md"
     },
-    "changeLog": []
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/assets/models/cloud-model-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:37:38.351Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T07:37:38.351Z"
+      }
+    ]
   }
 }

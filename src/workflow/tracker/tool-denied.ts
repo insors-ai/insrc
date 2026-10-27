@@ -61,3 +61,8 @@ export function errorOfFailure(toolId: string, failure: ToolFailure, detail: Too
 export function bestEffortMaySwallow(failure: ToolFailure): boolean {
 	return failure.kind !== 'denied' && failure.kind !== 'conversion-failed' && failure.kind !== 'schema-mismatch';
 }
+
+/** Throw the error a failed call becomes: a denial is thrown as ToolDenied, every other kind as the old GhCommandError. */
+export function throwFailure(toolId: string, failure: ToolFailure, detail: ToolDeniedDetail = {}): never {
+	throw errorOfFailure(toolId, failure, detail);
+}

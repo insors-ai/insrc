@@ -378,7 +378,7 @@ export function persistStandaloneBuildRecord(repoPath: string, rec: StandaloneBu
 function readPriorRecord(jsonPath: string): BuildRecord | null {
 	try {
 		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as BuildRecord;
-		if (parsed?.meta?.workflow === 'build' && typeof parsed.meta.epicHash === 'string' && typeof parsed.meta.storyId === 'string' && typeof parsed.meta.createdAt === 'string' && typeof parsed.body === 'object' && parsed.body !== null && !Array.isArray(parsed.body) && (parsed.body.tasks === undefined || (Array.isArray(parsed.body.tasks) && parsed.body.tasks.every(t => typeof t === 'object' && t !== null && typeof t.id === 'string' && (t.passed === undefined || typeof t.passed === 'boolean')))) && (parsed.body.changeLog === undefined || (Array.isArray(parsed.body.changeLog) && parsed.body.changeLog.every(e => typeof e === 'object' && e !== null && typeof e.target?.file === 'string' && (e.target.version === undefined || typeof e.target.version === 'string') && typeof e.author === 'string' && typeof e.timestamp === 'string')))) {
+		if (parsed?.meta?.workflow === 'build' && typeof parsed.meta.epicHash === 'string' && typeof parsed.meta.storyId === 'string' && (parsed.meta.createdAt === undefined || typeof parsed.meta.createdAt === 'string') && typeof parsed.body === 'object' && parsed.body !== null && !Array.isArray(parsed.body) && (parsed.body.tasks === undefined || (Array.isArray(parsed.body.tasks) && parsed.body.tasks.every(t => typeof t === 'object' && t !== null && typeof t.id === 'string' && (t.passed === undefined || typeof t.passed === 'boolean')))) && (parsed.body.changeLog === undefined || (Array.isArray(parsed.body.changeLog) && parsed.body.changeLog.every(e => typeof e === 'object' && e !== null && typeof e.target?.file === 'string' && (e.target.version === undefined || typeof e.target.version === 'string') && typeof e.author === 'string' && typeof e.timestamp === 'string')))) {
 			return parsed;
 		}
 		log.warn({ jsonPath }, 'persistBuildRecord: prior record has no epicHash/storyId; treating as absent (fail-open)');
@@ -453,7 +453,7 @@ function mergeWithPrior(jsonPath: string, rec: BuildRecord, completion = false, 
 		...rec.meta,
 		// From here down, PRIOR deliberately wins — the opposite of the rule
 		// above, and not to be flattened into it.
-		createdAt: prior.meta.createdAt,
+		createdAt: prior.meta.createdAt ?? rec.meta.createdAt,
 		// Completion/rejection stamps: prior wins — a later validate must never
 		// clobber a completed (or rejected) story.
 		...(prior.meta.approvedAt     !== undefined ? { approvedAt:     prior.meta.approvedAt     } : {}),

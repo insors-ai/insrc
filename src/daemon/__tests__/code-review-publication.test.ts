@@ -12,6 +12,8 @@ import { _clearCodeReviewStateStoreForTests } from '../steps/code-review-step/st
 import { writeAtomic } from '../../workflow/storage.js';
 import { compareReviewInputFingerprint, readReviewInputSnapshot } from '../../workflow/code-review/input-fingerprint.js';
 import { claimReviewPublication } from '../../workflow/code-review/publication.js';
+import { approveArtifactByJsonPath, approveWorkflowTarget, ReviewBlockedError } from '../../workflow/gates.js';
+import { enforceCodeReviewGate } from '../../workflow/code-review/gate.js';
 import { runCodeReview } from '../../workflow/code-review/runner.js';
 import { enveloped } from '../../workflow/review-pipeline/__tests__/enveloped.js';
 
@@ -89,6 +91,13 @@ test('DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted complet
   assert.equal(out.writes, 2); assert.equal(out.frames.at(-1)!.stream, 'error'); assert.ok(!out.frames.some(frame => frame.stream === 'done'));
   const artifact = JSON.parse(readFileSync(f.path('CR'), 'utf8'));
   assert.equal(compareReviewInputFingerprint(artifact.meta.reviewInputFingerprint, f.repo, epicHash, storyId).status, 'stale-review');
+  for (const overrideReview of [undefined, 'accept findings']) {
+   assert.throws(() => enforceCodeReviewGate(f.repo, epicHash, storyId, { enforce: false, overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
+   const before = readFileSync(f.path('BUILD'));
+   assert.throws(() => approveArtifactByJsonPath(f.path('BUILD'), overrideReview === undefined ? {} : { overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
+   assert.ok(readFileSync(f.path('BUILD')).equals(before));
+  }
+
  } finally { f.cleanup(); }
 });
 
@@ -147,5 +156,26 @@ test('DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before 
   assert.equal(frames.at(-1)!.stream, 'error'); assert.ok(!frames.some(m => m.stream === 'done'));
   const artifact = JSON.parse(readFileSync(f.path('CR'), 'utf8'));
   assert.equal(compareReviewInputFingerprint(artifact.meta.reviewInputFingerprint, f.repo, epicHash, storyId).status, 'stale-review');
+  for (const overrideReview of [undefined, 'accept findings']) {
+   assert.throws(() => enforceCodeReviewGate(f.repo, epicHash, storyId, { enforce: false, overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
+   const before = readFileSync(f.path('BUILD'));
+   assert.throws(() => approveArtifactByJsonPath(f.path('BUILD'), overrideReview === undefined ? {} : { overrideReview }), (err: unknown) => err instanceof ReviewBlockedError && err.summary === 'stale-review');
+   assert.ok(readFileSync(f.path('BUILD')).equals(before));
+  }
+
+ } finally { f.cleanup(); }
+});
+
+
+test('DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review', async () => {
+ const f = fixture();
+ try {
+  const { createdAt: _created, ...meta } = f.build.meta;
+  writeFileSync(f.path('BUILD'), JSON.stringify({ meta, body: f.build.body }));
+  writeFileSync(f.path('CR'), JSON.stringify({ meta: { reviewedBy: 'controller' }, body: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 } } }));
+  const result = await approveWorkflowTarget({ repoPath: f.repo, artifactPath: f.path('BUILD') }, { enforce: false });
+  assert.equal(result.approved.length, 0); assert.equal(result.skipped.length, 1);
+  const current = JSON.parse(readFileSync(f.path('BUILD'), 'utf8'));
+  assert.equal(current.meta.authoredBy, 'controller'); assert.equal(current.meta.approvedAt, undefined);
  } finally { f.cleanup(); }
 });

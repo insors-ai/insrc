@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:35:11.544Z",
+    "updatedAt": "2026-10-27T09:48:16.793Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -1694,6 +1694,121 @@
               },
               {
                 "title": "DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "f97e952ac",
+        "ranAt": "2026-10-27T09:48:16.793Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-PUBLISH-SOURCE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-PUBLISH-BUILD",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-IDENTITY-TESTS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/code-review-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14383,
+            "titles": [
+              {
+                "title": "DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result",
                 "result": "pass"
               }
             ],

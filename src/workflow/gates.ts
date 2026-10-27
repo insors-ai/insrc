@@ -27,6 +27,7 @@ import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
+import { assertStoredReviewInputCurrent } from './code-review/input-fingerprint.js';
 import { enforceCodeReviewGate } from './code-review/gate.js';
 import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
@@ -593,7 +594,10 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
-	// Review gate: refuses approval while any HIGH/MED finding is UNRESOLVED
+	const buildRef = parseBuildArtifactRef(jsonPath);
+ const assertBuildIdentity = (): void => { if (buildRef !== undefined) assertStoredReviewInputCurrent(dirname(dirname(dirname(jsonPath))), buildRef.epicHash, buildRef.storyId); };
+ assertBuildIdentity();
+ // Review gate: refuses approval while any HIGH/MED finding is UNRESOLVED
 	// (the effective verdict, after the interactive resolutions in R3), unless
 	// an explicit override reason is supplied. Auto-fixes + per-finding
 	// resolutions clear the block one finding at a time.
@@ -651,6 +655,7 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	delete nextMeta.rejectedAt;
 	delete nextMeta.rejectReason;
 	const next = { ...artifact, meta: nextMeta };
+ assertBuildIdentity();
 	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
 	return { workflow: (nextMeta['workflow'] as string | undefined) ?? 'unknown', path: jsonPath, approvedAt };
 }

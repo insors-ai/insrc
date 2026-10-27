@@ -7,10 +7,10 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
-import { ArtifactMissingError, ArtifactNotApprovedError, requireApprovedLld, requireApprovedPlan } from '../gates.js';
-import { artifactJsonPath, buildArtifactId, testsArtifactId } from '../storage.js';
+import { ReviewBlockedError, ArtifactMissingError, ArtifactNotApprovedError, requireApprovedLld, requireApprovedPlan } from '../gates.js';
+import { artifactJsonPath, buildArtifactId, codeReviewArtifactId, testsArtifactId } from '../storage.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../runners/build/changed-files.js';
 import { resolveStoryRangeBase } from '../runners/build/range-base.js';
 import { storyChangeSet } from '../runners/build/story-commits.js';
@@ -163,4 +163,20 @@ export function compareReviewInputFingerprint(recorded: unknown, repo: string, e
   const current = readReviewInputSnapshot(repo, epic, story).fingerprint;
   return current.digest === recorded.digest ? { status: 'fresh' } : { status: 'stale-review', reason: 'mismatch', message: 'Review inputs changed; run a new independent review' };
  } catch { return { status: 'stale-review', reason: 'unavailable', message: 'Current review input identity is unavailable; run a new independent review' }; }
+}
+
+/** Early publication-safety guard; task20 supplies the full approval outcome/race contract. */
+export function assertStoredReviewInputCurrent(repo: string, epic: string, story: string): void {
+ const path = artifactJsonPath(repo, codeReviewArtifactId(epic, story));
+ if (!existsSync(path)) return;
+ let record: unknown;
+ try { record = JSON.parse(readFileSync(path, 'utf8')); } catch { return; } // genuine legacy malformed-record policy
+ const meta = object(record) && object(record['meta']) ? record['meta'] : undefined;
+ if (meta === undefined) return;
+ const hasFingerprint = Object.hasOwn(meta, 'reviewInputFingerprint'), hasVersion = Object.hasOwn(meta, 'reviewInputSchemaVersion');
+ if (!hasFingerprint && !hasVersion) return;
+ const checked = !hasFingerprint || !hasVersion || meta['reviewInputSchemaVersion'] !== REVIEW_INPUT_SCHEMA_VERSION
+  ? { status: 'stale-review' as const, message: 'Invalid or partial review identity; run a new independent review' }
+  : compareReviewInputFingerprint(meta['reviewInputFingerprint'], repo, epic, story);
+ if (checked.status !== 'fresh') throw new ReviewBlockedError(`stale-review: ${checked.message}`, 'stale-review');
 }

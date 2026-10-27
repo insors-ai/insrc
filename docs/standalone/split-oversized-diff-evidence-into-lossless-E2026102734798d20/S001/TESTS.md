@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -391,3 +391,36 @@ Run at 2026-10-27T09:35:11.544Z on commit `f95fb9657`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/runners/build/__tests__/completion-identity.test.ts` | 0 | 4 | 3.7 s |  |
+
+## t14
+
+Run at 2026-10-27T09:48:16.793Z on commit `f97e952ac`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-PUBLISH-SOURCE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite | `src/daemon/__tests__/code-review-publication.test.ts` |
+| pass | DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record | `src/daemon/__tests__/code-review-publication.test.ts` |
+| pass | DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read | `src/daemon/__tests__/code-review-publication.test.ts` |
+
+**integration: DIFF-PUBLISH-BUILD**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata | `src/daemon/__tests__/code-review-publication.test.ts` |
+| pass | DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity | `src/daemon/__tests__/code-review-publication.test.ts` |
+| pass | DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models | `src/daemon/__tests__/code-review-publication.test.ts` |
+| pass | DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result | `src/daemon/__tests__/code-review-publication.test.ts` |
+
+**integration: DIFF-IDENTITY-TESTS**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR | `src/daemon/__tests__/code-review-publication.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/code-review-publication.test.ts` | 0 | 8 | 14.4 s |  |

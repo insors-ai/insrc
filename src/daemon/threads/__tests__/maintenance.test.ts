@@ -135,6 +135,22 @@ describe('unit', () => {
 		for (const w of [a, b, replacement]) w.close();
 	});
 
+	test('graph.close is asked of every worker at once: unresponsive workers cost one acknowledgement timeout, not one each', async () => {
+		const deaf = (threadId: number) => { const { port1, port2 } = new MessageChannel(); return { threadId, port: port1, close: () => { port1.close(); port2.close(); } }; };
+		const workers = [deaf(201), deaf(202), deaf(203)];
+		let refusedAfterMs = -1;
+		const t0 = Date.now();
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined, ackMs: 400,
+			workers: { live: () => workers, created: () => workers.length },
+			compact: async opts => { assert.equal(await opts.beforeRename(), false); refusedAfterMs = Date.now() - t0; return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 }; },
+		});
+		await c.runNow();
+		assert.ok(refusedAfterMs >= 350 && refusedAfterMs < 1000, `one timeout for three workers, not three (${refusedAfterMs} ms)`);
+		for (const w of workers) w.close();
+	});
+
 	test('reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required', async () => {
 		const MiB = 1024 * 1024;
 		const tree = (branch: number, leaf: number, overflow: number) => ({ treeBranchPageCount: branch, treeLeafPageCount: leaf, overflowPages: overflow });

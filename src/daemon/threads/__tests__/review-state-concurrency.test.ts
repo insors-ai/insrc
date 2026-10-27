@@ -29,6 +29,35 @@ test('two actual hub connections cannot consume or persist the same pending call
 	const left = connect(store), right = connect(store);
 	try {
 		for (const kind of ['review', 'code-review'] as const) {
+			const recoverToken = await store.mintReviewState(kind, {}, { generation: 0, callId: 'recover' });
+			const recoverAccess = { kind, token: recoverToken, generation: 0, callId: 'recover', owner: 'recover-owner' };
+			const consume = { op: 'consume', kind, access: recoverAccess, declaration: true, answer: 'accepted', persistencePath: join(dir, `${kind}-recovery`) };
+			assert.match(String((await left.ask({ ...consume, declaration: false }))['message']), /missing-declaration/);
+			assert.match(String((await left.ask({ ...consume, answer: 'wrong' }))['message']), /invalid-reply/);
+			assert.match(String((await left.ask({ ...consume, failure: 'before-write' }))['message']), /before-write-failure/);
+			assert.equal((await right.ask(consume))['ok'], true, 'each no-write rejection leaves the actual consumer reusable');
+			assert.equal((await left.ask(consume))['ok'], true, 'receipt replay never repeats persistence');
+			assert.equal(readFileSync(consume.persistencePath, 'utf8'), 'persisted\n');
+			const failedToken = await store.mintReviewState(kind, {}, { generation: 0, callId: 'failed' });
+			const failed = { ...consume, access: { ...recoverAccess, token: failedToken, callId: 'failed' }, persistencePath: join(dir, `${kind}-failure`), failure: 'after-write' };
+			assert.match(String((await left.ask(failed))['message']), /after-write-failure/);
+			assert.match(String((await right.ask({ ...failed, failure: undefined }))['message']), /uncertain/);
+			assert.equal(readFileSync(failed.persistencePath, 'utf8'), 'persisted\n');
+			const independentToken = await store.mintReviewState(kind, {}, { generation: 0, callId: 'independent' });
+			const independent = await right.ask({ op: 'claim', kind, access: { ...recoverAccess, token: independentToken, callId: 'independent' } });
+			assert.equal(independent['ok'], true, 'another token is independent of failed persistence');
+			const independentClaim = (independent['result'] as { claim: ReviewStateClaim }).claim;
+			const advanced = await right.ask({ op: 'commit', kind, claim: independentClaim, next: { status: 'pending', callId: 'second', payload: { n: 2 } } });
+			const next = advanced['result'] as { token: string; generation: number };
+			assert.equal(next.generation, 1);
+			assert.equal((await left.ask({ op: 'claim', kind, access: { ...recoverAccess, token: independentToken, callId: 'independent' } }))['ok'], false);
+			const nextClaimed = await left.ask({ op: 'claim', kind, access: { ...recoverAccess, token: next.token, generation: 1, callId: 'second' } });
+			assert.equal(nextClaimed['ok'], true);
+			const nextClaim = (nextClaimed['result'] as { claim: ReviewStateClaim }).claim;
+			assert.equal((await left.ask({ op: 'commit', kind, claim: nextClaim, next: { status: 'completed', receipt: { status: 'completed', callId: 'second', runId: 'x'.repeat(257) } } }))['ok'], false, 'receipt identifier bounds are enforced through the hub');
+			assert.equal((await right.ask({ op: 'claim', kind, access: { ...recoverAccess, token: next.token, generation: 1, callId: 'second' } }))['ok'], false, 'invalid receipt cannot release the exclusive final claim');
+			await left.ask({ op: 'invalidate', kind, claim: nextClaim });
+
 			const minted = await left.ask({ op: 'mint-review', kind, payload: { source: 'private' }, expected: { generation: 0, callId: 'c1' } });
 			assert.equal(minted['ok'], true);
 			const access = { kind, token: minted['token'], generation: 0, callId: 'c1', owner: 'left' };

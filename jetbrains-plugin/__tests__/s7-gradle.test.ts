@@ -59,3 +59,7 @@ test("ModelTiersModelTest: choices exactly from a fake definitions answer, curre
 	junitCase('settings.ModelTiersModelTest', "choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty");
 	junitCase('settings.ModelTiersModelTest', "updateDefinitions re-resolves clean tiers and keeps a dirty tier's edit");
 });
+
+test('ModelTiersModelTest: runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused', LONG, () => {
+	junitCase('settings.ModelTiersModelTest', 'runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused');
+});

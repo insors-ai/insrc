@@ -139,9 +139,9 @@ class ModelTiersModelTest {
 
         // A family with no models is the NoModels sentinel; an unknown tier is refused.
         val empty = defs.copy(families = defs.families + DefinedFamilyDto("cli-empty", "codex", "Empty", emptyMap(), null, emptyList()))
-        val e = ModelTiersModel(catalog(), empty)
-        e.selectRunner("core", "cli-empty")
+        val e = ModelTiersModel(catalog("core.runner" to "cli-empty", "core.model" to "z-1"), empty)
         assertEquals(listOf(ModelChoice.NoModels), e.modelOptions("core"))
+        assertFalse("cli-empty" in e.runnerOptions(), "a family with no models is not offered")
         assertThrows<IllegalArgumentException> { e.currentRunner("nope") }
     }
 
@@ -160,5 +160,58 @@ class ModelTiersModelTest {
         m.revert()
         assertEquals("lo", m.currentEffort("core"))
         assertFalse(m.isModified())
+    }
+
+    @Test
+    fun `runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused`() {
+        // A switch to a CLI family takes its tier default with the default's effort.
+        val m = ModelTiersModel(catalog(), defs)
+        m.selectRunner("core", "cli-claude")
+        assertEquals(Triple("cli-claude", "c-big", "deep"), current(m, "core"))
+        // A switch to the local family (no tierDefaults) takes its tool-loop model and no effort.
+        m.selectRunner("mid", "ollama")
+        assertEquals(Triple("ollama", "loc:1", ""), current(m, "mid"))
+        // A family the definitions do not serve is ignored.
+        m.selectRunner("cheap", "cli-nope")
+        assertEquals(Triple("cli-codex", "x-b", "lo"), current(m, "cheap"))
+
+        // A model change to one that does not accept the current effort clears it to ''.
+        val e = ModelTiersModel(catalog("core.effort" to "turbo"), defs)
+        assertEquals(Triple("cli-codex", "x-a", "turbo"), current(e, "core"))
+        e.selectModel("core", "x-b")
+        assertEquals("", e.currentEffort("core"))
+        // ... and keeps one it does accept.
+        val keep = ModelTiersModel(catalog(), defs)
+        keep.selectModel("core", "x-b")
+        assertEquals("lo", keep.currentEffort("core"))
+
+        // One whole-tier {runner, model, effort} write per dirty tier, at ['models','tiers',tier].
+        assertEquals(
+            listOf(
+                PendingWrite(listOf("models", "tiers", "core"), WriteOp.Set(mapOf("runner" to "cli-claude", "model" to "c-big", "effort" to "deep"))),
+                PendingWrite(listOf("models", "tiers", "mid"), WriteOp.Set(mapOf("runner" to "ollama", "model" to "loc:1", "effort" to ""))),
+            ),
+            m.collectWrites(),
+        )
+        assertTrue(ModelTiersModel(catalog(), defs).collectWrites().isEmpty(), "nothing dirty, nothing written")
+        m.onSaved("core")
+        m.onSaved("mid")
+        assertFalse(m.isModified())
+        assertTrue(m.collectWrites().isEmpty())
+
+        // An effort-only edit of a tier still on a model the definitions do not list is refused.
+        val stale = ModelTiersModel(catalog("mid.runner" to "cli-claude", "mid.model" to "c-old"), defs)
+        stale.selectEffort("mid", "")
+        stale.selectEffort("mid", "deep") // not offered for an unlisted model: ignored
+        assertFalse(stale.isModified())
+        val staleWithEffort = ModelTiersModel(catalog("mid.runner" to "cli-claude", "mid.model" to "c-old", "mid.effort" to "deep"), defs)
+        staleWithEffort.selectEffort("mid", "")
+        assertTrue(staleWithEffort.isModified())
+        assertTrue(staleWithEffort.collectWrites().isEmpty(), "the unlisted model is never written")
+        assertEquals(mapOf("mid" to "choose a listed model for the mid tier first (c-old is not listed)"), staleWithEffort.unsavable())
+        // Picking a listed model makes it savable.
+        staleWithEffort.selectModel("mid", "c-big")
+        assertTrue(staleWithEffort.unsavable().isEmpty())
+        assertEquals(listOf(PendingWrite(listOf("models", "tiers", "mid"), WriteOp.Set(mapOf("runner" to "cli-claude", "model" to "c-big", "effort" to "")))), staleWithEffort.collectWrites())
     }
 }

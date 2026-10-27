@@ -115,8 +115,8 @@ class ModelTiersModel(
         return result.copy(effort = effort, note = notes.joinToString("; ").ifEmpty { null })
     }
 
-    /** The runner (family) ids the definitions serve, in their order. */
-    fun runnerOptions(): List<String> = defs.families.map { it.id }
+    /** The runner (family) ids the definitions serve with at least one model, in their order. */
+    fun runnerOptions(): List<String> = defs.families.filter { it.models.isNotEmpty() }.map { it.id }
 
     /** A family's display name, for the runner combo. */
     fun runnerLabel(runner: String): String = family(runner)?.let { "${it.displayName} ($runner)" } ?: runner
@@ -199,14 +199,36 @@ class ModelTiersModel(
         dropUnacceptedEffort(s)
     }
 
-    /** Switch a tier's runner: clears the pending model, forcing an explicit re-pick. */
+    /**
+     * Switch a tier's runner: the new family's default for the tier (tierDefaults with its
+     * effort when the model takes it, else the tool-loop model, else the first model, with
+     * no effort). A family the definitions do not serve, or one with no models, is ignored.
+     */
     fun selectRunner(tier: String, runner: String) {
         val s = state(tier)
         if (s.pendingRunner == runner) return
-        s.pendingRunner = runner
-        s.pendingModel = ""
-        dropUnacceptedEffort(s)
+        val fam = family(runner) ?: return
+        val (model, effort) = familyDefault(fam, tier) ?: return
+        s.pendingRunner = fam.id
+        s.pendingModel = model.id
+        s.pendingEffort = effort
     }
+
+    /**
+     * The dirty tiers that cannot be saved, with the reason: a tier whose pending model the
+     * definitions do not list (an edit of a tier still on a model that is no longer listed)
+     * or with no model chosen. [collectWrites] leaves them out; the user must pick a listed
+     * model first, so no unlisted model is ever written.
+     */
+    fun unsavable(): Map<String, String> = TIERS.mapNotNull { tier ->
+        val s = states.getValue(tier)
+        when {
+            !dirty(s) -> null
+            s.pendingModel.isEmpty() -> tier to "choose a model for the $tier tier first"
+            pendingModelDef(s) == null -> tier to "choose a listed model for the $tier tier first (${s.pendingModel} is not listed)"
+            else -> null
+        }
+    }.toMap()
 
     /** True iff any tier has a pending edit different from its saved baseline. */
     fun isModified(): Boolean = states.values.any { dirty(it) }
@@ -223,16 +245,20 @@ class ModelTiersModel(
         }
     }
 
-    /** The dirty tiers' changed leaves as [PendingWrite]s at ['models','tiers',tier,leaf]. */
-    fun collectWrites(): List<PendingWrite> = TIERS.flatMap { tier ->
-        val s = states.getValue(tier)
-        buildList {
-            if (s.pendingRunner != s.saved.runner) add(PendingWrite(listOf("models", "tiers", tier, "runner"), WriteOp.Set(s.pendingRunner)))
-            if (s.pendingModel != s.saved.model) {
-                val segments = listOf("models", "tiers", tier, "model")
-                add(PendingWrite(segments, if (s.pendingModel.isNotEmpty()) WriteOp.Set(s.pendingModel) else WriteOp.Clear))
-            }
-            if (s.pendingEffort != s.saved.effort) add(PendingWrite(listOf("models", "tiers", tier, "effort"), WriteOp.Set(s.pendingEffort)))
+    /**
+     * One whole-tier write per dirty, savable tier: {runner, model, effort} at
+     * ['models','tiers',tier] — never a single leaf, so the daemon never sees a half-changed
+     * tier. Tiers in [unsavable] are left out.
+     */
+    fun collectWrites(): List<PendingWrite> {
+        val refused = unsavable()
+        return TIERS.mapNotNull { tier ->
+            val s = states.getValue(tier)
+            if (!dirty(s) || tier in refused) return@mapNotNull null
+            PendingWrite(
+                listOf("models", "tiers", tier),
+                WriteOp.Set(mapOf("runner" to s.pendingRunner, "model" to s.pendingModel, "effort" to s.pendingEffort)),
+            )
         }
     }
 

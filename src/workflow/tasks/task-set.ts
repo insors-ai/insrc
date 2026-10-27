@@ -25,6 +25,7 @@ import { emptyLifecycle } from '../artifact-core/decode.js';
 import type { Actor, Artifact, Reference } from '../artifact-core/types.js';
 import { bindArtifact, readBinding, setPendingLink } from '../tracker/binding.js';
 import { readTrackerMeta } from '../tracker/refs.js';
+import { isToolDenied, TaskSyncDenied } from '../tracker/tool-denied.js';
 import { unitKey } from '../tracker/unit-issue.js';
 import { getLogger } from '../../shared/logger.js';
 import { allocateNumber, assertPlanRows, checkTaskEdit, diffTask, taskPayloadFromRow } from './pure.js';
@@ -64,7 +65,8 @@ export interface ReconcileResult {
 }
 
 /** Closes a tracker issue by its `owner/repo#N` ref; supplied by the caller that has a tracker. */
-export type CloseIssue = (issue: string) => { readonly ok: true } | { readonly ok: false; readonly reason: string };
+export type CloseIssue = (issue: string) => CloseResult | Promise<CloseResult>;
+export type CloseResult = { readonly ok: true } | { readonly ok: false; readonly reason: string };
 
 /** One build round of a Task, as the gate judged it. */
 export interface BuildRound {
@@ -79,7 +81,11 @@ export const BUILD_ROUND = 'build-round';
 /** What a plan approval did to the Task set, or why nothing was attempted. */
 export type SyncResult = (ReconcileResult & { readonly created: string[] }) | { readonly error: string };
 
-export interface ReconcileOptions { readonly closeIssue?: CloseIssue | undefined }
+export interface ReconcileOptions {
+	readonly closeIssue?: CloseIssue | undefined;
+	/** Called after each step with what has been done so far (a copy), so a caller that is stopped part-way knows how far it got. */
+	readonly onProgress?: ((done: { readonly changed: readonly string[]; readonly withdrawn: readonly string[]; readonly added: readonly string[] }) => void) | undefined;
+}
 export interface EditOptions {
 	/** The revision the caller read the Task at; the edit is refused when the head has moved on since. */
 	readonly expectedRevision?: number | undefined;
@@ -239,6 +245,7 @@ export class TaskSets {
 		if (tasks === undefined) throw new TaskSetError(`${tasksId} does not exist: use createFromPlan for a plan with no Tasks yet`);
 		if (plan.revision < tasks.planRevision) throw new TaskSetError(`${planId} is at revision ${plan.revision}, behind the ${tasks.planRevision} its Tasks were made from`);
 		const result: ReconcileResult = { changed: [], withdrawn: [], added: [], closeFailed: [] };
+		const progress = (): void => opts.onProgress?.({ changed: [...result.changed], withdrawn: [...result.withdrawn], added: [...result.added] });
 		if (plan.revision === tasks.planRevision) { result.closeFailed.push(...await this.retryCloses(plan, tasks, by, opts)); return result; }
 
 		// the closes an earlier call could not make are retried first, so a Task withdrawn by this call is attempted once
@@ -269,7 +276,7 @@ export class TaskSets {
 				const body = moved ? taskPayloadFromRow(row) as unknown as Record<string, unknown> : head.payload.body;
 				return { next: { ...head, description: moved ? row.title : head.description, references, payload: { ...head.payload, body } }, options: { operation: 'update' } };
 			});
-			if (moved) result.changed.push(short);
+			if (moved) { result.changed.push(short); progress(); }
 		}
 
 		// dropped Tasks: withdrawn with the plan's approval; the issue is closed, or the failed close is kept for the next call
@@ -278,6 +285,7 @@ export class TaskSets {
 			await this.deps.service.apply(have.id, 'withdraw', by, { reason: `dropped by the re-plan (${planId} at revision ${plan.revision})` });
 			const short = ArtifactIds.parse(have.id)?.task ?? rowId;
 			result.withdrawn.push(short);
+			progress();
 			const failed = await this.closeIssueOf(have.id, short, by, opts);
 			if (failed !== undefined) result.closeFailed.push(failed);
 		}
@@ -288,6 +296,7 @@ export class TaskSets {
 			const short = numbered.get(row.id) ?? row.id;
 			await this.ensureTask(plan, row, this.taskId(plan, short), numbered, by, undefined);
 			result.added.push(short);
+			progress();
 		}
 
 		await this.deps.store.update(tasksId, by, current => {
@@ -327,7 +336,17 @@ export class TaskSets {
 		let issue: string | undefined;
 		try { issue = readBinding(this.deps.repoPath, id)?.reference.entityId; } catch { return undefined; }
 		if (issue === undefined) return undefined;
-		const closed = opts.closeIssue?.(issue) ?? { ok: false as const, reason: 'no tracker to close the issue on' };
+		let closed: CloseResult;
+		try { closed = (await opts.closeIssue?.(issue)) ?? { ok: false as const, reason: 'no tracker to close the issue on' }; }
+		catch (err) {
+			// A close that threw is not a close that ran (a denial, or any error of the closer): the Task keeps a pending-close entry, written
+			// before the error is rethrown, so the next reconciliation closes the still-open issue instead of losing it (a withdrawn Task is
+			// not matched again).
+			const why = isToolDenied(err) ? `the call was denied (${err.reason})` : `the close failed (${err instanceof Error ? err.message : String(err)})`;
+			await this.logClose(id, by, { result: 'pending-close', summary: `${issue} could not be closed: ${why}`, data: { issue } });
+			log.warn({ taskId: id, issue, reason: why }, 'tasks: closing a withdrawn Task\'s issue did not run; the next call retries it');
+			throw err;
+		}
 		await this.logClose(id, by, closed.ok ? { result: 'closed', summary: `closed ${issue}`, data: { issue } } : { result: 'pending-close', summary: `${issue} could not be closed: ${closed.reason}`, data: { issue } });
 		if (closed.ok) return undefined;
 		log.warn({ taskId: id, issue, reason: closed.reason }, 'tasks: a withdrawn Task\'s issue was not closed; the next call retries it');
@@ -374,10 +393,13 @@ export class TaskSets {
 
 	/**
 	 * What the approval of a plan does to the Task set: create it for a plan that has none, reconcile a plan at a newer revision,
-	 * do nothing when they agree. Never throws: a plan that is not usable, or a write that fails, comes back as `{ error }` so the
-	 * approval it follows is never failed by it (repeating the call finishes a part-way run).
+	 * do nothing when they agree. Never throws for a plan that is not usable or a write that fails: that comes back as `{ error }` so the
+	 * approval it follows is never failed by it (repeating the call finishes a part-way run). A tracker call the user denied is the one
+	 * exception: it stops the reconciliation and is thrown as a TaskSyncDenied that carries what had been done.
 	 */
 	async syncOnPlanApproval(planJsonPath: string, by: Actor, opts: ReconcileOptions = {}): Promise<SyncResult> {
+		let done: { changed: readonly string[]; withdrawn: readonly string[]; added: readonly string[] } = { changed: [], withdrawn: [], added: [] };
+		const tracked: ReconcileOptions = { ...opts, onProgress: d => { done = d; opts.onProgress?.(d); } };
 		try {
 			const planId = basename(planJsonPath).replace(/\.json$/, '');
 			const plan = await this.readPlan(planId);
@@ -386,8 +408,9 @@ export class TaskSets {
 				const set = await this.createFromPlan(planId, by);
 				return { created: set.tasks.map(t => ArtifactIds.parse(t.id)?.task ?? t.id), changed: [], withdrawn: [], added: [], closeFailed: [] };
 			}
-			return { created: [], ...(await this.reconcile(planId, by, opts)) };
+			return { created: [], ...(await this.reconcile(planId, by, tracked)) };
 		} catch (err) {
+			if (isToolDenied(err)) throw new TaskSyncDenied(err, { created: [], ...done });
 			const reason = err instanceof Error ? err.message : String(err);
 			log.warn({ planJsonPath, reason }, 'tasks: the Task set was not brought into line with the approved plan');
 			return { error: reason };

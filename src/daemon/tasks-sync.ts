@@ -19,6 +19,7 @@ import type { FollowOnOutcome, WorkflowApproveResult } from '../workflow/gates.j
 import { TaskSets } from '../workflow/tasks/task-set.js';
 import type { CloseIssue, SyncResult } from '../workflow/tasks/task-set.js';
 import { autoPushTasksOnPlan, openTracker } from '../workflow/tracker-auto.js';
+import { isToolDenied, TaskSyncDenied } from '../workflow/tracker/tool-denied.js';
 import { taskHeadIdOf } from '../workflow/tasks/lookup.js';
 import type { BuildRound } from '../workflow/tasks/task-set.js';
 import { BUILD_ACTOR, lifecycleFor } from './lifecycle-registry.js';
@@ -36,7 +37,8 @@ function repoOf(planJsonPath: string): string | undefined {
 
 /**
  * Create, reconcile or leave the Task set of the approved plan at `planJsonPath`. A dropped Task's issue is closed through the
- * repository's tracker when there is one; with none the close is kept pending on the Task. Never throws.
+ * repository's tracker when there is one; with none the close is kept pending on the Task. Throws only a TaskSyncDenied, when a tracker
+ * call was denied; every other failure is the `{ error }` result.
  */
 export async function syncPlanTasks(planJsonPath: string): Promise<SyncResult> {
 	const repoPath = repoOf(planJsonPath);
@@ -46,10 +48,14 @@ export async function syncPlanTasks(planJsonPath: string): Promise<SyncResult> {
 		const sets = new TaskSets({ repoPath, store: entry.store, service: entry.service, history: new History(createFileSidecarStore(repoPath)) });
 		const gate = openTracker(repoPath);
 		const closeIssue: CloseIssue | undefined = 'port' in gate
-			? issue => { const r = gate.port.issueOps.close(issue); return r.ok ? { ok: true } : { ok: false, reason: r.reason }; }
+			? async issue => { const r = await gate.port.issueOps.close(issue); return r.ok ? { ok: true } : { ok: false, reason: r.reason }; }
 			: undefined;
 		return await sets.syncOnPlanApproval(planJsonPath, APPROVAL_ACTOR, { closeIssue });
-	} catch (err) { return { error: err instanceof Error ? err.message : String(err) }; }
+	} catch (err) {
+		// a denied tracker call stops the reconciliation (it carries what was done); every other failure is the {error} result
+		if (isToolDenied(err)) throw err;
+		return { error: err instanceof Error ? err.message : String(err) };
+	}
 }
 
 /** The follow-on of a plan approval at the daemon: sync the Task set, then push the Tasks' issues. */
@@ -57,7 +63,18 @@ export async function followOnTasksSync(approved: WorkflowApproveResult['approve
 	const out: FollowOnOutcome[] = [];
 	for (const { path } of approved) {
 		if (!basename(path).startsWith('PLAN-') || !path.endsWith('.json')) continue;
-		const sync = await syncPlanTasks(path);
+		let sync: SyncResult;
+		try { sync = await syncPlanTasks(path); }
+		catch (err) {
+			// a denied tracker call stopped the reconciliation: reported on this entry with what was done, and the Tasks' issues are not pushed
+			if (!isToolDenied(err)) throw err;
+			const partial = err instanceof TaskSyncDenied ? err.partial : undefined;
+			out.push({
+				kind: 'tasks-sync', artifactPath: path, ok: false, note: `the Task reconciliation stopped: ${err.toolId} was denied (${err.reason}); repeat the approval to finish it`,
+				...(partial !== undefined ? { tasks: { created: [...partial.created], changed: [...partial.changed], withdrawn: [...partial.withdrawn], added: [...partial.added] } } : {}),
+			});
+			continue;
+		}
 		if ('error' in sync) { out.push({ kind: 'tasks-sync', artifactPath: path, ok: false, note: sync.error }); continue; }
 		const push = await autoPushTasksOnPlan(path);
 		const failed = push.status === 'failed';

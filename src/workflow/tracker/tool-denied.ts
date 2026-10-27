@@ -66,3 +66,21 @@ export function bestEffortMaySwallow(failure: ToolFailure): boolean {
 export function throwFailure(toolId: string, failure: ToolFailure, detail: ToolDeniedDetail = {}): never {
 	throw errorOfFailure(toolId, failure, detail);
 }
+
+/** What a Task reconciliation had done when a call was denied (Task ids, as in the reconcile result). */
+export interface TaskSyncProgress {
+	readonly created:   readonly string[];
+	readonly changed:   readonly string[];
+	readonly withdrawn: readonly string[];
+	readonly added:     readonly string[];
+}
+
+/** A denial that stopped a Task reconciliation, carrying what had been done before it. */
+export class TaskSyncDenied extends ToolDenied {
+	readonly partial: TaskSyncProgress;
+	constructor(denied: ToolDenied, partial: TaskSyncProgress) {
+		super(denied.toolId, denied.reason, { ...denied.detail, partial });
+		this.name = 'TaskSyncDenied';
+		this.partial = partial;
+	}
+}

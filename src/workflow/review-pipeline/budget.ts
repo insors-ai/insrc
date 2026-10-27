@@ -46,6 +46,7 @@ function jsonContainer(text: string): void {
 export function freezeReviewBudgetProfile(profile: ReviewProviderBudgetProfile | undefined): ReviewProviderBudgetProfile {
 	if (!profile || profile.profileVersion !== 1
 		|| !['json-v1', 'codex-strict-v1', 'controller-json-v1'].includes(profile.schemaDialect)
+		|| !['cli-text-v1', 'ollama-chat-v1', 'controller-frame-v1'].includes(profile.promptDialect)
 		|| !['managed-estimate', 'reserved-native', 'controller-reserved'].includes(profile.qualification)) {
 		throw new ReviewBudgetError('native-budget-unqualified');
 	}
@@ -58,12 +59,13 @@ export function freezeReviewBudgetProfile(profile: ReviewProviderBudgetProfile |
 	if (profile.qualification === 'reserved-native' && profile.nativeReserveTokens === 0) {
 		throw new ReviewBudgetError('native-budget-unqualified');
 	}
-	if ((profile.schemaDialect === 'controller-json-v1') !== (profile.qualification === 'controller-reserved')) {
+	if ((profile.schemaDialect === 'controller-json-v1') !== (profile.qualification === 'controller-reserved')
+		|| (profile.promptDialect === 'controller-frame-v1') !== (profile.qualification === 'controller-reserved')) {
 		throw new ReviewBudgetError('native-budget-unqualified');
 	}
 	return Object.freeze({
 		profileVersion: 1, providerId: profile.providerId, transport: profile.transport,
-		transportVersion: profile.transportVersion, schemaDialect: profile.schemaDialect,
+		transportVersion: profile.transportVersion, promptDialect: profile.promptDialect, schemaDialect: profile.schemaDialect,
 		qualification: profile.qualification, declaredToolsJson: profile.declaredToolsJson,
 		nativeReserveTokens: profile.nativeReserveTokens, transportReserveTokens: profile.transportReserveTokens,
 		completionReserveTokens: profile.completionReserveTokens, inspectionReserveTokens: profile.inspectionReserveTokens,

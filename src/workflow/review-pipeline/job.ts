@@ -23,6 +23,9 @@
  * stage; runReviewJob (driver.ts) is the serial daemon driver.
  */
 
+import type { ReviewBudgetPolicy } from '../../shared/review-budget.js';
+import { candidateChars, requestBudget } from './measurement.js';
+import { ReviewBudgetError, validateReviewBudgetPolicy } from './budget.js';
 import { createHash, randomUUID } from 'node:crypto';
 
 import { ReviewSessionTimeoutError } from '../../agent/providers/cli-provider.js';
@@ -72,6 +75,7 @@ export class MaterialChangedError extends Error {
 }
 
 export interface CreateJobOpts {
+	readonly budgetPolicy: ReviewBudgetPolicy;
 	/** Epoch ms at prepare. Default: now. */
 	readonly now?:      number | undefined;
 	readonly reviewId?: string | undefined;
@@ -84,8 +88,9 @@ export interface CreateJobOpts {
  * snapshot is copied and frozen; the adapter must be built from it.
  */
 export function createReviewJob(
-	adapter: ReviewAdapter<unknown>, path: ReviewPath, snapshot: ReviewMaterialSnapshot, limitChars: number, opts: CreateJobOpts = {},
+	adapter: ReviewAdapter<unknown>, path: ReviewPath, snapshot: ReviewMaterialSnapshot, limitChars: number, opts: CreateJobOpts,
 ): ReviewPipelineJob {
+	validateReviewBudgetPolicy(opts?.budgetPolicy);
 	const stages = adapter.stagesFor(path);
 	if (stages.length === 0) throw new Error(`review ${adapter.dimension}: the adapter has no stages for the ${path} path`);
 	stages.forEach((s, i) => {
@@ -94,6 +99,7 @@ export function createReviewJob(
 		}
 	});
 	const job: ReviewPipelineJob = {
+		budgetPolicy: freeze(structuredClone(opts.budgetPolicy)),
 		reviewId: opts.reviewId ?? randomUUID(), path, snapshot: freeze(structuredClone(snapshot)),
 		kind: adapter.kind, dimension: adapter.dimension, phase: 'review',
 		plan: { limitChars, single: true, chunks: [], crossRelations: [] },
@@ -112,10 +118,14 @@ function enterStage(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, ind
 
 	if (next.plan.single) {
 		const singles = stage.singleCalls(next.outputs, next.snapshot);
-		if (singles.every(p => sentChars(p) <= next.plan.limitChars)) {
+		if (singles.every(p => candidateChars(next.budgetPolicy, p, next.plan.limitChars) <= next.plan.limitChars)) {
 			next = issue(next, singles.map(prompt => ({ prompt, role: 'single' as const, carries: { atomIds: [], noteIds: [], key: prompt.key } })));
 		} else {
 			// Today's call does not fit: the review is divided, even with no atoms (its obligations go to gather).
+			const material = readMaterial(next, adapter);
+			if (material.atoms.length === 0 && material.obligations.length === 0 && singles.length > 0) {
+				throw new ReviewBudgetError('required-context-over-budget');
+			}
 			const b = budgets(next.plan.limitChars);
 			const planned = planWithin(next, adapter, stage, readMaterial(next, adapter), b.soft, b.hard, undefined, undefined);
 			next = { ...planned.job, plan: { ...next.plan, single: false, chunks: planned.chunks, crossRelations: planned.crossRelations } };
@@ -136,13 +146,21 @@ function planWithin(
 	soft: number, hard: number, atomIds: readonly string[] | undefined, heldElsewhere: ReadonlyMap<string, string> | undefined,
 ): { job: ReviewPipelineJob; chunks: readonly ReviewChunk[]; crossRelations: ReviewPipelineJob['plan']['crossRelations'] } {
 	let seq = job.seq;
+	// Keep the existing text packing target independently of the inclusive cap.
+	// Scaling inclusive cost to soft lets a cap-sized request fit that target; the
+	// correction reserve is not added to the inclusive total a second time.
 	const measure = (ids: readonly string[], neighbours: readonly NeighbourSummary[]): number =>
-		Math.max(0, ...stage.chunkCalls({ id: 'c0000', atomIds: ids, neighbours, chars: 0 }, job.outputs, job.snapshot).map(sentChars));
+		Math.max(0, ...stage.chunkCalls({ id: 'c0000', atomIds: ids, neighbours, chars: 0 }, job.outputs, job.snapshot).map(p => candidateChars(job.budgetPolicy, p, soft)));
 	const planned = planChunks({
 		material, atomIds, measure, soft, hard, heldElsewhere,
 		summaryOf: atom => adapter.neighbourSummary?.(atom, material) ?? atom.label,
 		nextChunkId: () => `c${++seq}`,
 	});
+	for (const chunk of planned.chunks) {
+		if (stage.chunkCalls(chunk, job.outputs, job.snapshot).some(p => candidateChars(job.budgetPolicy, p, hard) > hard)) {
+			throw new ReviewBudgetError('required-context-over-budget');
+		}
+	}
 	return { job: { ...job, seq }, chunks: planned.chunks, crossRelations: planned.crossRelations };
 }
 
@@ -170,11 +188,6 @@ interface NewCall {
 	readonly countAs?: CallRole | undefined;
 }
 
-/** A call's size as sent, under an id of a real id's length. */
-function sentChars(prompt: ChunkPrompt): number {
-	return promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages));
-}
-
 /** Envelope and record new calls under fresh ids. No sent prompt may repeat. */
 function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelineJob {
 	const issuedHashes = [...job.issuedHashes];
@@ -184,12 +197,14 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 		const callId = randomUUID();
 		const messages = envelopeMessages(callId, c.prompt.messages);
 		const schema = envelopeSchema(callId, c.prompt.schema);
+		const budget = requestBudget(job.budgetPolicy, messages, schema, (c.attempt ?? 1) > 1 ? 'dispatch' : 'planning');
+		if (budget.remainingTokens < 0) throw new ReviewBudgetError('review-budget-exceeded', budget);
 		const hash = promptHash(messages, schema);
 		if (issuedHashes.includes(hash)) throw new Error(`review ${job.dimension}: a planned ${job.stage} call repeats a prompt already sent`);
 		issuedHashes.push(hash);
 		counts[c.countAs ?? c.role]++;
 		made.push({
-			callId, attempt: c.attempt ?? 1, ...(c.invalidAnswers !== undefined ? { invalidAnswers: c.invalidAnswers } : {}), stage: job.stage, role: c.role, messages, schema,
+			budget, callId, attempt: c.attempt ?? 1, ...(c.invalidAnswers !== undefined ? { invalidAnswers: c.invalidAnswers } : {}), stage: job.stage, role: c.role, messages, schema,
 			execution: c.prompt.execution, chars: promptChars(messages), carries: c.carries, prompt: c.prompt,
 		});
 	}
@@ -304,10 +319,10 @@ export function applyFailure(
 		let prompt = call.prompt;
 		if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {
 			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, more.reasons);
-			// A correction that would not fit the limit is left out (never cut down): the call is
-			// re-issued once as planned, and the omission is logged with the reasons.
-			if (sentChars(corrected) <= job.plan.limitChars) prompt = corrected;
-			else log.warn({ dimension: job.dimension, stage: stage.id, callId, reasons: more.reasons }, 'review pipeline: the correction does not fit beside the call; re-issuing it as planned, without the correction');
+			if (candidateChars(job.budgetPolicy, corrected, job.plan.limitChars, 'dispatch') > job.plan.limitChars) {
+				throw new ReviewBudgetError('correction-budget-exceeded');
+			}
+			prompt = corrected;
 		}
 		log.warn({ dimension: job.dimension, stage: stage.id, cause, callId }, 'review pipeline: re-issuing a call once under a new callId');
 		return issue(rest, [{ prompt, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1, ...(invalidAnswers > 0 ? { invalidAnswers } : {}) }]);
@@ -331,7 +346,7 @@ function redivideByStage(job: ReviewPipelineJob, stage: AdapterStage, call: Revi
 	const what = `the ${stage.id} call ${call.carries.key ?? call.carries.atomIds.join(', ')}`;
 	if (prompts.length === 0) throw new AtomTooLargeError(what, call.chars, budget);
 	for (const p of prompts) {
-		const chars = sentChars(p);
+		const chars = candidateChars(job.budgetPolicy, p, budget);
 		if (chars > budget) throw new AtomTooLargeError(what, chars, budget);
 	}
 	return issue(job, prompts.map(prompt => ({
@@ -427,7 +442,7 @@ export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<u
 	let next: ReviewPipelineJob = { ...job, phase: job.phase === 'done' ? 'done' : 'gather' };
 	const context = role === 'obligation' && next.contextReduced[key] === undefined ? obligationContext(next, adapter, key) : [];
 	const prompt = role === 'obligation' ? gather.obligationCall(key, notes, context) : gather.reduceCall(key, notes);
-	if (sentChars(prompt) <= job.plan.limitChars) {
+	if (candidateChars(job.budgetPolicy, prompt, job.plan.limitChars) <= job.plan.limitChars) {
 		const carries = noteCarries(key, notes);
 		return issue(next, [{ prompt, role, carries: { ...carries, atomIds: [...new Set([...carries.atomIds, ...context.map(a => a.id)])] } }]);
 	}
@@ -435,7 +450,7 @@ export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<u
 	next = converted.job;
 	notes = [...notes, ...converted.notes];
 	const b = budgets(job.plan.limitChars);
-	const batches = reduceBatches(gather, key, notes, b.soft, b.hard, converted.labels);
+	const batches = reduceBatches(job, gather, key, notes, b.soft, b.hard, converted.labels);
 	// A level that reduces each note alone, when every note is already within the cap, cannot shrink the evidence.
 	if (batches.every(c => c.carries.noteIds.length === 1) && notes.every(n => n.text.length <= gather.noteCapChars)) {
 		throw new Error(`review ${job.dimension}: the evidence for ${key} cannot be reduced to fit one call (${notes.length} notes)`);
@@ -485,7 +500,7 @@ function startGather(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): R
 		const prompts = gather.relationCall([byId.get(r.from)!, byId.get(r.to)!]);
 		relationPlan[key] = prompts.length;
 		for (const prompt of prompts) {
-			const chars = sentChars(prompt);
+			const chars = candidateChars(next.budgetPolicy, prompt, next.plan.limitChars);
 			if (chars > next.plan.limitChars) throw new AtomTooLargeError(`the relation ${r.from} ${r.kind} ${r.to}`, chars, next.plan.limitChars);
 			calls.push({ prompt, role: 'relation', carries: { key, atomIds: [r.from, r.to], noteIds: [] } });
 		}
@@ -542,12 +557,12 @@ function redivideNotes(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, 
 	log.warn({ dimension: job.dimension, role: call.role, key, notes: notes.length, soft, hard }, 'review pipeline: a note call was refused for its size; reducing its notes in smaller batches');
 	if (notes.length <= 1 && call.role === 'reduce') throw new AtomTooLargeError(`evidence note ${notes[0]?.noteId ?? '?'} (${key})`, call.chars, hard);
 	if (notes.length === 0) throw new AtomTooLargeError(`the obligation call for ${key}`, call.chars, hard);
-	return issue(job, reduceBatches(gather, key, notes, soft, hard, labels));
+	return issue(job, reduceBatches(job, gather, key, notes, soft, hard, labels));
 }
 
 /** Reduce calls over `notes`, packed within `soft`; one note may use `hard`; one over it is named. */
-function reduceBatches(gather: GatherPlan<unknown>, key: string, notes: readonly EvidenceNote[], soft: number, hard: number, labels: ReadonlyMap<string, string> = new Map()): NewCall[] {
-	const size = (batch: readonly EvidenceNote[]): number => sentChars(gather.reduceCall(key, batch));
+function reduceBatches(job: ReviewPipelineJob, gather: GatherPlan<unknown>, key: string, notes: readonly EvidenceNote[], soft: number, hard: number, labels: ReadonlyMap<string, string> = new Map()): NewCall[] {
+	const size = (batch: readonly EvidenceNote[]): number => candidateChars(job.budgetPolicy, gather.reduceCall(key, batch), soft);
 	for (const n of notes) {
 		const alone = size([n]);
 		if (alone > hard) throw new AtomTooLargeError(`${labels.get(n.noteId) ?? `evidence note ${n.noteId}`} (${key})`, alone, hard);
@@ -599,8 +614,9 @@ function redivideRelation(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown
 		throw new AtomTooLargeError(`the relation call ${key}`, call.chars, budget);
 	}
 	const prompts = gather.relationCall([from, to], budget);
+	if (prompts.length === 0) throw new ReviewBudgetError('required-context-over-budget');
 	for (const prompt of prompts) {
-		const chars = sentChars(prompt);
+		const chars = candidateChars(job.budgetPolicy, prompt, budget);
 		if (chars > budget) throw new AtomTooLargeError(`the relation ${from.id} -> ${to.id} (${key})`, chars, budget);
 	}
 	log.warn({ dimension: job.dimension, key, refused: call.chars, budget, calls: prompts.length }, 'review pipeline: a relation call was refused for its size; asked again within the reported size');

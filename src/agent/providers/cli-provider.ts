@@ -284,7 +284,7 @@ export class CliProvider implements LLMProvider {
 	getReviewBudgetProfile(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile {
 		return freezeReviewBudgetProfile({
 			profileVersion: 1, providerId: `cli-${this.kind}:${this.defaultModel ?? 'default'}`,
-			transport: this.kind, transportVersion: 'cli-review-v1',
+			transport: this.kind, transportVersion: 'cli-review-v1', promptDialect: 'cli-text-v1',
 			schemaDialect: this.kind === 'codex' ? 'codex-strict-v1' : 'json-v1',
 			qualification: 'reserved-native',
 			declaredToolsJson: JSON.stringify(executionKind === 'reviewer-session' && this.kind === 'claude'

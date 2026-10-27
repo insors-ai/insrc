@@ -19,6 +19,8 @@
  * Run: npx tsx --test src/workflow/review-pipeline/__tests__/code-review-divided.test.ts
  */
 
+import { createTestReviewJob as createReviewJob } from './test-budget.js';
+import { testModelDimensionAdapter as modelDimensionAdapter } from './test-budget.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
@@ -30,10 +32,10 @@ import { functionalCoverageSpec } from '../../code-review/dimensions/functional-
 import { qualitySpec } from '../../code-review/dimensions/quality.js';
 import { runCodeReview, type CodeReviewRunnerDeps, type JudgeSlot } from '../../code-review/runner.js';
 import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../code-review/types.js';
-import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
+import { codeReviewSnapshot, type ModelDimensionSpec } from '../code-review.js';
 import { runReviewJob } from '../driver.js';
 import { promptChars } from '../envelope.js';
-import { createReviewJob } from '../job.js';
+
 import type { ReviewAdapter } from '../types.js';
 
 // -- fixture ---------------------------------------------------------------------

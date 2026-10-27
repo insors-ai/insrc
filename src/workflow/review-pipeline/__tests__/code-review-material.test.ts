@@ -10,13 +10,14 @@
  * Run: npx tsx --test src/workflow/review-pipeline/__tests__/code-review-material.test.ts
  */
 
+import { testModelDimensionAdapter as modelDimensionAdapter } from './test-budget.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { coverageSpec, prepareCoverageGrounding } from '../../code-review/dimensions/coverage.js';
 import { qualitySpec } from '../../code-review/dimensions/quality.js';
 import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject } from '../../code-review/types.js';
-import { codeReviewSnapshot, modelDimensionAdapter } from '../code-review.js';
+import { codeReviewSnapshot } from '../code-review.js';
 import { codeReviewMaterial, moduleOf, neighbourSummary, NEIGHBOUR_SIGNATURE_CHARS } from '../adapters/code-review-material.js';
 import type { ReviewAtom, ReviewMaterial, ReviewRelation } from '../types.js';
 

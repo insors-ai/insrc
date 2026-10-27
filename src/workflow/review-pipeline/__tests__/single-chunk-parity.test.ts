@@ -12,6 +12,8 @@
  * Run: npx tsx --test src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts
  */
 
+import { syntheticReviewBudget } from './test-budget.js';
+import { createTestReviewJob as createReviewJob } from './test-budget.js';
 import { sessionMessages } from './enveloped.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -37,7 +39,7 @@ import { computeReviewVerdict, runReview } from '../../review/review.js';
 import { buildTemplateReviewPrompt, DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor, validateTemplateAnswer } from '../../review/template.js';
 import { buildBatchedVerifyPrompt, buildVerifyPrompt, VERDICTS_SCHEMA, VERIFY_CALL_STALL_MS, VERIFY_CALL_TIMEOUT_MS, VERIFY_SCHEMA } from '../../review/verify.js';
 import { designReviewSnapshot, premiseAdapter, templateCorrection } from '../design-review.js';
-import { applyOutput, createReviewJob, nextCalls, result, runStage } from '../job.js';
+import { applyOutput, nextCalls, result, runStage } from '../job.js';
 import type { ReviewAdapter } from '../types.js';
 
 const EPIC = 'e1a2b3c4d5e6f708';
@@ -95,6 +97,7 @@ interface Seen { readonly messages: LLMMessage[]; readonly schema: unknown; read
 function recordedProvider(onCall?: (seen: Seen) => void): { provider: LLMProvider; seen: Seen[] } {
 	const seen: Seen[] = [];
 	const provider = {
+		getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 		runReviewSession: async (prompt: string, schema: StructuredSchema, opts: { cwd: string; deadlineMs: number; stallMs?: number | undefined; internalRetry?: boolean | undefined }) => provider.completeStructured(sessionMessages(prompt), schema, { cwd: opts.cwd, internalRetry: opts.internalRetry, timeoutMs: opts.deadlineMs, ...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}) }),
 		completeStructured: async (messages: LLMMessage[], schema: StructuredSchema, opts?: StructuredCompletionOpts) => {
 			const inner = (schema as unknown as { properties: { answer: unknown } }).properties.answer;
@@ -166,6 +169,7 @@ test("an under-limit code review makes today's calls per dimension, with the rep
 		let first = true;
 		const retried = recordedProvider();
 		const flaky = {
+		getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 			runReviewSession: async (prompt: string, schema: StructuredSchema, o: { cwd: string; deadlineMs: number; internalRetry?: boolean | undefined }) => flaky.completeStructured(sessionMessages(prompt), schema, { cwd: o.cwd, timeoutMs: o.deadlineMs, internalRetry: o.internalRetry }),
 			completeStructured: async (messages: LLMMessage[], schema: StructuredSchema, o?: StructuredCompletionOpts) => {
 				const inner = (schema as unknown as { properties: { answer: unknown } }).properties.answer;
@@ -182,6 +186,7 @@ test("an under-limit code review makes today's calls per dimension, with the rep
 		let qualityAsks = 0;
 		const written: string[] = [];
 		const failing = {
+		getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 			runReviewSession: async (prompt: string, schema: StructuredSchema, o: { cwd: string; deadlineMs: number; internalRetry?: boolean | undefined }) => failing.completeStructured(sessionMessages(prompt), schema, { cwd: o.cwd, timeoutMs: o.deadlineMs, internalRetry: o.internalRetry }),
 			completeStructured: async (messages: LLMMessage[], schema: StructuredSchema, o?: StructuredCompletionOpts) => {
 				if ((schema as unknown as { properties: { answer: unknown } }).properties.answer === QUALITY_FINDINGS_SCHEMA) { qualityAsks++; throw new Error('model unavailable'); }
@@ -265,6 +270,7 @@ function defRepo(): string {
 function premiseProvider(fail: { extract?: boolean; verify?: string } = {}): { provider: LLMProvider; seen: Seen[] } {
 	const seen: Seen[] = [];
 	const provider = {
+		getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 		completeStructured: async (messages: LLMMessage[], schema: StructuredSchema, opts?: StructuredCompletionOpts) => {
 			const inner = (schema as unknown as { properties: { answer: unknown } }).properties.answer;
 			seen.push({ messages: unenveloped(messages), schema: inner, opts });
@@ -336,6 +342,7 @@ function templateAnswer(): { items: unknown[] } {
 function sessionProvider(script: readonly unknown[]): { provider: LLMProvider; sessions: { prompt: string; callId: string; opts: ReviewSessionOpts }[] } {
 	const sessions: { prompt: string; callId: string; opts: ReviewSessionOpts }[] = [];
 	const provider = {
+		getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 		completeStructured: async () => { throw new Error('a design review makes no structured call'); },
 		runReviewSession: async (prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts) => {
 			const callId = (schema as unknown as { properties: { callId: { const: string } } }).properties.callId.const;

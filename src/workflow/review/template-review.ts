@@ -13,6 +13,7 @@
  * answer, any transient retry — shares ONE deadline.
  */
 
+import { resolveReviewBudgetPolicy } from '../../agent/providers/review-budget.js';
 import { getLogger } from '../../shared/logger.js';
 import type { ReviewSessionOpts } from '../../agent/providers/cli-provider.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -21,7 +22,7 @@ import type { LLMProvider } from '../../shared/types.js';
 import { runReviewJob } from '../review-pipeline/driver.js';
 import { designReviewSnapshot, templateAdapter } from '../review-pipeline/design-review.js';
 import { createReviewJob, pipelineCallsOf, ReviewCallFailedError } from '../review-pipeline/job.js';
-import { reviewLimitChars } from '../review-pipeline/limit.js';
+import { readReviewChunkTokens, reviewLimitChars } from '../review-pipeline/limit.js';
 import type { PipelineCalls, ReviewAdapter } from '../review-pipeline/types.js';
 import { HARD_REVIEW_DEADLINE_MS, reviewDeadlineMs, reviewTemplateFor } from './template.js';
 import type { Finding, ReviewReport } from './types.js';
@@ -78,7 +79,8 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 	// by the pipeline with today's correction, and a second break fails the review.
 	const snapshot = designReviewSnapshot(artifactMarkdown);
 	const adapter = templateAdapter(snapshot, { template, stage, repo, limitMs, timedOut }) as unknown as ReviewAdapter<unknown>;
-	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars(), { now: startedAt });
+	const budgetPolicy = resolveReviewBudgetPolicy(opts.provider as LLMProvider, 'reviewer-session', readReviewChunkTokens());
+	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { now: startedAt, budgetPolicy });
 	let findings: readonly Finding[];
 	let pipelineCalls: PipelineCalls | undefined;
 	try {

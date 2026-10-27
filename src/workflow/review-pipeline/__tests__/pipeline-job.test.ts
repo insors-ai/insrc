@@ -11,6 +11,10 @@
  * Run: npx tsx --test src/workflow/review-pipeline/__tests__/pipeline-job.test.ts
  */
 
+import { createReviewJob as createInclusiveReviewJob } from '../job.js';
+import { createReviewBudgetPolicy, ReviewBudgetError } from '../budget.js';
+import { CliProvider } from '../../../agent/providers/cli-provider.js';
+import { createTestReviewJob as createReviewJob } from './test-budget.js';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -23,7 +27,7 @@ import { ModelResponseShapeError } from '../../../agent/providers/model-call-err
 import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { runReviewJob } from '../driver.js';
 import { notJudgedFinding } from '../design-review.js';
-import { applyFailure, applyOutput, createReviewJob, MAX_CALL_ATTEMPTS, MAX_GATHER_LEVELS, MAX_STALL_ATTEMPTS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
+import { applyFailure, applyOutput, MAX_CALL_ATTEMPTS, MAX_GATHER_LEVELS, MAX_STALL_ATTEMPTS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { getLogger } from '../../../shared/logger.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
@@ -145,22 +149,15 @@ test("a review under the limit is one chunk whose calls carry today's messages a
 	const nearFull = atom(50, LIMIT - 700);
 	const crowd = Array.from({ length: 8 }, (_, i) => atom(60 + i));
 	const crowdSnap = toySnapshot([nearFull, ...crowd], crowd.map(c => ({ from: 'a50', to: c.id, kind: 'references' as const })));
-	const crowded = createReviewJob(toyAdapter(crowdSnap), 'daemon', crowdSnap, LIMIT);
-	const holder = crowded.plan.chunks.find(c => c.atomIds.includes('a50'))!;
-	assert.deepEqual(holder.atomIds, ['a50']);
-	assert.ok(holder.chars <= LIMIT);
-	assert.ok(holder.neighbours.length < crowd.length, 'only the summaries that fit');
+	assert.throws(() => createReviewJob(toyAdapter(crowdSnap), 'daemon', crowdSnap, LIMIT), e => e instanceof ReviewBudgetError && e.code === 'required-context-over-budget');
 
-	// Divided with no atoms: the single call is over the limit with nothing to chunk; no chunk call is made.
+	// No atoms or obligations: an oversized required request refuses, rather than completing without review.
 	const empty = toySnapshot([]);
 	const bloated: ReviewAdapter<ToyResult> = {
 		...toyAdapter(empty),
 		stagesFor: () => [{ ...toyAdapter(empty).stagesFor('daemon')[0]!, singleCalls: () => [{ messages: [{ role: 'user', content: 'x'.repeat(LIMIT) }], schema: TOY_SCHEMA, execution: { mode: 'structured' } }] }],
 	};
-	const none = createReviewJob(bloated, 'daemon', empty, LIMIT);
-	assert.equal(none.plan.single, false);
-	assert.equal(none.phase, 'done');
-	assert.equal(none.issuedHashes.length, 0, 'no call was made');
+	assert.throws(() => createReviewJob(bloated, 'daemon', empty, LIMIT), e => e instanceof ReviewBudgetError && e.code === 'required-context-over-budget', 'an oversized required request cannot become a vacuous pass');
 });
 
 test('a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats', () => {
@@ -341,14 +338,7 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 		const aloneChars = holding.chars - JSON.stringify(cj.plan.chunks.find(c => c.id === holding.carries.chunkId)!.neighbours.map(nb => ({ nid: nb.atomId, summary: nb.summary, heldIn: nb.heldInChunk }))).length + 2;
 		const reported = holding.chars - 300;
 		assert.ok(aloneChars < reported, 'the atom alone fits the reported size');
-		const re = applyFailure(cj, ca, holding.callId, 'size-refusal', reported);
-		const again = re.pending.find(c => c.carries.atomIds.includes('a50'))!;
-		assert.deepEqual(again.carries.atomIds, ['a50']);
-		assert.ok(again.chars <= reported, `${again.chars} within ${reported}`);
-		const kept = re.plan.chunks.find(c => c.id === again.carries.chunkId)!.neighbours.length;
-		assert.ok(kept > 0 && kept < fullNeighbours, `${kept} of ${fullNeighbours} summaries kept`);
-		assert.notEqual(content(again), content(holding), 'not resent');
-		assert.throws(() => applyFailure(cj, ca, holding.callId, 'size-refusal', aloneChars - 50), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/f50.ts#fn50'));
+		assert.throws(() => applyFailure(cj, ca, holding.callId, 'size-refusal', reported), e => e instanceof ReviewBudgetError && e.code === 'required-context-over-budget');
 	}
 
 	// The reported size bounds even a unit that cannot be split: an atom larger than it is named.
@@ -880,7 +870,7 @@ test('a relation judged by two calls is complete only when both are answered', (
 	assert.throws(() => applyOutput(wj, wa, second.callId, model.answer(second)), (e: unknown) => e instanceof AtomTooLargeError && /relation a1 references a2/.test(e.message));
 });
 
-test('usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged', () => {
+test('usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and required overflow refuses', () => {
 	// h calls k; 60 small symbols share h's directory only. Sized with every summary line, {h, k} would not fit;
 	// sized with the summaries it must carry (none: its only usage partner is inside), it does.
 	const h = atom(1, 3_500, 'src/hub/h.ts', 'src/hub');
@@ -915,10 +905,7 @@ test('usage summaries size a chunk and are always kept; proximity summaries are 
 	const giant = atom(20, LIMIT - 700, 'src/g/g.ts', 'src/g');
 	const callees = Array.from({ length: 12 }, (_, i) => atom(30 + i, 300, `src/c${i}/c.ts`, `src/c${i}`));
 	const lastSnap = toySnapshot([giant, ...callees], callees.map(c => ({ from: 'a20', to: c.id, kind: 'calls' as const })));
-	const lj = createReviewJob(toyAdapter(lastSnap), 'daemon', lastSnap, LIMIT);
-	const gchunk = lj.plan.chunks.find(c => c.atomIds.includes('a20'))!;
-	assert.deepEqual(gchunk.atomIds, ['a20']);
-	assert.ok(gchunk.chars <= LIMIT && gchunk.neighbours.length < callees.length, 'the atom stays whole; the summaries that do not fit are left out');
+	assert.throws(() => createReviewJob(toyAdapter(lastSnap), 'daemon', lastSnap, LIMIT), e => e instanceof ReviewBudgetError && e.code === 'required-context-over-budget');
 });
 
 test("an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named", async () => {
@@ -1065,28 +1052,32 @@ test('a refused obligation call that carried its raw context reduces that contex
 	}
 });
 
-test('an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged', () => {
-	// A call that fills the limit: the correction note would push it over.
-	const snap = toySnapshot([atom(1, LIMIT - 900)]);
-	const validate = (): readonly string[] => ['x'.repeat(2_000)];
-	const adapter = toyAdapter(snap, { validate });
-	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
-	const first = nextCalls(job, adapter)[0]!;
-	assert.equal(first.role, 'single');
-	const warnings: unknown[] = [];
-	const logger = getLogger('review-pipeline:job') as unknown as { warn: (...a: unknown[]) => void };
-	const original = logger.warn;
-	logger.warn = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
-	try {
-		job = applyOutput(job, adapter, first.callId, { callId: first.callId, answer: { seen: ['a1'] } });
-	} finally { logger.warn = original; }
-	const second = nextCalls(job, adapter)[0]!;
-	assert.equal(second.attempt, 2, 're-issued once');
-	assert.equal(content(second), content(first), 'as planned: the correction is not in it');
-	assert.ok(second.chars <= LIMIT);
-	assert.ok(warnings.some(w => JSON.stringify(w).includes('without the correction')), 'the omission is logged');
-	// A second invalid answer fails the review, as for any invalid answer.
-	assert.throws(() => applyOutput(job, adapter, second.callId, { callId: second.callId, answer: { seen: ['a1'] } }), (e: unknown) => e instanceof ReviewCallFailedError);
+test('inclusive single chunk retry admission and required-neighbour correction overflow retain all mandatory evidence', () => {
+	const provider = new CliProvider({ kind: 'codex', model: 'fixture' });
+	const policy = createReviewBudgetPolicy(provider.getReviewBudgetProfile('reviewer-session'), 'reviewer-session');
+	const snap = toySnapshot([atom(1, 95000), atom(2, 95000), atom(3, 95000)]);
+	const adapter = toyAdapter(snap);
+	const job = createInclusiveReviewJob(adapter, 'daemon', snap, 384000, { budgetPolicy: policy });
+	assert.equal(job.plan.single, false, 'raw text fits but complete inclusive request requires subdivision');
+	assert.deepEqual(job.plan.chunks.flatMap(c => c.atomIds).sort(), ['a1', 'a2', 'a3']);
+	for (const call of job.pending) {
+		assert.ok(call.budget.estimatedTotalTokens <= 128000);
+		assert.equal(call.budget.retryHeadroomTokens, 2667);
+		assert.ok(call.budget.schemaTokens > 0);
+		assert.equal(call.budget.nativeReserveTokens, 16384);
+	}
+	const first = job.pending[0]!;
+	const retry = applyFailure(job, adapter, first.callId, 'invalid-answer', undefined, { reasons: ['Answer every assigned atom exactly once.'] });
+	const corrected = retry.pending.find(c => c.attempt === 2)!;
+	assert.equal(corrected.budget.retryHeadroomTokens, 0);
+	assert.ok(JSON.stringify(corrected.messages).includes('Answer every assigned atom exactly once.'));
+	assert.throws(() => applyFailure(job, adapter, first.callId, 'invalid-answer', undefined, { reasons: ['x'.repeat(400000)] }), e => e instanceof ReviewBudgetError && e.code === 'correction-budget-exceeded');
+	assert.equal(job.pending[0]!.callId, first.callId, 'refusal does not consume/mutate the original state');
+	const atoms = Array.from({ length: 5 }, (_, i) => atom(i, 100000));
+	const related = toySnapshot(atoms, atoms.slice(1).map(a => ({ from: 'a0', to: a.id, kind: 'calls' as const })));
+	const base = toyAdapter(related);
+	assert.throws(() => createInclusiveReviewJob({ ...base, neighbourSummary: () => 'required'.repeat(6250) }, 'daemon', related, 384000, { budgetPolicy: policy }), e => e instanceof ReviewBudgetError && e.code === 'required-context-over-budget');
+	assert.throws(() => createInclusiveReviewJob(adapter, 'daemon', snap, 384000, {} as never), e => e instanceof ReviewBudgetError);
 });
 
 test("a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'", () => {

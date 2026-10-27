@@ -183,5 +183,5 @@ export async function judgeConventions(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(conventionsSpec(subject), subject, s), subject, grounding, provider, ctx);
+	return runDimensionJob((s, budgetPolicy) => modelDimensionAdapter(conventionsSpec(subject), subject, s, budgetPolicy.totalTokens * 3, 'daemon', budgetPolicy), subject, grounding, provider, ctx);
 }

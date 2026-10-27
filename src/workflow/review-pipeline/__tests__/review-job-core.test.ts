@@ -17,11 +17,12 @@
  * Run: npx tsx --test src/workflow/review-pipeline/__tests__/review-job-core.test.ts
  */
 
+import { createTestReviewJob as createReviewJob } from './test-budget.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { promptChars } from '../envelope.js';
-import { createReviewJob, nextCalls, result } from '../job.js';
+import { nextCalls, result } from '../job.js';
 import { atom, drive, seeingModel, todayMessages, toyAdapter, toySnapshot, type ToyResult } from './toy-adapter.js';
 
 test("a fitting review is one call with today's prompt and schema", async () => {

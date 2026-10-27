@@ -10,6 +10,8 @@
  * envelope's closing instruction.
  */
 
+import { syntheticReviewBudget } from './test-budget.js';
+
 /** A fake's answer to an enveloped call: `answer` under the call's own id. */
 export function enveloped(schema: unknown, answer: unknown): { callId: string; answer: unknown } {
 	const id = (schema as { properties?: { callId?: { const?: unknown } } } | null)?.properties?.callId?.const;
@@ -39,6 +41,10 @@ export function envelopeProvider<P extends object>(provider: P): P {
 	return new Proxy(provider, {
 		get(target, prop, receiver) {
 			const value: unknown = Reflect.get(target, prop, receiver);
+			// These are explicit test doubles, not production missing-provider defaults.
+			if (prop === 'getReviewBudgetProfile' && value === undefined) {
+				return (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile;
+			}
 			if (typeof value !== 'function') return value;
 			if (prop === 'completeStructured') {
 				return async (messages: readonly { content: unknown }[], schema: unknown, opts?: unknown) => {

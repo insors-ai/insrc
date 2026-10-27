@@ -15,6 +15,7 @@ export interface ReviewProviderBudgetProfile {
 	readonly transport: string;
 	readonly transportVersion: string;
 	readonly schemaDialect: ReviewSchemaDialect;
+	readonly promptDialect: 'cli-text-v1' | 'ollama-chat-v1' | 'controller-frame-v1';
 	readonly qualification: ReviewBudgetQualification;
 	/** Serialized declared tool manifest, including observable wire framing. */
 	readonly declaredToolsJson: string;

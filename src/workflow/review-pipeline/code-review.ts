@@ -17,6 +17,8 @@
  * whose single call is over the limit fails with that reason, never a pass.
  */
 
+import type { ReviewBudgetPolicy } from '../../shared/review-budget.js';
+import { resolveReviewBudgetPolicy } from '../../agent/providers/review-budget.js';
 import { existsSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 
@@ -32,7 +34,7 @@ import type { DimensionObligations } from './adapters/code-review-obligations.js
 import { runReviewJob } from './driver.js';
 import { getLogger } from '../../shared/logger.js';
 import { createReviewJob, pipelineCallsOf, withCorrectionNote } from './job.js';
-import { reviewLimitChars } from './limit.js';
+import { readReviewChunkTokens, reviewLimitChars } from './limit.js';
 import { REVIEW_CALL_LIMITS, structuredLimits } from '../review/call-limits.js';
 import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
 
@@ -153,7 +155,7 @@ function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: Re
  * job's: a divided review's out-of-set findings are dropped on the daemon path and kept in
  * outOfScope on the controller path, as each path does today.
  */
-export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon'): ReviewAdapter<DimensionResult> {
+export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon', budgetPolicy?: ReviewBudgetPolicy): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
 	const execution = spec.sourceInspection
 		? { mode: 'reviewer-session' as const, cwd: subject.repoPath, tools: 'read-only' as const, deadlineMs: REVIEW_CALL_LIMITS['code-review'].timeoutMs!, stallMs: REVIEW_CALL_LIMITS['code-review'].silenceMs }
@@ -204,7 +206,7 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		};
 		// Story s3: quality compares descriptions across chunks, then judges each candidate pair.
 		if (chunkSpec?.kind !== 'quality') return [judge];
-		const dup = { material, execution, limitChars, schema: spec.schema, chunkStage: judge.id };
+		const dup = { material, execution, limitChars, budgetPolicy, schema: spec.schema, chunkStage: judge.id };
 		return [judge, compareStage(dup), pairStage(dup)];
 	};
 	return {
@@ -214,7 +216,7 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		stagesFor: stages,
 		// Story s3: a divided review judges each obligation once, over every chunk's notes.
 		...(chunkSpec !== undefined && spec.skip === undefined
-			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: chunkSpec, schema: spec.schema, material, execution, limitChars, changedFiles: subject.changedFiles, finalize }) }
+			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: chunkSpec, schema: spec.schema, material, execution, limitChars, budgetPolicy, changedFiles: subject.changedFiles, finalize }) }
 			: {}),
 		finish: (outputs, ctx) => {
 			if (spec.skip !== undefined) return outputs['skip'] as DimensionResult;
@@ -253,13 +255,14 @@ export function deterministicDimensionAdapter(spec: DeterministicDimensionSpec, 
 /** Run one dimension as a pipeline job on the daemon path: the snapshot from the
  *  run's context (taken once by runCodeReview), else taken now. */
 export async function runDimensionJob(
-	build: (snapshot: ReviewMaterialSnapshot) => ReviewAdapter<DimensionResult>,
-	subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined,
+	build: (snapshot: ReviewMaterialSnapshot, budgetPolicy: ReviewBudgetPolicy) => ReviewAdapter<DimensionResult>,
+	subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined, executionKind: 'structured' | 'reviewer-session' = 'structured',
 ): Promise<DimensionResult> {
 	const snapshot = ctx?.snapshot ?? codeReviewSnapshot(subject, grounding, ctx?.groundingMode ?? 'full');
 	// The core is written over ReviewAdapter<unknown>; merge's parameter makes R invariant.
-	const adapter = build(snapshot) as unknown as ReviewAdapter<unknown>;
-	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars());
+	const budgetPolicy = resolveReviewBudgetPolicy(provider, executionKind, readReviewChunkTokens());
+	const adapter = build(snapshot, budgetPolicy) as unknown as ReviewAdapter<unknown>;
+	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { budgetPolicy });
 	// The plan, as one JSON object in the message (the daemon log is pretty-printed): once as
 	// prepared, so a job that fails still leaves its plan, and once as finished, after any
 	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).

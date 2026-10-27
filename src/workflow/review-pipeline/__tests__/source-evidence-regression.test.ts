@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { createTestReviewJob as createReviewJob } from './test-budget.js';
+import { testModelDimensionAdapter as modelDimensionAdapter } from './test-budget.js';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,8 +14,8 @@ import type { LLMProvider } from '../../../shared/types.js';
 import { adherenceSpec } from '../../code-review/dimensions/adherence.js';
 import { functionalCoverageSpec } from '../../code-review/dimensions/functional-coverage.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../code-review/types.js';
-import { codeReviewSnapshot, modelDimensionAdapter } from '../code-review.js';
-import { createReviewJob } from '../job.js';
+import { codeReviewSnapshot } from '../code-review.js';
+
 import { runReviewJob } from '../driver.js';
 import { enveloped } from './enveloped.js';
 

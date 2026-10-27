@@ -3,12 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { createTestReviewJob as createReviewJob } from './test-budget.js';
+import { testModelDimensionAdapter as modelDimensionAdapter } from './test-budget.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { LLMProvider } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult } from '../../code-review/types.js';
-import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
-import { createReviewJob } from '../job.js';
+import { codeReviewSnapshot, type ModelDimensionSpec } from '../code-review.js';
+
 import { runReviewJob } from '../driver.js';
 import { REVIEW_CALL_LIMITS } from '../../review/call-limits.js';
 import { enveloped } from './enveloped.js';

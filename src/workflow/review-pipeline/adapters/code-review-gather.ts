@@ -26,10 +26,11 @@
  * applies the dimension's own result filters once over the whole (finalize).
  */
 
+import type { ReviewBudgetPolicy } from '../../../shared/review-budget.js';
+import { candidateChars } from '../measurement.js';
 import { SOURCE_INSPECTION_RULES } from '../../code-review/source-inspection.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from '../../code-review/types.js';
-import { envelopeMessages, promptChars } from '../envelope.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { EvidenceNote, ExecutionMode, GatherAnswer, GatherPlan, ReviewAtom, ReviewCall, ReviewMaterial, ReviewObligation } from '../types.js';
 import { chunkNotesFrom, type ChunkSpec } from './code-review-chunk.js';
@@ -45,6 +46,7 @@ export const REDUCE_NOTE_SCHEMA: StructuredSchema = {
 export const NO_EVIDENCE = 'No chunk of the divided review showed evidence for this obligation: no part of the Story\'s changed code was noted as bearing on it.';
 
 export interface CodeReviewGatherArgs {
+	readonly budgetPolicy?: ReviewBudgetPolicy | undefined;
 	readonly dimension:    ReviewDimension;
 	readonly chunk:        ChunkSpec;
 	/** Today's findings schema: an obligation call answers with it. */
@@ -93,9 +95,6 @@ function refRule(ref: string | undefined): string {
 		? `Every finding carries expectationRef ${JSON.stringify(ref)} exactly`
 		: 'Every finding names in expectationRef the breached documented-rule id, or the label of the module idiom it departs from';
 }
-
-/** A call's size as sent, enveloped under an id of a real id's length. */
-const sentChars = (messages: readonly LLMMessage[]): number => promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', messages));
 
 const fileOfLocation = (location: string): string => {
 	const i = location.indexOf(':');
@@ -233,13 +232,13 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		};
 		// After a refusal s1 passes a size below the refused call's, so both rows never fit it again.
 		const both = build([caller, callee], undefined);
-		if (sentChars(both.messages) <= (maxChars ?? args.limitChars)) return [both];
+		if (candidateChars(args.budgetPolicy, both, maxChars ?? args.limitChars) <= (maxChars ?? args.limitChars)) return [both];
 		// One full row against the other's summary line, in each direction. A row that does not fit even so
 		// is never cut: it is named as too large, as s1 names an atom no call can hold.
 		const halves = [{ full: caller, call: build([caller], callee) }, { full: callee, call: build([callee], caller) }];
 		const budget = maxChars ?? args.limitChars;
 		for (const h of halves) {
-			const chars = sentChars(h.call.messages);
+			const chars = candidateChars(args.budgetPolicy, h.call, budget);
 			if (chars > budget) throw new AtomTooLargeError(`${h.full.label} (in the relation ${caller.label} calls ${callee.label})`, chars, budget);
 		}
 		return halves.map(h => h.call);

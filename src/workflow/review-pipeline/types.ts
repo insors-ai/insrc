@@ -10,6 +10,7 @@
  * Everything here but the adapter is plain, serialisable data.
  */
 
+import type { ReviewBudgetBreakdown, ReviewBudgetPolicy } from '../../shared/review-budget.js';
 import type { LLMMessage, StructuredSchema } from '../../shared/types.js';
 
 // -- sc1 ReviewMaterial ------------------------------------------------------
@@ -188,7 +189,7 @@ export interface ReviewChunk {
 	readonly id:         string;
 	readonly atomIds:    readonly string[];
 	readonly neighbours: readonly NeighbourSummary[];
-	/** The rendered call's size, envelope included. */
+	/** Inclusive packing score in text-limit coordinates; ReviewCall.chars remains text diagnostics. */
 	readonly chars:      number;
 }
 
@@ -212,6 +213,7 @@ export interface CallCarries {
 
 /** One call the job asks to be made, enveloped. Plain data. */
 export interface ReviewCall {
+	readonly budget: ReviewBudgetBreakdown;
 	readonly callId:    string;
 	/** 1 for the first issue; each re-issue adds one (up to MAX_STALL_ATTEMPTS for stalls). */
 	readonly attempt:   number;
@@ -272,6 +274,7 @@ export interface PipelineCalls {
 }
 
 export interface ReviewPipelineJob {
+	readonly budgetPolicy: ReviewBudgetPolicy;
 	readonly reviewId:   string;
 	readonly path:       ReviewPath;
 	readonly snapshot:   ReviewMaterialSnapshot;

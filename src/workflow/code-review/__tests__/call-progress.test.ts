@@ -11,6 +11,7 @@
  * Run: npx tsx --test src/workflow/code-review/__tests__/call-progress.test.ts
  */
 
+import { syntheticReviewBudget } from '../../review-pipeline/__tests__/test-budget.js';
 import { sessionMessages } from '../../review-pipeline/__tests__/enveloped.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -48,6 +49,7 @@ const ANSWERS = new Map<unknown, unknown>([
 /** A provider answering from ANSWERS; `log` records each call. */
 function provider(log: string[]): LLMProvider {
 	return {
+		getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile,
 		runReviewSession: async (prompt: string, schema: StructuredSchema, opts: { cwd: string; deadlineMs: number; stallMs?: number | undefined }) => provider(log).completeStructured(sessionMessages(prompt), schema, { cwd: opts.cwd, timeoutMs: opts.deadlineMs, ...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}) }),
 		completeStructured: async (_m: LLMMessage[], schema: StructuredSchema, _o?: StructuredCompletionOpts) => {
 			const inner = (schema as unknown as { properties: { answer: unknown } }).properties.answer;

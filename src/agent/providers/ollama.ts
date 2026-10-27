@@ -1,3 +1,5 @@
+import type { OllamaMessage } from './ollama-wire.js';
+import { toOllamaMessages } from './ollama-wire.js';
 import { randomUUID } from 'node:crypto';
 
 import { Ollama } from 'ollama';
@@ -169,7 +171,7 @@ export class OllamaProvider implements LLMProvider {
   getReviewBudgetProfile(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile {
     return freezeReviewBudgetProfile({
       profileVersion: 1, providerId: `ollama:${this.model}`, transport: 'ollama', transportVersion: 'ollama-chat-review-v1',
-      schemaDialect: 'json-v1', qualification: 'managed-estimate',
+      schemaDialect: 'json-v1', promptDialect: 'ollama-chat-v1', qualification: 'managed-estimate',
       declaredToolsJson: JSON.stringify(executionKind === 'reviewer-session' ? toOllamaTools(getReadOnlyTools()) : []),
       nativeReserveTokens: REVIEW_BUDGET_DEFAULTS.nativeReserveTokens,
       transportReserveTokens: REVIEW_BUDGET_DEFAULTS.transportReserveTokens,
@@ -743,70 +745,6 @@ const REVIEW_SESSION_MAX_TURNS = 40;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-interface OllamaMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
-  /** Native tool calls on an assistant turn (Ollama SDK passes these
-   *  through to the chat template; for qwen3-coder they render as
-   *  `<tool_call>` chat-template tokens the model recognises). */
-  tool_calls?: Array<{ function: { name: string; arguments: Record<string, unknown> } }>;
-}
-
-/**
- * Translate `LLMMessage[]` into Ollama's native shape. Structured
- * content blocks (`tool_use` on assistant turns, `tool_result` on
- * user turns) are converted to the SDK's `tool_calls` field and
- * `role: 'tool'` messages respectively, so the chat template carries
- * the structured signal instead of a mimicable text marker.
- */
-function toOllamaMessages(messages: LLMMessage[]): OllamaMessage[] {
-  const out: OllamaMessage[] = [];
-  for (const m of messages) {
-    if (typeof m.content === 'string') {
-      out.push({ role: m.role, content: m.content });
-      continue;
-    }
-
-    // Multi-block content. Separate by type.
-    const texts: string[] = [];
-    const toolUses: Array<{ id: string; name: string; input: Record<string, unknown> }> = [];
-    const toolResults: Array<{ id: string; content: string; isError: boolean }> = [];
-    for (const b of m.content) {
-      if (b.type === 'text') texts.push(b.text);
-      else if (b.type === 'tool_use') toolUses.push({ id: b.id, name: b.name, input: b.input as Record<string, unknown> });
-      else if (b.type === 'tool_result') toolResults.push({ id: b.tool_use_id, content: b.content, isError: b.isError === true });
-      // image / document blocks are skipped here -- this provider doesn't surface them.
-    }
-
-    if (toolResults.length > 0) {
-      // Each tool_result becomes a separate `role: 'tool'` message
-      // so the model sees them as the conversation's tool-side
-      // returns rather than mixed user content.
-      for (const tr of toolResults) {
-        out.push({
-          role: 'tool',
-          content: tr.isError ? `[error] ${tr.content}` : tr.content,
-        });
-      }
-      continue;
-    }
-
-    if (m.role === 'assistant' && toolUses.length > 0) {
-      out.push({
-        role: 'assistant',
-        content: texts.join('\n'),
-        tool_calls: toolUses.map(tu => ({
-          function: { name: tu.name, arguments: tu.input },
-        })),
-      });
-      continue;
-    }
-
-    out.push({ role: m.role, content: texts.join('\n') });
-  }
-  return out;
-}
 
 interface OllamaTool {
   type: 'function';

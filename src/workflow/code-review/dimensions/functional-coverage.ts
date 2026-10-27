@@ -180,5 +180,5 @@ export async function judgeFunctionalCoverage(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(functionalCoverageSpec(subject), subject, s), subject, grounding, provider, ctx);
+	return runDimensionJob((s, budgetPolicy) => modelDimensionAdapter(functionalCoverageSpec(subject), subject, s, budgetPolicy.totalTokens * 3, 'daemon', budgetPolicy), subject, grounding, provider, ctx, 'reviewer-session');
 }

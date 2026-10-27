@@ -15,12 +15,13 @@
  * stay reproducible.
  */
 
+import { resolveReviewBudgetPolicy } from '../../agent/providers/review-budget.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { runReviewJob } from '../review-pipeline/driver.js';
 import { designReviewSnapshot, premiseAdapter } from '../review-pipeline/design-review.js';
 import { createReviewJob, pipelineCallsOf } from '../review-pipeline/job.js';
-import { reviewLimitChars } from '../review-pipeline/limit.js';
+import { readReviewChunkTokens, reviewLimitChars } from '../review-pipeline/limit.js';
 import type { PipelineCalls, ReviewAdapter } from '../review-pipeline/types.js';
 import { isDesignStage } from './template.js';
 import { runTemplateReview } from './template-review.js';
@@ -93,7 +94,8 @@ export async function runReview(
 		stage, repo, readEntitiesForRepo: opts.readEntitiesForRepo,
 		onSourceRootFallback: reason => { sourceRootFallback = reason; },
 	}) as unknown as ReviewAdapter<unknown>;
-	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars());
+	const budgetPolicy = resolveReviewBudgetPolicy(opts.provider as LLMProvider, 'structured', readReviewChunkTokens());
+	const job = createReviewJob(adapter, 'daemon', snapshot, budgetPolicy.totalTokens * 3, { budgetPolicy });
 	let findings: Finding[];
 	let pipelineCalls: PipelineCalls | undefined;
 	try {

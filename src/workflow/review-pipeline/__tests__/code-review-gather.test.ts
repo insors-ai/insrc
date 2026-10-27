@@ -10,6 +10,8 @@
  * Run: npx tsx --test src/workflow/review-pipeline/__tests__/code-review-gather.test.ts
  */
 
+import { createTestReviewJob as createReviewJob } from './test-budget.js';
+import { testModelDimensionAdapter as modelDimensionAdapter } from './test-budget.js';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,8 +27,8 @@ import { validateAgainstSchema } from '../../../agent/providers/structured-outpu
 import { chunkNotesFrom, NOTES_CHUNK_SCHEMA } from '../adapters/code-review-chunk.js';
 import { NO_EVIDENCE, REDUCE_NOTE_SCHEMA } from '../adapters/code-review-gather.js';
 import { ADHERENCE_LLD_EXCLUDED, ADHERENCE_LLD_SECTIONS } from '../adapters/code-review-obligations.js';
-import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
-import { applyFailure, applyOutput, createReviewJob, nextCalls, result, ReviewCallFailedError } from '../job.js';
+import { codeReviewSnapshot, type ModelDimensionSpec } from '../code-review.js';
+import { applyFailure, applyOutput, nextCalls, result, ReviewCallFailedError } from '../job.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import { expectedDimensions, validateJudgements } from '../../../daemon/steps/code-review-step/handler.js';
 import { envelopeMessages, promptChars } from '../envelope.js';
@@ -645,9 +647,9 @@ test('a caller and callee in different chunks whose contract disagrees: the job 
 // -- quality's cross-chunk duplicates (t6) ---------------------------------------
 
 /** A quality reviewer for a divided job: long descriptions (so compare batches split), and `candidates` for compare. */
-function qualityReviewer(candidates: (call: ReviewCall) => { a: string; b: string; why: string }[], pair: (call: ReviewCall) => unknown = () => ({ findings: [] })) {
+function qualityReviewer(candidates: (call: ReviewCall) => { a: string; b: string; why: string }[], pair: (call: ReviewCall) => unknown = () => ({ findings: [] }), descriptionChars = 1800) {
 	return (call: ReviewCall): unknown => {
-		if (call.stage === 'judge' && call.role === 'chunk') return { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `${atomId} totals a basket ${'d'.repeat(1_800)}` })) };
+		if (call.stage === 'judge' && call.role === 'chunk') return { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `${atomId} totals a basket ${'d'.repeat(descriptionChars)}` })) };
 		if (call.stage === 'compare') return { candidates: candidates(call) };
 		if (call.stage === 'pair') return pair(call);
 		return { findings: [] };
@@ -662,7 +664,7 @@ const listsOf = (call: ReviewCall): [string[], string[]] => {
 test('every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit', () => {
 	const { job, adapter } = dividedJob(qualitySpec);
 	const ownerOf = new Map(job.plan.chunks.flatMap(c => c.atomIds.map(id => [id, c.id] as const)));
-	const { calls } = drive(job, adapter, qualityReviewer(() => []));
+	const { calls } = drive(job, adapter, qualityReviewer(() => [], undefined, 5000));
 	const compares = calls.filter(c => c.stage === 'compare');
 	assert.ok(compares.length > job.plan.chunks.length - 1, 'batches split: more calls than chunk pairs alone would need');
 	const seen: string[] = [];
@@ -930,5 +932,31 @@ test('a mutual call cut between chunks is checked in both directions, each at it
 	for (const c of made.filter(r => r.role === 'relation')) {
 		const callerFile = c.carries.atomIds[0] === 'id-fill' ? 'src/basket/basket.ts' : 'src/order/order.ts';
 		assert.ok((c.messages[0]!.content as string).includes(`in its file, "${callerFile}"`), 'located at its own caller');
+	}
+});
+
+test('gather reduction relation obligation and duplicate comparison use the shared budget', () => {
+	const notes = dividedJob(adherenceSpec);
+	const key = notes.adapter.material().obligations[0]!.key;
+	const gathered = drive(notes.job, notes.adapter, call => {
+		if (call.role === 'chunk') return { notes: call.carries.atomIds.map(atomId => ({ key, atomIds: [atomId], note: 'e'.repeat(3400) })) };
+		if (call.role === 'reduce') return { text: 'All assigned evidence remains represented.' };
+		return { findings: [] };
+	});
+	const quality = dividedJob(qualitySpec);
+	const compared = drive(quality.job, quality.adapter, qualityReviewer(call => {
+		const [first, second] = listsOf(call);
+		return first.flatMap(a => second.map(b => ({ a, b, why: 'Verify the possible duplicate.' })));
+	}, undefined, 5000));
+	assert.ok(gathered.calls.some(c => c.role === 'reduce'));
+	assert.ok(gathered.calls.some(c => c.role === 'obligation'));
+	assert.ok(gathered.calls.some(c => c.role === 'relation'));
+	assert.ok(compared.calls.some(c => c.stage === 'compare'));
+	assert.ok(compared.calls.some(c => c.stage === 'pair'));
+	for (const call of [...gathered.calls, ...compared.calls]) {
+		assert.ok(call.budget.remainingTokens >= 0, `${call.role}/${call.stage} admitted under the same policy`);
+		assert.ok(call.budget.schemaTokens > 0, 'enveloped schemas are included on downstream calls too');
+		assert.equal(call.budget.retryHeadroomTokens, call.attempt === 1 ? 2667 : 0);
+		assert.equal(call.chars, promptChars(call.messages), 'legacy text diagnostics retain their meaning');
 	}
 });

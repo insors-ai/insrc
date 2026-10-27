@@ -13,7 +13,7 @@ import {
 
 const profile = (overrides: Partial<ReviewProviderBudgetProfile> = {}): ReviewProviderBudgetProfile => ({
 	profileVersion: 1, providerId: 'fixture', transport: 'cli', transportVersion: '1',
-	schemaDialect: 'json-v1', qualification: 'reserved-native', declaredToolsJson: '[]',
+	schemaDialect: 'json-v1', promptDialect: 'cli-text-v1', qualification: 'reserved-native', declaredToolsJson: '[]',
 	nativeReserveTokens: 16384, transportReserveTokens: 1024, completionReserveTokens: 8192,
 	inspectionReserveTokens: 24576, ...overrides,
 });
@@ -85,7 +85,7 @@ test('invalid and unqualified review policies refuse without retaining raw input
 });
 
 test('controller host estimates are explicit additive reservations and cannot increase the cap', () => {
-	const controllerProfile = profile({ schemaDialect: 'controller-json-v1', qualification: 'controller-reserved' });
+	const controllerProfile = profile({ schemaDialect: 'controller-json-v1', promptDialect: 'controller-frame-v1', qualification: 'controller-reserved' });
 	assert.throws(() => validateControllerBudgetDeclaration(undefined), code('controller-budget-required'));
 	assert.throws(() => validateControllerBudgetDeclaration({ version: 0 as never, profile: controllerProfile, hostContextReserveTokens: 0 }), code('controller-budget-incompatible'));
 	assert.throws(() => validateControllerBudgetDeclaration({ version: 1, profile: controllerProfile, hostContextReserveTokens: -1 }), code('invalid-budget-policy'));

@@ -29,9 +29,11 @@
  * Under the limit the review is one call: neither stage makes a call.
  */
 
+import type { ReviewBudgetPolicy } from '../../../shared/review-budget.js';
+import { ReviewBudgetError } from '../budget.js';
+import { candidateChars } from '../measurement.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
-import { envelopeMessages, promptChars } from '../envelope.js';
-import { AtomTooLargeError, packIntoBatches } from '../pack-into-batches.js';
+import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { AdapterStage, ChunkPrompt, ExecutionMode, ReviewAtom, ReviewCall, ReviewChunk, ReviewMaterial, StageAnswer, StageOutputs } from '../types.js';
 
 /** A compare call's answer: candidate duplicates, `a` from the first list, `b` from the second. */
@@ -49,6 +51,7 @@ export const COMPARE_SCHEMA: StructuredSchema = {
 };
 
 export interface DuplicateStagesArgs {
+	readonly budgetPolicy?: ReviewBudgetPolicy | undefined;
 	readonly material:   () => ReviewMaterial;
 	readonly execution:  ExecutionMode;
 	readonly limitChars: number;
@@ -59,9 +62,6 @@ export interface DuplicateStagesArgs {
 }
 
 interface Described { readonly atomId: string; readonly symbol: string; readonly description: string }
-
-/** A call's size as sent, enveloped under an id of a real id's length. */
-const sentChars = (messages: readonly LLMMessage[]): number => promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', messages));
 
 /** A chunk id's place in the plan's order (c1 before c2 before c10). */
 const order = (chunkId: string): number => Number.parseInt(chunkId.replace(/\D/g, ''), 10) || 0;
@@ -100,14 +100,21 @@ function compareCall(first: readonly Described[], second: readonly Described[], 
 	};
 }
 
-/** Every pair of batches of `first` and `second`, each batch within half of what `budget` leaves beside the framing. */
-function compareCalls(first: readonly Described[], second: readonly Described[], budget: number, execution: ExecutionMode): ChunkPrompt[] {
-	const overhead = sentChars(compareCall([], [], execution).messages);
-	const half = Math.floor((budget - overhead) / 2);
-	const size = (batch: readonly Described[]): number => JSON.stringify(batch, null, 2).length;
-	const firsts = packIntoBatches(first, size, half, d => d.symbol);
-	const seconds = packIntoBatches(second, size, half, d => d.symbol);
-	return firsts.flatMap(a => seconds.map(b => compareCall(a, b, execution)));
+/** Partition complete list pairs until the full rendered comparison fits both budgets. */
+function compareCalls(first: readonly Described[], second: readonly Described[], budget: number, execution: ExecutionMode, policy: ReviewBudgetPolicy | undefined): ChunkPrompt[] {
+	if (first.length === 0 || second.length === 0) return [];
+	const call = compareCall(first, second, execution);
+	if (candidateChars(policy, call, budget) <= budget) return [call];
+	// Split whole description lists and preserve the complete Cartesian comparison set.
+	if (first.length > 1 && (second.length === 1 || JSON.stringify(first).length >= JSON.stringify(second).length)) {
+		const mid = Math.ceil(first.length / 2);
+		return [...compareCalls(first.slice(0, mid), second, budget, execution, policy), ...compareCalls(first.slice(mid), second, budget, execution, policy)];
+	}
+	if (second.length > 1) {
+		const mid = Math.ceil(second.length / 2);
+		return [...compareCalls(first, second.slice(0, mid), budget, execution, policy), ...compareCalls(first, second.slice(mid), budget, execution, policy)];
+	}
+	throw new ReviewBudgetError('required-context-over-budget');
 }
 
 /** The two lists a compare call carried, read back from its own prompt. */
@@ -137,12 +144,12 @@ export function compareStage(args: DuplicateStagesArgs): AdapterStage {
 			// Every symbol of a later chunk: each pair of chunks is compared once.
 			const second = [...described.values()].filter(x => order(x.owner) > order(mine)).sort((p, q) => order(p.owner) - order(q.owner)).map(x => x.d);
 			if (first.length === 0 || second.length === 0) return [];
-			return compareCalls(first, second, args.limitChars, args.execution);
+			return compareCalls(first, second, args.limitChars, args.execution, args.budgetPolicy);
 		},
 		// Refused: the same two lists, re-packed into smaller batches within the refused size.
 		redivide: (call: ReviewCall, maxChars: number) => {
 			const { first, second } = compareDescribed(call);
-			return compareCalls(first, second, maxChars, args.execution);
+			return compareCalls(first, second, maxChars, args.execution, args.budgetPolicy);
 		},
 		validate: (answer: unknown, call: ReviewCall) => {
 			if (call.role !== 'chunk') return [];
@@ -187,7 +194,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 	const halves = (a: ReviewAtom, b: ReviewAtom, budget: number, describe: (x: ReviewAtom) => string): ChunkPrompt[] =>
 		([[a, b], [b, a]] as const).map(([full, other]) => {
 			const half = build([full], { atom: other, description: describe(other) }, [a, b]);
-			const chars = sentChars(half.messages);
+			const chars = candidateChars(args.budgetPolicy, half, budget);
 			if (chars > budget) throw new AtomTooLargeError(`${full.label} (in the duplicate check of ${a.label} and ${b.label})`, chars, budget);
 			return half;
 		});
@@ -207,7 +214,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 					const a = byId.get(c.a), b = byId.get(c.b);
 					if (a === undefined || b === undefined) continue;
 					const both = build([a, b], undefined, [a, b]);
-					if (sentChars(both.messages) <= args.limitChars) { calls.push(both); continue; }
+					if (candidateChars(args.budgetPolicy, both, args.limitChars) <= args.limitChars) { calls.push(both); continue; }
 					calls.push(...halves(a, b, args.limitChars, x => described.get(x.id)?.d.description ?? x.label));
 				}
 			}

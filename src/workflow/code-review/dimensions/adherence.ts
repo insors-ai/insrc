@@ -174,5 +174,7 @@ export async function judgeAdherence(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(adherenceSpec(subject), subject, s), subject, grounding, provider, ctx);
+	const spec = adherenceSpec(subject);
+	if (spec.skip) return spec.skip();
+	return runDimensionJob((s, budgetPolicy) => modelDimensionAdapter(spec, subject, s, budgetPolicy.totalTokens * 3, 'daemon', budgetPolicy), subject, grounding, provider, ctx, 'reviewer-session');
 }

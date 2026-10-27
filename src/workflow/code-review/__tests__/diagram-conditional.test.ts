@@ -16,6 +16,7 @@
  * Run: npx tsx --test --test-force-exit src/workflow/code-review/__tests__/diagram-conditional.test.ts
  */
 
+import { syntheticReviewBudget } from '../../review-pipeline/__tests__/test-budget.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
@@ -62,7 +63,7 @@ function subject(er: ErDefinition | undefined, repoPath = '/repo'): CodeReviewSu
 }
 
 const grounding: CodeReviewGrounding = { symbols: [] };
-const fakeProvider = (): LLMProvider => ({}) as unknown as LLMProvider;
+const fakeProvider = (): LLMProvider => ({ getReviewBudgetProfile: (kind: 'structured' | 'reviewer-session') => syntheticReviewBudget(kind).profile }) as unknown as LLMProvider;
 
 /** Deps: the base four judges return [] + the REAL judgeDiagram slot (conditional). */
 function makeDeps(): CodeReviewRunnerDeps {

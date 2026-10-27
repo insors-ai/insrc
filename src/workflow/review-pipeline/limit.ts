@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The chunk limit every review call is measured against (Epic 8315a11f, shared
+ * The configured total allowance and legacy text-limit coordinate (Epic 8315a11f, shared
  * contract sc6). One setting, `review.chunkTokens`, counted at a fixed three
- * characters per token: the same limit for every provider.
+ * characters per token. Inclusive admission additionally uses provider-qualified wire accounting and reserves in budget.ts.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -34,7 +34,7 @@ export function readReviewChunkTokens(configPath: string = PATHS.config): number
 	}
 }
 
-/** The chunk limit in characters: `review.chunkTokens` x {@link REVIEW_CHARS_PER_TOKEN}.
+/** The gross text coordinate in characters: `review.chunkTokens` x {@link REVIEW_CHARS_PER_TOKEN}.
  *  It takes no provider: the limit is the same for every one. */
 export function reviewLimitChars(configPath: string = PATHS.config): number {
 	return readReviewChunkTokens(configPath) * REVIEW_CHARS_PER_TOKEN;

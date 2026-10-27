@@ -12,11 +12,10 @@
  * atom held in another chunk. Pure: no model call, no I/O.
  */
 
-import { getLogger } from '../../shared/logger.js';
+import { ReviewBudgetError } from './budget.js';
 import { AtomTooLargeError } from './pack-into-batches.js';
 import { RELATION_PRECEDENCE, type NeighbourSummary, type ReviewAtom, type ReviewChunk, type ReviewMaterial, type ReviewRelation } from './types.js';
 
-const log = getLogger('review-pipeline:prepare');
 
 /** Relation kinds whose cut always keeps a summary on both sides; the others are context. */
 export const USAGE_KINDS: ReadonlySet<ReviewRelation['kind']> = new Set(['calls', 'references']);
@@ -58,8 +57,13 @@ export function planChunks(args: PlanChunksArgs): PlannedChunks {
 	// directory are context, added while they fit.
 	const usageRelated = relatedMap(material.relations.filter(r => USAGE_KINDS.has(r.kind)));
 
+	// Reserve real candidate IDs before sizing: a '?' placeholder understated holder
+	// framing and could overflow a final chunk after all mandatory neighbours were attached.
+	const availableChunkIds = ids.map(() => args.nextChunkId());
+	const holderPlaceholder = [...availableChunkIds, ...(args.heldElsewhere?.values() ?? [])]
+		.reduce((longest, id) => id.length > longest.length ? id : longest, '');
 	// While sizing, every usage-related atom outside the candidate is a required neighbour.
-	const required = (group: readonly string[]): NeighbourSummary[] => neighboursOf(group, usageRelated, byId, args.summaryOf, () => '?');
+	const required = (group: readonly string[]): NeighbourSummary[] => neighboursOf(group, usageRelated, byId, args.summaryOf, () => holderPlaceholder);
 	const size = (group: readonly string[]): number => measure(group, required(group));
 
 	const units = split(ids, RELATION_PRECEDENCE.length);
@@ -92,7 +96,7 @@ export function planChunks(args: PlanChunksArgs): PlannedChunks {
 	}
 	if (current.length > 0) packed.push(current);
 
-	const chunkIds = packed.map(() => args.nextChunkId());
+	const chunkIds = availableChunkIds.slice(0, packed.length);
 	const holder = new Map<string, string>(args.heldElsewhere ?? []);
 	packed.forEach((group, i) => { for (const id of group) holder.set(id, chunkIds[i]!); });
 	const chunks: ReviewChunk[] = packed.map((group, i) => {
@@ -104,16 +108,9 @@ export function planChunks(args: PlanChunksArgs): PlannedChunks {
 			if (requiredIds.has(extra.atomId)) continue;
 			if (measure(group, [...neighbours, extra]) <= soft) neighbours = [...neighbours, extra];
 		}
-		let chars = measure(group, neighbours);
-		// Last resort: one atom so large that even its usage summaries do not fit beside it.
-		// The atom is never cut; the summaries that do not fit are left out, and logged.
-		if (chars > hard) {
-			log.warn({ chunk: chunkIds[i], atoms: group, summaries: neighbours.length }, 'review pipeline: a chunk cannot hold all its usage summaries beside its atom; leaving out the ones that do not fit');
-			while (chars > hard && neighbours.length > 0) {
-				neighbours = neighbours.slice(0, -1);
-				chars = measure(group, neighbours);
-			}
-		}
+		const chars = measure(group, neighbours);
+		// Required usage evidence is indivisible with its atom. Refuse rather than drop it.
+		if (chars > hard) throw new ReviewBudgetError('required-context-over-budget');
 		return { id: chunkIds[i]!, atomIds: group, neighbours, chars };
 	});
 	const crossRelations = material.relations.filter(r => inPlan.has(r.from) && inPlan.has(r.to) && holder.get(r.from) !== holder.get(r.to));

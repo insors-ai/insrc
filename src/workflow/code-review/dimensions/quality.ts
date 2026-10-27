@@ -156,5 +156,5 @@ export async function judgeQuality(
 	provider:  LLMProvider,
 	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	return runDimensionJob(s => modelDimensionAdapter(qualitySpec(subject), subject, s), subject, grounding, provider, ctx);
+	return runDimensionJob((s, budgetPolicy) => modelDimensionAdapter(qualitySpec(subject), subject, s, budgetPolicy.totalTokens * 3, 'daemon', budgetPolicy), subject, grounding, provider, ctx);
 }

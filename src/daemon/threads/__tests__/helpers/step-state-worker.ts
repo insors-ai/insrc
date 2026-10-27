@@ -13,10 +13,11 @@ import { getStepStateStore, HubStepStateStore, installStepStateStore } from '../
 import type { StepKind } from '../../step-state.js';
 
 installStepStateStore(new HubStepStateStore(new HubClient((workerData as { port: MessagePort }).port)));
-parentPort!.on('message', async (m: { op: 'mint' | 'mint-unclonable' | 'read' | 'pin'; kind: StepKind; token?: string; payload?: unknown; until?: number }) => {
+parentPort!.on('message', async (m: { op: 'mint' | 'mint-unclonable' | 'read' | 'pin' | 'compare'; kind: StepKind; token?: string; payload?: unknown; until?: number; revision?: number }) => {
 	try {
 		const store = getStepStateStore();
-		if (m.op === 'pin') { await store.pin(m.kind, m.token!, m.until!); parentPort!.postMessage({ ok: true }); }
+		if (m.op === 'compare') parentPort!.postMessage({ ok: true, replaced: await store.compareReplace(m.kind, m.token!, m.revision!, m.payload) });
+  else if (m.op === 'pin') { await store.pin(m.kind, m.token!, m.until!); parentPort!.postMessage({ ok: true }); }
   else if (m.op === 'mint') parentPort!.postMessage({ ok: true, token: await store.mint(m.kind, m.payload) });
 		else if (m.op === 'mint-unclonable') parentPort!.postMessage({ ok: true, token: await store.mint(m.kind, { run: () => 1 }) });
 		else parentPort!.postMessage({ ok: true, entry: await store.read(m.kind, m.token!) });

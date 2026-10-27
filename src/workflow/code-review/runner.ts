@@ -101,6 +101,8 @@ export interface CodeReviewRunnerDeps {
 /** Run options — mirrors workflow-rpc's run opts. `modelLabel` is the resolved
  *  high-tier label stamped on meta; `onProgress` emits CodeReviewProgress frames. */
 export interface RunCodeReviewOpts {
+ /** A finished controller pipeline folds its existing fixed clock; never replans a one-chunk budget. */
+ readonly completedControllerTiming?: ReviewTimingPlan | undefined;
  readonly publication?: Pick<ReviewPublicationGuard, 'fingerprint' | 'validate'> | undefined;
  readonly requirePublication?: boolean | undefined;
  readonly startedAtMs?: number | undefined;
@@ -219,7 +221,8 @@ export async function runCodeReview(
    if ((slot.prepare === undefined) !== (slot.execute === undefined)) throw new Error(`Incomplete preparation contract for ${slot.dimension}`);
    if (slot.prepare !== undefined) prepared.set(slot, slot.prepare(subject, grounding, provider, ctx));
   }
-  const timing = createReviewTimingPlan([...prepared.values()], startedAtMs);
+  if (opts.completedControllerTiming !== undefined && (prepared.size !== 0 || opts.reviewedBy !== 'controller' || opts.requirePublication !== true || opts.completedControllerTiming.startedAt !== startedAtMs)) throw new Error('Invalid completed controller timing context');
+  const timing = opts.completedControllerTiming ?? createReviewTimingPlan([...prepared.values()], startedAtMs);
   assertReviewTime(timing, now());
   emit({ phase: 'timing', timing });
   opts.publication?.validate();

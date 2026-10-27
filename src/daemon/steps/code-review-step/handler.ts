@@ -25,6 +25,11 @@
  *     byte-identical to the daemon-driven path.
  */
 
+import { prepareControllerPipeline, advanceControllerPipeline, applyControllerResult, controllerCallFrame, parseControllerCallResult, controllerAnswerDigest } from './controller-pipeline.js';
+import type { ControllerExecutionCapability, ControllerPipelineState } from './controller-pipeline.js';
+import { ReviewCallFailedError, MaterialChangedError } from '../../../workflow/review-pipeline/job.js';
+import { AtomTooLargeError } from '../../../workflow/review-pipeline/pack-into-batches.js';
+import { assertReviewTime } from '../../../workflow/review-pipeline/timing.js';
 import { captureReviewInputFingerprint } from '../../../workflow/code-review/input-fingerprint.js';
 import { assertReviewFingerprintCurrent, claimReviewPublication } from '../../../workflow/code-review/publication.js';
 import type { ReviewInputFingerprint } from '../../../workflow/code-review/types.js';
@@ -65,7 +70,7 @@ import type {
 	ReviewDimension,
 } from '../../../workflow/code-review/types.js';
 import { stepClient, stepEnvRepo } from '../../../shared/step-context.js';
-import { StateTokenNotFound, loadState, releaseState, saveState, savePendingState } from './state-store.js';
+import { StateTokenNotFound, loadState, releaseState, saveState, savePendingState, saveControllerState, replaceControllerState, withControllerStateLock } from './state-store.js';
 import type {
 	CodeReviewPendingState,
 	CodeReviewStepError,
@@ -90,6 +95,9 @@ export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewD
  *  (deterministic block-and-poll under test) and `freshnessTimeoutMs` (the poll
  *  bound, from config). */
 export interface CodeReviewStepDeps {
+ /** Internal verified-helper admission, never read from raw controllerInput JSON. */
+ readonly controllerExecution?: ControllerExecutionCapability | undefined;
+ readonly controllerRequest?: import('./types.js').ControllerInputRequest | undefined;
  readonly reviewControl?: ((params: CodeReviewControlParams, opts: ReviewStreamOpts) => Promise<CodeReviewControlResult>) | undefined;
  readonly operations?: CodeReviewOperationRegistry | undefined;
  readonly captureInput?: ((subject: CodeReviewSubject) => ReviewInputFingerprint) | undefined;
@@ -266,10 +274,15 @@ async function handleStart(
 
 	if (resuming) {
 		const payload = await loadState(step.state!);   // throws StateTokenNotFound → caught in dispatch
+  if (payload.kind === 'controller-pipeline') {
+   if ((step.repo !== undefined && canonicalReviewRepository(step.repo) !== canonicalReviewRepository(payload.repo)) || (step.epicHash !== undefined && step.epicHash !== payload.epicHash) || (step.storyId !== undefined && step.storyId !== payload.storyId)) return errorResult('review-target-mismatch', 'Controller continuation target cannot be changed.', false);
+   return handleControllerContinuation(step.state!, deps, undefined, step.proceed === false);
+  }
   if (payload.kind === 'daemon-review-pending') {
    if ((step.repo !== undefined && canonicalReviewRepository(step.repo) !== canonicalReviewRepository(payload.repo)) || (step.epicHash !== undefined && step.epicHash !== payload.epicHash) || (step.storyId !== undefined && step.storyId !== payload.storyId)) return errorResult('review-target-mismatch', 'Pending continuation target cannot be changed.', false);
    return resumeDaemonReview(payload, step.state!, deps, step.proceed === false);
   }
+		deps = { ...deps, controllerRequest: step.controllerInput ?? payload.controllerInput };
 		repo = payload.repo; epicHash = payload.epicHash; storyId = payload.storyId;
 		subject = payload.subject;
 
@@ -283,6 +296,7 @@ async function handleStart(
 			return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'declined' });
 		}
 	} else {
+  deps = { ...deps, controllerRequest: step.controllerInput };
 		if (typeof step.epicHash !== 'string' || step.epicHash.length === 0) {
 			return errorResult('bad-input', 'insrc_code_review_step: `epicHash` is required for phase=start.', false);
 		}
@@ -352,7 +366,7 @@ async function handleStart(
 			const token = await saveState({
 				runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 				startedAtMs: Date.now(),
-				repo, epicHash, storyId, subject,
+				repo, epicHash, storyId, subject, controllerInput: deps.controllerRequest,
 				// grounding intentionally omitted — not fetched until the index is fresh.
 			});
 			return confirmWaitResult(f.staleFiles, f.isProcessing, token);
@@ -419,7 +433,14 @@ async function beginDiffOnlyReview(
 		return await reviewByDaemon(subject, 'degraded', deps, reason);
 	}
 
-	const admittedFingerprint = deps.captureInput?.(subject);
+ const capability = deps.controllerExecution;
+ if (capability === undefined) return errorResult('unsupported-bounded-controller', 'This degraded controller review requires the verified fresh isolated CLI helper. A raw controllerInput flag or inherited chat session cannot enforce the input cap.', false);
+ const request = deps.controllerRequest;
+ if (request !== undefined && (request.mode !== 'isolated-structured' || request.adapterId !== capability.adapterId || !Number.isSafeInteger(request.maxInputChars) || request.maxInputChars <= 0)) return errorResult('unsupported-bounded-controller', 'The requested controller adapter does not match its verified isolated execution capability.', false);
+ const admittedCapability = { ...capability, maxInputChars: Math.min(capability.maxInputChars, request?.maxInputChars ?? capability.maxInputChars) };
+ const startedAt = deps.now();
+ const admittedFingerprint = (deps.captureInput ?? captureReviewInputFingerprint)(subject);
+ assertReviewFingerprintCurrent(admittedFingerprint, 'controller');
  let grounding: CodeReviewGrounding;
 	let changedFiles: readonly string[];
 	let scoped: Pick<CodeReviewSubject, 'changeSetAttribution' | 'sharedWithExcluded' | 'excludedFromScope'>;
@@ -453,16 +474,10 @@ async function beginDiffOnlyReview(
 	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };
  if (admittedFingerprint !== undefined) assertReviewFingerprintCurrent(admittedFingerprint, 'controller');
 
-	const token = await saveState({
-		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-		startedAtMs: Date.now(),
-		repo, epicHash, storyId, subject: diffSubject, grounding,
-		groundingMode: 'degraded',
-		fallbackReason: reason,
-  ...(admittedFingerprint !== undefined ? { reviewInputFingerprint: admittedFingerprint } : {}),
-	});
-
-	return emitJudgementsResult(diffSubject, grounding, token, 'degraded');
+ const pipeline = await advanceControllerPipeline(prepareControllerPipeline(diffSubject, grounding, admittedFingerprint, reason, admittedCapability, startedAt, deps.now), deps.now);
+ const token = await saveControllerState(pipeline);
+ if (pipeline.active === undefined) return handleControllerContinuation(token, deps);
+ return controllerCallFrame(pipeline, token);
 }
 
 /** Build the emit_judgements frame — the four per-dimension charges over the
@@ -533,12 +548,18 @@ async function handleJudgements(
 		return errorResult('bad-input', 'insrc_code_review_step: `state` is required for phase=judgements.', false);
 	}
 	const payload = await loadState(step.state);   // throws StateTokenNotFound → caught in dispatch
+ if (payload.kind === 'controller-pipeline') {
+  if (step.judgements !== undefined || step.callResult === undefined) return errorResult('bad-call-result', 'Controller pipeline states require exactly one identified callResult, never aggregate judgements.', false);
+  return handleControllerContinuation(step.state, deps, step.callResult);
+ }
+ if (step.callResult !== undefined) return errorResult('bad-state', 'This legacy state does not accept pipeline callResult.', false);
  if (payload.kind === 'daemon-review-pending') return errorResult('bad-state', 'A pending daemon review accepts start/status or explicit cancellation, never controller judgements.', false);
 
 	// A judgements turn always resumes an emit_judgements state, which carries the
 	// fetched grounding. A confirm_wait state (grounding not yet fetched) is not a
 	// valid judgements resume — guard rather than deref undefined.
-	if (payload.grounding === undefined) {
+	if (payload.groundingMode === 'degraded') return errorResult('restart-required', 'Legacy unbounded degraded review state is no longer accepted. Start again through the verified isolated controller helper.', false);
+ if (payload.grounding === undefined) {
 		return errorResult('bad-state', 'insrc_code_review_step: this state is awaiting a proceed/abort resume, not judgements.', false);
 	}
 	const grounding = payload.grounding;
@@ -558,7 +579,7 @@ async function handleJudgements(
 		return errorResult('bad-judgements', `insrc_code_review_step: ${validated.message}`, true);
 	}
 	const byDimension = validated.byDimension;
-	const degraded = payload.groundingMode === 'degraded';
+	const degraded = false;
 
 	// Coverage HIGHs are normalised against the same prepared grounding the daemon
 	// judge uses, so both paths fold the same verdict (ISSUE-b47dadc7).
@@ -598,23 +619,25 @@ async function driveRunner(
 	degraded: boolean,
 	fallbackReason?: CodeReviewFallbackReason | undefined,
  fingerprint?: ReviewInputFingerprint,
+ completedTiming?: import('../../../workflow/code-review/types.js').ReviewTimingPlan,
 ): Promise<CodeReviewStepOutput> {
  if (deps.captureInput !== undefined && fingerprint === undefined) return errorResult('restart-required', 'Review state has no admitted input identity; start a new review.', false);
  const publication = fingerprint === undefined ? undefined : claimReviewPublication(fingerprint, 'controller');
  try {
 	const runId = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const completedOpts = completedTiming === undefined ? {} : { completedControllerTiming: completedTiming, startedAtMs: completedTiming.startedAt, now: deps.now };
 	const outcome = await deps.runReview(
 		subject,
 		DUMMY_PROVIDER,
 		degraded
-			? { ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
-			: { ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller' },
+			? { ...completedOpts, ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
+			: { ...completedOpts, ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller' },
 		injected,
 	);
 	if (!outcome.ok) {
 		return errorResult(outcome.code ?? 'fold-failed', `insrc_code_review_step: ${outcome.error}`, outcome.code === undefined);
 	}
-	await releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
+	if (completedTiming === undefined) await releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
 	const cra = codeReviewSubjectPathArgs(subject);
 	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
 	// ISSUE-11e4fa88 — say so when findings were dropped. The operator reads this
@@ -643,6 +666,53 @@ async function driveRunner(
 		...(count > 0 ? { scopeDropped: { count, changedFiles: subject.changedFiles.length, byDimension } } : {}),
 	};
  } finally { publication?.release(); }
+}
+
+async function handleControllerContinuation(token: string, deps: CodeReviewStepDeps, raw?: unknown, cancel = false): Promise<CodeReviewStepOutput> {
+ return withControllerStateLock(token, async () => {
+  const state = await loadState(token);
+  if (state.kind !== 'controller-pipeline') return errorResult('bad-state', 'This token is not a bounded controller pipeline.', false);
+  try {
+   assertReviewFingerprintCurrent(state.fingerprint, 'controller');
+   if (cancel) {
+    if (state.terminal !== undefined) return state.terminal;
+    const terminal = errorResult('review-cancelled', 'The controller review was cancelled; outstanding call IDs are revoked.', false);
+    await replaceControllerState(token, state.revision, { ...state, revision: state.revision + 1, active: undefined, terminal }); return terminal;
+   }
+   const input = raw === undefined ? undefined : parseControllerCallResult(raw);
+   if (input !== undefined) {
+    const accepted = state.accepted.find(a => a.callId === input.callId);
+    if (accepted !== undefined) {
+     if (accepted.digest !== controllerAnswerDigest(input)) return errorResult('conflicting-call-replay', 'An accepted callId cannot be replayed with different content.', false);
+     return accepted.response;
+    }
+   }
+   if (state.terminal !== undefined) return input === undefined ? state.terminal : errorResult('bad-call-result', 'This controller pipeline is already terminal.', false);
+   assertReviewTime(state.timing, deps.now());
+   let next: ControllerPipelineState = input === undefined ? await advanceControllerPipeline(state, deps.now) : await applyControllerResult(state, input, deps.now);
+   let response: CodeReviewStepOutput;
+   if (next.active !== undefined) response = controllerCallFrame(next, token);
+   else {
+    const checked = validateJudgements(next.results, next.subject);
+    if (!checked.ok) throw new Error(checked.message);
+    const byDimension = checked.byDimension;
+    for (const dimension of next.results) byDimension.set(dimension.dimension, { ...dimension, ...byDimension.get(dimension.dimension)! });
+    const injected: CodeReviewRunnerDeps = { judges: expectedDimensions(next.subject).map(dimension => ({ dimension, judge: async () => byDimension.get(dimension)! })), assembleGrounding: async () => (next.snapshot.grounding as { grounding: CodeReviewGrounding }).grounding, write: deps.write };
+    response = await driveRunner(token, next.subject, injected, deps, true, next.fallbackReason, next.fingerprint, next.timing);
+    next = { ...next, terminal: response };
+   }
+   if (input !== undefined) next = { ...next, accepted: [...next.accepted, { callId: input.callId, digest: controllerAnswerDigest(input), response }] };
+   // A repeated start returns the same active call and clock without altering state.
+   if (next !== state) await replaceControllerState(token, state.revision, { ...next, revision: Math.max(state.revision + 1, next.revision) });
+   return response;
+  } catch (err) {
+   const message = err instanceof Error ? err.message : String(err);
+   const code = err instanceof Error && 'code' in err && typeof err.code === 'string' ? err.code : /expired|deadline/.test(message) ? 'review-deadline' : err instanceof ReviewCallFailedError || err instanceof AtomTooLargeError || err instanceof MaterialChangedError ? 'controller-review-failed' : 'bad-call-result';
+   const response = errorResult(code, message, false);
+   if (state.terminal === undefined && (code.startsWith('review-input-') || code === 'same-party-review' || code === 'review-deadline' || code === 'controller-review-failed')) await replaceControllerState(token, state.revision, { ...state, revision: state.revision + 1, active: undefined, terminal: response });
+   return response;
+  }
+ });
 }
 
 // ---------------------------------------------------------------------------

@@ -16,9 +16,12 @@
  * daemon and returns the daemon's verdict as `done`. Mirrors
  * `insrc_review_step`'s envelope verbatim.
  *
- * Loop: start → emit_judgements → judgements → done  (or error at any turn).
+ * Full graph: start → emit_judgements → judgements → done.
+ * Bounded diff: start → emit_review_call → identified callResult → repeat/done.
+ * Daemon-owned work: start → review_pending → start/status → done.
  */
 
+import type { ControllerPipelineState } from './controller-pipeline.js';
 import type { LLMMessage } from '../../../shared/types.js';
 import type { ReviewVerdict } from '../../../workflow/review/types.js';
 import type { ReviewInputFingerprint, CodeReviewFallbackReason, CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../../workflow/code-review/types.js';
@@ -41,6 +44,7 @@ export type CodeReviewStepPhase = 'start' | 'judgements';
  *  call (no `state`/`proceed`) is unchanged. */
 export interface CodeReviewStepInputStart {
 	readonly phase:    'start';
+ readonly controllerInput?: ControllerInputRequest | undefined;
 	readonly epicHash?: string | undefined;
 	readonly storyId?:  string | undefined;
 	readonly repo?:    string | undefined;
@@ -54,7 +58,8 @@ export interface CodeReviewStepInputStart {
  *  dimension), carried back with the opaque state token. */
 export interface CodeReviewStepInputJudgements {
 	readonly phase:      'judgements';
-	readonly judgements: { readonly judgements?: readonly DimensionResult[] | undefined };
+	readonly judgements?: { readonly judgements?: readonly DimensionResult[] | undefined } | undefined;
+ readonly callResult?: ControllerCallResult | undefined;
 	readonly state:      string;
 }
 
@@ -148,6 +153,7 @@ export interface CodeReviewStepPending {
  readonly timing?: import('../../../workflow/code-review/types.js').ReviewTimingPlan | undefined;
 }
 export type CodeReviewStepOutput =
+ | CodeReviewStepEmitCall
  | CodeReviewStepPending
 	| CodeReviewStepEmitJudgements
 	| CodeReviewStepConfirmWait
@@ -160,6 +166,7 @@ export type CodeReviewStepOutput =
 
 export interface CodeReviewJudgementsState {
  readonly kind?: 'judgements' | undefined;
+ readonly controllerInput?: ControllerInputRequest | undefined;
  readonly reviewInputFingerprint?: ReviewInputFingerprint | undefined;
 	readonly runId:       string;
 	readonly startedAtMs: number;
@@ -206,4 +213,16 @@ export interface CodeReviewPendingState {
  readonly reviewInputFingerprint?: ReviewInputFingerprint | undefined;
  readonly paths: { readonly md: string; readonly json: string };
 }
-export type CodeReviewStepStatePayload = CodeReviewJudgementsState | CodeReviewPendingState;
+export type CodeReviewStepStatePayload = CodeReviewJudgementsState | CodeReviewPendingState | ControllerPipelineState;
+
+export interface ControllerInputRequest { readonly mode: 'isolated-structured'; readonly maxInputChars: number; readonly adapterId: 'cli-claude' | 'cli-codex' }
+export type ControllerCallResult = { readonly callId: string } & (
+ | { readonly answer: unknown; readonly failure?: never }
+ | { readonly failure: { readonly cause: 'size-refusal' | 'invalid-answer' | 'transient' | 'stall'; readonly detail: string; readonly maxChars?: number | undefined }; readonly answer?: never });
+export interface CodeReviewStepEmitCall {
+ readonly next: 'emit_review_call';
+ readonly state: string;
+ readonly guidance: string;
+ readonly call: { readonly callId: string; readonly dimension: import('../../../workflow/code-review/types.js').ReviewDimension; readonly stage: string; readonly role: import('../../../workflow/review-pipeline/types.js').CallRole; readonly messages: readonly LLMMessage[]; readonly schema: import('../../../shared/types.js').StructuredSchema; readonly limitChars: number; readonly expiresAt: number };
+ readonly timing: Pick<import('../../../workflow/code-review/types.js').ReviewTimingPlan, 'startedAt' | 'chunkCount' | 'budgetMs' | 'deadlineAt'>;
+}

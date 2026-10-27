@@ -395,8 +395,20 @@ routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
   review of the diff is recorded as `degraded` and can be `warn` at best. If the
   daemon review does not complete the tool returns an error naming the cause;
   it does NOT fall back to a review by you.
-- **The daemon wrote the code:** `start` returns `emit_judgements` with the
-  dimension prompts + grounding; emit the `{ judgements }` JSON → `done`.
+- **The daemon wrote the code:** a legacy full-graph review returns
+  `emit_judgements`; emit the `{ judgements }` JSON. A degraded diff review
+  instead requires the verified fresh isolated local CLI helper. It returns
+  `emit_review_call` with exactly one bounded task, callId, schema, expiry and
+  compact fixed timing. Use `phase:'judgements'` with `callResult` containing
+  that callId and exactly one enveloped `answer` or defined `failure`. Never
+  inject aggregate dimension judgements, add whole grounding or inherit chat
+  history. `start` with the same state re-emits the same current call/deadline;
+  `proceed:false` cancels. A repeated accepted answer returns its cached
+  continuation; conflicting, foreign, late or out-of-order answers are refused.
+  Raw `controllerInput` flags do not prove isolated execution. Unsupported
+  hosts return `unsupported-bounded-controller` before receiving evidence;
+  the daemon does not substitute its own judgement. Legacy degraded tokens
+  require a restart through the verified helper.
 
 Either way it writes a code-review record across four dimensions — **adherence /
 conventions / coverage / quality** → block / warn / pass.

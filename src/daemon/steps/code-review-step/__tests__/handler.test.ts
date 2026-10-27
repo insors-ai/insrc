@@ -13,7 +13,6 @@ import { join } from 'node:path';
 import { handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import { runCodeReview } from '../../../../workflow/code-review/runner.js';
-import { LEDGER_EXCLUDE_GLOBS } from '../../../../workflow/runners/build/changed-files.js';
 import { buildStartRelPath } from '../../../../workflow/runners/build/range-base.js';
 import type { CodeReviewStepOutput } from '../types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../../workflow/code-review/types.js';
@@ -344,24 +343,12 @@ test('s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh
 // S001 ac1: timeout during the poll => auto-fall-back to the DIFF-ONLY review,
 // NOT an endless confirm_wait re-prompt (a wedged index never freshens). This
 // flips the pre-S001 behaviour where the timeout re-prompted confirm_wait.
-test('S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt', async () => {
-	await reset();
-	let clock = 0;
-	let diffCalls = 0;
-	const { deps, writes } = makeDeps({
-		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
-		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
-		now: () => clock,
-		sleep: async () => { clock += 1000; },   // advance the fake clock each poll
-		freshnessTimeoutMs: () => 2500,
-	});
-	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
-	assert.ok(cw.next === 'confirm_wait');
-	const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
-	assert.ok(out.next === 'emit_judgements', 'timeout => diff-only emit_judgements, not confirm_wait');
-	assert.equal(diffCalls, 1, 'the diff grounding was assembled on timeout');
-	assert.deepEqual(out.grounding, diffGrounding, 'the emit_judgements frame carries the diff grounding (degraded)');
-	assert.equal(writes.length, 0, 'nothing written yet — the write happens on the judgements turn');
+test('S001: a freshness timeout refuses an unverified degraded controller before reading diff evidence', async () => {
+ await reset(); let clock = 0, diffCalls = 0;
+ const { deps, writes } = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }), now: () => clock, sleep: async () => { clock += 1000; }, freshnessTimeoutMs: () => 2500, assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; } });
+ const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps)); assert.ok(cw.next === 'confirm_wait');
+ const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
+ assert.ok(out.next === 'error' && out.error.code === 'unsupported-bounded-controller'); assert.equal(diffCalls, 0); assert.equal(writes.length, 0);
 });
 
 // S001 ac1 (token hygiene): the confirm_wait token is consumed before the diff
@@ -378,7 +365,7 @@ test('S001: the timeout auto-diff releases the confirm_wait token before the dif
 	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(cw.next === 'confirm_wait');
 	const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
-	assert.ok(out.next === 'emit_judgements');
+	assert.ok(out.next === 'error' && out.error.code === 'unsupported-bounded-controller');
 	// resending the now-consumed confirm_wait token fails loadState
 	const resend = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
 	assert.ok(resend.next === 'error' && resend.error.code === 'state-not-found', 'the confirm_wait token was released');
@@ -386,17 +373,11 @@ test('S001: the timeout auto-diff releases the confirm_wait token before the dif
 
 // S001 ac2: a FRESH index whose grounding is hollow (symbols:[]) auto-falls-back
 // to the diff review instead of emitting a full-mode review over nothing.
-test('S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit', async () => {
-	await reset();
-	let diffCalls = 0;
-	const { deps } = makeDeps({
-		fetchGrounding: async () => ({ ok: true, grounding: hollowGrounding }),   // fresh but empty
-		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
-	});
-	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
-	assert.ok(out.next === 'emit_judgements', 'hollow grounding => diff-only emit_judgements');
-	assert.equal(diffCalls, 1, 'the diff grounding was assembled for the hollow case');
-	assert.deepEqual(out.grounding, diffGrounding, 'the frame carries the diff grounding, not the empty full grounding');
+test('S001: hollow graph grounding cannot emit an unbounded controller diff task without the helper', async () => {
+ await reset(); let diffCalls = 0;
+ const { deps } = makeDeps({ fetchGrounding: async () => ({ ok: true, grounding: hollowGrounding }), assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; } });
+ const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+ assert.ok(out.next === 'error' && out.error.code === 'unsupported-bounded-controller'); assert.equal(diffCalls, 0);
 });
 
 // S001 ac2 (regression): a FRESH index with real (non-empty) grounding still
@@ -443,50 +424,26 @@ async function declineTo(deps: CodeReviewStepDeps): Promise<CodeReviewStepOutput
 }
 
 // ac1: decline no longer fails closed — it runs the diff-only path.
-test('s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error', async () => {
-	await reset();
-	let diffCalls = 0;
-	const { deps } = makeDeps({
-		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
-		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
-	});
-	const declined = await declineTo(deps);
-	assert.ok(declined.next === 'emit_judgements', 'decline => diff-only emit_judgements, not an error');
-	assert.equal(diffCalls, 1, 'the diff grounding was assembled');
-	assert.deepEqual(declined.grounding, diffGrounding, 'the emit_judgements frame carries the diff grounding');
+test('s10: declining freshness requires the isolated controller helper before diff evidence is assembled', async () => {
+ await reset(); let diffCalls = 0;
+ const { deps, writes } = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }), assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; } });
+ const out = await declineTo(deps); assert.ok(out.next === 'error' && out.error.code === 'unsupported-bounded-controller'); assert.equal(diffCalls, 0); assert.equal(writes.length, 0);
 });
 
 // ac3 + ac4: the degraded judgements turn drives runReview with the degraded+cap opts and persists a record.
-test('s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record', async () => {
-	await reset();
-	const { runReview, opts } = reviewSpy();
-	const { deps, writes } = makeDeps({
-		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
-		runReview,
-	});
-	const declined = await declineTo(deps);
-	assert.ok(declined.next === 'emit_judgements');
-	// a clean set of judgements (no findings) — would fold to pass, but the cap raises it to warn.
-	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: declined.state }, deps));
-	assert.ok(done.next === 'done', 'the degraded review persists a record');
-	assert.equal(done.verdict, 'warn', 'a clean degraded fold is warn-capped, never pass (ac4)');
-	assert.equal(opts.length, 1);
-	assert.equal(opts[0]!.groundingMode, 'degraded', 'runReview got groundingMode:degraded (ac3)');
-	assert.equal(opts[0]!.capVerdictAtWarn, true, 'runReview got capVerdictAtWarn:true (ac4)');
-	const json = writes.find(w => w.path.endsWith('.json'))!;
-	const body = (JSON.parse(json.content) as { body: { groundingMode: string; verdict: string } }).body;
-	assert.equal(body.groundingMode, 'degraded', 'the persisted record is stamped degraded');
-	assert.equal(body.verdict, 'warn');
-	// T4 (LLD-1716f77ba9ba017b-S001): the degraded route is the controller's review too.
-	assert.equal(opts[0]!.reviewedBy, 'controller');
-	assert.equal((JSON.parse(json.content) as { meta: { reviewedBy?: string } }).meta.reviewedBy, 'controller');
+test('s10: an old degraded aggregate state is restart-required and never reaches the fold or writer', async () => {
+ await reset();
+ const { saveState } = await import('../state-store.js'); const { deps, writes } = makeDeps();
+ const state = await saveState({ runId: 'old-degraded', startedAtMs: 0, repo: '/repo', epicHash: EPIC, storyId: STORY, subject: subject(), grounding: diffGrounding, groundingMode: 'degraded' });
+ const out = parse(await handleCodeReviewStep({ phase: 'judgements', state, judgements: judgements() }, deps));
+ assert.ok(out.next === 'error' && out.error.code === 'restart-required'); assert.equal(writes.length, 0);
 });
 
 // ISSUE-5f7a7cb9 S001/t7 (T48): the degraded path hands the assembler the Story's
 // resolved base and the ledger globs. Driven against a REAL repo carrying a
 // build-start file for this Story, so "the resolved base" is what the shipping
 // resolver returns and not a value the test invented.
-test('T48: the degraded review passes the Story\'s resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler', async () => {
+test('T48: unverified controller admission stops before range-base diff assembly', async () => {
 	await reset();
 	const repo = mkdtempSync(join(tmpdir(), 'cr-handler-base-'));
 	try {
@@ -506,36 +463,22 @@ test('T48: the degraded review passes the Story\'s resolved range base and LEDGE
 		const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo }, deps));
 		assert.ok(cw.next === 'confirm_wait');
 		const declined = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: false }, deps));
-		assert.ok(declined.next === 'emit_judgements');
+		assert.ok(declined.next === 'error' && declined.error.code === 'unsupported-bounded-controller');
 
-		assert.equal(seen.length, 1);
-		assert.deepEqual(seen[0], [repo, undefined, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${EPIC}/${STORY}` }]);
+		assert.equal(seen.length, 0, 'unverified helpers cannot reach source assembly');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base', async () => {
-	await reset();
-	const seen: unknown[][] = [];
-	const { deps } = makeDeps({
-		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
-		assembleDiffGrounding: async (...a: unknown[]) => { seen.push(a); return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
-	});
-	await declineTo(deps);
-	assert.deepEqual(seen, [['/repo', undefined, { base: undefined, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${EPIC}/${STORY}` }]]);
+test('T48: a missing base cannot bypass verified controller admission', async () => {
+ await reset(); const seen: unknown[][] = [];
+ const { deps } = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }), assembleDiffGrounding: async (...a: unknown[]) => { seen.push(a); return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; } });
+ const out = await declineTo(deps); assert.ok(out.next === 'error' && out.error.code === 'unsupported-bounded-controller'); assert.deepEqual(seen, []);
 });
 
 // error: the diff cannot be read => diff-unavailable, nothing written.
-test('s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write', async () => {
-	await reset();
-	const { DiffUnavailableError } = await import('../../../../workflow/code-review/grounding.js');
-	const { deps, writes } = makeDeps({
-		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
-		assembleDiffGrounding: async () => { throw new DiffUnavailableError('not a git repo'); },
-	});
-	const out = await declineTo(deps);
-	assert.ok(out.next === 'error' && out.error.code === 'diff-unavailable', 'unreadable diff => diff-unavailable error');
-	assert.ok(out.next === 'error' && out.error.retryable === true);
-	assert.equal(writes.length, 0, 'no record written when the diff cannot be read');
+test('s10: lack of a helper cannot be hidden by an unreadable-diff fallback', async () => {
+ await reset(); const { deps, writes } = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }), assembleDiffGrounding: async () => { throw new Error('must not read evidence before admission'); } });
+ const out = await declineTo(deps); assert.ok(out.next === 'error' && out.error.code === 'unsupported-bounded-controller'); assert.equal(writes.length, 0);
 });
 
 // ac6 regression: the fresh graph path is byte-identical to s9 — runReview gets the DEFAULT opts (no degraded, no cap).
@@ -661,53 +604,15 @@ async function timedOutFallback(fresh: { inFlight: boolean; pendingCodeIndexJobs
 	const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, made.deps));
 	return { ...made, out };
 }
-/** Finish a controller-reviewed emit_judgements and return the done frame and the record body. */
-async function finish(deps: CodeReviewStepDeps, writes: { path: string; content: string }[], out: CodeReviewStepOutput) {
-	assert.ok(out.next === 'emit_judgements', JSON.stringify(out));
-	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: out.state }, deps));
-	assert.ok(done.next === 'done', JSON.stringify(done));
-	const json = writes.find(w => w.path.endsWith('.json'))!;
-	return { done, body: (JSON.parse(json.content) as { body: { groundingMode: string; fallbackReason?: unknown } }).body };
-}
 
-test('a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason', async () => {
-	// Timed out: the record and the done frame carry what the wait was still on.
-	await reset();
-	let t = await timedOutFallback({ inFlight: false, pendingCodeIndexJobs: 4 });
-	let r = await finish(t.deps, t.writes, t.out);
-	const timedOut = { kind: 'freshness-timeout', waitedMs: 3000, inFlight: false, pendingCodeIndexJobs: 4, staleFiles: ['src/a.ts'] };
-	assert.deepEqual(r.body.fallbackReason, timedOut);
-	assert.equal(r.body.groundingMode, 'degraded');
-	assert.deepEqual((r.done as { fallbackReason?: unknown }).fallbackReason, timedOut);
-	assert.match(t.writes.find(w => w.path.endsWith('.md'))!.content, /Reviewed on the diff:\*\* the wait for a fresh index timed out after 3 s .*queued: 4; stale files: src\/a\.ts/);
-
-	// proceed:false: declined.
-	await reset();
-	const d = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: true, inFlight: true, pendingCodeIndexJobs: 0, staleFiles: [] }) });
-	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, d.deps));
-	assert.ok(cw.next === 'confirm_wait');
-	r = await finish(d.deps, d.writes, parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: false }, d.deps)));
-	assert.deepEqual(r.body.fallbackReason, { kind: 'declined' });
-
-	// A fresh but hollow grounding: hollow-grounding.
-	await reset();
-	const h = makeDeps({ fetchGrounding: async () => ({ ok: true, grounding: hollowGrounding }) });
-	r = await finish(h.deps, h.writes, parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, h.deps)));
-	assert.deepEqual(r.body.fallbackReason, { kind: 'hollow-grounding' });
-
-	// A fresh full review carries none, in the record or the done frame.
-	await reset();
-	const full = await runFullFlow();
-	const fullBody = JSON.parse(full.writes.find(w => w.path.endsWith('.json'))!.content) as { body: Record<string, unknown> };
-	assert.equal(fullBody.body['groundingMode'], 'full');
-	assert.equal('fallbackReason' in fullBody.body, false);
-	assert.equal('fallbackReason' in (full.done as object), false);
-	assert.doesNotMatch(full.writes.find(w => w.path.endsWith('.md'))!.content, /Reviewed on the diff/);
-
+test('a full graph review omits fallbackReason while a daemon-reviewed timeout forwards its exact queued/in-flight reason', async () => {
+ await reset(); const full = await runFullFlow();
+ const fullBody = JSON.parse(full.writes.find(w => w.path.endsWith('.json'))!.content);
+ assert.equal(fullBody.body.groundingMode, 'full'); assert.equal('fallbackReason' in fullBody.body, false); assert.equal('fallbackReason' in full.done, false);
 	// The daemon-reviewed path (code the controller wrote) forwards the reason to the daemon and onto the done frame.
 	await reset();
 	const asked: unknown[] = [];
-	t = await timedOutFallback({ inFlight: true, pendingCodeIndexJobs: 0 }, {
+	const t = await timedOutFallback({ inFlight: true, pendingCodeIndexJobs: 0 }, {
 		readBuildAuthor: () => 'controller',
 		reviewByDaemon: async (params) => {
 			asked.push(params);
@@ -720,16 +625,9 @@ test('a proceed:true wait that times out falls back with fallbackReason freshnes
 	assert.deepEqual((t.out as { fallbackReason?: unknown }).fallbackReason, sent);
 });
 
-test('on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work', async () => {
-	for (const fresh of [{ inFlight: false, pendingCodeIndexJobs: 2 }, { inFlight: true, pendingCodeIndexJobs: 0 }]) {
-		await reset();
-		const t = await timedOutFallback(fresh);
-		assert.ok(t.out.next === 'emit_judgements');
-		assert.equal(t.writes.length, 0, 'nothing is written before the judgements turn');
-		// The reason crosses the turn only through the saved state.
-		const r = await finish(t.deps, t.writes, t.out);
-		const expected = { kind: 'freshness-timeout', waitedMs: 3000, ...fresh, staleFiles: ['src/a.ts'] };
-		assert.deepEqual(r.body.fallbackReason, expected, JSON.stringify(fresh));
-		assert.deepEqual((r.done as { fallbackReason?: unknown }).fallbackReason, expected);
-	}
+test('on the controller-reviewed path, queued-only and in-flight timeout cannot bypass bounded helper admission', async () => {
+ for (const fresh of [{ inFlight: false, pendingCodeIndexJobs: 2 }, { inFlight: true, pendingCodeIndexJobs: 0 }]) {
+  await reset(); const t = await timedOutFallback(fresh);
+  assert.ok(t.out.next === 'error' && t.out.error.code === 'unsupported-bounded-controller'); assert.equal(t.writes.length, 0);
+ }
 });

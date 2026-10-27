@@ -727,7 +727,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'`warn` at best. If the daemon review does not complete, it returns ' +
 				'next:\'error\' naming the cause and stamps nothing; it never falls back to a ' +
 				'review by you.\n\n' +
-				'Your multi-turn loop (daemon-written code only):\n\n' +
+				'For a degraded review of daemon-written code, only a verified fresh isolated controller CLI helper is accepted. ' +
+                'The tool returns emit_review_call with ONE bounded identified call, schema, expiry and compact timing. Return callResult with its callId and enveloped answer or defined failure through phase=judgements. Never send aggregate dimension judgements, inherited chat context or extra grounding. Resume start/state re-emits the SAME call and deadline; proceed:false cancels. Without the actual verified helper this route returns unsupported-bounded-controller before evidence.\n\n' +
+                'Legacy full-graph multi-turn loop (daemon-written code only):\n\n' +
 				'  1. phase=\'start\' with { epicHash, storyId, repo? }. Server resolves the ' +
 				'subject (declines with an error if there is no approved contract / build) ' +
 				'and fetches grounding, returning { next: \'emit_judgements\', prompts, ' +
@@ -758,6 +760,8 @@ export function buildInsrcMcpServerWithRegistry(): {
 				repo: z.string()
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
+				controllerInput: z.object({ mode: z.literal('isolated-structured'), maxInputChars: z.number().int().positive(), adapterId: z.enum(['cli-claude', 'cli-codex']) }).strict().describe('Optional bounded controller request. A raw flag does not establish verified isolated helper capability.').optional(),
+                callResult: z.object({ callId: z.string(), answer: z.unknown().optional(), failure: z.object({ cause: z.enum(['size-refusal', 'invalid-answer', 'transient', 'stall']), detail: z.string(), maxChars: z.number().int().positive().optional() }).strict().optional() }).strict().describe('For emit_review_call states only: exact current callId and exactly one enveloped answer or failure; never combine with judgements.').optional(),
 				judgements: z.object({ judgements: z.array(z.record(z.string(), z.unknown())).optional() })
 					.passthrough()
 					.describe('Only for phase=judgements. The four DimensionResult judgements your LLM emitted (matches the emit_judgements schema).')

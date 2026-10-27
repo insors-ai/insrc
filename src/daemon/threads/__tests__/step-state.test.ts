@@ -177,3 +177,16 @@ test('DIFF-WAIT-RESUME: shared and hub leases protect all active entries from TT
   assert.notEqual(await store.read('code-review', tokens[1]!), undefined);
  } finally { await worker.terminate(); }
 });
+
+
+test('DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token', async () => {
+ const store = new LocalStepStateStore();
+ const token = await store.mint('code-review', { revision: 0, currentCall: 'a' }, Date.now() + HOUR);
+ const { worker, ask } = connect(store)();
+ try {
+  const first = await ask({ op: 'compare', kind: 'code-review', token, revision: 0, payload: { revision: 1, currentCall: 'b' } });
+  const stale = await ask({ op: 'compare', kind: 'code-review', token, revision: 0, payload: { revision: 1, currentCall: 'foreign' } });
+  assert.equal(first['replaced'], true); assert.equal(stale['replaced'], false);
+  assert.deepEqual((await store.read('code-review', token))?.payload, { revision: 1, currentCall: 'b' });
+ } finally { await worker.terminate(); }
+});

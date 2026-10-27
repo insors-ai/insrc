@@ -68,3 +68,22 @@ export class StateTokenNotFound extends Error {
 		this.name = 'StateTokenNotFound';
 	}
 }
+
+export function saveControllerState(payload: import('./controller-pipeline.js').ControllerPipelineState): Promise<string> {
+ return getStepStateStore().mint('code-review', payload, payload.timing.deadlineAt + 600_000);
+}
+export async function replaceControllerState(token: string, revision: number, payload: import('./controller-pipeline.js').ControllerPipelineState): Promise<void> {
+ if (!await getStepStateStore().compareReplace('code-review', token, revision, payload)) throw new Error('Controller state changed concurrently or expired');
+ if (payload.terminal !== undefined) await getStepStateStore().pin('code-review', token, Date.now() + 600_000);
+}
+const controllerLocks = new Map<string, Promise<void>>();
+/** Serializes deterministic transitions and final publication; CAS remains authoritative in the shared store. */
+export async function withControllerStateLock<T>(token: string, run: () => Promise<T>): Promise<T> {
+ const prior = controllerLocks.get(token) ?? Promise.resolve();
+ let release!: () => void;
+ const current = new Promise<void>(resolve => { release = resolve; });
+ controllerLocks.set(token, current);
+ await prior;
+ try { return await run(); }
+ finally { release(); if (controllerLocks.get(token) === current) controllerLocks.delete(token); }
+}

@@ -54,6 +54,7 @@ export interface SharedStepStateStore {
 	 * token must exist), a new one otherwise (the old one, if any, is released).
 	 */
 	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string>;
+	compareReplace<P>(kind: StepKind, token: string, revision: number, payload: P): Promise<boolean>;
 	pin(kind: StepKind, token: string, until: number): Promise<void>;
 	release(kind: StepKind, token: string): Promise<void>;
 	/** ONLY for tests. */
@@ -117,6 +118,12 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		return next;
 	}
 
+	async compareReplace<P>(kind: StepKind, token: string, revision: number, payload: P): Promise<boolean> {
+  assertNoSessionPersistence();
+  const entry = this.map(kind).get(token);
+  if (entry === undefined || (entry.pinnedUntil !== undefined && this.now() >= entry.pinnedUntil) || (entry.payload as { revision?: unknown } | null)?.revision !== revision) return false;
+  entry.payload = structuredClone(payload); entry.touchedAt = this.now(); return true;
+ }
 	async pin(kind: StepKind, token: string, until: number): Promise<void> {
   assertNoSessionPersistence();
   if (!Number.isSafeInteger(until) || until < 0) throw new Error('Invalid step-state lease');
@@ -163,11 +170,12 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 /** The main thread's hub services for the step-state store. */
 export function stepStateHubHandlers(store: SharedStepStateStore): HubHandlers {
-	type A = { kind: StepKind; token?: string; payload?: unknown; until?: number };
+	type A = { kind: StepKind; token?: string; payload?: unknown; until?: number; revision?: number };
 	return {
 		'step.mint':    a => store.mint((a as A).kind, (a as A).payload, (a as A).until),
 		'step.read':    a => store.read((a as A).kind, (a as A).token!),
 		'step.update':  a => store.update((a as A).kind, (a as A).token, (a as A).payload),
+		'step.compareReplace': a => store.compareReplace((a as A).kind, (a as A).token!, (a as A).revision!, (a as A).payload),
 		'step.pin': a => store.pin((a as A).kind, (a as A).token!, (a as A).until!),
 		'step.release': a => store.release((a as A).kind, (a as A).token!),
 		'step.clear':   a => store.clearForTests((a as A).kind),
@@ -188,6 +196,9 @@ export class HubStepStateStore implements SharedStepStateStore {
 	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> {
 		assertNoSessionPersistence(); return this.hub.request('step.update', { kind, token, payload });
 	}
+	compareReplace<P>(kind: StepKind, token: string, revision: number, payload: P): Promise<boolean> {
+  assertNoSessionPersistence(); return this.hub.request('step.compareReplace', { kind, token, revision, payload });
+ }
 	pin(kind: StepKind, token: string, until: number): Promise<void> {
   assertNoSessionPersistence(); return this.hub.request('step.pin', { kind, token, until });
  }

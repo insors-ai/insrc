@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 87 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 88 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -485,7 +485,7 @@ Run at 2026-10-27T10:47:29.400Z on commit `cf0cad096`. Tests check: **passed**. 
 
 ## t17
 
-Run at 2026-10-27T10:56:02.829Z on commit `9d87b90e1`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T10:59:04.235Z on commit `bd62205c3`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: DIFF-WAIT-RESUME**
 
@@ -496,6 +496,7 @@ Run at 2026-10-27T10:56:02.829Z on commit `9d87b90e1`. Tests check: **passed**. 
 | pass | DIFF-WAIT-RESUME: transient waiter failures keep the same token; foreign target, daemon loss never claim a CR | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
 | pass | DIFF-WAIT-RESUME: malformed final or a changed daemon epoch is rejected before consuming a pending result | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
 | pass | DIFF-WAIT-RESUME: shared and hub leases protect all active entries from TTL/LRU and expire at a fixed terminal deadline | `src/daemon/threads/__tests__/step-state.test.ts` |
+| pass | DIFF-WAIT-RESUME: a repository alias attaches its pending token to the canonical owner and resumes through either path | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
 
 **integration: DIFF-WAIT-COMPAT**
 
@@ -508,6 +509,6 @@ Run at 2026-10-27T10:56:02.829Z on commit `9d87b90e1`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` | 0 | 5 | 0.5 s |  |
+| `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` | 0 | 6 | 0.5 s |  |
 | `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 4 | 0.8 s |  |
 | `src/shared/__tests__/code-review-control.test.ts` | 0 | 5 | 0.6 s |  |

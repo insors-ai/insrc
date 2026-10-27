@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T10:56:02.829Z",
+    "updatedAt": "2026-10-27T10:59:04.235Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -2013,8 +2013,8 @@
       },
       {
         "taskId": "t17",
-        "commit": "9d87b90e1",
-        "ranAt": "2026-10-27T10:56:02.829Z",
+        "commit": "bd62205c3",
+        "ranAt": "2026-10-27T10:59:04.235Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2046,6 +2046,11 @@
                 "file": "src/daemon/threads/__tests__/step-state.test.ts",
                 "title": "DIFF-WAIT-RESUME: shared and hub leases protect all active entries from TTL/LRU and expire at a fixed terminal deadline",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/pending-review.test.ts",
+                "title": "DIFF-WAIT-RESUME: a repository alias attaches its pending token to the canonical owner and resumes through either path",
+                "result": "pass"
               }
             ],
             "files": []
@@ -2074,7 +2079,7 @@
             "file": "src/daemon/steps/code-review-step/__tests__/pending-review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 491,
+            "durationMs": 524,
             "titles": [
               {
                 "title": "DIFF-WAIT-RESUME: pending turns join one owner beyond300s, retain the same state/deadline and consume exactly one final review",
@@ -2095,6 +2100,10 @@
               {
                 "title": "DIFF-WAIT-RESUME: malformed final or a changed daemon epoch is rejected before consuming a pending result",
                 "result": "pass"
+              },
+              {
+                "title": "DIFF-WAIT-RESUME: a repository alias attaches its pending token to the canonical owner and resumes through either path",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -2103,7 +2112,7 @@
             "file": "src/daemon/threads/__tests__/step-state.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 822,
+            "durationMs": 821,
             "titles": [
               {
                 "title": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores",
@@ -2128,7 +2137,7 @@
             "file": "src/shared/__tests__/code-review-control.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 581,
+            "durationMs": 573,
             "titles": [
               {
                 "title": "DIFF-WAIT-TRANSPORT: shared serializer and both actual transports preserve start/status/cancel and discriminate every reply",

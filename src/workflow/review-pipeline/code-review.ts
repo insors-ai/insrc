@@ -286,21 +286,21 @@ export function effectiveDimensionLimit(provider: LLMProvider, mode: 'full' | 'd
 export function prepareDimensionJob(
  build: (snapshot: ReviewMaterialSnapshot, effectiveLimitChars: number) => ReviewAdapter<DimensionResult>,
  subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, ctx: JudgeContext | undefined,
- replacementLimit?: number,
+ replacementLimit?: number, path: ReviewPath = 'daemon',
 ): PreparedDimensionReview {
  const preparedAt = (ctx?.now ?? Date.now)();
  const snapshot = immutableReviewSnapshot(ctx?.snapshot ?? codeReviewSnapshot(subject, grounding, ctx?.groundingMode ?? 'full'));
  const limit = replacementLimit ?? effectiveDimensionLimit(provider, ctx?.groundingMode ?? 'full');
  const adapter = build(snapshot, limit) as unknown as ReviewAdapter<unknown>;
- const job = createReviewJob(adapter, 'daemon', snapshot, limit, { now: preparedAt });
- const model = adapter.stagesFor('daemon').some(stage => stage.kind === 'model');
+ const job = createReviewJob(adapter, path, snapshot, limit, { now: preparedAt });
+ const model = adapter.stagesFor(path).some(stage => stage.kind === 'model');
  const primaryChunkCount = model ? Math.max(1, job.plan.chunks.length) : 0;
  const primaryChunkIds = Object.freeze(primaryChunkCount === 0 ? [] : job.plan.single || job.plan.chunks.length === 0 ? [`${job.dimension}:single`] : job.plan.chunks.map(c => `${job.dimension}:${c.id}`));
  logPlan('prepared', job, subject);
  return Object.freeze({ dimension: job.dimension as ReviewDimension, snapshot: job.snapshot, adapter, job, primaryChunkCount, primaryChunkIds, preparedAt, subject,
   reprepare: (lower: number, at: number) => {
    if (!Number.isSafeInteger(lower) || lower <= 0 || lower >= limit) throw new Error('Diff material replacement must lower the input cap');
-   return prepareDimensionJob(build, subject, grounding, provider, { ...ctx, snapshot, now: () => at, groundingMode: ctx?.groundingMode ?? 'full' }, lower);
+   return prepareDimensionJob(build, subject, grounding, provider, { ...ctx, snapshot, now: () => at, groundingMode: ctx?.groundingMode ?? 'full' }, lower, path);
   } });
 }
 
@@ -310,8 +310,15 @@ export async function executeDimensionJob(prepared: PreparedDimensionReview, pro
  const job = activateDimensionTiming(prepared, root, now());
  let completed: ReviewPipelineJob | undefined;
  const output = await runReviewJob(job, prepared.adapter, provider, { now, signal: ctx?.signal, onCall: ctx?.onCall,
-  onMaterialRefusal: (old, adapter, call, reported, at) => {
-   if (ctx?.groundingMode !== 'degraded' || call.stage !== 'judge' || (call.role !== 'single' && call.role !== 'chunk')) return undefined;
+  onMaterialRefusal: (old, adapter, call, reported, at) => reprepareDiffRefusal(prepared, old, adapter, call, reported, at, now, ctx?.groundingMode ?? 'full'),
+  onDone: done => { completed = done; logPlan('finished', done, prepared.subject); },
+ }) as DimensionResult;
+ return completed?.materialRevisions === undefined ? output : { ...output, materialRevisions: completed.materialRevisions };
+}
+
+/** Shared by owned execution and controller turns; one source of refusal lineage and timing. */
+export function reprepareDiffRefusal(prepared: PreparedDimensionReview, old: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, call: import('./types.js').ReviewCall, reported: number | undefined, at: number, now: () => number, mode: 'full' | 'degraded'): { adapter: ReviewAdapter<unknown>; job: ReviewPipelineJob } | undefined {
+   if (mode !== 'degraded' || call.stage !== 'judge' || (call.role !== 'single' && call.role !== 'chunk')) return undefined;
    const carried = new Set(call.role === 'single' ? adapter.material().atoms.map(a => a.id) : call.carries.atomIds);
    const text = adapter.material().atoms.some(a => carried.has(a.id) && isTextDiffRow(JSON.parse(a.text) as ChangedSymbolSummary));
    if (!text) return undefined;
@@ -330,10 +337,6 @@ export async function executeDimensionJob(prepared: PreparedDimensionReview, pro
    log.info({ dimension: old.dimension, from: old.reviewId, to: rebuilt.job.reviewId, limitChars: limit }, 'review pipeline: restarting dimension from complete descendant diff material');
    return { adapter: rebuilt.adapter, job: { ...rebuilt.job, timing: old.timing, deadlineAt: old.deadlineAt, deadlineBudgetMs: old.deadlineBudgetMs,
     materialRevisions: [...(old.materialRevisions ?? []), revision] } };
-  },
-  onDone: done => { completed = done; logPlan('finished', done, prepared.subject); },
- }) as DimensionResult;
- return completed?.materialRevisions === undefined ? output : { ...output, materialRevisions: completed.materialRevisions };
 }
 
 function diffRanges(material: ReviewMaterial): DiffRevisionRange[] {

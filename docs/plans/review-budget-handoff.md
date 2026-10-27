@@ -52,6 +52,13 @@ material, not deleted. Review documents stay in `/tmp`.
 - Registered MCP schemas, all review roles, managed history/final answers,
   dynamic time limits, central state ownership, real worker duplicates and
   real-git attribution are covered by the focused suite.
+- Final focused matrix: 642 tests, 624 passed, 18 optional/live skips, no failures.
+- Final full sweep: 7596 tests, 7347 passed, 98 failed, 10 cancelled, 138 skipped,
+  3 todo. The same-runtime prebuild baseline also has 98 failures and
+  10 cancellations. No new individual test failure remains; one extra file-level
+  indexing-worker wrapper failure reports the same existing Node22 `.js` import
+  resolution issue. It reproduces on the unchanged baseline in isolation
+  (`/tmp/review-budget-node22-baseline-indexing-worker.log`).
 - Full-suite and same-Node22 prebuild-baseline comparisons are retained under
   `/tmp/review-budget-final-full-comparison.json`. Existing backend failures
   are reported separately; the full suite is not claimed green.

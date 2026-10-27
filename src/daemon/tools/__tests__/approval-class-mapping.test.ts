@@ -122,10 +122,14 @@ test('approval-class-mapping.test.ts: the tool ids and input schemas match the s
 	// add are not in the snapshot and are not compared.
 	// The two project item tools passed --project-id, a flag gh 2.46.0 lacks: they take the project number now (gh-compat.test.ts pins the corrected schemas).
 	const corrected = new Set(['gh:project:item-archive', 'gh:project:item-delete']);
+	// Optional inputs added since the snapshot (the snapshot stays pinned): every other property is the snapshot's.
+	const ADDED_SINCE = new Map([['git_ls_files', ['maxBytes']], ['gh_pr_view', ['jsonFields']]]);
 	for (const old of snapshot) {
 		assert.ok(live.has(old.id), `${old.id} is still registered`);
 		if (corrected.has(old.id)) { continue; }
-		assert.deepEqual(JSON.parse(JSON.stringify(live.get(old.id)!.inputSchema)), old.inputSchema, `${old.id} input schema`);
+		const schema = JSON.parse(JSON.stringify(live.get(old.id)!.inputSchema)) as { properties: Record<string, unknown> };
+		for (const added of ADDED_SINCE.get(old.id) ?? []) { delete schema.properties[added]; }
+		assert.deepEqual(schema, old.inputSchema, `${old.id} input schema`);
 	}
 });
 
@@ -150,6 +154,11 @@ test('approval-class-mapping.test.ts: the twelve git tools of Story s4 are regis
 		if (rec.id === 'git_cat_file') {
 			assert.ok(schema.properties['timeoutMs'] !== undefined, 'git_cat_file has the s7 timeoutMs input');
 			delete schema.properties['timeoutMs'];
+		}
+		// the add-optional-output-budget-git-ls Story adds one optional input to git_ls_files (maxBytes), set aside the same way
+		if (rec.id === 'git_ls_files') {
+			assert.ok(schema.properties['maxBytes'] !== undefined, 'git_ls_files has the maxBytes input');
+			delete schema.properties['maxBytes'];
 		}
 		assert.deepEqual(schema, rec.inputSchema, `${rec.id} input schema`);
 		assert.equal(typeof tool.approval === 'function' ? 'per-input' : tool.approval ?? 'none', rec.approval, `${rec.id} approval`);

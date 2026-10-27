@@ -137,24 +137,30 @@ function configuredFields(raw: Record<string, unknown>, tier: Tier): Partial<Tie
 }
 
 /**
- * The tier's current value: the configured fields laid over the definitions' default for
- * the tier — the configured family (else the default family), its tier default model when
- * none is configured, and the configured effort (an explicit '' kept) else the tier default's
- * effort when the model takes it — the daemon's own precedence.
+ * The tier's current value: the tier the daemon runs, by its own rules (tierSetting and
+ * parseTiering in src/config/analyze.ts, then the registry's resolveTier). A configured
+ * runner the definitions serve AND a non-empty model make the tier, with the configured
+ * effort or none ('' = CLI default) — never the default's effort. Any other tier (unset,
+ * model '', a runner or model alone, an unknown runner) is the default family's default
+ * for the tier, at the configured effort, else the default's effort. An effort the
+ * resolved model does not accept is dropped by the daemon, so it is shown as ''.
  */
 function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier): TierValue | undefined {
   const configured = configuredFields(raw, tier);
-  const family = familyOf(defs, configured.runner ?? defs.defaultFamily);
-  if (family === undefined) {
-    return configured.runner !== undefined && configured.model !== undefined
-      ? { runner: configured.runner, model: configured.model, effort: configured.effort ?? '' } : undefined;
+  const configuredFamily = configured.runner !== undefined ? familyOf(defs, configured.runner) : undefined;
+  let value: TierValue;
+  if (configuredFamily !== undefined && configured.model !== undefined) {
+    const model = servedModel(configuredFamily, configured.model);
+    value = { runner: configuredFamily.id, model: model?.id ?? configured.model, effort: configured.effort ?? '' };
+  } else {
+    const family = familyOf(defs, defs.defaultFamily);
+    const fallback = family !== undefined ? familyDefault(family, tier) : undefined;
+    if (family === undefined || fallback === undefined) return undefined;
+    value = { runner: family.id, model: fallback.model.id, effort: configured.effort ?? fallback.effort };
   }
-  const fallback = familyDefault(family, tier);
-  const model = configured.model ?? fallback?.model.id;
-  if (model === undefined) return undefined;
-  const defaultEffort = fallback?.effort ?? '';
-  const effort = configured.effort ?? (servedModel(family, model)?.efforts.includes(defaultEffort) === true ? defaultEffort : '');
-  return { runner: family.id, model, effort };
+  const resolved = familyOf(defs, value.runner);
+  const model = resolved !== undefined ? servedModel(resolved, value.model) : undefined;
+  return model !== undefined && value.effort !== '' && !model.efforts.includes(value.effort) ? { ...value, effort: '' } : value;
 }
 
 /** What a failed request means for this flow, as one message. */

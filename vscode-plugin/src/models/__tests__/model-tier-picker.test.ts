@@ -104,21 +104,34 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
   assert.equal(r.shown[1]!.find((x) => x.value === 'cli-codex')?.description, 'cli-codex (current)');
   assert.equal(r.shown[2]!.find((x) => x.value === 'x-a')?.description, '(current)');
 
-  // A partly configured tier is laid over the definitions' default: effort only, model only, runner only.
-  r = await run({ picks: ['core', 'cli-codex', 'x-a'], raw: { models: { tiers: { core: { effort: 'turbo' } } } } });
-  assert.equal(r.shown[2]!.find((x) => x.value === 'x-a')?.description, '(current)');
-  assert.equal(r.shown[3]!.find((x) => x.value === 'turbo')?.description, '(current)', 'the configured effort, not the default lo');
-  assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, undefined);
-  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], raw: { models: { tiers: { core: { model: 'x-b' } } } } });
+  // The current tier is the one the daemon resolves (ISSUE-07dfdf71974a7c45; src/config/analyze.ts tierSetting
+  // + parseTiering, then the registry's dropped effort).
+  const cur = (shown: Array<{ value?: string; description?: string }> | undefined) => shown?.find((x) => x.description?.endsWith('(current)'))?.value;
+  // Effort leaf alone: the default tier at that effort.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { effort: 'turbo' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'turbo'], 'the configured effort, not the default lo');
+  // Model alone: the daemon ignores the tier, so the default family's default with its effort.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: { models: { tiers: { core: { model: 'x-b' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'lo'], 'a model alone is ignored');
+  // Runner alone: ignored too.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: { models: { tiers: { core: { runner: 'cli-claude' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'lo'], 'a runner alone is ignored');
+  // Runner + model with no effort: that tier with NO effort, never the default's.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', ''], raw: { models: { tiers: { core: { runner: 'cli-codex', model: 'x-a' } } } } });
+  assert.deepEqual([cur(r.shown[2]), cur(r.shown[3])], ['x-a', ''], 'no effort, not the default lo');
+  assert.deepEqual(r.writes, [], 'the CLI default re-picked is unchanged');
+  // An explicit '' is kept.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', ''], raw: TIER('cli-codex', 'x-a', '') });
+  assert.equal(cur(r.shown[3]), '');
+  // An alias is the canonical model.
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], raw: TIER('cli-codex', 'xb', 'lo') });
   assert.equal(r.shown[2]!.find((x) => x.value === 'x-b')?.description, 'alias xb (current)');
-  assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, '(current)', "no configured effort: the tier default's, which x-b takes");
-  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { model: 'x-a' } } } } });
-  assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, '(current)', 'the default effort for a configured model');
-  r = await run({ picks: ['core', 'cli-codex', 'x-a', ''], raw: { models: { tiers: { core: { model: 'x-a', effort: '' } } } } });
-  assert.equal(r.shown[3]!.find((x) => x.value === '')?.description, '(current)', "an explicit '' is kept");
-  r = await run({ picks: ['core', 'cli-claude', 'c-big'], raw: { models: { tiers: { core: { runner: 'cli-claude' } } } } });
-  assert.equal(r.shown[1]!.find((x) => x.value === 'cli-claude')?.description, 'cli-claude (current)');
-  assert.equal(r.shown[2]!.find((x) => x.value === 'c-big')?.description, 'alias cb (current)', "the family's tier default");
+  // A stored effort the model does not accept is dropped by the daemon: shown as the CLI default.
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', ''], raw: TIER('cli-codex', 'x-b', 'turbo') });
+  assert.deepEqual([cur(r.shown[2]), cur(r.shown[3])], ['x-b', ''], 'the unaccepted turbo is shown as none');
+  // An unset tier: the default family's tier default and its effort.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: {} });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'lo']);
 
   // A configured model the family no longer lists is marked and not selectable.
   r = await run({ picks: ['core', 'cli-codex', '(current, not listed — runs the default): x-gone'], raw: TIER('cli-codex', 'x-gone') });

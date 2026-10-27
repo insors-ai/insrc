@@ -76,13 +76,14 @@ export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHand
   return (request, deliver) => {
     const { requestId, method } = request;
 		const privateReply = !!request.trustedContext?.connectionSession || request.trustedContext?.connectionExecution?.mode === 'session-memory';
-    const streamHandler = request.stream ? streamHandlers[method] : undefined;
+    // Own entries only: a method named like an inherited property (toString) is an unknown method.
+    const streamHandler = request.stream && Object.hasOwn(streamHandlers, method) ? streamHandlers[method] : undefined;
     if (streamHandler === undefined) {
       const lifetime = request.lifetime;
       const finish = (reply: ReplyEnvelope): void => {
 				try { deliver(reply); } catch (error) { lifetime?.abort(); throw error; } finally { lifetime?.complete(); }
       };
-      const handler = handlers[method];
+      const handler = Object.hasOwn(handlers, method) ? handlers[method] : undefined;
       if (!handler) {
 				finish({ kind: 'reply', requestId, error: privateReply ? 'unsupported-temporary' : `unknown method: ${method}` });
         return () => {};

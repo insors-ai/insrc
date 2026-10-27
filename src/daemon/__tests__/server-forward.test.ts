@@ -162,3 +162,13 @@ test('the registry hook fires on connect, close and each message before the requ
 	]);
 	assert.deepEqual(sock.writes.map(w => JSON.parse(w) as unknown), [{ id: 1, result: null }, { id: 2, result: null }]);
 });
+
+test('a method named like an inherited property (toString, constructor) is an unknown method, unary or stream, and never runs Object.prototype', async () => {
+	const forward = directDispatch({ 'x.ok': async () => 'ok' }, {});
+	for (const [method, stream] of [['toString', false], ['constructor', false], ['toString', true], ['hasOwnProperty', true]] as const) {
+		const replies: { error?: string; result?: unknown }[] = [];
+		forward({ kind: 'request', requestId: `r-${method}`, method, params: {}, stream }, e => replies.push(e as { error?: string }));
+		await new Promise(r => setTimeout(r, 10));
+		assert.deepEqual(replies.map(r => r.error), [`unknown method: ${method}`], `${method} (stream ${stream})`);
+	}
+});

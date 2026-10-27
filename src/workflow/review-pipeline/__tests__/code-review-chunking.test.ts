@@ -130,7 +130,7 @@ test('every rendered chunk call, with array formatting, neighbours, context and 
 	const job = plan(g, LIMIT);
 	assert.ok(job.pending.length >= 2);
 	for (const c of job.pending) {
-		assert.equal(c.chars, promptChars(c.messages), 'measured on the call as sent');
+		assert.equal(c.chars, promptChars(c.messages, c.schema), 'measured on the call as sent');
 		assert.ok(c.chars <= LIMIT, `a ${c.chars}-character call`);
 		const user = c.messages[1]!.content as string;
 		assert.ok(user.includes('[\n  {\n    "entityId"'), 'the rows in the prompt\'s array form');

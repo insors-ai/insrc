@@ -22,6 +22,7 @@ import { CliStallError, ReviewSessionTimeoutError } from '../../../agent/provide
 import { ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { runReviewJob } from '../driver.js';
+import { promptChars } from '../envelope.js';
 import { notJudgedFinding } from '../design-review.js';
 import { applyFailure, applyOutput, createReviewJob, MAX_CALL_ATTEMPTS, MAX_GATHER_LEVELS, MAX_STALL_ATTEMPTS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
@@ -84,7 +85,7 @@ test("a review under the limit is one chunk whose calls carry today's messages a
 	assert.equal(schema.properties.callId.const, call.callId);
 	assert.equal(schema.properties.answer, TOY_SCHEMA);
 	assert.deepEqual(call.execution, { mode: 'structured', cwd: '/repo' });
-	assert.equal(call.chars, asSent(call.messages).length, 'chars measures the prompt as sent');
+	assert.equal(call.chars, promptChars(call.messages, call.schema), 'chars measures messages and the actual schema as sent');
 
 	// Driven to the end: today's one call, today's result, and no pipelineCalls on a single review.
 	const model = seeingModel();
@@ -142,7 +143,7 @@ test("a review under the limit is one chunk whose calls carry today's messages a
 
 	// "Too large" is judged on the atom alone, without neighbour lines: an atom that fits alone but
 	// not beside its neighbours' summaries is planned (keeping the summaries that fit), never named.
-	const nearFull = atom(50, LIMIT - 700);
+	const nearFull = atom(50, LIMIT - 1_200);
 	const crowd = Array.from({ length: 8 }, (_, i) => atom(60 + i));
 	const crowdSnap = toySnapshot([nearFull, ...crowd], crowd.map(c => ({ from: 'a50', to: c.id, kind: 'references' as const })));
 	const crowded = createReviewJob(toyAdapter(crowdSnap), 'daemon', crowdSnap, LIMIT);
@@ -329,7 +330,7 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 	// A refused chunk holding one atom is re-planned neighbour-free: it keeps only the summaries
 	// that fit the reported size, and is named only when the atom alone does not fit it.
 	{
-		const one = atom(50, LIMIT - 1_200);
+		const one = atom(50, LIMIT - 1_800);
 		const crowd = Array.from({ length: 8 }, (_, i) => atom(60 + i));
 		const cs = toySnapshot([one, ...crowd], crowd.map(c => ({ from: 'a50', to: c.id, kind: 'references' as const })));
 		const ca = toyAdapter(cs);
@@ -359,10 +360,10 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 	assert.ok(holding.carries.atomIds.length > 1);
 	assert.throws(() => applyFailure(mj, ma, holding.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/f40.ts#fn40'));
 	// Within the reported size it is read in a call of its own, over the packing budget but within the size.
-	const within = applyFailure(mj, ma, holding.callId, 'size-refusal', 2_900);
+	const within = applyFailure(mj, ma, holding.callId, 'size-refusal', 3_300);
 	const alone = within.pending.find(c => c.carries.atomIds.includes('a40'))!;
 	assert.deepEqual(alone.carries.atomIds, ['a40']);
-	assert.ok(alone.chars <= 2_900 && alone.chars > 2_900 - 362, 'over the packing budget, within the reported size');
+	assert.ok(alone.chars <= 3_300 && alone.chars > 3_300 - 412, 'over the packing budget, within the reported size');
 
 	// Today's single call refused: the whole material is divided.
 	const small = toySnapshot([atom(1), atom(2), atom(3)]);
@@ -850,10 +851,10 @@ test('a relation judged by two calls is complete only when both are answered', (
 		}
 		const [r1, r2] = rj.pending.filter(c => c.role === 'relation');
 		const before = new Set(rj.pending.map(c => c.callId));
-		let re = applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 900);
+		let re = applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 1_100);
 		const fresh = re.pending.filter(c => !before.has(c.callId));
 		assert.equal(fresh.length, 2, 'asked again: one call per direction');
-		assert.ok(fresh.every(c => c.role === 'relation' && c.carries.key === key && c.chars <= 900), 'each within the reported size');
+		assert.ok(fresh.every(c => c.role === 'relation' && c.carries.key === key && c.chars <= 1_100), 'each within the reported size');
 		assert.ok(!re.pending.some(c => c.callId === r1!.callId) && !fresh.some(c => content(c) === content(r1!)), 'the refused prompt is never resent');
 		assert.equal(re.relationPlan[key], 3, 'the relation now waits for three answers');
 		for (const c of [r2!, ...fresh].slice(0, 2)) re = applyOutput(re, rebuild(re.snapshot), c.callId, model.answer(c));
@@ -912,7 +913,7 @@ test('usage summaries size a chunk and are always kept; proximity summaries are 
 	}
 
 	// Last resort: an atom so large that its usage summaries do not fit beside it keeps those that fit, logged.
-	const giant = atom(20, LIMIT - 700, 'src/g/g.ts', 'src/g');
+	const giant = atom(20, LIMIT - 1_200, 'src/g/g.ts', 'src/g');
 	const callees = Array.from({ length: 12 }, (_, i) => atom(30 + i, 300, `src/c${i}/c.ts`, `src/c${i}`));
 	const lastSnap = toySnapshot([giant, ...callees], callees.map(c => ({ from: 'a20', to: c.id, kind: 'calls' as const })));
 	const lj = createReviewJob(toyAdapter(lastSnap), 'daemon', lastSnap, LIMIT);
@@ -1054,39 +1055,26 @@ test('a refused obligation call that carried its raw context reduces that contex
 		let job = requestNoteCall({ ...base, notes }, adapter, 'obligation', 'k1', notes.map(n => n.noteId));
 		const obligation = job.pending.find(c => c.role === 'obligation')!;
 		assert.deepEqual([...obligation.carries.atomIds].sort(), [...(withNotes ? ['a1'] : []), 'x0', 'x1'].sort(), 'the raw context fits and is carried');
-		job = applyFailure(job, adapter, obligation.callId, 'size-refusal', 1_400);
+		job = applyFailure(job, adapter, obligation.callId, 'size-refusal', 1_700);
 		const reductions = job.pending.filter(c => c.role === 'reduce');
 		assert.ok(reductions.length >= 1, `${withNotes ? 'mixed' : 'context-only'}: reductions are planned`);
 		assert.equal(job.contextReduced['k1'], true, 'the context became notes');
 		const carried = reductions.flatMap(c => c.carries.atomIds).sort();
 		assert.deepEqual(carried, [...(withNotes ? ['a1'] : []), 'x0', 'x1'].sort(), 'nothing it carried is lost');
-		for (const c of reductions) assert.ok(c.chars <= 1_400);
+		for (const c of reductions) assert.ok(c.chars <= 1_700);
 		assert.ok(!job.pending.some(c => c.role === 'obligation'), 'the refused call is not resent');
 	}
 });
 
-test('an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged', () => {
-	// A call that fills the limit: the correction note would push it over.
-	const snap = toySnapshot([atom(1, LIMIT - 900)]);
-	const validate = (): readonly string[] => ['x'.repeat(2_000)];
-	const adapter = toyAdapter(snap, { validate });
-	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
+test('DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted', () => {
+	const snap = toySnapshot([atom(1, LIMIT - 1_500)]);
+	const adapter = toyAdapter(snap, { validate: () => ['x'.repeat(LIMIT)] });
+	const job = createReviewJob(adapter, 'daemon', snap, LIMIT);
 	const first = nextCalls(job, adapter)[0]!;
 	assert.equal(first.role, 'single');
-	const warnings: unknown[] = [];
-	const logger = getLogger('review-pipeline:job') as unknown as { warn: (...a: unknown[]) => void };
-	const original = logger.warn;
-	logger.warn = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
-	try {
-		job = applyOutput(job, adapter, first.callId, { callId: first.callId, answer: { seen: ['a1'] } });
-	} finally { logger.warn = original; }
-	const second = nextCalls(job, adapter)[0]!;
-	assert.equal(second.attempt, 2, 're-issued once');
-	assert.equal(content(second), content(first), 'as planned: the correction is not in it');
-	assert.ok(second.chars <= LIMIT);
-	assert.ok(warnings.some(w => JSON.stringify(w).includes('without the correction')), 'the omission is logged');
-	// A second invalid answer fails the review, as for any invalid answer.
-	assert.throws(() => applyOutput(job, adapter, second.callId, { callId: second.callId, answer: { seen: ['a1'] } }), (e: unknown) => e instanceof ReviewCallFailedError);
+	assert.throws(() => applyOutput(job, adapter, first.callId, { callId: first.callId, answer: { seen: ['a1'] } }),
+		(e: unknown) => e instanceof AtomTooLargeError && e.message.includes('correction'));
+	assert.equal(job.pending[0]!.attempt, 1, 'no uncorrected replacement was issued');
 });
 
 test("a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'", () => {

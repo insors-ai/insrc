@@ -541,7 +541,7 @@ test('a relation call carries both full summaries when they fit, else full again
 		// A size no row fits even against the other's summary: named as too large, never cut.
 		assert.throws(() => relationCall([caller, callee], 4_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/order/order.ts#placeOrder'));
 		// When both do not fit the limit, the same two calls.
-		const tight = modelDimensionAdapter(spec(s), s, snap, 9_000) as unknown as ReviewAdapter<unknown>;
+		const tight = modelDimensionAdapter(spec(s), s, snap, 10_000) as unknown as ReviewAdapter<unknown>;
 		assert.equal(tight.gather!.relationCall!([caller, callee]).length, 2);
 		// A cut relation that is not a call (same module) is not judged.
 		assert.deepEqual(relationCall([atomOf('id-price'), atomOf('id-discount')]), []);

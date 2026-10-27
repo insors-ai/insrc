@@ -41,15 +41,15 @@ export function envelopeMessages(callId: string, messages: readonly LLMMessage[]
 	return [...messages, { role: 'user', content: envelopeInstruction(callId) }];
 }
 
-/** The prompt's size as the CLI receives it (cli-provider's serialiseMessages: system
- *  and assistant parts headed, parts joined by blank lines). */
-export function promptChars(messages: readonly LLMMessage[]): number {
+/** Complete supplied input: serialized messages plus the separately supplied schema.
+ *  Provider-specific schema normalization is checked again at dispatch. */
+export function promptChars(messages: readonly LLMMessage[], schema?: StructuredSchema): number {
 	let n = 0;
 	for (const [i, m] of messages.entries()) {
 		const content = typeof m.content === 'string' ? m.content : m.content.map(b => 'text' in b ? b.text : '').join('');
 		n += content.length + (m.role === 'system' ? '## System\n'.length : m.role === 'assistant' ? '## Assistant\n'.length : 0) + (i > 0 ? 2 : 0);
 	}
-	return n;
+	return n + (schema === undefined ? 0 : 2 + JSON.stringify(schema).length);
 }
 
 /** A sent prompt's identity: its messages and schema. */

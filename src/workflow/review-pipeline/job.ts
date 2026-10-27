@@ -172,7 +172,7 @@ interface NewCall {
 
 /** A call's size as sent, under an id of a real id's length. */
 function sentChars(prompt: ChunkPrompt): number {
-	return promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages));
+	return promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages), envelopeSchema('00000000-0000-0000-0000-000000000000', prompt.schema));
 }
 
 /** Envelope and record new calls under fresh ids. No sent prompt may repeat. */
@@ -184,13 +184,15 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 		const callId = randomUUID();
 		const messages = envelopeMessages(callId, c.prompt.messages);
 		const schema = envelopeSchema(callId, c.prompt.schema);
+		const chars = promptChars(messages, schema);
+		if (chars > job.plan.limitChars) throw new AtomTooLargeError(`the ${job.stage} ${c.role} call`, chars, job.plan.limitChars);
 		const hash = promptHash(messages, schema);
 		if (issuedHashes.includes(hash)) throw new Error(`review ${job.dimension}: a planned ${job.stage} call repeats a prompt already sent`);
 		issuedHashes.push(hash);
 		counts[c.countAs ?? c.role]++;
 		made.push({
 			callId, attempt: c.attempt ?? 1, ...(c.invalidAnswers !== undefined ? { invalidAnswers: c.invalidAnswers } : {}), stage: job.stage, role: c.role, messages, schema,
-			execution: c.prompt.execution, chars: promptChars(messages), carries: c.carries, prompt: c.prompt,
+			execution: c.prompt.execution, chars, carries: c.carries, prompt: c.prompt,
 		});
 	}
 	return { ...job, issuedHashes, counts, pending: [...job.pending, ...made] };
@@ -304,10 +306,9 @@ export function applyFailure(
 		let prompt = call.prompt;
 		if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {
 			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, more.reasons);
-			// A correction that would not fit the limit is left out (never cut down): the call is
-			// re-issued once as planned, and the omission is logged with the reasons.
-			if (sentChars(corrected) <= job.plan.limitChars) prompt = corrected;
-			else log.warn({ dimension: job.dimension, stage: stage.id, callId, reasons: more.reasons }, 'review pipeline: the correction does not fit beside the call; re-issuing it as planned, without the correction');
+			const chars = sentChars(corrected);
+			if (chars > job.plan.limitChars) throw new AtomTooLargeError(`the ${stage.id} correction`, chars, job.plan.limitChars);
+			prompt = corrected;
 		}
 		log.warn({ dimension: job.dimension, stage: stage.id, cause, callId }, 'review pipeline: re-issuing a call once under a new callId');
 		return issue(rest, [{ prompt, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1, ...(invalidAnswers > 0 ? { invalidAnswers } : {}) }]);

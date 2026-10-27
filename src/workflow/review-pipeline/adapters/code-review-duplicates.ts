@@ -30,7 +30,7 @@
  */
 
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
-import { envelopeMessages, promptChars } from '../envelope.js';
+import { envelopeMessages, envelopeSchema, promptChars } from '../envelope.js';
 import { AtomTooLargeError, packIntoBatches } from '../pack-into-batches.js';
 import type { AdapterStage, ChunkPrompt, ExecutionMode, ReviewAtom, ReviewCall, ReviewChunk, ReviewMaterial, StageAnswer, StageOutputs } from '../types.js';
 
@@ -61,7 +61,7 @@ export interface DuplicateStagesArgs {
 interface Described { readonly atomId: string; readonly symbol: string; readonly description: string }
 
 /** A call's size as sent, enveloped under an id of a real id's length. */
-const sentChars = (messages: readonly LLMMessage[]): number => promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', messages));
+const sentChars = (messages: readonly LLMMessage[], schema: StructuredSchema): number => promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', messages), envelopeSchema('00000000-0000-0000-0000-000000000000', schema));
 
 /** A chunk id's place in the plan's order (c1 before c2 before c10). */
 const order = (chunkId: string): number => Number.parseInt(chunkId.replace(/\D/g, ''), 10) || 0;
@@ -102,7 +102,7 @@ function compareCall(first: readonly Described[], second: readonly Described[], 
 
 /** Every pair of batches of `first` and `second`, each batch within half of what `budget` leaves beside the framing. */
 function compareCalls(first: readonly Described[], second: readonly Described[], budget: number, execution: ExecutionMode): ChunkPrompt[] {
-	const overhead = sentChars(compareCall([], [], execution).messages);
+	const overhead = sentChars(compareCall([], [], execution).messages, COMPARE_SCHEMA);
 	const half = Math.floor((budget - overhead) / 2);
 	const size = (batch: readonly Described[]): number => JSON.stringify(batch, null, 2).length;
 	const firsts = packIntoBatches(first, size, half, d => d.symbol);
@@ -187,7 +187,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 	const halves = (a: ReviewAtom, b: ReviewAtom, budget: number, describe: (x: ReviewAtom) => string): ChunkPrompt[] =>
 		([[a, b], [b, a]] as const).map(([full, other]) => {
 			const half = build([full], { atom: other, description: describe(other) }, [a, b]);
-			const chars = sentChars(half.messages);
+			const chars = sentChars(half.messages, half.schema);
 			if (chars > budget) throw new AtomTooLargeError(`${full.label} (in the duplicate check of ${a.label} and ${b.label})`, chars, budget);
 			return half;
 		});
@@ -207,7 +207,7 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 					const a = byId.get(c.a), b = byId.get(c.b);
 					if (a === undefined || b === undefined) continue;
 					const both = build([a, b], undefined, [a, b]);
-					if (sentChars(both.messages) <= args.limitChars) { calls.push(both); continue; }
+					if (sentChars(both.messages, both.schema) <= args.limitChars) { calls.push(both); continue; }
 					calls.push(...halves(a, b, args.limitChars, x => described.get(x.id)?.d.description ?? x.label));
 				}
 			}

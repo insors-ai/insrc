@@ -28,7 +28,7 @@
 
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from '../../code-review/types.js';
-import { envelopeMessages, promptChars } from '../envelope.js';
+import { envelopeMessages, envelopeSchema, promptChars } from '../envelope.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { EvidenceNote, ExecutionMode, GatherAnswer, GatherPlan, ReviewAtom, ReviewCall, ReviewMaterial, ReviewObligation } from '../types.js';
 import { chunkNotesFrom, type ChunkSpec } from './code-review-chunk.js';
@@ -94,7 +94,7 @@ function refRule(ref: string | undefined): string {
 }
 
 /** A call's size as sent, enveloped under an id of a real id's length. */
-const sentChars = (messages: readonly LLMMessage[]): number => promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', messages));
+const sentChars = (messages: readonly LLMMessage[], schema: StructuredSchema): number => promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', messages), envelopeSchema('00000000-0000-0000-0000-000000000000', schema));
 
 const fileOfLocation = (location: string): string => {
 	const i = location.indexOf(':');
@@ -227,13 +227,13 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		};
 		// After a refusal s1 passes a size below the refused call's, so both rows never fit it again.
 		const both = build([caller, callee], undefined);
-		if (sentChars(both.messages) <= (maxChars ?? args.limitChars)) return [both];
+		if (sentChars(both.messages, both.schema) <= (maxChars ?? args.limitChars)) return [both];
 		// One full row against the other's summary line, in each direction. A row that does not fit even so
 		// is never cut: it is named as too large, as s1 names an atom no call can hold.
 		const halves = [{ full: caller, call: build([caller], callee) }, { full: callee, call: build([callee], caller) }];
 		const budget = maxChars ?? args.limitChars;
 		for (const h of halves) {
-			const chars = sentChars(h.call.messages);
+			const chars = sentChars(h.call.messages, h.call.schema);
 			if (chars > budget) throw new AtomTooLargeError(`${h.full.label} (in the relation ${caller.label} calls ${callee.label})`, chars, budget);
 		}
 		return halves.map(h => h.call);

@@ -1,0 +1,18 @@
+{
+  "task": "t1",
+  "node": "/opt/homebrew/opt/node@22/bin/node",
+  "tests": {
+    "command": "node --import tsx --test 'src/workflow/review-pipeline/__tests__/*.test.ts'",
+    "total": 91,
+    "passed": 88,
+    "failed": 0,
+    "skipped": 3,
+    "log": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task01-pipeline-tests.txt"
+  },
+  "typecheck": {
+    "command": "node node_modules/typescript/bin/tsc --noEmit",
+    "exitCode": 0
+  },
+  "fullSweep": "Deferred until all implementation tasks are built, per user instruction",
+  "pending": "Independent daemon build validation; provider normalization/isolation belongs to t2"
+}

@@ -20,6 +20,7 @@ import { CliStallError, InputTooLargeError } from '../../agent/providers/cli-pro
 import { ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
+import { promptChars } from './envelope.js';
 import { applyFailure, applyOutput, deadlineError, nextCalls, result, runStage } from './job.js';
 import type { FailureCause, ReviewAdapter, ReviewCall, ReviewPipelineJob } from './types.js';
 
@@ -55,6 +56,8 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		opts.onCall?.(call);
 		let raw: unknown;
 		try {
+			const chars = promptChars(call.messages, call.schema);
+			if (chars > job.plan.limitChars) throw new InputTooLargeError(`Review input ${chars} exceeds ${job.plan.limitChars} characters`, '', { actualChars: chars, maxChars: job.plan.limitChars });
 			raw = await untilAborted(send(provider, call, signal), signal);
 		} catch (err) {
 			throwIfAborted(signal);

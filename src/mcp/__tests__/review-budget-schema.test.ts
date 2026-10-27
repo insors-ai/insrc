@@ -5,6 +5,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { z } from 'zod';
 import { buildInsrcMcpServerWithRegistry } from '../server.js';
 import { handleInsrcSchema } from '../schema/handler.js';
+import { rawReviewCall } from '../../daemon/steps/review-step/__tests__/terminal-client.js';
 import { CONTROLLER_DECLARATION } from '../../daemon/steps/code-review-step/__tests__/controller-client.js';
 
 test('registered code-review declaration envelope and schema lookup match runtime contracts', async () => {
@@ -47,5 +48,7 @@ test('registered design-review phases validate declarations envelopes stale stat
 			assert.equal(actual.safeParse({ ...valid, reviewBudget: { ...CONTROLLER_DECLARATION, hostContextReserveTokens: -1 } }).success, false);
 		}
 		assert.equal(actual.safeParse({ phase: 'start', artifact: 'LLD.md' }).success, true, 'daemon routing does not require a controller declaration');
+		const stale = JSON.parse((await rawReviewCall({ phase: 'claims', state: 'stale-token', reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: 0, callId: '00000000-0000-4000-8000-000000000000', answer: { claims: [] } } })).content[0]!.text);
+		assert.equal(stale.next, 'error'); assert.equal(stale.error.code, 'review-budget-state-stale');
 	} finally { await client.close(); await server.close(); }
 });

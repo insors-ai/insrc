@@ -11,6 +11,9 @@ import { controllerPolicy, admitControllerFrame } from '../../../../workflow/rev
 import { validateAgainstSchema } from '../../../../agent/providers/structured-output.js';
 import { reviewTemplateFor } from '../../../../workflow/review/template.js';
 import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
+import { rawControllerCall } from '../../code-review-step/__tests__/controller-client.js';
+import { DEFAULT_DEPS } from '../../code-review-step/handler.js';
+import type { Entity } from '../../../../shared/types.js';
 import type { ReviewStepDeps, ReviewStepStatePayload } from '../types.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
@@ -95,4 +98,41 @@ test('design continuations refuse expired changed and cancelled sources without 
 			else { assert.equal(result.next, 'error', JSON.stringify(result)); assert.equal(readFileSync(fx.jsonPath, 'utf8'), before); }
 		} finally { rmSync(fx.repo, { recursive: true, force: true }); }
 	}
+});
+
+
+test('grounded and degraded design evidence retain all claims and enforce original-epoch deadline boundaries', async () => {
+	for (const grounded of [true, false]) {
+		const fx = fixture('define'); let now = 1000;
+		const events: unknown[] = [];
+		const deps: ReviewStepDeps = { nowMs: () => now, progress: value => events.push(value), readEntitiesForRepo: async () => grounded ? [{ id: 'file', kind: 'file', file: join(fx.repo, 'src/foo.ts'), repo: fx.repo } as Entity] : [], lifecycleFor: repo => createRepoLifecycle(repo).service };
+		try {
+			const start = await call({ phase: 'start', artifact: fx.mdPath, repo: fx.repo, reviewBudget: declaration }, deps);
+			now += 599999;
+			const frame = await call(resume(start, { claims: [claim('a'), claim('b')] }), deps);
+			assert.equal(frame.next, 'emit_verdicts', JSON.stringify(frame));
+			const snapshot = (await getStepStateStore().read<ReviewStepStatePayload>('review', frame.state))!.payload;
+			assert.equal(snapshot.claims!.length, 2); assert.equal(snapshot.evidence!.length, 2);
+			assert.equal(events.some(e => (e as { mode?: string }).mode === 'degraded'), !grounded);
+			assert.equal(frame.timing.deadlineAt, 1000 + 1800000, 'new work extends budget from original epoch');
+			now = frame.timing.deadlineAt;
+			const input = resume(frame, { verdicts: [verdict('a')] });
+			assert.equal((await call(input, deps)).error.code, 'review-job-timeout');
+			assert.equal((await call(input, deps)).error.code, 'review-state-uncertain', 'late answers cannot revive expired work');
+		} finally { rmSync(fx.repo, { recursive: true, force: true }); }
+	}
+});
+
+test('actual design and code-review handlers refuse cross-protocol tokens and stale envelopes without consuming valid work', async () => {
+	const fx = fixture('design.story');
+	try {
+		const frame = await call({ phase: 'start', artifact: fx.mdPath, repo: fx.repo, reviewBudget: declaration });
+		const answer = templateAnswer(), input = resume(frame, answer);
+		const wrongTool = parse(await rawControllerCall({ ...input, phase: 'judgements' }, DEFAULT_DEPS));
+		assert.equal(wrongTool.next, 'error'); assert.match(wrongTool.error.code, /stale|not-found/);
+		const code = await getStepStateStore().mintReviewState('code-review', { controller: { version: 1 } }, { generation: frame.call.generation, callId: frame.call.callId });
+		const wrongKind = await call({ ...input, state: code }); assert.equal(wrongKind.next, 'error');
+		const stale = await call({ ...input, state: 'missing-state' }); assert.equal(stale.next, 'error');
+		assert.equal((await call(input, { lifecycleFor: repo => createRepoLifecycle(repo).service })).next, 'done');
+	} finally { rmSync(fx.repo, { recursive: true, force: true }); }
 });

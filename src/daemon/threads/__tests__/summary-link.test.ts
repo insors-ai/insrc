@@ -103,3 +103,36 @@ test('both ends speak the shared sc3 envelopes: a job is a streaming request wit
 	for (const m of [...toSummary, ...toCode]) assert.ok(['request', 'reply', 'frame'].includes(m.kind), `only sc3 envelopes: ${JSON.stringify(m)}`);
 	for (const p of [port1, port2, tap.port1, tap.port2, tapBack.port1, tapBack.port2]) p.close();
 });
+
+test("a replacement code-indexing worker's job waits for the job the exited one handed over: never two at once", async () => {
+	const block = new IndexingBlock(createIndexingBlock());
+	const first = new MessageChannel();
+	const link = new SummaryWorkerLink(first.port1, block);
+	const events: string[] = [];
+	let running = 0;
+	let releaseFirst!: () => void;
+	const firstGate = new Promise<void>(r => { releaseFirst = r; });
+	link.serveJobs(async job => {
+		running++;
+		events.push(`start ${(job as { repoPath: string }).repoPath} (running ${running})`);
+		if ((job as { repoPath: string }).repoPath === '/old') await firstGate;
+		events.push(`end ${(job as { repoPath: string }).repoPath}`);
+		running--;
+	}, () => undefined);
+	first.port2.postMessage({ kind: 'request', requestId: 'old', method: SUMMARY_JOB, params: { kind: 'doc-summarise-repo', repoPath: '/old' }, stream: true });
+	await new Promise(r => setTimeout(r, 30));
+	first.port2.close();   // the code-indexing worker exited; its job is still finishing
+	await new Promise(r => setTimeout(r, 30));   // its port's close arrives before the replacement's port, as in the daemon
+	const second = new MessageChannel();
+	link.rebind(second.port1);
+	const replied = new Promise(resolve => second.port2.on('message', (m: ChannelEnvelope) => { if (m.kind === 'reply') resolve(m); }));
+	second.port2.postMessage({ kind: 'request', requestId: 'new', method: SUMMARY_JOB, params: { kind: 'doc-summarise-repo', repoPath: '/new' }, stream: true });
+	await new Promise(r => setTimeout(r, 100));
+	assert.deepEqual(events, ['start /old (running 1)'], 'the new job waits');
+	assert.equal(link.isStopping, true, 'the abandoned job is told to stop between documents');
+	releaseFirst();
+	await replied;
+	assert.deepEqual(events, ['start /old (running 1)', 'end /old', 'start /new (running 1)', 'end /new']);
+	assert.equal(link.isStopping, false, 'the new job is not stopped');
+	second.port2.close();
+});

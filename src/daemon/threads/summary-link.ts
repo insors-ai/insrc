@@ -142,6 +142,12 @@ export class SummaryWorkerLink implements IndexerQueue {
 	/** The code-indexing worker that handed over the running job exited: the job stops as on shutdown. */
 	private abandoned = false;
 	private jobs: { run: (job: IndexJob) => Promise<void>; sweep: () => SummarySweepProgress | undefined } | undefined;
+	/**
+	 * One job at a time, across reconnections too: a replacement code-indexing worker's
+	 * job waits for the job the exited one handed over (abandoned, stopping between
+	 * documents) to finish, so two never run on the indexer together.
+	 */
+	private serial: Promise<void> = Promise.resolve();
 
 	constructor(port: MessagePort, private readonly block: IndexingBlock) {
 		this.port = port;
@@ -179,6 +185,11 @@ export class SummaryWorkerLink implements IndexerQueue {
 	}
 
 	private serveJob(port: MessagePort, m: RequestEnvelope, run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): void {
+		// A failure answering an exited worker's port must not stop the jobs after it.
+		this.serial = this.serial.then(() => this.runJob(port, m, run, sweep)).catch(() => {});
+	}
+
+	private runJob(port: MessagePort, m: RequestEnvelope, run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): Promise<void> {
 		this.abandoned = false;
 		let last: string | undefined;
 		const report = (): void => {
@@ -189,7 +200,7 @@ export class SummaryWorkerLink implements IndexerQueue {
 			port.postMessage({ kind: 'frame', requestId: m.requestId, frame: { stream: 'sweep', data: now ?? null } satisfies SweepFrame } satisfies FrameEnvelope);
 		};
 		const ticker = setInterval(report, 200);
-		run(m.params as IndexJob).then(
+		return run(m.params as IndexJob).then(
 			() => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId } satisfies ReplyEnvelope); },
 			(err: unknown) => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId, error: err instanceof Error ? err.message : String(err) } satisfies ReplyEnvelope); },
 		);

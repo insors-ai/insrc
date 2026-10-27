@@ -86,26 +86,26 @@ function inject(f: Fake | undefined, readPolicy: PolicyReader = policy(), extra:
 	return seen;
 }
 
-test('teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false', () => {
+test('teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false', async () => {
 	for (const readPolicy of [none, policy({ teamMode: false }), policy({ claimsEnforced: false })]) {
 		const f = fakePort(['bob']);
 		const seen = inject(f, readPolicy);
 		for (const action of ['author', 'build', 'approve-local', 'open-signoff', 'review-fix'] as GuardedAction[]) {
-			assert.deepEqual(teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
+			assert.deepEqual(await teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
 		}
 		assert.equal(seen.loads, 0, 'the tracker is never loaded');
 		assert.deepEqual(f.calls, [], 'no port call');
 	}
 	// an action the gate does not know is not guarded
 	inject(fakePort(['bob']));
-	assert.deepEqual(teamGate('/repo', UNIT, 'analyze' as GuardedAction), { kind: 'allowed', implicitClaim: false });
+	assert.deepEqual(await teamGate('/repo', UNIT, 'analyze' as GuardedAction), { kind: 'allowed', implicitClaim: false });
 });
 
-test('teamGate allows an unassigned stage for author and build and adds the actor through addAssignee (implicitClaim true), and takes no claim for approve-local or applying a finding', () => {
+test('teamGate allows an unassigned stage for author and build and adds the actor through addAssignee (implicitClaim true), and takes no claim for approve-local or applying a finding', async () => {
 	for (const action of ['author', 'build'] as GuardedAction[]) {
 		const f = fakePort([]);
 		inject(f);
-		assert.deepEqual(teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: true }, action);
+		assert.deepEqual(await teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: true }, action);
 		assert.deepEqual(f.assignees, ['alice']);
 		assert.ok(f.calls.includes('addAssignee:alice'));
 		assert.ok(!f.calls.some(c => c.startsWith('setAssignee')), 'a claim never uses the replacing setAssignee');
@@ -114,38 +114,38 @@ test('teamGate allows an unassigned stage for author and build and adds the acto
 	for (const action of ['approve-local', 'review-fix'] as GuardedAction[]) {
 		const f = fakePort([]);
 		inject(f);
-		assert.deepEqual(teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
+		assert.deepEqual(await teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
 		assert.deepEqual(f.assignees, []);
 		assert.ok(!f.calls.some(c => c.startsWith('addAssignee')));
 	}
 	// a failed or contested implicit claim refuses the action
 	const failed = fakePort([], { failAdd: 'unreachable' });
 	inject(failed);
-	const r = teamGate('/repo', UNIT, 'author');
+	const r = await teamGate('/repo', UNIT, 'author');
 	assert.equal(r.kind, 'refused');
 	assert.match(r.kind === 'refused' ? r.reason : '', /implicit claim failed \(unreachable\)/);
 	const raced = fakePort([], { raceWith: 'bob' });
 	inject(raced);
-	const c = teamGate('/repo', UNIT, 'build');
+	const c = await teamGate('/repo', UNIT, 'build');
 	assert.equal(c.kind, 'refused');
 	assert.match(c.kind === 'refused' ? c.reason : '', /contested: bob, alice/);
 	assert.deepEqual(raced.assignees, ['bob', 'alice'], 'nobody is removed');
 });
 
-test('teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively', () => {
+test('teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively', async () => {
 	const f = fakePort(['Alice']);
 	inject(f);
 	for (const action of ['author', 'build', 'approve-local', 'review-fix'] as GuardedAction[]) {
-		assert.deepEqual(teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
+		assert.deepEqual(await teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
 	}
 	assert.ok(!f.calls.some(c => c.startsWith('addAssignee')), 'no claim was needed');
 });
 
-test('teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder\'s idle time', () => {
+test('teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder\'s idle time', async () => {
 	const f = fakePort(['bob']);
 	inject(f);
 	for (const action of ['author', 'build', 'approve-local', 'review-fix', 'open-signoff'] as GuardedAction[]) {
-		const o = teamGate('/repo', UNIT, action);
+		const o = await teamGate('/repo', UNIT, action);
 		assert.deepEqual(o, { kind: 'held-by-other', holder: 'bob', offerPark: false }, action);
 	}
 	assert.deepEqual(f.assignees, ['bob'], 'the holder is never replaced');
@@ -154,221 +154,222 @@ test('teamGate returns held-by-other naming the holder for author, build, approv
 	// every refusal shape: several assignees, each port failure kind, an unreadable policy, a missing issue
 	const several = fakePort(['bob', 'carol']);
 	inject(several);
-	const m = teamGate('/repo', UNIT, 'author');
+	const m = await teamGate('/repo', UNIT, 'author');
 	assert.equal(m.kind, 'refused');
 	assert.match(m.kind === 'refused' ? m.reason : '', /more than one assignee \(bob, carol\)/);
 	for (const kind of ['missing-tool', 'missing-signin', 'unreachable', 'rejected'] as PortFailureKind[]) {
 		inject(fakePort([], { failRead: kind }));
-		const r = teamGate('/repo', UNIT, 'author');
+		const r = await teamGate('/repo', UNIT, 'author');
 		assert.equal(r.kind, 'refused', kind);
 		assert.match(r.kind === 'refused' ? r.reason : '', new RegExp(`\\(${kind}\\)`));
 		inject(fakePort([], { failWho: kind }));
-		assert.equal(teamGate('/repo', UNIT, 'author').kind, 'refused', `whoAmI ${kind}`);
+		assert.equal((await teamGate('/repo', UNIT, 'author')).kind, 'refused', `whoAmI ${kind}`);
 	}
 	inject(undefined);
-	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /gh is not installed/);
+	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /gh is not installed/);
 	inject(fakePort([]), () => ({ ok: false, reason: 'default branch unknown' }));
-	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /policy cannot be read: default branch unknown/);
+	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /policy cannot be read: default branch unknown/);
 	inject(fakePort([]), policy(), { issue: null, ensure: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }), artifact: true });
-	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'no-issue');
+	assert.equal((await teamGate('/repo', UNIT, 'author')).kind, 'no-issue');
 	// a throwing policy reader never escapes
 	_setGateDepsForTests({ readPolicy: () => { throw new Error('boom'); } });
-	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /team gate failed: boom/);
+	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /team gate failed: boom/);
 	// anything thrown, not only an Error, is a refusal and the gate itself does not throw
 	for (const thrown of [null, undefined, 'a string', 42, { code: 'x' }]) {
 		_setGateDepsForTests({ readPolicy: () => { throw thrown; } });
-		const o = teamGate('/repo', UNIT, 'author');
+		const o = await teamGate('/repo', UNIT, 'author');
 		assert.equal(o.kind, 'refused', String(thrown));
 	}
-	assert.match(String((() => { _setGateDepsForTests({ readPolicy: () => { throw 'a string'; } }); return (teamGate('/repo', UNIT, 'author') as { reason?: string }).reason; })()), /team gate failed: a string/);
+	_setGateDepsForTests({ readPolicy: () => { throw 'a string'; } });
+	assert.match(String(((await teamGate('/repo', UNIT, 'author')) as { reason?: string }).reason), /team gate failed: a string/);
 });
 
 const FAIL_ENSURE: GateDeps['ensureIssue'] = () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' });
 
-test('the first author turn of a stage with no issue and no artifact is allowed as an explicit exception and any other action on a stage with no issue is refused', () => {
+test('the first author turn of a stage with no issue and no artifact is allowed as an explicit exception and any other action on a stage with no issue is refused', async () => {
 	// no issue, no artifact: only the first author turn is let through, and it says why the issue is missing
 	inject(fakePort([]), policy(), { issue: null, ensure: FAIL_ENSURE, artifact: false });
-	assert.deepEqual(teamGate('/repo', UNIT, 'author'), { kind: 'no-issue', allowFirstAuthor: true, creationFailure: 'gh timed out' });
+	assert.deepEqual(await teamGate('/repo', UNIT, 'author'), { kind: 'no-issue', allowFirstAuthor: true, creationFailure: 'gh timed out' });
 	for (const action of ['build', 'approve-local', 'review-fix', 'open-signoff', 'revise', 'release', 'claim'] as GuardedAction[]) {
-		const o = teamGate('/repo', UNIT, action);
+		const o = await teamGate('/repo', UNIT, action);
 		assert.deepEqual(o, { kind: 'no-issue', allowFirstAuthor: false, creationFailure: 'gh timed out' }, action);
 	}
 	// no issue but the artifact exists: not the first draft, so author is refused too
 	inject(fakePort([]), policy(), { issue: null, ensure: FAIL_ENSURE, artifact: true });
-	assert.equal((teamGate('/repo', UNIT, 'author') as { allowFirstAuthor?: boolean }).allowFirstAuthor, false);
+	assert.equal((await teamGate('/repo', UNIT, 'author') as { allowFirstAuthor?: boolean }).allowFirstAuthor, false);
 
 	// a missing issue that ensureUnitIssue can create is created, and the gate then decides on the live assignee
 	const f = fakePort([]);
 	let ensured = 0;
 	inject(f, policy(), { issue: null, ensure: () => { ensured += 1; return { ok: true, value: ISSUE }; }, artifact: false });
-	assert.deepEqual(teamGate('/repo', UNIT, 'author'), { kind: 'allowed', implicitClaim: true });
+	assert.deepEqual(await teamGate('/repo', UNIT, 'author'), { kind: 'allowed', implicitClaim: true });
 	assert.equal(ensured, 1);
 	assert.deepEqual(f.assignees, ['alice']);
 });
 
-test('the registered completion hook is consulted for author and build on a next stage and for open-signoff, revise and release, a release called by the hook does not consult it again, and with none registered the gate behaves as continue (a hook-contract test; the completion-releases-the-claim integration test belongs to s7)', () => {
+test('the registered completion hook is consulted for author and build on a next stage and for open-signoff, revise and release, a release called by the hook does not consult it again, and with none registered the gate behaves as continue (a hook-contract test; the completion-releases-the-claim integration test belongs to s7)', async () => {
 	const f = fakePort(['alice']);
 	inject(f);
 
 	// none registered: continue
-	assert.deepEqual(teamGate('/repo', UNIT, 'author'), { kind: 'allowed', implicitClaim: false });
+	assert.deepEqual(await teamGate('/repo', UNIT, 'author'), { kind: 'allowed', implicitClaim: false });
 
 	// consulted for the five hooked actions, not for the others; 'continue' lets the gate decide
 	const seen: string[] = [];
 	registerCompletionHook((_repo, _unit, port) => { seen.push(typeof port.whoAmI); return 'continue'; });
-	for (const action of ['author', 'build', 'open-signoff', 'revise', 'release', 'approve-local', 'review-fix', 'claim'] as GuardedAction[]) teamGate('/repo', UNIT, action);
+	for (const action of ['author', 'build', 'open-signoff', 'revise', 'release', 'approve-local', 'review-fix', 'claim'] as GuardedAction[]) await teamGate('/repo', UNIT, action);
 	assert.equal(seen.length, 5, 'author, build, open-signoff, revise and release only');
 
 	// an outcome from the hook is the answer, before the holder is read
 	const reads = f.calls.filter(c => c === 'readAssignee').length;
 	registerCompletionHook(() => ({ kind: 'awaiting-signoff', request: { ref: 'acme/demo#99' } as never }));
-	const o = teamGate('/repo', UNIT, 'author');
+	const o = await teamGate('/repo', UNIT, 'author');
 	assert.equal(o.kind, 'awaiting-signoff');
 	assert.equal(f.calls.filter(c => c === 'readAssignee').length, reads, 'the holder was not read');
 
 	// a gate call made by the hook itself (its release) does not consult the hook again
 	let consulted = 0;
 	let inner: ReturnType<typeof teamGate> | undefined;
-	registerCompletionHook(() => { consulted += 1; inner = teamGate('/repo', UNIT, 'release'); return 'continue'; });
-	teamGate('/repo', UNIT, 'open-signoff');
+	registerCompletionHook(async () => { consulted += 1; inner = await teamGate('/repo', UNIT, 'release'); return 'continue'; });
+	await teamGate('/repo', UNIT, 'open-signoff');
 	assert.equal(consulted, 1, 'no recursion');
 	assert.equal(inner?.kind, 'allowed');
 	// and the guard is released afterwards
-	teamGate('/repo', UNIT, 'open-signoff');
+	await teamGate('/repo', UNIT, 'open-signoff');
 	assert.equal(consulted, 2);
 });
 
-test('each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw', () => {
+test('each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw', async () => {
 	for (const kind of ['missing-tool', 'missing-signin', 'unreachable', 'rejected'] as PortFailureKind[]) {
 		inject(fakePort([], { failRead: kind }));
-		const r = teamGate('/repo', UNIT, 'build');
+		const r = await teamGate('/repo', UNIT, 'build');
 		assert.equal(r.kind, 'refused', kind);
 		assert.match(r.kind === 'refused' ? r.reason : '', new RegExp(`\\(${kind}\\)`));
 	}
 	inject(fakePort(['bob', 'carol']));
-	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /more than one assignee/);
+	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /more than one assignee/);
 	inject(fakePort([]), () => ({ ok: false, reason: 'default branch unknown' }));
-	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /policy cannot be read/);
+	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /policy cannot be read/);
 	inject(fakePort([]), policy(), { issue: null, ensure: FAIL_ENSURE, artifact: true });
-	assert.equal(teamGate('/repo', UNIT, 'build').kind, 'no-issue');
+	assert.equal((await teamGate('/repo', UNIT, 'build')).kind, 'no-issue');
 
 	// a hook that throws (an Error or anything else) refuses with its message and the gate does not throw
 	inject(fakePort([]));
 	for (const thrown of [new Error('hook broke'), 'plain string', null]) {
 		registerCompletionHook(() => { throw thrown; });
-		const o = teamGate('/repo', UNIT, 'author');
+		const o = await teamGate('/repo', UNIT, 'author');
 		assert.equal(o.kind, 'refused');
 		assert.match(o.kind === 'refused' ? o.reason : '', /completion hook failed/);
 	}
 	registerCompletionHook(() => { throw new Error('hook broke'); });
-	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /hook broke/);
+	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /hook broke/);
 	// the guard against recursion is reset after a throw
 	registerCompletionHook(() => 'continue');
-	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'allowed');
+	assert.equal((await teamGate('/repo', UNIT, 'author')).kind, 'allowed');
 });
 
-test('claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused', () => {
+test('claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused', async () => {
 	// an unassigned stage is claimed through addAssignee only
 	const free = fakePort([]);
 	inject(free);
-	assert.deepEqual(claim('/repo', UNIT), { kind: 'allowed', implicitClaim: false });
+	assert.deepEqual(await claim('/repo', UNIT), { kind: 'allowed', implicitClaim: false });
 	assert.deepEqual(free.assignees, ['alice']);
 	assert.ok(!free.calls.some(c => c.startsWith('setAssignee')));
 
 	// already mine: allowed with no write; someone else's: refused naming them, nobody removed
 	const mine = fakePort(['ALICE']);
 	inject(mine);
-	assert.equal(claim('/repo', UNIT).kind, 'allowed');
+	assert.equal((await claim('/repo', UNIT)).kind, 'allowed');
 	assert.ok(!mine.calls.some(c => c.startsWith('addAssignee')));
 	const theirs = fakePort(['bob']);
 	inject(theirs);
-	assert.deepEqual(claim('/repo', UNIT), { kind: 'held-by-other', holder: 'bob', offerPark: false });
+	assert.deepEqual(await claim('/repo', UNIT), { kind: 'held-by-other', holder: 'bob', offerPark: false });
 	assert.deepEqual(theirs.assignees, ['bob']);
 
 	// two developers claim at the same moment: both read "nobody", both add. The earlier claimant has
 	// already returned allowed; only the later one observes the contention. Nobody is removed.
 	const shared: string[] = [];
 	inject(fakePort([], { me: 'alice', shared, staleRead: true }));
-	assert.deepEqual(claim('/repo', UNIT), { kind: 'allowed', implicitClaim: false }, 'the earlier claimant is told it holds the stage');
+	assert.deepEqual(await claim('/repo', UNIT), { kind: 'allowed', implicitClaim: false }, 'the earlier claimant is told it holds the stage');
 	inject(fakePort([], { me: 'bob', shared, staleRead: true }));
-	const later = claim('/repo', UNIT);
+	const later = await claim('/repo', UNIT);
 	assert.equal(later.kind, 'refused');
 	assert.match(later.kind === 'refused' ? later.reason : '', /contested: alice, bob are all assigned; nobody was removed/);
 	assert.deepEqual(shared, ['alice', 'bob']);
 	// the earlier claimant finds out on its next gate read: several assignees are never a holder
 	inject(fakePort([], { me: 'alice', shared }));
-	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /more than one assignee/);
+	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /more than one assignee/);
 
 	// a failed add and a failed read are refused and say the state is unknown / the reason
 	inject(fakePort([], { failAdd: 'unreachable' }));
-	const failed = claim('/repo', UNIT);
+	const failed = await claim('/repo', UNIT);
 	assert.match(failed.kind === 'refused' ? failed.reason : '', /claim failed \(unreachable\).*unknown/);
 	// the add took effect but the re-read failed: refused, the state is unknown, and the next claim finds the stage already mine
 	const reread = fakePort([], { failReread: 'unreachable' });
 	inject(reread);
-	const rr = claim('/repo', UNIT);
+	const rr = await claim('/repo', UNIT);
 	assert.equal(rr.kind, 'refused');
 	assert.match(rr.kind === 'refused' ? rr.reason : '', /claim failed \(unreachable\): re-read unreachable; the stage state is unknown/);
 	assert.deepEqual(reread.assignees, ['alice'], 'the add happened and nobody else was touched');
-	assert.equal(claim('/repo', UNIT).kind, 'allowed', 'reading the stage again shows the claim is mine');
+	assert.equal((await claim('/repo', UNIT)).kind, 'allowed', 'reading the stage again shows the claim is mine');
 	inject(fakePort([], { failRead: 'missing-signin' }));
-	assert.equal(claim('/repo', UNIT).kind, 'refused');
+	assert.equal((await claim('/repo', UNIT)).kind, 'refused');
 	// outside team mode there is nothing to claim
 	inject(fakePort([]), none);
-	assert.equal(claim('/repo', UNIT).kind, 'refused');
+	assert.equal((await claim('/repo', UNIT)).kind, 'refused');
 });
 
-test('release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee', () => {
+test('release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee', async () => {
 	// the holder releases
 	const mine = fakePort(['alice']);
 	inject(mine);
-	assert.deepEqual(release('/repo', UNIT), { kind: 'allowed', implicitClaim: false });
+	assert.deepEqual(await release('/repo', UNIT), { kind: 'allowed', implicitClaim: false });
 	assert.deepEqual(mine.assignees, []);
 	assert.ok(mine.calls.includes('setAssignee:null'));
 
 	// an administrator releases someone else's claim, and a contested one with several assignees
 	const theirs = fakePort(['bob'], { me: 'root' });
 	inject(theirs);
-	assert.equal(release('/repo', UNIT).kind, 'allowed');
+	assert.equal((await release('/repo', UNIT)).kind, 'allowed');
 	assert.deepEqual(theirs.assignees, []);
 	const contested = fakePort(['bob', 'carol'], { me: 'root' });
 	inject(contested);
-	assert.equal(release('/repo', UNIT).kind, 'allowed');
+	assert.equal((await release('/repo', UNIT)).kind, 'allowed');
 	assert.deepEqual(contested.assignees, []);
 
 	// anyone else is refused naming the holder, with no write; a non-administrator cannot clear a contested claim
 	const other = fakePort(['bob'], { me: 'alice' });
 	inject(other);
-	const r = release('/repo', UNIT);
+	const r = await release('/repo', UNIT);
 	assert.equal(r.kind, 'refused');
 	assert.match(r.kind === 'refused' ? r.reason : '', /only the holder \(bob\) or a policy administrator/);
 	assert.ok(!other.calls.some(c => c.startsWith('setAssignee')));
 	const both = fakePort(['bob', 'carol'], { me: 'alice' });
 	inject(both);
-	assert.equal(release('/repo', UNIT).kind, 'refused');
+	assert.equal((await release('/repo', UNIT)).kind, 'refused');
 	assert.ok(!both.calls.some(c => c.startsWith('setAssignee')));
 
 	// nothing held: nothing to release, no write; a failed clear says the state is unknown
 	const free = fakePort([]);
 	inject(free);
-	assert.equal(release('/repo', UNIT).kind, 'allowed');
+	assert.equal((await release('/repo', UNIT)).kind, 'allowed');
 	assert.ok(!free.calls.some(c => c.startsWith('setAssignee')));
 	inject(fakePort(['alice'], { failSet: 'unreachable' }));
-	const failed = release('/repo', UNIT);
+	const failed = await release('/repo', UNIT);
 	assert.match(failed.kind === 'refused' ? failed.reason : '', /release failed \(unreachable\).*unknown/);
 
 	// the hook is consulted for a release, and a release made by the hook itself does not consult it again
 	let consulted = 0;
 	inject(fakePort(['alice']));
 	registerCompletionHook(() => { consulted += 1; return 'continue'; });
-	release('/repo', UNIT);
+	await release('/repo', UNIT);
 	assert.equal(consulted, 1);
 	registerCompletionHook(() => ({ kind: 'refused', reason: 'signoff pending' }));
 	inject(fakePort(['alice']));
-	assert.deepEqual(release('/repo', UNIT), { kind: 'refused', reason: 'signoff pending' });
+	assert.deepEqual(await release('/repo', UNIT), { kind: 'refused', reason: 'signoff pending' });
 });
 
-test('the first-author exception looks for the artifact being authored, not the unit\'s own: a first HLD or plan is let through when its issue cannot be created', () => {
+test('the first-author exception looks for the artifact being authored, not the unit\'s own: a first HLD or plan is let through when its issue cannot be created', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-first-author-'));
 	try {
 		const hash = 'a3f4b8c9d1e2f3a4';
@@ -383,36 +384,36 @@ test('the first-author exception looks for the artifact being authored, not the 
 		const story: UnitRef = { unit: 'story', repoPath: repo, epicHash: hash, storyId: 's1' };
 		const first = (o: ReturnType<typeof teamGate>): boolean => o.kind === 'no-issue' && o.allowFirstAuthor;
 
-		assert.ok(first(teamGate(repo, epic, 'author', 'design.epic')), 'the first HLD is let through although the Define exists');
-		assert.ok(first(teamGate(repo, story, 'author', 'plan')), 'the first plan is let through although the LLD exists');
+		assert.ok(first(await teamGate(repo, epic, 'author', 'design.epic')), 'the first HLD is let through although the Define exists');
+		assert.ok(first(await teamGate(repo, story, 'author', 'plan')), 'the first plan is let through although the LLD exists');
 		// once the artifact being authored exists the exception is gone
 		writeFileSync(join(dir, `HLD-${hash}.json`), '{}');
 		writeFileSync(join(dir, `PLAN-${hash}-s1.json`), '{}');
-		assert.ok(!first(teamGate(repo, epic, 'author', 'design.epic')));
-		assert.ok(!first(teamGate(repo, story, 'author', 'plan')));
+		assert.ok(!first(await teamGate(repo, epic, 'author', 'design.epic')));
+		assert.ok(!first(await teamGate(repo, story, 'author', 'plan')));
 		// with no workflow named, the unit's own artifact decides, as before
-		assert.ok(!first(teamGate(repo, epic, 'author')));
+		assert.ok(!first(await teamGate(repo, epic, 'author')));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('the implicit claim in teamGate and the explicit claim keep their own refusal wording for a failed add and a contested claim', () => {
+test('the implicit claim in teamGate and the explicit claim keep their own refusal wording for a failed add and a contested claim', async () => {
 	const wording = (outcome: ReturnType<typeof claim>): string => (outcome.kind === 'refused' ? outcome.reason : `not refused: ${outcome.kind}`);
 
 	inject(fakePort([], { failAdd: 'unreachable' }));
-	assert.equal(wording(teamGate('/repo', UNIT, 'author')), 'the implicit claim failed (unreachable): add unreachable; the stage state is unknown, read it again before acting');
+	assert.equal(wording(await teamGate('/repo', UNIT, 'author')), 'the implicit claim failed (unreachable): add unreachable; the stage state is unknown, read it again before acting');
 	inject(fakePort([], { failAdd: 'unreachable' }));
-	assert.equal(wording(claim('/repo', UNIT)), 'the claim failed (unreachable): add unreachable; the stage state is unknown, read it again before acting');
+	assert.equal(wording(await claim('/repo', UNIT)), 'the claim failed (unreachable): add unreachable; the stage state is unknown, read it again before acting');
 
 	inject(fakePort([], { raceWith: 'bob' }));
-	assert.equal(wording(teamGate('/repo', UNIT, 'build')), 'the claim is contested: bob, alice are all assigned; ask an administrator to release the stage');
+	assert.equal(wording(await teamGate('/repo', UNIT, 'build')), 'the claim is contested: bob, alice are all assigned; ask an administrator to release the stage');
 	inject(fakePort([], { raceWith: 'bob' }));
-	assert.equal(wording(claim('/repo', UNIT)), 'the claim is contested: bob, alice are all assigned; nobody was removed, ask an administrator to release the stage');
+	assert.equal(wording(await claim('/repo', UNIT)), 'the claim is contested: bob, alice are all assigned; nobody was removed, ask an administrator to release the stage');
 
 	// the holder decision is the same for both: the holder passes, anyone else is refused naming the holder
-	for (const [name, ask] of [['teamGate', () => teamGate('/repo', UNIT, 'author')], ['claim', () => claim('/repo', UNIT)]] as const) {
+	for (const [name, ask] of [['teamGate', async () => await teamGate('/repo', UNIT, 'author')], ['claim', async () => await claim('/repo', UNIT)]] as const) {
 		inject(fakePort(['ALICE']));
-		assert.equal(ask().kind, 'allowed', `${name}: the holder`);
+		assert.equal((await ask()).kind, 'allowed', `${name}: the holder`);
 		inject(fakePort(['bob']));
-		assert.deepEqual(ask(), { kind: 'held-by-other', holder: 'bob', offerPark: false }, `${name}: another holder`);
+		assert.deepEqual(await ask(), { kind: 'held-by-other', holder: 'bob', offerPark: false }, `${name}: another holder`);
 	}
 });

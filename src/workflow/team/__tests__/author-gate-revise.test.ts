@@ -54,48 +54,48 @@ function world(heads: Record<string, unknown>, holder: string | null, me = 'alic
 	return w;
 }
 
-const refusal = (fn: () => void): TeamGateRefusedError => {
-	try { fn(); } catch (e) { if (e instanceof TeamGateRefusedError) return e; throw e; }
+const refusal = async (fn: () => Promise<void>): Promise<TeamGateRefusedError> => {
+	try { await fn(); } catch (e) { if (e instanceof TeamGateRefusedError) return e; throw e; }
 	throw new Error('expected a TeamGateRefusedError');
 };
 
-test("assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run", () => {
+test("assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run", async () => {
 	for (const [workflow, id] of [['design.epic', HLD], ['design.story', LLD]] as const) {
 		for (const status of ['in-signoff', 'changes-requested']) {
 			// the holder revises
 			let w = world({ [id]: headOf(status) }, 'alice');
-			assert.doesNotThrow(() => assertMayAuthor(intent(workflow)), `${workflow} ${status}`);
+			await assert.doesNotReject(async () => assertMayAuthor(intent(workflow)), `${workflow} ${status}`);
 			assert.deepEqual(w.actions, ['revise']);
 			// someone else is refused naming the holder
 			w = world({ [id]: headOf(status) }, 'bob');
-			const held = refusal(() => assertMayAuthor(intent(workflow)));
+			const held = await refusal(async () => await assertMayAuthor(intent(workflow)));
 			assert.deepEqual(held.outcome.kind === 'held-by-other' ? held.outcome.holder : null, 'bob');
 			// nobody holding it is refused with a claim first, and the claim is not taken
 			w = world({ [id]: headOf(status) }, null);
-			assert.match(refusal(() => assertMayAuthor(intent(workflow))).reason, /nobody holds acme\/demo#2: claim it before revising/);
+			assert.match((await refusal(async () => await assertMayAuthor(intent(workflow)))).reason, /nobody holds acme\/demo#2: claim it before revising/);
 			assert.deepEqual(w.claimed, [], 'revising never takes the claim');
 		}
 		// any other status is an ordinary author turn, which takes an unassigned stage as before
 		const w = world({ [id]: headOf('approved') }, null);
-		assert.doesNotThrow(() => assertMayAuthor(intent(workflow)));
+		await assert.doesNotReject(async () => assertMayAuthor(intent(workflow)));
 		assert.deepEqual(w.actions, ['author']);
 		assert.deepEqual(w.claimed, ['alice']);
 	}
 
 	// a plan run is not covered, even over an LLD in signoff, and neither is a head that does not exist yet
 	let w = world({ [LLD]: headOf('in-signoff') }, 'alice');
-	assertMayAuthor(intent('plan'));
+	await assertMayAuthor(intent('plan'));
 	assert.deepEqual(w.actions, ['author']);
 	w = world({}, 'alice');
-	assertMayAuthor(intent('design.story'));
+	await assertMayAuthor(intent('design.story'));
 	assert.deepEqual(w.actions, ['author']);
 	// a define run names no unit, so it reaches no gate
 	w = world({ [HLD]: headOf('in-signoff') }, 'bob');
-	assertMayAuthor(intent('define', {}));
+	await assertMayAuthor(intent('define', {}));
 	assert.deepEqual([w.actions, w.loads], [[], 0]);
 	// a repository with no policy makes no tracker call
 	w = world({ [LLD]: headOf('in-signoff') }, 'bob', 'alice', true);
-	assertMayAuthor(intent('design.story'));
+	await assertMayAuthor(intent('design.story'));
 	assert.equal(w.loads, 0);
 });
 

@@ -108,7 +108,7 @@ test('claim, submit, refused next stage while open, completion settled at the ne
 		// --- the Epic: DEF and HLD are claimed, submitted as one request, and the next stage waits for it ---
 		await approveReviewed(svc, DEF);
 		await approveReviewed(svc, HLD);
-		assert.equal(claim(k.repo, EPIC_UNIT(k)).kind, 'allowed');
+		assert.equal((await claim(k.repo, EPIC_UNIT(k))).kind, 'allowed');
 		assert.deepEqual(t.assignees[EPIC_ISSUE], ['alice']);
 
 		const opened = await openSignoff(k.repo, EPIC_UNIT(k), [DEF, HLD]);
@@ -119,7 +119,7 @@ test('claim, submit, refused next stage while open, completion settled at the ne
 
 		// the next stage (design.story) is refused by the entry and by the gate, saying it awaits signoff and linking the request
 		await assert.rejects(settleForAttempt(k.repo, STORY_UNIT(k), 'author', 'design.story'), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'awaiting-signoff' && e.outcome.request.ref === 'acme/demo#41');
-		assert.deepEqual(teamGate(k.repo, STORY_UNIT(k), 'author', 'design.story'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#41' } });
+		assert.deepEqual(await teamGate(k.repo, STORY_UNIT(k), 'author', 'design.story'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#41' } });
 		assert.equal(await statusOf(k, DEF), 'in-signoff', 'nothing is recorded while the request is open');
 
 		// the tracker reports it completed: starting the next stage records both artifacts together, releases the claim and proceeds
@@ -132,12 +132,12 @@ test('claim, submit, refused next stage while open, completion settled at the ne
 			assert.equal(log.filter(e => e.operation === 'signed-off').length, 1, `${id} is signed off once, with its request`);
 		}
 		assert.deepEqual(t.assignees[EPIC_ISSUE], [], 'the claim on the Epic is released');
-		assert.deepEqual(teamGate(k.repo, STORY_UNIT(k), 'author', 'design.story'), { kind: 'allowed', implicitClaim: true });
+		assert.deepEqual(await teamGate(k.repo, STORY_UNIT(k), 'author', 'design.story'), { kind: 'allowed', implicitClaim: true });
 
 		// --- the Story: its LLD is submitted, plan waits for it, and an unlisted stage is not held ---
 		await approveReviewed(svc, LLD);
 		t.state.value = 'open';
-		assert.equal(claim(k.repo, STORY_UNIT(k)).kind, 'allowed');
+		assert.equal((await claim(k.repo, STORY_UNIT(k))).kind, 'allowed');
 		const lldRequest = await openSignoff(k.repo, STORY_UNIT(k), [LLD]);
 		assert.deepEqual(lldRequest, { ok: true, value: { ref: 'acme/demo#42' } });
 		await assert.rejects(settleForAttempt(k.repo, STORY_UNIT(k), 'author', 'plan'), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'awaiting-signoff');
@@ -149,7 +149,7 @@ test('claim, submit, refused next stage while open, completion settled at the ne
 		// --- an unlisted stage: with only BUILD listed, an approved and never-submitted LLD does not hold the next stage ---
 		wire(k, t, ['BUILD'], svc);
 		await settleForAttempt(k.repo, STORY_UNIT(k), 'author', 'plan');
-		assert.equal(teamGate(k.repo, STORY_UNIT(k), 'author', 'plan').kind, 'allowed');
+		assert.equal((await teamGate(k.repo, STORY_UNIT(k), 'author', 'plan')).kind, 'allowed');
 	} finally { k.done(); }
 
 	// --- a BUILD: held at approval, submitted, and the Story completes when team.settle reads the completed request ---

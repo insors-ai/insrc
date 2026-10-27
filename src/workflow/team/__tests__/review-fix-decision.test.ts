@@ -34,18 +34,18 @@ function inject(holder: string | null | 'fail', readPolicy: PolicyReader = team)
 	return seen;
 }
 
-test('reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read', () => {
+test('reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read', async () => {
 	inject('alice');
-	assert.equal(reviewFixDecision('/repo', UNIT), 'apply-auto-fixes', 'the holder');
+	assert.equal(await reviewFixDecision('/repo', UNIT), 'apply-auto-fixes', 'the holder');
 	const free = inject(null);
-	assert.equal(reviewFixDecision('/repo', UNIT), 'apply-auto-fixes', 'an unassigned stage: nobody to protect, and a review takes no claim');
+	assert.equal(await reviewFixDecision('/repo', UNIT), 'apply-auto-fixes', 'an unassigned stage: nobody to protect, and a review takes no claim');
 	assert.equal(free.addCalls, 0, 'a review never takes a claim');
 	inject('bob');
-	assert.equal(reviewFixDecision('/repo', UNIT), 'report-only', 'a non-holder');
+	assert.equal(await reviewFixDecision('/repo', UNIT), 'report-only', 'a non-holder');
 	inject('fail');
-	assert.equal(reviewFixDecision('/repo', UNIT), 'report-only', 'a failed read');
+	assert.equal(await reviewFixDecision('/repo', UNIT), 'report-only', 'a failed read');
 	inject('bob', () => ({ ok: true, value: 'none' }));
-	assert.equal(reviewFixDecision('/repo', UNIT), 'apply-auto-fixes', 'no team policy: no gate applies');
+	assert.equal(await reviewFixDecision('/repo', UNIT), 'apply-auto-fixes', 'no team policy: no gate applies');
 	_setGateDepsForTests({ readPolicy: () => { throw new Error('boom'); } });
-	assert.equal(reviewFixDecision('/repo', UNIT), 'report-only', 'a throwing dependency never escapes');
+	assert.equal(await reviewFixDecision('/repo', UNIT), 'report-only', 'a throwing dependency never escapes');
 });

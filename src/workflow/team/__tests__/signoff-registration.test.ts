@@ -34,20 +34,20 @@ function injectGate(): void {
 	_setGateDepsForTests({ readPolicy: () => ({ ok: true, value: policy }), loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#7', now: () => '2026-10-18T00:00:00.000Z' });
 }
 
-test('consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works', () => {
+test('consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works', async () => {
 	injectGate();
 
 	// a hook that takes the new arguments gets them
 	const seen: Array<{ action: GuardedAction; authoring: string | undefined }> = [];
 	registerCompletionHook((_repo, _unit, _port, action, authoring) => { seen.push({ action, authoring }); return 'continue'; });
-	teamGate('/repo', UNIT, 'author', 'plan');
-	teamGate('/repo', UNIT, 'build');
+	await teamGate('/repo', UNIT, 'author', 'plan');
+	await teamGate('/repo', UNIT, 'build');
 	assert.deepEqual(seen, [{ action: 'author', authoring: 'plan' }, { action: 'build', authoring: undefined }]);
 
 	// a hook written with three parameters keeps working
 	let calls = 0;
 	registerCompletionHook((_repo: string, _unit: UnitRef, _port: TrackerPort) => { calls += 1; return 'continue'; });
-	assert.deepEqual(teamGate('/repo', UNIT, 'author', 'design.story'), { kind: 'allowed', implicitClaim: false });
+	assert.deepEqual(await teamGate('/repo', UNIT, 'author', 'design.story'), { kind: 'allowed', implicitClaim: false });
 	assert.equal(calls, 1);
 
 	// the registered signoff hook is judged by the stage the attempt follows, through the real gate
@@ -58,9 +58,9 @@ test('consultHook passes the action and the authoring workflow to the hook and a
 			? { lifecycle: { status: 'in-signoff', revision: { number: 1 }, approval: { revision: 1, at: '2026-07-01T00:00:00Z' }, signoffs: [{ revision: 1, request: { entityId: 'acme/demo#2', type: 'signoff-request', relation: 'tracked-by' }, state: 'open', actors: [], at: '2026-07-01T00:00:00Z' }] } }
 			: undefined,
 	});
-	assert.deepEqual(teamGate('/repo', UNIT, 'author', 'plan'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#2' } });
-	assert.deepEqual(teamGate('/repo', UNIT, 'author', 'design.story'), { kind: 'allowed', implicitClaim: false }, 'design.story follows the HLD, which is not listed');
-	assert.deepEqual(teamGate('/repo', UNIT, 'open-signoff'), { kind: 'allowed', implicitClaim: false }, 'a submission is never blocked by its own request');
+	assert.deepEqual(await teamGate('/repo', UNIT, 'author', 'plan'), { kind: 'awaiting-signoff', request: { ref: 'acme/demo#2' } });
+	assert.deepEqual(await teamGate('/repo', UNIT, 'author', 'design.story'), { kind: 'allowed', implicitClaim: false }, 'design.story follows the HLD, which is not listed');
+	assert.deepEqual(await teamGate('/repo', UNIT, 'open-signoff'), { kind: 'allowed', implicitClaim: false }, 'a submission is never blocked by its own request');
 });
 
 // --- registration in both processes, and the entries that settle ----------------------------------------------------------------
@@ -113,7 +113,7 @@ interface SignoffGateProbe { daemon: string; terminal: string }
 async function probeRegistration(): Promise<SignoffGateProbe> {
 	const { registerSignoff } = await import('../../../daemon/steps/workflow-step/signoff-registration.js');
 	const { makeServices } = await import('../../../cli/services/index.js');
-	const ask = (): string => {
+	const ask = async (): Promise<string> => {
 		injectGate();
 		_setSignoffDepsForTests({
 			readPolicy: () => ({ ok: true, value: policy }),
@@ -121,13 +121,13 @@ async function probeRegistration(): Promise<SignoffGateProbe> {
 				? { lifecycle: { status: 'in-signoff', revision: { number: 1 }, approval: { revision: 1, at: '2026-07-01T00:00:00Z' }, signoffs: [{ revision: 1, request: { entityId: 'acme/demo#2', type: 'signoff-request', relation: 'tracked-by' }, state: 'open', actors: [], at: 'x' }] } }
 				: undefined,
 		});
-		return teamGate('/repo', UNIT, 'author', 'plan').kind;
+		return (await teamGate('/repo', UNIT, 'author', 'plan')).kind;
 	};
 	registerCompletionHook(undefined);
 	registerSignoff();
-	const daemon = ask();
+	const daemon = await ask();
 	registerCompletionHook(undefined);
 	makeServices();
-	const terminal = ask();
+	const terminal = await ask();
 	return { daemon, terminal };
 }

@@ -91,49 +91,49 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		const { repo, unit } = env;
 		WRITES.length = 0;
 		const before = { status: env.git('status', '--porcelain'), branches: env.git('branch', '--list'), refs: env.git('for-each-ref'), runs: listStates().length };
-		const plan = (u: UnitRef = unit, opts: { runToken?: string } = {}, d: ParkDeps = deps()) => parkPlan(repo, u, opts, d);
+		const plan = async (u: UnitRef = unit, opts: { runToken?: string } = {}, d: ParkDeps = deps()) => await parkPlan(repo, u, opts, d);
 
 		// a bad branch pattern is refused before the tracker or git is touched
 		const early = inject('bob');
-		assert.match(reasonOf(plan(unit, {}, deps({ branchPattern: () => 'no-id-{type}' }))), /does not identify the unit/);
+		assert.match(reasonOf(await plan(unit, {}, deps({ branchPattern: () => 'no-id-{type}' }))), /does not identify the unit/);
 		assert.equal(early.loads(), 0, 'no tracker context was built');
 
 		// a Task has no run: refused before the tracker is even asked
 		const seen = inject('bob');
-		assert.match(reasonOf(plan({ ...unit, unit: 'task', taskId: 't1' })), /a Task has no run/);
+		assert.match(reasonOf(await plan({ ...unit, unit: 'task', taskId: 't1' })), /a Task has no run/);
 		assert.equal(seen.loads(), 0);
 
 		// the tracker side
 		inject('bob', { readPolicy: none });
-		assert.match(reasonOf(plan()), /does not enforce claims/);
+		assert.match(reasonOf(await plan()), /does not enforce claims/);
 		const noIssue = inject('bob', { issue: null });
-		assert.match(reasonOf(plan()), /no tracker issue yet/);
+		assert.match(reasonOf(await plan()), /no tracker issue yet/);
 		assert.equal(noIssue.ensures(), 0, 'planning a park never creates an issue (the stubbed ensure would have succeeded)');
 		inject(null);
-		assert.match(reasonOf(plan()), /nobody holds this stage/);
+		assert.match(reasonOf(await plan()), /nobody holds this stage/);
 		inject('alice');
-		assert.match(reasonOf(plan()), /you hold this stage; there is nothing to hand over/);
+		assert.match(reasonOf(await plan()), /you hold this stage; there is nothing to hand over/);
 		inject('ALICE');
-		assert.match(reasonOf(plan()), /you hold this stage/, 'the login compares case-insensitively');
+		assert.match(reasonOf(await plan()), /you hold this stage/, 'the login compares case-insensitively');
 
 		// held by bob, but nothing of ours to hand over
 		inject('bob');
-		assert.match(reasonOf(plan()), /no draft or run to hand over/);
+		assert.match(reasonOf(await plan()), /no draft or run to hand over/);
 
 		// a supplied token must be the actor's own run for this unit
 		const mine = await saveState(payload(repo, 'wf-mine'), owned('alice'));
 		const other = await saveState(payload(repo, 'wf-other-story', 'awaiting_plan', 's2'), owned('alice'));
 		const stranger = await saveState(payload(repo, 'wf-carols'), owned('carol'));
 		const ownerless = await saveState(payload(repo, 'wf-ownerless'), undefined);
-		assert.match(reasonOf(plan(unit, { runToken: 'no-such-token' })), /not a live run/);
-		assert.match(reasonOf(plan(unit, { runToken: other })), /belongs to another unit/);
-		assert.match(reasonOf(plan(unit, { runToken: stranger })), /belongs to carol/);
-		assert.match(reasonOf(plan(unit, { runToken: ownerless })), /no recorded owner/);
-		assert.equal(plan(unit, { runToken: mine }).ok, true);
+		assert.match(reasonOf(await plan(unit, { runToken: 'no-such-token' })), /not a live run/);
+		assert.match(reasonOf(await plan(unit, { runToken: other })), /belongs to another unit/);
+		assert.match(reasonOf(await plan(unit, { runToken: stranger })), /belongs to carol/);
+		assert.match(reasonOf(await plan(unit, { runToken: ownerless })), /no recorded owner/);
+		assert.equal((await plan(unit, { runToken: mine })).ok, true);
 
 		// the branch name must be valid
 		for (const bad of ['/lead-{id}', 'no-id-{type}', 'a..{id}', 'foo.lock/{id}', 'x/y.lock/{id}', '-{id}']) {
-			assert.match(reasonOf(plan(unit, {}, deps({ branchPattern: () => bad }))), /branch pattern|branch name/, bad);
+			assert.match(reasonOf(await plan(unit, {}, deps({ branchPattern: () => bad }))), /branch pattern|branch name/, bad);
 		}
 
 		// a bad branch pattern is refused before any git command runs: in a directory that is not a repository the answer is the pattern's,
@@ -143,15 +143,15 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 			inject('bob');
 			await saveState(payload(bare, 'wf-nogit'), owned('alice'));
 			const nogit: UnitRef = { ...unit, repoPath: bare };
-			assert.match(reasonOf(parkPlan(bare, nogit, {}, deps({ branchPattern: () => 'no-id-{type}' }))), /does not identify the unit/);
-			assert.match(reasonOf(parkPlan(bare, nogit, {}, deps())), /cannot read the repository's history/);
+			assert.match(reasonOf(await parkPlan(bare, nogit, {}, deps({ branchPattern: () => 'no-id-{type}' }))), /does not identify the unit/);
+			assert.match(reasonOf(await parkPlan(bare, nogit, {}, deps())), /cannot read the repository's history/);
 		} finally { rmSync(bare, { recursive: true, force: true }); _clearWorkflowStateStoreForTests(); }
 		inject('bob');
 
 		// an owned live run becomes a run checkpoint carrying the owner, the upstream snapshot and the repository identity
 		_clearWorkflowStateStoreForTests();
 		await saveState(payload(repo, 'wf-1'), owned('alice'));
-		const run = plan();
+		const run = await plan();
 		assert.equal(run.ok, true);
 		if (!run.ok) return;
 		assert.equal(run.variant, 'run');
@@ -173,7 +173,7 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		assert.equal(validateCheckpoint(JSON.parse(JSON.stringify(run.checkpoint)), { epicHash: HASH, storyId: 's1' }).ok, true, 'what park plans is what resume accepts');
 
 		// the repo's branch pattern is used
-		const custom = plan(unit, {}, deps({ branchPattern: () => 'team/{type}/{id}' }));
+		const custom = await plan(unit, {}, deps({ branchPattern: () => 'team/{type}/{id}' }));
 		assert.equal(custom.ok && custom.branch, `team/story/${HASH}-s1`);
 
 		// two owned runs: the most recently touched one is chosen and named
@@ -181,17 +181,17 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		const base = Date.now();
 		const first = await withClock([base + 1000], () => saveState(payload(repo, 'wf-older'), owned('alice')));
 		await withClock([base + 2000], () => saveState(payload(repo, 'wf-newer'), owned('alice')));
-		assert.equal((plan() as { runId?: string }).runId, 'wf-newer');
+		assert.equal(((await plan()) as { runId?: string }).runId, 'wf-newer');
 		await withClock([base + 3000], () => loadState(first));   // touching the older one makes it the newest
-		assert.equal((plan() as { runId?: string }).runId, 'wf-older');
-		assert.equal(plan(unit, { runToken: first }).ok && (plan(unit, { runToken: first }) as { runId?: string }).runId, 'wf-older', 'a supplied token wins');
+		assert.equal(((await plan()) as { runId?: string }).runId, 'wf-older');
+		assert.equal((await plan(unit, { runToken: first })).ok && ((await plan(unit, { runToken: first })) as { runId?: string }).runId, 'wf-older', 'a supplied token wins');
 
 		// only a draft: a draft-only checkpoint listing the draft file
 		_clearWorkflowStateStoreForTests();
 		const json = artifactJsonPath(repo, lldArtifactId(HASH, 's1'));
 		mkdirSync(dirname(json), { recursive: true });
 		writeFileSync(json, '{"draft":true}');
-		const draft = plan();
+		const draft = await plan();
 		assert.equal(draft.ok, true);
 		if (!draft.ok) return;
 		assert.equal(draft.variant, 'draft');
@@ -204,7 +204,7 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 
 		// a run and a draft together: the run checkpoint lists the draft as parked with it
 		await saveState(payload(repo, 'wf-with-draft', 'awaiting_synthesize'), owned('alice'));
-		const both = plan();
+		const both = await plan();
 		assert.equal(both.ok && both.variant, 'run');
 		assert.deepEqual(both.ok && both.checkpoint.artifactPaths, [`.insrc/artifacts/${lldArtifactId(HASH, 's1')}.json`]);
 

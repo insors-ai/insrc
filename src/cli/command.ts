@@ -343,7 +343,7 @@ async function runTeam(sub: string | undefined, rest: readonly string[], svc: Se
 	if (sub === 'claim' || sub === 'release') {
 		const unit = parseClaimUnit(rest);
 		if (unit === undefined) return [USAGE];
-		return [sub === 'claim' ? svc.team.teamClaim(ctx.repoPath, unit) : svc.team.teamRelease(ctx.repoPath, unit)];
+		return [sub === 'claim' ? await svc.team.teamClaim(ctx.repoPath, unit) : await svc.team.teamRelease(ctx.repoPath, unit)];
 	}
 	if (sub === 'settle') {
 		const unit = parseClaimUnit(rest);

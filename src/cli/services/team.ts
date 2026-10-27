@@ -45,14 +45,14 @@ function outcomeLine(outcome: GateOutcome, unit: UnitRef, done: string, failed: 
 	return outcome.kind === 'allowed' ? `✓ ${done} ${unitLabel(unit)}` : `✗ not ${failed} — ${describeOutcome(outcome)}`;
 }
 
-export function teamClaim(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): string {
+export async function teamClaim(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): Promise<string> {
 	const full = { ...unit, repoPath: toAbsPath(repoPath) } as UnitRef;
-	return outcomeLine(claim(full.repoPath, full), full, 'claimed', 'claimed');
+	return outcomeLine(await claim(full.repoPath, full), full, 'claimed', 'claimed');
 }
 
-export function teamRelease(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): string {
+export async function teamRelease(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): Promise<string> {
 	const full = { ...unit, repoPath: toAbsPath(repoPath) } as UnitRef;
-	return outcomeLine(release(full.repoPath, full), full, 'released', 'released');
+	return outcomeLine(await release(full.repoPath, full), full, 'released', 'released');
 }
 
 /** The daemon call a park or resume goes through; the real IPC rpc by default. */

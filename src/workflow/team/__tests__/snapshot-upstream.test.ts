@@ -104,15 +104,15 @@ test('actingUser and runMetaFor read the tracker only for a repo that enforces c
 	const deps = (enforced: boolean) => _setGateDepsForTests({ readPolicy: reader(enforced), loadTracker: () => { loads += 1; return { ok: true, value: port }; } });
 
 	deps(false);
-	assert.equal(actingUser('/repo'), undefined);
+	assert.equal(await actingUser('/repo'), undefined);
 	assert.equal(await runMetaFor('/repo', 'plan', { epicHash: HASH, storyId: 's1' }), undefined);
 	assert.equal(loads, 0, 'no policy: no tracker call');
 
 	deps(true);
-	assert.equal(actingUser('/repo'), 'alice');
+	assert.equal(await actingUser('/repo'), 'alice');
 	assert.equal((await runMetaFor('/nowhere', 'stub', {}))?.owner, 'alice');
 
 	// a tracker that cannot be used gives no owner and never throws
 	_setGateDepsForTests({ readPolicy: reader(true), loadTracker: () => ({ ok: false, kind: 'missing-tool', reason: 'gh missing' }) });
-	assert.equal(actingUser('/repo'), undefined);
+	assert.equal(await actingUser('/repo'), undefined);
 });

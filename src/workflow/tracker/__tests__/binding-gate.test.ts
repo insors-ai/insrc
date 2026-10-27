@@ -11,7 +11,7 @@ afterEach(() => _setGateDepsForTests());
 
 const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 
-test("the team gate resolves a bound unit's issue synchronously from the binding with no tracker call", () => {
+test("the team gate resolves a bound unit's issue synchronously from the binding with no tracker call", async () => {
 	const fx = seed();
 	try {
 		seedBoundUnits(fx.repo, HASH, undefined, { s1: 'acme/demo#12' });
@@ -22,7 +22,7 @@ test("the team gate resolves a bound unit's issue synchronously from the binding
 		_setGateDepsForTests({ readPolicy: policy, loadTracker: () => ({ ok: true, value: port }) });
 
 		// the real resolveUnitIssueLocal runs (no resolveIssue seam): the answer is the binding's, returned at once
-		const ctx = teamContext(fx.repo, story(fx.repo));
+		const ctx = await teamContext(fx.repo, story(fx.repo));
 		assert.equal(typeof (ctx as unknown as { then?: unknown }).then, 'undefined', 'a plain value, not a promise');
 		assert.ok(ctx.ok && ctx.team);
 		assert.equal(ctx.ok && ctx.team ? ctx.issue : null, 'acme/demo#12');

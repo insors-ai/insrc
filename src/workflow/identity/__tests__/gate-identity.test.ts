@@ -29,7 +29,7 @@ function inject(me: string, holder: string): void {
 }
 
 const ACTIONS: GuardedAction[] = ['author', 'build', 'approve-local', 'revise', 'release'];
-const decide = (me: string, holder: string): GateOutcome[] => { inject(me, holder); return ACTIONS.map(a => teamGate('/repo', UNIT, a)); };
+const decide = async (me: string, holder: string): Promise<GateOutcome[]> => { inject(me, holder); const out: GateOutcome[] = []; for (const a of ACTIONS) out.push(await teamGate('/repo', UNIT, a)); return out; };
 
 test("the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module", async () => {
 	const home = mkdtempSync(join(tmpdir(), 'gate-identity-'));
@@ -37,8 +37,8 @@ test("the team gate decides on the tracker's whoAmI only: declaring the claimant
 	process.env['HOME'] = home;
 	try {
 		// before any declaration: alice is signed in, bob holds the stage (she is refused); alice holds it (she is allowed)
-		const refusedBefore = decide('alice', 'bob');
-		const allowedBefore = decide('alice', 'alice');
+		const refusedBefore = await decide('alice', 'bob');
+		const allowedBefore = await decide('alice', 'alice');
 		assert.ok(refusedBefore.some(o => o.kind !== 'allowed'), 'the claimant is refused on bob\'s stage');
 		assert.ok(allowedBefore.some(o => o.kind === 'allowed'), 'the holder is allowed');
 
@@ -50,8 +50,8 @@ test("the team gate decides on the tracker's whoAmI only: declaring the claimant
 		// and the other way round: bob declares himself an alias of alice
 		for (const decl of [{ primary: 'github:bob', aliases: ['github:alice'] }, { primary: 'github:alice', aliases: ['github:bob'] }]) {
 			await new IdentityService().declare(decl);
-			assert.deepEqual(decide('alice', 'bob'), refusedBefore, `refused as before with ${JSON.stringify(decl)}`);
-			assert.deepEqual(decide('alice', 'alice'), allowedBefore, `allowed as before with ${JSON.stringify(decl)}`);
+			assert.deepEqual(await decide('alice', 'bob'), refusedBefore, `refused as before with ${JSON.stringify(decl)}`);
+			assert.deepEqual(await decide('alice', 'alice'), allowedBefore, `allowed as before with ${JSON.stringify(decl)}`);
 		}
 	} finally {
 		if (savedHome === undefined) delete process.env['HOME']; else process.env['HOME'] = savedHome;

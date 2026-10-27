@@ -16,7 +16,7 @@ afterEach(() => _setGateDepsForTests());
 const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 const planJson = (fx: ReturnType<typeof seed>) => fx.read(planArtifactId(HASH, 's1'));
 
-test('ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit is bound on its Task artifact with no record on the Plan', () => {
+test('ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit is bound on its Task artifact with no record on the Plan', async () => {
 	// the framework creates the issues: the Epic's Define and the Story's LLD are bound to them
 	let fx = seed();
 	try {
@@ -69,7 +69,7 @@ test('ensureUnitIssueDetailed binds an issue a person created first and an issue
 	} finally { fx.cleanup(); }
 });
 
-test('a failed link under the parent is stored as the binding\'s pending link, retried by the next ensure, cleared once done and not retried again', () => {
+test('a failed link under the parent is stored as the binding\'s pending link, retried by the next ensure, cleared once done and not retried again', async () => {
 	const fx = seed();
 	try {
 		const t = fakeTracker({ failLink: 1 });
@@ -94,7 +94,7 @@ test('a failed link under the parent is stored as the binding\'s pending link, r
 	} finally { fx.cleanup(); }
 });
 
-test('the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue', () => {
+test('the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue', async () => {
 	const fx = seed();
 	try {
 		// bind both units, then make the LLD a head a draft hook accepts (it reads repoPath from the head's meta)
@@ -115,7 +115,7 @@ test('the draft hook and the handoff check read the binding for an Epic or Story
 		// the handoff check (teamContext with createIssue false) reads the binding
 		const port = { kind: 'github', capabilities: new Set(['claim']), whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }) } as unknown as TrackerPort;
 		_setGateDepsForTests({ readPolicy: policy, loadTracker: (_r: string, _n: ReadonlySet<Capability>) => ({ ok: true, value: port }) });
-		const ctx = teamContext(fx.repo, story(fx.repo), { createIssue: false });
+		const ctx = await teamContext(fx.repo, story(fx.repo), { createIssue: false });
 		assert.ok(ctx.ok && ctx.team);
 		assert.equal(ctx.ok && ctx.team ? ctx.issue : null, 'acme/demo#2');
 	} finally { fx.cleanup(); }
@@ -130,7 +130,7 @@ test('the draft hook and the handoff check read the binding for an Epic or Story
 		const t = fakeTracker();
 		const port = { ...t.port, whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }) } as unknown as TrackerPort;
 		_setGateDepsForTests({ readPolicy: policy, loadTracker: () => ({ ok: true, value: port }) });
-		const ctx = teamContext(old.repo, story(old.repo), { createIssue: false });
+		const ctx = await teamContext(old.repo, story(old.repo), { createIssue: false });
 		assert.notEqual(ctx.ok && ctx.team ? ctx.issue : null, 'acme/demo#5', 'the older ref is not resolved');
 		assert.equal(readBinding(old.repo, storyHead), undefined, 'and nothing is bound from it');
 		assert.deepEqual([t.calls.find, t.calls.create, t.calls.list], [0, 0, 0], 'no lookup and no new issue');

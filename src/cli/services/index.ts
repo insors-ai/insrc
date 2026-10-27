@@ -92,8 +92,8 @@ export interface Services {
 	readonly team: {
 		teamInit(repoPath: string): Promise<string>;
 		teamRefresh(repoPath: string, branch?: string): Promise<string>;
-		teamClaim(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): string;
-		teamRelease(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): string;
+		teamClaim(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): Promise<string>;
+		teamRelease(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): Promise<string>;
 		teamPark(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): Promise<string>;
 		teamResume(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>, workflow?: string): Promise<string>;
 		teamSettle(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): Promise<string>;

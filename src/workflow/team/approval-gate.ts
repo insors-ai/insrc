@@ -18,6 +18,7 @@ import { basename, dirname } from 'node:path';
 import type { UnitRef } from '../tracker/refs.js';
 import { artifactJsonPath, inheritedStoryStandalone, planArtifactId } from '../storage.js';
 import { parseBuildArtifactRef } from '../gates.js';
+import { isToolDenied } from '../tracker/tool-denied.js';
 import { claimsEnforcedFor, reviewFixDecision, teamGate, type GateOutcome, type GuardedAction, type RefusedOutcome, type ReviewFixMode } from './gate.js';
 
 export interface ApprovalRefusal {
@@ -60,17 +61,17 @@ function taskIdsOf(repoPath: string, epicHash: string, storyId: string): { ok: t
 }
 
 /** How the gate is asked about one unit. */
-type Decide = (repo: string, unit: UnitRef) => GateOutcome;
+type Decide = (repo: string, unit: UnitRef) => GateOutcome | Promise<GateOutcome>;
 
 const asking = (action: GuardedAction): Decide => (repo, unit) => teamGate(repo, unit, action);
 
 /** The refusal for approving this artifact, or undefined when it may be approved (or is not guarded). Never throws. */
-export function authorizeApproval(jsonPath: string, metaOverride?: Meta): ApprovalRefusal | undefined {
+export function authorizeApproval(jsonPath: string, metaOverride?: Meta): Promise<ApprovalRefusal | undefined> {
 	return authorizeStageChange(jsonPath, asking('approve-local'), metaOverride);
 }
 
 /** The refusal for applying a review finding to this artifact (changes its content), or undefined. Never throws. */
-export function authorizeFindingApply(jsonPath: string): ApprovalRefusal | undefined {
+export function authorizeFindingApply(jsonPath: string): Promise<ApprovalRefusal | undefined> {
 	return authorizeStageChange(jsonPath, asking('review-fix'));
 }
 
@@ -78,16 +79,20 @@ export function authorizeFindingApply(jsonPath: string): ApprovalRefusal | undef
  * Whether an automatic review may write fixes to this artifact: through reviewFixDecision for the
  * stage unit(s) the artifact belongs to. A review is never refused; only its fix mode changes.
  */
-export function reviewFixModeFor(jsonPath: string): ReviewFixMode {
-	const decide: Decide = (repo, unit) => (reviewFixDecision(repo, unit) === 'apply-auto-fixes' ? { kind: 'allowed', implicitClaim: false } : { kind: 'refused', reason: 'report-only' });
-	try { return authorizeStageChange(jsonPath, decide) === undefined ? 'apply-auto-fixes' : 'report-only'; }
-	catch { return 'report-only'; }
+export async function reviewFixModeFor(jsonPath: string): Promise<ReviewFixMode> {
+	const decide: Decide = async (repo, unit) => ((await reviewFixDecision(repo, unit)) === 'apply-auto-fixes' ? { kind: 'allowed', implicitClaim: false } : { kind: 'refused', reason: 'report-only' });
+	try { return (await authorizeStageChange(jsonPath, decide)) === undefined ? 'apply-auto-fixes' : 'report-only'; }
+	catch (err) {
+		// a denied tracker call stops the review; it does not continue as a report-only review
+		if (isToolDenied(err)) throw err;
+		return 'report-only';
+	}
 }
 
 /** Map the artifact to its stage unit(s) and ask `decide` about each; the first refusal wins. */
-function authorizeStageChange(jsonPath: string, decide: Decide, metaOverride?: Meta): ApprovalRefusal | undefined {
-	const check = (repo: string, unit: UnitRef, subject: string | undefined): ApprovalRefusal | undefined => {
-		const o = decide(repo, unit);
+async function authorizeStageChange(jsonPath: string, decide: Decide, metaOverride?: Meta): Promise<ApprovalRefusal | undefined> {
+	const check = async (repo: string, unit: UnitRef, subject: string | undefined): Promise<ApprovalRefusal | undefined> => {
+		const o = await decide(repo, unit);
 		return o.kind === 'allowed' ? undefined : { outcome: o, subject };
 	};
 	try {
@@ -111,9 +116,9 @@ function authorizeStageChange(jsonPath: string, decide: Decide, metaOverride?: M
 			return { outcome: { kind: 'refused', reason: enforced === 'yes' ? 'cannot tell which stage this approval is for (the artifact has no epic or story)' : enforced }, subject: undefined };
 		}
 		const epic: UnitRef = { unit: 'epic', repoPath, epicHash };
-		if (!isBuild && EPIC_WORKFLOWS.has(workflow ?? '')) return check(repoPath, epic, undefined);
+		if (!isBuild && EPIC_WORKFLOWS.has(workflow ?? '')) return await check(repoPath, epic, undefined);
 		const story: UnitRef = { unit: 'story', repoPath, epicHash, storyId: storyId as string };
-		if (!isBuild) return check(repoPath, story, undefined);
+		if (!isBuild) return await check(repoPath, story, undefined);
 
 		// BUILD: the Story's Tasks, or the Story itself when it has none (a standalone BUILD is such a Story)
 		// Standalone-ness is what the BUILD record will inherit from its upstream (the record may not exist yet)
@@ -125,13 +130,15 @@ function authorizeStageChange(jsonPath: string, decide: Decide, metaOverride?: M
 			if (enforced === 'no') return undefined;
 			return { outcome: { kind: 'refused', reason: enforced === 'yes' ? tasks.reason : enforced }, subject: undefined };
 		}
-		if (tasks.ids.length === 0) return check(repoPath, story, undefined);
+		if (tasks.ids.length === 0) return await check(repoPath, story, undefined);
 		for (const taskId of tasks.ids) {
-			const refusal = check(repoPath, { unit: 'task', repoPath, epicHash, storyId: storyId as string, taskId }, `task ${taskId}`);
+			const refusal = await check(repoPath, { unit: 'task', repoPath, epicHash, storyId: storyId as string, taskId }, `task ${taskId}`);
 			if (refusal !== undefined) return refusal;
 		}
 		return undefined;
 	} catch (err) {
+		// a denied tracker call stops the stage; it is never a generic refusal
+		if (isToolDenied(err)) throw err;
 		return { outcome: { kind: 'refused', reason: `cannot authorize this approval: ${err instanceof Error ? err.message : String(err)}` }, subject: undefined };
 	}
 }

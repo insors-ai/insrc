@@ -19,6 +19,7 @@ import { resolveBranchPattern } from '../config/github.js';
 import type { WorkflowStepStatePayload } from '../../daemon/steps/workflow-step/state.js';
 import { listStates, type RunEntryMeta } from '../../daemon/steps/workflow-step/state-store.js';
 import { snapshotUpstream } from './run-meta.js';
+import { isToolDenied } from '../tracker/tool-denied.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readEpicDefinitionCore } from '../storage.js';
 import type { IssueRef, TrackerPort } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
@@ -379,7 +380,7 @@ const reasonOf = (o: GateOutcome): string => (o.kind === 'allowed' ? 'the gate a
  * supplied run token is not the actor's run for this unit, there is nothing to hand over, or the branch name is not valid.
  * Otherwise it picks the actor's most recently touched owned run (or only the draft) and assembles the checkpoint. Only reads.
  */
-export function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?: string | undefined } = {}, deps: ParkDeps = {}): ParkPlanResult {
+export async function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?: string | undefined } = {}, deps: ParkDeps = {}): Promise<ParkPlanResult> {
 	try {
 		if (unit.unit === 'task') return refuse('a Task has no run to hand over: commit your code on a branch as usual');
 
@@ -392,10 +393,10 @@ export function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?
 
 		// the tracker side: who acts, which issue, who holds it
 		// a read: a missing issue is reported, never created
-		const ctx = teamContext(repo, unit, { createIssue: false });
+		const ctx = await teamContext(repo, unit, { createIssue: false });
 		if (!ctx.ok) return refuse(ctx.outcome.kind === 'no-issue' ? 'this stage has no tracker issue yet, so there is nobody to hand over to' : reasonOf(ctx.outcome));
 		if (!ctx.team) return refuse('this repository does not enforce claims, so there is nothing to hand over');
-		const read = readHolder(ctx, unit, deps.now ?? (() => new Date().toISOString()));
+		const read = await readHolder(ctx, unit, deps.now ?? (() => new Date().toISOString()));
 		if (!read.ok) return refuse(reasonOf(read.outcome));
 		const holder = read.state.holder;
 		if (holder === null) return refuse('nobody holds this stage: claim it and continue, there is nothing to hand over');
@@ -435,6 +436,8 @@ export function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?
 			actor, holder, issue: ctx.issue, port: ctx.port,
 		};
 	} catch (err) {
+		// a denied tracker call stops the park; it is not "could not be planned"
+		if (isToolDenied(err)) throw err;
 		return refuse(`park could not be planned: ${err instanceof Error ? err.message : String(err)}`);
 	}
 }
@@ -580,7 +583,7 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 
 /** Plan a park and, when it is allowed, carry it out. */
 export async function parkDraft(repo: string, unit: UnitRef, opts: { readonly runToken?: string | undefined } = {}, deps: ParkDeps = {}): Promise<ParkResult> {
-	const plan = parkPlan(repo, unit, opts, deps);
+	const plan = await parkPlan(repo, unit, opts, deps);
 	return plan.ok ? await executePark(plan, deps) : { ok: false, reason: plan.reason };
 }
 
@@ -685,7 +688,7 @@ export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly 
 		}
 
 		// may this actor author it? (An unassigned stage is claimed; a held one throws.)
-		const outcome = teamGate(repo, unit, 'author', workflow);
+		const outcome = await teamGate(repo, unit, 'author', workflow);
 		if (outcome.kind !== 'allowed' && !(outcome.kind === 'no-issue' && outcome.allowFirstAuthor)) throw new TeamGateRefusedError(outcome);
 
 		const handoff: HandoffUnit = { epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) };
@@ -745,7 +748,7 @@ export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly 
 			await git(repo, ['update-ref', '-d', tmpRef], deps);
 		}
 	} catch (err) {
-		if (err instanceof TeamGateRefusedError) throw err;
+		if (err instanceof TeamGateRefusedError || isToolDenied(err)) throw err;
 		return refused(`resume could not be checked: ${err instanceof Error ? err.message : String(err)}`);
 	}
 }

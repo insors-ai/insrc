@@ -46,22 +46,22 @@ function authorActionOf(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath'>, u
 }
 
 /** Throws TeamGateRefusedError when the actor may not author this run's stage. A repo with no policy is untouched. */
-export function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): void {
+export async function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): Promise<void> {
 	const unit = authorUnitOf(intent);
 	if (unit === undefined) return;
 	const action = authorActionOf(intent, unit);
-	const outcome = teamGate(intent.repoPath, unit, action, intent.workflow);
+	const outcome = await teamGate(intent.repoPath, unit, action, intent.workflow);
 	if (outcome.kind === 'no-issue' && outcome.allowFirstAuthor) return;   // the first draft is what creates the issue
 	if (outcome.kind !== 'allowed') throw new TeamGateRefusedError(outcome);
-	if (action === 'revise') assertHeld(intent.repoPath, unit);
+	if (action === 'revise') await assertHeld(intent.repoPath, unit);
 }
 
 /** The gate lets 'revise' through on an unassigned stage, as it does every action but the claiming ones; revising must not take the claim, so nobody holding the stage is refused. */
-function assertHeld(repo: string, unit: UnitRef): void {
-	const ctx = teamContext(repo, unit, { createIssue: false });
+async function assertHeld(repo: string, unit: UnitRef): Promise<void> {
+	const ctx = await teamContext(repo, unit, { createIssue: false });
 	if (!ctx.ok) throw new TeamGateRefusedError(ctx.outcome as RefusedOutcome);
 	if (!ctx.team) return;
-	const read = readHolder(ctx, unit, () => new Date().toISOString());
+	const read = await readHolder(ctx, unit, () => new Date().toISOString());
 	if (!read.ok) throw new TeamGateRefusedError(read.outcome as RefusedOutcome);
 	if (read.state.holder === null) {
 		throw new TeamGateRefusedError({ kind: 'refused', reason: `nobody holds ${ctx.issue}: claim it before revising work that is in signoff` });
@@ -73,8 +73,8 @@ function assertHeld(repo: string, unit: UnitRef): void {
  * or the Story of a standalone one. Throws TeamGateRefusedError for anyone but the holder;
  * a stage with no issue is refused as the gate says (only the first author turn is let through).
  */
-export function assertMayBuild(repoPath: string, ref: BuildRef): void {
-	const outcome = teamGate(repoPath, buildUnitOf(repoPath, ref), 'build');
+export async function assertMayBuild(repoPath: string, ref: BuildRef): Promise<void> {
+	const outcome = await teamGate(repoPath, buildUnitOf(repoPath, ref), 'build');
 	if (outcome.kind !== 'allowed') throw new TeamGateRefusedError(outcome);
 }
 

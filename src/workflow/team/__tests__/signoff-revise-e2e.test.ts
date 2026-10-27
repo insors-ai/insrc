@@ -131,7 +131,7 @@ test('changes requested on a two-artifact request, both re-authored through writ
 		// --- the request: DEF and HLD go to one pull request, #41 ---
 		await approveReviewed(svc, DEF);
 		await approveReviewed(svc, HLD);
-		assert.equal(claim(k.repo, epic).kind, 'allowed');
+		assert.equal((await claim(k.repo, epic)).kind, 'allowed');
 		assert.deepEqual(await openSignoff(k.repo, epic, [DEF, HLD]), { ok: true, value: { ref: 'acme/demo#41' } });
 		const firstSubmission = submittedAt();
 
@@ -142,12 +142,12 @@ test('changes requested on a two-artifact request, both re-authored through writ
 
 		// --- someone else, and nobody, may not revise it; revising never takes the claim ---
 		t.assignees[EPIC_ISSUE] = ['bob'];
-		assert.throws(() => assertMayAuthor(intent(k, 'design.epic')), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'held-by-other' && e.outcome.holder === 'bob');
+		await assert.rejects(async () => assertMayAuthor(intent(k, 'design.epic')), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'held-by-other' && e.outcome.holder === 'bob');
 		t.assignees[EPIC_ISSUE] = [];
-		assert.throws(() => assertMayAuthor(intent(k, 'design.epic')), (e: unknown) => e instanceof TeamGateRefusedError && /claim it before revising/.test(e.reason));
+		await assert.rejects(async () => assertMayAuthor(intent(k, 'design.epic')), (e: unknown) => e instanceof TeamGateRefusedError && /claim it before revising/.test(e.reason));
 		assert.deepEqual(t.assignees[EPIC_ISSUE], [], 'no claim was taken');
 		t.assignees[EPIC_ISSUE] = ['alice'];
-		assert.doesNotThrow(() => assertMayAuthor(intent(k, 'design.epic')), 'the holder revises');
+		await assert.doesNotReject(async () => assertMayAuthor(intent(k, 'design.epic')), 'the holder revises');
 
 		// --- the holder re-authors the DEF and leaves the HLD as it is: the DEF keeps its history, the HLD is untouched ---
 		await reauthor(DEF, 'revised after review');
@@ -181,7 +181,7 @@ test('changes requested on a two-artifact request, both re-authored through writ
 		await settleForAttempt(k.repo, story, 'author', 'design.story');
 
 		// --- the merged request is not carried over: a later revision of the DEF gets a request of its own ---
-		assert.equal(claim(k.repo, epic).kind, 'allowed');
+		assert.equal((await claim(k.repo, epic)).kind, 'allowed');
 		await reauthor(DEF, 'revised again after the merge');
 		await approveReviewed(svc, DEF);
 		assert.deepEqual(await openSignoff(k.repo, epic, [DEF]), { ok: true, value: { ref: 'acme/demo#42' } });

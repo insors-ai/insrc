@@ -60,38 +60,38 @@ afterEach(() => { _setGateDepsForTests(); registerParkOfferProvider(undefined); 
 
 const offer = (o: GateOutcome): boolean | undefined => (o.kind === 'held-by-other' ? o.offerPark : undefined);
 
-test('teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then', () => {
+test('teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then', async () => {
 	// no provider registered: never an offer
 	inject('bob');
-	assert.equal(offer(teamGate('/repo', UNIT, 'author')), false);
+	assert.equal(offer(await teamGate('/repo', UNIT, 'author')), false);
 
 	// the provider is asked with (repo, unit, actor) and its answer decides
 	const asked: Array<[string, string | undefined, string]> = [];
 	registerParkOfferProvider((repo, unit, actor) => { asked.push([repo, unit.storyId, actor]); return true; });
-	const held = teamGate('/repo', UNIT, 'author');
+	const held = await teamGate('/repo', UNIT, 'author');
 	assert.equal(offer(held), true);
 	assert.deepEqual(asked, [['/repo', 's1', 'alice']]);
 	// the explicit claim path offers too
-	assert.equal(offer(claim('/repo', UNIT)), true);
+	assert.equal(offer(await claim('/repo', UNIT)), true);
 	registerParkOfferProvider(() => false);
-	assert.equal(offer(teamGate('/repo', UNIT, 'build')), false);
+	assert.equal(offer(await teamGate('/repo', UNIT, 'build')), false);
 
 	// a throwing provider counts as false
 	registerParkOfferProvider(() => { throw new Error('boom'); });
-	assert.equal(offer(teamGate('/repo', UNIT, 'author')), false);
+	assert.equal(offer(await teamGate('/repo', UNIT, 'author')), false);
 
 	// outcomes other than held-by-other never carry an offer and never ask the provider
 	let calls = 0;
 	registerParkOfferProvider(() => { calls += 1; return true; });
 	inject('alice');
-	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'allowed');
+	assert.equal((await teamGate('/repo', UNIT, 'author')).kind, 'allowed');
 	inject(null);
-	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'allowed');
+	assert.equal((await teamGate('/repo', UNIT, 'author')).kind, 'allowed');
 	assert.equal(calls, 0, 'the provider is only asked for a held-by-other outcome');
 
 	// no policy: no tracker call and no provider call
 	const free = inject('bob', none);
-	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'allowed');
+	assert.equal((await teamGate('/repo', UNIT, 'author')).kind, 'allowed');
 	assert.equal(free.loads, 0);
 	assert.equal(calls, 0);
 
@@ -119,21 +119,21 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 		inject('bob');
 		stepToolTable();   // the daemon builds its step tools at startup, and that registers the park-offer provider with the gate
 		const unit: UnitRef = { ...UNIT, repoPath: repo };
-		const offered = (): boolean | undefined => offer(teamGate(repo, unit, 'author'));
+		const offered = async (): Promise<boolean | undefined> => offer(await teamGate(repo, unit, 'author'));
 
 		// nothing yet: held by bob, no work of ours to park
-		assert.equal(offered(), false);
+		assert.equal(await offered(), false);
 
 		// a run the actor owns, in each stage a refused run can be in
 		for (const stage of ['awaiting_plan', 'awaiting_llm_step', 'awaiting_synthesize'] as const) {
 			_clearWorkflowStateStoreForTests();
 			saveState(runPayload(repo, stage), { owner: 'alice' });
-			assert.equal(offered(), true, stage);
+			assert.equal(await offered(), true, stage);
 		}
 		// the login compares case-insensitively
 		_clearWorkflowStateStoreForTests();
 		saveState(runPayload(repo, 'awaiting_plan'), { owner: 'ALICE' });
-		assert.equal(offered(), true);
+		assert.equal(await offered(), true);
 
 		// never for a run with no owner, another owner's run, a run for another unit, or a run in another repo
 		for (const [label, meta, payload] of [
@@ -146,7 +146,7 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 		] as const) {
 			_clearWorkflowStateStoreForTests();
 			saveState(payload, meta);
-			assert.equal(offered(), false, label);
+			assert.equal(await offered(), false, label);
 		}
 		_clearWorkflowStateStoreForTests();
 
@@ -154,21 +154,21 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 		const json = artifactJsonPath(repo, lldArtifactId(HASH, 's1'));
 		mkdirSync(dirname(json), { recursive: true });
 		writeFileSync(json, '{"a":1}');
-		assert.equal(offered(), true, 'an untracked draft');
+		assert.equal(await offered(), true, 'an untracked draft');
 		git('add', '-A'); git('commit', '-qm', 'lld');
-		assert.equal(offered(), false, 'a committed artifact is not unparked work');
+		assert.equal(await offered(), false, 'a committed artifact is not unparked work');
 		writeFileSync(json, '{"a":2}');
-		assert.equal(offered(), true, 'a modified draft');
+		assert.equal(await offered(), true, 'a modified draft');
 		git('checkout', '--', '.');
 		const md = join(repo, `docs/epics/tag-filtering-E20260718${HASH.slice(0, 8)}/S001/PLAN.md`);
 		mkdirSync(dirname(md), { recursive: true });
 		writeFileSync(md, '# plan');
-		assert.equal(offered(), true, 'an untracked markdown draft in the Story folder');
+		assert.equal(await offered(), true, 'an untracked markdown draft in the Story folder');
 		git('add', '-A'); git('commit', '-qm', 'plan md');
-		assert.equal(offered(), false);
+		assert.equal(await offered(), false);
 		// a changed file that is not the unit's own is not its draft
 		writeFileSync(join(repo, 'docs', 'notes.md'), 'n');
-		assert.equal(offered(), false);
+		assert.equal(await offered(), false);
 
 		// the terminal runs the gate in its own process (no run store): its refusals offer to park an uncommitted draft
 		registerParkOfferProvider(undefined);
@@ -193,7 +193,7 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('the daemon registers the park-offer provider at startup, not only when its step tools are first used', () => {
+test('the daemon registers the park-offer provider at startup, not only when its step tools are first used', async () => {
 	const main = readFileSync(join(__dirname, '..', '..', '..', 'daemon', 'index.ts'), 'utf8');
 	assert.match(main, /installStepDaemonClient\(createInDaemonClient\([\s\S]*?\)\);\s*\n\s*\/\/[^\n]*\n\s*registerParkOffer\(\);/, 'main() calls registerParkOffer() when the daemon starts');
 	assert.match(main, /import \{ registerParkOffer \} from '\.\/steps\/workflow-step\/park-offer\.js'/);

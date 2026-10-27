@@ -18,6 +18,7 @@ import { existsSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { loadTracker } from '../tracker/github-adapter.js';
+import { isToolDenied } from '../tracker/tool-denied.js';
 import type { Capability, IssueRef, PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
 import { ensureUnitIssue, resolveUnitIssueLocal, unitKey } from '../tracker/unit-issue.js';
@@ -74,9 +75,9 @@ export function describeOutcome(o: RefusedOutcome): string {
 
 export interface GateDeps {
 	readonly readPolicy?:  PolicyReader | undefined;
-	readonly loadTracker?: ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>) | undefined;
-	readonly resolveIssue?: ((unit: UnitRef) => IssueRef | null) | undefined;
-	readonly ensureIssue?: ((unit: UnitRef, port: TrackerPort) => PortResult<IssueRef>) | undefined;
+	readonly loadTracker?: ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort> | Promise<PortResult<TrackerPort>>) | undefined;
+	readonly resolveIssue?: ((unit: UnitRef) => IssueRef | null | Promise<IssueRef | null>) | undefined;
+	readonly ensureIssue?: ((unit: UnitRef, port: TrackerPort) => PortResult<IssueRef> | Promise<PortResult<IssueRef>>) | undefined;
 	readonly artifactExists?: ((unit: UnitRef) => boolean) | undefined;
 	readonly now?:         (() => string) | undefined;
 }
@@ -95,7 +96,7 @@ export function _setGateDepsForTests(deps: GateDeps = {}): void { testDeps = dep
  * and, for author, the authoring workflow (AMD-315d510cb28100e2-17), so it can tell which stage the attempt follows; a hook
  * written with the first three parameters only keeps working.
  */
-export type CompletionHook = (repo: string, unit: UnitRef, port: TrackerPort, action: GuardedAction, authoring?: string) => GateOutcome | 'continue';
+export type CompletionHook = (repo: string, unit: UnitRef, port: TrackerPort, action: GuardedAction, authoring?: string) => GateOutcome | 'continue' | Promise<GateOutcome | 'continue'>;
 
 let registeredHook: CompletionHook | undefined;
 /** True while a hook runs: gate calls made by the hook itself (for example its release) skip the hook. */
@@ -121,11 +122,15 @@ function heldByOther(repo: string, unit: UnitRef, holder: string, actor: string)
 const HOOKED: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build', 'open-signoff', 'revise', 'release']);
 
 /** The hook's answer for this action, or 'continue' when none is registered, the call came from the hook, or the action is not hooked. */
-function consultHook(repo: string, unit: UnitRef, action: GuardedAction, port: TrackerPort, authoring?: string): GateOutcome | 'continue' {
+async function consultHook(repo: string, unit: UnitRef, action: GuardedAction, port: TrackerPort, authoring?: string): Promise<GateOutcome | 'continue'> {
 	if (registeredHook === undefined || insideHook || !HOOKED.has(action)) return 'continue';
 	insideHook = true;
-	try { return registeredHook(repo, unit, port, action, authoring); }
-	catch (err) { return refused(`the completion hook failed: ${errorText(err)}`); }
+	try { return await registeredHook(repo, unit, port, action, authoring); }
+	catch (err) {
+		// a denied tracker call inside the hook stops the stage; it is not "the hook failed"
+		if (isToolDenied(err)) throw err;
+		return refused(`the completion hook failed: ${errorText(err)}`);
+	}
 	finally { insideHook = false; }
 }
 
@@ -173,14 +178,18 @@ export function claimsEnforcedFor(repo: string): 'yes' | 'no' | string {
  * The signed-in tracker login when claims are enforced for the repo, otherwise undefined with no tracker call.
  * Never throws: any failure reading the user is undefined.
  */
-export function actingUser(repo: string): string | undefined {
+export async function actingUser(repo: string): Promise<string | undefined> {
 	try {
 		if (claimsEnforcedFor(repo) !== 'yes') return undefined;
-		const loaded = (testDeps.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim']));
+		const loaded = await (testDeps.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim']));
 		if (!loaded.ok) return undefined;
-		const who = loaded.value.whoAmI();
+		const who = await loaded.value.whoAmI();
 		return who.ok ? who.value : undefined;
-	} catch { return undefined; }
+	} catch (err) {
+		// a denied tracker call stops the stage; it is never "nobody is signed in"
+		if (isToolDenied(err)) throw err;
+		return undefined;
+	}
 }
 
 /**
@@ -205,21 +214,21 @@ function authoredArtifactExists(unit: UnitRef, authoring: string | undefined): b
  * Read the policy, then (team mode with claims enforced only) the tracker, the actor and the unit's issue. A missing issue is
  * created (the gate's usual behaviour) unless `createIssue` is false, for a read that must not write to the tracker.
  */
-export function teamContext(repo: string, unit: UnitRef, opts: { readonly createIssue?: boolean | undefined } = {}): TeamContext {
+export async function teamContext(repo: string, unit: UnitRef, opts: { readonly createIssue?: boolean | undefined } = {}): Promise<TeamContext> {
 	const policy = (testDeps.readPolicy ?? policyReader)(repo);
 	if (!policy.ok) return { ok: false, outcome: refused(`the team policy cannot be read: ${policy.reason}`) };
 	if (policy.value === 'none' || !policy.value.teamMode || !policy.value.claimsEnforced) return { ok: true, team: false };
 
-	const loaded = (testDeps.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim']));
+	const loaded = await (testDeps.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim']));
 	if (!loaded.ok) return { ok: false, outcome: refused(`the tracker cannot be used (${loaded.kind}): ${loaded.reason}`) };
-	const who = loaded.value.whoAmI();
+	const who = await loaded.value.whoAmI();
 	if (!who.ok) return { ok: false, outcome: refused(`cannot tell who is acting (${who.kind}): ${who.reason}`) };
 
 	// The unit's issue: recorded, found, or created now. If it cannot be had, the stage has no issue yet.
-	let issue = (testDeps.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
+	let issue = await (testDeps.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
 	let creationFailure: string | undefined;
 	if (issue === null && opts.createIssue !== false) {
-		const ensured = (testDeps.ensureIssue ?? ensureUnitIssue)(unit, loaded.value);
+		const ensured = await (testDeps.ensureIssue ?? ensureUnitIssue)(unit, loaded.value);
 		if (ensured.ok) issue = ensured.value; else creationFailure = ensured.reason;
 	}
 	if (issue === null) {
@@ -229,8 +238,8 @@ export function teamContext(repo: string, unit: UnitRef, opts: { readonly create
 }
 
 /** Who holds the unit's issue right now (null when nobody), or a refusal. */
-export function readHolder(ctx: Extract<TeamContext, { team: true }>, unit: UnitRef, now: () => string): { ok: true; state: ClaimState } | { ok: false; outcome: GateOutcome } {
-	const a = ctx.port.readAssignee(ctx.issue);
+export async function readHolder(ctx: Extract<TeamContext, { team: true }>, unit: UnitRef, now: () => string): Promise<{ ok: true; state: ClaimState } | { ok: false; outcome: GateOutcome }> {
+	const a = await ctx.port.readAssignee(ctx.issue);
 	if (!a.ok) return { ok: false, outcome: refused(`cannot read who holds the stage (${a.kind}): ${a.reason}`) };
 	return { ok: true, state: { unit, holder: a.value, readAt: now() } };
 }
@@ -240,12 +249,12 @@ export function readHolder(ctx: Extract<TeamContext, { team: true }>, unit: Unit
  * else is refused naming the holder, and an unassigned stage is taken with the add-only assignment, never removing another
  * claimant. The refusal wording and whether the take counts as an implicit claim differ by caller, so `words` carries them.
  */
-function decideOnHolder(
+async function decideOnHolder(
 	repo: string, unit: UnitRef, action: GuardedAction | 'claim', ctx: Extract<TeamContext, { team: true }>, holder: string | null,
 	words: { readonly failed: string; readonly contested: string; readonly implicit: boolean },
-): GateOutcome {
+): Promise<GateOutcome> {
 	if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, action, heldByOther(repo, unit, holder, ctx.who));
-	const added = ctx.port.addAssignee(ctx.issue, ctx.who);
+	const added = await ctx.port.addAssignee(ctx.issue, ctx.who);
 	if (!added.ok) return logOutcome(unit, action, refused(`${words.failed} (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));
 	if (added.value.length > 1) return logOutcome(unit, action, refused(`the claim is contested: ${added.value.join(', ')} are all assigned; ${words.contested}`));
 	return allowed(words.implicit);
@@ -255,10 +264,10 @@ function decideOnHolder(
  * May `action` change this stage unit? Allowed with no tracker call outside team mode;
  * otherwise the live assignee decides. Never throws.
  */
-export function teamGate(repo: string, unit: UnitRef, action: GuardedAction, authoring?: string): GateOutcome {
+export async function teamGate(repo: string, unit: UnitRef, action: GuardedAction, authoring?: string): Promise<GateOutcome> {
 	try {
 		if (!GUARDED.has(action)) return allowed();
-		const ctx = teamContext(repo, unit);
+		const ctx = await teamContext(repo, unit);
 		if (!ctx.ok) {
 			// The one exception: the first author turn of a stage that has no artifact yet can be written without its issue
 			if (ctx.noIssue === true && ctx.outcome.kind === 'no-issue' && action === 'author' && !authoredArtifactExists(unit, authoring)) {
@@ -268,18 +277,20 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction, aut
 		}
 		if (!ctx.team) return allowed();
 
-		const hooked = consultHook(repo, unit, action, ctx.port, authoring);
+		const hooked = await consultHook(repo, unit, action, ctx.port, authoring);
 		if (hooked !== 'continue') return logOutcome(unit, action, hooked);
 
 		const now = testDeps.now ?? ((): string => new Date().toISOString());
-		const read = readHolder(ctx, unit, now);
+		const read = await readHolder(ctx, unit, now);
 		if (!read.ok) return logOutcome(unit, action, read.outcome);
 		const holder = read.state.holder;
 
 		// Only author and build take an unassigned stage; the other actions leave it alone.
 		if (holder === null && !CLAIMING.has(action)) return allowed();
-		return decideOnHolder(repo, unit, action, ctx, holder, { failed: 'the implicit claim failed', contested: 'ask an administrator to release the stage', implicit: true });
+		return await decideOnHolder(repo, unit, action, ctx, holder, { failed: 'the implicit claim failed', contested: 'ask an administrator to release the stage', implicit: true });
 	} catch (err) {
+		// a denied tracker call stops the stage; it is never a generic refusal
+		if (isToolDenied(err)) throw err;
 		return logOutcome(unit, action, refused(`the team gate failed: ${errorText(err)}`));
 	}
 }
@@ -296,16 +307,17 @@ const notEnforced = (): GateOutcome => refused('this repository does not enforce
  * claim is contested. GitHub cannot assign atomically: contention is reported when it is
  * observed, so an earlier claimant may discover it on a later gate read.
  */
-export function claim(repo: string, unit: UnitRef): GateOutcome {
+export async function claim(repo: string, unit: UnitRef): Promise<GateOutcome> {
 	try {
-		const ctx = teamContext(repo, unit);
+		const ctx = await teamContext(repo, unit);
 		if (!ctx.ok) return logOutcome(unit, 'claim', ctx.outcome);
 		if (!ctx.team) return logOutcome(unit, 'claim', notEnforced());
-		const read = readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
+		const read = await readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
 		if (!read.ok) return logOutcome(unit, 'claim', read.outcome);
 		const holder = read.state.holder;
-		return decideOnHolder(repo, unit, 'claim', ctx, holder, { failed: 'the claim failed', contested: 'nobody was removed, ask an administrator to release the stage', implicit: false });
+		return await decideOnHolder(repo, unit, 'claim', ctx, holder, { failed: 'the claim failed', contested: 'nobody was removed, ask an administrator to release the stage', implicit: false });
 	} catch (err) {
+		if (isToolDenied(err)) throw err;
 		return logOutcome(unit, 'claim', refused(`the claim failed: ${errorText(err)}`));
 	}
 }
@@ -315,27 +327,28 @@ export function claim(repo: string, unit: UnitRef): GateOutcome {
  * may release; an administrator may release whoever holds it, including a contested claim
  * with several assignees. Anyone else is refused without a port write.
  */
-export function release(repo: string, unit: UnitRef): GateOutcome {
+export async function release(repo: string, unit: UnitRef): Promise<GateOutcome> {
 	try {
-		const ctx = teamContext(repo, unit);
+		const ctx = await teamContext(repo, unit);
 		if (!ctx.ok) return logOutcome(unit, 'release', ctx.outcome);
 		if (!ctx.team) return logOutcome(unit, 'release', notEnforced());
 
-		const hooked = consultHook(repo, unit, 'release', ctx.port);
+		const hooked = await consultHook(repo, unit, 'release', ctx.port);
 		if (hooked !== 'continue') return logOutcome(unit, 'release', hooked);
 
 		const admin = ctx.administrators.some(a => sameLogin(a, ctx.who));
 		if (!admin) {
-			const read = readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
+			const read = await readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
 			if (!read.ok) return logOutcome(unit, 'release', read.outcome);
 			const holder = read.state.holder;
 			if (holder === null) return allowed();   // nothing to release
 			if (!sameLogin(holder, ctx.who)) return logOutcome(unit, 'release', refused(`only the holder (${holder}) or a policy administrator may release this stage`));
 		}
-		const cleared = ctx.port.setAssignee(ctx.issue, null);
+		const cleared = await ctx.port.setAssignee(ctx.issue, null);
 		if (!cleared.ok) return logOutcome(unit, 'release', refused(`the release failed (${cleared.kind}): ${cleared.reason}; the stage state is unknown, read it again before acting`));
 		return allowed();
 	} catch (err) {
+		if (isToolDenied(err)) throw err;
 		return logOutcome(unit, 'release', refused(`the release failed: ${errorText(err)}`));
 	}
 }
@@ -343,7 +356,11 @@ export function release(repo: string, unit: UnitRef): GateOutcome {
 export type ReviewFixMode = 'apply-auto-fixes' | 'report-only';
 
 /** A review is never refused; only whether it may write fixes changes. Report-only for a non-holder or a failed read. */
-export function reviewFixDecision(repo: string, unit: UnitRef): ReviewFixMode {
-	try { return teamGate(repo, unit, 'review-fix').kind === 'allowed' ? 'apply-auto-fixes' : 'report-only'; }
-	catch { return 'report-only'; }
+export async function reviewFixDecision(repo: string, unit: UnitRef): Promise<ReviewFixMode> {
+	try { return (await teamGate(repo, unit, 'review-fix')).kind === 'allowed' ? 'apply-auto-fixes' : 'report-only'; }
+	catch (err) {
+		// a denied tracker call stops the review; it does not continue as a report-only review
+		if (isToolDenied(err)) throw err;
+		return 'report-only';
+	}
 }

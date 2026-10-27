@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T11:30:05.856Z",
+    "updatedAt": "2026-10-27T12:03:50.535Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -2332,6 +2332,130 @@
               },
               {
                 "title": "DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "2e042cd47",
+        "ranAt": "2026-10-27T12:03:50.535Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-CONTROLLER-LARGE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-LARGE: actual helper dispatches complete explicit task metadata/schema through fresh isolated CLI/OAuth boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-LARGE: duplicated normalized schema and task framing are measured before actual CLI dispatch and reported as a lower size refusal",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon-authored git Story through isolated CLI calls only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-CONTROLLER-TIME",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-TIME: pending helper turns rejoin one actual subprocess and explicit cancellation waits for its shutdown",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-TIME: expiry kills owned CLI work and refuses late structured output",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-TIME: serial helper handoff starts the next identified call once without returning evidence into chat",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-CONTROLLER-ADMISSION",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-ADMISSION: self-declared flags, forged descriptors, missing CLI isolation and unsupported Codex fail before evidence or model dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/controller-review.test.ts",
+                "title": "DIFF-CONTROLLER-ADMISSION: actual socket forwarder separates verified helper capability from arguments and host rechecks the installed CLI",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/controller-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22668,
+            "titles": [
+              {
+                "title": "DIFF-CONTROLLER-LARGE: actual helper dispatches complete explicit task metadata/schema through fresh isolated CLI/OAuth boundary",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-ADMISSION: self-declared flags, forged descriptors, missing CLI isolation and unsupported Codex fail before evidence or model dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: pending helper turns rejoin one actual subprocess and explicit cancellation waits for its shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: expiry kills owned CLI work and refuses late structured output",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-LARGE: duplicated normalized schema and task framing are measured before actual CLI dispatch and reported as a lower size refusal",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-ADMISSION: actual socket forwarder separates verified helper capability from arguments and host rechecks the installed CLI",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: serial helper handoff starts the next identified call once without returning evidence into chat",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon-authored git Story through isolated CLI calls only",
                 "result": "pass"
               }
             ],

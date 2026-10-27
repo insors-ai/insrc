@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 99 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 108 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -554,3 +554,37 @@ Run at 2026-10-27T11:30:05.856Z on commit `91496c91d`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts` | 0 | 10 | 39.9 s |  |
 | `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 5 | 0.9 s |  |
+
+## t19
+
+Run at 2026-10-27T12:03:50.535Z on commit `2e042cd47`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-CONTROLLER-LARGE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-CONTROLLER-LARGE: actual helper dispatches complete explicit task metadata/schema through fresh isolated CLI/OAuth boundary | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-CONTROLLER-LARGE: duplicated normalized schema and task framing are measured before actual CLI dispatch and reported as a lower size refusal | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon-authored git Story through isolated CLI calls only | `src/mcp/__tests__/controller-review.test.ts` |
+
+**integration: DIFF-CONTROLLER-TIME**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-CONTROLLER-TIME: pending helper turns rejoin one actual subprocess and explicit cancellation waits for its shutdown | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-CONTROLLER-TIME: expiry kills owned CLI work and refuses late structured output | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-CONTROLLER-TIME: serial helper handoff starts the next identified call once without returning evidence into chat | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess | `src/mcp/__tests__/controller-review.test.ts` |
+
+**integration: DIFF-CONTROLLER-ADMISSION**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-CONTROLLER-ADMISSION: self-declared flags, forged descriptors, missing CLI isolation and unsupported Codex fail before evidence or model dispatch | `src/mcp/__tests__/controller-review.test.ts` |
+| pass | DIFF-CONTROLLER-ADMISSION: actual socket forwarder separates verified helper capability from arguments and host rechecks the installed CLI | `src/mcp/__tests__/controller-review.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/mcp/__tests__/controller-review.test.ts` | 0 | 9 | 22.7 s |  |

@@ -67,6 +67,7 @@ function frameOf(value: Record<string, unknown>): CodeReviewStepEmitCall {
 export class ControllerReviewHelper {
  private readonly epoch = randomUUID();
  private readonly owners = new Map<string, Owner>();
+ private readonly turns = new Map<string, Promise<void>>();
  private readonly admissions = new Map<string, { admission: ControllerReviewAdmission; execution: ControllerReviewExecution; expiresAt: number }>();
  private queue: Promise<void> = Promise.resolve();
  private closed = false;
@@ -87,6 +88,8 @@ export class ControllerReviewHelper {
   return envelope({ next: 'controller_call_pending', state: owner.state, callId: owner.callId, expiresAt: owner.expiresAt, timing: owner.timing, guidance: "The verified isolated CLI helper owns this call. Continue phase='start' with the SAME state to rejoin; do not execute it in chat or relaunch. proceed:false cancels the helper and the controller review." });
  }
  private start(frame: CodeReviewStepEmitCall, admitted: { admission: ControllerReviewAdmission; execution: ControllerReviewExecution }): Owner {
+  const present = this.owners.get(frame.state);
+  if (present !== undefined) return present; // Atomic check at mutation, never an earlier turn snapshot.
   const controller = new AbortController();
   let settle!: (value: ControllerCallResult) => void;
   const work = new Promise<ControllerCallResult>(resolve => { settle = resolve; });
@@ -121,6 +124,28 @@ export class ControllerReviewHelper {
  }
  async forward(raw: unknown, extra: ForwardStepExtra, forward: ControllerReviewForward): Promise<StepMcpEnvelope> {
   const turnStartedAt = this.now();
+  if (this.closed) return error('unsupported-bounded-controller', 'The isolated controller helper is closed');
+  const args = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
+  const state = typeof args['state'] === 'string' ? args['state'] : undefined;
+  // Cancellation interrupts owned execution immediately, before waiting for its turn lock.
+  if (state !== undefined && args['phase'] === 'start' && args['proceed'] === false) this.owners.get(state)?.controller.abort();
+  const key = state ?? JSON.stringify([extra.client, args['repo'], args['epicHash'], args['storyId']]);
+  const prior = this.turns.get(key) ?? Promise.resolve();
+  let release!: () => void;
+  const ticket = new Promise<void>(resolve => { release = resolve; });
+  const tail = prior.then(() => ticket); this.turns.set(key, tail);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const acquired = await Promise.race([prior.then(() => true), new Promise<boolean>(resolve => { timer = setTimeout(() => resolve(false), 180_000); })]);
+  if (timer !== undefined) clearTimeout(timer);
+  const cleanup = (): void => { release(); void tail.then(() => { if (this.turns.get(key) === tail) this.turns.delete(key); }); };
+  if (!acquired) {
+   cleanup(); const owner = state === undefined ? undefined : this.owners.get(state);
+   return owner !== undefined ? this.pending(owner) : envelope({ next: 'error', error: { code: 'controller-turn-busy', message: 'Retry with the same state to rejoin the owned transition.', retryable: true } }, true);
+  }
+  try { return await this.forwardTurn(raw, extra, forward, turnStartedAt); }
+  finally { cleanup(); }
+ }
+ private async forwardTurn(raw: unknown, extra: ForwardStepExtra, forward: ControllerReviewForward, turnStartedAt: number): Promise<StepMcpEnvelope> {
   for (const [token, value] of this.admissions) if (this.now() >= value.expiresAt && !this.owners.has(token)) this.admissions.delete(token);
   if (this.closed) return error('unsupported-bounded-controller', 'The isolated controller helper is closed');
   try { if ((this.deps.privateSession ?? (() => privateSessionBootstrap() !== undefined))()) return forward(raw, extra); } catch { return forward(raw, extra); }
@@ -177,7 +202,7 @@ export class ControllerReviewHelper {
   if (this.now() >= owner.expiresAt || owner.controller.signal.aborted) {
    owner.controller.abort(); await owner.work; if (this.owners.get(owner.state) === owner) this.owners.delete(owner.state);
    await forward({ phase: 'start', state: owner.state, proceed: false }, { ...extra, controllerReview: owner.admission });
-   return error('review-deadline', 'The owned isolated controller call expired or was cancelled; no late output was accepted');
+   return error(this.now() >= owner.expiresAt ? 'review-deadline' : 'review-cancelled', 'The owned isolated controller call expired or was cancelled; no late output was accepted');
   }
   if (settled.failure?.detail.startsWith('unsupported-bounded-controller:')) {
    await forward({ phase: 'start', state: owner.state, proceed: false }, { ...extra, controllerReview: owner.admission }); if (this.owners.get(owner.state) === owner) this.owners.delete(owner.state);

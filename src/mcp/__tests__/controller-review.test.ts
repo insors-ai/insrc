@@ -218,3 +218,30 @@ test('DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon
   assert.ok(f.captures().every(capture => capture.cwd !== repo && !capture.project));
  } finally { await f.helper.close(); for (const socket of sockets) socket.destroy(); await new Promise<void>(resolve => server.close(() => resolve())); await _clearCodeReviewStateStoreForTests(); await f.cleanup(); }
 });
+
+
+test('DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice', async () => {
+ const f = fixture({ gated: true, waitMs: 5 }), first = frame('overlap'), next = { ...frame('overlap'), call: { ...frame('overlap').call, callId: 'next-overlap-call' } };
+ (next.call.schema as { properties: { callId: { const: string } } }).properties.callId.const = next.call.callId;
+ let current = first, terminal = false, firstSubmissions = 0;
+ let release!: () => void; const barrier = new Promise<void>(resolve => { release = resolve; });
+ const forward: ControllerReviewForward = async raw => {
+  const args = raw as { phase: string; callResult?: { callId: string } };
+  if (args.phase === 'judgements') {
+   if (args.callResult!.callId === first.call.callId) { firstSubmissions++; await barrier; current = next; return env(next); } // daemon replay returns the cached next call
+   terminal = true; return env({ next: 'done', verdict: 'warn' });
+  }
+  return terminal ? env({ next: 'done', verdict: 'warn' }) : env(current);
+ };
+ try {
+  const pending = parse(await f.helper.forward({ phase: 'start', repo: f.dir }, { client: 'claude' }, forward)); assert.equal(pending.next, 'controller_call_pending');
+  await until(() => f.captures().length === 1); writeFileSync(f.gate, 'release'); await until(() => existsSync(f.closed));
+  const a = f.helper.forward({ phase: 'start', state: first.state }, { client: 'claude' }, forward);
+  const b = f.helper.forward({ phase: 'start', state: first.state }, { client: 'claude' }, forward);
+  await until(() => firstSubmissions > 0); await new Promise(resolve => setTimeout(resolve, 50)); release();
+  const one = parse(await a), two = parse(await b); assert.ok(['controller_call_pending', 'done'].includes(one.next)); assert.ok(['controller_call_pending', 'done'].includes(two.next));
+  for (let i = 0; i < 30 && !terminal; i++) { await f.helper.forward({ phase: 'start', state: first.state }, { client: 'claude' }, forward); await new Promise(resolve => setTimeout(resolve, 10)); }
+  assert.equal(terminal, true); assert.equal(firstSubmissions, 1); assert.equal(f.captures().length, 2, 'one actual CLI process for each identified call');
+  assert.equal(f.captures().filter(c => c.stdin.includes('next-overlap-call')).length, 1);
+ } finally { release?.(); await f.cleanup(); }
+});

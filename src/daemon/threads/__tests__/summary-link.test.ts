@@ -157,3 +157,22 @@ test("rebinding before the old port's close is seen settles what waited on it: t
 	assert.equal(await edit, undefined);
 	for (const p of [first.port2, second.port2, second.port1, a.port2, b.port1, b.port2]) p.close();
 });
+
+test("a summary job runs under the summary worker's own shared maintenance hold, not only its sender's", async () => {
+	const { enableMaintenanceLock, MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
+	const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
+	enableMaintenanceLock();
+	const block = new IndexingBlock(createIndexingBlock());
+	const { port1, port2 } = new MessageChannel();
+	const link = new SummaryWorkerLink(port1, block);
+	let heldWhileRunning = -1;
+	link.serveJobs(async () => {
+		heldWhileRunning = getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+	}, () => undefined);
+	const replied = new Promise(resolve => port2.on('message', (m: ChannelEnvelope) => { if (m.kind === 'reply') resolve(m); }));
+	port2.postMessage({ kind: 'request', requestId: 'held-job', method: SUMMARY_JOB, params: JOB, stream: true });
+	await replied;
+	assert.equal(heldWhileRunning, 1, 'held while the job ran');
+	assert.equal(getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK).length, 0, 'released after');
+	port1.close(); port2.close();
+});

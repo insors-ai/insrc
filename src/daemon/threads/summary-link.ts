@@ -29,6 +29,7 @@ import type { MessagePort } from 'node:worker_threads';
 
 import type { IndexJob } from '../../shared/types.js';
 import type { IndexerQueue } from '../../indexer/index.js';
+import { withBackgroundHold } from '../../shared/locks/maintenance-lock.js';
 import type { ChannelEnvelope, FrameEnvelope, ReplyEnvelope, RequestEnvelope } from './channel.js';
 import type { IndexingBlock } from './indexing-block.js';
 import type { SummarySweepProgress } from './status-board.js';
@@ -213,7 +214,10 @@ export class SummaryWorkerLink implements IndexerQueue {
 			port.postMessage({ kind: 'frame', requestId: m.requestId, frame: { stream: 'sweep', data: now ?? null } satisfies SweepFrame } satisfies FrameEnvelope);
 		};
 		const ticker = setInterval(report, 200);
-		return run(m.params as IndexJob).then(
+		// Under this worker's own shared maintenance hold: the code-indexing worker's hold ends with it,
+		// and this job may still be finishing a document then. (Maintenance starts only with both lanes
+		// idle, so it is never pending while a summary job runs: this wait does not block it.)
+		return withBackgroundHold(() => run(m.params as IndexJob)).then(
 			() => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId } satisfies ReplyEnvelope); },
 			(err: unknown) => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId, error: err instanceof Error ? err.message : String(err) } satisfies ReplyEnvelope); },
 		);

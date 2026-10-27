@@ -1,0 +1,5 @@
+Task 13 focused verification
+Node 22 TypeScript --noEmit: pass.
+Build writer/collector/completion suites plus canonical fingerprint suite: 213 tests, all pass.
+Real ensureBuildRecordOnCompletion twice preserves JSON/Markdown bytes, inode/mtime, BUILD timestamps/authorship, original provenance ordering/versions and fingerprint; TESTS bytes/ranAt remain untouched. Commit aliases preserve the prior representation. New Story files/commits and task results persist, with unchanged file-version provenance retained by commit tree comparison and new entries appended. Working source changes still invalidate source identity despite retained ledger entries. Malformed prior creates a fresh record and cannot retain old identity. Default normal validate writes still update their semantic timestamp.
+Full sweep deferred to task22. Daemon validation follows commit.

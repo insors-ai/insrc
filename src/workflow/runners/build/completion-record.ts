@@ -11,7 +11,7 @@
  * skips validate would otherwise complete with no BUILD ledger trace. This hook
  * — called from the approve path BEFORE the artifact is stamped — CREATE-or-MERGES
  * a `BUILD-<epicHash>-<storyId>` record from the current git changed set, reusing
- * the unchanged {@link persistBuildRecord} writer + {@link collectBuildChangeLog}
+ * the completion-aware {@link persistBuildRecord} writer + {@link collectBuildChangeLog}
  * collector. `persistBuildRecord` is a read-merge-write UPSERT, so on a build that
  * already wrote its record this is idempotent (prior fields, incl. `approvedAt`,
  * are preserved). Every failure is swallowed — completion must never fail because
@@ -19,7 +19,7 @@
  */
 
 import { storyWorkflowFiles } from './own-files.js';
-import { persistBuildRecord, type BuildRecord } from './standalone-record.js';
+import { persistBuildRecord, readBuildRecordForCompletion, type BuildRecord } from './standalone-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
 import { inheritedStoryStandalone } from '../../storage.js';
 import { collectBuildChangeLog } from './changed-files.js';
@@ -38,7 +38,8 @@ export async function ensureBuildRecordOnCompletion(
 ): Promise<{ readonly md: string; readonly json: string } | undefined> {
 	if (ref.epicHash.length === 0 || ref.storyId.length === 0) return undefined;
 	try {
-		const now = new Date().toISOString();
+		const prior = readBuildRecordForCompletion(repoPath, ref.epicHash, ref.storyId);
+  const now = new Date().toISOString();
 		// S001/t4 — the placement, INHERITED from the work item's definition artifact.
 		//
 		// Previously this wrote no `standalone` key at all, for a reason that was
@@ -58,7 +59,7 @@ export async function ensureBuildRecordOnCompletion(
 		const standaloneFlag = inheritedStoryStandalone(repoPath, ref.epicHash, ref.storyId);
 		const base: BuildRecord = {
 			meta: {
-				workflow: 'build', epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: now,
+				workflow: 'build', epicHash: ref.epicHash, storyId: ref.storyId, createdAt: prior?.meta.createdAt ?? now, updatedAt: now,
 				...(standaloneFlag === true ? { standalone: true } : {}),
 			},
 			body: { tasks: [] },
@@ -89,7 +90,7 @@ export async function ensureBuildRecordOnCompletion(
 			...base,
 			body: { ...base.body, changeLog },
 		};
-		return persistBuildRecord(repoPath, rec);
+		return persistBuildRecord(repoPath, rec, { mode: 'completion' });
 	} catch (err) {
 		getLogger('completion-record').warn(
 			{ epicHash: ref.epicHash, storyId: ref.storyId, err: err instanceof Error ? err.message : String(err) },

@@ -18,6 +18,7 @@
  * docs/plans/PLAN-build-ledger-plan-driven-builds-today-S001.md.
  */
 
+import { isDeepStrictEqual } from 'node:util';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -30,6 +31,7 @@ import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bi
 import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
 import { readTestRecord } from './test-record.js';
+import { reconcileCompletionChangeLog } from './changed-files.js';
 import { resolveStoryRangeBase } from './range-base.js';
 import { newestStoryCommit } from './story-commits.js';
 
@@ -317,7 +319,7 @@ function storyCommit(repoPath: string, epicHash: string, storyId: string): strin
 	return base !== undefined ? newestStoryCommit(repoPath, base, `${epicHash}/${storyId}`) : undefined;
 }
 
-export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {
+export function persistBuildRecord(repoPath: string, rec: BuildRecord, options: { readonly mode?: 'validate' | 'completion' | undefined } = {}): { md: string; json: string } {
 	// The json path is hash-flat (identity-free), so resolve + merge FIRST, then
 	// key the nested md folder on the MERGED record. mergeWithPrior preserves the
 	// original createdAt across an upsert, and for a Trivial standalone (no LLD)
@@ -337,15 +339,20 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// trailered commit advances it. A caller that knows better can supply
 	// `body.commit` explicitly and it wins for that write.
 	const commit = rec.body.commit ?? storyCommit(repoPath, rec.meta.epicHash, rec.meta.storyId) ?? priorCommit(repoPath, jsonPath) ?? headShortSha(repoPath);
-	const withCommit: BuildRecord = commit !== undefined
-		? { ...rec, body: { ...rec.body, commit } }
+	const completionPrior = options.mode === 'completion' ? readBuildRecordForCompletion(repoPath, rec.meta.epicHash, rec.meta.storyId) : undefined;
+ const stableCommit = options.mode === 'completion' && commit !== undefined && completionPrior?.body.commit !== undefined && sameCommitRevision(repoPath, commit, completionPrior.body.commit) ? completionPrior.body.commit : commit;
+ const withCommit: BuildRecord = stableCommit !== undefined
+		? { ...rec, body: { ...rec.body, commit: stableCommit } }
 		: rec;
-	const unstamped = mergeWithPrior(jsonPath, withCommit);
+	const prior = completionPrior;
+ const unstamped = mergeWithPrior(jsonPath, withCommit, options.mode === 'completion', prior);
 	// Store the folder identity the record is filed under, so its meta and its md
 	// location agree (ISSUE-764b88ed). It is resolved from the work item, never
 	// from the stamp itself, so a re-persist re-derives rather than echoes it.
-	const merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped)) } };
-	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
+	let merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped)) } };
+	const unchanged = options.mode === 'completion' && prior !== null && prior !== undefined && isDeepStrictEqual(completionSemantics(merged), completionSemantics(prior));
+ if (unchanged) merged = prior;
+ if (!unchanged) writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
 	const paths = pathsForMerged(repoPath, merged);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
 	// The id marker is prepended HERE, not in the renderer, so the renderer's
@@ -355,7 +362,7 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// BUILD was the one artifact that could not be approved by its md path
 	// (ISSUE-43d72766).
 	const md = `${artifactIdMarker(buildArtifactId(merged.meta.epicHash, merged.meta.storyId))}\n\n${renderBuildRecordMd(merged)}`;
-	writeAtomic(paths.md, md);
+	if (options.mode === 'completion') writeCompletionIfChanged(paths.md, md); else writeAtomic(paths.md, md);
 	return paths;
 }
 
@@ -371,7 +378,7 @@ export function persistStandaloneBuildRecord(repoPath: string, rec: StandaloneBu
 function readPriorRecord(jsonPath: string): BuildRecord | null {
 	try {
 		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as BuildRecord;
-		if (typeof parsed?.meta?.epicHash === 'string' && typeof parsed?.meta?.storyId === 'string') {
+		if (parsed?.meta?.workflow === 'build' && typeof parsed.meta.epicHash === 'string' && typeof parsed.meta.storyId === 'string' && typeof parsed.meta.createdAt === 'string' && typeof parsed.body === 'object' && parsed.body !== null && !Array.isArray(parsed.body) && (parsed.body.tasks === undefined || (Array.isArray(parsed.body.tasks) && parsed.body.tasks.every(t => typeof t === 'object' && t !== null && typeof t.id === 'string' && (t.passed === undefined || typeof t.passed === 'boolean')))) && (parsed.body.changeLog === undefined || (Array.isArray(parsed.body.changeLog) && parsed.body.changeLog.every(e => typeof e === 'object' && e !== null && typeof e.target?.file === 'string' && (e.target.version === undefined || typeof e.target.version === 'string') && typeof e.author === 'string' && typeof e.timestamp === 'string')))) {
 			return parsed;
 		}
 		log.warn({ jsonPath }, 'persistBuildRecord: prior record has no epicHash/storyId; treating as absent (fail-open)');
@@ -431,8 +438,8 @@ function repoPathOfArtifactJson(jsonPath: string): string {
 /** Merge a new record on top of any prior on-disk record (the upsert core).
  *  Prior `createdAt` + completion/rejection stamps win; tasks union; everything
  *  else takes the new write. */
-function mergeWithPrior(jsonPath: string, rec: BuildRecord): BuildRecord {
-	const prior = readPriorRecord(jsonPath);
+function mergeWithPrior(jsonPath: string, rec: BuildRecord, completion = false, capturedPrior?: BuildRecord | null): BuildRecord {
+	const prior = capturedPrior === undefined ? readPriorRecord(jsonPath) : capturedPrior;
 	if (prior === null) return seedFromTestRecord(jsonPath, rec);
 	const tasks = mergeTasks(prior.body.tasks, rec.body.tasks);
 	const meta: BuildRecord['meta'] = {
@@ -454,10 +461,35 @@ function mergeWithPrior(jsonPath: string, rec: BuildRecord): BuildRecord {
 		...(prior.meta.rejectReason   !== undefined ? { rejectReason:   prior.meta.rejectReason   } : {}),
 		...(prior.meta.reviewOverride !== undefined ? { reviewOverride: prior.meta.reviewOverride } : {}),
 	};
-	const body: BuildRecord['body'] = {
+	const changeLog = completion && rec.body.changeLog !== undefined ? reconcileCompletionChangeLog(repoPathOfArtifactJson(jsonPath), rec.body.changeLog, prior.body.changeLog ?? [], rec.body.commit, prior.body.commit) : undefined;
+ const body: BuildRecord['body'] = {
 		...prior.body,
 		...rec.body,
 		...(tasks !== undefined ? { tasks } : {}),
+  ...(changeLog !== undefined ? { changeLog } : {}),
 	};
-	return { meta, body };
+	return { ...(completion ? prior : {}), meta: completion && prior.meta.authoredBy !== undefined ? { ...meta, authoredBy: prior.meta.authoredBy } : meta, body };
+}
+
+/** Completion reads a valid matching prior before collecting new observations. */
+export function readBuildRecordForCompletion(repo: string, epic: string, story: string): BuildRecord | null {
+ const prior = readPriorRecord(artifactJsonPath(repo, buildArtifactId(epic, story)));
+ return prior?.meta.epicHash === epic && prior.meta.storyId === story ? prior : null;
+}
+function completionSemantics(record: BuildRecord): unknown {
+ const { createdAt: _created, updatedAt: _updated, ...meta } = record.meta;
+ return { ...record, meta };
+}
+function writeCompletionIfChanged(path: string, content: string): void {
+ try { if (readFileSync(path, 'utf8') === content) return; }
+ catch (err) { if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err; }
+ writeAtomic(path, content);
+}
+
+function sameCommitRevision(repo: string, a: string, b: string): boolean {
+ if (a === b) return true;
+ try {
+  const resolved = (v: string): string => execFileSync('git', ['rev-parse', '--verify', '--end-of-options', `${v}^{commit}`], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  return resolved(a) === resolved(b);
+ } catch { return false; }
 }

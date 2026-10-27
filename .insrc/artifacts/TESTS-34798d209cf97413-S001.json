@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:23:56.707Z",
+    "updatedAt": "2026-10-27T09:26:58.551Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -1562,8 +1562,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "9222dca90",
-        "ranAt": "2026-10-27T09:23:56.707Z",
+        "commit": "6f8ca43e4",
+        "ranAt": "2026-10-27T09:26:58.551Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1603,7 +1603,7 @@
             "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7582,
+            "durationMs": 7082,
             "titles": [
               {
                 "title": "DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence",

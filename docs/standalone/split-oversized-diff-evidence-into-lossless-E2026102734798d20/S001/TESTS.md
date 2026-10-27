@@ -342,7 +342,7 @@ Run at 2026-10-27T09:13:13.967Z on commit `7f3c1889b`. Tests check: **passed**. 
 
 ## t12
 
-Run at 2026-10-27T09:23:56.707Z on commit `9222dca90`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T09:26:58.551Z on commit `6f8ca43e4`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: DIFF-FINGERPRINT-SNAPSHOT**
 
@@ -361,4 +361,4 @@ Run at 2026-10-27T09:23:56.707Z on commit `9222dca90`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/__tests__/input-fingerprint.test.ts` | 0 | 3 | 7.6 s |  |
+| `src/workflow/code-review/__tests__/input-fingerprint.test.ts` | 0 | 3 | 7.1 s |  |

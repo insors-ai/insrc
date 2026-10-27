@@ -19,7 +19,8 @@
  * collected.
  */
 
-import { isAbsolute, relative } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { isAbsolute, relative, resolve } from 'node:path';
 
 import { gitDiffTool } from '../../../daemon/tools/builtins/git/diff.js';
 import type { GitDiffData } from '../../../daemon/tools/builtins/git/diff.js';
@@ -259,4 +260,28 @@ export async function collectBuildChangeLog(
 		author:    ctx.author,
 		timestamp: ctx.timestamp,
 	}));
+}
+
+/** Completion observations keep prior provenance only when its version still applies to this path. */
+export function reconcileCompletionChangeLog(repo: string, observed: ChangeLog, prior: ChangeLog, currentCommit: string | undefined, priorCommit: string | undefined): ChangeLog {
+ const key = (file: string): string => relative(repo, resolve(repo, file));
+ const pending = new Map(observed.map(entry => [key(entry.target.file), entry]));
+ const retained = new Set<string>(), out: ChangeLogEntry[] = [];
+ const cache = new Map<string, string | undefined>();
+ const treeEntry = (version: string, path: string): string | undefined => {
+  const id = JSON.stringify([version, path]); if (cache.has(id)) return cache.get(id);
+  let entry: string | undefined;
+  try { entry = execFileSync('git', ['ls-tree', '-z', version, '--', path], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { entry = undefined; }
+  cache.set(id, entry); return entry;
+ };
+ for (const old of prior) {
+  const path = key(old.target.file), next = pending.get(path); if (next === undefined) continue;
+  const from = old.target.version ?? priorCommit, to = next.target.version ?? currentCommit;
+  if (old.target.version !== undefined && to === undefined) throw new Error('Cannot reconcile known BUILD provenance without a resolved current commit');
+  const before = from === undefined || to === undefined || from === to ? undefined : treeEntry(from, path);
+  const applies = from === to || (from !== undefined && to !== undefined && before !== undefined && before === treeEntry(to, path));
+  if (applies) { out.push(old); retained.add(path); }
+ }
+ for (const [path, entry] of pending) if (!retained.has(path)) out.push(currentCommit !== undefined && entry.target.version === undefined ? { ...entry, target: { ...entry.target, version: currentCommit } } : entry);
+ return out;
 }

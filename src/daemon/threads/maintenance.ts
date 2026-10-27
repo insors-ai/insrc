@@ -218,7 +218,12 @@ export class MaintenanceController {
 				stopIfUnhealthy('before compacting');
 				const result = await this.deps.compact({
 					// Every worker closed its handle and none was started since: the environment is really closed.
-					beforeRename: async () => closed.allClosed && this.deps.workers.created() === closed.workers,
+					// By identity, not count: a worker that exited and was replaced keeps the count unchanged.
+					beforeRename: async () => {
+						if (!closed.allClosed) return false;
+						const live = this.deps.workers.live();
+						return this.deps.workers.created() === live.length && live.every(w => closed.acknowledged.has(w.threadId));
+					},
 				});
 				log.info({ ...result, reason }, 'maintenance: compaction done');
 				return result;
@@ -246,10 +251,11 @@ export class MaintenanceController {
 	}
 
 	/** Ask every ready worker to close its graph handle; wait for each answer (bounded). */
-	private async closeWorkerHandles(): Promise<{ readonly allClosed: boolean; readonly workers: number }> {
+	private async closeWorkerHandles(): Promise<{ readonly allClosed: boolean; readonly acknowledged: ReadonlySet<number> }> {
 		const workers = this.deps.workers.live();
 		const created = this.deps.workers.created();
 		let allClosed = created === workers.length;
+		const acknowledged = new Set<number>();
 		for (const w of workers) {
 			const { port1, port2 } = new MessageChannel();
 			const closed = new Promise<boolean>(resolve => {
@@ -259,11 +265,12 @@ export class MaintenanceController {
 			pushToWorker(w.port, GRAPH_CLOSE_OP, port2, [port2]);
 			const ok = await closed;
 			port1.close();
-			if (!ok) {
+			if (ok) acknowledged.add(w.threadId);
+			else {
 				allClosed = false;
 				log.warn({ threadId: w.threadId }, 'maintenance: a worker did not acknowledge graph.close');
 			}
 		}
-		return { allClosed, workers: created };
+		return { allClosed, acknowledged };
 	}
 }

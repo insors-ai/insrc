@@ -107,6 +107,34 @@ describe('unit', () => {
 		assert.equal(reclaimableAsked.length, 2);
 	});
 
+	test('the pre-rename check is by worker identity: a worker that exited and was replaced between the close acknowledgements and the rename fails it, though the count is unchanged', async () => {
+		// Fake workers that acknowledge graph.close, as startDaemonWorker does.
+		const fakeWorker = (threadId: number) => {
+			const { port1, port2 } = new MessageChannel();
+			port2.on('message', (m: { op?: string; args?: unknown }) => {
+				if (m.op === GRAPH_CLOSE_OP) { (m.args as MessagePort).postMessage('closed'); (m.args as MessagePort).close(); }
+			});
+			return { threadId, port: port1, close: () => { port1.close(); port2.close(); } };
+		};
+		const a = fakeWorker(101), b = fakeWorker(102), replacement = fakeWorker(103);
+		let live = [a, b];
+		const decisions: boolean[] = [];
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined,
+			workers: { live: () => live, created: () => live.length },
+			compact: async opts => {
+				decisions.push(await opts.beforeRename());          // every live worker acknowledged
+				live = [a, replacement];                             // b exited and was replaced: same count
+				decisions.push(await opts.beforeRename());
+				return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 };
+			},
+		});
+		await c.runNow();
+		assert.deepEqual(decisions, [true, false], 'the replacement never acknowledged graph.close');
+		for (const w of [a, b, replacement]) w.close();
+	});
+
 	test('reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required', async () => {
 		const MiB = 1024 * 1024;
 		const tree = (branch: number, leaf: number, overflow: number) => ({ treeBranchPageCount: branch, treeLeafPageCount: leaf, overflowPages: overflow });

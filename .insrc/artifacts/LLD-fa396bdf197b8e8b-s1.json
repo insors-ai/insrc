@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1793081987457-d5ktxu",
+    "runId": "wf-1793085995063-vangle",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-27T06:23:03.654Z",
+    "createdAt": "2026-10-27T07:31:14.138Z",
     "epicCreatedAt": "2026-10-27T05:43:26.134Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 192671,
+    "elapsedMs": 277143,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "fa396bdf197b8e8b",
     "epicSlug": "fix-code-review-freshness-gate-so",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1793081987457-d5ktxu",
-    "hldEffectiveHash": "7cc15a874e91e4a57d91555da608d339e85881bda95d0cc41c6133edfc2dd028",
+    "hldBaseRunId": "wf-1793085995063-vangle",
+    "hldEffectiveHash": "96a34482d75a212ba6972a2655bde77c9b8278caa1a1923adacd34c4a222b088",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "authoredBy": "controller",
@@ -31,12 +31,12 @@
       "references": [],
       "attachments": []
     },
-    "revision": 4,
+    "revision": 5,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 4,
-        "contentHash": "017ac21fcb277d41e5e1723e9788f098a8a1d262176f262d3dbe48376faba58d",
+        "number": 5,
+        "contentHash": "1f113b196a0945665b197daec11ee250a03ed6d3cfe87c5521f8ff360271a4ec",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -46,7 +46,7 @@
       },
       "signoffs": [],
       "review": {
-        "revision": 4,
+        "revision": 5,
         "reviewer": {
           "id": "insrc:daemon",
           "kind": "agent",
@@ -59,59 +59,38 @@
           "med": 0,
           "low": 7
         },
-        "at": "2026-10-27T06:35:48.872Z",
+        "at": "2026-10-27T07:39:16.847Z",
         "report": {
           "entityId": "LLD-fa396bdf197b8e8b-s1",
           "type": "change-log-entry",
           "relation": "reviews",
-          "fragment": "review-fe3ec081db71a0b43888b8fce4ec19d5"
+          "fragment": "review-904267914ada54e86187d9a70fdee93d"
         }
       },
       "approval": {
-        "revision": 4,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-27T06:35:49.008Z"
+        "at": "2026-10-27T07:39:16.853Z"
       }
     },
-    "rangeBase": "4217e6555ba01769bfac29df350e959943cc89a2",
+    "rangeBase": "dea72feb18e51b95efae23895f1398b4c54036bc",
     "questionResolutions": {
-      "q71ed78b7": {
-        "question": "Graded partial in the audit (ts1): the Story record has no acceptance criteria; ac1 to ac6 were written in this LLD from the approved issue's fix intent and the review rounds.",
+      "qfa21e2bd": {
+        "question": "Graded partial in the audit (ts1): the Story record has no acceptance criteria; ac1 to ac9 were written in this LLD from the approved issue, the review rounds and the user's decision to bring the watcher into scope. The user confirmed the LLD as the acceptance baseline on 2026-10-27.",
         "status": "resolved",
-        "choice": "Confirm LLD as baseline",
-        "rationale": "User chose option 2: ac1 to ac6 in the approved LLD govern acceptance; derived from the approved issue's fix intent and the review rounds; the Story record stays without criteria.",
-        "resolvedAt": "2026-10-27T06:42:17.229Z"
-      },
-      "qc02cc01e": {
-        "question": "That an entity-less changed file is left out of a full review's grounding rests on review round 1; only the symbol list of grounding.ts was read here.",
-        "status": "resolved",
-        "choice": "Verify before proceeding",
-        "rationale": "Verified 2026-10-27 in src/workflow/code-review/grounding.ts:88-113: symbols are built by looping each changed file's entities, so an entity-less file adds none; the code-review step handler falls back to the diff review only when the whole symbols list is empty (handler.ts:305-372). The omission in a mixed set is confirmed.",
-        "resolvedAt": "2026-10-27T06:43:15.519Z"
-      },
-      "q3d42c913": {
-        "question": "Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent.",
-        "status": "resolved",
-        "choice": "Explicitly adopt issue intent",
-        "rationale": "User chose option 1: the approved issue's fix intent is the scoring basis for the three constraints; the audit stays graded partial because the Story has no acceptance criteria, Epic constraints or HLD contracts.",
-        "resolvedAt": "2026-10-27T06:48:16.439Z"
-      },
-      "qbd1ff74d": {
-        "question": "The Story title still says 'the wait cannot deadlock'; the design does not address a wait deadlock because the controller-side wait is bounded by codeReview.freshnessTimeoutMs, and the review-session timeout is handled in another session.",
-        "status": "resolved",
-        "choice": "Rename to bounded freshness wait",
-        "rationale": "User chose option 1: the Story is about the bounded controller-side freshness wait and stale-file indexing; the review-session timeout is out of scope (another session). The approved issue and LLD keep their original title text.",
-        "resolvedAt": "2026-10-27T06:52:02.757Z"
+        "choice": "Use the confirmed LLD baseline",
+        "rationale": "Same decision the user gave on 2026-10-27 for the earlier wording: LLD ac1 to ac9 govern acceptance; the Story record stays without criteria.",
+        "resolvedAt": "2026-10-27T07:40:34.059Z"
       }
     }
   },
   "body": {
     "summary": {
-      "prose": "A changed file the index holds is brought up to date without a full reindex. A file that no longer exists is never stale. A file the index would never hold (an unsupported type, a lock file, a generated file or a path on the ignore list) is not stale. Any other stale changed file, whether it was never indexed or was indexed before a later edit the watcher missed, is queued once for indexing by the daemon's freshness handler, so a later poll of the gate finds it fresh. A file that cannot be indexed is never declared fresh: it stays stale until the existing freshness time-out sends the review to the degraded diff review. The review-session timeout seen on 2026-10-27 is a different defect handled elsewhere and is not part of this Story.",
+      "prose": "The index no longer misses files in directories that are created together with their parent. When the watcher sees a new directory that has subdirectories, it adds a watch for that directory and then reports every file already in it, so the files reach the index and later writes are seen too. As a backstop for what the watcher cannot know about, the code-review freshness check also asks for any stale changed file the index holds to be indexed once per modification time, treats a deleted file or a file the index never holds as not stale, and never calls a file fresh that is still stale after its request, so a file that cannot be indexed ends in the existing degraded diff review. The review-session timeout seen on 2026-10-27 is a different defect handled elsewhere and is not part of this Story.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -122,7 +101,7 @@
         "storyId": "s1",
         "owns": [],
         "depends": [],
-        "internal": "Code-review freshness gate cannot clear for entity-less changed files and the wait cannot deadlock"
+        "internal": "Index changed files the watcher misses and let the code-review freshness gate request them"
       },
       "adjacentBoundaries": [],
       "rolloutPhase": "standalone",
@@ -131,6 +110,77 @@
     "contractDetails": {
       "surfaceLevel": "internal",
       "api": [
+        {
+          "name": "Watcher.addRepo",
+          "signature": "(repoPath: string, ignore?: readonly string[]) => Promise<void>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Absolute path of the repo to watch",
+              "optional": false
+            },
+            {
+              "name": "ignore",
+              "type": "readonly string[]",
+              "purpose": "Directory names to leave out of the watch, the scan and the per-directory watches; defaults to IGNORE_DIRS",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the repo subscription exists; unchanged"
+          },
+          "errors": [
+            {
+              "type": "error thrown by the watcher backend",
+              "condition": "The repo subscription cannot be created, as today"
+            }
+          ],
+          "preconditions": [
+            "The repo path exists"
+          ],
+          "postconditions": [
+            "For each create event whose path is a directory, not a symbolic link, and with no ignored segment below the repo root, and that has no subscription of its own yet: if the directory has subdirectories, a recursive subscription for it is created first; then a create event is emitted for every file in its tree, skipping ignored directories and symbolic links",
+            "Events from a directory's own subscription reach the same debounce and handlers as the repo's events, and a create event for a directory inside it is handled the same way",
+            "A directory whose subscription fails is logged and still scanned, so its files are reported once"
+          ]
+        },
+        {
+          "name": "Watcher.removeRepo",
+          "signature": "(repoPath: string) => Promise<void>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Absolute path of the repo to stop watching",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the repo subscription and every per-directory subscription under it are released"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "No subscription remains for the repo or for any directory under it"
+          ]
+        },
+        {
+          "name": "Watcher.close",
+          "signature": "() => Promise<void>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once every subscription, per-directory ones included, is released"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The map of per-directory subscriptions is empty"
+          ]
+        },
         {
           "name": "computeCodeReviewFreshness",
           "signature": "(repoPath: string, changedFiles: readonly string[], deps: FreshnessDeps) => Promise<FreshnessResult>",
@@ -258,12 +308,20 @@
     },
     "dataModelChanges": [
       {
+        "entity": "Watcher per-directory subscriptions",
+        "change": "new",
+        "details": "A Map in the Watcher from the absolute path of a directory that was created together with subdirectories to its @parcel/watcher subscription, with the ignore list of its repo held per repo. Entries are added on a create event, removed on a delete event for that directory, and cleared by removeRepo and close. In memory only; empty after a restart, where the start-up delta pass covers files changed while the daemon was down.",
+        "callSites": [
+          "src/indexer/watcher.ts:30-103"
+        ]
+      },
+      {
         "entity": "FreshnessDeps",
         "change": "field-add",
         "details": "selection: (repoPath: string, file: string) => Promise<FileSelection> ; requestedAt: (repoPath: string, file: string) => number | undefined (unix ms of the last index request for the file, from a daemon-side map that lives for the daemon process)",
         "schemaDiff": "+ readonly selection: (repoPath: string, file: string) => Promise<FileSelection>;\n+ readonly requestedAt: (repoPath: string, file: string) => number | undefined;",
         "callSites": [
-          "src/workflow/code-review/freshness.ts:32-44",
+          "src/workflow/code-review/freshness.ts:65-90",
           "src/daemon/handler-runtime.ts:596-626"
         ]
       },
@@ -273,8 +331,8 @@
         "details": "unindexedFiles: readonly string[], a subset of staleFiles. Additive: the controller-side handler reads isProcessing, inFlight, pendingCodeIndexJobs and staleFiles and ignores the new field.",
         "schemaDiff": "+ readonly unindexedFiles: readonly string[];",
         "callSites": [
-          "src/workflow/code-review/freshness.ts:47-57",
-          "src/daemon/steps/code-review-step/handler.ts:305-345",
+          "src/workflow/code-review/freshness.ts:65-90",
+          "src/daemon/steps/code-review-step/handler.ts:305-372",
           "src/workflow/code-review/__tests__/freshness.test.ts:97-114"
         ]
       },
@@ -291,14 +349,21 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "The selection seam throws for a changed file that exists and has no entities, for example a permission error while selectFile reads a large file",
-          "detection": "The compute catches an exception from deps.selection for that file",
-          "response": "The file is treated as selected and kept stale, but it is not listed in unindexedFiles, so nothing is queued for it",
-          "userImpact": "The gate may wait for the freshness time-out for that file and then fall back to the degraded diff review, as before this fix",
+          "scenario": "The per-directory subscription for a new directory cannot be created (an inotify limit, a permission error, the directory removed first)",
+          "detection": "The subscribe call rejects and the watcher catches the rejection",
+          "response": "A warning with the directory is logged, no entry is kept for it, and the scan still reports the files present, so they are indexed once",
+          "userImpact": "Files written later in that directory are not seen by the watcher; the freshness gate still requests them when a review asks, and the start-up delta pass covers them after a restart",
           "recoverable": true
         },
         {
-          "scenario": "The daemon handler cannot queue the file job (the queue is stopped, as during shutdown)",
+          "scenario": "The scan of a new directory fails part-way (a subdirectory removed or unreadable during the walk)",
+          "detection": "A readdir or lstat call throws for one entry",
+          "response": "That entry is skipped, the rest of the tree is reported, and a debug line is logged",
+          "userImpact": "At most the files under the unreadable entry are not reported by the scan",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon handler cannot queue the file job for a stale file (the queue is stopped, as during shutdown)",
           "detection": "queue.enqueue returns without queueing, so the re-read of the queue state after the request still shows no code index work",
           "response": "The file stays stale; it is not declared fresh",
           "userImpact": "The gate waits for the freshness time-out and the review runs as a degraded diff review",
@@ -312,6 +377,13 @@
           "recoverable": true
         },
         {
+          "scenario": "The selection seam throws for a changed file that exists and has no entities",
+          "detection": "The compute catches an exception from deps.selection for that file",
+          "response": "The file is treated as selected and kept stale, but it is not listed in unindexedFiles, so nothing is queued for it",
+          "userImpact": "The gate may wait for the freshness time-out for that file and then fall back to the degraded diff review",
+          "recoverable": true
+        },
+        {
           "scenario": "A changed file cannot be stat'ed (it was deleted, or a permission error)",
           "detection": "The real fileMtime catches the statSync failure and returns 0",
           "response": "The compute settles the file before any entity or selection read: it is not stale, not listed as unindexed and nothing is requested, as today",
@@ -321,40 +393,56 @@
       ],
       "edgeCases": [
         {
+          "input": "mkdir -p a/b/c followed by a file written in a/b/c at once, or seconds later",
+          "expected": "The create event for a gets a per-directory subscription and a scan; the file present at the scan is reported by it, and a file written later in a/b/c is reported by the new subscription"
+        },
+        {
+          "input": "A single new directory with no subdirectories",
+          "expected": "No per-directory subscription is created, because the repo's own watch already covers it; the scan reports any files already in it"
+        },
+        {
+          "input": "A directory created under an ignored directory name (node_modules, out, .insrc, a name from the repo's ignore list)",
+          "expected": "Not subscribed to and not scanned"
+        },
+        {
+          "input": "A new directory that contains an ignored subdirectory and other directories",
+          "expected": "The ignored subdirectory is skipped by the scan and by the per-directory subscription's ignore list; the others are covered"
+        },
+        {
+          "input": "A symbolic link to a directory appears in the tree",
+          "expected": "It is not followed, so no loop and no second copy of the files"
+        },
+        {
+          "input": "A new directory is deleted again",
+          "expected": "Its delete event releases its per-directory subscription and drops its map entry; files that were reported stay until the indexer handles their delete events"
+        },
+        {
+          "input": "The repo's own watch and a per-directory watch both report the same file",
+          "expected": "Two events reach the Indexer, which queues one 'file' job because the queue replaces a queued job for the same path"
+        },
+        {
+          "input": "A directory is moved in from outside the repo with a large tree",
+          "expected": "The scan reports every file with a supported type; the Indexer drops the others as it does today; the queue holds one job per path"
+        },
+        {
           "input": "A changed .ts file that was deleted after the change",
-          "expected": "Its mtime reads as 0, so it is not stale and not requested even though selectFile would class the missing path as selected"
+          "expected": "Its mtime reads as 0, so the gate does not call it stale and does not request it, even though selectFile would class the missing path as selected"
         },
         {
           "input": "A changed file of an unsupported type (for example a .png) or a lock file, with the repo last fully indexed before the change",
-          "expected": "Not stale and never queued: selection is 'not-code', so the repo-level lastIndexed is not consulted (it makes such a file stale today)"
+          "expected": "Not stale and never queued: selection is 'not-code', so the repo-level lastIndexed is not consulted"
         },
         {
           "input": "A changed ordinary Markdown file the index has no entities for",
           "expected": "Selected, because the artifact parser holds Markdown: stale, listed as unindexed and queued once, then fresh when its File entity exists"
         },
         {
-          "input": "A changed generated or minified file, or a path under an ignored directory such as node_modules or out, with no entities",
-          "expected": "Not stale and never queued"
-        },
-        {
-          "input": "A changed code file the watcher missed, with an idle queue",
-          "expected": "Listed in staleFiles and unindexedFiles on the first poll; the handler queues one job and the same reply shows isProcessing true; a later poll finds a File entity with a watermark newer than the mtime and the file is fresh"
-        },
-        {
           "input": "An already indexed file edited after its entities were written, where the watcher missed the update and the queue is idle",
-          "expected": "Stale because its watermark is older than its mtime, listed in unindexedFiles and queued once; the watermark comparison itself is unchanged; a later poll finds the new entities and the file is fresh"
+          "expected": "Stale because its watermark is older than its mtime, listed in unindexedFiles and queued once; a later poll finds the new entities and the file is fresh"
         },
         {
           "input": "A requested file is edited again after the request",
           "expected": "Its mtime is newer than the recorded request time, so it is listed as unindexed again and requested once more"
-        },
-        {
-          "input": "The same stale file appears on two polls before its job runs",
-          "expected": "It is queued once: the recorded request time is at or after its mtime so it is no longer listed, and the queue replaces a queued job for the same path in any case"
-        },
-        {
-          "input": "A file's entities are being rewritten by its index job (the old entities are deleted before the new ones are written)",
-          "expected": "A poll in that window sees no entities, so the file is judged by selection and, because it was requested at or after its mtime, is stale but not listed again; it becomes fresh once the new entities exist"
         },
         {
           "input": "A changed set with one indexed file and one file whose indexing fails",
@@ -362,46 +450,66 @@
         },
         {
           "input": "The daemon restarts while a changed file is stale",
-          "expected": "The request map is empty, so the file is requested again once; the start-up delta pass may also queue it, and the queue replaces a queued job for the same path"
+          "expected": "The per-directory subscriptions and the request map are empty; the start-up delta pass queues files changed while the daemon was down, and a still-stale file is requested again once by the gate"
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "A changed file with indexed entities is stale exactly when its newest entity indexedAt is older than the file's mtime, and the compute never writes or queues anything",
+          "text": "The repo subscription, its ignore list, the 200 ms debounce and the handlers' view of events as {type, path} are unchanged; a file event from a per-directory subscription is indistinguishable from one from the repo subscription",
           "source": "c1"
         },
         {
-          "text": "A changed file that cannot be stat'ed has mtime 0 and is never stale on its own",
-          "source": "c1"
-        },
-        {
-          "text": "A file with a parser leaves a File entity when indexed, and a file event deletes the file's old entities before writing the new ones; selectFile stays the one rule for what the index holds",
+          "text": "A directory created alone, or a child created later than its parent, is already watched by the repo subscription, so it gets no second subscription",
           "source": "c2"
         },
         {
-          "text": "The queued-or-running 'file' job for the repo keeps making isProcessing true, and a queued file job for the same path replaces the earlier one",
+          "text": "The Indexer drops events whose extension is not supported and a queued file job for the same path replaces the earlier one, so repeated events cost nothing",
+          "source": "c1"
+        },
+        {
+          "text": "A changed file with indexed entities is stale exactly when its newest entity indexedAt is older than the file's mtime, and the compute never writes or queues anything",
           "source": "c3"
         },
         {
-          "text": "The controller-side handler keeps reading isProcessing, inFlight, pendingCodeIndexJobs and staleFiles with the same meaning, and its freshness time-out and diff-only fallback are unchanged",
+          "text": "A changed file that cannot be stat'ed has mtime 0 and is never stale on its own",
           "source": "c3"
         },
         {
-          "text": "The full review falls back to the diff review only when grounding has no symbols at all, so a file left out of the graph in a mixed set must be kept stale rather than reported fresh",
-          "source": "c3"
+          "text": "A file with a parser leaves a File entity when indexed, and a file event deletes the file's old entities before writing the new ones; selectFile stays the one rule for what the index holds",
+          "source": "c4"
+        },
+        {
+          "text": "The controller-side handler keeps reading isProcessing, inFlight, pendingCodeIndexJobs and staleFiles with the same meaning, and its freshness time-out and diff-only fallback are unchanged; the full review falls back to the diff review only when grounding has no symbols at all, so a file left out of the graph in a mixed set must be kept stale rather than reported fresh",
+          "source": "c5"
         },
         {
           "text": "The handler, routing, long-review, RPC fallback and review-stream-freshness tests, which fake the freshness result, keep passing without edits",
-          "source": "c5"
+          "source": "c6"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test run with tsx (npx tsx --test), tests co-located in __tests__, as in the existing src/workflow/code-review/__tests__/freshness.test.ts and src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+      "testFramework": "node:test run with tsx (npx tsx --test), tests co-located in __tests__, as in the existing src/workflow/code-review/__tests__/freshness.test.ts, src/daemon/steps/code-review-step/__tests__/handler.test.ts and src/indexer/__tests__/ignore-dirs.test.ts",
       "testLevels": [
         {
+          "level": "integration",
+          "purpose": "The real @parcel/watcher in a temporary directory: the Watcher reports files in directories created together with their parent, ignores what it must, and releases what it holds",
+          "subjects": [
+            "src/indexer/__tests__/watcher-new-directories.test.ts: after addRepo, mkdir -p a/b/c with a file written in it at once yields a create event for that file, and a second file written in a/b/c three seconds later yields an event too (the case that produced no event before the fix)",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: a directory tree with files created in one call yields a create event for every file in the tree, including files in nested directories, and a symbolic link to a directory is not followed",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: files inside a new directory whose name is on the ignore list (node_modules) and inside an ignored subdirectory of a new directory yield no events, at creation and when written later",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: after a new nested directory is deleted and created again with the same path, files written in it are reported again",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: after close() no handler is called for later writes, and after removeRepo() the repo's per-directory subscriptions deliver nothing",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: a new nested directory that cannot be read (mode 000, skipped when running as root) does not throw or stop later events for other directories"
+          ],
+          "fixturesNeeded": [
+            "a temporary repo directory per test, removed afterwards",
+            "a polling wait with a time limit instead of fixed sleeps"
+          ]
+        },
+        {
           "level": "unit",
-          "purpose": "The pure compute: missing files are settled first, stale held files are listed for a request once per mtime, files the index never holds are not stale, and nothing is declared fresh without fresh entities",
+          "purpose": "The pure freshness compute: missing files are settled first, stale held files are listed for a request once per mtime, files the index never holds are not stale, and nothing is declared fresh without fresh entities",
           "subjects": [
             "src/workflow/code-review/__tests__/freshness.test.ts: a changed file whose mtime is 0 (deleted or unstattable) is not stale, not in unindexedFiles, and neither the entity nor the selection seam decides it, even when selection would say selected",
             "src/workflow/code-review/__tests__/freshness.test.ts: a file with no entities and selection 'not-code' or 'excluded-by-ignore' is not stale, whatever the repo-level lastIndexed is",
@@ -442,12 +550,12 @@
         },
         {
           "level": "live",
-          "purpose": "The observed case and the missed update on a running daemon",
+          "purpose": "The observed case on a running daemon, end to end",
           "subjects": [
-            "Reported by the builder, not run by the gate: in a new directory create a small .ts file, call codeReview.freshness for a changed set that names it, see it listed and queued, and see it fresh within a few polls with the daemon's real index; then edit an already indexed file the same way and see it listed, queued and fresh"
+            "Reported by the builder, not run by the gate: with the rebuilt daemon running, create mkdir -p dir/sub with a small .ts file in it at once, then another file three seconds later, and see both indexed (codeReview.freshness reports them not stale) without a restart; then edit an already indexed file and see it fresh"
           ],
           "fixturesNeeded": [
-            "a running daemon with this repo registered"
+            "a running daemon with this repo registered and the rebuilt watcher"
           ]
         }
       ],
@@ -494,118 +602,158 @@
           "provingTests": [
             "src/workflow/code-review/__tests__/freshness.test.ts: with an idle queue, a file with entities whose watermark is older than its mtime (a missed update) is in staleFiles and unindexedFiles, and the selection seam is not consulted for it"
           ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "src/indexer/__tests__/watcher-new-directories.test.ts: after addRepo, mkdir -p a/b/c with a file written in it at once yields a create event for that file, and a second file written in a/b/c three seconds later yields an event too (the case that produced no event before the fix)",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: a directory tree with files created in one call yields a create event for every file in the tree, including files in nested directories, and a symbolic link to a directory is not followed"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "src/indexer/__tests__/watcher-new-directories.test.ts: files inside a new directory whose name is on the ignore list (node_modules) and inside an ignored subdirectory of a new directory yield no events, at creation and when written later",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: after a new nested directory is deleted and created again with the same path, files written in it are reported again",
+            "src/indexer/__tests__/watcher-new-directories.test.ts: after close() no handler is called for later writes, and after removeRepo() the repo's per-directory subscriptions deliver nothing"
+          ]
+        },
+        {
+          "criterionId": "ac9",
+          "provingTests": [
+            "src/indexer/__tests__/watcher-new-directories.test.ts: a new nested directory that cannot be read (mode 000, skipped when running as root) does not throw or stop later events for other directories"
+          ]
         }
       ]
     },
     "migration": {
-      "stateBefore": "computeCodeReviewFreshness judges a changed file with entities by its watermark against its mtime, and a file with no entities by the repo-level lastIndexed against its mtime (bundle c1). lastIndexed is written when a full index completes and also at daemon start-up, right after the delta file jobs are enqueued and before they finish, so it cannot show that any one file is indexed (bundle c2). Nothing in the gate asks for indexing, and the codeReview.freshness handler is read-only (bundle c3). A deleted file has mtime 0 and is never stale today. A changed file the watcher missed, new or edited, or a file of a type the index never holds, stays stale until the next full reindex or a daemon restart.",
-      "stateAfter": "A changed file whose mtime is 0 is settled first and is never stale, as today. A file with entities keeps its watermark comparison. A file with no entities is classed by selectFile: a file the index would never hold is not stale; a selected file is stale. Every stale file the index holds, with an older watermark or without entities, is listed as unindexed, and the codeReview.freshness handler queues one file job for it per mtime and re-reads the queue, so a later poll finds it fresh. A file that is still stale after its request stays stale and is not requested again for the same mtime, so the existing freshness time-out sends the review to the degraded diff review. FreshnessResult has one more field, unindexedFiles. No stored data changes.",
+      "stateBefore": "The Watcher holds one @parcel/watcher subscription per repo and hands its events to the Indexer (bundle c1). On Linux, a directory created together with its parent is never watched, so files written into it, even much later, produce no event until the daemon restarts and its start-up delta pass re-queues them (bundle c2). The freshness check judges a changed file with entities by its watermark and a file without entities by the repo-level lastIndexed, which is also set at start-up before the delta jobs finish (bundles c3 and c4); nothing in the gate asks for indexing and the codeReview.freshness handler is read-only (bundle c5). A deleted file has mtime 0 and is never stale today.",
+      "stateAfter": "The Watcher gives each new directory that has subdirectories its own subscription, created before its tree is scanned, and reports the files already in it; the subscription is released when the directory is deleted, on removeRepo and on close, and a failed subscription is logged with the scan kept. The freshness check settles a file with mtime 0 first, classes an entity-less file with selectFile, lists every stale file the index holds as unindexed, and the codeReview.freshness handler queues one file job for it per mtime and re-reads the queue; a file still stale after its request stays stale, so the existing freshness time-out sends the review to the degraded diff review. FreshnessResult has one more field, unindexedFiles. No stored data changes.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the selection and requestedAt seams to FreshnessDeps and the unindexedFiles field to FreshnessResult, and the new rules to the compute with the mtime-0 case settled first and every stale held file listed, with the real selection seam in realFreshnessGraphDeps",
+          "action": "Change the Watcher so a create event for a directory under a watched repo adds its own subscription when it has subdirectories, then scans the tree and emits create events for its files, with the per-directory subscriptions released on delete, removeRepo and close",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "In the codeReview.freshness handler, keep the in-memory request map, supply requestedAt from it, queue one file job for each file in unindexedFiles, record the time, and re-read the queue state for the reply",
+          "action": "Add the selection and requestedAt seams to FreshnessDeps and the unindexedFiles field to FreshnessResult, and the new rules to the compute with the mtime-0 case settled first and every stale held file listed, with the real selection seam in realFreshnessGraphDeps",
           "rollbackable": true
         },
         {
           "order": 3,
-          "action": "Update the existing whole-result assertions in freshness.test.ts, add the unit, integration and contract tests including the idle-queue missed-update case, and run the handler, routing, long-review, RPC fallback and review-stream-freshness tests unchanged",
+          "action": "In the codeReview.freshness handler, keep the in-memory request map, supply requestedAt from it, queue one file job for each file in unindexedFiles, record the time, and re-read the queue state for the reply",
           "rollbackable": true
         },
         {
           "order": 4,
-          "action": "Restart the daemon so the running process uses the new handler; the request map starts empty, which only means each file is requested once more",
+          "action": "Add the watcher integration test and the freshness unit, integration and contract tests, update the existing whole-result assertions in freshness.test.ts, and run the handler, routing, long-review, RPC fallback and review-stream-freshness tests unchanged",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Rebuild and restart the daemon so the running process uses the new watcher and handler; the per-directory subscriptions and the request map start empty, and the start-up delta pass covers files changed while it was down",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "The freshness IPC reply only gains unindexedFiles; clients that read isProcessing, inFlight, pendingCodeIndexJobs and staleFiles are unaffected. The controller-side wait loop, its freshness time-out and the diff-only fallback are unchanged. A client talking to an older daemon sees no unindexedFiles and the old behaviour.",
+      "backwardCompat": "The Watcher keeps its public methods and the {type, path} event shape, so the Indexer and both places that construct a Watcher need no change; only the set of events grows, by create events for files in directories the watcher previously did not cover. The freshness IPC reply only gains unindexedFiles; clients that read isProcessing, inFlight, pendingCodeIndexJobs and staleFiles are unaffected, and the controller-side wait loop, its freshness time-out and the diff-only fallback are unchanged. A client talking to an older daemon sees no unindexedFiles and the old behaviour.",
       "zeroDowntime": false,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Classify with the index rule, and request indexing of every stale file the index holds",
-        "oneLineSummary": "Settle missing files first; class entity-less files with selectFile; and list every other stale file (entity-less and selected, or with an outdated watermark) so the daemon queues one file job for it per mtime.",
-        "approach": "A changed file with mtime 0 is settled first, as today. A file with entities keeps its watermark comparison and, when its watermark is behind its mtime, is stale and listed in a new unindexedFiles field. A file with no entities is classed by the existing selectFile rule through a new read-only selection seam: 'not-code' and 'excluded-by-ignore' files are not stale, and a 'selected' file is stale and listed. A listed file is left out of the list only when the daemon has already requested it at or after its mtime. The codeReview.freshness daemon handler queues one 'file' job for each listed file, records the request time, and re-samples the queue so the same reply shows isProcessing. A requested file that is still stale stays stale, so the controller-side wait ends through its existing freshness time-out in the degraded diff review.",
+        "name": "Close the watcher blind spot with a per-directory watch and a scan, and keep the gate's index request as a backstop",
+        "oneLineSummary": "The watcher watches and scans every new directory that has subdirectories, so the index stays current; the freshness gate also requests indexing of any stale file the index holds.",
+        "approach": "In the Watcher, a create event for a directory under a watched repo (not on the ignore list) first adds a dedicated recursive subscription for that directory when it has subdirectories, then walks the new tree and emits a create event for each file in it; the subscription is released on delete, removeRepo and close, and a failure to subscribe is logged with the scan kept. Separately, the freshness compute lists every stale changed file the index holds and the codeReview.freshness handler queues one file job for it per mtime, after settling files with mtime 0 first; a file still stale after its request stays stale, so the existing time-out reaches the degraded diff review.",
         "pros": [
-          "Fixes every way a held file stays stale: never indexed, or indexed and then edited with the watcher missing the update",
-          "A file the index will never hold stops counting as stale",
-          "Reuses selectFile and the existing file job; no new storage",
+          "Fixes the cause: the index stays current for every consumer, not only for a review",
+          "Reuses the existing handlers, queue and file job; no new storage",
+          "The gate's request covers what the watcher cannot know about (a restart gap, a failed watch)",
           "A file the index cannot index is never declared fresh, so a failure still reaches the degraded diff review"
         ],
         "cons": [
-          "The freshness IPC gains a side effect (it queues work)",
-          "A file that cannot be indexed keeps the gate waiting until the freshness time-out (120 s by default) before the diff review"
+          "Two changes in two modules instead of one",
+          "Each such directory is watched twice, which uses more inotify watches"
         ],
         "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Classification only",
-        "oneLineSummary": "Treat files the index would never hold as fresh; leave every other stale file stale.",
-        "approach": "Only the compute changes: it drops 'not-code' and 'excluded-by-ignore' files from staleFiles. Nothing is queued. A held file the watcher missed, new or edited, stays stale until a full reindex, a daemon restart or a later edit.",
+        "name": "Watcher fix only",
+        "oneLineSummary": "Only the watcher changes; the freshness gate stays read-only.",
+        "approach": "The Watcher watches and scans new directories as in a1; the freshness compute and handler do not change.",
         "pros": [
-          "Smallest change; the freshness IPC stays read-only",
-          "Removes the stale-forever case for unsupported file types, lock files and ignored paths"
+          "Smallest change to the review path",
+          "Fixes the observed cause"
         ],
         "cons": [
-          "Does not fix the observed case: the ten fixture files are code files the index would select",
-          "Does not fix a missed update of an indexed file"
+          "Leaves the gate unable to recover from any other missed event, including a failed watch",
+          "A review of files the daemon missed while it was down still waits for the time-out and degrades"
         ],
         "costEstimate": "S",
-        "reasonRejected": "Safe and small but leaves the observed case and the missed update unfixed; it violates the first fix criterion."
+        "reasonRejected": "Fixes the cause but leaves the gate unable to recover from a failed watch or a restart gap; partial on the second fix criterion."
       },
       {
         "id": "a3",
-        "name": "Per-file index record",
-        "oneLineSummary": "The indexer records, for every file event it handles, a per-file marker with the time and outcome, and freshness reads that marker.",
-        "approach": "The indexer writes a small record per file path with the time and outcome for the watcher path, the index.file path and the full index; freshness compares that record with the mtime.",
+        "name": "Gate request only",
+        "oneLineSummary": "Leave the watcher alone and let the freshness gate request indexing of stale files.",
+        "approach": "The freshness compute lists every stale held file and the handler queues one file job per mtime; the watcher is unchanged.",
         "pros": [
-          "The decision is exact for every outcome, including failures",
-          "Independent of what entities a parser happens to produce"
+          "Small and contained to the review path",
+          "No change to inotify usage"
         ],
         "cons": [
-          "New stored data and a write on every file event",
-          "Existing repositories have no records until a full index",
-          "Much larger than the defect needs"
+          "Does not fix the cause: the unwatched directories stay unwatched, so everything else that relies on the index stays stale for files in them until a restart",
+          "Every review of such files pays a queue round trip"
         ],
-        "costEstimate": "L",
-        "reasonRejected": "Exact but a new stored record and a write on every file event for a defect that two small rules fix; partial on keeping existing behaviour and tests."
+        "costEstimate": "M",
+        "reasonRejected": "A workaround that leaves the cause, which the user named as the crux; it violates the first fix criterion."
       },
       {
         "id": "a4",
-        "name": "Advance the repo watermark on incremental indexing",
-        "oneLineSummary": "Make each incremental file index move the repo-level lastIndexed.",
-        "approach": "After a 'file' job completes, the daemon sets the registered repo's lastIndexed to the time of the job.",
+        "name": "Re-subscribe the whole repo when a nested directory appears, plus the gate request",
+        "oneLineSummary": "On a created directory that has subdirectories, replace the repo's watch with a new one and scan the new tree.",
+        "approach": "On a create event for a directory with subdirectories, the Watcher unsubscribes the repo's subscription, subscribes again and scans the new directory; the gate request from a1 is kept. Events that occur between the unsubscribe and the new subscription are lost.",
         "pros": [
-          "No change to the freshness compute"
+          "No second subscription per directory, so no doubled watches",
+          "Re-establishes every watch under the repo"
         ],
         "cons": [
-          "Wrong meaning: lastIndexed would say the whole repo is current after one file",
-          "Does not help a file that was never indexed",
-          "Changes a value the repo status and the completeness report show"
+          "A window with no watch on the whole repo while it re-subscribes, so events in it are lost",
+          "A full tree walk by the watcher backend on each such directory",
+          "Needs more bookkeeping to run for several directories at once"
         ],
-        "costEstimate": "S",
-        "reasonRejected": "Reports false freshness for unindexed files, so a mixed set reaches a full review without them; it violates the first and third fix criteria."
+        "costEstimate": "M",
+        "reasonRejected": "Trades the doubled watches for a window in which the whole repo is unwatched, which is the kind of loss this Story removes; partial on the first fix criterion."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "Graded partial in the audit (ts1): the Story record has no acceptance criteria; ac1 to ac6 were written in this LLD from the approved issue's fix intent and the review rounds.",
-      "Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent.",
-      "The Story title still says 'the wait cannot deadlock'; the design does not address a wait deadlock because the controller-side wait is bounded by codeReview.freshnessTimeoutMs, and the review-session timeout is handled in another session.",
-      "Why the ten fixture files were not indexed by the watcher was not confirmed from a daemon log; a missed event in a newly created directory is the likely cause.",
-      "That an entity-less changed file is left out of a full review's grounding rests on review round 1; only the symbol list of grounding.ts was read here."
+      "Graded partial in the audit (ts1): the Story record has no acceptance criteria; ac1 to ac9 were written in this LLD from the approved issue, the review rounds and the user's decision to bring the watcher into scope. The user confirmed the LLD as the acceptance baseline on 2026-10-27.",
+      "Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent and the user's decision on the watcher; the user confirmed this basis on 2026-10-27.",
+      "The approved ISSUE's root cause says the missing watcher event was not established, and its reproduction step 3 and second cause describe a wait deadlock that does not exist; the ISSUE record has not been revised to match the confirmed cause.",
+      "No test forces the per-directory subscribe call itself to fail; the unreadable-directory test covers the scan and the no-throw guarantee only."
     ],
     "sequenceDefinition": {
-      "id": "freshness-request-flow",
-      "narrative": "How one poll of the freshness gate settles a missing file, finds the stale held files (never indexed, or with an outdated watermark), queues one index job for each and re-reads the queue so the same reply shows the work, and how a later poll finds the file fresh.",
+      "id": "watcher-and-freshness-flow",
+      "narrative": "How a directory created together with its parent gets its own watch and a scan so its files reach the index, and how a review's freshness poll then asks for any file still stale to be indexed and re-reads the queue so the same reply shows the work.",
       "participants": [
+        {
+          "id": "fs",
+          "label": "File system",
+          "description": "A directory is created together with its parent and files are written into it"
+        },
+        {
+          "id": "watcher",
+          "label": "Watcher",
+          "description": "Holds the repo subscription and the per-directory subscriptions"
+        },
+        {
+          "id": "indexer",
+          "label": "Indexer",
+          "description": "Turns file events into file jobs on the queue"
+        },
         {
           "id": "gate",
           "label": "Code-review step handler",
@@ -614,52 +762,56 @@
         {
           "id": "handler",
           "label": "codeReview.freshness handler",
-          "description": "Daemon handler that runs the compute, queues the index request and re-reads the queue"
-        },
-        {
-          "id": "compute",
-          "label": "computeCodeReviewFreshness",
-          "description": "Pure compute over the seams"
+          "description": "Runs the compute, queues the index request and re-reads the queue"
         },
         {
           "id": "queue",
           "label": "IndexQueue",
           "description": "Holds file jobs and reports code index work"
-        },
-        {
-          "id": "indexer",
-          "label": "Indexer",
-          "description": "Writes the File entity for an indexed file"
         }
       ],
       "messages": [
+        {
+          "from": "fs",
+          "to": "watcher",
+          "label": "create event for the new directory",
+          "kind": "call",
+          "description": "The repo subscription reports the directory, not the nested ones created with it"
+        },
+        {
+          "from": "watcher",
+          "to": "watcher",
+          "label": "subscribe to the directory, then scan its tree",
+          "kind": "recurse",
+          "description": "The own subscription is created first so no write between the two steps is lost"
+        },
+        {
+          "from": "watcher",
+          "to": "indexer",
+          "label": "create events for the files present, then later writes",
+          "kind": "call",
+          "description": "Same event shape as the repo subscription's events"
+        },
+        {
+          "from": "indexer",
+          "to": "queue",
+          "label": "file jobs",
+          "kind": "call",
+          "description": "The queue keeps one job per path"
+        },
         {
           "from": "gate",
           "to": "handler",
           "label": "codeReview.freshness(changedFiles)",
           "kind": "call",
-          "description": "First poll"
-        },
-        {
-          "from": "handler",
-          "to": "compute",
-          "label": "compute(repoPath, changedFiles, deps)",
-          "kind": "call",
-          "description": "A file with mtime 0 is settled first; the others use the entity watermark, the selection seam and requestedAt"
-        },
-        {
-          "from": "compute",
-          "to": "handler",
-          "label": "staleFiles, unindexedFiles",
-          "kind": "return",
-          "description": "A stale held file is stale and unindexed; a not-code or missing file is not stale"
+          "description": "Poll for a review"
         },
         {
           "from": "handler",
           "to": "queue",
-          "label": "enqueue file job for each unindexed file",
+          "label": "enqueue a file job for each stale file the index holds",
           "kind": "call",
-          "description": "Records the request time per file"
+          "description": "Once per mtime, after settling files with mtime 0 and files the index never holds"
         },
         {
           "from": "handler",
@@ -673,28 +825,7 @@
           "to": "gate",
           "label": "FreshnessResult with isProcessing true",
           "kind": "return",
-          "description": "The same reply shows the queued work"
-        },
-        {
-          "from": "queue",
-          "to": "indexer",
-          "label": "run file job",
-          "kind": "call",
-          "description": "Indexes the file"
-        },
-        {
-          "from": "gate",
-          "to": "handler",
-          "label": "codeReview.freshness(changedFiles)",
-          "kind": "call",
-          "description": "Later poll"
-        },
-        {
-          "from": "handler",
-          "to": "gate",
-          "label": "fresh, or still stale if not indexed",
-          "kind": "return",
-          "description": "A File entity newer than the mtime makes it fresh; a file that is still stale stays so until the freshness time-out"
+          "description": "A file still stale after its request stays stale until the freshness time-out sends the review to the degraded diff review"
         }
       ]
     },
@@ -716,25 +847,30 @@
     {
       "id": "c1",
       "kind": "code",
-      "ref": "src/workflow/code-review/freshness.ts:65-90"
+      "ref": "src/indexer/watcher.ts:1-103"
     },
     {
       "id": "c2",
       "kind": "code",
-      "ref": "src/indexer/index.ts:293-303"
+      "ref": "src/indexer/index.ts:233-259"
     },
     {
       "id": "c3",
       "kind": "code",
-      "ref": "src/daemon/steps/code-review-step/handler.ts:305-372"
+      "ref": "src/workflow/code-review/freshness.ts:65-90"
     },
     {
       "id": "c4",
       "kind": "code",
-      "ref": "src/daemon/handler-runtime.ts:1189-1193"
+      "ref": "src/indexer/index.ts:293-303"
     },
     {
       "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/steps/code-review-step/handler.ts:305-372"
+    },
+    {
+      "id": "c6",
       "kind": "code",
       "ref": "src/indexer/file-selection.ts:57-75"
     }

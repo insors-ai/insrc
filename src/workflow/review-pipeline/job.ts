@@ -105,7 +105,7 @@ export function createReviewJob(
 		plan: { limitChars, single: true, chunks: [], crossRelations: [] },
 		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], relationPlan: {}, gatherLevels: {}, contextReduced: {}, notes: [], noteProvenance: {}, notJudged: [],
 		issuedHashes: [], counts: { single: 0, chunk: 0, reduce: 0, obligation: 0, relation: 0, merge: 0 },
-		materialHash: materialHash(adapter.material()), seq: 0,
+		materialHash: materialHash(adapter.material()), seq: 0, workSeq: 0, workUnits: [],
 	};
 	return enterStage(job, adapter, 0, opts.now ?? Date.now());
 }
@@ -179,6 +179,7 @@ function issueChunkCalls(job: ReviewPipelineJob, stage: AdapterStage, chunks: re
 // -- issue -------------------------------------------------------------------
 
 interface NewCall {
+	readonly workId?: string | undefined;
 	readonly prompt:   ChunkPrompt;
 	readonly role:     CallRole;
 	readonly carries:  CallCarries;
@@ -193,8 +194,12 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 	const issuedHashes = [...job.issuedHashes];
 	const counts = { ...job.counts };
 	const made: ReviewCall[] = [];
+	let workSeq = job.workSeq;
+	const workUnits = [...job.workUnits];
 	for (const c of calls) {
 		const callId = randomUUID();
+		const workId = c.workId ?? `w${++workSeq}`;
+		if (c.workId === undefined) workUnits.push({ id: workId, replaced: false });
 		const messages = envelopeMessages(callId, c.prompt.messages);
 		const schema = envelopeSchema(callId, c.prompt.schema);
 		const budget = requestBudget(job.budgetPolicy, messages, schema, (c.attempt ?? 1) > 1 ? 'dispatch' : 'planning');
@@ -204,28 +209,26 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 		issuedHashes.push(hash);
 		counts[c.countAs ?? c.role]++;
 		made.push({
-			budget, callId, attempt: c.attempt ?? 1, ...(c.invalidAnswers !== undefined ? { invalidAnswers: c.invalidAnswers } : {}), stage: job.stage, role: c.role, messages, schema,
+			budget, callId, workId, attempt: c.attempt ?? 1, ...(c.invalidAnswers !== undefined ? { invalidAnswers: c.invalidAnswers } : {}), stage: job.stage, role: c.role, messages, schema,
 			execution: c.prompt.execution, chars: promptChars(messages), carries: c.carries, prompt: c.prompt,
 		});
 	}
-	return { ...job, issuedHashes, counts, pending: [...job.pending, ...made] };
+	return withDeadline({ ...job, workSeq, workUnits, issuedHashes, counts, pending: [...job.pending, ...made] }, job.executionStartedAt);
 }
 
 // -- deadline ----------------------------------------------------------------
 
-/**
- * The review's deadline, set once, when its first reviewer-session calls are
- * planned: the per-session limit (capped at 30 minutes) times the sessions
- * planned. A re-issue or a re-division never extends it.
- */
-function withDeadline(job: ReviewPipelineJob, now: number): ReviewPipelineJob {
-	if (job.deadlineAt !== undefined) return job;
-	const sessions = job.pending.filter(c => c.execution.mode === 'reviewer-session');
-	if (sessions.length === 0) return job;
-	const first = sessions[0]!.execution as { readonly deadlineMs: number };
-	const sessionLimitMs = Math.min(first.deadlineMs, HARD_REVIEW_DEADLINE_MS);
-	const deadlineBudgetMs = sessionLimitMs * sessions.length;
-	return { ...job, sessionLimitMs, deadlineBudgetMs, deadlineAt: now + deadlineBudgetMs };
+/** Ten minutes per admitted logical leaf, measured from one original epoch. */
+export const REVIEW_WORK_UNIT_MS = 600_000;
+function withDeadline(job: ReviewPipelineJob, now: number | undefined): ReviewPipelineJob {
+	const count = job.workUnits.filter(unit => !unit.replaced).length;
+	const executionStartedAt = job.executionStartedAt ?? (count > 0 ? now : undefined);
+	if (executionStartedAt === undefined) return job;
+	const deadlineBudgetMs = REVIEW_WORK_UNIT_MS * count;
+	return { ...job, executionStartedAt, deadlineBudgetMs, deadlineAt: executionStartedAt + deadlineBudgetMs };
+}
+function assertDeadline(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, now: number): void {
+	if (job.deadlineAt !== undefined && now >= job.deadlineAt) throw deadlineError(job, adapter);
 }
 
 // -- driver steps --------------------------------------------------------------
@@ -237,11 +240,14 @@ function withDeadline(job: ReviewPipelineJob, now: number): ReviewPipelineJob {
  */
 export function nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, now: number = Date.now()): readonly ReviewCall[] {
 	if (job.phase === 'done') return [];
-	if (job.deadlineAt === undefined || !job.pending.some(c => c.execution.mode === 'reviewer-session')) return job.pending;
-	const remaining = job.deadlineAt - now;
-	if (remaining <= 0) throw deadlineError(job, adapter);
-	return job.pending.map(c => c.execution.mode !== 'reviewer-session' ? c : {
-		...c, execution: { ...c.execution, deadlineMs: Math.min(remaining, job.sessionLimitMs ?? remaining) },
+	assertDeadline(job, adapter, now);
+	const remaining = job.deadlineAt === undefined ? REVIEW_WORK_UNIT_MS : job.deadlineAt - now;
+	return job.pending.map(c => {
+		const execution = c.execution;
+		const selected = execution.mode === 'reviewer-session' ? execution.deadlineMs : (execution.timeoutMs ?? REVIEW_WORK_UNIT_MS);
+		const cap = Math.min(remaining, selected, HARD_REVIEW_DEADLINE_MS);
+		return { ...c, execution: execution.mode === 'reviewer-session'
+			? { ...execution, deadlineMs: cap } : { ...execution, timeoutMs: cap } };
 	});
 }
 
@@ -256,6 +262,7 @@ export function deadlineError(job: ReviewPipelineJob, adapter: ReviewAdapter<unk
  * failed with 'identifier-mismatch'. Then as {@link applyAnswer}.
  */
 export function applyOutput(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, callId: string, raw: unknown, now: number = Date.now()): ReviewPipelineJob {
+	assertDeadline(job, adapter, now);
 	const opened = openEnvelope(raw, callId);
 	if (opened === undefined) return applyFailure(job, adapter, callId, 'identifier-mismatch', undefined, { detail: 'the answer did not carry its call\'s id', now });
 	return applyAnswer(job, adapter, { callId, answer: opened.answer }, now);
@@ -267,6 +274,7 @@ export function applyOutput(job: ReviewPipelineJob, adapter: ReviewAdapter<unkno
  * stage when it was its last call.
  */
 export function applyAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, answer: EnvelopedAnswer, now: number = Date.now()): ReviewPipelineJob {
+	assertDeadline(job, adapter, now);
 	const call = pendingCall(job, answer.callId);
 	if (isGatherRole(call.role)) return applyGatherAnswer(job, adapter, call, answer.answer, now);
 	const stage = currentStage(job, adapter);
@@ -302,10 +310,18 @@ export function applyFailure(
 ): ReviewPipelineJob {
 	const call = pendingCall(job, callId);
 	const now = more.now ?? Date.now();
+	assertDeadline(job, adapter, now);
 	const rest: ReviewPipelineJob = { ...job, pending: job.pending.filter(c => c.callId !== callId) };
 	// A gather call fails the review when it fails twice; it re-divides its notes when refused.
 	const stage: Pick<AdapterStage, 'id' | 'onCallFailure' | 'withCorrection'> = isGatherRole(call.role) ? { id: call.stage, onCallFailure: 'fail-review' } : currentStage(job, adapter);
 	if (cause === 'size-refusal') {
+		const replaced = { ...rest, workUnits: rest.workUnits.map(unit => unit.id === call.workId ? { ...unit, replaced: true } : unit) };
+		const divided = subdivide(replaced);
+		const existing = new Set(job.workUnits.map(unit => unit.id));
+		if (!divided.workUnits.some(unit => !existing.has(unit.id))) throw new ReviewBudgetError('required-context-over-budget');
+		return { ...divided, workUnits: divided.workUnits.map(unit => existing.has(unit.id) ? unit : { ...unit, parentId: call.workId }) };
+	}
+	function subdivide(rest: ReviewPipelineJob): ReviewPipelineJob {
 		if (call.role === 'relation') return redivideRelation(rest, adapter, call, maxChars);
 		if (call.role === 'merge') throw new AtomTooLargeError(`the merge call ${call.carries.key ?? call.callId}`, call.chars, maxChars ?? call.chars - 1);
 		if (isGatherRole(call.role)) return redivideNotes(rest, adapter, call, maxChars);
@@ -325,7 +341,7 @@ export function applyFailure(
 			prompt = corrected;
 		}
 		log.warn({ dimension: job.dimension, stage: stage.id, cause, callId }, 'review pipeline: re-issuing a call once under a new callId');
-		return issue(rest, [{ prompt, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1, ...(invalidAnswers > 0 ? { invalidAnswers } : {}) }]);
+		return issue(rest, [{ prompt, workId: call.workId, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1, ...(invalidAnswers > 0 ? { invalidAnswers } : {}) }]);
 	}
 
 	const detail = cause; // Detailed correction text is prompt-only, never a persistent failure detail.
@@ -393,6 +409,7 @@ function redivide(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, stage
  * (a diagram handler's LOW observation) and the review goes on.
  */
 export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, opts: { readonly signal?: AbortSignal | undefined; readonly now?: (() => number) | undefined } = {}): Promise<ReviewPipelineJob> {
+	assertDeadline(job, adapter, opts.now?.() ?? Date.now());
 	if (job.phase === 'done') throw new Error(`review ${job.dimension}: the job is finished`);
 	const stage = currentStage(job, adapter);
 	if (stage.kind !== 'deterministic' || stage.run === undefined) throw new Error(`review ${job.dimension}: stage ${stage.id} is a model stage; its calls are made, not run`);
@@ -411,7 +428,9 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 		output = undefined;
 	}
 	throwIfAborted(opts.signal);
-	return commit(next, adapter, stage, output, opts.now?.() ?? Date.now());
+	const completedAt = opts.now?.() ?? Date.now();
+	assertDeadline(job, adapter, completedAt);
+	return commit(next, adapter, stage, output, completedAt);
 }
 
 /** The adapter's finished result. */
@@ -680,7 +699,7 @@ function commit(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, stage: 
 	if (index + 1 < stages.length) return enterStage(next, adapter, index + 1, now);
 
 	// A divided review is gathered; one chunk passes straight through.
-	if (!next.plan.single && adapter.gather !== undefined) return startGather({ ...next, stage: '' }, adapter);
+	if (!next.plan.single && adapter.gather !== undefined) return withDeadline(startGather({ ...next, stage: '' }, adapter), now);
 	return finishJob(next, adapter);
 }
 

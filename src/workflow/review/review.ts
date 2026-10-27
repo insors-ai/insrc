@@ -56,8 +56,8 @@ export interface RunReviewOpts {
 	/** Design stages only: which template applies. `reviewArtifactFile` resolves
 	 *  it from the artifact store; default `spec`. */
 	readonly intent?: DesignIntent | undefined;
-	/** Design stages only: the deadline for the WHOLE review, in ms. Default: the
-	 *  configured limit for the intent. Never more than the 10 minute hard cap. */
+	/** Design stages only: the deadline for the individual attempt, in ms. Default: the
+	 *  configured limit for the intent. Never more than the 30 minute attempt cap; the job gets ten minutes per logical work unit. */
 	readonly deadlineMs?: number | undefined;
 	/** Design stages only: millisecond clock for the deadline (test seam). */
 	readonly nowMs?: (() => number) | undefined;

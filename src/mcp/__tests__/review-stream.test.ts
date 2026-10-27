@@ -77,13 +77,13 @@ const HELPERS = [
 	{
 		name: 'reviewArtifactStream', method: 'workflow.review',
 		call: (opts: ReviewStreamOpts, deps: ReviewStreamDeps) => reviewArtifactStream({ artifactPath: '/r/LLD.md', repo: '/r' }, opts, deps) as Promise<unknown>,
-		params: { artifactPath: '/r/LLD.md', repo: '/r' },
+		params: { artifactPath: '/r/LLD.md', repo: '/r', executionCeilingMs: OPTS.timeoutMs },
 		done: { artifactPath: '/r/LLD.md', verdict: 'warn', counts: { high: 0, med: 0, low: 3, unverified: 1 }, reviewedBy: 'daemon', model: 'm', applied: 0, pending: 1, report: 'r' },
 	},
 	{
 		name: 'codeReviewStream', method: 'codeReview.run',
 		call: (opts: ReviewStreamOpts, deps: ReviewStreamDeps) => codeReviewStream({ repo: '/r', epicHash: 'abcd', storyId: 'S001', groundingMode: 'degraded' }, opts, deps) as Promise<unknown>,
-		params: { epicHash: 'abcd', storyId: 'S001', repo: '/r', groundingMode: 'degraded' },
+		params: { epicHash: 'abcd', storyId: 'S001', repo: '/r', groundingMode: 'degraded', executionCeilingMs: OPTS.timeoutMs },
 		done: { runId: 'cr-1', artifact: { meta: { reviewedBy: 'daemon' }, body: { verdict: 'pass' } } },
 	},
 ] as const;

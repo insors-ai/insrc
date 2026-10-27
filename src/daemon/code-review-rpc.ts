@@ -18,6 +18,7 @@
  * validate-then-write, no-pass-on-failure) lives in `runCodeReview`.
  */
 
+import { withReviewExecutionCeiling } from '../shared/review-execution-time.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
 import { SamePartyReviewError } from '../workflow/review/party.js';
@@ -81,7 +82,7 @@ export interface CodeReviewRunDeps {
 /** `codeReview.run` stream handler. Emits `progress` frames per phase, then a
  *  terminal `done` (with the outcome) or `error`. Never throws — a bad payload,
  *  a declined subject, or a run failure is sent as an `error` / declined frame. */
-export async function codeReviewRunStart(
+async function codeReviewRunStartInner(
 	rawParams: unknown,
 	send:      (msg: IpcStreamMessage) => void,
 	signal:    AbortSignal,
@@ -269,3 +270,8 @@ function modelLabelFor(
 }
 
 export { buildAuthorParty };
+
+export async function codeReviewRunStart(rawParams: unknown, send: (msg: IpcStreamMessage) => void, signal: AbortSignal, deps: CodeReviewRunDeps = {}): Promise<void> {
+	try { await withReviewExecutionCeiling(rawParams, () => codeReviewRunStartInner(rawParams, send, signal, deps)); }
+	catch (err) { send({ id: 0, stream: 'error', data: { error: err instanceof Error ? err.message : 'review execution failed', recoverable: false } }); }
+}

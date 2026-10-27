@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { test } from 'node:test';
+import { withReviewExecutionCeiling } from '../../../shared/review-execution-time.js';
 import assert from 'node:assert/strict';
 import type { LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import { CliProvider } from '../../../agent/providers/cli-provider.js';
@@ -79,4 +80,29 @@ test('successful failed and cancelled calls have exactly one content-free termin
 		}
 		assert.ok(!JSON.stringify(events).includes('PRIVATE_SOURCE_CREDENTIAL'));
 	}
+});
+
+test('effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced', async () => {
+	const { profile, adapter, job } = fixture();
+	let sends = 0;
+	let observed: AbortSignal | undefined;
+	const provider = {
+		getReviewBudgetProfile: () => profile,
+		completeStructured: async (_messages: unknown, _schema: unknown, opts: { signal: AbortSignal }) => {
+			sends++; observed = opts.signal;
+			return new Promise(() => {}); // deliberately ignores cancellation
+		},
+	} as unknown as LLMProvider;
+	await assert.rejects(runReviewJob(job, adapter, provider, { outerCeilingMs: 1 }), /transport-ceiling-incompatible/);
+	await assert.rejects(withReviewExecutionCeiling({ executionCeilingMs: 5 }, () => runReviewJob(job, adapter, provider)), /transport-ceiling-incompatible/);
+	assert.equal(sends, 0);
+	const limited = { ...job, pending: job.pending.map(c => ({ ...c, execution: { mode: 'structured' as const, timeoutMs: 15 } })) };
+	const began = performance.now();
+	await assert.rejects(runReviewJob(limited, adapter, provider), /time|limit/i);
+	assert.ok(performance.now() - began < 1000);
+	assert.equal(sends, 1, 'timed-out attempt is not retried');
+	assert.equal(observed?.aborted, true);
+	const remaining = { ...limited, deadlineAt: Date.now() + 12 };
+	await assert.rejects(runReviewJob(remaining, adapter, provider), /time|limit/i);
+	assert.equal(sends, 2);
 });

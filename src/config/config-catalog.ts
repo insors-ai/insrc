@@ -127,9 +127,9 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks', group: 'Workflow & review' },
 		{ path: 'designReview.premises.issue',      type: 'number', default: 8,      desc: 'most premises a design review examines when the design answers an ISSUE', group: 'Workflow & review' },
 		{ path: 'designReview.premises.spec',       type: 'number', default: 16,     desc: 'most premises a design review examines when the design answers a SPEC', group: 'Workflow & review' },
-		{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000, desc: 'time limit (ms) for the whole review of a design that answers an ISSUE; capped at 30 minutes', group: 'Workflow & review' },
-		{ path: 'designReview.timeLimitMs.feature', type: 'number', default: 1080000, desc: 'time limit (ms) for the whole review of a standalone feature design; capped at 30 minutes', group: 'Workflow & review' },
-		{ path: 'designReview.timeLimitMs.epic',    type: 'number', default: 1440000, desc: 'time limit (ms) for the whole review of a design under an Epic; capped at 30 minutes', group: 'Workflow & review' },
+		{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000, desc: 'time limit (ms) for each review attempt of a design that answers an ISSUE; capped at 30 minutes', group: 'Workflow & review' },
+		{ path: 'designReview.timeLimitMs.feature', type: 'number', default: 1080000, desc: 'time limit (ms) for each review attempt of a standalone feature design; capped at 30 minutes', group: 'Workflow & review' },
+		{ path: 'designReview.timeLimitMs.epic',    type: 'number', default: 1440000, desc: 'time limit (ms) for each review attempt of a design under an Epic; capped at 30 minutes', group: 'Workflow & review' },
 
 		// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
 		// A (runner, model) pair is named ONLY here. The shaper + summariser providers

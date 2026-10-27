@@ -143,8 +143,8 @@ export function createInDaemonClient(
 
 	return {
 		request: <T>(method: string, params: unknown) => call<T>(method, params),
-		reviewArtifactStream: (params, opts) => streamRequest<WorkflowReviewDone>('workflow.review', reviewArtifactRequestParams(params), opts),
-		codeReviewStream:     (params, opts) => streamRequest<CodeReviewStreamResult>('codeReview.run', codeReviewRequestParams(params), opts),
+		reviewArtifactStream: (params, opts) => streamRequest<WorkflowReviewDone>('workflow.review', { ...reviewArtifactRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts),
+		codeReviewStream:     (params, opts) => streamRequest<CodeReviewStreamResult>('codeReview.run', { ...codeReviewRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts),
 		fetchCodeReviewGrounding: (params) =>
 			call<Parameters<typeof groundingFromReply>[0]>('codeReview.grounding', params).then(groundingFromReply, unavailableFromError),
 		fetchCodeReviewFreshness: (params) =>

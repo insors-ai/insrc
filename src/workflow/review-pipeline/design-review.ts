@@ -151,7 +151,7 @@ export interface TemplateAdapterOpts {
 	/** The review's time limit (capped at 30 minutes). */
 	readonly limitMs:  number;
 	/** Today's time-limit error. */
-	readonly timedOut: () => Error;
+	readonly timedOut: (limitMs: number) => Error;
 }
 
 /** Today's correction for an answer that broke the checklist; it sits between the instructions and the checklist. */
@@ -187,6 +187,6 @@ export function templateAdapter(snapshot: ReviewMaterialSnapshot, opts: Template
 			if (!r.ok) throw new Error(`design review: a validated answer failed checklist ${opts.template.id}`);
 			return r.findings;
 		},
-		deadlineError: () => opts.timedOut(),
+		deadlineError: ms => opts.timedOut(ms),
 	};
 }

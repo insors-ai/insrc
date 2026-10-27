@@ -215,6 +215,8 @@ export interface CallCarries {
 export interface ReviewCall {
 	readonly budget: ReviewBudgetBreakdown;
 	readonly callId:    string;
+	/** Stable across retries; generated only by the planner. */
+	readonly workId: string;
 	/** 1 for the first issue; each re-issue adds one (up to MAX_STALL_ATTEMPTS for stalls). */
 	readonly attempt:   number;
 	/** How many earlier attempts of this call were invalid answers; absent: none. */
@@ -303,9 +305,12 @@ export interface ReviewPipelineJob {
 	readonly issuedHashes: readonly string[];
 	/** Calls made per role. */
 	readonly counts:     Readonly<Record<CallRole, number>>;
-	/** Epoch ms after which no reviewer-session call is issued; absent when the review has none. */
+	/** Epoch ms after which no model result or replan is accepted; absent without model work. */
+	readonly executionStartedAt?: number | undefined;
+	readonly workSeq: number;
+	readonly workUnits: readonly { readonly id: string; readonly parentId?: string | undefined; readonly replaced: boolean }[];
 	readonly deadlineAt?: number | undefined;
-	/** The per-session limit (capped at 30 minutes) and the whole budget it was planned with. */
+	/** Legacy optional session diagnostic; current attempt caps remain on individual calls. */
 	readonly sessionLimitMs?: number | undefined;
 	readonly deadlineBudgetMs?: number | undefined;
 	/** The material's fingerprint at prepare: a rebuilt adapter must give the same material. */

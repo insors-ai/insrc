@@ -58,7 +58,7 @@ export interface DesignReviewSettings {
 // Settings
 // ---------------------------------------------------------------------------
 
-/** No design review may run longer than this, whatever a setting says. */
+/** No individual design-review attempt may run longer than this. */
 export const HARD_REVIEW_DEADLINE_MS = 30 * 60_000;
 
 /** Provisional defaults (LLD-f2f08ccf89f8ab25-S001); each is a setting under
@@ -97,7 +97,7 @@ export function readDesignReviewSettings(configPath: string = PATHS.config): Des
 	};
 }
 
-/** The deadline for a WHOLE design review of this complexity. A setting above
+/** The deadline for a individual design-review attempt of this complexity. A setting above
  *  the hard cap is reduced to it; the cap cannot be raised. */
 export function reviewDeadlineMs(complexity: DesignComplexity, settings: DesignReviewSettings = readDesignReviewSettings()): number {
 	return Math.min(settings.timeLimitMs[complexity], HARD_REVIEW_DEADLINE_MS);

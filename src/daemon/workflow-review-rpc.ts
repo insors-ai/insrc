@@ -19,6 +19,7 @@
  * or `error`. Never throws.
  */
 
+import { withReviewExecutionCeiling } from '../shared/review-execution-time.js';
 import { existsSync } from 'node:fs';
 
 import { createRoleRouter } from '../analyze/context/role-router.js';
@@ -74,7 +75,7 @@ export interface WorkflowReviewDeps {
 	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 }
 
-export async function workflowReviewStart(
+async function workflowReviewStartInner(
 	rawParams: unknown,
 	send:      (msg: IpcStreamMessage) => void,
 	signal:    AbortSignal,
@@ -178,4 +179,9 @@ function parseParams(raw: unknown): WorkflowReviewParams {
 	if (typeof artifactPath !== 'string' || artifactPath.length === 0) throw new Error('workflow.review: `artifactPath` is required');
 	const repo = o['repo'];
 	return { artifactPath, ...(typeof repo === 'string' ? { repo } : {}) };
+}
+
+export async function workflowReviewStart(rawParams: unknown, send: (msg: IpcStreamMessage) => void, signal: AbortSignal, deps: WorkflowReviewDeps = {}): Promise<void> {
+	try { await withReviewExecutionCeiling(rawParams, () => workflowReviewStartInner(rawParams, send, signal, deps)); }
+	catch (err) { send({ id: 0, stream: 'error', data: { error: err instanceof Error ? err.message : 'review execution failed', recoverable: false } }); }
 }

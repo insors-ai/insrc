@@ -22,6 +22,7 @@ export interface ReviewCallEvent {
 	readonly qualification: ReviewBudgetBreakdown['qualification'];
 	readonly budget: ReviewBudgetBreakdown;
 	readonly durationMs: number;
+	readonly timing: { readonly kind: 'review-execution'; readonly logicalWorkUnits: number; readonly jobBudgetMs: number; readonly deadlineAt?: number | undefined; readonly attemptLimitMs: number };
 	readonly errorCode?: ReviewCallErrorCode | undefined;
 }
 
@@ -38,6 +39,7 @@ export function reviewCallEvent(job: ReviewPipelineJob, call: ReviewCall, budget
 		role: member(call.role, ['single', 'chunk', 'reduce', 'obligation', 'relation', 'merge']),
 		attempt: Number.isSafeInteger(call.attempt) && call.attempt > 0 ? call.attempt : 0,
 		transport: member(job.budgetPolicy.profile.transport, ['claude', 'codex', 'ollama', 'controller']),
+		timing: { kind: 'review-execution', logicalWorkUnits: job.workUnits.filter(w => !w.replaced).length, jobBudgetMs: job.deadlineBudgetMs ?? 0, deadlineAt: job.deadlineAt, attemptLimitMs: call.execution.mode === 'reviewer-session' ? call.execution.deadlineMs : (call.execution.timeoutMs ?? 0) },
 		policyVersion: job.budgetPolicy.policyVersion, qualification: budget.qualification, budget,
 		durationMs: Number.isFinite(durationMs) && durationMs >= 0 ? Math.floor(durationMs) : 0,
 		...(errorCode !== undefined ? { errorCode } : {}),

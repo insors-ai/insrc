@@ -487,7 +487,7 @@ export function reviewArtifactStream(
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
 ): Promise<WorkflowReviewDone> {
-	return reviewStreamRequest<WorkflowReviewDone>('workflow.review', reviewArtifactRequestParams(params), opts, deps);
+	return reviewStreamRequest<WorkflowReviewDone>('workflow.review', { ...reviewArtifactRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts, deps);
 }
 
 /** Ask the daemon to review a Story's code (`codeReview.run`). */
@@ -496,5 +496,5 @@ export function codeReviewStream(
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
 ): Promise<CodeReviewStreamResult> {
-	return reviewStreamRequest<CodeReviewStreamResult>('codeReview.run', codeReviewRequestParams(params), opts, deps);
+	return reviewStreamRequest<CodeReviewStreamResult>('codeReview.run', { ...codeReviewRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts, deps);
 }

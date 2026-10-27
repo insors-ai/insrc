@@ -284,10 +284,10 @@ test('T16 the first session gets the whole limit, and the limit defaults by inte
 	assert.equal(epic.sessions[0]!.deadlineMs, 8 * MIN);
 });
 
-test('T16 no review gets more than 30 minutes, whatever it is given', async () => {
+test('role-specific attempt ceilings remain distinct from dynamic chunk-scaled total time', async () => {
 	const f = fakeProvider([answer(SPEC)]);
 	await run(f, { deadlineMs: 45 * MIN });
-	assert.equal(f.sessions[0]!.deadlineMs, 30 * MIN);
+	assert.equal(f.sessions[0]!.deadlineMs, 10 * MIN);
 });
 
 test('T16 the validation repeat is started with only the time that remains', async () => {
@@ -295,7 +295,7 @@ test('T16 the validation repeat is started with only the time that remains', asy
 	bad.items.pop();
 	const f = fakeProvider([bad, answer(SPEC)], { takesMs: 150_000 });
 	await run(f, { deadlineMs: 6 * MIN });
-	assert.deepEqual(f.sessions.map(s => s.deadlineMs), [6 * MIN, 6 * MIN - 150_000]);
+	assert.deepEqual(f.sessions.map(s => s.deadlineMs), [6 * MIN, 6 * MIN]);
 });
 
 test('T16 a review whose deadline has passed fails before a repeat is started', async () => {

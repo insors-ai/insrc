@@ -16,13 +16,14 @@
  * nothing: the job is not returned.
  */
 
+import { reviewOuterDeadlineAt } from '../../shared/review-execution-time.js';
 import type { ReviewExecutionBudget } from '../../shared/review-budget.js';
 import { preflightProviderReviewBudget, reviewWireSchemaJson } from '../../agent/providers/review-budget.js';
 import { ReviewBudgetError } from './budget.js';
 import { requestBudget } from './measurement.js';
 import { reviewCallEvent, type ReviewCallEvent, type ReviewCallOutcome, type ReviewCallErrorCode } from './call-events.js';
 import { serialiseMessages as sessionPrompt } from '../../agent/providers/cli-wire.js';
-import { CliStallError, InputTooLargeError } from '../../agent/providers/cli-provider.js';
+import { CliStallError, InputTooLargeError, ReviewSessionTimeoutError } from '../../agent/providers/cli-provider.js';
 import { ModelCallFailedError, ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
@@ -32,6 +33,8 @@ import type { FailureCause, ReviewAdapter, ReviewCall, ReviewPipelineJob } from 
 const log = getLogger('review-pipeline:driver');
 
 export interface RunReviewJobOpts {
+	/** Known remaining outer execution allowance; incompatibility fails explicitly. */
+	readonly outerCeilingMs?: number | undefined;
 	/** Content-free per-call lifecycle progress; existing onCall remains start-only. */
 	readonly onCallEvent?: ((event: ReviewCallEvent) => void) | undefined;
 	/** Cancels the review at once, including the call in flight. */
@@ -50,8 +53,13 @@ export interface RunReviewJobOpts {
 export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, provider: LLMProvider, opts: RunReviewJobOpts = {}): Promise<unknown> {
 	const now = opts.now ?? Date.now;
 	const signal = opts.signal;
+	const outerStartedAt = now();
+	const outerDeadlineAt = Math.min(opts.outerCeilingMs === undefined ? Infinity : outerStartedAt + opts.outerCeilingMs, reviewOuterDeadlineAt() ?? Infinity);
 	while (job.phase !== 'done') {
 		throwIfAborted(signal);
+		if (job.deadlineAt !== undefined && job.deadlineAt > outerDeadlineAt) {
+			throw new Error(`review transport-ceiling-incompatible: job requires ${job.deadlineBudgetMs}ms; outer remaining allowance ${outerDeadlineAt - now()}ms`);
+		}
 		const calls = nextCalls(job, adapter, now());
 		if (calls.length === 0) {
 			opts.onStage?.(job.stage);
@@ -82,6 +90,11 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			throw err instanceof ReviewBudgetError ? err : new ReviewBudgetError('native-budget-unqualified');
 		}
 		const startedAt = performance.now();
+		const attemptStartedAt = now();
+		const attemptMs = call.execution.mode === 'reviewer-session' ? call.execution.deadlineMs : call.execution.timeoutMs!;
+		const attemptController = new AbortController();
+		const attemptSignal = signal === undefined ? attemptController.signal : AbortSignal.any([signal, attemptController.signal]);
+		const attemptTimer = setTimeout(() => attemptController.abort(new ReviewSessionTimeoutError(attemptMs)), attemptMs);
 		let outcome: ReviewCallOutcome = 'failure';
 		let errorCode: ReviewCallErrorCode | undefined = 'call-failed';
 		try {
@@ -90,15 +103,16 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			throwIfAborted(signal);
 			let raw: unknown;
 			try {
-				raw = await untilAborted(send(provider, call, budget, signal), signal);
+				raw = await untilAborted(send(provider, call, budget, attemptSignal), attemptSignal);
 			} catch (err) {
 				throwIfAborted(signal);
+				if (attemptController.signal.aborted) { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : new ReviewSessionTimeoutError(attemptMs); }
 				if (err instanceof ReviewBudgetError) {
 					if (err.breakdown) admitted = err.breakdown;
 					errorCode = 'budget-refused'; throw err;
 				}
 				if (isAbortError(err)) throw err;
-				if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') { errorCode = 'timeout'; throw deadlineError(job, adapter); }
+				if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : (adapter.deadlineError?.(attemptMs) ?? new ReviewSessionTimeoutError(attemptMs)); }
 				const failure = classify(err);
 				errorCode = failure.cause === 'identifier-mismatch' ? 'invalid-answer' : failure.cause;
 				// Only stable categories persist. Detailed semantic corrections remain ephemeral prompt input.
@@ -106,6 +120,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 				continue;
 			}
 			throwIfAborted(signal);
+			if (now() >= attemptStartedAt + attemptMs) { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : (adapter.deadlineError?.(attemptMs) ?? new ReviewSessionTimeoutError(attemptMs)); }
 			job = applyOutput(job, adapter, call.callId, raw, now());
 			const accepted = job.answered.some(answer => answer.callId === call.callId);
 			outcome = accepted ? 'success' : 'failure';
@@ -115,6 +130,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 			if (err instanceof ReviewBudgetError) errorCode = 'budget-refused';
 			throw err;
 		} finally {
+			clearTimeout(attemptTimer);
 			emit(outcome, performance.now() - startedAt, errorCode);
 		}
 	}

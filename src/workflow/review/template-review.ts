@@ -70,8 +70,8 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 	const limitMs = Math.min(opts.deadlineMs ?? reviewDeadlineMs(intent === 'issue' ? 'issue' : 'feature'), HARD_REVIEW_DEADLINE_MS);
 	const startedAt = nowMs();
 
-	const timedOut = (): Error => new Error(
-		`The design review passed its time limit of ${minutes(limitMs)} (template ${template.id}). No review was recorded.`,
+	const timedOut = (totalMs: number): Error => new Error(
+		`The design review passed its time limit of ${minutes(totalMs)} (template ${template.id}). No review was recorded.`,
 	);
 
 	// One review-pipeline job (Epic 8315a11f): one reviewer session under the

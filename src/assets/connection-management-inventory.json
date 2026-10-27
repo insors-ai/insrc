@@ -13749,7 +13749,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "8f213e2d42c99230b6af9a04ee11f2f4b552aee20a4de5ebd78db8a290ee1271",
-      "sourceDigest": "e4624cd21f4197d4d8b8f723073f478297f8e76d58423121f4ed3f0c98338388",
+      "sourceDigest": "271e0edd3912b537c6c442660bc432f2bbd03738d0c53a507bea1d0ae06289fd",
       "boundaries": [
         "diagnostic",
         "provider-adapter",
@@ -16391,7 +16391,7 @@
       ],
       "siteCount": 70,
       "sitesDigest": "86a00cade709b3e940c520653f3f0f862a3d2ba1615bf2889733d73f4921e02d",
-      "sourceDigest": "4fe90b578efac0d1300d78d3ba800e5a91686ab023e262ce640662ffdeaf7a99",
+      "sourceDigest": "962558b2708ae5117e79c088c23fcc92914ca64c1b0efba8cb810c1192934c96",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -37999,12 +37999,28 @@
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "src/shared/locks/maintenance-lock.ts": {
-      "classification": "no-boundary-sites",
-      "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "d28caf037dedcb2b326bf4febe64953d3178e4d72f5214f44392991c885ada65",
-      "sites": [],
-      "siteCount": 0,
-      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "classification": "shared-transport-foundation",
+      "rationale": "Shared maintenance-lock helper (shared lock request wrappers) is not an authorization boundary; its only boundary sites are a diagnostic logger warning while background work waits for maintenance.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "bcf548fe27a1f69e9e81a3d54378f285283f5ca3d4a587635d8a58ba783c844b",
+      "sourceDigest": "b5cd20b5fcb6a54b71ddcc86cc24eb9cdf34f85941e548f47eaa1dd8683193ba",
+      "boundaries": [
+        "diagnostic"
+      ]
     },
     "src/shared/model-recommender.ts": {
       "classification": "no-boundary-sites",
@@ -39850,7 +39866,7 @@
     "daemon/model-check.ts": "f89be2f68e2241e2c564957f66afead4706259c81c1436ae388cef1707eb75a2",
     "daemon/model-definitions.ts": "ce093c894637e6ed7f63606b6bfb55f05273232b48f145932352e77ef85450b2",
     "daemon/model-registry.ts": "c96cd49d81bbae096f9073965c9daeb6271bab02e9352c178bc1c808c9b04311",
-    "daemon/prune-timer.ts": "e4624cd21f4197d4d8b8f723073f478297f8e76d58423121f4ed3f0c98338388",
+    "daemon/prune-timer.ts": "271e0edd3912b537c6c442660bc432f2bbd03738d0c53a507bea1d0ae06289fd",
     "daemon/queue.ts": "53193c5e4ee85e75da1477975c2903afca274205fdb1c723fa9e11f4b3168d44",
     "daemon/repo-completeness.ts": "c55dfc0c77b0b1d401daad88e422ddec4403dfbdab24d982100f36a0c2583939",
     "daemon/repo-stats.ts": "63aa3d30d0ae55f3028cdf5933eb0710e36b19add0a48c023a61d52b8797ba94",
@@ -39938,7 +39954,7 @@
     "daemon/threads/worker-entry.ts": "66cbe422009f0c0179a527f08815b80308b7c7f1cfbea7c09396fe29d9fb0218",
     "daemon/threads/worker-requests.ts": "745e8951329eb83143297bfc06de051390f2558ab67d035b1606074f65195fd0",
     "daemon/threads/workers.ts": "70d9e4e1f8b775fd0db9166d7558e6800d948ddef496c278b21bc2f645d81d8a",
-    "daemon/todos-rpc.ts": "4fe90b578efac0d1300d78d3ba800e5a91686ab023e262ce640662ffdeaf7a99",
+    "daemon/todos-rpc.ts": "962558b2708ae5117e79c088c23fcc92914ca64c1b0efba8cb810c1192934c96",
     "daemon/tools/builtins/cloud/aws/cloudformation.ts": "af33fb3c9ea612f78a426fc740e2a3d6f6f5ba2c52ce0515f5642fb6d3f4b6d7",
     "daemon/tools/builtins/cloud/aws/ec2.ts": "e42f25635dcc1591dddd71ec67a41ac15961ee715c80a0ffd018ff263bc3241a",
     "daemon/tools/builtins/cloud/aws/ecr.ts": "afc7b092f7e0d8744b14e1cf1450b430f6fcd32e0d357f0d7e8641c66cb12e44",
@@ -40192,7 +40208,7 @@
     "shared/json-fences.ts": "ad422a5636e8f9d38afc4cdc4a5685d76ccb73885f069d2b8c260482374ebdb0",
     "shared/keystore.ts": "1ca4c50b835b9553c8b84fd7b175b1fa557b10e7f1b4f4fce165ae8839871889",
     "shared/locks/lock-manager.ts": "ffc4dffe4e7a99306194054648fbe6b7b6dad11502bf50dae378ba70b2b1a0f9",
-    "shared/locks/maintenance-lock.ts": "d28caf037dedcb2b326bf4febe64953d3178e4d72f5214f44392991c885ada65",
+    "shared/locks/maintenance-lock.ts": "b5cd20b5fcb6a54b71ddcc86cc24eb9cdf34f85941e548f47eaa1dd8683193ba",
     "shared/logger.ts": "4d37ca182c80dbec718286e3eb32c500997697df566d9fff1936a854ca8ce5e5",
     "shared/model-recommender.ts": "230e90a6819496ba10ab60d928649f398d1b1266b4dec4693c42524eaf928ad1",
     "shared/paths.ts": "cf20f4f5bef4fc77b480a18a9e3031010c9753b7aaedbeeb8c23d17e7b258360",

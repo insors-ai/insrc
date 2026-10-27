@@ -388,6 +388,8 @@ export class IndexQueue {
   /** Let both lanes take jobs again after pause(). */
   resume(): void {
     this.paused = false;
+    // A pause() still waiting for quiet resolves too: the queue is no longer paused.
+    this.releaseQuietWaiters();
     this.releaseResumeWaiters();
   }
 

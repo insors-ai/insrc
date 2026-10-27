@@ -163,3 +163,21 @@ test('every lane change publishes the lane\'s depth and processing, and lane ord
 	assert.deepEqual(q2.takeDocSummaryEdit(), { kind: 'doc-summarise-entity', entityId: 'e' });
 	assert.deepEqual(published, ['summary 1', 'summary 1 sweep 2/5', 'summary 0 sweep 2/5']);
 });
+
+test('resume() while a pause() still waits for the job in flight resolves that pause instead of leaving it pending', async () => {
+	const q = new IndexQueue();
+	const g = gate();
+	const running = q.start(async () => { await g.wait; });
+	q.enqueue(file('slow.ts'));
+	await until(() => q.laneStatus().index.running, 'the job to start');
+	let settled = false;
+	const pausing = q.pause().then(() => { settled = true; });
+	await tick();
+	assert.equal(settled, false);
+	q.resume();
+	await pausing;
+	assert.equal(settled, true, 'the pause resolved at the resume');
+	g.open();
+	q.stop();
+	await running;
+});

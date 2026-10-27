@@ -26,11 +26,13 @@
  * correction always fits beside the call (s1 leaves out one that would not).
  */
 
+import { parentNoteReasons, type DiffParentDescriptor } from './diff-parent-evidence.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { ExecutionMode, ReviewCall, ReviewChunk, ReviewMaterial, StageAnswer } from '../types.js';
 
 /** What a dimension supplies for its chunk calls. */
 export interface ChunkSpec {
+	readonly diffParents?: readonly DiffParentDescriptor[] | undefined;
 	readonly kind:       'notes' | 'coverage' | 'quality';
 	/** The dimension's framing: what it judges, in today's words. */
 	readonly framing:    string;
@@ -88,9 +90,10 @@ export function chunkSchema(spec: ChunkSpec): StructuredSchema {
 		}
 		case 'quality':
 			return {
-				type: 'object', required: ['findings', 'descriptions'], additionalProperties: false,
+				type: 'object', required: ['findings', 'descriptions', ...((spec.diffParents?.length ?? 0) > 0 ? ['notes'] : [])], additionalProperties: false,
 				properties: {
 					findings: findingsProperty(spec.findings),
+					...((spec.diffParents?.length ?? 0) > 0 ? { notes: NOTES_PROPERTY } : {}),
 					descriptions: {
 						type: 'array',
 						items: {
@@ -139,6 +142,7 @@ const OUTPUT: Record<ChunkSpec['kind'], string> = {
 export function chunkCall(spec: ChunkSpec, chunk: ReviewChunk, material: ReviewMaterial, execution: ExecutionMode): { readonly messages: LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode } {
 	const system = [
 		spec.framing, DIVIDED, ...RULES[spec.kind],
+		...((spec.diffParents?.length ?? 0) > 0 ? ['For EVERY carried diff fragment write exactly one notes entry: key is diff-file-quality:<its parentId>, atomIds contains only that fragment entityId, and note states concrete local facts/assumptions and source coordinates needed to judge the whole parent file. Empty findings never excuse missing notes. A fragment is partial evidence, not a complete JSON/document.'] : []),
 		'Use only the keys listed and only the entityIds of the symbols in this chunk. Reason only over the structured symbol summaries provided.',
 	].join('\n');
 	const user = [
@@ -155,6 +159,7 @@ export function chunkCall(spec: ChunkSpec, chunk: ReviewChunk, material: ReviewM
 		...(chunk.neighbours.length > 0 ? chunk.neighbours.map(n => `- ${n.summary} (in ${n.heldInChunk})`) : ['(none)']),
 		'## Output',
 		OUTPUT[spec.kind],
+		...((spec.diffParents?.length ?? 0) > 0 ? ['Also return required notes: [{key: "diff-file-quality:<parentId>", atomIds: ["<this fragment entityId>"], note: "local facts and source coordinates"}], exactly one per carried fragment.'] : []),
 	].join('\n');
 	return { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: chunkSchema(spec), execution };
 }
@@ -204,6 +209,7 @@ export function validateChunk(spec: ChunkSpec, answer: unknown, call: ReviewCall
 			const repeated = ids.flatMap((id, i) => ids.indexOf(id) !== i ? [`descriptions[${i}]`] : []);
 			const foreign = ids.flatMap((id, i) => carried.has(id) ? [] : [`descriptions[${i}]`]);
 			return [
+				...((spec.diffParents?.length ?? 0) > 0 ? parentNoteReasons(a.notes ?? [], call, material) : []),
 				...(missing.length > 0 ? [`descriptions are missing for symbols in this chunk: ${quoted(missing)}`] : []),
 				...(repeated.length > 0 ? [`${atFault('descriptions repeat a symbol already described', repeated)}`] : []),
 				...(foreign.length > 0 ? [`${atFault('descriptions name an atomId that is no symbol in this chunk', foreign)}; describe exactly: ${quoted(call.carries.atomIds)}`] : []),

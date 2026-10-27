@@ -161,6 +161,7 @@ export interface FinishContext {
 }
 
 export interface ReviewAdapter<R> {
+	readonly requiresChunking?: boolean | undefined;
 	readonly kind:      'code-review' | 'design-review';
 	readonly dimension: string;
 	material(): ReviewMaterial;

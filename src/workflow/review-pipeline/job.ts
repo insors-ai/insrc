@@ -112,7 +112,7 @@ function enterStage(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, ind
 
 	if (next.plan.single) {
 		const singles = stage.singleCalls(next.outputs, next.snapshot);
-		if (singles.every(p => sentChars(p) <= next.plan.limitChars)) {
+		if (adapter.requiresChunking !== true && singles.every(p => sentChars(p) <= next.plan.limitChars)) {
 			next = issue(next, singles.map(prompt => ({ prompt, role: 'single' as const, carries: { atomIds: [], noteIds: [], key: prompt.key } })));
 		} else {
 			// Today's call does not fit: the review is divided, even with no atoms (its obligations go to gather).

@@ -27,6 +27,7 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, Dimensio
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
 import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
 import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
+import { DIFF_PARENT_QUALITY, withDiffParents } from './adapters/diff-parent-evidence.js';
 import { fitDiffMaterial } from './adapters/diff-fragments.js';
 import { envelopeMessages, envelopeSchema, promptChars } from './envelope.js';
 import { codeReviewGather } from './adapters/code-review-gather.js';
@@ -166,14 +167,14 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		if (built !== undefined) return built;
 		const source = spec.materialGrounding?.(grounding, groundingMode) ?? grounding;
 		const assemble = (view: CodeReviewGrounding): ReviewMaterial => {
-			const base = codeReviewMaterial(view), own = spec.obligations?.(base);
+			const base = codeReviewMaterial(view, { parentQuality: spec.chunk?.kind === 'quality' }), own = spec.obligations?.(base);
 			return own === undefined ? base : { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
 		};
 		const chunk = spec.chunk;
 		built = groundingMode === 'degraded' && chunk !== undefined && spec.skip === undefined
 			? fitDiffMaterial(source, limitChars, assemble, (atom, view) => {
 				// The exact singleton call: its complete context and schema, without unrelated row scans.
-				const prompt = chunkCall(chunk, { id: 'c0000', atomIds: [atom.id], neighbours: [], chars: 0 }, { ...view, atoms: [atom] }, execution);
+				const prompt = chunkCall(withDiffParents(chunk, view), { id: 'c0000', atomIds: [atom.id], neighbours: [], chars: 0 }, { ...view, atoms: [atom] }, execution);
 				const id = '00000000-0000-0000-0000-000000000000';
 				return promptChars(envelopeMessages(id, prompt.messages), envelopeSchema(id, prompt.schema));
 			}) : assemble(source);
@@ -201,9 +202,9 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		const judge: AdapterStage = {
 			id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review',
 			singleCalls: () => [{ messages: spec.prompt(grounding, groundingMode, undefined), schema: spec.schema, execution }],
-			chunkCalls: chunk => chunkSpec !== undefined ? [chunkCall(chunkSpec, chunk, material(), execution)] : [],
+			chunkCalls: chunk => chunkSpec !== undefined ? [chunkCall(withDiffParents(chunkSpec, material()), chunk, material(), execution)] : [],
 			// A chunk answer is checked against the obligations and the atoms its call carried.
-			validate: (answer, call) => call.role === 'chunk' && chunkSpec !== undefined ? validateChunk(chunkSpec, answer, call, material()) : [],
+			validate: (answer, call) => call.role === 'chunk' && chunkSpec !== undefined ? validateChunk(withDiffParents(chunkSpec, material()), answer, call, material()) : [],
 			// Today's correction for today's call: the prompt rebuilt with withStructuredRetry's note.
 			// A chunk call keeps its own prompt, with the reasons appended.
 			withCorrection: (prompt, reasons) => JSON.stringify(prompt.schema) === singleSchema
@@ -217,6 +218,7 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 	};
 	return {
 		kind: 'code-review', dimension: spec.dimension,
+		get requiresChunking() { return spec.chunk?.kind === 'quality' && material().obligations.some(o => o.key.startsWith(DIFF_PARENT_QUALITY)); },
 		material,
 		neighbourSummary,
 		stagesFor: stages,

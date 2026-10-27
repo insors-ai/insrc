@@ -11,6 +11,7 @@
  * share a directory. Pure: built from the job's snapshot, never re-queried.
  */
 
+import { parentQualityObligations } from './diff-parent-evidence.js';
 import { posix } from 'node:path';
 
 import { validateDiffFragments } from '../../code-review/diff-spans.js';
@@ -28,7 +29,7 @@ export function moduleOf(file: string): string {
  * context are the dimension's own (Story s3). Throws when two rows share an
  * entityId: carries and provenance would be ambiguous.
  */
-export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMaterial {
+export function codeReviewMaterial(grounding: CodeReviewGrounding, opts?: { readonly parentQuality?: boolean }): ReviewMaterial {
 	validateDiffFragments(grounding.symbols);
 	const atoms: ReviewAtom[] = [];
 	const labelById = new Map<string, string>();
@@ -97,7 +98,7 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 			relate(a.id, b.id, 'same-module');
 		}
 	}
-	return { atoms, relations, obligations: [] };
+	return { atoms, relations, obligations: opts?.parentQuality === true ? parentQualityObligations(grounding.symbols) : [] };
 }
 
 /** The longest first signature line a neighbour summary carries. */

@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T08:07:02.430Z",
+    "updatedAt": "2026-10-27T08:15:04.584Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -515,6 +515,111 @@
               },
               {
                 "title": "DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a5390a694",
+        "ranAt": "2026-10-27T08:15:04.584Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-INTEGRITY",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-LARGE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-SCALE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-LOW-CAP",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1033,
+            "titles": [
+              {
+                "title": "DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
                 "result": "pass"
               }
             ],

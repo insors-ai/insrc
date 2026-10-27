@@ -71,7 +71,7 @@ test('DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with 
 		assert.ok(promptChars(call.messages, call.schema) <= 384_000);
 		if (call.stage === 'judge') reviewed.push(...call.carries.atomIds);
 		const answer = call.stage === 'judge'
-			? { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `Local facts for ${atomId}` })) }
+			? { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `Local facts for ${atomId}` })), notes: call.carries.atomIds.map(atomId => { const row = JSON.parse(adapter.material().atoms.find(a => a.id === atomId)!.text) as ChangedSymbolSummary; return { key: `diff-file-quality:${row.diffFragment!.parentId}`, atomIds: [atomId], note: 'Local quality facts' }; }) }
 			: call.stage === 'compare' ? { candidates: [] } : { findings: [] };
 		job = applyOutput(job, adapter, call.callId, { callId: call.callId, answer });
 	}

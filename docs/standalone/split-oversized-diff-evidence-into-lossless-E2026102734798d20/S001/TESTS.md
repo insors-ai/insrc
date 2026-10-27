@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -104,3 +104,39 @@ Run at 2026-10-27T08:07:02.430Z on commit `cdafce8c3`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/__tests__/diff-spans.test.ts` | 0 | 5 | 0.6 s |  |
+
+## t5
+
+Run at 2026-10-27T08:15:04.584Z on commit `a5390a694`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: DIFF-INTEGRITY**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+
+**integration: DIFF-LARGE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+
+**integration: DIFF-SCALE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+
+**integration: DIFF-LOW-CAP**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+| pass | DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+| pass | DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` | 0 | 6 | 1 s |  |

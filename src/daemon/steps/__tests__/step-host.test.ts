@@ -414,3 +414,46 @@ test('insrc_analyze through step.call refuses bad arguments with a clear error, 
 		assert.match(env.content[0]!.text, message, JSON.stringify(args));
 	}
 });
+
+test('single-thread owner registration cleanup and out-of-band trusted context preserve non-review behavior', async () => {
+	const { getStepStateStore } = await import('../../threads/step-state.js');
+	const { assertReviewOwnerActive } = await import('../../review-request-owner.js');
+	const store = getStepStateStore();
+	let held: import('../../threads/review-state-contract.js').ReviewStateClaim | undefined;
+	let owner = '';
+	let token = '';
+	let mode: 'leave' | 'complete' | 'throw' = 'leave';
+	const host = createStepCallHandler({
+		insrc_review_step: async () => {
+			owner = currentStepContext()!.reviewOwner!.nonce;
+			assert.notEqual(owner, 'forged'); assertReviewOwnerActive(owner);
+			token = await store.mintReviewState('review', {}, { generation: 0, callId: 'local-call' });
+			const result = await store.claimReviewState({ kind: 'review', token, generation: 0, callId: 'local-call', owner });
+			if (result.status !== 'claimed') throw new Error('expected claim'); held = result.claim;
+			if (mode === 'complete') await store.commitReviewState(result.claim, { status: 'completed', receipt: { status: 'completed', callId: 'local-call', artifactId: 'CR-local-s1' } });
+			if (mode === 'throw') throw new Error('fixture failure');
+			return ENVELOPE;
+		},
+		insrc_triage: async () => { assert.equal(currentStepContext()?.reviewOwner, undefined); return ENVELOPE; },
+	});
+	for (const selected of ['leave', 'complete', 'throw'] as const) {
+		mode = selected;
+		const frames = await collect(host, { tool: 'insrc_review_step', args: { owner: 'forged' }, context: { ...CTX, reviewOwner: { nonce: 'forged' } } });
+		assert.equal(frames.at(-1)?.stream, selected === 'throw' ? 'error' : 'done');
+		assert.throws(() => assertReviewOwnerActive(owner), /owner-mismatch/);
+		await assert.rejects(store.commitReviewState(held!, { status: 'completed', receipt: { status: 'completed', callId: 'local-call' } }), /owner-mismatch|uncertain/);
+		if (selected === 'complete') assert.equal((await store.read('review', token))!.payload, undefined, 'bounded receipt survives owner cleanup');
+	}
+	assert.equal((await collect(host, { tool: 'insrc_triage', args: {}, context: CTX })).at(-1)?.stream, 'done');
+	const controller = new AbortController();
+	const cancelHost = createStepCallHandler({ insrc_review_step: async () => {
+		owner = currentStepContext()!.reviewOwner!.nonce;
+		token = await store.mintReviewState('review', {}, { generation: 0, callId: 'cancel' });
+		await store.claimReviewState({ kind: 'review', token, generation: 0, callId: 'cancel', owner });
+		controller.abort();
+		assert.throws(() => assertReviewOwnerActive(owner), /owner-mismatch/);
+		return ENVELOPE;
+	} });
+	await collect(cancelHost, { tool: 'insrc_review_step', args: {}, context: CTX }, controller.signal);
+	assert.throws(() => assertReviewOwnerActive(owner));
+});

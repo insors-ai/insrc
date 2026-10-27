@@ -14,8 +14,10 @@ import { getStepStateStore, HubStepStateStore, installStepStateStore } from '../
 import type { ReviewStateAccess, ReviewStateClaim, ReviewStateExpected, ReviewStateCommit, ReviewStateKind } from '../../review-state-contract.js';
 import type { StepKind } from '../../step-state.js';
 
-installStepStateStore(new HubStepStateStore(new HubClient((workerData as { port: MessagePort }).port)));
+let fixtureOwner = ''; // Explicit trusted-owner injection for the isolated t8 store fixture only.
+installStepStateStore(new HubStepStateStore(new HubClient((workerData as { port: MessagePort }).port), () => fixtureOwner));
 parentPort!.on('message', async (m: { op: 'mint' | 'mint-unclonable' | 'read' | 'mint-review' | 'claim' | 'commit' | 'release-claim' | 'invalidate' | 'consume'; kind: StepKind; token?: string; payload?: unknown; expected?: ReviewStateExpected; access?: ReviewStateAccess; claim?: ReviewStateClaim; next?: ReviewStateCommit<unknown>; declaration?: boolean; answer?: unknown; failure?: 'before-write' | 'after-write'; persistencePath?: string }) => {
+	fixtureOwner = m.access?.owner ?? m.claim?.owner ?? '';
 	try {
 		const store = getStepStateStore();
 		if (m.op === 'consume') {

@@ -10,7 +10,7 @@ import type { ReviewStateClaim } from '../review-state-contract.js';
 
 function connect(store: LocalStepStateStore) {
 	const { port1, port2 } = new MessageChannel();
-	const stop = serveHub(port1, stepStateHubHandlers(store));
+	const stop = serveHub(port1, stepStateHubHandlers(store, () => {}));
 	const worker = new Worker(new URL('./helpers/step-state-worker-bootstrap.mjs', import.meta.url), { workerData: { port: port2 }, transferList: [port2] });
 	const inbox: Record<string, unknown>[] = [];
 	const waiting: ((v: Record<string, unknown>) => void)[] = [];
@@ -24,7 +24,7 @@ function connect(store: LocalStepStateStore) {
 }
 
 test('two actual hub connections cannot consume or persist the same pending call twice', async () => {
-	const store = new LocalStepStateStore();
+	const store = new LocalStepStateStore(undefined, () => {});
 	const dir = mkdtempSync(join(tmpdir(), 'review-atomic-persist-'));
 	const left = connect(store), right = connect(store);
 	try {

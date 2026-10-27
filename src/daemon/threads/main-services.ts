@@ -14,6 +14,7 @@
  * single-threaded, as before.
  */
 
+import { registerReviewWorkerConnection, disconnectReviewWorker, assertReviewOwnerActive } from '../review-request-owner.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { MessageChannel } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
@@ -114,7 +115,7 @@ export class ThreadServices {
 	private shutdown: ((reason: string) => void) | undefined;
 	private maintenance: (() => Promise<unknown>) | undefined;
 
-	constructor(private readonly info: () => DaemonInfo, steps: SharedStepStateStore = new LocalStepStateStore()) {
+	constructor(private readonly info: () => DaemonInfo, private readonly steps: SharedStepStateStore = new LocalStepStateStore()) {
 		// The main thread joins the same blocks it hands to every worker.
 		installStoreGuard(this.guardBlock);
 		installLockManager(this.lockBlock);
@@ -146,7 +147,9 @@ export class ThreadServices {
 	/** Open a channel for a new worker and serve the hub on the main thread's end. */
 	connectWorker(): WorkerConnection {
 		const { port1, port2 } = new MessageChannel();
-		const stop = serveHub(port1, this.handlers);
+		const connection = registerReviewWorkerConnection(port1);
+		port1.once('close', () => disconnectReviewWorker(connection));
+		const stop = serveHub(port1, { ...this.handlers, ...stepStateHubHandlers(this.steps, owner => assertReviewOwnerActive(owner, connection)) });
 		this.ports.add(port1);
 		// A worker started after the backend was decided gets it at once.
 		if (this.embedderBackend !== undefined) pushToWorker(port1, EMBEDDER_BACKEND_OP, this.embedderBackend);
@@ -154,7 +157,7 @@ export class ThreadServices {
 			workerData: { guardBlock: this.guardBlock, lockBlock: this.lockBlock, indexingBlock: this.indexingBlock, hubPort: port2 },
 			transferList: [port2],
 			port: port1,
-			disconnect: () => { stop(); this.ports.delete(port1); port1.close(); },
+			disconnect: () => { disconnectReviewWorker(connection); stop(); this.ports.delete(port1); port1.close(); },
 		};
 	}
 

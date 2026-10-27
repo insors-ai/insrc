@@ -15,6 +15,7 @@
  * is held until one registers, at most holdMs, then answered with an error.
  */
 
+import { registerReviewRequestOwner, reviewWorkerConnection, retireReviewOwner, disconnectReviewWorker } from '../review-request-owner.js';
 import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../../shared/logger.js';
@@ -46,6 +47,7 @@ export interface RouterOptions {
 }
 
 interface Pending {
+	readonly reviewOwner?: string | undefined;
 	readonly lifetime?: RequestLifetime | undefined;
 	readonly threadId: number;
 	readonly method: string;
@@ -154,13 +156,14 @@ export class Router {
 			const pending = this.pending.get(response.requestId);
 			if (pending === undefined || pending.threadId !== threadId) return;
 			if (completion) {
+				if (pending.reviewOwner) retireReviewOwner(pending.reviewOwner);
 				if (pending.lifetime) { this.pending.delete(response.requestId); pending.lifetime.complete(); }
 				return;
 			}
-			if (response.kind === 'reply') { if (!pending.lifetime) this.pending.delete(response.requestId); }
+			if (response.kind === 'reply') { if (!pending.lifetime) { if (pending.reviewOwner) retireReviewOwner(pending.reviewOwner); this.pending.delete(response.requestId); } }
 			else {
 				const stream = ((response as FrameEnvelope).frame as IpcStreamMessage).stream;
-				if (!pending.lifetime && (stream === 'done' || stream === 'error')) this.pending.delete(response.requestId);
+				if (!pending.lifetime && (stream === 'done' || stream === 'error')) { if (pending.reviewOwner) retireReviewOwner(pending.reviewOwner); this.pending.delete(response.requestId); }
 			}
 			pending.deliver(response);
 		};
@@ -174,6 +177,8 @@ export class Router {
 	detach(threadId: number): OrphanedRequest[] {
 		const port = this.ports.get(threadId);
 		const listener = this.listeners.get(threadId);
+		const connection = port === undefined ? undefined : reviewWorkerConnection(port);
+		if (connection) disconnectReviewWorker(connection);
 		if (port !== undefined && listener !== undefined) port.off('message', listener);
 		this.ports.delete(threadId);
 		this.listeners.delete(threadId);
@@ -181,6 +186,7 @@ export class Router {
 		for (const [requestId, p] of this.pending) {
 			if (p.threadId !== threadId) continue;
 			this.pending.delete(requestId);
+			if (p.reviewOwner) { retireReviewOwner(p.reviewOwner); p.lifetime?.abort(); }
 			p.lifetime?.complete();
 			orphaned.push({ requestId, method: p.method, stream: p.stream, deliver: p.deliver });
 		}
@@ -210,9 +216,23 @@ export class Router {
 
 	private send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		const port = this.ports.get(threadId)!;
-		this.pending.set(request.requestId, { threadId, method: request.method, stream: request.stream, deliver, ...(request.stream && request.lifetime ? { lifetime: request.lifetime } : {}) });
-		try { port.postMessage(wireRequest(request)); }
+		const tool = (request.params as { tool?: unknown } | null)?.tool;
+		const connection = reviewWorkerConnection(port);
+		let reviewOwner: string | undefined;
+		try {
+			if (request.method === 'step.call' && (tool === 'insrc_review_step' || tool === 'insrc_code_review_step') && connection !== undefined) {
+				reviewOwner = registerReviewRequestOwner(connection, request.requestId, request.lifetime?.signal, request.lifetime?.assertActive);
+			}
+		} catch {
+			try { deliver({ kind: 'reply', requestId: request.requestId, error: 'review request channel unavailable' }); }
+			finally { request.lifetime?.complete(); }
+			return () => {};
+		}
+		const owned = reviewOwner === undefined ? request : { ...request, trustedContext: { ...request.trustedContext, connectionIdentity: request.trustedContext?.connectionIdentity ?? 'internal', daemonEpoch: request.trustedContext?.daemonEpoch ?? 'internal', reviewOwnerNonce: reviewOwner } };
+		this.pending.set(request.requestId, { reviewOwner, threadId, method: request.method, stream: request.stream, deliver, ...(request.stream && request.lifetime ? { lifetime: request.lifetime } : {}) });
+		try { port.postMessage(wireRequest(owned)); }
 		catch {
+			if (reviewOwner) retireReviewOwner(reviewOwner);
 			this.pending.delete(request.requestId);
 			try { deliver({kind:'reply', requestId:request.requestId, error:'request channel unavailable'}); }
 			finally { request.lifetime?.complete(); }
@@ -250,6 +270,8 @@ export class Router {
 	/** The request's socket closed: a stream is cancelled on its worker; a unary request runs on and its reply is dropped there. */
 	private cancel(threadId: number, request: LocalRequestEnvelope): void {
 		if (!request.stream) return;
+		const owner = this.pending.get(request.requestId)?.reviewOwner;
+		if (owner) retireReviewOwner(owner);
 		request.lifetime?.abort();
 		if (!request.lifetime) this.pending.delete(request.requestId);
 		this.ports.get(threadId)?.postMessage({ kind: 'cancel', requestId: request.requestId } satisfies CancelEnvelope);

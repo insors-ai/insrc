@@ -16,6 +16,9 @@
  * worker's payload becomes when it crosses threads.
  */
 
+import { assertReviewOwnerActive, retireReviewOwner } from '../review-request-owner.js';
+import { currentStepContext } from '../../shared/step-context.js';
+import { requireReviewOwnerContext } from '../../shared/review-owner-context.js';
 import { ReviewStateRefused } from './review-state-contract.js';
 import type { ReviewStateKind, ReviewStateExpected, ReviewStateAccess, ReviewStateClaim, ReviewClaimResult, ReviewStateCommit, ReviewCommitResult, ReviewCompletionReceipt } from './review-state-contract.js';
 import { randomBytes } from 'node:crypto';
@@ -102,7 +105,7 @@ function mintToken(): string {
 export class LocalStepStateStore implements SharedStepStateStore {
 	private readonly stores = new Map<StepKind, Map<string, Entry>>(STEP_KINDS.map(k => [k, new Map()]));
 
-	constructor(private readonly now: () => number = () => Date.now()) {}
+	constructor(private readonly now: () => number = () => Date.now(), private readonly assertOwner: (owner: string) => void = assertReviewOwnerActive) {}
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 
@@ -153,6 +156,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 	}
 
 	async claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> {
+		this.assertOwner(access.owner);
 		this.validateExpected(access.kind, access);
 		if (typeof access.owner !== 'string' || access.owner.length === 0) throw new ReviewStateRefused('review-state-owner-mismatch');
 		const entry = this.reviewEntry(access.kind, access.token);
@@ -219,6 +223,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		return entry;
 	}
 	private claimEntry(claim: ReviewStateClaim): Entry {
+		this.assertOwner(claim.owner);
 		const entry = this.reviewEntry(claim.kind, claim.token);
 		const held = entry.review!.claim;
 		if (held === undefined || held.claimId !== claim.claimId || held.owner !== claim.owner || held.generation !== claim.generation || held.callId !== claim.callId) throw new ReviewStateRefused('review-state-owner-mismatch');
@@ -262,14 +267,15 @@ export class LocalStepStateStore implements SharedStepStateStore {
 // ---------------------------------------------------------------------------
 
 /** The main thread's hub services for the step-state store. */
-export function stepStateHubHandlers(store: SharedStepStateStore): HubHandlers {
+export function stepStateHubHandlers(store: SharedStepStateStore, assertOwner: (owner: string) => void = assertReviewOwnerActive): HubHandlers {
 	type A = { kind: StepKind; token?: string; payload?: unknown };
 	return {
 		'step.review.mint': a => { const v = a as { kind: ReviewStateKind; payload: unknown; expected: ReviewStateExpected }; return store.mintReviewState(v.kind, v.payload, v.expected); },
-		'step.review.claim': a => store.claimReviewState(a as ReviewStateAccess),
-		'step.review.commit': a => { const v = a as { claim: ReviewStateClaim; next: ReviewStateCommit<unknown> }; return store.commitReviewState(v.claim, v.next); },
-		'step.review.release': a => { const v = a as { claim: ReviewStateClaim; noSideEffects: true }; return store.releaseReviewClaim(v.claim, v.noSideEffects); },
-		'step.review.invalidate': a => store.invalidateReviewClaim(a as ReviewStateClaim),
+		'step.review.claim': a => { const access = a as ReviewStateAccess; assertOwner(access.owner); return store.claimReviewState(access); },
+		'step.review.commit': a => { const v = a as { claim: ReviewStateClaim; next: ReviewStateCommit<unknown> }; assertOwner(v.claim.owner); return store.commitReviewState(v.claim, v.next); },
+		'step.review.release': a => { const v = a as { claim: ReviewStateClaim; noSideEffects: true }; assertOwner(v.claim.owner); return store.releaseReviewClaim(v.claim, v.noSideEffects); },
+		'step.review.invalidate': a => { const claim = a as ReviewStateClaim; assertOwner(claim.owner); return store.invalidateReviewClaim(claim); },
+		'step.review.owner-end': a => { const owner = (a as { owner: string }).owner; assertOwner(owner); retireReviewOwner(owner); },
 		'step.mint':    a => store.mint((a as A).kind, (a as A).payload),
 		'step.read':    a => store.read((a as A).kind, (a as A).token!),
 		'step.update':  a => store.update((a as A).kind, (a as A).token, (a as A).payload),
@@ -281,13 +287,14 @@ export function stepStateHubHandlers(store: SharedStepStateStore): HubHandlers {
 
 /** A worker's view of the step-state store, one hub request per call. */
 export class HubStepStateStore implements SharedStepStateStore {
-	constructor(private readonly hub: HubClient) {}
+	constructor(private readonly hub: HubClient, private readonly ownerContext: (() => string) = () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).nonce) {}
+	private checkOwner(owner: string): void { if (owner !== this.ownerContext()) throw new ReviewStateRefused('review-state-owner-mismatch'); }
 	mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> { return this.hub.request('step.review.mint', { kind, payload, expected }); }
-	claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> { return this.hub.request('step.review.claim', access); }
-	commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> { return this.hub.request('step.review.commit', { claim, next }); }
-	releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> { return this.hub.request('step.review.release', { claim, noSideEffects }); }
-	invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> { return this.hub.request('step.review.invalidate', claim); }
-	invalidateReviewOwner(_owner: string): Promise<void> { throw new Error('review owner invalidation is main-thread only'); }
+	claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> { this.checkOwner(access.owner); return this.hub.request('step.review.claim', access); }
+	commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> { this.checkOwner(claim.owner); return this.hub.request('step.review.commit', { claim, next }); }
+	releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> { this.checkOwner(claim.owner); return this.hub.request('step.review.release', { claim, noSideEffects }); }
+	invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> { this.checkOwner(claim.owner); return this.hub.request('step.review.invalidate', claim); }
+	invalidateReviewOwner(owner: string): Promise<void> { this.checkOwner(owner); return this.hub.request('step.review.owner-end', { owner }); }
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 	mint<P>(kind: StepKind, payload: P): Promise<string> { return this.hub.request('step.mint', { kind, payload }); }

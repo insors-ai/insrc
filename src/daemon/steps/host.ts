@@ -17,6 +17,8 @@
  *     request itself was malformed.
  */
 
+import { registerLocalReviewOwner } from '../review-request-owner.js';
+import { createReviewOwnerContext } from '../../shared/review-owner-context.js';
 import type { StreamHandler } from '../server.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInStepContext, requireConnectionExecution } from '../../shared/step-context.js';
@@ -142,8 +144,13 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 			// The step runs in the client provider context of the family the calling
 			// client implies (Claude Code → the family running claude), as an MCP call did.
 			const family = familyForClient((ctx as StepCallContext).client);
+			const review = p.tool === 'insrc_review_step' || p.tool === 'insrc_code_review_step';
+			const localOwner = review && trusted?.reviewOwnerNonce === undefined ? registerLocalReviewOwner(signal, trusted?.assertRequestActive) : undefined;
+			const nonce = trusted?.reviewOwnerNonce ?? localOwner?.nonce;
+			const ownedContext = review && nonce ? { ...ctx, reviewOwner: createReviewOwnerContext(nonce, signal, trusted?.assertRequestActive) } : ctx;
 			const call = (): Promise<StepEnvelope> => run(p.args, signal, progress, execution);
-			envelope = await runInStepContext(ctx, () => family !== undefined ? runWithClientProviderContext(family, call) : call());
+			try { envelope = await runInStepContext(ownedContext, () => family !== undefined ? runWithClientProviderContext(family, call) : call()); }
+			finally { localOwner?.close(); }
 		} catch (err) {
 			answered = true;
 			const message = bound ? 'Connection session operation failed.' : err instanceof Error ? err.message : String(err);

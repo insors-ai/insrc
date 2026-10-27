@@ -10,6 +10,8 @@ export interface TrustedConnectionSession {
 }
 /** Server-owned transport metadata; never deserialized from request params or client labels. */
 export interface TrustedRpcContext {
+	/** Main-thread minted request nonce; the only review authority carried over the worker wire. */
+	readonly reviewOwnerNonce?: string | undefined;
 	readonly connectionIdentity: string;
 	readonly daemonEpoch: string;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;

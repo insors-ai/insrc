@@ -43,7 +43,7 @@ export interface RequestEnvelope {
 	readonly trackCompletion?: true | undefined;
 	readonly session?: SessionId | undefined;
 	/** Constructed by the socket server; session label/pid and params are untrusted. */
-	readonly trustedContext?: Pick<TrustedRpcContext, 'connectionIdentity' | 'daemonEpoch'> | undefined;
+	readonly trustedContext?: Pick<TrustedRpcContext, 'connectionIdentity' | 'daemonEpoch' | 'reviewOwnerNonce'> | undefined;
 	/**
 	 * Set on a cross-class request made by a handler that already holds the
 	 * daemon maintenance lock (a nested in-daemon call): the serving worker does
@@ -66,7 +66,7 @@ export function wireRequest(request: LocalRequestEnvelope): RequestEnvelope {
 		...(request.stream && request.lifetime ? { trackCompletion: true as const } : {}),
 		...(request.session ? { session: { label: request.session.label, pid: request.session.pid } } : {}),
 		...(request.underHold !== undefined ? { underHold: request.underHold } : {}),
-		...(request.trustedContext ? { trustedContext: { connectionIdentity: request.trustedContext.connectionIdentity, daemonEpoch: request.trustedContext.daemonEpoch } } : {}),
+		...(request.trustedContext ? { trustedContext: { connectionIdentity: request.trustedContext.connectionIdentity, daemonEpoch: request.trustedContext.daemonEpoch, ...(request.trustedContext.reviewOwnerNonce !== undefined ? { reviewOwnerNonce: request.trustedContext.reviewOwnerNonce } : {}) } } : {}),
 	};
 }
 export interface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }

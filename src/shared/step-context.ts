@@ -16,6 +16,7 @@
  * In src/shared because src/analyze/context/scope.ts reads it too.
  */
 
+import type { ReviewRequestOwnerContext } from './review-owner-context.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { ConnectionAccessContext, ConnectionScope } from './connection-management.js';
 
@@ -117,6 +118,8 @@ export function requireConnectionExecution(value: ConnectionExecutionContext | u
 export type StepClient = 'claude' | 'codex';
 
 export interface StepCallContext {
+	/** Trusted review request owner, never read from caller context JSON. */
+	readonly reviewOwner?: ReviewRequestOwnerContext | undefined;
 	readonly cwd:      string;
 	readonly envRepo?: string | undefined;
 	readonly client?:  StepClient | undefined;

@@ -30,7 +30,7 @@ const HOUR = 60 * 60 * 1_000;
 
 test("each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores", async () => {
 	let t = 1_000_000;
-	const s = new LocalStepStateStore(() => t);
+	const s = new LocalStepStateStore(() => t, () => {});
 
 	// rotate-token (analyze, workflow): a new token; the old one is gone; no prior token is fine.
 	for (const kind of ['analyze', 'workflow'] as const) {
@@ -61,7 +61,7 @@ test("each step kind's token rule, 100-entry eviction, TTL with read refresh and
 	await s.release('code-review', 'unknown');   // a no-op
 
 	// 100-entry cap per kind, least recently touched evicted first; other kinds untouched.
-	const lru = new LocalStepStateStore(() => t);
+	const lru = new LocalStepStateStore(() => t, () => {});
 	const tokens: string[] = [];
 	for (let i = 0; i < 100; i++) { t += 1; tokens.push(await lru.mint('analyze', { i })); }
 	t += 1; await lru.read('analyze', tokens[0]!);   // touch the oldest: now the least recent is tokens[1]
@@ -73,7 +73,7 @@ test("each step kind's token rule, 100-entry eviction, TTL with read refresh and
 	assert.notEqual(await lru.read('review', otherKind), undefined, 'another kind is unaffected');
 
 	// TTL: a read refreshes the expiry; an entry untouched for over an hour is swept on the next mint.
-	const ttl = new LocalStepStateStore(() => t);
+	const ttl = new LocalStepStateStore(() => t, () => {});
 	const kept = await ttl.mint('workflow', { kept: true });
 	const dropped = await ttl.mint('workflow', { dropped: true });
 	t += HOUR - 1; await ttl.read('workflow', kept);
@@ -85,7 +85,7 @@ test("each step kind's token rule, 100-entry eviction, TTL with read refresh and
 function connect(store: LocalStepStateStore): () => { worker: Worker; ask: (m: Record<string, unknown>) => Promise<Record<string, unknown>> } {
 	return () => {
 		const { port1: main, port2: workerPort } = new MessageChannel();
-		serveHub(main, stepStateHubHandlers(store));
+		serveHub(main, stepStateHubHandlers(store, () => {}));
 		const worker = new Worker(join(HERE, 'helpers', 'step-state-worker-bootstrap.mjs'), { workerData: { port: workerPort }, transferList: [workerPort] });
 		const inbox: Record<string, unknown>[] = [];
 		const waiting: ((m: Record<string, unknown>) => void)[] = [];
@@ -120,7 +120,7 @@ const PAYLOADS: Readonly<Record<StepKind, unknown>> = {
 };
 
 test('a real payload of each step kind survives a structured clone through the hub', async () => {
-	const store = new LocalStepStateStore();
+	const store = new LocalStepStateStore(undefined, () => {});
 	const { worker, ask } = connect(store)();
 	try {
 		for (const kind of Object.keys(PAYLOADS) as StepKind[]) {
@@ -144,7 +144,7 @@ test('a real payload of each step kind survives a structured clone through the h
 });
 
 test('step state minted in one worker is read in another after the first exits', async () => {
-	const store = new LocalStepStateStore();
+	const store = new LocalStepStateStore(undefined, () => {});
 	const open = connect(store);
 	const first = open();
 	const minted = await first.ask({ op: 'mint', kind: 'workflow', payload: PAYLOADS['workflow'] });
@@ -160,7 +160,7 @@ test('step state minted in one worker is read in another after the first exits',
 
 test('atomic review claim commit generation recovery receipt and pinned-capacity invariants', async () => {
 	let now = 1000;
-	const store = new LocalStepStateStore(() => now);
+	const store = new LocalStepStateStore(() => now, () => {});
 	for (const kind of ['review', 'code-review'] as const) {
 		const token = await store.mintReviewState(kind, { source: ['original'] }, { generation: 0, callId: 'call-1' });
 		const access = { kind, token, generation: 0, callId: 'call-1', owner: 'owner-1' };
@@ -202,7 +202,7 @@ test('atomic review claim commit generation recovery receipt and pinned-capacity
 	await assert.rejects(store.commitReviewState(claimed.claim, { status: 'pending', callId: 'late', payload: {} }), /uncertain/);
 	const unrelated = await store.mintReviewState('review', {}, { generation: 0, callId: 'unrelated' });
 	assert.equal((await store.claimReviewState({ ...access, token: unrelated, callId: 'unrelated', owner: 'independent' })).status, 'claimed');
-	const pinned = new LocalStepStateStore(() => now);
+	const pinned = new LocalStepStateStore(() => now, () => {});
 	for (let i = 0; i < 100; i++) {
 		const token = await pinned.mintReviewState('review', { i }, { generation: 0, callId: `c-${i}` });
 		await pinned.claimReviewState({ kind: 'review', token, generation: 0, callId: `c-${i}`, owner: 'live' });
@@ -213,7 +213,7 @@ test('atomic review claim commit generation recovery receipt and pinned-capacity
 	await pinned.invalidateReviewOwner('live');
 	await pinned.mintReviewState('review', {}, { generation: 0, callId: 'after-loss' });
 	assert.equal(await pinned.sizeForTests('review'), 100, 'uncertain tombstones stay bounded');
-	const receipts = new LocalStepStateStore(() => now);
+	const receipts = new LocalStepStateStore(() => now, () => {});
 	let first: string | undefined;
 	for (let i = 0; i < 101; i++) {
 		const token = await receipts.mintReviewState('review', {}, { generation: 0, callId: `r-${i}` }); first ??= token;

@@ -1,9 +1,11 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsDto
 import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto
+import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.ui.JBColor
@@ -42,7 +44,8 @@ class ModelTiersSection(
     private val gateway: DaemonGateway,
 ) : SettingsSection {
 
-    private var model: ModelTiersModel? = (initial as? ModelDefinitionsResult.Loaded)?.let { ModelTiersModel(catalog, it.definitions) }
+    private var definitions: ModelDefinitionsDto? = (initial as? ModelDefinitionsResult.Loaded)?.definitions
+    private var model: ModelTiersModel? = definitions?.let { ModelTiersModel(catalog, it) }
     private var status: String? = (initial as? ModelDefinitionsResult.Failed)?.failure?.text
 
     private val body = JPanel().apply { layout = BoxLayout(this, BoxLayout.Y_AXIS) }
@@ -206,10 +209,15 @@ class ModelTiersSection(
     private fun refreshRow(): JComponent {
         val row = JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0))
         row.alignmentX = Component.LEFT_ALIGNMENT
+        val check = JButton("Check model…").apply {
+            toolTipText = "Check a model the daemon does not list, then approve or reject it"
+            addActionListener { checkModel(this) }
+        }
         val refresh = JButton("Refresh").apply {
             toolTipText = "Re-read the daemon's model definitions"
             addActionListener { refreshDefinitions() }
         }
+        row.add(check)
         row.add(refresh)
         row.maximumSize = Dimension(Int.MAX_VALUE, row.preferredSize.height)
         return row
@@ -226,15 +234,35 @@ class ModelTiersSection(
             fresh = gateway.modelDefinitions()
         }, "Refreshing the model definitions…", false, null)
         when (val r = fresh) {
-            is ModelDefinitionsResult.Loaded -> {
-                val m = model
-                if (m == null) model = ModelTiersModel(catalog, r.definitions) else m.updateDefinitions(r.definitions)
-                status = null
-            }
+            is ModelDefinitionsResult.Loaded -> applyDefinitions(r.definitions)
             is ModelDefinitionsResult.Failed -> status = r.failure.text
             null -> status = "the model definitions could not be read"
         }
         underGuard(::rebuildBody)
+    }
+
+    /** Build or update the model from fresh definitions (keeping pending edits) and clear the failure. */
+    private fun applyDefinitions(fresh: ModelDefinitionsDto) {
+        definitions = fresh
+        val m = model
+        if (m == null) model = ModelTiersModel(catalog, fresh) else m.updateDefinitions(fresh)
+        status = null
+    }
+
+    /**
+     * Open the Check model… dialog over the current definitions. A model approved there is
+     * offered once the dialog's restart re-read the definitions; it is saved to a tier only
+     * by this page's Apply.
+     */
+    private fun checkModel(parent: JComponent) {
+        val defs = definitions ?: return
+        val flow = ModelCheckFlow(gateway, defs, DaemonRestart({ DaemonLifecycleCommandRunner.production().run(it) }, gateway))
+        val dialog = ModelCheckDialog(parent, flow)
+        dialog.show()
+        dialog.reloaded?.let {
+            applyDefinitions(it)
+            underGuard(::rebuildBody)
+        }
     }
 
     private fun underGuard(action: () -> Unit) {

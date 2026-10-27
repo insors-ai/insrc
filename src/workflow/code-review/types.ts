@@ -157,6 +157,20 @@ export interface ChangedSymbolSummary {
 /** How far the graph and the Story's test record show a symbol is exercised. */
 export type CoverageEvidence = 'reached-passing' | 'reached-not-passing' | 'no-edge-story-tests-pass' | 'no-edge-no-tests';
 
+/** Canonical content identity; both shape and canonicalization version are validated on consumption. */
+export interface ReviewInputFingerprint {
+ readonly schemaVersion: 1;
+ readonly repoPath: string;
+ readonly epicHash: string;
+ readonly storyId: string;
+ readonly author: 'controller' | 'daemon' | 'unknown';
+ readonly sourceDigest: string;
+ readonly contractDigest: string;
+ readonly buildDigest: string;
+ readonly testsDigest: string;
+ readonly digest: string;
+}
+
 /** Frozen root budget measured from admission through grounding/preparation and execution. */
 export interface ReviewTimingPlan {
  readonly startedAt: number;

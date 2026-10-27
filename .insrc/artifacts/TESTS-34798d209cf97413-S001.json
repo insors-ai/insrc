@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:07:38.086Z",
+    "updatedAt": "2026-10-27T09:13:13.967Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -1203,6 +1203,356 @@
               },
               {
                 "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "7f3c1889b",
+        "ranAt": "2026-10-27T09:13:13.967Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-BUDGET",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/complete-input.test.ts",
+                "title": "DIFF-BUDGET: the actual schema changes planning and every issued call includes it in its budget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-REPAIR",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-ADMISSION",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+                "title": "DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts",
+                "title": "DIFF-FACTORY-LIMIT: all five model and two deterministic factories share the provider cap through preparation and dispatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-LARGE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-TIME-FIXED",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+                "title": "DIFF-TIME-FIXED: structured and session dispatch use remaining time and reject a late valid answer before completion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+                "title": "DIFF-TIME-FIXED: deterministic boundaries reject an output that finishes after the fixed deadline",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+                "title": "DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+                "title": "DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-TIME-OUTER",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+                "title": "DIFF-TIME-OUTER: healthy serial structured and session jobs can exceed four hours under their derived budget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3800,
+            "titles": [
+              {
+                "title": "DIFF-TRANSPORT: bounded Claude dispatch preserves explicit input and disables ambient tools/history/project context",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-ADMISSION: unsupported CLI isolation and oversized normalized schemas make zero model calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TRANSPORT: Codex schema normalization is counted before isolation admission",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/complete-input.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 592,
+            "titles": [
+              {
+                "title": "DIFF-BUDGET: the actual schema changes planning and every issued call includes it in its budget",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-BUDGET: irreducible schema and explicit history are never omitted to fit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1088,
+            "titles": [
+              {
+                "title": "DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 681,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)",
+                "result": "pass"
+              },
+              {
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+                "result": "pass"
+              },
+              {
+                "title": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 542,
+            "titles": [
+              {
+                "title": "DIFF-FACTORY-LIMIT: all five model and two deterministic factories share the provider cap through preparation and dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-PLAN: the runner prepares all effective dimensions before execution and uses the identical prepared jobs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 763,
+            "titles": [
+              {
+                "title": "DIFF-TIME-FIXED: structured and session dispatch use remaining time and reject a late valid answer before completion",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-FIXED: deterministic boundaries reject an output that finishes after the fixed deadline",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-OUTER: healthy serial structured and session jobs can exceed four hours under their derived budget",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write",
                 "result": "pass"
               }
             ],

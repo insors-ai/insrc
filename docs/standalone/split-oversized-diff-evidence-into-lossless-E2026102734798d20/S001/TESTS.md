@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 43 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -284,3 +284,58 @@ Run at 2026-10-27T09:07:38.086Z on commit `140b1b920`. Tests check: **passed**. 
 | `src/workflow/review-pipeline/__tests__/diff-refusal.test.ts` | 0 | 4 | 0.8 s |  |
 | `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` | 0 | 3 | 0.5 s |  |
 | `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` | 0 | 28 | 0.7 s |  |
+
+## t11
+
+Run at 2026-10-27T09:13:13.967Z on commit `7f3c1889b`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-BUDGET**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-BUDGET: the actual schema changes planning and every issued call includes it in its budget | `src/workflow/review-pipeline/__tests__/complete-input.test.ts` |
+
+**integration: DIFF-REPAIR**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted | `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` |
+
+**integration: DIFF-ADMISSION**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap | `src/agent/providers/__tests__/bounded-input.test.ts` |
+| pass | DIFF-FACTORY-LIMIT: all five model and two deterministic factories share the provider cap through preparation and dispatch | `src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts` |
+
+**integration: DIFF-LARGE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` |
+
+**integration: DIFF-TIME-FIXED**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-TIME-FIXED: structured and session dispatch use remaining time and reject a late valid answer before completion | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` |
+| pass | DIFF-TIME-FIXED: deterministic boundaries reject an output that finishes after the fixed deadline | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` |
+| pass | DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` |
+| pass | DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` |
+
+**integration: DIFF-TIME-OUTER**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-TIME-OUTER: healthy serial structured and session jobs can exceed four hours under their derived budget | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/bounded-input.test.ts` | 0 | 4 | 3.8 s |  |
+| `src/workflow/review-pipeline/__tests__/complete-input.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` | 0 | 6 | 1.1 s |  |
+| `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` | 0 | 28 | 0.7 s |  |
+| `src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` | 0 | 5 | 0.8 s |  |

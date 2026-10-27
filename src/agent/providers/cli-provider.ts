@@ -58,7 +58,7 @@ import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
-import { preflightProviderReviewBudget, reviewWireSchemaJson } from './review-budget.js';
+import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars } from './review-budget.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 
@@ -343,7 +343,7 @@ export class CliProvider implements LLMProvider {
 			? reviewWireSchemaJson(this.getReviewBudgetProfile('structured'), schema)
 			: this.kind === 'codex' ? codexSchemaJson(schema) : JSON.stringify(schema);
 		if (opts?.reviewBudget) {
-			preflightProviderReviewBudget(opts.reviewBudget, this.getReviewBudgetProfile('structured'), prompt.length, wireSchema, opts.maxTokens);
+			preflightProviderReviewBudget(opts.reviewBudget, this.getReviewBudgetProfile('structured'), reviewPromptChars(this.getReviewBudgetProfile('structured'), messages), wireSchema, opts.maxTokens);
 		}
 		if (this.kind === 'claude') {
 			const args = [

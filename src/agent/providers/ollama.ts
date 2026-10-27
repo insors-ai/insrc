@@ -1,5 +1,5 @@
 import type { OllamaMessage, OllamaTool } from './ollama-wire.js';
-import { toOllamaMessages, toOllamaTools } from './ollama-wire.js';
+import { toOllamaMessages, toOllamaNativeMessages, toOllamaTools } from './ollama-wire.js';
 import { randomUUID } from 'node:crypto';
 
 import { Ollama } from 'ollama';
@@ -18,7 +18,7 @@ import type {
 } from '../../shared/types.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
-import { preflightProviderReviewBudget, reviewToolsJson, reviewWireSchemaJson } from './review-budget.js';
+import { preflightProviderReviewBudget, reviewPromptChars, reviewToolsJson, reviewWireSchemaJson } from './review-budget.js';
 import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from '../../analyze/context/tool-surface.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { getLogger } from '../../shared/logger.js';
@@ -317,6 +317,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async complete(messages: LLMMessage[], opts: CompletionOpts = {}): Promise<LLMResponse> {
+    if (opts?.reviewBudget) reviewPromptChars(this.getReviewBudgetProfile(opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured'), messages);
     const ollamaMessages = toOllamaMessages(messages);
     const tools = opts.tools ? toOllamaTools(opts.tools) : undefined;
 
@@ -460,7 +461,7 @@ export class OllamaProvider implements LLMProvider {
     }
     const response = await this.clientFor(opts.signal).chat({
       model: this.model,
-      messages: ollamaMessages,
+      messages: toOllamaNativeMessages(ollamaMessages),
       ...(tools ? { tools } : {}),
       // Ollama SDK doesn't expose `tool_choice` in its TS types yet, but
       // the underlying HTTP API accepts it. Forward only when set.
@@ -564,7 +565,7 @@ export class OllamaProvider implements LLMProvider {
     try {
       const response = await this.client.chat({
         model: this.model,
-        messages: ollamaMessages,
+        messages: toOllamaNativeMessages(ollamaMessages),
         stream: true,
         options: {
           num_ctx: this.numCtx,
@@ -602,6 +603,7 @@ export class OllamaProvider implements LLMProvider {
     schema:   StructuredSchema,
     opts?:    StructuredCompletionOpts,
   ): Promise<T> {
+    if (opts?.reviewBudget) reviewPromptChars(this.getReviewBudgetProfile(opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured'), messages);
     const apiMessages = toOllamaMessages(messages);
     // plans/structured-output.md Phase C.5. Honour the caller's
     // `disableThinking: true` (Ollama specifically -- cloud providers
@@ -629,7 +631,7 @@ export class OllamaProvider implements LLMProvider {
           // retry-loop feedback names explicitly (ISSUES.md I-003).
           const response = await this.clientFor(opts?.signal).chat({
             model:    this.model,
-            messages: msgs,
+            messages: toOllamaNativeMessages(msgs),
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             format:   schema as any,
             keep_alive: '24h',
@@ -711,7 +713,7 @@ export class OllamaProvider implements LLMProvider {
     if (opts.reviewBudget) {
       const profile = this.getReviewBudgetProfile('reviewer-session');
       const messages: LLMMessage[] = [{ role: 'user', content: prompt }];
-      preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(toOllamaMessages(messages)).length, reviewWireSchemaJson(profile, schema));
+      preflightProviderReviewBudget(opts.reviewBudget, profile, reviewPromptChars(profile, messages), reviewWireSchemaJson(profile, schema));
     }
     const deadlineAt = Date.now() + opts.deadlineMs;
     const timer = new AbortController();

@@ -52,5 +52,6 @@ export function controllerReplySchema(call: Pick<ReviewCall, 'schema' | 'callId'
  * so it is not charged again as a separate wire component. Host/native reserves remain estimates. */
 export function admitControllerFrame(frame: unknown, policy: ReviewBudgetPolicy, declaration: ReviewControllerBudgetDeclaration) {
 	const envelope = { content: [{ type: 'text', text: JSON.stringify(frame, null, 2) }] };
-	return admitReviewBudget(policy, { promptChars: JSON.stringify(envelope).length, wireSchemaJson: '', schemaEmbedded: true, phase: 'dispatch', hostContextReserveTokens: declaration.hostContextReserveTokens });
+	try { return admitReviewBudget(policy, { promptChars: JSON.stringify(envelope).length, wireSchemaJson: '', schemaEmbedded: true, phase: 'dispatch', hostContextReserveTokens: declaration.hostContextReserveTokens }); }
+	catch (error) { if (error instanceof ReviewBudgetError && error.breakdown) throw new ReviewBudgetError('controller-frame-over-budget', error.breakdown); throw error; }
 }

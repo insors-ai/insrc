@@ -39,13 +39,13 @@ function remember(envelope: ReviewStepMcpEnvelope): ReviewStepMcpEnvelope {
 }
 export async function fixtureReviewClient(input: unknown, deps: ReviewStepDeps = {}): Promise<ReviewStepMcpEnvelope> {
 	if (!input || typeof input !== 'object') return rawReviewCall(input, deps);
-	const p = input as { phase?: string; state?: string; findings?: unknown; verdicts?: { verdicts?: RawVerdict[] }; claims?: unknown };
+	const p = input as { phase?: string | undefined; state?: string | undefined; findings?: unknown | undefined; verdicts?: { verdicts?: RawVerdict[] | undefined } | undefined; claims?: unknown | undefined };
 	if (p.phase === 'start') return remember(await rawReviewCall({ ...input, reviewBudget: CONTROLLER_DECLARATION }, deps));
 	if (!p.state || !['claims', 'verdicts', 'findings'].includes(p.phase ?? '')) return rawReviewCall(input, deps);
 	let frame = frames.get(p.state);
 	if (!frame) return rawReviewCall({ ...input, reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: 0, callId: randomUUID(), answer: {} } }, deps);
 	for (let turns = 0; turns < 100; turns++) {
-		const call = frame['call'] as { generation: number; callId: string; assignedClaimIds?: string[] };
+		const call = frame['call'] as { generation: number; callId: string; assignedClaimIds?: string[] | undefined };
 		const answer = p.phase === 'findings' ? p.findings : p.phase === 'claims' ? p.claims : {
 			verdicts: p.verdicts?.verdicts?.filter(verdict => call.assignedClaimIds?.includes(verdict.claimId)),
 		};

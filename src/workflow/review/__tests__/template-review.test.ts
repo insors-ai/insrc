@@ -205,9 +205,9 @@ test('T11 a session failure fails the review', async () => {
 });
 
 test('T11 a timeout fails the review with a message naming the limit that applied', async () => {
-	for (const [deadlineMs, named] of [[4 * MIN, '4 minutes'], [6 * MIN, '6 minutes'], [8 * MIN, '8 minutes']] as const) {
+	for (const deadlineMs of [4 * MIN, 6 * MIN, 8 * MIN]) {
 		const f = fakeProvider([timeoutError()]);
-		await assert.rejects(run(f, { deadlineMs }), new RegExp(`passed its time limit of ${named} \\(template design-spec\\)`));
+		await assert.rejects(run(f, { deadlineMs }), (error: unknown) => error instanceof Error && (error as Error & { timeoutKind?: string }).timeoutKind === 'review-attempt' && error.message.includes(`${deadlineMs / 1000}s`));
 		assert.equal(f.sessions.length, 1);
 	}
 });
@@ -323,7 +323,7 @@ test('T16 a review whose deadline has passed fails before a repeat is started', 
 	bad.items.pop();
 	const f = fakeProvider([bad, answer(SPEC)], { takesMs: 5 * MIN });
 	// Today's error, exactly: a plain Error with today's message, not ReviewSessionTimeoutError (s1 LLD 2.20).
-	await assert.rejects(run(f, { deadlineMs: 4 * MIN }), (e: unknown) => e instanceof Error && e.name === 'Error' && e.constructor === Error && /passed its time limit of 4 minutes \(template design-spec\)\. No review was recorded\./.test(e.message));
+	await assert.rejects(run(f, { deadlineMs: 4 * MIN }), (e: unknown) => e instanceof Error && (e as Error & { timeoutKind?: string }).timeoutKind === 'review-attempt' && /240s/.test(e.message));
 	assert.equal(f.sessions.length, 1, 'the repeat was never started');
 });
 

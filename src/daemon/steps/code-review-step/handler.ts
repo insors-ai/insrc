@@ -1,3 +1,4 @@
+import { safeReviewFailure, reviewTimeoutMessage } from '../../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -108,6 +109,7 @@ export interface CodeReviewStepDeps {
 	/** The invoking MCP client, so the daemon can fall back to that CLI. */
 	readonly client?: 'claude' | 'codex' | undefined;
 	/** Aborts the daemon code-review wait, and with it the review run. */
+	readonly admitCompletion?: ((frame: CodeReviewStepOutput) => void) | undefined;
 	readonly signal?: AbortSignal | undefined;
 	/** The step tool's progress callback: each frame of the daemon review is relayed to it. */
 	readonly progress?: ((data: unknown) => void) | undefined;
@@ -233,19 +235,19 @@ async function dispatch(input: unknown, deps: CodeReviewStepDeps): Promise<CodeR
 		}
 	} catch (err) {
 		if (err instanceof AtomTooLargeError) return errorResult('required-context-over-budget', 'required-context-over-budget', true);
-		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', 'review-job-timeout', false);
-		if (err instanceof ControllerCodeReviewError) return errorResult(err.code, err.code, true);
+		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', reviewTimeoutMessage(err), false);
+		if (err instanceof ControllerCodeReviewError) return errorResult(err.code, err.code, (err as { retryable?: boolean }).retryable !== false);
 		if (err instanceof ReviewBudgetError) {
-			const refused = errorResult(err.code, err.code, true);
-			return { ...refused, error: { ...refused.error, ...(err.breakdown ? { budget: err.breakdown } : {}) } };
+			const refused = errorResult(err.code, err.code, (err as { retryable?: boolean }).retryable !== false);
+			return { ...refused, error: { ...refused.error, ...(err.breakdown ? { budget: err.breakdown } : {}), ...(err.context ? { context: err.context } : {}) } };
 		}
-		if (err instanceof ReviewStateRefused) return errorResult(err.reason, err.reason, false);
+		if (err instanceof ReviewStateRefused) { const result = errorResult(err.reason, err.reason, false); return { ...result, error: { ...result.error, ...(err.evidence ? { evidence: err.evidence } : {}) } }; }
 		if (err instanceof StateTokenNotFound) {
 			return errorResult('state-not-found', err.message, false);
 		}
 		const msg = err instanceof Error ? err.message : String(err);
-		log.warn({ phase: step.phase, err: msg }, 'insrc_code_review_step: uncaught error');
-		return errorResult('internal', msg, false);
+		log.warn({ phase: step.phase, errorCode: safeReviewFailure(err) }, 'insrc_code_review_step: uncaught error');
+		return errorResult('internal', safeReviewFailure(err), false);
 	}
 }
 
@@ -522,12 +524,23 @@ async function driveRunner(
 	fallbackReason?: CodeReviewFallbackReason | undefined,
 ): Promise<CodeReviewStepOutput> {
 	const runId = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const completionFrame = (artifact: import('../../../workflow/code-review/types.js').CodeReviewArtifact): CodeReviewStepOutput => {
+		const cra = codeReviewSubjectPathArgs(subject);
+		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.epicCreatedAt, cra.workItemKind, cra.epicSlug);
+		const byDimension: Record<string, number> = {};
+		for (const dimension of artifact.body.dimensions) if (dimension.outOfScope?.length) byDimension[dimension.dimension] = dimension.outOfScope.length;
+		const count = Object.values(byDimension).reduce((a, b) => a + b, 0);
+		return { next: 'done', verdict: artifact.body.verdict, counts: artifact.body.counts, path: paths.md, jsonPath: paths.json,
+			...(artifact.body.fallbackReason ? { fallbackReason: artifact.body.fallbackReason } : {}),
+			...(count ? { scopeDropped: { count, changedFiles: subject.changedFiles.length, byDimension } } : {}) };
+	};
+	const beforePersist = (artifact: Parameters<typeof completionFrame>[0]): void => { deps.admitCompletion?.(completionFrame(artifact)); };
 	const outcome = await deps.runReview(
 		subject,
 		DUMMY_PROVIDER,
 		degraded
-			? { runId, signal: deps.signal, onProgress: () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).assertActive(), modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
-			: { runId, signal: deps.signal, onProgress: () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).assertActive(), modelLabel: 'client', reviewedBy: 'controller' },
+			? { runId, beforePersist, signal: deps.signal, onProgress: () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).assertActive(), modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
+			: { runId, beforePersist, signal: deps.signal, onProgress: () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).assertActive(), modelLabel: 'client', reviewedBy: 'controller' },
 		injected,
 	);
 	if (!outcome.ok) {
@@ -739,7 +752,7 @@ async function reviewByDaemon(
 			if (err.reason === IDLE_TIMEOUT) cause += ` (the idle limit, ${IDLE_KEY})`;
 			else if (err.reason === CEILING_TIMEOUT) cause += ` (the overall limit, ${CEILING_KEY})`;
 		}
-		log.warn({ repo, epicHash, storyId, mode, failure, cause }, 'insrc_code_review_step: the daemon review did not complete; nothing stamped');
+		log.warn({ repo, epicHash, storyId, mode, failure, errorCode: safeReviewFailure(err) }, 'insrc_code_review_step: the daemon review did not complete; nothing stamped');
 		return errorResult(
 			`daemon-review-${failure}`,
 			`The daemon code review of Story ${storyId} did not complete: ${cause}. No review was recorded. ` +

@@ -100,6 +100,6 @@ test('CLI review through the daemon: source roots come through the request and t
 	await assert.rejects(readEntitiesForRepoFromDaemon(repo), /daemon is not running/);
 	const reasons: string[] = [];
 	await gatherEvidence(claims, repo, { readEntitiesForRepo: readEntitiesForRepoFromDaemon, onSourceRootFallback: r => reasons.push(r) });
-	assert.match(reasons[0] ?? '', /the index could not be read \(daemon is not running/);
+	assert.match(reasons[0] ?? '', /the index could not be read \(review-failed/);
 	assert.doesNotMatch(openFiles(), /graph\.lmdb/);
 });

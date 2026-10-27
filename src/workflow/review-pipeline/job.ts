@@ -1,3 +1,4 @@
+import { reviewTiming } from './call-events.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -125,7 +126,7 @@ function enterStage(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, ind
 			// Today's call does not fit: the review is divided, even with no atoms (its obligations go to gather).
 			const material = readMaterial(next, adapter);
 			if (material.atoms.length === 0 && material.obligations.length === 0 && singles.length > 0) {
-				throw new ReviewBudgetError('required-context-over-budget');
+				throw new ReviewBudgetError('mandatory-context-over-budget', requestBudget(next.budgetPolicy, envelopeMessages('00000000-0000-0000-0000-000000000000', singles[0]!.messages), envelopeSchema('00000000-0000-0000-0000-000000000000', singles[0]!.schema), 'planning'), { stage: stage.id });
 			}
 			const b = budgets(next.plan.limitChars);
 			const planned = planWithin(next, adapter, stage, readMaterial(next, adapter), b.soft, b.hard, undefined, undefined);
@@ -150,13 +151,35 @@ function planWithin(
 	// Keep the existing text packing target independently of the inclusive cap.
 	// Scaling inclusive cost to soft lets a cap-sized request fit that target; the
 	// correction reserve is not added to the inclusive total a second time.
-	const measure = (ids: readonly string[], neighbours: readonly NeighbourSummary[]): number =>
-		Math.max(0, ...stage.chunkCalls({ id: 'c0000', atomIds: ids, neighbours, chars: 0 }, job.outputs, job.snapshot).map(p => candidateChars(job.budgetPolicy, p, soft)));
-	const planned = planChunks({
+	let lastBudget: import('../../shared/review-budget.js').ReviewBudgetBreakdown | undefined;
+	let lastIds: readonly string[] = [];
+	const measure = (ids: readonly string[], neighbours: readonly NeighbourSummary[]): number => {
+		lastIds = ids;
+		const prompts = stage.chunkCalls({ id: 'c0000', atomIds: ids, neighbours, chars: 0 }, job.outputs, job.snapshot);
+		const measured = prompts.map(prompt => requestBudget(job.budgetPolicy, envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages), envelopeSchema('00000000-0000-0000-0000-000000000000', prompt.schema), 'planning'));
+		lastBudget = measured.sort((a, b) => b.estimatedTotalTokens - a.estimatedTotalTokens)[0];
+		return Math.max(0, ...prompts.map(prompt => candidateChars(job.budgetPolicy, prompt, soft)));
+	};
+	// The empty rendering contains mandatory instructions/schemas/reserves only.
+	measure([], []);
+	if (lastBudget && lastBudget.remainingTokens < 0) throw new ReviewBudgetError('mandatory-context-over-budget', lastBudget, { stage: stage.id });
+	let planned: ReturnType<typeof planChunks>;
+	try {
+	planned = planChunks({
 		material, atomIds, measure, soft, hard, heldElsewhere,
 		summaryOf: atom => adapter.neighbourSummary?.(atom, material) ?? atom.label,
 		nextChunkId: () => `c${++seq}`,
 	});
+	} catch (error) {
+		if (error instanceof AtomTooLargeError) throw Object.assign(error, { breakdown: lastBudget, context: { ...error.context, stage: stage.id, ...(lastBudget ? { shortfallTokens: Math.max(0, -lastBudget.remainingTokens) } : {}) } });
+		if (error instanceof ReviewBudgetError && error.code === 'required-context-over-budget') {
+			throw new ReviewBudgetError('required-context-over-budget', lastBudget, { stage: stage.id,
+				unitId: createHash('sha256').update(lastIds.join('\0')).digest('hex').slice(0, 24),
+				...(lastBudget ? { shortfallTokens: Math.max(0, -lastBudget.remainingTokens) } : {}) });
+		}
+		throw error;
+	}
+
 	for (const chunk of planned.chunks) {
 		if (stage.chunkCalls(chunk, job.outputs, job.snapshot).some(p => candidateChars(job.budgetPolicy, p, hard) > hard)) {
 			throw new ReviewBudgetError('required-context-over-budget');
@@ -225,13 +248,15 @@ function withDeadline(job: ReviewPipelineJob, now: number | undefined): ReviewPi
 	const count = job.workUnits.filter(unit => !unit.replaced).length;
 	const executionStartedAt = job.executionStartedAt ?? (count > 0 ? now : undefined);
 	if (executionStartedAt === undefined) return job;
-	const deadlineBudgetMs = REVIEW_WORK_UNIT_MS * count;
+	const prior = job.priorWorkBudgetMs ?? 0;
+	if (!Number.isSafeInteger(prior) || prior < 0 || prior % REVIEW_WORK_UNIT_MS !== 0) throw new ReviewBudgetError('invalid-budget-policy');
+	const deadlineBudgetMs = prior + REVIEW_WORK_UNIT_MS * count;
 	const ids = new Set(job.workUnits.map(unit => unit.id));
 	if (ids.size !== job.workUnits.length || !Number.isSafeInteger(job.workSeq) || job.workSeq < job.workUnits.length || !Number.isSafeInteger(executionStartedAt) || !Number.isSafeInteger(executionStartedAt + deadlineBudgetMs) || job.workUnits.some(unit => unit.parentId !== undefined && (!ids.has(unit.parentId) || unit.parentId === unit.id))) throw new ReviewBudgetError('invalid-budget-policy');
 	return { ...job, executionStartedAt, deadlineBudgetMs, deadlineAt: executionStartedAt + deadlineBudgetMs };
 }
 function assertDeadline(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, now: number): void {
-	if (job.deadlineAt !== undefined && now >= job.deadlineAt) throw deadlineError(job, adapter);
+	if (job.deadlineAt !== undefined && now >= job.deadlineAt) throw deadlineError(job, adapter, now);
 }
 
 // -- driver steps --------------------------------------------------------------
@@ -255,9 +280,12 @@ export function nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown
 }
 
 /** The adapter's (today's) time-limit error, else ReviewSessionTimeoutError. */
-export function deadlineError(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): Error {
+export function deadlineError(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, now: number = Date.now()): Error {
 	const budget = job.deadlineBudgetMs ?? 0;
-	return Object.assign(adapter.deadlineError?.(budget) ?? new ReviewSessionTimeoutError(budget), { timeoutKind: 'review-job', limitMs: budget });
+	const timing = reviewTiming(job, now);
+	const error = adapter.deadlineError?.(budget, timing) ?? new ReviewSessionTimeoutError(budget);
+	error.message += ` (${timing.logicalWorkUnits} work chunks × 10 minutes = ${budget}ms total)`;
+	return Object.assign(error, { timeoutKind: 'review-job', limitMs: budget, timing: reviewTiming(job, now) });
 }
 
 /**
@@ -318,6 +346,9 @@ export function applyFailure(
 	// A gather call fails the review when it fails twice; it re-divides its notes when refused.
 	const stage: Pick<AdapterStage, 'id' | 'onCallFailure' | 'withCorrection'> = isGatherRole(call.role) ? { id: call.stage, onCallFailure: 'fail-review' } : currentStage(job, adapter);
 	if (cause === 'size-refusal') {
+		// Rebuilding from material cannot preserve a mandatory correction. Refuse
+		// this indivisible retry instead of silently returning to an uncorrected prompt.
+		if ((call.invalidAnswers ?? 0) > 0) throw new ReviewBudgetError('dispatch-budget-exceeded', call.budget, { stage: call.stage, callId: call.callId });
 		const replaced = { ...rest, workUnits: rest.workUnits.map(unit => unit.id === call.workId ? { ...unit, replaced: true } : unit) };
 		const divided = subdivide(replaced);
 		const existing = new Set(job.workUnits.map(unit => unit.id));
@@ -339,7 +370,7 @@ export function applyFailure(
 		if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {
 			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, more.reasons);
 			if (candidateChars(job.budgetPolicy, corrected, job.plan.limitChars, 'dispatch') > job.plan.limitChars) {
-				throw new ReviewBudgetError('correction-budget-exceeded');
+				throw new ReviewBudgetError('dispatch-budget-exceeded', requestBudget(job.budgetPolicy, envelopeMessages(call.callId, corrected.messages), envelopeSchema(call.callId, corrected.schema), 'dispatch'), { stage: call.stage, callId: call.callId });
 			}
 			prompt = corrected;
 		}
@@ -411,7 +442,7 @@ function redivide(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, stage
  * applies its policy: 'fail-review' fails the review; otherwise it is recorded
  * (a diagram handler's LOW observation) and the review goes on.
  */
-export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, opts: { readonly signal?: AbortSignal | undefined; readonly now?: (() => number) | undefined } = {}): Promise<ReviewPipelineJob> {
+export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, opts: { readonly signal?: AbortSignal | undefined; readonly now?: (() => number) | undefined; readonly outerDeadlineAt?: number | undefined } = {}): Promise<ReviewPipelineJob> {
 	assertDeadline(job, adapter, opts.now?.() ?? Date.now());
 	if (job.phase === 'done') throw new Error(`review ${job.dimension}: the job is finished`);
 	const stage = currentStage(job, adapter);
@@ -421,8 +452,10 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 	const signal = opts.signal === undefined ? deadlineController.signal : AbortSignal.any([opts.signal, deadlineController.signal]);
 	const stageStartedAt = opts.now?.() ?? Date.now();
 	// Deterministic-only jobs grant zero model work, but their local/tool wait still has a bounded watchdog.
-	const remaining = job.deadlineAt === undefined ? REVIEW_WORK_UNIT_MS : job.deadlineAt - stageStartedAt;
-	const stageTimeout = (): Error => job.deadlineAt === undefined ? Object.assign(new ReviewSessionTimeoutError(remaining), { timeoutKind: 'review-stage', limitMs: remaining }) : deadlineError(job, adapter);
+	const stageAllowance = job.deadlineAt === undefined ? REVIEW_WORK_UNIT_MS : job.deadlineAt - stageStartedAt;
+	const remaining = Math.min(stageAllowance, (opts.outerDeadlineAt ?? Infinity) - stageStartedAt);
+	if (remaining <= 0) throw Object.assign(new Error('review transport-ceiling-incompatible'), { timeoutKind: 'external-review-transport' });
+	const stageTimeout = (): Error => remaining < stageAllowance ? Object.assign(new Error('review transport-ceiling-incompatible'), { timeoutKind: 'external-review-transport' }) : job.deadlineAt === undefined ? Object.assign(new ReviewSessionTimeoutError(remaining), { timeoutKind: 'review-stage', limitMs: remaining }) : deadlineError(job, adapter);
 	const timer = setTimeout(() => deadlineController.abort(), remaining);
 	let output: unknown;
 	let next = job;
@@ -433,7 +466,8 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 		throwIfAborted(opts.signal);
 		if (deadlineController.signal.aborted) throw stageTimeout();
 		if (err instanceof Error && err.name === 'AbortError') throw err;
-		const detail = err instanceof Error ? err.message : String(err);
+		if (err instanceof ReviewBudgetError) throw new ReviewBudgetError(err.code, err.breakdown, { ...err.context, stage: stage.id });
+		const detail = 'stage-error';
 		if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, 'stage-error', detail);
 		next = { ...job, notJudged: [...job.notJudged, { stage: stage.id, key: stage.id, cause: 'stage-error', detail, policy: stage.onCallFailure }] };
 		output = undefined;

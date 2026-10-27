@@ -16,9 +16,15 @@ export const REVIEW_BUDGET_DEFAULTS = Object.freeze({
 
 /** Only allowlisted codes and numeric breakdowns reach persistent failure diagnostics. */
 export class ReviewBudgetError extends Error {
-	constructor(readonly code: ReviewBudgetErrorCode, readonly breakdown?: ReviewBudgetBreakdown) {
+	constructor(readonly code: ReviewBudgetErrorCode, readonly breakdown?: ReviewBudgetBreakdown | undefined, readonly context?: { readonly stage?: string | undefined; readonly callId?: string | undefined; readonly unitId?: string | undefined; readonly shortfallTokens?: number | undefined } | undefined) {
 		super(code);
 		this.name = 'ReviewBudgetError';
+		if (context) this.context = Object.freeze({
+			...(context.stage !== undefined && ['judge','compare','pair','extract','probe','verify','template','run','skip','gather','reduce'].includes(context.stage) ? { stage: context.stage } : {}),
+			...(context.callId !== undefined && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(context.callId) ? { callId: context.callId } : {}),
+			...(context.unitId !== undefined && /^[a-f0-9]{24}$/.test(context.unitId) ? { unitId: context.unitId } : {}),
+			...(Number.isSafeInteger(context.shortfallTokens) && context.shortfallTokens! >= 0 ? { shortfallTokens: context.shortfallTokens } : {}),
+		});
 	}
 }
 
@@ -54,9 +60,11 @@ export function freezeReviewBudgetProfile(profile: ReviewProviderBudgetProfile |
 	if (typeof profile.declaredToolsJson !== 'string') throw new ReviewBudgetError('native-budget-unqualified');
 	// A manifest must be JSON, not a silently omitted/unsupported serialization.
 	jsonContainer(profile.declaredToolsJson);
-	integer(profile.nativeReserveTokens); integer(profile.transportReserveTokens);
-	integer(profile.completionReserveTokens, true); integer(profile.inspectionReserveTokens);
-	if (profile.contextWindowTokens !== undefined) integer(profile.contextWindowTokens, true);
+	try {
+		integer(profile.nativeReserveTokens); integer(profile.transportReserveTokens);
+		integer(profile.completionReserveTokens, true); integer(profile.inspectionReserveTokens);
+		if (profile.contextWindowTokens !== undefined) integer(profile.contextWindowTokens, true);
+	} catch { throw new ReviewBudgetError('native-budget-unqualified'); }
 	if (profile.qualification === 'reserved-native' && profile.nativeReserveTokens === 0) {
 		throw new ReviewBudgetError('native-budget-unqualified');
 	}
@@ -140,7 +148,7 @@ export function measureReviewBudget(policy: ReviewBudgetPolicy, input: {
 
 export function admitReviewBudget(policy: ReviewBudgetPolicy, input: Parameters<typeof measureReviewBudget>[1]): ReviewBudgetBreakdown {
 	const breakdown = measureReviewBudget(policy, input);
-	if (breakdown.remainingTokens < 0) throw new ReviewBudgetError('review-budget-exceeded', breakdown);
+	if (breakdown.remainingTokens < 0) throw new ReviewBudgetError(input.phase === 'dispatch' ? 'dispatch-budget-exceeded' : 'review-budget-exceeded', breakdown);
 	return breakdown;
 }
 
@@ -148,7 +156,7 @@ export function admitReviewBudget(policy: ReviewBudgetPolicy, input: Parameters<
 export function validateControllerBudgetDeclaration(declaration: ReviewControllerBudgetDeclaration | undefined): ReviewControllerBudgetDeclaration {
 	if (!declaration) throw new ReviewBudgetError('controller-budget-required');
 	if (declaration.version !== 1) throw new ReviewBudgetError('controller-budget-incompatible');
-	integer(declaration.hostContextReserveTokens);
+	try { integer(declaration.hostContextReserveTokens, true); } catch { throw new ReviewBudgetError('controller-budget-incompatible'); }
 	const profile = freezeReviewBudgetProfile(declaration.profile);
 	if (profile.qualification !== 'controller-reserved') throw new ReviewBudgetError('native-budget-unqualified');
 	return Object.freeze({ version: 1, profile, hostContextReserveTokens: declaration.hostContextReserveTokens });

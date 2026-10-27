@@ -101,6 +101,20 @@ export async function persistTemplateFindings(state: ReviewStepStatePayload, ans
 	if (!existsSync(state.jsonPath)) throw new Error(`insrc_review_step[findings]: no artifact json at ${state.jsonPath}`);
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[findings]: no artifact md at ${state.mdPath}`);
 
+	const pending = pendingUserFindings(report).length;
+	const completed: ReviewStepOutput = {
+		next:     'done',
+		verdict:  report.verdict,
+		counts:   report.counts,
+		report:   renderReviewReport(report),
+		applied:  0,
+		pending,
+		path:     state.mdPath,
+		jsonPath: state.jsonPath,
+	};
+
+	guard.admitCompletion?.(completed);
+
 	// The head is checked (and any write a crash left staged is finished) BEFORE it is read, as in the verdicts phase.
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
 	const lifecycle = lifecycleFor(state.repo);
@@ -123,21 +137,9 @@ export async function persistTemplateFindings(state: ReviewStepStatePayload, ans
 		assertActive: guard.assertActive, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
 	});
 
-	const pending = pendingUserFindings(report).length;
-
 	log.info(
 		{ runId: state.runId, stage: state.stage, template: template.id, verdict: report.verdict, pending },
 		'insrc_review_step[findings]: validated + persisted design review (model=client)',
 	);
 
-	return {
-		next:     'done',
-		verdict:  report.verdict,
-		counts:   report.counts,
-		report:   renderReviewReport(report),
-		applied:  0,
-		pending,
-		path:     state.mdPath,
-		jsonPath: state.jsonPath,
-	};
-}
+	return completed;}

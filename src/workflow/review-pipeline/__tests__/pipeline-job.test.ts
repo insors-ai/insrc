@@ -158,7 +158,7 @@ test("a review under the limit is one chunk whose calls carry today's messages a
 		...toyAdapter(empty),
 		stagesFor: () => [{ ...toyAdapter(empty).stagesFor('daemon')[0]!, singleCalls: () => [{ messages: [{ role: 'user', content: 'x'.repeat(LIMIT) }], schema: TOY_SCHEMA, execution: { mode: 'structured' } }] }],
 	};
-	assert.throws(() => createReviewJob(bloated, 'daemon', empty, LIMIT), e => e instanceof ReviewBudgetError && e.code === 'required-context-over-budget', 'an oversized required request cannot become a vacuous pass');
+	assert.throws(() => createReviewJob(bloated, 'daemon', empty, LIMIT), e => e instanceof ReviewBudgetError && e.code === 'mandatory-context-over-budget', 'an oversized required request cannot become a vacuous pass');
 });
 
 test('a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats', () => {
@@ -467,10 +467,10 @@ test("runStage commits a deterministic stage's output; extract claims and probe 
 		const c = nextCalls(j, premiseAdapter(j.snapshot, boom, policy))[0]!;
 		j = applyOutput(j, premiseAdapter(j.snapshot, boom, policy), c.callId, { callId: c.callId, answer: { claims: [] } });
 		if (policy === 'fail-review') {
-			await assert.rejects(runStage(j, premiseAdapter(j.snapshot, boom, policy)), (e: unknown) => e instanceof ReviewCallFailedError && e.message.includes('handler broke'));
+			await assert.rejects(runStage(j, premiseAdapter(j.snapshot, boom, policy)), (e: unknown) => e instanceof ReviewCallFailedError && e.message.includes('stage-error') && !e.message.includes('handler broke'));
 		} else {
 			j = await runStage(j, premiseAdapter(j.snapshot, boom, policy));
-			assert.deepEqual(j.notJudged.map(n => [n.stage, n.policy, n.cause, n.detail]), [['probe', 'record-observation', 'stage-error', 'handler broke']]);
+			assert.deepEqual(j.notJudged.map(n => [n.stage, n.policy, n.cause, n.detail]), [['probe', 'record-observation', 'stage-error', 'stage-error']]);
 		}
 	}
 	// Re-planning after the snapshot is complete reads the claims and evidence from it alone: a
@@ -1085,7 +1085,7 @@ test('inclusive single chunk retry admission and required-neighbour correction o
 	const corrected = retry.pending.find(c => c.attempt === 2)!;
 	assert.equal(corrected.budget.retryHeadroomTokens, 0);
 	assert.ok(JSON.stringify(corrected.messages).includes('Answer every assigned atom exactly once.'));
-	assert.throws(() => applyFailure(job, adapter, first.callId, 'invalid-answer', undefined, { reasons: ['x'.repeat(400000)] }), e => e instanceof ReviewBudgetError && e.code === 'correction-budget-exceeded');
+	assert.throws(() => applyFailure(job, adapter, first.callId, 'invalid-answer', undefined, { reasons: ['x'.repeat(400000)] }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
 	assert.equal(job.pending[0]!.callId, first.callId, 'refusal does not consume/mutate the original state');
 	const atoms = Array.from({ length: 5 }, (_, i) => atom(i, 100000));
 	const related = toySnapshot(atoms, atoms.slice(1).map(a => ({ from: 'a0', to: a.id, kind: 'calls' as const })));

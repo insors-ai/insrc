@@ -19,7 +19,7 @@
 import { assertReviewOwnerActive, retireReviewOwner } from '../review-request-owner.js';
 import { currentStepContext } from '../../shared/step-context.js';
 import { requireReviewOwnerContext } from '../../shared/review-owner-context.js';
-import { ReviewStateRefused } from './review-state-contract.js';
+import { ReviewStateRefused, reviewEvidence } from './review-state-contract.js';
 import type { ReviewStateKind, ReviewStateExpected, ReviewStateAccess, ReviewStateClaim, ReviewClaimResult, ReviewStateCommit, ReviewCommitResult, ReviewCompletionReceipt } from './review-state-contract.js';
 import { randomBytes } from 'node:crypto';
 
@@ -94,6 +94,7 @@ interface ReviewEntry extends ReviewStateExpected {
 	claim?: ReviewStateClaim | undefined;
 	receipt?: ReviewCompletionReceipt | undefined;
 	uncertain?: boolean | undefined;
+	evidence?: ReturnType<typeof reviewEvidence> | undefined;
 }
 interface Entry { review?: ReviewEntry | undefined; payload: unknown; readonly createdAt: number; touchedAt: number; }
 
@@ -208,7 +209,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 	}
 	private invalidateEntry(entry: Entry): void {
 		const review = entry.review!;
-		entry.review = { generation: review.generation, callId: review.callId, uncertain: true };
+		entry.review = { generation: review.generation, callId: review.callId, uncertain: true, evidence: reviewEvidence(entry.payload) };
 		entry.payload = undefined;
 		entry.touchedAt = this.now();
 	}
@@ -219,7 +220,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		if (entry.review.claim === undefined && this.now() - entry.touchedAt > LIFECYCLES[kind].ttlMs) {
 			this.map(kind).delete(token); throw new ReviewStateRefused('review-state-stale');
 		}
-		if (entry.review.uncertain) throw new ReviewStateRefused('review-state-uncertain');
+		if (entry.review.uncertain) throw new ReviewStateRefused('review-state-uncertain', entry.review.evidence);
 		return entry;
 	}
 	private claimEntry(claim: ReviewStateClaim): Entry {

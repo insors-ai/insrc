@@ -58,19 +58,19 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 	while (job.phase !== 'done') {
 		throwIfAborted(signal);
 		if (job.deadlineAt !== undefined && job.deadlineAt > outerDeadlineAt) {
-			throw new Error(`review transport-ceiling-incompatible: job requires ${job.deadlineBudgetMs}ms; outer remaining allowance ${outerDeadlineAt - now()}ms`);
+			throw Object.assign(new Error(`review transport-ceiling-incompatible: job requires ${job.deadlineBudgetMs}ms; outer remaining allowance ${outerDeadlineAt - now()}ms`), { timeoutKind: 'external-review-transport', timing: { requiredMs: job.deadlineBudgetMs, remainingMs: Math.max(0, outerDeadlineAt - now()) } });
 		}
 		const calls = nextCalls(job, adapter, now());
 		if (calls.length === 0) {
 			opts.onStage?.(job.stage);
-			job = await runStage(job, adapter, { signal, now });
+			job = await runStage(job, adapter, { signal, now, outerDeadlineAt });
 			continue;
 		}
 		// Serial: one call at a time, never more than one in flight.
 		const call = calls[0]!;
 		let admitted = call.budget;
 		const emit = (event: ReviewCallOutcome, durationMs: number, errorCode?: ReviewCallErrorCode): void => {
-			const metadata = reviewCallEvent(job, call, admitted, event, durationMs, errorCode);
+			const metadata = reviewCallEvent(job, call, admitted, event, durationMs, errorCode, now());
 			log.info(metadata, 'review pipeline: call lifecycle');
 			opts.onCallEvent?.(metadata);
 		};
@@ -87,7 +87,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		} catch (err) {
 			if (err instanceof ReviewBudgetError && err.breakdown) admitted = err.breakdown;
 			emit('refused', 0, 'budget-refused');
-			throw err instanceof ReviewBudgetError ? err : new ReviewBudgetError('native-budget-unqualified');
+			throw err instanceof ReviewBudgetError ? new ReviewBudgetError(err.code, err.breakdown ?? admitted, { ...err.context, stage: call.stage, callId: call.callId }) : new ReviewBudgetError('native-budget-unqualified', admitted, { stage: call.stage, callId: call.callId });
 		}
 		const startedAt = performance.now();
 		const attemptStartedAt = now();
@@ -106,13 +106,13 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 				raw = await untilAborted(send(provider, call, budget, attemptSignal), attemptSignal);
 			} catch (err) {
 				throwIfAborted(signal);
-				if (attemptController.signal.aborted) { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : attemptTimeout(adapter, attemptMs); }
+				if (attemptController.signal.aborted) { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : attemptTimeout(attemptMs); }
 				if (err instanceof ReviewBudgetError) {
 					if (err.breakdown) admitted = err.breakdown;
 					errorCode = 'budget-refused'; throw err;
 				}
 				if (isAbortError(err)) throw err;
-				if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : attemptTimeout(adapter, attemptMs); }
+				if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : attemptTimeout(attemptMs); }
 				const failure = classify(err);
 				errorCode = failure.cause === 'identifier-mismatch' ? 'invalid-answer' : failure.cause;
 				// Only stable categories persist. Detailed semantic corrections remain ephemeral prompt input.
@@ -120,14 +120,14 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 				continue;
 			}
 			throwIfAborted(signal);
-			if (now() >= attemptStartedAt + attemptMs) { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : attemptTimeout(adapter, attemptMs); }
+			if (now() >= attemptStartedAt + attemptMs) { errorCode = 'timeout'; throw job.deadlineAt !== undefined && now() >= job.deadlineAt ? deadlineError(job, adapter) : attemptTimeout(attemptMs); }
 			job = applyOutput(job, adapter, call.callId, raw, now());
 			const accepted = job.answered.some(answer => answer.callId === call.callId);
 			outcome = accepted ? 'success' : 'failure';
 			errorCode = accepted ? undefined : 'invalid-answer';
 		} catch (err) {
 			if (signal?.aborted === true || isAbortError(err)) { outcome = 'cancel'; errorCode = 'cancelled'; }
-			if (err instanceof ReviewBudgetError) errorCode = 'budget-refused';
+			if (err instanceof ReviewBudgetError) { errorCode = 'budget-refused'; if (!err.context) err = new ReviewBudgetError(err.code, err.breakdown ?? admitted, { stage: call.stage, callId: call.callId }); }
 			const timeoutKind = (err as { timeoutKind?: unknown } | null)?.timeoutKind;
 			if (timeoutKind === 'review-attempt') errorCode = 'attempt-timeout';
 			if (timeoutKind === 'review-job') errorCode = 'job-timeout';
@@ -202,6 +202,6 @@ function abortError(): Error {
 	return err;
 }
 
-function attemptTimeout(adapter: ReviewAdapter<unknown>, limitMs: number): Error {
-	return Object.assign(adapter.deadlineError?.(limitMs) ?? new ReviewSessionTimeoutError(limitMs), { timeoutKind: 'review-attempt', limitMs });
+function attemptTimeout(limitMs: number): Error {
+	return Object.assign(new ReviewSessionTimeoutError(limitMs), { timeoutKind: 'review-attempt', limitMs });
 }

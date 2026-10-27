@@ -501,7 +501,7 @@ test('inspection growth and final structured answer cannot bypass the inclusive 
 		try {
 			const budget = budgetFor(growth.provider, ANSWER_SCHEMA);
 			await assert.rejects(() => growth.provider.runReviewSession('review', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => {
-				assert.ok(e instanceof ReviewBudgetError); assert.equal(e.code, 'review-budget-exceeded');
+				assert.ok(e instanceof ReviewBudgetError); assert.equal(e.code, 'inspection-budget-exceeded');
 				assert.ok(e.breakdown!.promptChars >= huge.length, 'the full tool output is counted'); return true;
 			});
 			assert.equal(growth.bodies.length, 1, 'no second HTTP/model request is sent after inspection overflow');
@@ -517,7 +517,7 @@ test('inspection growth and final structured answer cannot bypass the inclusive 
 			const schema = { ...ANSWER_SCHEMA, description: 'r'.repeat(Math.min(150000, Math.floor(allowance * 3 * 0.75))) };
 			const before = JSON.stringify(schema);
 			const budget = budgetFor(closing.provider, schema);
-			await assert.rejects(() => closing.provider.runReviewSession('review', schema, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			await assert.rejects(() => closing.provider.runReviewSession('review', schema, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
 			assert.equal(closing.bodies.length, 1, 'final closing instruction plus native schema is refused before its model call');
 			assert.equal(JSON.stringify(schema), before, 'the schema is not shortened to fit');
 		} finally { await closing.close(); }
@@ -527,7 +527,7 @@ test('inspection growth and final structured answer cannot bypass the inclusive 
 			const { getReadOnlyTools } = await import('../../../analyze/context/tool-surface.js');
 			const tools = getReadOnlyTools();
 			const budget = budgetFor(direct.provider, ANSWER_SCHEMA);
-			await assert.rejects(() => direct.provider.complete([{ role: 'user', content: huge }], { tools, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			await assert.rejects(() => direct.provider.complete([{ role: 'user', content: huge }], { tools, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
 			await assert.rejects(() => direct.provider.complete([{ role: 'user', content: 'review' }], { tools: [], reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
 			await assert.rejects(() => direct.provider.complete([{ role: 'user', content: 'review' }], { tools, reviewBudget: budget, maxTokens: 8193 }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
 			const messages: LLMMessage[] = [{ role: 'system', content: 'Review.' }, { role: 'user', content: 'check' }];
@@ -535,7 +535,7 @@ test('inspection growth and final structured answer cannot bypass the inclusive 
 			const needed = measureReviewBudget(budget.policy, input).estimatedTotalTokens;
 			const exact = createReviewBudgetPolicy(budget.policy.profile, 'reviewer-session', needed);
 			const exactBudget = { ...budget, policy: exact, admitted: admitReviewBudget(exact, input) };
-			await assert.rejects(() => direct.provider.complete(messages, { tools, reviewBudget: exactBudget, disableThinking: true }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			await assert.rejects(() => direct.provider.complete(messages, { tools, reviewBudget: exactBudget, disableThinking: true }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
 			assert.equal(messages[0]!.content, 'Review.', 'provider prefix normalization never mutates caller history');
 			assert.equal(direct.bodies.length, 0, 'final wire checks cover direct calls, tool/output changes and added model prefixes');
 		} finally { await direct.close(); }
@@ -548,7 +548,7 @@ test('inspection growth and final structured answer cannot bypass the inclusive 
 			const breakdown = measureReviewBudget(policy, { promptChars: 10, wireSchemaJson: JSON.stringify(ANSWER_SCHEMA), phase: 'dispatch' });
 			assert.equal(breakdown.limitTokens, 16384);
 			assert.equal(breakdown.configuredLimitTokens, 128000);
-			await assert.rejects(() => small.provider.runReviewSession('review', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 10000, reviewBudget: { policy, admitted: breakdown, outputAllowanceTokens: 8192, reviewId: 'r', callId: 'c', stage: 'template', role: 'single', attempt: 1 } }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			await assert.rejects(() => small.provider.runReviewSession('review', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 10000, reviewBudget: { policy, admitted: breakdown, outputAllowanceTokens: 8192, reviewId: 'r', callId: 'c', stage: 'template', role: 'single', attempt: 1 } }), e => e instanceof ReviewBudgetError && e.code === 'dispatch-budget-exceeded');
 			assert.equal(small.bodies.length, 0, 'an insufficient native context never silently truncates the review');
 		} finally { await small.close(); }
 	} finally { rmSync(repo, { recursive: true, force: true }); }

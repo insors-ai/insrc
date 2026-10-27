@@ -136,6 +136,7 @@ export interface JudgeContext {
 	/** Cancels the review, including a call in flight. */
 	readonly signal?: AbortSignal | undefined;
 	/** Told as each review pipeline call of the judge starts (ISSUE-1973e125). */
+	readonly onCallEvent?: ((event: import('../review-pipeline/call-events.js').ReviewCallEvent) => void) | undefined;
 	readonly onCall?: ((call: { readonly stage: string; readonly role: string }) => void) | undefined;
 }
 

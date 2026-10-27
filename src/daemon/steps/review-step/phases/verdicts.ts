@@ -67,7 +67,7 @@ export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answ
 
 	const protocol = state.controller;
 	if (!protocol?.expectedClaimIds || !protocol.assignedClaimIds) throw new ReviewBudgetError('review-budget-state-stale');
-	assertExactReviewIds(state.claims.map(claim => claim.id), protocol.expectedClaimIds, 'review-verdict-set-mismatch');
+	assertExactReviewIds(state.claims.map(claim => claim.id), protocol.expectedClaimIds, 'verdict-coverage-invalid');
 	const rawVerdicts = validateVerdictCoverage({ expected: protocol.expectedClaimIds, assigned: protocol.assignedClaimIds,
 		completed: protocol.completedVerdicts ?? [], received: answer.verdicts, extractionComplete: protocol.extractionComplete === true });
 	const claimById = new Map<string, Claim>(state.claims.map(c => [c.id, c] as const));
@@ -105,6 +105,7 @@ export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answ
 	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not reviewed until a person resolves it.
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
 	const lifecycle = lifecycleFor(state.repo);
+	guard.admitCompletion?.({ next: 'done', verdict: report.verdict, counts: report.counts, report: renderReviewReport(report), applied: Number.MAX_SAFE_INTEGER, pending: pendingUserFindings(report).length, path: state.mdPath, jsonPath: state.jsonPath });
 	guard.beginSideEffects();
 	const seen = await lifecycle.inspect(artifactId);
 	guard.assertActive();
@@ -122,21 +123,8 @@ export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answ
 		? applyAutoFixes(md, artifact.body, report)
 		: ({ body: artifact.body, markdown: md, applied: [], skipped: [] } as ReturnType<typeof applyAutoFixes>);
 
-	// The one persist path: the auto-fix goes through the store (it answers no feedback), the report becomes the review entry of the
-	// log and the lifecycle review names it, and the markdown is written last.
-	await persistReview({
-		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle, assertActive: guard.assertActive, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER,
-		...(fixed.applied.length > 0 ? { fix: { body: fixed.body as Record<string, unknown>, citations: Array.isArray(artifact.citations) ? artifact.citations : [] } } : {}),
-		markdown: fixed.markdown,
-	});
 	const pending = pendingUserFindings(report).length;
-
-	log.info(
-		{ runId: state.runId, stage: state.stage, verdict: report.verdict, applied: fixed.applied.length, pending },
-		'insrc_review_step[verdicts]: assembled + persisted review (model=client)',
-	);
-
-	return {
+	const completed: ReviewStepOutput = {
 		next:     'done',
 		verdict:  report.verdict,
 		counts:   report.counts,
@@ -146,4 +134,19 @@ export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answ
 		path:     state.mdPath,
 		jsonPath: state.jsonPath,
 	};
-}
+
+	guard.admitCompletion?.(completed);
+
+	// The one persist path: the auto-fix goes through the store (it answers no feedback), the report becomes the review entry of the
+	// log and the lifecycle review names it, and the markdown is written last.
+	await persistReview({
+		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle, assertActive: guard.assertActive, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER,
+		...(fixed.applied.length > 0 ? { fix: { body: fixed.body as Record<string, unknown>, citations: Array.isArray(artifact.citations) ? artifact.citations : [] } } : {}),
+		markdown: fixed.markdown,
+	});
+	log.info(
+		{ runId: state.runId, stage: state.stage, verdict: report.verdict, applied: fixed.applied.length, pending },
+		'insrc_review_step[verdicts]: assembled + persisted review (model=client)',
+	);
+
+	return completed;}

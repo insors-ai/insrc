@@ -1,3 +1,4 @@
+import { ReviewStateRefused } from './review-state-contract.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -83,7 +84,7 @@ export type ChannelEnvelope = RequestEnvelope | ReplyEnvelope | FrameEnvelope | 
 export interface HubRequest { readonly kind: 'hub-request'; readonly requestId: string; readonly op: string; readonly args: unknown; }
 export type HubReply =
 	| { readonly kind: 'hub-reply'; readonly requestId: string; readonly ok: true; readonly value: unknown }
-	| { readonly kind: 'hub-reply'; readonly requestId: string; readonly ok: false; readonly error: { readonly name: string; readonly message: string } };
+	| { readonly kind: 'hub-reply'; readonly requestId: string; readonly ok: false; readonly error: { readonly name: string; readonly message: string; readonly evidence?: { artifactId?: string | undefined; runId?: string | undefined } | undefined } };
 /** A one-way message, never answered: a worker's to a main-thread service (status publishes), or the main thread's push to a worker. */
 export interface HubMessage { readonly kind: 'hub-message'; readonly op: string; readonly args: unknown; }
 
@@ -161,7 +162,7 @@ export class HubClient {
 			if (waiting === undefined) return;
 			this.pending.delete(msg.requestId);
 			if (msg.ok) waiting.resolve(msg.value);
-			else waiting.reject(new HubRemoteError(msg.error.name, msg.error.message));
+			else waiting.reject(msg.error.name === 'ReviewStateRefused' && /^review-state-(stale|busy|owner-mismatch|uncertain|capacity|invalid)$/.test(msg.error.message) ? new ReviewStateRefused(msg.error.message as ReviewStateRefused['reason'], msg.error.evidence) : new HubRemoteError(msg.error.name, msg.error.message));
 		});
 		port.once('close', () => this.fail('the hub port closed'));
 	}
@@ -204,7 +205,8 @@ export class HubClient {
 	}
 }
 
-function errorShape(e: unknown): { readonly name: string; readonly message: string } {
+function errorShape(e: unknown): { readonly name: string; readonly message: string; readonly evidence?: { artifactId?: string | undefined; runId?: string | undefined } | undefined } {
+	if (e instanceof ReviewStateRefused) return { name: e.name, message: e.message, ...(e.evidence ? { evidence: e.evidence } : {}) };
 	return e instanceof Error ? { name: e.name, message: e.message } : { name: 'Error', message: String(e) };
 }
 

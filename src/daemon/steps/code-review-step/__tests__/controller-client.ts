@@ -33,7 +33,7 @@ function remember(envelope: CodeReviewStepMcpEnvelope): CodeReviewStepMcpEnvelop
 }
 export async function fixtureCodeReviewClient(input: unknown, deps: CodeReviewStepDeps): Promise<CodeReviewStepMcpEnvelope> {
 	if (!input || typeof input !== 'object') return rawControllerCall(input, deps);
-	const p = input as { phase?: string; state?: string; proceed?: boolean; judgements?: { judgements?: DimensionResult[] } };
+	const p = input as { phase?: string | undefined; state?: string | undefined; proceed?: boolean | undefined; judgements?: { judgements?: DimensionResult[] | undefined } | undefined };
 	if (p.phase === 'start') {
 		const previous = p.state ? frames.get(p.state) : undefined;
 		return remember(await rawControllerCall({ ...input, reviewBudget: CONTROLLER_DECLARATION,

@@ -134,15 +134,15 @@ test('exact expected claim and assigned subset sets reject empty partial duplica
 	const deps = { lifecycleFor: () => { lifecycleLookups++; return lifecycleFor(fx.repo).service; } };
 	for (const received of [[], [good[0]!], [good[0]!, good[0]!], [good[0]!, { ...good[1]!, claimId: 'unknown' }], [good[1]!, good[1]!]]) {
 		const out = parse(await rawReviewCall(seeded.input({ verdicts: received }), deps));
-		assert.equal(out.next, 'error'); assert.equal(out.error?.code, 'review-verdict-set-mismatch');
+		assert.equal(out.next, 'error'); assert.equal(out.error?.code, 'verdict-coverage-invalid');
 		assert.equal(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8'), beforeHead);
 		assert.equal(readFileSync(fx.md, 'utf8'), beforeMd);
 	}
 	assert.equal(lifecycleLookups, 0, 'exact-set failures precede even inspect/repair');
 	const partial = await seedTerminalFixture(state, 'verdicts', { assignedClaimIds: ['c-second'], completedVerdicts: [] });
-	assert.equal(parse(await rawReviewCall(partial.input({ verdicts: [good[1]!] }), deps)).error?.code, 'review-verdict-set-mismatch', 'a correct assigned subset cannot prematurely complete the full review');
+	assert.equal(parse(await rawReviewCall(partial.input({ verdicts: [good[1]!] }), deps)).error?.code, 'verdict-coverage-invalid', 'a correct assigned subset cannot prematurely complete the full review');
 	const subset = await seedTerminalFixture(state, 'verdicts', { assignedClaimIds: ['c-second'], completedVerdicts: [good[0]!] });
-	assert.equal(parse(await rawReviewCall(subset.input({ verdicts: [good[0]!] }), deps)).error?.code, 'review-verdict-set-mismatch', 'wrong assigned subset refuses even a known claim');
+	assert.equal(parse(await rawReviewCall(subset.input({ verdicts: [good[0]!] }), deps)).error?.code, 'verdict-coverage-invalid', 'wrong assigned subset refuses even a known claim');
 	const unextracted = await seedTerminalFixture({ ...payload, claims: [], evidence: [] }, 'verdicts', { extractionComplete: false });
 	assert.equal(parse(await rawReviewCall(unextracted.input({ verdicts: [] }), deps)).error?.code, 'review-extraction-incomplete');
 	assert.equal(lifecycleLookups, 0);

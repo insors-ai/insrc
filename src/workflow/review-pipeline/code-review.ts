@@ -1,3 +1,4 @@
+import { reviewTiming } from './call-events.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -65,7 +66,7 @@ export function fileExisted(snapshot: ReviewMaterialSnapshot, relPath: string): 
 }
 
 function companionsOf(subject: CodeReviewSubject): readonly CompanionArtifactRef[] {
-	const body = (subject.approvedLld as { body?: { companions?: readonly CompanionArtifactRef[] } } | null)?.body;
+	const body = (subject.approvedLld as { body?: { companions?: readonly CompanionArtifactRef[] | undefined } | undefined } | null)?.body;
 	return body?.companions ?? [];
 }
 
@@ -147,7 +148,7 @@ function fileOfLocation(location: string): string {
  *  quality's findings, then quality's pair findings); notes-only chunks report none. */
 function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: ReviewDimension): DimensionFinding[] {
 	return ['judge', 'pair'].flatMap(stage => ((outputs[stage] ?? []) as readonly StageAnswer[])
-		.flatMap(a => ((a.answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? []).map(f => ({ ...f, dimension }))));
+		.flatMap(a => ((a.answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] | undefined }).findings ?? []).map(f => ({ ...f, dimension }))));
 }
 
 /**
@@ -225,7 +226,7 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 			const answer = singleAnswer(outputs, 'judge', spec.dimension, false) as O;
 			const judged = spec.toResult(answer, grounding, groundingMode);
 			if (path !== 'controller') return judged;
-			const outside = ((answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? [])
+			const outside = ((answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] | undefined }).findings ?? [])
 				.filter(f => !changed.has(fileOfLocation(f.location))).map(f => ({ ...f, dimension: spec.dimension }));
 			return { ...judged, findings: [...judged.findings, ...outside] };
 		},
@@ -272,13 +273,13 @@ export async function runDimensionJob(
 	// prepared, so a job that fails still leaves its plan, and once as finished, after any
 	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).
 	logPlan('prepared', job, subject);
-	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
+	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onCall: ctx?.onCall, onCallEvent: ctx?.onCallEvent, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
 }
 
 function logPlan(phase: 'prepared' | 'finished', job: ReviewPipelineJob, subject: CodeReviewSubject): void {
 	const plan = {
 		phase, epicHash: subject.epicHash, storyId: subject.storyId, dimension: job.dimension, reviewId: job.reviewId,
-		single: job.plan.single, limitChars: job.plan.limitChars,
+		timing: reviewTiming(job), single: job.plan.single, limitChars: job.plan.limitChars,
 		chunks: job.plan.chunks.map(c => ({ id: c.id, atoms: c.atomIds.length, chars: c.chars })),
 		...(phase === 'finished' ? { pipelineCalls: pipelineCallsOf(job) ?? null } : {}),
 	};

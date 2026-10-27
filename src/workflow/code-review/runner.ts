@@ -1,3 +1,5 @@
+import { ReviewBudgetError } from '../review-pipeline/budget.js';
+import { safeReviewFailure } from '../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -104,6 +106,7 @@ export interface CodeReviewRunnerDeps {
 /** Run options — mirrors workflow-rpc's run opts. `modelLabel` is the resolved
  *  high-tier label stamped on meta; `onProgress` emits CodeReviewProgress frames. */
 export interface RunCodeReviewOpts {
+	readonly beforePersist?: ((artifact: CodeReviewArtifact) => void) | undefined;
 	readonly runId:       string;
 	readonly modelLabel:  string;
 	readonly signal?:     AbortSignal | undefined;
@@ -128,9 +131,10 @@ export interface RunCodeReviewOpts {
 
 /** Incremental progress frame streamed through `onProgress`. */
 export interface CodeReviewProgress {
-	readonly phase:      'grounding' | 'dimension-start' | 'call' | 'dimension-done' | 'finalize' | 'done' | 'error';
+	readonly phase:      'grounding' | 'dimension-start' | 'call' | 'call-event' | 'dimension-done' | 'finalize' | 'done' | 'error';
 	readonly dimension?: ReviewDimension | undefined;
 	readonly detail?:    string | undefined;
+	readonly callEvent?: import('../review-pipeline/call-events.js').ReviewCallEvent | undefined;
 }
 
 /** The shipped judges, in fixed evaluation order. The trailing conditionals —
@@ -227,7 +231,7 @@ export async function runCodeReview(
 			let calls = 0;
 			const onCall = (call: { readonly stage: string; readonly role: string }): void =>
 				emit({ phase: 'call', dimension: slot.dimension, detail: `${call.stage} ${call.role} #${++calls}` });
-			const result = await slot.judge(subject, grounding, provider, { ...ctx, onCall });
+			const result = await slot.judge(subject, grounding, provider, { ...ctx, onCall, onCallEvent: callEvent => emit({ phase: 'call-event', dimension: slot.dimension, callEvent }) });
 			dimensions.push(result);
 			emit({ phase: 'dimension-done', dimension: slot.dimension });
 		}
@@ -251,6 +255,7 @@ export async function runCodeReview(
 
 		// 6. Finalize: write BOTH files (json load-bearing; md a deterministic
 		//    summary). Validation has already passed, so a write here is never partial.
+		opts.beforePersist?.(artifact);
 		emit({ phase: 'finalize' });
 		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, pa.epicCreatedAt, pa.workItemKind, pa.epicSlug);
 		if (deps.through !== undefined) {
@@ -263,8 +268,9 @@ export async function runCodeReview(
 		emit({ phase: 'done' });
 		return { ok: true, artifact };
 	} catch (err) {
+		if (err instanceof ReviewBudgetError) throw err;
 		const msg = err instanceof Error ? err.message : String(err);
-		log.warn({ runId: opts.runId, storyId: subject.storyId, err: msg }, 'code review failed; no record written');
+		log.warn({ runId: opts.runId, storyId: subject.storyId, errorCode: safeReviewFailure(err) }, 'code review failed; no record written');
 		emit({ phase: 'error', detail: msg });
 		return { ok: false, error: msg };
 	}

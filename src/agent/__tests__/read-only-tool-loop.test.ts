@@ -83,7 +83,7 @@ test('review-only admission rechecks accumulated tools and history before every 
 		registerTool(fakeTool('budget_read', { output: huge, format: 'text', success: true }, { schemas: false }));
 		const args = { provider, messages: initial, tools: [tool], allow: new Set(['budget_read']), deps: deps(), maxTurns: 4,
 			onTrace: (event: import('../read-only-tool-loop.js').ToolLoopTraceEvent) => { if (event.type === 'tool-response') outputs.push(event.output); } };
-		await assert.rejects(() => runReadOnlyToolLoop({ ...args, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+		await assert.rejects(() => runReadOnlyToolLoop({ ...args, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
 		assert.equal(turns, 1, 'history growth is refused before the next model call');
 		assert.deepEqual(outputs, [huge], 'the complete tool evidence is retained, never trimmed to fit');
 		assert.deepEqual(initial, [{ role: 'user', content: 'review' }]);
@@ -94,7 +94,7 @@ test('review-only admission rechecks accumulated tools and history before every 
 		await assert.rejects(() => runReadOnlyToolLoop({ ...args, tools: [{ ...tool, description: 'changed manifest' }], reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
 		assert.equal(turns, 0, 'changed tools are not sent under an old profile');
 		const history = [{ role: 'user' as const, content: huge }];
-		await assert.rejects(() => emitStructuredAnswer({ provider, messages: history, instruction: 'Answer completely.', schema: { type: 'object' }, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+		await assert.rejects(() => emitStructuredAnswer({ provider, messages: history, instruction: 'Answer completely.', schema: { type: 'object' }, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'inspection-budget-exceeded');
 		assert.equal(finals, 0, 'the final answer has no budget exemption');
 		assert.equal(history[0]!.content, huge);
 		await assert.rejects(() => emitStructuredAnswer({ provider, messages: initial, instruction: 'Answer.', schema: { type: 'object' }, reviewBudget: budget, maxTokens: 65 }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');

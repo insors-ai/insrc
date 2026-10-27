@@ -796,13 +796,13 @@ test('full degraded and confirm-wait controller continuations use complete-frame
 		const measured = admitControllerFrame(frame, policy, CONTROLLER_DECLARATION);
 		assert.equal(measured.promptChars, JSON.stringify(env).length, 'the actual returned MCP envelope, escaping and schema are accounted');
 		assert.equal(measured.schemaTokens, 0, 'embedded schema is counted once inside the complete frame');
-		assert.throws(() => admitControllerFrame({ ...frame, prompts: Array.from({ length: 4 }, () => frame.next === 'emit_judgements' ? frame.prompts[0] : []) }, policy, CONTROLLER_DECLARATION), /review-budget-exceeded/, 'four individually admitted requests do not form an admitted aggregate');
+		assert.throws(() => admitControllerFrame({ ...frame, prompts: Array.from({ length: 4 }, () => frame.next === 'emit_judgements' ? frame.prompts[0] : []) }, policy, CONTROLLER_DECLARATION), /controller-frame-over-budget/, 'four individually admitted requests do not form an admitted aggregate');
 		let current: Extract<CodeReviewStepOutput, { next: 'emit_judgements' }> = frame;
 		const requestFor = () => ({ phase: 'judgements', state: current.state, reviewBudget: CONTROLLER_DECLARATION, reply: { version: 1, generation: current.call!['generation'], callId: current.call!['callId'], answer: { findings: [] } } });
 		const wrongProfile = parse(await rawControllerCall({ ...requestFor(), reviewBudget: { ...CONTROLLER_DECLARATION, profile: { ...CONTROLLER_DECLARATION.profile, providerId: 'changed-host' } } }, deps));
 		assert.ok(wrongProfile.next === 'error' && wrongProfile.error.code === 'budget-profile-mismatch');
 		const overflow = parse(await rawControllerCall({ ...requestFor(), reviewBudget: { ...CONTROLLER_DECLARATION, hostContextReserveTokens: 1_000_000 } }, deps));
-		assert.ok(overflow.next === 'error' && overflow.error.code === 'review-budget-exceeded');
+		assert.ok(overflow.next === 'error' && overflow.error.code === 'controller-frame-over-budget');
 		const invalid = parse(await rawControllerCall({ ...requestFor(), reply: { ...requestFor().reply, answer: {} } }, deps));
 		assert.ok(invalid.next === 'error' && invalid.error.code === 'controller-budget-incompatible');
 		const malformed = parse(await rawControllerCall({ ...requestFor(), reply: { ...requestFor().reply, answer: { findings: [{ severity: 'HIGH', confidence: 'breach', location: 'src/a.ts', message: 'missing line' }] } } }, deps));
@@ -858,4 +858,28 @@ test('full degraded and confirm-wait controller continuations use complete-frame
 	const cannotRevive = parse(await rawControllerCall(lateRequest, chunked.deps));
 	assert.ok(cannotRevive.next === 'error' && cannotRevive.error.code === 'review-state-uncertain');
 	assert.equal(chunked.writes.length, 0);
+});
+
+test('controller dimensions retain one original epoch and reject expired attempts and overflowing final reserves before writes', async () => {
+	await reset(); let clock = 0;
+	const { deps, writes } = makeDeps({ now: () => clock });
+	const start = { phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo', reviewBudget: CONTROLLER_DECLARATION };
+	const request = (frame: any, extra: Record<string, unknown> = {}) => ({ phase: 'judgements', state: frame.state, reviewBudget: CONTROLLER_DECLARATION,
+		reply: { version: 1, generation: frame.call.generation, callId: frame.call.callId, answer: { findings: [] } }, ...extra });
+	let frame: any = parse(await rawControllerCall(start, deps));
+	clock = 500000;
+	frame = parse(await rawControllerCall(request(frame), deps));
+	assert.equal(frame.timing.deadlineAt, 1200000, 'the second dimension extends the original epoch rather than starting a fresh clock');
+	assert.equal(frame.timing.logicalWorkUnits, 2); assert.equal(frame.timing.elapsedMs, 500000); assert.equal(frame.timing.remainingMs, 700000);
+	clock = 500000 + frame.timing.attemptLimitMs;
+	assert.ok(clock < frame.timing.deadlineAt);
+	const late: any = parse(await rawControllerCall(request(frame), deps));
+	assert.equal(late.error.code, 'review-attempt-timeout'); assert.equal(late.error.retryable, false); assert.equal(writes.length, 0);
+	await reset(); clock = 0;
+	frame = parse(await rawControllerCall(start, deps));
+	for (let i = 0; i < 3; i++) frame = parse(await rawControllerCall(request(frame), deps));
+	assert.equal(frame.next, 'emit_judgements');
+	const overflow: any = parse(await rawControllerCall(request(frame, { reviewBudget: { ...CONTROLLER_DECLARATION, hostContextReserveTokens: 200000 } }), deps));
+	assert.equal(overflow.error.code, 'controller-frame-over-budget'); assert.equal(writes.length, 0);
+	assert.equal(parse(await rawControllerCall(request(frame), deps)).next, 'done'); assert.ok(writes.length > 0);
 });

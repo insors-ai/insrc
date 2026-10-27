@@ -58,7 +58,7 @@ if (step.fail !== undefined) { process.stderr.write(step.fail); process.exit(ste
 process.stdout.write(step.out);
 `;
 
-interface Call { argv: string[]; cwd: string; stdin: string; wireSchema?: string }
+interface Call { argv: string[]; cwd: string; stdin: string; wireSchema?: string | undefined }
 
 function fakeCli(script: readonly Record<string, unknown>[]): { bin: string; dir: string; calls: () => Call[]; cleanup: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-cli-'));

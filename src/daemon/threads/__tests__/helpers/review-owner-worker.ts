@@ -12,10 +12,10 @@ import type { ReviewStateClaim } from '../../review-state-contract.js';
 
 const hub = startDaemonWorker(workerData as DaemonWorkerInit);
 const finishers = new Map<string, () => void>();
-parentPort!.on('message', (msg: { finish?: string }) => { if (msg.finish) finishers.get(msg.finish)?.(); });
+parentPort!.on('message', (msg: { finish?: string | undefined }) => { if (msg.finish) finishers.get(msg.finish)?.(); });
 const envelope = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(value) }], isError: false });
 async function operation(args: unknown, signal: AbortSignal, progress: (data: unknown) => void) {
-	const p = args as { mode?: string; token?: string; claim?: ReviewStateClaim };
+	const p = args as { mode?: string | undefined; token?: string | undefined; claim?: ReviewStateClaim | undefined };
 	const owner = currentStepContext()!.reviewOwner!.nonce;
 	const store = getStepStateStore();
 	if (p.mode === 'attack') {

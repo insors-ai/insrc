@@ -1,3 +1,4 @@
+import { safeReviewFailure } from '../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -67,7 +68,7 @@ async function runGrep(
 			// drive a BLOCK. If the pattern itself is bad, every root skips and
 			// the net result is an honest empty — same as the old behaviour.
 			const msg = err instanceof Error ? err.message : String(err);
-			log.warn({ pattern, root: root.path, err: msg }, 'review:probe: grep errored on root; skipping');
+			log.warn({ root: root.path, errorCode: safeReviewFailure(err) }, 'review:probe: grep errored on root; skipping');
 			continue;
 		}
 		const prefix = rootPrefix(repoPath, root);

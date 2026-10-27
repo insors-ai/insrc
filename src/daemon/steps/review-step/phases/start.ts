@@ -1,3 +1,4 @@
+import { safeReviewFailure, reviewTimeoutMessage } from '../../../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -138,7 +139,7 @@ async function reviewByDaemon(
 		// this work (or may have), so its review would not be a second pair of eyes.
 		const failure = err instanceof ReviewStreamError ? err.failure : 'failed';
 		const cause = err instanceof Error ? err.message : String(err);
-		log.warn({ stage: a.stage, mdPath: a.mdPath, failure, cause }, 'insrc_review_step[start]: the daemon review did not complete; nothing stamped');
+		log.warn({ stage: a.stage, mdPath: a.mdPath, failure, errorCode: safeReviewFailure(err) }, 'insrc_review_step[start]: the daemon review did not complete; nothing stamped');
 		return {
 			next: 'error',
 			error: {

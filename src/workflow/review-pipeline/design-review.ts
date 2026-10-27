@@ -85,10 +85,10 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		},
 		chunkCalls: () => [],
 		validate: answer => {
-			const raw = (answer as { claims?: readonly Claim[] }).claims;
+			const raw = (answer as { claims?: readonly Claim[] | undefined }).claims;
 			try {
 				if (!Array.isArray(raw)) return ['invalid-extraction-claims'];
-				assertExactReviewIds(raw.map(claim => claim.id), raw.map(claim => claim.id), 'review-verdict-set-mismatch');
+				assertExactReviewIds(raw.map(claim => claim.id), raw.map(claim => claim.id), 'verdict-coverage-invalid');
 				if (raw.some(claim => claim.id.trim().length === 0 || claim.text.trim().length === 0) || normalizeClaimsEnvelope({ claims: raw }).length !== raw.length) return ['invalid-extraction-claims'];
 				return [];
 			} catch { return ['invalid-extraction-claims']; }
@@ -126,7 +126,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		// Each admitted request owns one whole claim and all its required evidence.
 		singleCalls: (_prior, snap) => ((snap.claims ?? []) as Claim[]).map(claim => {
 			const { system, user } = buildBatchedVerifyPrompt([claim], [evidenceFor(snap, claim)]);
-			const schema = structuredClone(VERDICTS_SCHEMA) as { properties: { verdicts: { minItems?: number; maxItems?: number; items: { properties: { claimId: { const?: string } } } } } };
+			const schema = structuredClone(VERDICTS_SCHEMA) as { properties: { verdicts: { minItems?: number | undefined; maxItems?: number | undefined; items: { properties: { claimId: { const?: string | undefined } } } } } };
 			schema.properties.verdicts.minItems = 1; schema.properties.verdicts.maxItems = 1;
 			schema.properties.verdicts.items.properties.claimId.const = claim.id;
 			return { key: claim.id, messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: schema as unknown as StructuredSchema, execution: { mode: 'structured' as const, cwd: opts.repo, ...structuredLimits('design-verify') } };
@@ -134,9 +134,9 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		validate: (answer, call) => {
 			try {
 				const assigned = call.carries.key === undefined ? [] : [call.carries.key];
-				validateVerdictCoverage({ expected: assigned, assigned, completed: [], received: (answer as { verdicts?: readonly (RawFinding & { claimId: string })[] }).verdicts, extractionComplete: true });
+				validateVerdictCoverage({ expected: assigned, assigned, completed: [], received: (answer as { verdicts?: readonly (RawFinding & { claimId: string })[] | undefined }).verdicts, extractionComplete: true });
 				return [];
-			} catch { return ['review-verdict-set-mismatch']; }
+			} catch { return ['verdict-coverage-invalid']; }
 		},
 		chunkCalls: () => [],
 	};
@@ -148,7 +148,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 			refuseDivided('premise review', ctx.divided);
 			const claims = normalizeClaimsEnvelope((onlyAnswer(outputs, 'extract') ?? {}) as Parameters<typeof normalizeClaimsEnvelope>[0]);
 			const answers = (outputs['verify'] ?? []) as readonly StageAnswer[];
-			const batchedAnswers = answers.length > 0 && answers.every(answer => Array.isArray((answer.answer as { verdicts?: unknown }).verdicts));
+			const batchedAnswers = answers.length > 0 && answers.every(answer => Array.isArray((answer.answer as { verdicts?: unknown | undefined }).verdicts));
 			const batched = batchedAnswers
 				? new Map(validateVerdictCoverage({ expected: claims.map(claim => claim.id), assigned: claims.map(claim => claim.id), completed: [],
 					received: answers.flatMap(answer => (answer.answer as { verdicts: readonly (RawFinding & { claimId: string })[] }).verdicts), extractionComplete: true }).map(verdict => [verdict.claimId, verdict]))
@@ -171,7 +171,7 @@ export interface TemplateAdapterOpts {
 	/** The review's time limit (capped at 30 minutes). */
 	readonly limitMs:  number;
 	/** Today's time-limit error. */
-	readonly timedOut: (limitMs: number) => Error;
+	readonly timedOut: (limitMs: number, timing?: ReturnType<typeof import('./call-events.js').reviewTiming> | undefined) => Error;
 }
 
 /** Today's correction for an answer that broke the checklist; it sits between the instructions and the checklist. */
@@ -207,6 +207,6 @@ export function templateAdapter(snapshot: ReviewMaterialSnapshot, opts: Template
 			if (!r.ok) throw new Error(`design review: a validated answer failed checklist ${opts.template.id}`);
 			return r.findings;
 		},
-		deadlineError: ms => opts.timedOut(ms),
+		deadlineError: (ms, timing) => opts.timedOut(ms, timing),
 	};
 }

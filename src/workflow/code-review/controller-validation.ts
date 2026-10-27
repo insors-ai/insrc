@@ -7,7 +7,7 @@ export function validateFinding(f: unknown, dimension: ReviewDimension): string 
 	if (o['severity'] !== 'HIGH' && o['severity'] !== 'MED' && o['severity'] !== 'LOW') {
 		return `dimension '${dimension}' has a finding with severity '${String(o['severity'])}' (expected HIGH|MED|LOW).`;
 	}
-	if (typeof o['location'] !== 'string' || !o['location'].includes(':')) {
+	if (typeof o['location'] !== 'string' || !/^.+:[1-9]\d*$/.test(o['location']) || o['location'].slice(0, o['location'].lastIndexOf(':')).trim().length === 0 || !Number.isSafeInteger(Number(o['location'].slice(o['location'].lastIndexOf(':') + 1)))) {
 		return `dimension '${dimension}' has a finding whose location '${String(o['location'])}' is not a \`file:line\`.`;
 	}
 	if (typeof o['message'] !== 'string' || o['message'].length === 0) {

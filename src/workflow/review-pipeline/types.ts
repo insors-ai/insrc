@@ -171,7 +171,7 @@ export interface ReviewAdapter<R> {
 	/** Text for a related atom held in another chunk. Deterministic; no model call. Absent: its label. */
 	neighbourSummary?(atom: ReviewAtom, material: ReviewMaterial): string;
 	/** Today's error when the review's time limit passes. Absent: ReviewSessionTimeoutError. */
-	deadlineError?(limitMs: number): Error;
+	deadlineError?(limitMs: number, timing?: ReturnType<typeof import('./call-events.js').reviewTiming> | undefined): Error;
 }
 
 export type ReviewPath = 'daemon' | 'controller';
@@ -308,6 +308,7 @@ export interface ReviewPipelineJob {
 	/** Epoch ms after which no model result or replan is accepted; absent without model work. */
 	readonly executionStartedAt?: number | undefined;
 	readonly workSeq: number;
+	readonly priorWorkBudgetMs?: number | undefined;
 	readonly workUnits: readonly { readonly id: string; readonly parentId?: string | undefined; readonly replaced: boolean }[];
 	readonly deadlineAt?: number | undefined;
 	/** Legacy optional session diagnostic; current attempt caps remain on individual calls. */

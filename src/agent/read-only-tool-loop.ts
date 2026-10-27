@@ -323,7 +323,10 @@ function managedReviewBudget(provider: LLMProvider, budget: ReviewExecutionBudge
 	try {
 		preflightProviderReviewBudget(current, profile, promptChars, wireSchemaJson, maxTokens ?? budget.outputAllowanceTokens, declaredToolsJson);
 	} catch (err) {
-		if (err instanceof ReviewBudgetError) log.info({ ...metadata, errorCode: err.code }, 'review managed request refused');
+		if (err instanceof ReviewBudgetError) {
+			const refusal = err.code === 'dispatch-budget-exceeded' ? new ReviewBudgetError('inspection-budget-exceeded', err.breakdown) : err;
+			log.info({ ...metadata, errorCode: refusal.code }, 'review managed request refused'); throw refusal;
+		}
 		throw err;
 	}
 	log.info(metadata, 'review managed request admitted');

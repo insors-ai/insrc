@@ -58,7 +58,7 @@ test('template extraction evidence verification and finalization preserve every 
 		assert.equal((await call(resume(first, { items: [] }), deps)).next, 'error');
 		assert.equal((await call(resume(first, answer), deps)).next, 'done');
 		assert.equal((await call(resume(first, answer), deps)).next, 'already_completed');
-		assert.equal((await call({ phase: 'start', artifact: huge.mdPath, repo: huge.repo, reviewBudget: declaration }, deps)).error.code, 'required-context-over-budget');
+		assert.equal((await call({ phase: 'start', artifact: huge.mdPath, repo: huge.repo, reviewBudget: declaration }, deps)).error.code, 'mandatory-context-over-budget');
 
 		let frame = await call({ phase: 'start', artifact: premise.mdPath, repo: premise.repo, reviewBudget: declaration }, deps);
 		assert.equal(frame.next, 'emit_claims'); assert.equal(probes, 0, 'no probes before validated extraction');
@@ -135,4 +135,31 @@ test('actual design and code-review handlers refuse cross-protocol tokens and st
 		const stale = await call({ ...input, state: 'missing-state' }); assert.equal(stale.next, 'error');
 		assert.equal((await call(input, { lifecycleFor: repo => createRepoLifecycle(repo).service })).next, 'done');
 	} finally { rmSync(fx.repo, { recursive: true, force: true }); }
+});
+
+test('final controller reserve overflow precedes every persistence effect and late attempts cannot use remaining job time', async () => {
+	const template = fixture('design.story'), premise = fixture('define');
+	let inspections = 0, now = 1000;
+	const deps: ReviewStepDeps = { nowMs: () => now, readEntitiesForRepo: async () => [], lifecycleFor: repo => {
+		inspections++; return createRepoLifecycle(repo).service;
+	} };
+	try {
+		const frame = await call({ phase: 'start', artifact: template.mdPath, repo: template.repo, reviewBudget: declaration }, deps);
+		const before = readFileSync(template.jsonPath, 'utf8');
+		const final = resume(frame, templateAnswer(), { reviewBudget: { ...declaration, hostContextReserveTokens: 200000 } });
+		assert.equal((await call(final, deps)).error.code, 'controller-frame-over-budget'); assert.equal(inspections, 0);
+		assert.equal(readFileSync(template.jsonPath, 'utf8'), before);
+		assert.equal((await call(resume(frame, templateAnswer()), deps)).next, 'done');
+		const extract = await call({ phase: 'start', artifact: premise.mdPath, repo: premise.repo, reviewBudget: declaration }, deps);
+		const verify = await call(resume(extract, { claims: [claim('a'), claim('b')] }), deps);
+		const original = readFileSync(premise.jsonPath, 'utf8');
+		now += verify.timing.attemptLimitMs;
+		assert.ok(now < verify.timing.deadlineAt);
+		const result = await call(resume(verify, { verdicts: [verdict('a')] }), deps);
+		assert.equal(result.error.code, 'review-attempt-timeout'); assert.equal(result.error.retryable, false);
+		assert.equal(readFileSync(premise.jsonPath, 'utf8'), original);
+		const replay = await call(resume(verify, { verdicts: [verdict('a')] }), deps);
+		assert.equal(replay.error.code, 'review-state-uncertain');
+		assert.equal(replay.error.evidence.artifactId, idOfWorkflow('define'));
+	} finally { for (const fx of [template, premise]) rmSync(fx.repo, { recursive: true, force: true }); }
 });

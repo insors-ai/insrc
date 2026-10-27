@@ -1,3 +1,4 @@
+import { safeReviewFailure, reviewTimeoutMessage } from '../../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -85,12 +86,13 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 				);
 		}
 	} catch (err) {
-		if (err instanceof ReviewBudgetError || err instanceof ReviewCoverageError || err instanceof ReviewTerminalError) return errorResult(err.code, err.code, err.code !== 'review-job-timeout' && err.code !== 'review-budget-state-stale' && err.code !== 'review-source-changed');
-		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', 'review-job-timeout', false);
+		if (err instanceof ReviewBudgetError) { const out = errorResult(err.code, err.code, (err as { retryable?: boolean }).retryable !== false); return { ...out, error: { ...out.error, ...(err.breakdown ? { budget: err.breakdown } : {}), ...(err.context ? { context: err.context } : {}) } }; }
+		if (err instanceof ReviewCoverageError || err instanceof ReviewTerminalError) return errorResult(err.code, err.code === 'review-job-timeout' ? reviewTimeoutMessage(err) : err.code, (err as { retryable?: boolean }).retryable !== false && !['review-job-timeout', 'review-budget-state-stale', 'review-source-changed', 'review-attempt-timeout'].includes(err.code));
+		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', reviewTimeoutMessage(err), false);
 		if (err instanceof AtomTooLargeError) return errorResult('required-context-over-budget', 'required-context-over-budget', true);
-		if (err instanceof ReviewStateRefused) return errorResult(err.reason, err.reason, false);
+		if (err instanceof ReviewStateRefused) { const result = errorResult(err.reason, err.reason, false); return { ...result, error: { ...result.error, ...(err.evidence ? { evidence: err.evidence } : {}) } }; }
 		const msg = err instanceof Error ? err.message : String(err);
-		log.warn({ phase: step.phase, err: msg }, 'insrc_review_step: uncaught error');
+		log.warn({ phase: step.phase, errorCode: safeReviewFailure(err) }, 'insrc_review_step: uncaught error');
 		return errorResult(err instanceof SamePartyReviewError ? 'same-party-review' : 'internal', msg, false);
 	}
 }

@@ -83,13 +83,16 @@ test('two actual hub connections cannot consume or persist the same pending call
 			assert.deepEqual(replay['result'], { status: 'completed', receipt });
 			assert.equal(writes, 1);
 			assert.equal(readFileSync(join(dir, kind), 'utf8'), 'completed\n');
-			const uncertainToken = await store.mintReviewState(kind, {}, { generation: 0, callId: 'uncertain' });
+			const uncertainToken = await store.mintReviewState(kind, { jsonPath: '/repo/.insrc/artifacts/LLD-abcd1234ef567890-s1.json', runId: 'rev-1234-abcdef', privateSource: 'PRIVATE_SOURCE_CANARY' }, { generation: 0, callId: 'uncertain' });
 			const uncertain = await winner.ask({ op: 'claim', kind, access: { ...access, token: uncertainToken, callId: 'uncertain', owner: 'uncertain-owner' } });
 			const uncertainClaim = (uncertain['result'] as { claim: ReviewStateClaim }).claim;
 			appendFileSync(join(dir, kind), 'uncertain-write\n');
 			await store.invalidateReviewOwner('uncertain-owner'); // write may have happened before connection loss
 			assert.equal((await winner.ask({ op: 'commit', kind, claim: uncertainClaim, next: { status: 'completed', receipt: { ...receipt, callId: 'uncertain' } } }))['ok'], false);
-			assert.equal((await loser.ask({ op: 'claim', kind, access: { ...access, token: uncertainToken, callId: 'uncertain' } }))['ok'], false);
+			const uncertainReplay = await loser.ask({ op: 'claim', kind, access: { ...access, token: uncertainToken, callId: 'uncertain' } });
+			assert.equal(uncertainReplay['ok'], false);
+			assert.deepEqual(uncertainReplay['evidence'], { artifactId: 'LLD-abcd1234ef567890-s1', runId: 'rev-1234-abcdef' });
+			assert.ok(!JSON.stringify(uncertainReplay).includes('PRIVATE_SOURCE_CANARY'));
 		}
 	} finally { await left.close(); await right.close(); rmSync(dir, { recursive: true, force: true }); }
 });

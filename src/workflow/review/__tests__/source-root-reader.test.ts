@@ -127,13 +127,13 @@ test('CLI review: a rejecting reader falls back to the repository root and the o
 	const ev = matches(await gatherEvidence(claims, repo, { readEntitiesForRepo: rejecting, onSourceRootFallback: r => reasons.push(r) }));
 	assert.ok(under(ev, 'indexed') && under(ev, 'elsewhere'), 'both directories are searched');
 	assert.equal(reasons.length, 1);
-	assert.match(reasons[0] ?? '', /the index could not be read \(daemon is not running/);
+	assert.match(reasons[0] ?? '', /the index could not be read \(review-failed/);
 
 	// The review's output says that it fell back, and why.
 	const report = await runReview('# Story s1\n\n- t1: the token exists.\n', { repo, stage: 'plan', provider: provider(), model: 'fake', readEntitiesForRepo: rejecting });
-	assert.match(report.sourceRootFallback ?? '', /the index could not be read \(daemon is not running/);
+	assert.match(report.sourceRootFallback ?? '', /the index could not be read \(review-failed/);
 	const rendered = renderReviewReport(report);
-	assert.match(rendered, /The source roots could not be derived from the index: the index could not be read \(daemon is not running/);
+	assert.match(rendered, /The source roots could not be derived from the index: the index could not be read \(review-failed/);
 	assert.match(rendered, /The whole repository root was searched in their place/);
 
 	// A reader that answers with no file is the other reason.
@@ -163,6 +163,6 @@ test('the reader given to the review of an artifact file reaches the source-root
 
 	const bad = write('s2');
 	const fell = await reviewArtifactFile({ ...bad, ...common, readEntitiesForRepo: async () => { throw new Error('daemon is not running'); } });
-	assert.match(fell.report.sourceRootFallback ?? '', /daemon is not running/);
-	assert.match(readFileSync(bad.mdPath, 'utf8'), /The source roots could not be derived from the index: the index could not be read \(daemon is not running\)/);
+	assert.match(fell.report.sourceRootFallback ?? '', /review-failed/);
+	assert.match(readFileSync(bad.mdPath, 'utf8'), /The source roots could not be derived from the index: the index could not be read \(review-failed\)/);
 });

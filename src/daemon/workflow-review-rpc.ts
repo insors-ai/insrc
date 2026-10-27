@@ -1,3 +1,4 @@
+import { safeReviewFailure, reviewTimeoutMessage } from '../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -167,7 +168,7 @@ async function workflowReviewStartInner(
 		stopHeartbeat();
 		const msg = err instanceof Error ? err.message : String(err);
 		const samePartyRefusal = err instanceof SamePartyReviewError;
-		log.info({ repoPath, artifactPath: params.artifactPath, err: msg, samePartyRefusal }, 'workflow.review: no review recorded');
+		log.info({ repoPath, artifactPath: params.artifactPath, errorCode: safeReviewFailure(err), samePartyRefusal }, 'workflow.review: no review recorded');
 		fail(msg, samePartyRefusal ? 'same-party-review' : undefined);
 	}
 }

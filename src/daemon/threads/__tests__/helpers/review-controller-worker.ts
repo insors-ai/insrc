@@ -11,9 +11,9 @@ import { _setRepoSchemaGuardForTests } from '../../../repo-schema-guard.js';
 _setRepoSchemaGuardForTests(() => undefined);
 startDaemonWorker(workerData as DaemonWorkerInit);
 let release: (() => void) | undefined;
-parentPort!.on('message', (message: { release?: boolean }) => { if (message.release) release?.(); });
+parentPort!.on('message', (message: { release?: boolean | undefined }) => { if (message.release) release?.(); });
 const host = createStepCallHandler({ insrc_review_step: async (args, signal) => {
-	const p = args as { holdInspect?: boolean };
+	const p = args as { holdInspect?: boolean | undefined };
 	return handleReviewStep(args, { signal, readEntitiesForRepo: async () => [], lifecycleFor: repo => {
 		const service = createRepoLifecycle(repo).service;
 		return new Proxy(service, { get(target, key) {

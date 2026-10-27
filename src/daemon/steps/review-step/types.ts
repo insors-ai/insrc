@@ -54,7 +54,7 @@ export interface ReviewStepInputClaims {
 	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
 	readonly reply?: ControllerReviewReply | undefined;
 	readonly phase:  'claims';
-	readonly claims?: { readonly claims?: readonly Claim[] | undefined };
+	readonly claims?: { readonly claims?: readonly Claim[] | undefined } | undefined;
 	readonly state:  string;
 }
 
@@ -64,7 +64,7 @@ export interface ReviewStepInputVerdicts {
 	readonly reviewBudget?: ReviewControllerBudgetDeclaration | undefined;
 	readonly reply?: ControllerReviewReply | undefined;
 	readonly phase:    'verdicts';
-	readonly verdicts?: { readonly verdicts?: readonly RawVerdict[] | undefined };
+	readonly verdicts?: { readonly verdicts?: readonly RawVerdict[] | undefined } | undefined;
 	readonly state:    string;
 }
 
@@ -76,7 +76,7 @@ export interface RawVerdict {
 	readonly evidence:    string;
 	readonly action:      string;
 	readonly fixability:  string;
-	readonly proposedFix?: unknown;
+	readonly proposedFix?: unknown | undefined;
 }
 
 /** The controller's answer to a design-review template (matching
@@ -176,6 +176,9 @@ export interface ReviewStepError {
 		readonly code:      string;
 		readonly message:   string;
 		readonly retryable: boolean;
+		readonly budget?: import('../../../shared/review-budget.js').ReviewBudgetBreakdown | undefined;
+		readonly context?: { readonly stage?: string | undefined; readonly callId?: string | undefined; readonly unitId?: string | undefined; readonly shortfallTokens?: number | undefined } | undefined;
+		readonly evidence?: { artifactId?: string | undefined; runId?: string | undefined } | undefined;
 	};
 }
 
@@ -215,6 +218,6 @@ export interface ReviewStepStatePayload {
 
 export interface ReviewStepMcpEnvelope {
 	readonly content:  { readonly type: 'text'; readonly text: string }[];
-	readonly isError?: boolean;
+	readonly isError?: boolean | undefined;
 	readonly [key: string]: unknown;
 }

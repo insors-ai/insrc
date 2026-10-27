@@ -1,3 +1,4 @@
+import { safeReviewFailure } from '../../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -101,8 +102,8 @@ export async function resolveSourceRoots(
 		entities = await read(repoPath);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
-		log.warn({ repoPath, err: msg }, 'review:source-roots: graph read failed; falling back to repo root');
-		return { roots: [{ path: repoPath, fileCount: 0 }], fallbackUsed: true, fallbackReason: `the index could not be read (${msg})` };
+		log.warn({ repoPath, errorCode: safeReviewFailure(err) }, 'review:source-roots: graph read failed; falling back to repo root');
+		return { roots: [{ path: repoPath, fileCount: 0 }], fallbackUsed: true, fallbackReason: 'the index could not be read (review-failed)' };
 	}
 
 	const counts = new Map<string, number>();

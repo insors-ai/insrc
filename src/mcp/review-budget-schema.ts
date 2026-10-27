@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /** Optional publicly because daemon-routed reviews do not need a host declaration. */
 export const reviewBudgetDeclarationSchema = z.object({
-	version: z.literal(1), hostContextReserveTokens: z.number().int().nonnegative(),
+	version: z.literal(1), hostContextReserveTokens: z.number().int().positive(),
 	profile: z.object({
 		profileVersion: z.literal(1), providerId: z.string().min(1).max(128),
 		transport: z.literal('controller'), transportVersion: z.string().min(1).max(128),

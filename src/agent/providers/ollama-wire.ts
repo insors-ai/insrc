@@ -11,7 +11,7 @@ export interface OllamaMessage {
   /** Native tool calls on an assistant turn (Ollama SDK passes these
    *  through to the chat template; for qwen3-coder they render as
    *  `<tool_call>` chat-template tokens the model recognises). */
-  tool_calls?: Array<{ function: { name: string; arguments: Record<string, unknown> } }>;
+  tool_calls?: Array<{ function: { name: string; arguments: Record<string, unknown> } }> | undefined;
 }
 
 /**
@@ -90,3 +90,8 @@ export function toOllamaTools(tools: readonly ToolDefinition[]): OllamaTool[] {
   }));
 }
 
+
+/** SDK boundary: an optional native property must be absent rather than explicitly undefined. */
+export function toOllamaNativeMessages(messages: readonly OllamaMessage[]) {
+  return messages.map(({ tool_calls, ...message }) => tool_calls === undefined ? message : { ...message, tool_calls });
+}

@@ -54,6 +54,14 @@ export function resolveReviewBudgetPolicy(
 /** Provider-final conversation representation, shared by planning and dispatch. */
 export function reviewPromptChars(profile: ReviewProviderBudgetProfile, messages: readonly import('../../shared/types.js').LLMMessage[]): number {
 	freezeReviewBudgetProfile(profile);
+	for (const message of messages) {
+		if (typeof message.content === 'string') continue;
+		for (const block of message.content) {
+			const supported = block.type === 'text' || (profile.promptDialect === 'ollama-chat-v1' && ((block.type === 'tool_use' && message.role === 'assistant') || block.type === 'tool_result'));
+			if (!supported) throw new ReviewBudgetError('native-budget-unqualified');
+		}
+		if (profile.promptDialect === 'ollama-chat-v1' && message.content.some(block => block.type === 'tool_result') && message.content.some(block => block.type !== 'tool_result')) throw new ReviewBudgetError('native-budget-unqualified');
+	}
 	switch (profile.promptDialect) {
 		case 'cli-text-v1': return promptChars(messages);
 		case 'ollama-chat-v1': return JSON.stringify(toOllamaMessages(messages)).length;

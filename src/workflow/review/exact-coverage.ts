@@ -1,6 +1,6 @@
 /** Stable diagnostics never echo model-generated IDs or answer text. */
 export class ReviewCoverageError extends Error {
-	constructor(readonly code: 'review-verdict-set-mismatch' | 'review-template-set-mismatch' | 'review-extraction-incomplete') { super(code); this.name = 'ReviewCoverageError'; }
+	constructor(readonly code: 'verdict-coverage-invalid' | 'review-template-set-mismatch' | 'review-extraction-incomplete') { super(code); this.name = 'ReviewCoverageError'; }
 }
 export function assertExactReviewIds(expected: readonly string[], actual: readonly unknown[], code: ReviewCoverageError['code']): void {
 	const wanted = new Set(expected);
@@ -14,7 +14,7 @@ export function validateVerdictCoverage<V extends { readonly claimId: string }>(
 	readonly completed: readonly V[]; readonly received: readonly V[] | undefined;
 	readonly extractionComplete: boolean; readonly requireComplete?: boolean | undefined;
 }): readonly V[] {
-	const code = 'review-verdict-set-mismatch';
+	const code = 'verdict-coverage-invalid';
 	if (!input.extractionComplete) throw new ReviewCoverageError('review-extraction-incomplete');
 	assertExactReviewIds(input.expected, input.expected, code);
 	const expected = new Set(input.expected);

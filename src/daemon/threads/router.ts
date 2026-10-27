@@ -221,7 +221,7 @@ export class Router {
 		let reviewOwner: string | undefined;
 		try {
 			if (request.method === 'step.call' && (tool === 'insrc_review_step' || tool === 'insrc_code_review_step') && connection !== undefined) {
-				reviewOwner = registerReviewRequestOwner(connection, request.requestId, request.lifetime?.signal, request.lifetime?.assertActive);
+				reviewOwner = registerReviewRequestOwner(connection, request.requestId, request.stream ? request.lifetime?.signal : undefined, request.stream ? request.lifetime?.assertActive : undefined);
 			}
 		} catch {
 			try { deliver({ kind: 'reply', requestId: request.requestId, error: 'review request channel unavailable' }); }

@@ -65,6 +65,26 @@ material, not deleted. Review documents stay in `/tmp`.
 - Production build evidence: `/tmp/review-budget-t13-build.log`.
 - Final focused regression evidence: `/tmp/review-budget-t13-final-tests.log`.
 
+## Controller recovery and compatibility after review fixes
+
+Both controller flows and the protected design terminal share the same
+owner-bound claim transaction. A fresh positive host reserve is admitted on
+all turns, including the exact completion frame before persistence. Stored
+frames carry attempt deadlines; state from the earlier incomplete protocol
+without that deadline refuses explicitly. Code-review dimensions accumulate
+logical work against one original execution epoch.
+
+| Reference | Direction and cardinality | Ownership and compatibility |
+| --- | --- | --- |
+| uncertain-state evidence.artifactId | uncertain receipt → canonical artifact, zero or one | The daemon derives the bounded ID before discarding source-bearing state; it is a recovery pointer, not proof of completion. |
+| uncertain-state evidence.runId | uncertain receipt → review run, zero or one | Server-derived identifier retained for the existing bounded state lifetime; replay never reacquires a write claim. |
+
+Lifecycle events also reach progress with numeric timing and digested obligation
+identifiers. Budget errors distinguish dispatch, inspection, controller-frame
+and mandatory-context overflow. Ordinary dependency exception text is excluded
+from persistent review failure logs. Required corrections and evidence are
+preserved or refused; unsupported review blocks are never silently dropped.
+
 ## Release sequence — pending BUILD approval
 
 1. Complete the independent Story code review, resolve blocking findings and
@@ -84,3 +104,7 @@ material, not deleted. Review documents stay in `/tmp`.
 
 Deployment and the live TU1 smoke have not been performed by this build. The
 previous failed TU1 review is diagnostic evidence, not a fresh passing review.
+
+## Post-review validation
+
+Production build and compiled smoke passed (`/tmp/review-budget-cr-fixes-final-build.log`, `/tmp/review-budget-cr-fixes-packaged-smoke.log`). Final targeted checks passed 51/51 (`/tmp/review-budget-cr-fixes-final-checks.log`); the broader review matrix passed 630 with 18 optional skips. The full suite remains non-green: baseline failures persist; two diagnostic expectation changes were corrected and rechecked, and a concurrent git_ls_files maxBytes change has an unrelated approval-class assertion failure. Comparison: `/tmp/review-budget-cr-fixes-full-comparison.json`.

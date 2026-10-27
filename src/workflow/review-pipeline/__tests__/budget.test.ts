@@ -62,13 +62,13 @@ test('invalid and unqualified review policies refuse without retaining raw input
 	});
 	for (const value of [-1, NaN, Infinity, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
 		assert.throws(() => createReviewBudgetPolicy(profile(), 'structured', value), code('invalid-budget-policy'));
-		assert.throws(() => createReviewBudgetPolicy(profile({ inspectionReserveTokens: value }), 'structured'), code('invalid-budget-policy'));
+		assert.throws(() => createReviewBudgetPolicy(profile({ inspectionReserveTokens: value }), 'structured'), code('native-budget-unqualified'));
 		assert.throws(() => measureReviewBudget(createReviewBudgetPolicy(profile(), 'structured'), { ...input, promptChars: value }), code('invalid-budget-policy'));
 	}
 	assert.throws(() => createReviewBudgetPolicy(profile({ qualification: 'hard-native' as never }), 'structured'), code('native-budget-unqualified'));
 	assert.throws(() => createReviewBudgetPolicy(profile({ nativeReserveTokens: 0 }), 'structured'), code('native-budget-unqualified'));
 	assert.throws(() => createReviewBudgetPolicy(profile({ declaredToolsJson: sentinel }), 'structured'), code('native-budget-unqualified'));
-	assert.throws(() => createReviewBudgetPolicy(profile({ completionReserveTokens: 0 }), 'structured'), code('invalid-budget-policy'));
+	assert.throws(() => createReviewBudgetPolicy(profile({ completionReserveTokens: 0 }), 'structured'), code('native-budget-unqualified'));
 	for (const invalid of ['null', '0', 'false', '"text"']) {
 		assert.throws(() => createReviewBudgetPolicy(profile({ declaredToolsJson: invalid }), 'structured'), code('native-budget-unqualified'));
 		assert.throws(() => measureReviewBudget(createReviewBudgetPolicy(profile(), 'structured'), { ...input, wireSchemaJson: invalid }), code('native-budget-unqualified'));
@@ -88,7 +88,7 @@ test('controller host estimates are explicit additive reservations and cannot in
 	const controllerProfile = profile({ schemaDialect: 'controller-json-v1', promptDialect: 'controller-frame-v1', qualification: 'controller-reserved' });
 	assert.throws(() => validateControllerBudgetDeclaration(undefined), code('controller-budget-required'));
 	assert.throws(() => validateControllerBudgetDeclaration({ version: 0 as never, profile: controllerProfile, hostContextReserveTokens: 0 }), code('controller-budget-incompatible'));
-	assert.throws(() => validateControllerBudgetDeclaration({ version: 1, profile: controllerProfile, hostContextReserveTokens: -1 }), code('invalid-budget-policy'));
+	assert.throws(() => validateControllerBudgetDeclaration({ version: 1, profile: controllerProfile, hostContextReserveTokens: -1 }), code('controller-budget-incompatible'));
 	assert.throws(() => createReviewBudgetPolicy(profile(), 'controller'), code('native-budget-unqualified'));
 	assert.throws(() => createReviewBudgetPolicy(controllerProfile, 'structured'), code('native-budget-unqualified'));
 	const declaration = validateControllerBudgetDeclaration({ version: 1, profile: controllerProfile, hostContextReserveTokens: 1000 });
@@ -110,5 +110,5 @@ test('known native context only lowers admission while the configured total rema
 	assert.equal(b.limitTokens, 64000);
 	assert.equal(b.remainingTokens, 64000 - b.estimatedTotalTokens);
 	assert.throws(() => admitReviewBudget(createReviewBudgetPolicy(profile({ contextWindowTokens: 1000 }), 'structured'), input), code('review-budget-exceeded'));
-	for (const value of [0, -1, NaN, Infinity, 1.5]) assert.throws(() => createReviewBudgetPolicy(profile({ contextWindowTokens: value }), 'structured'), code('invalid-budget-policy'));
+	for (const value of [0, -1, NaN, Infinity, 1.5]) assert.throws(() => createReviewBudgetPolicy(profile({ contextWindowTokens: value }), 'structured'), code('native-budget-unqualified'));
 });

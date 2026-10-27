@@ -16,7 +16,7 @@ import type { StepKind } from '../../step-state.js';
 
 let fixtureOwner = ''; // Explicit trusted-owner injection for the isolated t8 store fixture only.
 installStepStateStore(new HubStepStateStore(new HubClient((workerData as { port: MessagePort }).port), () => fixtureOwner));
-parentPort!.on('message', async (m: { op: 'mint' | 'mint-unclonable' | 'read' | 'mint-review' | 'claim' | 'commit' | 'release-claim' | 'invalidate' | 'consume'; kind: StepKind; token?: string; payload?: unknown; expected?: ReviewStateExpected; access?: ReviewStateAccess; claim?: ReviewStateClaim; next?: ReviewStateCommit<unknown>; declaration?: boolean; answer?: unknown; failure?: 'before-write' | 'after-write'; persistencePath?: string }) => {
+parentPort!.on('message', async (m: { op: 'mint' | 'mint-unclonable' | 'read' | 'mint-review' | 'claim' | 'commit' | 'release-claim' | 'invalidate' | 'consume'; kind: StepKind; token?: string | undefined; payload?: unknown | undefined; expected?: ReviewStateExpected | undefined; access?: ReviewStateAccess | undefined; claim?: ReviewStateClaim | undefined; next?: ReviewStateCommit<unknown> | undefined; declaration?: boolean | undefined; answer?: unknown | undefined; failure?: 'before-write' | 'after-write' | undefined; persistencePath?: string | undefined }) => {
 	fixtureOwner = m.access?.owner ?? m.claim?.owner ?? '';
 	try {
 		const store = getStepStateStore();
@@ -49,7 +49,7 @@ parentPort!.on('message', async (m: { op: 'mint' | 'mint-unclonable' | 'read' | 
 		else if (m.op === 'mint-unclonable') parentPort!.postMessage({ ok: true, token: await store.mint(m.kind, { run: () => 1 }) });
 		else parentPort!.postMessage({ ok: true, entry: await store.read(m.kind, m.token!) });
 	} catch (e) {
-		parentPort!.postMessage({ ok: false, name: (e as Error).name, message: (e as Error).message });
+		parentPort!.postMessage({ ok: false, name: (e as Error).name, message: (e as Error).message, evidence: (e as { evidence?: unknown | undefined }).evidence });
 	}
 });
 parentPort!.postMessage({ ok: true, ready: true });

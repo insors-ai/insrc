@@ -146,6 +146,8 @@ export interface CodeReviewStepError {
 		readonly code:      string;
 		readonly message:   string;
 		readonly retryable: boolean;
+		readonly context?: { readonly stage?: string | undefined; readonly callId?: string | undefined; readonly unitId?: string | undefined; readonly shortfallTokens?: number | undefined } | undefined;
+		readonly evidence?: { artifactId?: string | undefined; runId?: string | undefined } | undefined;
 		readonly budget?: ReviewBudgetBreakdown | undefined;
 	};
 }

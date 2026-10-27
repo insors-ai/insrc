@@ -8,6 +8,8 @@ const log = getLogger('watcher');
 export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
 export type EventHandler = (events: FileEvent[]) => void;
+/** The subscribe function the Watcher uses; tests replace it to force a failure. */
+export type SubscribeFn = typeof parcelWatcher.subscribe;
 
 /** Directories to ignore during watching and file-walking.
  *  `out` is a build-output dir (insrc itself builds to `out/`, alongside the
@@ -46,6 +48,9 @@ export class Watcher {
   private debounceTimer:          ReturnType<typeof setTimeout> | null = null;
   private pendingEvents:          FileEvent[] = [];
 
+  /** `subscribe` defaults to the real @parcel/watcher subscribe. */
+  constructor(private readonly subscribe: SubscribeFn = parcelWatcher.subscribe) {}
+
   /** Register an event handler (call before addRepo). */
   onEvents(handler: EventHandler): void {
     this.handlers.push(handler);
@@ -60,7 +65,7 @@ export class Watcher {
     this.repoIgnore.set(repoPath, ignore);
     let sub: parcelWatcher.AsyncSubscription;
     try {
-      sub = await parcelWatcher.subscribe(
+      sub = await this.subscribe(
         repoPath,
         (_err, events) => this.onBackendEvents(repoPath, events),
         { ignore: [...ignore] },
@@ -138,7 +143,7 @@ export class Watcher {
         const entry: { repo: string; sub: parcelWatcher.AsyncSubscription | null } = { repo: repoPath, sub: null };
         this.dirSubscriptions.set(dir, entry);
         try {
-          const sub = await parcelWatcher.subscribe(dir, (_err, events) => this.onBackendEvents(repoPath, events), { ignore: [...ignore] });
+          const sub = await this.subscribe(dir, (_err, events) => this.onBackendEvents(repoPath, events), { ignore: [...ignore] });
           if (this.dirSubscriptions.get(dir) === entry && this.repoIgnore.has(repoPath)) entry.sub = sub;
           else await sub.unsubscribe();                     // the repo or the directory went away meanwhile
         } catch (err) {

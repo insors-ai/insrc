@@ -7,12 +7,13 @@
 
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { Watcher } from '../watcher.js';
-import type { FileEvent } from '../watcher.js';
+import type { FileEvent, SubscribeFn } from '../watcher.js';
+import { getLogger } from '../../shared/logger.js';
 
 const WAIT_MS = 15_000;
 const cleanups: Array<() => Promise<void> | void> = [];
@@ -21,11 +22,11 @@ afterEach(async () => { for (const c of cleanups.splice(0).reverse()) await c();
 interface Harness { root: string; watcher: Watcher; events: FileEvent[]; seen(path: string, type?: FileEvent['type']): boolean; until(p: () => boolean, what: string): Promise<void> }
 
 /** A watcher on a fresh temporary repo directory. */
-async function harness(ignore?: readonly string[]): Promise<Harness> {
+async function harness(ignore?: readonly string[], subscribe?: SubscribeFn): Promise<Harness> {
   const base = mkdtempSync(join(tmpdir(), 'insrc-watcher-'));
   const root = join(realpathSync(base), 'repo');
   mkdirSync(root);
-  const watcher = new Watcher();
+  const watcher = subscribe === undefined ? new Watcher() : new Watcher(subscribe);
   const events: FileEvent[] = [];
   watcher.onEvents(e => { events.push(...e); });
   if (ignore === undefined) await watcher.addRepo(root); else await watcher.addRepo(root, ignore);
@@ -162,4 +163,53 @@ test("src/indexer/__tests__/watcher-new-directories.test.ts: after close() no ha
   writeFileSync(join(dirB, 'after-remove.ts'), 'x\n');
   await watchingToo.until(() => watchingToo.seen(join(dirB, 'after-remove.ts')), 'the control watcher to see the write after removeRepo');
   assert.deepEqual(removing.events, [], 'the directory subscription delivers nothing after removeRepo()');
+});
+
+test('src/indexer/__tests__/watcher-new-directories.test.ts: a per-directory subscribe that throws is logged, does not throw out of the handler, and the files present in the new directory are still reported once', async () => {
+  const { subscribe: real } = await import('@parcel/watcher');
+  let calls = 0;
+  const failing: SubscribeFn = (dir, fn, opts) => {
+    if (++calls === 1) return real(dir, fn, opts);            // the repo subscription is real; every later one fails
+    return Promise.reject(new Error('inotify limit reached'));
+  };
+  const log = getLogger('watcher');
+  const warnings: unknown[][] = [];
+  const original = log.warn.bind(log);
+  (log as { warn: unknown }).warn = (...args: unknown[]) => { warnings.push(args); };
+  cleanups.push(() => { (log as { warn: unknown }).warn = original; });
+  const rejections: unknown[] = [];
+  const onRejection = (e: unknown) => { rejections.push(e); };
+  process.on('unhandledRejection', onRejection);
+  cleanups.push(() => { process.off('unhandledRejection', onRejection); });
+
+  const h = await harness(undefined, failing);
+  const dir = join(h.root, 'a', 'b');
+  mkdirSync(dir, { recursive: true });
+  mkdirSync(join(dir, 'c'));
+  writeFileSync(join(dir, 'c', 'present.ts'), 'x\n');
+  await h.until(() => h.seen(join(dir, 'c', 'present.ts'), 'create'), 'the file present in the new directory to be reported');
+  assert.ok(warnings.some(w => JSON.stringify(w[0]).includes(h.root)), 'a warning names the directory');
+  assert.equal(h.events.filter(e => e.path === join(dir, 'c', 'present.ts')).length, 1, 'reported once');
+  assert.deepEqual(rejections, [], 'nothing was thrown out of the handler');
+});
+
+test('src/indexer/__tests__/watcher-new-directories.test.ts: a new nested directory that cannot be read (mode 000, skipped when running as root) does not throw or stop later events for other directories', { skip: process.getuid?.() === 0 }, async () => {
+  const rejections: unknown[] = [];
+  const onRejection = (e: unknown) => { rejections.push(e); };
+  process.on('unhandledRejection', onRejection);
+  cleanups.push(() => { process.off('unhandledRejection', onRejection); });
+
+  const h = await harness();
+  const locked = join(h.root, 'x', 'locked');
+  mkdirSync(locked, { recursive: true });
+  chmodSync(locked, 0o000);
+  cleanups.push(() => { try { chmodSync(locked, 0o755); } catch { /* removed */ } });
+  const other = join(h.root, 'y', 'z');
+  mkdirSync(other, { recursive: true });
+  writeFileSync(join(other, 'ok.ts'), 'x\n');
+  await h.until(() => h.seen(join(other, 'ok.ts')), 'the file in the other directory');
+  mkdirSync(join(other, 'w'));
+  writeFileSync(join(other, 'w', 'later.ts'), 'x\n');
+  await h.until(() => h.seen(join(other, 'w', 'later.ts')), 'a later file in the other directory');
+  assert.deepEqual(rejections, [], 'nothing was thrown');
 });

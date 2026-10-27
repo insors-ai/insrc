@@ -628,7 +628,7 @@
       ],
       "siteCount": 154,
       "sitesDigest": "930f0fbe7631ff968c19ad91f4b2d4e5db03ff644f75cee8a1163df4ab0b9001",
-      "sourceDigest": "0b4d572eabe305796057618bbfdde4dc5ccfbeac6704e1e50645039991e00fe7",
+      "sourceDigest": "f24c4576c6bac3d281aedff252bbde93f32687e9f61f9197e2e1d2776a7f2279",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -1097,88 +1097,8 @@
           "call"
         ],
         [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "serialization",
-          "decodeURIComponent"
-        ],
-        [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
         ],
         [
           "diagnostic",
@@ -1198,60 +1118,15 @@
         ],
         [
           "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processSchemaForOpenAIStrict"
-        ],
-        [
-          "provider-adapter",
-          "resolvesIn"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
           "validate"
         ]
       ],
-      "siteCount": 42,
-      "sitesDigest": "cd6f3d7dcf9d24c1419ded6f229e79f1159e794ea5d1c8b14d9eb9139759abc0",
-      "sourceDigest": "e497326e8c98e99344dae3f5183246019fe414bac900552e4c7d6121e89a5c75",
+      "siteCount": 11,
+      "sitesDigest": "118e2c6b1ee09964e18e3eccd5372215105722c3f231afd43e874d6ac9f39ef3",
+      "sourceDigest": "5ced73c060c63c12e2bba00ba00e885d1921b253e78f3c2ada7eee5e7b23984d",
       "boundaries": [
         "diagnostic",
-        "provider-adapter",
-        "serialization"
+        "provider-adapter"
       ]
     },
     "src/agent/read-only-tool-loop.ts": {
@@ -13035,6 +12910,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "provider-backend",
           "ollama.list"
         ],
@@ -13175,9 +13054,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 184,
-      "sitesDigest": "552fadddbe2e68ae83937e09db71000715d39b1c47bd7c3f3006d6d30711d3d3",
-      "sourceDigest": "0d103f46b2ba5c4e7d437c72f7b2f0bee144a0c702430c8fd40694e45f90fd1d",
+      "siteCount": 185,
+      "sitesDigest": "17e10c1df726588eb5127e903f794144f145325fdfd8e37af76c8af2709e1a08",
+      "sourceDigest": "55ea08d82de8eae018f4c0d653c47d45260d5ae1700500ab51cdf9cd83f244b7",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -31044,7 +30923,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "ec3321264249fb3f9c9d11d564422c5a5cfed11d58080aac59c184c8135e27a7",
-      "sourceDigest": "3e8d7bff04c978326e03addc3316a4ab1609eee9066396d9991a45d3fc84bdde",
+      "sourceDigest": "c9863b232d73fb75c49b998775ce54ef130a2a10355c139ad2a6ed5f14243e39",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31204,7 +31083,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a8ce25ee55e92f906c493216e179e3b5abc04a91e9e75964b94f8da3d38d913b",
-      "sourceDigest": "50c85fff94eca5a94d318cea3ac5f8646684201a1b3c01bb62fece79156272af",
+      "sourceDigest": "e20136fee665e84372fc739806d4b384baba24f3ada0c4b1a98974698678ac03",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31317,11 +31196,19 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ]
       ],
-      "siteCount": 14,
-      "sitesDigest": "21a9db16bb8681e02caf77463d28a2f4d9fc8905ae1cbd020d41b5f7afba1b7d",
-      "sourceDigest": "9ccb09d35c11f380591c3984469ec05c9cf25a958e0ba51a019daa2907fa91e3",
+      "siteCount": 16,
+      "sitesDigest": "2d1c5086d8373eec03a875ad6f73169d17c313b6469a4fde020576d3b0767a42",
+      "sourceDigest": "b6ea16547ce84c5208ec7dba9c73d1f1ba744e91f398ea50362abb0a641e7857",
       "boundaries": [
         "filesystem-read",
         "provider-adapter",
@@ -36344,7 +36231,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "c1e5b2b07a437320253c91bd120194e6e168d3bf6d9f580123117c7c5a9c51b4",
-      "sourceDigest": "656fdf95764568d8aaf270113e6daa94beedb1884a72fcc1d8db6f7c5c1729aa",
+      "sourceDigest": "f4b8bef8936e3a07a9679e7715c86517e7f7b5523e790cea0961076d797c7566",
       "boundaries": [
         "serialization"
       ]
@@ -36360,6 +36247,18 @@
         [
           "provider-use",
           "admitted.execution.provider.completeStructured"
+        ],
+        [
+          "provider-adapter",
+          "CliProvider"
+        ],
+        [
+          "provider-factory",
+          "CliProvider"
+        ],
+        [
+          "provider-use",
+          "CliProvider"
         ],
         [
           "diagnostic",
@@ -36479,17 +36378,34 @@
         ],
         [
           "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
           "verifyBoundedCli"
         ]
       ],
-      "siteCount": 32,
-      "sitesDigest": "d5b45e8558de7e22ee1af15f72ec667fa80ea337f4078b04744eec08810cffd5",
-      "sourceDigest": "582efa54416aa7926ed9bdf3de5c22dfe55a3e3d41101820889931b13bf4d760",
+      "siteCount": 39,
+      "sitesDigest": "711052aab8e5968e1896be4f12b6257aee15db72a75a0731bb317bd7341033e4",
+      "sourceDigest": "a804a6473f91c7deca81c577704de6d9ca381e0f6f17ef24dd685638c4e3c931",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
         "filesystem-write",
         "provider-adapter",
+        "provider-factory",
         "provider-use",
         "serialization"
       ]
@@ -36730,6 +36646,143 @@
       "sitesDigest": "966b2f1ddd34bb57e8a04cacd434b85ccadbb860a48df55e20f6ad14d1c79cbf",
       "sourceDigest": "c659127bae0d3023eaabbe5f86671f497acd69e403602a1aff6308be063512e6",
       "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/agent/providers/structured-schema.ts": {
+      "classification": "provider-admission",
+      "rationale": "Pure schema normalization and full-schema reply validation extracted unchanged from structured-output. This module constructs no provider or Session authority; CLI denial and the local adapter byte attestation remain mandatory.",
+      "sites": [
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "serialization",
+          "decodeURIComponent"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processSchemaForOpenAIStrict"
+        ],
+        [
+          "provider-adapter",
+          "resolvesIn"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ]
+      ],
+      "siteCount": 31,
+      "sitesDigest": "7c5a13549a1f03f521b01d4eb0254f5c47ee242d8d3edee8dfe80dbfc22d7de7",
+      "sourceDigest": "ab56afa44d5e7de36881740e0f578f18a14c0937bee909b0e241da1ed70ce578",
+      "boundaries": [
+        "provider-adapter",
         "serialization"
       ]
     }

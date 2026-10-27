@@ -48,6 +48,8 @@ export class Watcher {
    * there produce no event. A value of null marks a subscription being created.
    */
   private readonly dirSubscriptions: Map<string, DirEntry> = new Map();
+  /** Releases started by delete events and not finished; removeRepo() and close() wait for them. */
+  private readonly releasing:    Set<Promise<void>> = new Set();
   private debounceTimer:          ReturnType<typeof setTimeout> | null = null;
   private pendingEvents:          FileEvent[] = [];
 
@@ -100,6 +102,7 @@ export class Watcher {
     for (const [dir, entry] of [...this.dirSubscriptions]) {
       if (entry.repo === repoPath) await this.releaseDirectory(dir);
     }
+    await Promise.allSettled([...this.releasing]);
   }
 
   /** Stop all watchers. */
@@ -114,6 +117,7 @@ export class Watcher {
     this.subscriptions.clear();
     this.repoIgnore.clear();
     for (const dir of [...this.dirSubscriptions.keys()]) await this.releaseDirectory(dir);
+    await Promise.allSettled([...this.releasing]);
   }
 
   /** Events from the repo subscription or from one of its directory subscriptions. */
@@ -122,9 +126,14 @@ export class Watcher {
     for (const e of events) {
       this.pendingEvents.push({ type: e.type as FileEventType, path: e.path });
       if (e.type === 'create') void this.adoptDirectory(repoPath, e.path);
-      else if (e.type === 'delete') void this.releaseDirectory(e.path, true);
+      else if (e.type === 'delete') this.trackRelease(this.releaseDirectory(e.path, true));
     }
     this.scheduleDrain();
+  }
+
+  private trackRelease(release: Promise<void>): void {
+    this.releasing.add(release);
+    void release.finally(() => this.releasing.delete(release));
   }
 
   /** Whether a path under the repo has a segment on the repo's ignore list. */

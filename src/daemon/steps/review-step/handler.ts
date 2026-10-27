@@ -49,7 +49,7 @@ export async function handleReviewStep(input: unknown, deps: ReviewStepDeps = {}
 	const result = await dispatch(input, deps);
 	if (TRACE_PATH !== undefined) {
 		try {
-			const raw = input as { phase?: unknown; reply?: { callId?: unknown } } | null;
+			const raw = input as { phase?: unknown | undefined; reply?: { callId?: unknown | undefined } | undefined } | null;
 			const phase = typeof raw?.phase === 'string' && ['start', 'claims', 'verdicts', 'findings'].includes(raw.phase) ? raw.phase : 'other';
 			appendFileSync(TRACE_PATH, JSON.stringify({ phase, next: result.next, callId: typeof raw?.reply?.callId === 'string' ? safeReviewId(raw.reply.callId) : undefined, ...(result.next === 'error' ? { errorCode: result.error.code } : {}) }) + '\n', 'utf8');
 		} catch { /* trace is best-effort */ }
@@ -86,9 +86,9 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 				);
 		}
 	} catch (err) {
-		if (err instanceof ReviewBudgetError) { const out = errorResult(err.code, err.code, (err as { retryable?: boolean }).retryable !== false); return { ...out, error: { ...out.error, ...(err.breakdown ? { budget: err.breakdown } : {}), ...(err.context ? { context: err.context } : {}) } }; }
-		if (err instanceof ReviewCoverageError || err instanceof ReviewTerminalError) return errorResult(err.code, err.code === 'review-job-timeout' ? reviewTimeoutMessage(err) : err.code, (err as { retryable?: boolean }).retryable !== false && !['review-job-timeout', 'review-budget-state-stale', 'review-source-changed', 'review-attempt-timeout'].includes(err.code));
-		if ((err as { timeoutKind?: unknown } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', reviewTimeoutMessage(err), false);
+		if (err instanceof ReviewBudgetError) { const out = errorResult(err.code, err.code, (err as { retryable?: boolean | undefined }).retryable !== false); return { ...out, error: { ...out.error, ...(err.breakdown ? { budget: err.breakdown } : {}), ...(err.context ? { context: err.context } : {}) } }; }
+		if (err instanceof ReviewCoverageError || err instanceof ReviewTerminalError) return errorResult(err.code, err.code === 'review-job-timeout' ? reviewTimeoutMessage(err) : err.code, (err as { retryable?: boolean | undefined }).retryable !== false && !['review-job-timeout', 'review-budget-state-stale', 'review-source-changed', 'review-attempt-timeout'].includes(err.code));
+		if ((err as { timeoutKind?: unknown | undefined } | null)?.timeoutKind === 'review-job') return errorResult('review-job-timeout', reviewTimeoutMessage(err), false);
 		if (err instanceof AtomTooLargeError) return errorResult('required-context-over-budget', 'required-context-over-budget', true);
 		if (err instanceof ReviewStateRefused) { const result = errorResult(err.reason, err.reason, false); return { ...result, error: { ...result.error, ...(err.evidence ? { evidence: err.evidence } : {}) } }; }
 		const msg = err instanceof SamePartyReviewError ? 'This artifact was authored by the controller, so the controller cannot review it; it needs a daemon review.' : safeReviewFailure(err);

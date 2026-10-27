@@ -1,3 +1,4 @@
+import { controllerMonotonicNow } from '../../../workflow/review-pipeline/controller.js';
 import { appendReviewRunEvent } from '../../../workflow/code-review/run-events.js';
 import { admitControllerTurn, assertControllerAttempt, controllerObservedEvent } from '../../../workflow/review-pipeline/controller.js';
 import { claimReviewTransaction } from '../review-transaction.js';
@@ -35,6 +36,7 @@ import type { ReviewStepDeps, ReviewStepInputClaims, ReviewStepInputFindings, Re
 type Payload = ReviewStepStatePayload & { readonly controller: ReviewTerminalProtocol };
 const log = getLogger('design-review-controller');
 const clock = (deps: ReviewStepDeps) => deps.nowMs ?? Date.now;
+const monotonic = (deps: ReviewStepDeps) => deps.monotonicNow ?? deps.nowMs ?? controllerMonotonicNow;
 const owner = () => requireReviewOwnerContext(currentStepContext()?.reviewOwner);
 
 function sourceDigest(state: ReviewStepStatePayload, enforceAuthor = false): string {
@@ -100,7 +102,7 @@ async function admit(state: Payload, declaration: ReviewControllerBudgetDeclarat
 	if (!call) throw new ReviewTerminalError('review-terminal-incompatible');
 	const frame = frameFor(advanced, call, clock(deps)());
 	try {
-		const lifetime = admitControllerTurn(frame, advanced.controller.policy, declaration, frame.timing?.['attemptLimitMs'] as number, clock(deps)());
+		const lifetime = admitControllerTurn(frame, advanced.controller.policy, declaration, frame.timing?.['attemptLimitMs'] as number, clock(deps)(), monotonic(deps)());
 		return { state: { ...advanced, controller: { ...advanced.controller, ...lifetime } }, frame };
 	} catch (error) {
 		// Current design partitions are whole templates/extractions/claims. Never drop source or evidence to fit.
@@ -113,8 +115,8 @@ function logFrame(state: Payload, event: 'controller-frame-ready' | 'controller-
  const pending = call ?? job?.pending.find(value => value.callId === c.callId);
  if (!job || !pending || !c.frameBudget) return;
  const code = event === 'controller-call-failed' ? reviewFailureCode(error) : undefined;
- const metadata = controllerObservedEvent(job, pending, c, code === 'cancelled' ? 'cancel' : event === 'controller-call-failed' ? 'failure' : event === 'controller-answer-committed' ? 'success' : 'start', clock(deps)(), code);
- (deps.recordCallEvent ?? appendReviewRunEvent)(state.repo, state.runId, metadata);
+ const metadata = controllerObservedEvent(job, pending, c, code === 'cancelled' ? 'cancel' : event === 'controller-call-failed' ? 'failure' : event === 'controller-answer-committed' ? 'success' : 'start', clock(deps)(), code, monotonic(deps)());
+ try { (deps.recordCallEvent ?? appendReviewRunEvent)(state.repo, state.runId, metadata); } catch { log.warn({errorCode:'review-evidence-write-failed'},'controller evidence observer failed'); }
  log.info(metadata, 'design controller: observed protocol transition');
 }
 
@@ -138,6 +140,8 @@ export async function hasControllerDesignJob(token: string): Promise<boolean> {
 	return (await getStepStateStore().read<ReviewStepStatePayload>('review', token))?.payload?.controller?.job !== undefined;
 }
 export async function resumeControllerDesignReview(input: ReviewStepInputClaims | ReviewStepInputFindings | ReviewStepInputVerdicts, deps: ReviewStepDeps): Promise<ReviewStepOutput> {
+	const saved = await getStepStateStore().read<ReviewStepStatePayload>('review', input.state);
+ if (saved?.payload && (!saved.payload.controller || saved.payload.controller.version !== 1)) throw new ReviewBudgetError('review-budget-state-stale');
 	const declaration = controllerPolicy(input.reviewBudget).declaration;
 	const reply = requireControllerReply(input.reply);
 	const authority = owner();
@@ -150,7 +154,7 @@ export async function resumeControllerDesignReview(input: ReviewStepInputClaims 
 		if (!c || c.version !== 1 || !c.job || c.frameDeadlineAt === undefined || c.callId !== reply.callId || c.generation !== reply.generation) throw new ReviewBudgetError('review-budget-state-stale');
 		controllerPolicy(declaration, c.policy);
 		admitControllerFrame({}, c.policy, declaration);
-		assertControllerAttempt(c, clock(deps)(), () => { if (c.job!.deadlineAt !== undefined && clock(deps)() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapterFor(state, deps)); }, () => new ReviewTerminalError('review-attempt-timeout'));
+		assertControllerAttempt(c, clock(deps)(), () => { if (c.job!.deadlineAt !== undefined && clock(deps)() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapterFor(state, deps)); }, () => new ReviewTerminalError('review-attempt-timeout'), monotonic(deps)());
 		if (c.phase !== input.phase) throw new ReviewTerminalError('review-terminal-incompatible');
 		assertSource(state);
 		const adapter = adapterFor(state, deps), now = clock(deps);

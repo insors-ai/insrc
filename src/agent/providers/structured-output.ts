@@ -246,6 +246,7 @@ export async function withStructuredRetry<T>(
 		log.warn(reviewScoped ? { attempt, maxAttempts, errorCode: 'invalid-answer' } : { attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
 	}
 	const prefix = `structured-output: validation failed after ${maxAttempts} attempts: `;
+	if (reviewScoped && lastCallFailure !== undefined) throw new ModelCallFailedError('review-model-call-failed');
 	if (lastCallFailure !== undefined) {
 		throw new ModelCallFailedError(`${prefix}${lastCallFailure.detail}`, { cause: lastCallFailure });
 	}

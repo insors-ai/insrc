@@ -106,8 +106,8 @@ test('effective attempt timer remaining-time clamp and transport-ceiling diagnos
 	assert.ok(performance.now() - began < 1000);
 	assert.equal(sends, 1, 'timed-out attempt is not retried');
 	assert.equal(observed?.aborted, true);
-	const remaining = { ...limited, deadlineAt: Date.now() + 12 };
-	await assert.rejects(runReviewJob(remaining, adapter, provider), /time|limit/i);
+	const remaining = { ...limited, deadlineAt: 1012 };
+	await assert.rejects(runReviewJob(remaining, adapter, provider, { now: () => 1000 }), /time|limit/i);
 	assert.equal(sends, 2);
 	let deterministicSignal: AbortSignal | undefined;
 	const blocked = { ...adapter, stagesFor: () => [{ id: 'blocked', kind: 'deterministic' as const, after: [], singleCalls: () => [], chunkCalls: () => [], onCallFailure: 'record-observation' as const,

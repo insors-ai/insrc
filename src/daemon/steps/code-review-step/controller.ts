@@ -53,6 +53,7 @@ export interface ControllerCodeReviewState extends ControllerReviewProtocol {
 	readonly results: readonly DimensionResult[];
 	readonly completedBudgetMs: number;
  readonly sourceDigest?: string | undefined;
+ readonly inputChangedFiles?: readonly string[] | undefined;
 	readonly job?: ReviewPipelineJob | undefined;
 }
 type Payload = CodeReviewStepStatePayload & { readonly controller: ControllerCodeReviewState };
@@ -74,7 +75,7 @@ function codeSourceDigest(subject: CodeReviewSubject): string {
 async function assertCodeSource(payload: Payload, deps: CodeReviewStepDeps): Promise<void> {
  owner().assertActive();
  const current=await deps.resolveSubject(payload.repo,payload.epicHash,payload.storyId);
- if(!current.ok || payload.controller.sourceDigest !== codeSourceDigest({...current.subject, changedFiles:payload.subject.changedFiles})) throw new ControllerCodeReviewError('review-source-changed');
+ if(!current.ok || JSON.stringify([...current.subject.changedFiles].sort()) !== JSON.stringify([...(payload.controller.inputChangedFiles ?? [])].sort()) || payload.controller.sourceDigest !== codeSourceDigest({...current.subject, changedFiles:payload.subject.changedFiles})) throw new ControllerCodeReviewError('review-source-changed');
  owner().assertActive();
 }
 
@@ -134,7 +135,7 @@ async function admitted(payload: Payload, declaration: ReviewControllerBudgetDec
 	for (;;) {
 		const frame = emitted(state, deps.now());
 		try {
-			const lifetime = admitControllerTurn(frame, state.controller.policy, declaration, frame.next === 'emit_judgements' && typeof frame.timing?.['attemptLimitMs'] === 'number' ? frame.timing['attemptLimitMs'] : undefined, deps.now());
+			const lifetime = admitControllerTurn(frame, state.controller.policy, declaration, frame.next === 'emit_judgements' && typeof frame.timing?.['attemptLimitMs'] === 'number' ? frame.timing['attemptLimitMs'] : undefined, deps.now(), (deps.monotonicNow ?? deps.now)());
 			return { payload: { ...state, controller: { ...state.controller, ...lifetime } }, frame };
 		}
 		catch (error) {
@@ -155,8 +156,8 @@ function logTransition(payload: Payload, event: 'start' | 'success' | 'failure',
  const call = job?.pending.find(value => value.callId === c.callId);
  if (!job || !call || !c.frameBudget) return;
  const code = event === 'failure' ? reviewFailureCode(error) : undefined;
- const metadata = controllerObservedEvent(job, call, c, code === 'cancelled' ? 'cancel' : event, deps.now(), code);
- deps.recordCallEvent?.(payload.repo, payload.runId, metadata);
+ const metadata = controllerObservedEvent(job, call, c, code === 'cancelled' ? 'cancel' : event, deps.now(), code, (deps.monotonicNow ?? deps.now)());
+ try { deps.recordCallEvent?.(payload.repo, payload.runId, metadata); } catch { log.warn({errorCode:'review-evidence-write-failed'},'controller evidence observer failed'); }
  log.info(metadata, 'controller review: observed protocol transition');
 }
 
@@ -177,7 +178,7 @@ export async function startControllerCodeReview(subject: CodeReviewSubject, decl
 	const { policy, declaration: d } = controllerPolicy(declaration);
 	owner().assertActive();
 	let payload: Payload = { runId: `cr-${randomUUID()}`, startedAtMs: deps.now(), repo: identity.repo, epicHash: identity.epicHash, storyId: identity.storyId, subject,
-		controller: { version: 1, generation: 0, callId: randomUUID(), policy, phase: 'confirm_wait', dimensions: computeExpectedDimensions(subject), results: [], completedBudgetMs: 0 } };
+		controller: { version: 1, generation: 0, callId: randomUUID(), policy, phase: 'confirm_wait', dimensions: computeExpectedDimensions(subject), results: [], completedBudgetMs: 0, inputChangedFiles: [...subject.changedFiles] } };
 	if (route?.degraded) {
 		const next = await admitted(await ground(payload, deps, true, route.reason), d, deps);
 		owner().assertActive();
@@ -198,7 +199,7 @@ export async function startControllerCodeReview(subject: CodeReviewSubject, decl
 
 export async function resumeControllerCodeReview(step: CodeReviewStepInputStart | CodeReviewStepInputJudgements, deps: CodeReviewStepDeps, finalize: Finalize): Promise<CodeReviewStepOutput> {
 	const saved = await getStepStateStore().read<Payload>('code-review', step.state!);
- if (saved?.payload && (!saved.payload.controller || saved.payload.controller.version !== 1 || (saved.payload.controller.phase === 'review' && (!saved.payload.controller.sourceDigest || saved.payload.controller.frameMonotonicStartedAt === undefined)))) throw new ReviewBudgetError('review-budget-state-stale');
+ if (saved?.payload && (!saved.payload.controller || saved.payload.controller.version !== 1 || (saved.payload.controller.phase === 'review' && (!saved.payload.controller.sourceDigest || !Array.isArray(saved.payload.controller.inputChangedFiles) || saved.payload.controller.frameMonotonicStartedAt === undefined)))) throw new ReviewBudgetError('review-budget-state-stale');
 	const { declaration } = controllerPolicy(step.reviewBudget);
 	const reply = requireControllerReply(step.reply);
 	const authority = owner();
@@ -231,7 +232,7 @@ export async function resumeControllerCodeReview(step: CodeReviewStepInputStart 
 			await assertCodeSource(payload, deps);
 			const c = payload.controller;
 			const adapter = adapterFor(payload, c.dimensions[c.results.length]!);
-			assertControllerAttempt(c, deps.now(), () => { if (c.job!.deadlineAt !== undefined && deps.now() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapter); }, () => Object.assign(new ControllerCodeReviewError('review-attempt-timeout'), { timeoutKind: 'review-attempt' }));
+			assertControllerAttempt(c, deps.now(), () => { if (c.job!.deadlineAt !== undefined && deps.now() >= c.job!.deadlineAt!) throw deadlineError(c.job!, adapter); }, () => Object.assign(new ControllerCodeReviewError('review-attempt-timeout'), { timeoutKind: 'review-attempt' }), (deps.monotonicNow ?? deps.now)());
 			const call = nextCalls(c.job!, adapter, deps.now()).find(call => call.callId === reply.callId);
 			if (!call || !validateAgainstSchema(controllerReplySchema(call, c.generation), reply).ok) throw new ReviewBudgetError('controller-budget-incompatible');
 			const findings = (reply.answer as { findings?: unknown[] | undefined } | null)?.findings;

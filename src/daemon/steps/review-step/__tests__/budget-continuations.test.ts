@@ -183,3 +183,16 @@ test('an artifact edited during awaited inspection cannot receive stale controll
   assert.equal(done.next,'error');assert.equal(done.error.code,'review-source-changed');assert.equal(writes,0);
  } finally {rmSync(f.repo,{recursive:true,force:true});}
 });
+
+
+test('legacy design shapes refuse stale before requiring new declarations or replies',async()=>{
+ await _clearReviewStateStoreForTests();
+ const f=fixture('define');
+ try{
+  for(const phase of ['claims','findings','verdicts']){
+   const state=await getStepStateStore().mint('review',{repo:f.repo,jsonPath:f.jsonPath,mdPath:f.mdPath,stage:'define'});
+   const reply=await call({phase,state,claims:[],findings:{items:[]},verdicts:[]});
+   assert.equal(reply.error.code,'review-budget-state-stale');
+  }
+ }finally{rmSync(f.repo,{recursive:true,force:true});}
+});

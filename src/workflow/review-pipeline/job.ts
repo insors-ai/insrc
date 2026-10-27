@@ -470,7 +470,7 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 	// Deterministic-only jobs grant zero model work, but their local/tool wait still has a bounded watchdog.
 	const stageAllowance = job.deadlineAt === undefined ? REVIEW_WORK_UNIT_MS : job.deadlineAt - stageStartedAt;
 	const remaining = Math.min(stageAllowance, (opts.outerDeadlineAt ?? Infinity) - stageStartedAt);
-	if (remaining <= 0) throw Object.assign(new Error('review transport-ceiling-incompatible'), { timeoutKind: 'external-review-transport' });
+	if (remaining <= 0 || remaining < stageAllowance) throw Object.assign(new Error('review transport-ceiling-incompatible'), { timeoutKind: 'external-review-transport' });
 	const stageTimeout = (): Error => remaining < stageAllowance ? Object.assign(new Error('review transport-ceiling-incompatible'), { timeoutKind: 'external-review-transport' }) : job.deadlineAt === undefined ? Object.assign(new ReviewSessionTimeoutError(remaining), { timeoutKind: 'review-stage', limitMs: remaining }) : deadlineError(job, adapter);
 	const timer = setTimeout(() => deadlineController.abort(), remaining);
 	let output: unknown;
@@ -536,7 +536,8 @@ export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<u
 	const batches = reduceBatches(job, gather, key, notes, b.soft, b.hard, converted.labels);
 	// A level that reduces each note alone, when every note is already within the cap, cannot shrink the evidence.
 	if (batches.every(c => c.carries.noteIds.length === 1) && notes.every(n => n.text.length <= gather.noteCapChars)) {
-		throw new Error(`review ${job.dimension}: the evidence for ${key} cannot be reduced to fit one call (${notes.length} notes)`);
+		const b = requestBudget(job.budgetPolicy, envelopeMessages('00000000-0000-0000-0000-000000000000', prompt.messages), envelopeSchema('00000000-0000-0000-0000-000000000000', prompt.schema), 'planning');
+  throw new ReviewBudgetError('required-context-over-budget', b, { stage: 'gather', unitId: createHash('sha256').update(key).digest('hex').slice(0,24), shortfallTokens: Math.max(0,-b.remainingTokens) });
 	}
 	const level = (next.gatherLevels[key] ?? 0) + 1;
 	if (level > MAX_GATHER_LEVELS) throw new Error(`review ${job.dimension}: the evidence for ${key} did not fit one call after ${MAX_GATHER_LEVELS} reduction levels`);

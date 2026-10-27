@@ -1,3 +1,4 @@
+import { getStepStateStore } from '../../threads/step-state.js';
 import { claimReviewTransaction } from '../review-transaction.js';
 import type { ReviewPipelineJob } from '../../../workflow/review-pipeline/types.js';
 import { basename } from 'node:path';
@@ -43,6 +44,8 @@ export async function withReviewTerminal(
 	input: ReviewStepInputFindings | ReviewStepInputVerdicts,
 	work: (state: ReviewStepStatePayload, answer: unknown, guard: ReviewTerminalGuard) => Promise<ReviewStepOutput>,
 ): Promise<ReviewStepOutput> {
+	const saved = await getStepStateStore().read<ReviewStepStatePayload>('review', input.state);
+ if (saved?.payload && (!saved.payload.controller || saved.payload.controller.version !== 1)) throw new ReviewBudgetError('review-budget-state-stale');
 	const declaration = controllerPolicy(input.reviewBudget).declaration;
 	const reply = requireControllerReply(input.reply);
 	const authority = requireReviewOwnerContext(currentStepContext()?.reviewOwner);

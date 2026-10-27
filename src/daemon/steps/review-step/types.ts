@@ -158,6 +158,7 @@ export interface ReviewStepDone {
 /** The tool's collaborators. Each defaults to the real thing; a test replaces
  *  the daemon request. */
 export interface ReviewStepDeps {
+ readonly monotonicNow?: (() => number) | undefined;
  readonly recordCallEvent?: ((repo: string, runId: string, event: import('../../../workflow/review-pipeline/call-events.js').ReviewCallEvent) => void) | undefined;
 	readonly readEntitiesForRepo?: EntitiesForRepoReader | undefined;
 	readonly nowMs?: (() => number) | undefined;

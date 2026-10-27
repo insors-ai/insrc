@@ -971,7 +971,7 @@ test("the gather stops, failing the review with nothing recorded, when an obliga
 		const { adapter, job } = base(4 * 3_000);   // note cap 3,000
 		const notes: EvidenceNote[] = Array.from({ length: 3 }, (_, i) => ({ noteId: `e${i}`, key: 'k1', text: `n${i}-${'q'.repeat(2_900)}`, atomIds: [] }));
 		assert.throws(() => requestNoteCall({ ...job, notes }, adapter, 'obligation', 'k1', notes.map(n => n.noteId)),
-			(e: unknown) => e instanceof Error && /the evidence for k1 cannot be reduced to fit one call \(3 notes\)/.test(e.message));
+			(e: unknown) => e instanceof ReviewBudgetError && e.code === 'required-context-over-budget' && e.breakdown !== undefined && e.context?.unitId !== undefined);
 	}
 	// The level limit: an obligation already reduced MAX_GATHER_LEVELS times that still does not fit is not reduced again.
 	{
@@ -994,7 +994,7 @@ test("the gather stops, failing the review with nothing recorded, when an obliga
 		};
 		// Each chunk answer carries one large note per atom: the evidence cannot shrink.
 		const model = gatherModel(2_900, 10);
-		await assert.rejects(drive(createReviewJob(rebuild(snap), 'daemon', snap, LIMIT), rebuild, model.answer), /cannot be reduced to fit one call/);
+		await assert.rejects(drive(createReviewJob(rebuild(snap), 'daemon', snap, LIMIT), rebuild, model.answer), (error:unknown) => error instanceof ReviewBudgetError && error.code === 'required-context-over-budget');
 		assert.equal(finished, 0, 'nothing recorded');
 	}
 });

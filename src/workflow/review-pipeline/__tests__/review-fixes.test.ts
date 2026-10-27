@@ -34,10 +34,12 @@ test('deterministic budget errors remain terminal under every failure policy and
 });
 
 test('deterministic-only work obeys a shorter outer deadline without waiting for the ten-minute stage watchdog', { timeout: 1000 }, async () => {
+	let dispatched = false;
 	const snapshot = toySnapshot([]), base = toyAdapter(snapshot);
-	const adapter: ReviewAdapter<unknown> = { ...base, stagesFor: () => [{ id: 'probe', kind: 'deterministic', after: [], onCallFailure: 'record-observation', run: async () => new Promise(() => {}) }] };
+	const adapter: ReviewAdapter<unknown> = { ...base, stagesFor: () => [{ id: 'probe', kind: 'deterministic', after: [], onCallFailure: 'record-observation', run: async () => { dispatched = true; return []; } }] };
 	const job = createReviewJob(adapter, 'daemon', snapshot, 384000, { budgetPolicy: policy });
 	await assert.rejects(runReviewJob(job, adapter, {} as LLMProvider, { outerCeilingMs: 20 }), error => (error as { timeoutKind?: string | undefined }).timeoutKind === 'external-review-transport');
+	assert.equal(dispatched, false, 'known incompatible outer allowance refuses even a fast stage before dispatch');
 });
 
 test('size refusal of a corrected retry never rebuilds an uncorrected request', () => {

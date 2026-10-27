@@ -29,7 +29,7 @@ export class ReviewStateRefused extends Error {
 
 /** Canonical recovery identifiers, never the source-bearing state itself. */
 export function reviewEvidence(payload: unknown): { artifactId?: string | undefined; runId?: string | undefined } {
-	const p = payload as { jsonPath?: unknown; epicHash?: unknown; storyId?: unknown; runId?: unknown } | null;
+	const p = payload as { jsonPath?: unknown | undefined; epicHash?: unknown | undefined; storyId?: unknown | undefined; runId?: unknown | undefined } | null;
 	const candidate = typeof p?.jsonPath === 'string' ? basename(p.jsonPath, '.json') : `CR-${String(p?.epicHash)}-${String(p?.storyId)}`;
 	const artifactId = /^(CR|LLD|HLD|DEF|PLAN|ISSUE)-[a-f0-9]+(?:-s\d+)?$/.test(candidate) ? candidate : undefined;
 	const runId = typeof p?.runId === 'string' && /^(cr|rev)-\d+-[a-z0-9]+$/.test(p.runId) ? p.runId : undefined;

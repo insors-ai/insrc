@@ -901,6 +901,13 @@ test('controller source edits refuse stale answers and persisted run IDs match c
   writeFileSync(join(repo,'src/a.ts'),'export const a=2;');
   const stale:any=parse(await rawControllerCall(request(frame),deps));
   assert.equal(stale.error.code,'review-source-changed');assert.equal(writes.length,0);
+  await reset();
+  frame=parse(await rawControllerCall(start,deps));
+  const scopeDeps={...deps,resolveSubject:async()=>({ok:true as const,subject:{...current,changedFiles:[...current.changedFiles,'src/new.ts']}})};
+  const enlarged:any=parse(await rawControllerCall(request(frame),{...scopeDeps,recordCallEvent:()=>{throw new Error('private recorder failure');}}));
+  assert.equal(enlarged.error.code,'review-source-changed');assert.equal(writes.length,0);
+  const replay:any=parse(await rawControllerCall(request(frame),scopeDeps));assert.equal(replay.error.code,'review-state-uncertain');
+
   await reset();events.length=0;
   frame=parse(await rawControllerCall(start,deps));
   while(frame.next==='emit_judgements')frame=parse(await rawControllerCall(request(frame),deps));

@@ -9,7 +9,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { mock, test } from 'node:test';
@@ -230,4 +230,18 @@ test('workflow.review sends a heartbeat frame every 60 s while a review runs and
 		mock.timers.reset();
 		f.cleanup();
 	}
+});
+
+
+test('failed daemon design reviews retain paired canonical call outcomes',async()=>{
+ const f=fixture('LLD',{authoredBy:'controller'});
+ try{
+  await run({artifactPath:f.md,repo:f.repo},{resolveProvider:()=>({provider:{} as LLMProvider,model:'fixture'}),review:async opts=>{
+   const event={event:'start',reviewId:'00000000-0000-0000-0000-000000000001',callId:'00000000-0000-0000-0000-000000000002'} as import('../../workflow/review-pipeline/call-events.js').ReviewCallEvent;
+   opts.onProgress?.('call-event',event);opts.onProgress?.('call-event',{...event,event:'failure'});
+   throw new Error('review failed');
+  }});
+  const dir=join(f.repo,'.insrc/review-runs');const files=readdirSync(dir);assert.equal(files.length,1);
+  assert.deepEqual(readFileSync(join(dir,files[0]!),'utf8').trim().split('\n').map(s=>JSON.parse(s).event),['start','failure']);
+ }finally{f.cleanup();}
 });

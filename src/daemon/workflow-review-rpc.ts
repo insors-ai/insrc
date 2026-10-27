@@ -1,9 +1,11 @@
-import { safeReviewFailure, reviewTimeoutMessage } from '../shared/review-failure.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { randomUUID } from 'node:crypto';
+import { appendReviewRunEvent } from '../workflow/code-review/run-events.js';
+import { safeReviewFailure, reviewTimeoutMessage } from '../shared/review-failure.js';
 /**
  * `workflow.review` StreamHandler: the daemon reviews an EXISTING design
  * artifact (a DEF, HLD or LLD) that it did not author.
@@ -115,11 +117,14 @@ async function workflowReviewStartInner(
 		}), WORKFLOW_REVIEW_HEARTBEAT_MS);
 		stopHeartbeat = () => clearInterval(heartbeat);
 
+		const evidenceRunId = `wr-${randomUUID()}`;
 		let stageIndex = 0;
-		const progress = (label: string, callEvent?: import('../workflow/review-pipeline/call-events.js').ReviewCallEvent | undefined): void => send({
+		const progress = (label: string, callEvent?: import('../workflow/review-pipeline/call-events.js').ReviewCallEvent | undefined): void => {
+   if(callEvent) appendReviewRunEvent(repoPath,evidenceRunId,callEvent);
+   send({
 			id: 0, stream: 'progress',
-			data: { kind: 'stage', operation: 'workflow.review', stageId: label, stageLabel: label, index: stageIndex++, total: null, ...(callEvent ? { callEvent } : {}) },
-		});
+			data: { kind: 'stage', operation: 'workflow.review', stageId: label, stageLabel: label, index: stageIndex++, total: null, ...(callEvent ? { callEvent, evidenceRunId } : {}) },
+		}); };
 
 		const lifecycle = (deps.lifecycleFor ?? (r => lifecycleFor(r).service))(repoPath);
 		const run = async (provider: LLMProvider, model: string): Promise<ReviewArtifactResult> =>

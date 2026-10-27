@@ -65,11 +65,12 @@ export interface ControllerFrameLifetime {
  readonly frameDeadlineAt?: number | undefined;
 }
 /** Both controllers admit and time the exact outer frame through this boundary. */
-export function admitControllerTurn(frame: unknown, policy: ReviewBudgetPolicy, declaration: ReviewControllerBudgetDeclaration, attemptMs: number | undefined, now: number): ControllerFrameLifetime {
- return { frameBudget: admitControllerFrame(frame, policy, declaration), frameAttemptMs: attemptMs, frameStartedAt: now, frameMonotonicStartedAt: controllerMonotonicNow(), frameDeadlineAt: attemptMs === undefined ? undefined : now + attemptMs };
+export function admitControllerTurn(frame: unknown, policy: ReviewBudgetPolicy, declaration: ReviewControllerBudgetDeclaration, attemptMs: number | undefined, now: number, monotonicNow: number = controllerMonotonicNow()): ControllerFrameLifetime {
+ return { frameBudget: admitControllerFrame(frame, policy, declaration), frameAttemptMs: attemptMs, frameStartedAt: now, frameMonotonicStartedAt: monotonicNow, frameDeadlineAt: attemptMs === undefined ? undefined : now + attemptMs };
 }
-export function assertControllerAttempt(frame: ControllerFrameLifetime, now: number, checkJob: () => void, attemptError: () => Error): void {
- if (frame.frameDeadlineAt !== undefined && now >= frame.frameDeadlineAt) { checkJob(); throw attemptError(); }
+export function assertControllerAttempt(frame: ControllerFrameLifetime, now: number, checkJob: () => void, attemptError: () => Error, monotonicNow: number = controllerMonotonicNow()): void {
+ const expired = frame.frameMonotonicStartedAt !== undefined && frame.frameAttemptMs !== undefined ? monotonicNow - frame.frameMonotonicStartedAt >= frame.frameAttemptMs : frame.frameDeadlineAt !== undefined && now >= frame.frameDeadlineAt;
+ if (expired) { checkJob(); throw attemptError(); }
 }
 export function controllerObservedEvent(job: import('./types.js').ReviewPipelineJob, call: ReviewCall, frame: ControllerFrameLifetime, event: import('./call-events.js').ReviewCallOutcome, now: number, errorCode?: import('./call-events.js').ReviewCallErrorCode | undefined, monotonicNow: number = controllerMonotonicNow()) {
  const effective = frame.frameAttemptMs === undefined ? call : { ...call, execution: call.execution.mode === 'reviewer-session' ? { ...call.execution, deadlineMs: frame.frameAttemptMs } : { ...call.execution, timeoutMs: frame.frameAttemptMs } };

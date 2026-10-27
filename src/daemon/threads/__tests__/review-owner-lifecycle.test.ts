@@ -79,9 +79,10 @@ test('real worker connection request and exit cancellation hooks bind and invali
 		await until(() => supervisor.current('owner-admin')?.threadId !== undefined && supervisor.current('owner-admin')!.threadId !== first.threadId);
 		assert.throws(() => assertReviewOwnerActive(dead.owner));
 		await assert.rejects(store.commitReviewState(dead.claim, { status: 'completed', receipt: { status: 'completed', callId: 'call-1' } }), /owner-mismatch|uncertain/);
+		const unaryOffset = events.length;
 		const unary = send({ mode: 'hold' }, false, true);
-		await until(() => events.some(e => e['event'] === 'claimed' && e['owner'] !== held.owner && e['owner'] !== dead.owner));
-		const unaryEvent = events.filter(e => e['event'] === 'claimed').at(-1)!;
+		await until(() => events.slice(unaryOffset).some(e => e['event'] === 'claimed'));
+		const unaryEvent = events.slice(unaryOffset).find(e => e['event'] === 'claimed')!;
 		unary.lifetime!.abort(); // real IPC socket close aborts this lifetime too
 		unary.cancel(); // ordinary unary disconnect must not revoke admitted, uncancelled work
 		assertReviewOwnerActive(unaryEvent['owner'] as string);

@@ -62,3 +62,19 @@ test('invalid envelope without reasons receives a mandatory correction before re
  const {reviewFailureCode}=await import('../call-events.js');const {AtomTooLargeError}=await import('../pack-into-batches.js');
  assert.equal(reviewFailureCode(new AtomTooLargeError('private source',100,1)),'budget-refused');
 });
+
+
+test('controller attempt expiry uses monotonic elapsed time across wall clock jumps',async()=>{
+ const {assertControllerAttempt}=await import('../controller.js');
+ const frame={frameStartedAt:100000,frameDeadlineAt:100050,frameMonotonicStartedAt:100,frameAttemptMs:50};
+ assert.doesNotThrow(()=>assertControllerAttempt(frame,999999,()=>{},()=>new Error('attempt'),149));
+ assert.throws(()=>assertControllerAttempt(frame,-999999,()=>{},()=>new Error('attempt'),150),/attempt/);
+});
+
+test('review-scoped model-call failures redact both dependency detail and cause',async()=>{
+ const {withStructuredRetry}=await import('../../../agent/providers/structured-output.js');
+ const {ModelCallFailedError}=await import('../../../agent/providers/model-call-error.js');
+ await assert.rejects(()=>withStructuredRetry(async()=>{throw new ModelCallFailedError('PRIVATE_DEPENDENCY_DETAIL',{cause:new Error('PRIVATE_CAUSE')});},()=>({ok:true as const,value:{}}),1,true),error=>{
+  assert.ok(error instanceof ModelCallFailedError);assert.equal(error.detail,'review-model-call-failed');assert.equal(error.cause,undefined);assert.ok(!JSON.stringify(error).includes('PRIVATE'));return true;
+ });
+});

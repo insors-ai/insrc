@@ -97,7 +97,7 @@ test('snapshotUpstream lists the artifacts each workflow reads, including the De
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('actingUser and runMetaFor read the tracker only for a repo that enforces claims', () => {
+test('actingUser and runMetaFor read the tracker only for a repo that enforces claims', async () => {
 	let loads = 0;
 	const port = { whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }) } as unknown as TrackerPort;
 	const reader = (enforced: boolean): PolicyReader => () => ({ ok: true, value: enforced ? ({ teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy) : 'none' });
@@ -105,12 +105,12 @@ test('actingUser and runMetaFor read the tracker only for a repo that enforces c
 
 	deps(false);
 	assert.equal(actingUser('/repo'), undefined);
-	assert.equal(runMetaFor('/repo', 'plan', { epicHash: HASH, storyId: 's1' }), undefined);
+	assert.equal(await runMetaFor('/repo', 'plan', { epicHash: HASH, storyId: 's1' }), undefined);
 	assert.equal(loads, 0, 'no policy: no tracker call');
 
 	deps(true);
 	assert.equal(actingUser('/repo'), 'alice');
-	assert.equal(runMetaFor('/nowhere', 'stub', {})?.owner, 'alice');
+	assert.equal((await runMetaFor('/nowhere', 'stub', {}))?.owner, 'alice');
 
 	// a tracker that cannot be used gives no owner and never throws
 	_setGateDepsForTests({ readPolicy: reader(true), loadTracker: () => ({ ok: false, kind: 'missing-tool', reason: 'gh missing' }) });

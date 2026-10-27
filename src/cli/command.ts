@@ -217,9 +217,9 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 				return ['usage: workflow resolve <path> <findingId> apply|accept|override|defer [note]'];
 			}
 			const note = noteParts.join(' ');
-			let res: ReturnType<typeof svc.workflow.resolveFinding>;
+			let res: Awaited<ReturnType<typeof svc.workflow.resolveFinding>>;
 			try {
-				res = svc.workflow.resolveFinding(path, id, action as 'apply' | 'accept' | 'override' | 'defer', note.length > 0 ? note : undefined);
+				res = await svc.workflow.resolveFinding(path, id, action as 'apply' | 'accept' | 'override' | 'defer', note.length > 0 ? note : undefined);
 			} catch (err) {
 				// Applying a finding changes the stage: a team repo refuses it for anyone but the holder.
 				if (err instanceof Error && err.name === 'TeamGateRefusedError') return [`✗ not applied — ${(err as { reason?: string | undefined }).reason ?? err.message}`];

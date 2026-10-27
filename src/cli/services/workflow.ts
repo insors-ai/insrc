@@ -263,7 +263,7 @@ export function reviewFindings(artifactPath: string): ReviewFindingsResult {
 }
 
 /** Resolve one review finding (apply | accept | override | defer). */
-export function resolveFinding(artifactPath: string, findingId: string, action: ReviewAction, note?: string): ResolveReviewResult {
+export function resolveFinding(artifactPath: string, findingId: string, action: ReviewAction, note?: string): Promise<ResolveReviewResult> {
 	return resolveReviewFinding(artifactPath, jsonPathForMd(artifactPath), findingId, action, note);
 }
 

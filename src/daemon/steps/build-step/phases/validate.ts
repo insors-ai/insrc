@@ -225,7 +225,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 
 	const ref = resolved.ref;
-	assertMayBuild(repoPath, ref);   // team gate: before any check runs or record is written
+	await assertMayBuild(repoPath, ref);   // team gate: before any check runs or record is written
 	const mapping = resolveMapping(repoPath, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
 	if (!mapping.ok) return mapping.error;
 	const done = await runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
@@ -333,7 +333,7 @@ async function handleStandaloneValidate(
 		return err('no-identity', `insrc_build_step[validate]: a standalone Small validate requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
 	}
 	const storyId = ctx.storyId ?? 's1';
-	assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before any check runs or record is written
+	await assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before any check runs or record is written
 
 	// Point the verdict gate at the standalone LLD when one exists (Small), and take
 	// its test strategy as the tests to run. A missing / unreadable LLD omits the
@@ -425,11 +425,11 @@ async function runValidateTurn(
 
 	// The checks and the judge take minutes, and the claim may have moved meanwhile: ask the gate again
 	// before each record this turn writes, so a non-holder never persists results.
-	const recheckGate = (): void => {
+	const recheckGate = async (): Promise<void> => {
 		if (ident.epicHash.length === 0 || ident.storyId.length === 0) return;
-		assertMayBuild(repoPath, ident.standalone !== undefined ? { epicHash: ident.epicHash, storyId: ident.storyId } : ident);
+		await assertMayBuild(repoPath, ident.standalone !== undefined ? { epicHash: ident.epicHash, storyId: ident.storyId } : ident);
 	};
-	recheckGate();
+	await recheckGate();
 
 	// ONE time and ONE resolved route flag for both of the Story's records.
 	const now = (clockOverride ?? (() => new Date().toISOString()))();
@@ -513,7 +513,7 @@ async function runValidateTurn(
 			return err('unparseable-verdict', `insrc_build_step[validate]: the judge's verdict is unusable: ${shapeError}.`);
 		}
 		const judge = judged as JudgeVerdict;
-		recheckGate();
+		await recheckGate();
 		const testsPassed = results.tests.ok;
 		const typecheckClean = results.typecheck.ok;
 		const passed = judge.passed && testsPassed && typecheckClean;

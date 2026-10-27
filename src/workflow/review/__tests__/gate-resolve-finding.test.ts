@@ -57,7 +57,7 @@ function setup(): { md: string; json: string; cleanup: () => void } {
 	return { md, json, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
-test('resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run', () => {
+test('resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run', async () => {
 	const s = setup();
 	try {
 		const mdBefore = readFileSync(s.md, 'utf8');
@@ -65,13 +65,13 @@ test('resolveReviewFinding with action apply by a non-holder throws TeamGateRefu
 
 		// someone else holds the stage: apply is refused naming them, and nothing is written
 		hold('bob');
-		assert.throws(() => resolveReviewFinding(s.md, s.json, 'apply1', 'apply', undefined, now), (err: unknown) => err instanceof TeamGateRefusedError && /held by bob/.test(err.reason));
+		await assert.rejects(async () => resolveReviewFinding(s.md, s.json, 'apply1', 'apply', undefined, now), (err: unknown) => err instanceof TeamGateRefusedError && /held by bob/.test(err.reason));
 		assert.equal(readFileSync(s.md, 'utf8'), mdBefore, 'the markdown is untouched');
 		assert.equal(readFileSync(s.json, 'utf8'), jsonBefore, 'the artifact is untouched');
 
 		// accept, override and defer only record a decision: they still run for a non-holder
 		for (const [id, action] of [['acc', 'accept'], ['ovr', 'override'], ['def', 'defer']] as const) {
-			assert.doesNotThrow(() => resolveReviewFinding(s.md, s.json, id, action, 'noted', now), action);
+			await assert.doesNotReject(async () => resolveReviewFinding(s.md, s.json, id, action, 'noted', now), action as unknown as string);
 		}
 		assert.deepEqual(Object.keys(readReviewRecordOf(s.json)?.resolutions ?? {}).sort(), ['acc', 'def', 'ovr']);
 		const meta = JSON.parse(readFileSync(s.json, 'utf8')).meta;
@@ -80,7 +80,7 @@ test('resolveReviewFinding with action apply by a non-holder throws TeamGateRefu
 
 		// the holder applies; so does a repo with no policy
 		hold('alice');
-		assert.equal(resolveReviewFinding(s.md, s.json, 'apply1', 'apply', undefined, now).status, 'resolved');
+		assert.equal((await resolveReviewFinding(s.md, s.json, 'apply1', 'apply', undefined, now)).status, 'resolved');
 		assert.match(readFileSync(s.md, 'utf8'), /three exported constants/);
 		assert.equal(JSON.parse(readFileSync(s.json, 'utf8')).meta.revision, 2, 'applying the edit is a content change');
 	} finally { s.cleanup(); }
@@ -88,6 +88,6 @@ test('resolveReviewFinding with action apply by a non-holder throws TeamGateRefu
 	const free = setup();
 	try {
 		hold('bob', () => ({ ok: true, value: 'none' }));
-		assert.equal(resolveReviewFinding(free.md, free.json, 'apply1', 'apply', undefined, now).status, 'resolved', 'no policy: applies as before');
+		assert.equal((await resolveReviewFinding(free.md, free.json, 'apply1', 'apply', undefined, now)).status, 'resolved', 'no policy: applies as before');
 	} finally { free.cleanup(); }
 });

@@ -36,7 +36,7 @@ function setup(findings: Finding[]): { md: string; json: string; cleanup: () => 
 
 const FIXED = () => '2026-07-21T00:00:00.000Z';
 
-test('listPendingReviewFindings returns non-LOW unresolved findings; effective verdict blocks', () => {
+test('listPendingReviewFindings returns non-LOW unresolved findings; effective verdict blocks', async () => {
 	const r = report([
 		finding({ claimId: 'high1', severity: 'HIGH' }),
 		finding({ claimId: 'med1', severity: 'MED' }),
@@ -51,14 +51,14 @@ test('listPendingReviewFindings returns non-LOW unresolved findings; effective v
 	assert.equal(listPendingReviewFindings(r, resolutions).length, 0);
 });
 
-test('resolve apply mutates the artifact + records resolution; override clears the rest', () => {
+test('resolve apply mutates the artifact + records resolution; override clears the rest', async () => {
 	const s = setup([
 		finding({ claimId: 'high1', severity: 'HIGH', fixability: 'assisted', proposedFix: { rationale: 'r', artifactEdits: [{ find: 'two exported constants', replace: 'three exported constants' }] } }),
 		finding({ claimId: 'med1', severity: 'MED', fixability: 'manual' }),
 	]);
 	try {
 		// apply the HIGH's edit
-		const r1 = resolveReviewFinding(s.md, s.json, 'high1', 'apply', undefined, FIXED);
+		const r1 = await resolveReviewFinding(s.md, s.json, 'high1', 'apply', undefined, FIXED);
 		assert.equal(r1.status, 'resolved');
 		assert.equal(r1.appliedEdits, 1);
 		assert.equal(r1.effectiveVerdict, 'block');       // MED still unresolved
@@ -68,7 +68,7 @@ test('resolve apply mutates the artifact + records resolution; override clears t
 		assert.equal(body.tasks[0].desc, 'extend the three exported constants.');   // body edited too
 
 		// override the MED
-		const r2 = resolveReviewFinding(s.md, s.json, 'med1', 'override', 'non-material', FIXED);
+		const r2 = await resolveReviewFinding(s.md, s.json, 'med1', 'override', 'non-material', FIXED);
 		assert.equal(r2.status, 'overridden');
 		assert.equal(r2.effectiveVerdict, 'pass');        // all blocking resolved
 		assert.equal(r2.remainingBlocking, 0);
@@ -79,14 +79,14 @@ test('resolve apply mutates the artifact + records resolution; override clears t
 	} finally { s.cleanup(); }
 });
 
-test('resolve apply refuses a finding with no edits', () => {
+test('resolve apply refuses a finding with no edits', async () => {
 	const s = setup([finding({ claimId: 'm', severity: 'MED', fixability: 'manual' })]);
 	try {
-		assert.throws(() => resolveReviewFinding(s.md, s.json, 'm', 'apply', undefined, FIXED), /no artifactEdits/);
+		await assert.rejects(async () => resolveReviewFinding(s.md, s.json, 'm', 'apply', undefined, FIXED), /no artifactEdits/);
 	} finally { s.cleanup(); }
 });
 
-test('resolve.test.ts: the review report is read from the review log entry', () => {
+test('resolve.test.ts: the review report is read from the review log entry', async () => {
 	const s = setup([finding({ claimId: 'm1', severity: 'MED', fixability: 'manual' }), finding({ claimId: 'm2', severity: 'MED', fixability: 'manual' })]);
 	try {
 		// the report and the decision come from the log; the head names the entry and holds no report
@@ -95,21 +95,21 @@ test('resolve.test.ts: the review report is read from the review log entry', () 
 		assert.equal(head.meta.lifecycle.review.report.type, 'change-log-entry');
 		assert.equal(reviewerPartyOf(head.meta.lifecycle.review), 'daemon', 'the party is the lifecycle review\'s');
 		assert.equal(reviewerPartyOf({ party: 'controller', reviewedBy: 'daemon' }), 'controller', 'and wins over a report\'s label');
-		const r1 = resolveReviewFinding(s.md, s.json, 'm1', 'accept', 'seen', FIXED);
+		const r1 = await resolveReviewFinding(s.md, s.json, 'm1', 'accept', 'seen', FIXED);
 		assert.equal(r1.effectiveVerdict, 'block');
 		assert.equal(r1.remainingBlocking, 1);
-		const r2 = resolveReviewFinding(s.md, s.json, 'm2', 'defer', undefined, FIXED);
+		const r2 = await resolveReviewFinding(s.md, s.json, 'm2', 'defer', undefined, FIXED);
 		assert.equal(r2.effectiveVerdict, 'pass');
 		const read = readReviewRecordOf(s.json);
 		assert.deepEqual(Object.keys(read?.resolutions ?? {}).sort(), ['m1', 'm2']);
 		assert.equal(effectiveReviewVerdict(read!.report, read!.resolutions), 'pass');
-		assert.throws(() => resolveReviewFinding(s.md, s.json, 'nope', 'accept', undefined, FIXED), /no finding 'nope'/);
+		await assert.rejects(async () => resolveReviewFinding(s.md, s.json, 'nope', 'accept', undefined, FIXED), /no finding 'nope'/);
 
 		// a head with a review stamp in its meta and no lifecycle review has nothing to resolve
 		const old = JSON.parse(readFileSync(s.json, 'utf8'));
 		delete old.meta.lifecycle;
 		old.meta.review = report([finding({ claimId: 'm1', severity: 'MED' })]);
 		writeFileSync(s.json, JSON.stringify(old));
-		assert.throws(() => resolveReviewFinding(s.md, s.json, 'm1', 'accept', undefined, FIXED), /carries no review/);
+		await assert.rejects(async () => resolveReviewFinding(s.md, s.json, 'm1', 'accept', undefined, FIXED), /carries no review/);
 	} finally { s.cleanup(); }
 });

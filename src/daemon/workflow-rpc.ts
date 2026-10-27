@@ -182,7 +182,7 @@ export async function runWorkflowServerSide(
 ): Promise<RunWorkflowResult> {
 	registerWorkflowRunners();   // idempotent — the daemon never registers them otherwise
 	await settleBeforeAuthor(intent);   // signoff of the stage this follows, settled first
-	assertMayAuthor(intent);     // team gate: nothing is decomposed or generated for a stage someone else holds
+	await assertMayAuthor(intent);     // team gate: nothing is decomposed or generated for a stage someone else holds
 	if (!provider.capabilities.structuredOutput) {
 		throw new Error(`workflow.run: provider '${opts.modelLabel}' does not support structured output`);
 	}
@@ -341,7 +341,7 @@ export async function runWorkflowServerSide(
 		storyId: meta.storyId, storyIdParam, standalone: meta.standalone,
 	});
 	// Team gate again, right before the draft is written: the stage may have been claimed while this run generated it.
-	assertMayAuthor(intent);
+	await assertMayAuthor(intent);
 	// raw-write: markdown render of the draft.
 	writeAtomic(paths.md,   finalized.renderedMd);
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.
@@ -480,7 +480,7 @@ export async function runStart(
 
 	try {
 		await settleBeforeAuthor(intent);   // signoff of the stage this follows, settled first
-		assertMayAuthor(intent);   // team gate at the entry; the driver asks again before the draft is written
+		await assertMayAuthor(intent);   // team gate at the entry; the driver asks again before the draft is written
 		// t5/t6: map the driver's internal vocabulary onto the sc1 wire shape.
 		// WorkflowProgress → StageProgressEvent on `progress`; the per-token
 		// string stream is counted + batched into TokenProgressEvent on `delta`.

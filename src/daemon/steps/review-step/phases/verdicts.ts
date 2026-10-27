@@ -119,7 +119,7 @@ export async function persistPremiseVerdicts(state: ReviewStepStatePayload, answ
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
 	// A reviewer who does not hold the stage reports findings but writes no fix (the review is never refused).
-	const fixed = reviewFixModeFor(state.jsonPath) === 'apply-auto-fixes'
+	const fixed = (await reviewFixModeFor(state.jsonPath)) === 'apply-auto-fixes'
 		? applyAutoFixes(md, artifact.body, report)
 		: ({ body: artifact.body, markdown: md, applied: [], skipped: [] } as ReturnType<typeof applyAutoFixes>);
 

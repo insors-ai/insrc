@@ -71,7 +71,7 @@ export function snapshotUpstream(repoPath: string, workflow: string, params: Rec
  * The meta to store with a new run: the acting user and the upstream snapshot, only for a repo that enforces
  * claims (a repo without a team policy records neither and makes no tracker call).
  */
-export function runMetaFor(repoPath: string, workflow: string, params: Record<string, unknown>): RunEntryMeta | undefined {
-	if (claimsEnforcedFor(repoPath) !== 'yes') return undefined;
-	return { owner: actingUser(repoPath), upstream: snapshotUpstream(repoPath, workflow, params) };
+export async function runMetaFor(repoPath: string, workflow: string, params: Record<string, unknown>): Promise<RunEntryMeta | undefined> {
+	if (await claimsEnforcedFor(repoPath) !== 'yes') return undefined;
+	return { owner: await actingUser(repoPath), upstream: snapshotUpstream(repoPath, workflow, params) };
 }

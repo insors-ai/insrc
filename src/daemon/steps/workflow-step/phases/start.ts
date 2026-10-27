@@ -59,7 +59,7 @@ export async function handleStart(
 	// Team gate first, before even the upstream-question gate: a stage held by someone else is refused
 	// naming the holder, not answered with questions to resolve.
 	await settleBeforeAuthor({ workflow: input.workflow, repoPath, params });   // signoff of the stage this follows, settled first
-	assertMayAuthor({ workflow: input.workflow, repoPath, params });
+	await assertMayAuthor({ workflow: input.workflow, repoPath, params });
 
 	// Mandatory start gate: resolve the IMMEDIATE-UPSTREAM artifact's open
 	// questions before this consuming stage runs. Pre-run — no state token yet.
@@ -108,7 +108,7 @@ export async function handleStart(
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
 		// The run records its owner and the upstream revisions it starts from (a repo without a team policy records neither)
-		state:    await encodeState(state, runMetaFor(repoPath, input.workflow, params)),
+		state:    await encodeState(state, await runMetaFor(repoPath, input.workflow, params)),
 	};
 }
 

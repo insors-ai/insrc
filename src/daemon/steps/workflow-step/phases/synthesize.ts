@@ -37,7 +37,7 @@ export async function handleSynthesize(
 ): Promise<WorkflowStepDone | WorkflowStepError> {
 	const state = await decodeState(input.state);
 	assertStage(state, 'awaiting_synthesize');
-	assertMayAuthor(state.intent);   // team gate: before the draft is finalized and written
+	await assertMayAuthor(state.intent);   // team gate: before the draft is finalized and written
 
 	if (state.stepOutputs === undefined) {
 		return errorResult(
@@ -67,7 +67,7 @@ export async function handleSynthesize(
 		return errorResult(code, formatFailure(failure), retryable);
 	}
 	// Finalizing awaits a long review: ask again right before anything is written, so a claim that moved meanwhile is honored
-	assertMayAuthor(state.intent);
+	await assertMayAuthor(state.intent);
 	// The finalized artifact carries the definitive epicHash in its
 	// meta (Define mints it; downstream workflows echo it). Read it
 	// back to pick paths, so we never diverge from the artifact.

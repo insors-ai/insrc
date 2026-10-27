@@ -146,7 +146,7 @@ export async function applyResume(check: ResumeCheck, repo: string, deps: ApplyD
 
 	const checkpoint: RunCheckpoint = check.plan.checkpoint;
 	// the resumed run must be owned by the person resuming it, so who that is must be known before anything is written
-	const owner = actingUser(repo);
+	const owner = await actingUser(repo);
 	if (owner === undefined) return refusedWith('could not tell who you are on the tracker, so the run cannot be handed to you; nothing was changed');
 	const restored = restoreFiles(repo, check.plan.files, deps);
 	if ('failed' in restored) return refusedWith(restored.failed);

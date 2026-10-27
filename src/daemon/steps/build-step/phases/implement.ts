@@ -66,7 +66,7 @@ export async function handleImplement(
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 	const ref = resolved.ref;
 	await settleBeforeBuild(repoPath, ref);   // signoff of the LLD this follows, settled first
-	assertMayBuild(repoPath, ref);   // team gate: before admission or any build-start stamp
+	await assertMayBuild(repoPath, ref);   // team gate: before admission or any build-start stamp
 
 	// Admission gate — refuse when the Story's plan is missing / unapproved /
 	// stale. Read-only; the tree is untouched.
@@ -143,7 +143,7 @@ async function handleStandaloneImplement(
 	}
 	const storyId = ctx.storyId ?? 's1';
 	await settleBeforeBuild(repoPath, { epicHash, storyId });   // signoff of the LLD this follows, settled first
-	assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before admission, the stamp or the Trivial record
+	await assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before admission, the stamp or the Trivial record
 
 	const verdict = admitStandaloneBuild(repoPath, epicHash, storyId, producesLld);
 	if (!verdict.admitted) {

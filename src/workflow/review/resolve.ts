@@ -84,7 +84,7 @@ const RESOLVER: Actor = { id: 'insrc:user', kind: 'person', properties: {} };
  * the decision is a further entry there. Returns the post-resolution effective verdict + how many blocking
  * findings remain, so a caller can drive the loop until it clears.
  */
-export function resolveReviewFinding(
+export async function resolveReviewFinding(
 	mdPath: string,
 	jsonPath: string,
 	findingId: string,
@@ -92,7 +92,7 @@ export function resolveReviewFinding(
 	note?: string,
 	now: () => string = () => new Date().toISOString(),
 	actor: Actor = RESOLVER,
-): ResolveReviewResult {
+): Promise<ResolveReviewResult> {
 	if (!existsSync(jsonPath)) throw new Error(`No artifact json at ${jsonPath}`);
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as ArtifactShape;
 	const stored = readReviewRecordOf(jsonPath);
@@ -107,7 +107,7 @@ export function resolveReviewFinding(
 
 	if (action === 'apply') {
 		// Applying a finding changes the stage's content: in a team repo only the holder may, and the refusal comes before anything is written.
-		const teamRefusal = authorizeFindingApply(jsonPath);
+		const teamRefusal = await authorizeFindingApply(jsonPath);
 		if (teamRefusal !== undefined) throw new TeamGateRefusedError(teamRefusal.outcome, teamRefusal.subject);
 		if (!existsSync(mdPath)) throw new Error(`No artifact md at ${mdPath}`);
 		const edits = finding.proposedFix?.artifactEdits ?? [];

@@ -113,7 +113,7 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 
 	const first = await runReview(md, base);
 	// A reviewer who does not hold the stage reports findings but writes no fix (the review is never refused).
-	const fixed = reviewFixModeFor(opts.jsonPath) === 'apply-auto-fixes'
+	const fixed = (await reviewFixModeFor(opts.jsonPath)) === 'apply-auto-fixes'
 		? applyAutoFixes(md, artifact.body, first)
 		: ({ body: artifact.body, markdown: md, applied: [], skipped: [] } as ReturnType<typeof applyAutoFixes>);
 

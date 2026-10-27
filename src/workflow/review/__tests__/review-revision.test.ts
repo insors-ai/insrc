@@ -127,11 +127,11 @@ test('auto-fix review and apply resolution bump the revision, report-only review
 		const json = writeReviewedHead(dir, `PLAN-${HASH}-s1`, { meta: { workflow: 'plan', epicHash: HASH, storyId: 's1' }, body: { tasks: [{ id: 't1', desc: 'extend the two exported constants.' }] }, report: report(findings) });
 		const now = () => '2026-07-21T00:00:00.000Z';
 		const revision = read(json).meta['revision'];
-		resolveReviewFinding(md, json, 'acc', 'accept', undefined, now);
-		resolveReviewFinding(md, json, 'ovr', 'override', 'ok', now);
-		resolveReviewFinding(md, json, 'def', 'defer', undefined, now);
+		await resolveReviewFinding(md, json, 'acc', 'accept', undefined, now);
+		await resolveReviewFinding(md, json, 'ovr', 'override', 'ok', now);
+		await resolveReviewFinding(md, json, 'def', 'defer', undefined, now);
 		assert.equal(read(json).meta['revision'], revision, 'accept, override and defer keep the revision');
-		resolveReviewFinding(md, json, 'apply1', 'apply', undefined, now);
+		await resolveReviewFinding(md, json, 'apply1', 'apply', undefined, now);
 		assert.equal(read(json).meta['revision'], Number(revision) + 1, 'apply mints the next revision');
 		assert.match(JSON.stringify(read(json).body), /three exported constants/);
 	} finally { rmSync(dir, { recursive: true, force: true }); }

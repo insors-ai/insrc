@@ -35,7 +35,7 @@ export async function handleStep(
 ): Promise<WorkflowStepEmitStep | WorkflowStepEmitSynthesize | WorkflowStepError> {
 	const state = await decodeState(input.state);
 	assertStage(state, 'awaiting_llm_step');
-	assertMayAuthor(state.intent);   // team gate: before the executor resumes
+	await assertMayAuthor(state.intent);   // team gate: before the executor resumes
 
 	if (state.executor === undefined || state.executor.pause === undefined) {
 		return errorResult(

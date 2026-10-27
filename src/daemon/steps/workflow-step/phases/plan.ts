@@ -37,7 +37,7 @@ export async function handlePlan(
 ): Promise<WorkflowStepEmitStep | WorkflowStepEmitSynthesize | WorkflowStepError> {
 	const state = await decodeState(input.state);
 	assertStage(state, 'awaiting_plan');
-	assertMayAuthor(state.intent);   // team gate: before the executor runs
+	await assertMayAuthor(state.intent);   // team gate: before the executor runs
 
 	if (input.plan.workflow !== state.intent.workflow) {
 		return errorResult(

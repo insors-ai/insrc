@@ -63,6 +63,7 @@ function rpcDeps() {
 		judge: async (): Promise<DimensionResult> => ({ dimension: slot.dimension, findings: [] }),
 	}));
 	const deps: CodeReviewRunDeps = {
+  captureInput: () => undefined,
 		resolveSubject: async (repoPath) => ({ ok: true, subject: subjectFor(repoPath) }),
 		resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'cli-codex:gpt' }),
 		assembleDiffGrounding: (async () => ({ grounding: DIFF, changedFiles: ['src/a.ts'] })) as never,

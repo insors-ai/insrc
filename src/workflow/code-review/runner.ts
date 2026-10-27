@@ -59,6 +59,8 @@ import { judgeUx, prepareUx } from './dimensions/ux/index.js';
 import { computeExpectedDimensions } from './expected-dimensions.js';
 import { codeReviewSnapshot, executeDimensionJob, type PreparedDimensionReview } from '../review-pipeline/code-review.js';
 import { assertReviewTime, createReviewTimingPlan } from '../review-pipeline/timing.js';
+import { captureReviewInputFingerprint, isReviewInputFingerprint, ReviewInputChangedError, REVIEW_INPUT_SCHEMA_VERSION } from './input-fingerprint.js';
+import type { ReviewPublicationGuard } from './publication.js';
 import type { Party } from '../review/party.js';
 
 const log = getLogger('code-review:runner');
@@ -99,6 +101,9 @@ export interface CodeReviewRunnerDeps {
 /** Run options — mirrors workflow-rpc's run opts. `modelLabel` is the resolved
  *  high-tier label stamped on meta; `onProgress` emits CodeReviewProgress frames. */
 export interface RunCodeReviewOpts {
+ readonly publication?: Pick<ReviewPublicationGuard, 'fingerprint' | 'validate'> | undefined;
+ readonly requirePublication?: boolean | undefined;
+ readonly startedAtMs?: number | undefined;
  readonly now?: (() => number) | undefined;
 	readonly runId:       string;
 	readonly modelLabel:  string;
@@ -172,8 +177,9 @@ export const DEFAULT_DEPS: CodeReviewRunnerDeps = {
 /**
  * Drive one code review to a persisted sc4 record. Never throws — every failure
  * (throwing judge, grounding failure, in-memory validation failure, abort) is
- * converted to `{ ok:false, error }` BEFORE any write, so no partial/pass record
- * is left on disk (ac5). On success exactly one record is written atomically at
+ * converted to `{ ok:false, error }`. Input changes before publication preserve the
+ * prior CR; a post-publication race leaves only a fingerprinted stale record,
+ * never an accepted completion. On success exactly one record is written atomically at
  * `CR-<epic>-<story>` (both `.json` and a minimal `.md`), after validation.
  */
 export async function runCodeReview(
@@ -183,15 +189,20 @@ export async function runCodeReview(
 	deps:     CodeReviewRunnerDeps = DEFAULT_DEPS,
 ): Promise<CodeReviewOutcome> {
 	const now = opts.now ?? Date.now;
- const startedAtMs = now();
+ const startedAtMs = opts.startedAtMs ?? now();
 	const emit = (f: CodeReviewProgress): void => opts.onProgress?.(f);
 
 	try {
-		// 1. Grounding — assembled once, shared by every judge. An abort or a
+		if (opts.requirePublication === true && opts.publication === undefined) throw new Error('Review publication identity hook is required');
+  if (opts.publication !== undefined && !isReviewInputFingerprint(opts.publication.fingerprint)) throw new Error('Invalid review publication identity');
+  opts.publication?.validate();
+  if (opts.publication !== undefined && captureReviewInputFingerprint(subject).digest !== opts.publication.fingerprint.digest) throw new ReviewInputChangedError();
+  // 1. Grounding — assembled once, shared by every judge. An abort or a
 		//    grounding throw returns {ok:false} before any judge runs.
 		if (opts.signal?.aborted) return fail('aborted', emit);
 		emit({ phase: 'grounding' });
 		const grounding = await deps.assembleGrounding(subject.repoPath, subject.changedFiles);
+  opts.publication?.validate();
 
 		// 2. SERIAL judge loop — each awaited before the next (k4/ac4). The abort
 		//    signal is checked at every iteration boundary; a throwing judge
@@ -211,6 +222,8 @@ export async function runCodeReview(
   const timing = createReviewTimingPlan([...prepared.values()], startedAtMs);
   assertReviewTime(timing, now());
   emit({ phase: 'timing', timing });
+  opts.publication?.validate();
+  assertReviewTime(timing, now());
   const dimensions: DimensionResult[] = [];
 		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);
@@ -236,7 +249,9 @@ export async function runCodeReview(
 		const counts  = foldCounts(dimensions);
 		const verdict = foldVerdict(counts, opts.capVerdictAtWarn === true);
 
-		// 4. Build the record.
+		opts.publication?.validate();
+  assertReviewTime(timing, now());
+  // 4. Build the record.
 		const built = buildArtifact(subject, dimensions, verdict, counts, opts, startedAtMs);
 		// The record stores the folder identity it is filed under, so its meta and
 		// its md location agree (ISSUE-764b88ed).
@@ -255,16 +270,21 @@ export async function runCodeReview(
   assertReviewTime(timing, now());
 		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, pa.createdAtISO, pa.workItemKind, pa.epicSlug);
 		assertReviewTime(timing, now());
+  opts.publication?.validate();
+  assertReviewTime(timing, now());
   deps.write(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 		deps.write(paths.md,   renderCodeReviewMd(artifact));
+  opts.publication?.validate();
+  if (opts.signal?.aborted) return fail('aborted', emit);
+  assertReviewTime(timing, now());
 		log.info({ runId: opts.runId, storyId: subject.storyId, verdict, counts }, 'code-review record written');
 		emit({ phase: 'done' });
 		return { ok: true, artifact };
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
-		log.warn({ runId: opts.runId, storyId: subject.storyId, err: msg }, 'code review failed; no record written');
+		log.warn({ runId: opts.runId, storyId: subject.storyId, err: msg }, 'code review failed; no completion accepted');
 		emit({ phase: 'error', detail: msg });
-		return { ok: false, error: msg };
+		return { ok: false, error: msg, ...(err instanceof Error && 'code' in err && typeof err.code === 'string' ? { code: err.code } : {}) };
 	}
 }
 
@@ -319,6 +339,7 @@ function buildArtifact(
 		epicHash:      subject.epicHash,
 		storyId:       subject.storyId,
 		...(opts.reviewedBy !== undefined ? { reviewedBy: opts.reviewedBy } : {}),
+  ...(opts.publication !== undefined ? { reviewInputFingerprint: opts.publication.fingerprint, reviewInputSchemaVersion: REVIEW_INPUT_SCHEMA_VERSION } : {}),
 	};
 	const body: CodeReviewBody = {
 		kind:          'code-review',

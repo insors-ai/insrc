@@ -57,6 +57,7 @@ function repoWith(buildMeta?: Record<string, unknown>): { repo: string; cleanup:
 function spyDeps(): { deps: CodeReviewRunDeps; calls: { subject: number; provider: number; review: RunCodeReviewOpts[] } } {
 	const calls = { subject: 0, provider: 0, review: [] as RunCodeReviewOpts[] };
 	const deps: CodeReviewRunDeps = {
+  captureInput: () => undefined,
 		resolveSubject: async (repoPath, epicHash, storyId) => {
 			calls.subject += 1;
 			return { ok: true, subject: { repoPath, epicHash, storyId, changedFiles: ['src/a.ts'] } } as never;
@@ -155,6 +156,7 @@ function realRunnerDeps(diff: 'ok' | 'unavailable' | 'broken' = 'ok') {
 		judge: async (_s: unknown, grounding: unknown): Promise<DimensionResult> => { seen.groundings.push(grounding); return { dimension: slot.dimension, findings: [] }; },
 	}));
 	const deps: CodeReviewRunDeps = {
+  captureInput: () => undefined,
 		resolveSubject: async (repoPath, epicHash, storyId) => ({ ok: true, subject: { repoPath, epicHash, storyId, changedFiles: ['src/graph.ts'] } }) as never,
 		resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'cli-claude:opus' }),
 		assembleDiffGrounding: (async (...args: unknown[]) => {

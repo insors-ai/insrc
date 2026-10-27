@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:26:58.551Z",
+    "updatedAt": "2026-10-27T09:35:11.544Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -1615,6 +1615,85 @@
               },
               {
                 "title": "DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed states, reports and absence each affect identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "f95fb9657",
+        "ranAt": "2026-10-27T09:35:11.544Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-APPROVE-IDENTITY",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/completion-identity.test.ts",
+                "title": "DIFF-APPROVE-IDENTITY: approval metadata and no-op completion stay stable while normal validate persistence still refreshes semantic time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-COMPLETION-NOOP",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/completion-identity.test.ts",
+                "title": "DIFF-COMPLETION-NOOP: real completion preserves BUILD bytes, file identities, provenance order/version/author and TESTS ranAt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-COMPLETION-CHANGE",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/completion-identity.test.ts",
+                "title": "DIFF-COMPLETION-CHANGE: new commits/files and changed tasks persist; unchanged per-file provenance survives the new Story revision",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/completion-identity.test.ts",
+                "title": "DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/completion-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3697,
+            "titles": [
+              {
+                "title": "DIFF-COMPLETION-NOOP: real completion preserves BUILD bytes, file identities, provenance order/version/author and TESTS ranAt",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-APPROVE-IDENTITY: approval metadata and no-op completion stay stable while normal validate persistence still refreshes semantic time",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-COMPLETION-CHANGE: new commits/files and changed tasks persist; unchanged per-file provenance survives the new Story revision",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint",
                 "result": "pass"
               }
             ],

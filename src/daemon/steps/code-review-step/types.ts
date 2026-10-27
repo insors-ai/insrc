@@ -21,7 +21,7 @@
 
 import type { LLMMessage } from '../../../shared/types.js';
 import type { ReviewVerdict } from '../../../workflow/review/types.js';
-import type { CodeReviewFallbackReason, CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../../workflow/code-review/types.js';
+import type { ReviewInputFingerprint, CodeReviewFallbackReason, CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../../workflow/code-review/types.js';
 
 // ---------------------------------------------------------------------------
 // Phases
@@ -148,6 +148,7 @@ export type CodeReviewStepOutput =
 // ---------------------------------------------------------------------------
 
 export interface CodeReviewStepStatePayload {
+ readonly reviewInputFingerprint?: ReviewInputFingerprint | undefined;
 	readonly runId:       string;
 	readonly startedAtMs: number;
 	readonly repo:        string;

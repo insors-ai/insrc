@@ -25,6 +25,9 @@
  *     byte-identical to the daemon-driven path.
  */
 
+import { captureReviewInputFingerprint } from '../../../workflow/code-review/input-fingerprint.js';
+import { assertReviewFingerprintCurrent, claimReviewPublication } from '../../../workflow/code-review/publication.js';
+import type { ReviewInputFingerprint } from '../../../workflow/code-review/types.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
@@ -84,6 +87,7 @@ export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewD
  *  (deterministic block-and-poll under test) and `freshnessTimeoutMs` (the poll
  *  bound, from config). */
 export interface CodeReviewStepDeps {
+ readonly captureInput?: ((subject: CodeReviewSubject) => ReviewInputFingerprint) | undefined;
 	readonly resolveSubject: typeof resolveCodeReviewSubject;
 	readonly fetchGrounding: StepDaemonClient['fetchCodeReviewGrounding'];
 	readonly fetchFreshness: StepDaemonClient['fetchCodeReviewFreshness'];
@@ -128,6 +132,7 @@ function readFreshnessTimeoutMs(): number {
 }
 
 export const DEFAULT_DEPS: CodeReviewStepDeps = {
+ captureInput: captureReviewInputFingerprint,
 	resolveSubject: resolveCodeReviewSubject,
 	fetchGrounding: (params) => stepDaemonClient().fetchCodeReviewGrounding(params),
 	fetchFreshness: (params) => stepDaemonClient().fetchCodeReviewFreshness(params),
@@ -230,6 +235,7 @@ async function dispatch(input: unknown, deps: CodeReviewStepDeps): Promise<CodeR
 			return errorResult('state-not-found', err.message, false);
 		}
 		const msg = err instanceof Error ? err.message : String(err);
+  if (err instanceof Error && 'code' in err && typeof err.code === 'string' && err.code.startsWith('review-input-')) return errorResult(err.code, msg, false);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_code_review_step: uncaught error');
 		return errorResult('internal', msg, false);
 	}
@@ -343,12 +349,14 @@ async function handleStart(
 		}
 	}
 
-	// 2. Fresh → fetch the sc2 grounding ONLY over the daemon IPC (k5/k6).
+	const admittedFingerprint = deps.captureInput?.(subject);
+ // 2. Fresh → fetch the sc2 grounding ONLY over the daemon IPC (k5/k6).
 	const g = await deps.fetchGrounding({ repo, epicHash, storyId });
 	if (!g.ok) {
 		return errorResult('grounding-unavailable', `insrc_code_review_step: grounding unavailable — ${g.reason}.`, true);
 	}
-	// Fresh-but-hollow: the index reports fresh but the graph grounding carries no
+	if (admittedFingerprint !== undefined) assertReviewFingerprintCurrent(admittedFingerprint, admittedFingerprint.author === 'daemon' ? 'controller' : 'daemon');
+ // Fresh-but-hollow: the index reports fresh but the graph grounding carries no
 	// changed-symbol summaries (the hollow-PASS). Emitting a full-mode review over
 	// an empty symbol set produces a meaningless verdict, so auto-fall-back to the
 	// DIFF-ONLY (degraded) review over the changed-file diff instead. Runs only on
@@ -369,6 +377,7 @@ async function handleStart(
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 		startedAtMs: Date.now(),
 		repo, epicHash, storyId, subject, grounding,
+  ...(admittedFingerprint !== undefined ? { reviewInputFingerprint: admittedFingerprint } : {}),
 	});
 
 	return emitJudgementsResult(subject, grounding, token, 'full');
@@ -400,7 +409,8 @@ async function beginDiffOnlyReview(
 		return await reviewByDaemon(subject, 'degraded', deps, reason);
 	}
 
-	let grounding: CodeReviewGrounding;
+	const admittedFingerprint = deps.captureInput?.(subject);
+ let grounding: CodeReviewGrounding;
 	let changedFiles: readonly string[];
 	let scoped: Pick<CodeReviewSubject, 'changeSetAttribution' | 'sharedWithExcluded' | 'excludedFromScope'>;
 	try {
@@ -431,6 +441,7 @@ async function beginDiffOnlyReview(
 	// Re-key the subject to the diff-derived changed set and to how the diff scoped
 	// it (ISSUE-b47dadc7), including what it left out (ISSUE-b97752e9).
 	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };
+ if (admittedFingerprint !== undefined) assertReviewFingerprintCurrent(admittedFingerprint, 'controller');
 
 	const token = await saveState({
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -438,6 +449,7 @@ async function beginDiffOnlyReview(
 		repo, epicHash, storyId, subject: diffSubject, grounding,
 		groundingMode: 'degraded',
 		fallbackReason: reason,
+  ...(admittedFingerprint !== undefined ? { reviewInputFingerprint: admittedFingerprint } : {}),
 	});
 
 	return emitJudgementsResult(diffSubject, grounding, token, 'degraded');
@@ -564,7 +576,7 @@ async function handleJudgements(
 	// marked degraded and a clean fold can never register a pass. The graph path
 	// passes neither (⇒ 'full', uncapped) — byte-identical to s9.
 
-	return await driveRunner(step.state, payload.subject, injected, deps, degraded, payload.fallbackReason);
+	return await driveRunner(step.state, payload.subject, injected, deps, degraded, payload.fallbackReason, payload.reviewInputFingerprint);
 }
 
 async function driveRunner(
@@ -574,18 +586,22 @@ async function driveRunner(
 	deps:     CodeReviewStepDeps,
 	degraded: boolean,
 	fallbackReason?: CodeReviewFallbackReason | undefined,
+ fingerprint?: ReviewInputFingerprint,
 ): Promise<CodeReviewStepOutput> {
+ if (deps.captureInput !== undefined && fingerprint === undefined) return errorResult('restart-required', 'Review state has no admitted input identity; start a new review.', false);
+ const publication = fingerprint === undefined ? undefined : claimReviewPublication(fingerprint, 'controller');
+ try {
 	const runId = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const outcome = await deps.runReview(
 		subject,
 		DUMMY_PROVIDER,
 		degraded
-			? { runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
-			: { runId, modelLabel: 'client', reviewedBy: 'controller' },
+			? { ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
+			: { ...(publication !== undefined ? { publication, requirePublication: true } : {}), runId, modelLabel: 'client', reviewedBy: 'controller' },
 		injected,
 	);
 	if (!outcome.ok) {
-		return errorResult('fold-failed', `insrc_code_review_step: ${outcome.error}`, true);
+		return errorResult(outcome.code ?? 'fold-failed', `insrc_code_review_step: ${outcome.error}`, outcome.code === undefined);
 	}
 	await releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
 	const cra = codeReviewSubjectPathArgs(subject);
@@ -605,6 +621,7 @@ async function driveRunner(
 			'insrc_code_review_step: findings dropped as out of scope (not counted in the verdict)',
 		);
 	}
+ publication?.validate();
 	return {
 		next:     'done',
 		verdict:  outcome.artifact.body.verdict,
@@ -614,6 +631,7 @@ async function driveRunner(
 		...(outcome.artifact.body.fallbackReason !== undefined ? { fallbackReason: outcome.artifact.body.fallbackReason } : {}),
 		...(count > 0 ? { scopeDropped: { count, changedFiles: subject.changedFiles.length, byDimension } } : {}),
 	};
+ } finally { publication?.release(); }
 }
 
 // ---------------------------------------------------------------------------

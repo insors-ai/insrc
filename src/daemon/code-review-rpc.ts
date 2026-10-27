@@ -22,7 +22,9 @@ import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
 import { SamePartyReviewError } from '../workflow/review/party.js';
 import { buildAuthorParty } from '../workflow/code-review/author.js';
-import type { CodeReviewFallbackReason } from '../workflow/code-review/types.js';
+import { captureReviewInputFingerprint } from '../workflow/code-review/input-fingerprint.js';
+import { claimReviewPublication, type ReviewPublicationGuard } from '../workflow/code-review/publication.js';
+import type { CodeReviewSubject, ReviewInputFingerprint, CodeReviewFallbackReason } from '../workflow/code-review/types.js';
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../workflow/code-review/grounding.js';
 import type { CodeReviewProgress, runCodeReview as RunCodeReview } from '../workflow/code-review/runner.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js';
@@ -64,6 +66,8 @@ interface CodeReviewRunParams {
 /** The collaborators of {@link codeReviewRunStart}. Every one defaults to the
  *  real thing; a test replaces the ones it needs to. */
 export interface CodeReviewRunDeps {
+ /** Explicit legacy injected-test seam; shipped calls always use the enforcing capture default. */
+ readonly captureInput?: ((subject: CodeReviewSubject) => ReviewInputFingerprint | undefined) | undefined;
 	readonly resolveSubject?: ((repoPath: string, epicHash: string, storyId: string) => Promise<CodeReviewSubjectResolution>) | undefined;
 	/** The provider and its label for this review. */
 	readonly resolveProvider?: ((repoPath: string, client: 'claude' | 'codex' | undefined) => { provider: LLMProvider; modelLabel: string }) | undefined;
@@ -96,6 +100,7 @@ export async function codeReviewRunStart(
 		return;
 	}
 
+ let publication: ReviewPublicationGuard | undefined;
 	try {
 		// 2. Resolve the fixed subject. A DECLINE (no approved contract / build) is
 		//    NOT a verdict — the handler sends an error frame and never runs.
@@ -116,7 +121,11 @@ export async function codeReviewRunStart(
 			return;
 		}
 
-		// 4. Resolve the high-tier provider (k10) — per-repo override > global
+		const admittedAt = Date.now();
+  const fingerprint = (deps.captureInput ?? captureReviewInputFingerprint)(resolved.subject);
+  publication = fingerprint === undefined ? undefined : claimReviewPublication(fingerprint, 'daemon');
+
+  // 4. Resolve the high-tier provider (k10) — per-repo override > global
 		//    config > invoking CLI > Ollama, mirroring workflow-rpc's resolution.
 		const { provider, modelLabel } = (deps.resolveProvider ?? defaultProvider)(repoPath, params.client);
 		const runId      = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -126,7 +135,8 @@ export async function codeReviewRunStart(
 		const runCodeReview = deps.runReview ?? runner.runCodeReview;
 		let stageIndex = 0;
 		const base = {
-			runId, modelLabel, signal,
+			runId, modelLabel, signal, startedAtMs: admittedAt,
+   ...(publication !== undefined ? { publication, requirePublication: true } : {}),
 			// This request is the daemon's review.
 			reviewedBy: 'daemon' as const,
 			onProgress: (f: CodeReviewProgress) => send({
@@ -174,13 +184,14 @@ export async function codeReviewRunStart(
 		// 6. Terminal frame. A runner {ok:false} is an error frame; {ok:true}
 		//    carries the outcome + artifact on `done`.
 		if (!outcome.ok) {
-			send({ id: 0, stream: 'error', data: { error: outcome.error, recoverable: false } });
+			send({ id: 0, stream: 'error', data: { error: outcome.error, ...(outcome.code !== undefined ? { reason: outcome.code } : {}), recoverable: false } });
 			return;
 		}
+  publication?.validate();
 		send({ id: 0, stream: 'done', data: { runId, artifact: outcome.artifact } });
 	} catch (err) {
-		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
-	}
+		send({ id: 0, stream: 'error', data: { error: (err as Error).message, ...(err instanceof Error && 'code' in err && typeof err.code === 'string' ? { reason: err.code } : {}), recoverable: false } });
+	} finally { publication?.release(); }
 }
 
 // ---------------------------------------------------------------------------

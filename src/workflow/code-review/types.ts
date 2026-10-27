@@ -319,6 +319,8 @@ export interface CodeReviewBody {
  *  `epicHash`/`storyId` are required (they key the `CR-<epic>-<story>` id). */
 export interface CodeReviewMeta extends Omit<ArtifactMetaBase, 'workflow'> {
 	readonly workflow: 'code-review';
+ readonly reviewInputFingerprint?: ReviewInputFingerprint | undefined;
+ readonly reviewInputSchemaVersion?: 1 | undefined;
 	readonly epicHash: string;
 	readonly storyId:  string;
 	/** The party that ran this code review. Absent on older records. */
@@ -339,4 +341,4 @@ export const CODE_REVIEW_SCHEMA_VERSION = 1;
  *  failure signal — a run that fails partway returns it and writes nothing. */
 export type CodeReviewOutcome =
 	| { readonly ok: true;  readonly artifact: CodeReviewArtifact }
-	| { readonly ok: false; readonly error: string };
+	| { readonly ok: false; readonly error: string; readonly code?: string | undefined };

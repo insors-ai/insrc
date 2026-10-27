@@ -94,6 +94,7 @@ async function review(calls: number, callMs: number): Promise<{ out: CodeReviewS
 
 	installStepDaemonClient(createInDaemonClient({}, {
 		'codeReview.run': (params, send, signal) => codeReviewRunStart(params, send, signal, {
+   captureInput: () => undefined,
 			resolveSubject: async () => ({ ok: true, subject: subject() }),
 			resolveProvider: () => ({ provider, modelLabel: 'stub' }),
 			runReview: (s, p, opts) => runCodeReview(s, p, opts, { judges, assembleGrounding: async () => grounding, write: (path) => { written.push(path); } }),

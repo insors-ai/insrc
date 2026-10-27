@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -362,3 +362,32 @@ Run at 2026-10-27T09:26:58.551Z on commit `6f8ca43e4`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/__tests__/input-fingerprint.test.ts` | 0 | 3 | 7.1 s |  |
+
+## t13
+
+Run at 2026-10-27T09:35:11.544Z on commit `f95fb9657`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-APPROVE-IDENTITY**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-APPROVE-IDENTITY: approval metadata and no-op completion stay stable while normal validate persistence still refreshes semantic time | `src/workflow/runners/build/__tests__/completion-identity.test.ts` |
+
+**integration: DIFF-COMPLETION-NOOP**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-COMPLETION-NOOP: real completion preserves BUILD bytes, file identities, provenance order/version/author and TESTS ranAt | `src/workflow/runners/build/__tests__/completion-identity.test.ts` |
+
+**integration: DIFF-COMPLETION-CHANGE**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-COMPLETION-CHANGE: new commits/files and changed tasks persist; unchanged per-file provenance survives the new Story revision | `src/workflow/runners/build/__tests__/completion-identity.test.ts` |
+| pass | DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint | `src/workflow/runners/build/__tests__/completion-identity.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/runners/build/__tests__/completion-identity.test.ts` | 0 | 4 | 3.7 s |  |

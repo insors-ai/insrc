@@ -17,6 +17,8 @@ import type { Static } from '@sinclair/typebox';
 
 import { callTool } from '../../daemon/tools/call-tool.js';
 import type { TypedTool, TypedToolResult } from '../../daemon/tools/call-tool.js';
+import { ghProjectManageTool } from '../../daemon/tools/builtins/gh/manage.js';
+import { ghProjectItemAddTool, ghProjectListTool } from '../../daemon/tools/builtins/gh/project.js';
 import { ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool } from '../../daemon/tools/builtins/gh/issue.js';
 import { ghLabelTool } from '../../daemon/tools/builtins/gh/resources.js';
 import { ghTrackerTool } from '../../daemon/tools/builtins/gh/tracker.js';
@@ -34,7 +36,7 @@ export function workflowToolDeps(repoPath: string, overrides: Partial<ToolDeps> 
 	return { sessionId: 'workflow', repoPath, send: () => {}, requestId: 0, caller: 'workflow', ...overrides };
 }
 
-type Call<D> = { readonly ok: true; readonly data: D } | { readonly ok: false; readonly toolId: string; readonly failure: ToolFailure };
+export type Call<D> = { readonly ok: true; readonly data: D } | { readonly ok: false; readonly toolId: string; readonly failure: ToolFailure };
 
 async function run<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<Call<Static<T['outputSchema']>>> {
 	const r: TypedToolResult<Static<T['outputSchema']>> = await callTool(tool, input, deps);
@@ -42,13 +44,13 @@ async function run<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>
 }
 
 /** The data of a call, or the error the failure becomes (ToolDenied or the old GhCommandError). */
-function must<D>(c: Call<D>): D {
+export function must<D>(c: Call<D>): D {
 	if (c.ok) return c.data;
 	throw errorOfFailure(c.toolId, c.failure);
 }
 
 /** The data of a best-effort call: the fallback for a gh failure only; a denial, conversion failure or schema mismatch throws. */
-function soft<D, F>(c: Call<D>, fallback: F): D | F {
+export function soft<D, F>(c: Call<D>, fallback: F): D | F {
 	if (c.ok) return c.data;
 	if (bestEffortMaySwallow(c.failure)) return fallback;
 	throw errorOfFailure(c.toolId, c.failure);
@@ -134,8 +136,8 @@ function toTrackerTask(n: SearchNode): TrackerTask {
 // ---------------------------------------------------------------------------
 
 export function createRegistryTable(deps: ToolDeps) {
-	/** The login of the current gh user (also the base of ghCurrentLogin, added with the account rows). */
-	async function currentLogin(): Promise<string> {
+	/** Login of the currently-authenticated gh user: the authoritative current-user source (not any config value). */
+	async function ghCurrentLogin(): Promise<string> {
 		const d = opData(must(await run(ghTrackerTool, { op: 'current_login' }, deps)), 'current_login');
 		return d['login'] as string;
 	}
@@ -154,7 +156,7 @@ export function createRegistryTable(deps: ToolDeps) {
 	}
 
 	return {
-		currentLogin,
+		ghCurrentLogin,
 		queryTasks,
 
 		/** Best-effort: false when gh fails. */
@@ -279,9 +281,60 @@ export function createRegistryTable(deps: ToolDeps) {
 			must(await run(ghIssueEditTool, { repo: repoArg(owner, repo), number: issueNo(ref), milestone: title }, deps));
 		},
 
+		/** The scopes of the gh token (the X-Oauth-Scopes header); ok:false when gh fails. */
+		async ghTokenScopes(): Promise<{ readonly ok: true; readonly scopes: readonly string[] } | { readonly ok: false; readonly reason: string }> {
+			const c = await run(ghTrackerTool, { op: 'token_scopes' }, deps);
+			const d = soft(c, undefined);
+			if (d === undefined) return { ok: false, reason: 'could not read token scopes (`gh api -i /user` failed)' };
+			return { ok: true, scopes: opData(d, 'token_scopes')['scopes'] as string[] };
+		},
+
+		/** Names of the native issue types of an org; [] when gh fails (org without the feature, personal account, API hiccup). */
+		async ghListOrgIssueTypes(org: string): Promise<readonly string[]> {
+			const d = soft(await run(ghTrackerTool, { op: 'org_issue_types_list', org }, deps), undefined);
+			return d === undefined ? [] : opData(d, 'org_issue_types_list')['names'] as string[];
+		},
+
+		/** Create an org issue type; false when gh fails (needs admin:org). */
+		async ghCreateOrgIssueType(org: string, name: string, color: string, description: string): Promise<boolean> {
+			return soft(await run(ghTrackerTool, { op: 'org_issue_type_create', org, name, color, description }, deps), undefined) !== undefined;
+		},
+
+		/** Create a Projects v2 board: its number and url, or null when gh fails (needs the project scope). */
+		async ghCreateProject(org: string, title: string): Promise<{ readonly number: number; readonly url: string } | null> {
+			const d = soft(await run(ghTrackerTool, { op: 'project_create', owner: org, title }, deps), undefined);
+			if (d === undefined) return null;
+			const row = opData(d, 'project_create');
+			return { number: row['number'] as number, url: row['url'] as string };
+		},
+
+		/** Find an open Projects v2 board by exact title: its number and url, or null (none, or gh failed). */
+		async ghFindProjectByTitle(org: string, title: string): Promise<{ readonly number: number; readonly url: string } | null> {
+			const d = soft(await run(ghProjectListTool, { owner: org, limit: 200 }, deps), undefined);
+			const match = d?.projects.find(p => p.title === title && typeof p.number === 'number' && p.closed !== true);
+			return match === undefined ? null : { number: match.number, url: match.url ?? '' };
+		},
+
+		/** Add a single-select field to a Projects v2 board; false when gh fails. */
+		async ghAddProjectSingleSelectField(org: string, projectNumber: number, name: string, options: readonly string[]): Promise<boolean> {
+			const c = await run(ghProjectManageTool, { op: 'field-create', number: projectNumber, owner: org, name, dataType: 'SINGLE_SELECT', singleSelectOptions: [...options] }, deps);
+			return soft(c, undefined) !== undefined;
+		},
+
+		/** The web urls of a repo's issues (any state), capped at `limit` (at most 500, the tool's ceiling); [] when gh fails. */
+		async ghListRepoIssueUrls(owner: string, repo: string, limit: number): Promise<readonly string[]> {
+			const d = soft(await run(ghIssueListTool, { repo: repoArg(owner, repo), state: 'all', limit: Math.min(Math.max(1, Math.trunc(limit)), 500) }, deps), undefined);
+			return (d?.issues ?? []).map(i => (i.url ?? '').trim()).filter(u => u.length > 0);
+		},
+
+		/** Add one issue (by web url) to a Projects v2 board; false when gh fails. */
+		async ghAddProjectItem(org: string, projectNumber: number, issueUrl: string): Promise<boolean> {
+			return soft(await run(ghProjectItemAddTool, { number: projectNumber, owner: org, url: issueUrl }, deps), undefined) !== undefined;
+		},
+
 		/** The current user's open tasks. */
 		async listMyOpenTasks(owner: string, repo: string, page?: PageRequest): Promise<TaskPage> {
-			return queryTasks(owner, repo, { owner: await currentLogin(), state: 'open' }, page);
+			return queryTasks(owner, repo, { owner: await ghCurrentLogin(), state: 'open' }, page);
 		},
 	};
 }

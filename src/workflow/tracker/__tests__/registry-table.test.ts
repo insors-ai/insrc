@@ -10,6 +10,8 @@ import { join } from 'node:path';
 
 import { ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool } from '../../../daemon/tools/builtins/gh/issue.js';
 import { ghLabelTool } from '../../../daemon/tools/builtins/gh/resources.js';
+import { ghProjectManageTool } from '../../../daemon/tools/builtins/gh/manage.js';
+import { ghProjectItemAddTool, ghProjectListTool } from '../../../daemon/tools/builtins/gh/project.js';
 import { ghTrackerTool } from '../../../daemon/tools/builtins/gh/tracker.js';
 import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
 import { _resetRegistryForTests, registerTool } from '../../../daemon/tools/registry.js';
@@ -18,7 +20,7 @@ import { cleanup } from '../../../daemon/tools/__tests__/_proc.js';
 import { installStandInBin } from '../../../daemon/tools/__tests__/_bin.js';
 import type { StandInBin } from '../../../daemon/tools/__tests__/_bin.js';
 import { GhCommandError } from '../github.js';
-import { createRegistryTable, workflowToolDeps } from '../registry-table.js';
+import { createRegistryTable, soft, workflowToolDeps } from '../registry-table.js';
 import { ToolDenied } from '../tool-denied.js';
 
 const OK = workflowToolDeps('/tmp', { approvalMode: 'auto' });
@@ -28,7 +30,7 @@ const decline: ApprovalGate = { async ask(r) { return { requestId: r.requestId, 
 let bin: StandInBin | undefined;
 beforeEach(() => {
 	_resetRegistryForTests();
-	for (const t of [ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool, ghLabelTool, ghTrackerTool]) registerTool(t);
+	for (const t of [ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool, ghLabelTool, ghTrackerTool, ghProjectManageTool, ghProjectItemAddTool, ghProjectListTool]) registerTool(t);
 	_setApprovalGateForTests(() => approve);
 });
 afterEach(() => { _setApprovalGateForTests(undefined); bin?.restore(); if (bin) cleanup(bin.dir); bin = undefined; });
@@ -264,5 +266,114 @@ describe('registry-table.test.ts: one case per issue, comment, label, milestone 
 		// an answer the tool itself refuses is a plain rejected failure, which a best-effort row may swallow
 		gh([['*milestones*', '{"nope":true}']]);
 		await table().ghEnsureMilestone('o', 'r', 'M');
+	});
+});
+
+describe('registry-table.test.ts: one case per organisation, project, scope, login and url row, with null, false and [] only for gh failures', () => {
+	const manual = workflowToolDeps('/tmp', { approvalMode: 'manual' });
+	const isDenied = (err: unknown) => err instanceof ToolDenied && err.reason === 'declined';
+
+	it('ghTokenScopes: the scopes from the header, an absent header is an empty list, a gh failure is ok:false with the old reason', async () => {
+		gh([['*api*-i*', 'HTTP/2.0 200 OK\nX-Oauth-Scopes: repo, read:org , project\n\n{}']]);
+		assert.deepEqual(await table().ghTokenScopes(), { ok: true, scopes: ['repo', 'read:org', 'project'] });
+		gh([['*api*-i*', 'HTTP/2.0 200 OK\n\n{}']]);
+		assert.deepEqual(await table().ghTokenScopes(), { ok: true, scopes: [] });
+		gh([fail404()]);
+		assert.deepEqual(await table().ghTokenScopes(), { ok: false, reason: 'could not read token scopes (`gh api -i /user` failed)' });
+	});
+
+	it('ghCurrentLogin: the login; a gh failure throws; an empty answer throws', async () => {
+		gh([['*api*user*', '{"login":"octo"}']]);
+		assert.equal(await table().ghCurrentLogin(), 'octo');
+		gh([['*api*user*', '{"login":""}']]);
+		await assert.rejects(table().ghCurrentLogin(), rejectedGh());
+		gh([fail404()]);
+		await assert.rejects(table().ghCurrentLogin(), rejectedGh());
+	});
+
+	it('ghListOrgIssueTypes: the names; [] only when gh fails', async () => {
+		gh([['*graphql*', '{"data":{"organization":{"issueTypes":{"nodes":[{"name":"Task"},{"name":""},{"name":"Bug"}]}}}}']]);
+		assert.deepEqual(await table().ghListOrgIssueTypes('org'), ['Task', 'Bug']);
+		gh([['*graphql*', '{"data":{"organization":null}}']]);
+		assert.deepEqual(await table().ghListOrgIssueTypes('org'), []);
+		gh([fail404()]);
+		assert.deepEqual(await table().ghListOrgIssueTypes('org'), []);
+	});
+
+	it('ghCreateOrgIssueType: true; false only when gh fails; a denial is thrown', async () => {
+		const g = gh([['*issue-types*', '{}']]);
+		assert.equal(await table().ghCreateOrgIssueType('org', 'Task', 'blue', 'd'), true);
+		assert.match(g.calls()[0]!, /orgs\/org\/issue-types/);
+		gh([fail404()]);
+		assert.equal(await table().ghCreateOrgIssueType('org', 'Task', 'blue', 'd'), false);
+		gh([['*', '{}']]); _setApprovalGateForTests(() => decline);
+		await assert.rejects(table(manual).ghCreateOrgIssueType('org', 'Task', 'blue', 'd'), isDenied);
+	});
+
+	it('ghCreateProject: number and url; null only when gh fails; a denial is thrown', async () => {
+		const g = gh([['*project*create*', '{"number":4,"url":"https://github.com/orgs/o/projects/4"}']]);
+		assert.deepEqual(await table().ghCreateProject('o', 'Board'), { number: 4, url: 'https://github.com/orgs/o/projects/4' });
+		assert.match(g.calls()[0]!, /--title Board/);
+		gh([['*project*create*', '{"number":5}']]);
+		assert.deepEqual(await table().ghCreateProject('o', 'Board'), { number: 5, url: '' });
+		gh([fail404()]);
+		assert.equal(await table().ghCreateProject('o', 'Board'), null);
+		gh([['*', '{}']]); _setApprovalGateForTests(() => decline);
+		await assert.rejects(table(manual).ghCreateProject('o', 'Board'), isDenied);
+	});
+
+	it('ghFindProjectByTitle: the open board with the exact title; null when none or when gh fails; a schema failure throws (the listing is a read, so it is never asked for approval)', async () => {
+		const list = JSON.stringify({ projects: [{ number: 1, title: 'Board', closed: true, url: 'u1' }, { number: 2, title: 'Board', url: 'u2' }, { number: 3, title: 'Other', url: 'u3' }] });
+		const g = gh([['*project*list*', list]]);
+		assert.deepEqual(await table().ghFindProjectByTitle('o', 'Board'), { number: 2, url: 'u2' });
+		assert.match(g.calls()[0]!, /--owner o/);
+		assert.match(g.calls()[0]!, /-L 200/);
+		assert.equal(await table().ghFindProjectByTitle('o', 'Missing'), null);
+		gh([fail404()]);
+		assert.equal(await table().ghFindProjectByTitle('o', 'Board'), null);
+		// a number that is not a number fails the output schema: thrown, not null
+		gh([['*project*list*', JSON.stringify({ projects: [{ number: '2', title: 'Board' }] })]]);
+		await assert.rejects(table().ghFindProjectByTitle('o', 'Board'), rejectedGh());
+	});
+
+	it('ghAddProjectSingleSelectField: true; false only when gh fails; a denial is thrown', async () => {
+		const g = gh([['*project*field-create*', '{}']]);
+		assert.equal(await table().ghAddProjectSingleSelectField('o', 4, 'Size', ['XS', 'S']), true);
+		assert.match(g.calls()[0]!, /field-create 4/);
+		assert.match(g.calls()[0]!, /--data-type SINGLE_SELECT/);
+		assert.match(g.calls()[0]!, /--single-select-options XS/);
+		gh([fail404()]);
+		assert.equal(await table().ghAddProjectSingleSelectField('o', 4, 'Size', ['XS']), false);
+		gh([['*', '{}']]); _setApprovalGateForTests(() => decline);
+		await assert.rejects(table(manual).ghAddProjectSingleSelectField('o', 4, 'Size', ['XS']), isDenied);
+	});
+
+	it('ghListRepoIssueUrls: the urls up to the limit; [] only when gh fails', async () => {
+		const g = gh([['*issue*list*', JSON.stringify([{ number: 1, title: 'a', state: 'OPEN', url: 'https://x/1' }, { number: 2, title: 'b', state: 'OPEN' }, { number: 3, title: 'c', state: 'OPEN', url: ' https://x/3 ' }])]]);
+		assert.deepEqual(await table().ghListRepoIssueUrls('o', 'r', 50), ['https://x/1', 'https://x/3']);
+		assert.match(g.calls()[0]!, /-L 50/);
+		await table().ghListRepoIssueUrls('o', 'r', 100000);
+		assert.match(g.calls()[1]!, /-L 500/);
+		gh([fail404()]);
+		assert.deepEqual(await table().ghListRepoIssueUrls('o', 'r', 50), []);
+	});
+
+	it('ghAddProjectItem: true; false only when gh fails; a denial is thrown', async () => {
+		const g = gh([['*project*item-add*', '{}']]);
+		assert.equal(await table().ghAddProjectItem('o', 4, 'https://x/1'), true);
+		assert.match(g.calls()[0]!, /item-add 4 --url https:\/\/x\/1 --owner o/);
+		gh([fail404()]);
+		assert.equal(await table().ghAddProjectItem('o', 4, 'https://x/1'), false);
+		gh([['*', '{}']]); _setApprovalGateForTests(() => decline);
+		await assert.rejects(table(manual).ghAddProjectItem('o', 4, 'https://x/1'), isDenied);
+	});
+
+	it('the best-effort helper turns only gh failures into the fallback: a denial, a conversion failure and a schema mismatch throw', () => {
+		const call = (kind: 'rejected' | 'denied' | 'conversion-failed' | 'schema-mismatch' | 'timed-out' | 'unreachable' | 'missing-tool' | 'missing-signin') =>
+			({ ok: false as const, toolId: 't', failure: { kind, message: 'm', ...(kind === 'denied' ? { denial: 'no-client' as const } : {}) } });
+		for (const k of ['rejected', 'timed-out', 'unreachable', 'missing-tool', 'missing-signin'] as const) assert.equal(soft(call(k), 'fallback'), 'fallback', k);
+		assert.throws(() => soft(call('denied'), 'fallback'), (e: unknown) => e instanceof ToolDenied);
+		assert.throws(() => soft(call('conversion-failed'), 'fallback'), rejectedGh());
+		assert.throws(() => soft(call('schema-mismatch'), 'fallback'), rejectedGh());
 	});
 });

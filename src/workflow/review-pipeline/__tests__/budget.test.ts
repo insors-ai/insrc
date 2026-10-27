@@ -101,3 +101,14 @@ test('controller host estimates are explicit additive reservations and cannot in
 	assert.equal(measured.qualification, 'controller-reserved');
 	assert.throws(() => admitReviewBudget(policy, { ...input, hostContextReserveTokens: 128000 }), code('review-budget-exceeded'));
 });
+
+test('known native context only lowers admission while the configured total remains unchanged', () => {
+	const policy = createReviewBudgetPolicy(profile({ contextWindowTokens: 64000 }), 'reviewer-session');
+	const b = measureReviewBudget(policy, input);
+	assert.equal(policy.totalTokens, 128000);
+	assert.equal(b.configuredLimitTokens, 128000);
+	assert.equal(b.limitTokens, 64000);
+	assert.equal(b.remainingTokens, 64000 - b.estimatedTotalTokens);
+	assert.throws(() => admitReviewBudget(createReviewBudgetPolicy(profile({ contextWindowTokens: 1000 }), 'structured'), input), code('review-budget-exceeded'));
+	for (const value of [0, -1, NaN, Infinity, 1.5]) assert.throws(() => createReviewBudgetPolicy(profile({ contextWindowTokens: value }), 'structured'), code('invalid-budget-policy'));
+});

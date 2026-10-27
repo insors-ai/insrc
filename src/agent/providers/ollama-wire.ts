@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { LLMMessage } from '../../shared/types.js';
+import type { LLMMessage, ToolDefinition } from '../../shared/types.js';
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
@@ -67,5 +67,26 @@ export function toOllamaMessages(messages: readonly LLMMessage[]): OllamaMessage
     out.push({ role: m.role, content: texts.join('\n') });
   }
   return out;
+}
+
+
+export interface OllamaTool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+export function toOllamaTools(tools: readonly ToolDefinition[]): OllamaTool[] {
+  return tools.map(t => ({
+    type: 'function' as const,
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: t.inputSchema,
+    },
+  }));
 }
 

@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { ReviewBudgetBreakdown, ReviewExecutionBudget, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
-import type { StructuredSchema } from '../../shared/types.js';
+import type { StructuredSchema, ToolDefinition } from '../../shared/types.js';
 import { admitReviewBudget, createReviewBudgetPolicy, freezeReviewBudgetProfile, ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
 import { promptChars } from '../../workflow/review-pipeline/envelope.js';
-import { toOllamaMessages } from './ollama-wire.js';
+import { toOllamaMessages, toOllamaTools } from './ollama-wire.js';
 import { codexStrictSchema } from './structured-output.js';
 
 /** The provider and the planner share exactly this final schema serialization. */
@@ -25,18 +25,19 @@ export function preflightProviderReviewBudget(
 	promptChars: number,
 	wireSchemaJson: string,
 	outputTokens?: number,
+	declaredToolsJson?: string,
 ): ReviewBudgetBreakdown {
 	const pinned = freezeReviewBudgetProfile(budget.policy.profile);
 	const actual = freezeReviewBudgetProfile(actualProfile);
 	if (JSON.stringify(pinned) !== JSON.stringify(actual)
-		|| budget.admitted.limitTokens !== budget.policy.totalTokens
+		|| budget.admitted.limitTokens !== Math.min(budget.policy.totalTokens, actual.contextWindowTokens ?? budget.policy.totalTokens)
 		|| budget.admitted.qualification !== actual.qualification
 		|| budget.admitted.estimatorVersion !== budget.policy.estimatorVersion
 		|| budget.outputAllowanceTokens !== actual.completionReserveTokens
 		|| (outputTokens !== undefined && (!Number.isSafeInteger(outputTokens) || outputTokens <= 0 || outputTokens > budget.outputAllowanceTokens))) {
 		throw new ReviewBudgetError('budget-profile-mismatch');
 	}
-	return admitReviewBudget(budget.policy, { promptChars, wireSchemaJson, phase: 'dispatch' });
+	return admitReviewBudget(budget.policy, { promptChars, wireSchemaJson, phase: 'dispatch', ...(declaredToolsJson !== undefined ? { declaredToolsJson } : {}) });
 }
 
 /** The same provider must be selected before any production job is constructed. */
@@ -46,7 +47,8 @@ export function resolveReviewBudgetPolicy(
 	totalTokens: number,
 ): import('../../shared/review-budget.js').ReviewBudgetPolicy {
 	if (!provider.getReviewBudgetProfile) throw new ReviewBudgetError('native-budget-unqualified');
-	return createReviewBudgetPolicy(provider.getReviewBudgetProfile(executionKind), executionKind, totalTokens);
+	try { return createReviewBudgetPolicy(provider.getReviewBudgetProfile(executionKind), executionKind, totalTokens); }
+	catch (err) { throw err instanceof ReviewBudgetError ? err : new ReviewBudgetError('native-budget-unqualified'); }
 }
 
 /** Provider-final conversation representation, shared by planning and dispatch. */
@@ -57,4 +59,12 @@ export function reviewPromptChars(profile: ReviewProviderBudgetProfile, messages
 		case 'ollama-chat-v1': return JSON.stringify(toOllamaMessages(messages)).length;
 		case 'controller-frame-v1': throw new ReviewBudgetError('controller-budget-incompatible');
 	}
+}
+
+/** Declared native tools, serialized by the same helper used at the managed provider wire. */
+export function reviewToolsJson(profile: ReviewProviderBudgetProfile, tools: readonly ToolDefinition[]): string {
+	freezeReviewBudgetProfile(profile);
+	if (profile.promptDialect === 'controller-frame-v1') throw new ReviewBudgetError('controller-budget-incompatible');
+	try { return JSON.stringify(profile.promptDialect === 'ollama-chat-v1' ? toOllamaTools(tools) : tools); }
+	catch { throw new ReviewBudgetError('native-budget-unqualified'); }
 }

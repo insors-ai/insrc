@@ -56,6 +56,7 @@ export function freezeReviewBudgetProfile(profile: ReviewProviderBudgetProfile |
 	jsonContainer(profile.declaredToolsJson);
 	integer(profile.nativeReserveTokens); integer(profile.transportReserveTokens);
 	integer(profile.completionReserveTokens, true); integer(profile.inspectionReserveTokens);
+	if (profile.contextWindowTokens !== undefined) integer(profile.contextWindowTokens, true);
 	if (profile.qualification === 'reserved-native' && profile.nativeReserveTokens === 0) {
 		throw new ReviewBudgetError('native-budget-unqualified');
 	}
@@ -67,6 +68,7 @@ export function freezeReviewBudgetProfile(profile: ReviewProviderBudgetProfile |
 		profileVersion: 1, providerId: profile.providerId, transport: profile.transport,
 		transportVersion: profile.transportVersion, promptDialect: profile.promptDialect, schemaDialect: profile.schemaDialect,
 		qualification: profile.qualification, declaredToolsJson: profile.declaredToolsJson,
+		...(profile.contextWindowTokens !== undefined ? { contextWindowTokens: profile.contextWindowTokens } : {}),
 		nativeReserveTokens: profile.nativeReserveTokens, transportReserveTokens: profile.transportReserveTokens,
 		completionReserveTokens: profile.completionReserveTokens, inspectionReserveTokens: profile.inspectionReserveTokens,
 	});
@@ -100,6 +102,8 @@ export function measureReviewBudget(policy: ReviewBudgetPolicy, input: {
 	readonly promptChars: number;
 	readonly wireSchemaJson: string;
 	readonly phase: 'planning' | 'dispatch';
+	/** Provider-final manifest for managed turns; absent uses the pinned planning manifest. */
+	readonly declaredToolsJson?: string | undefined;
 	readonly hostContextReserveTokens?: number | undefined;
 }): ReviewBudgetBreakdown {
 	validateReviewBudgetPolicy(policy);
@@ -111,11 +115,14 @@ export function measureReviewBudget(policy: ReviewBudgetPolicy, input: {
 	if (policy.executionKind === 'controller' && input.hostContextReserveTokens === undefined) throw new ReviewBudgetError('controller-budget-required');
 	if (policy.executionKind !== 'controller' && host !== 0) throw new ReviewBudgetError('invalid-budget-policy');
 	const profile = policy.profile;
+	const declaredToolsJson = input.declaredToolsJson ?? profile.declaredToolsJson;
+	if (typeof declaredToolsJson !== 'string') throw new ReviewBudgetError('native-budget-unqualified');
+	jsonContainer(declaredToolsJson);
 	const tokens = (chars: number): number => Math.ceil(chars / policy.charsPerToken);
 	const components = {
-		limitTokens: policy.totalTokens, promptChars: input.promptChars, promptTokens: tokens(input.promptChars),
+		configuredLimitTokens: policy.totalTokens, limitTokens: Math.min(policy.totalTokens, profile.contextWindowTokens ?? policy.totalTokens), promptChars: input.promptChars, promptTokens: tokens(input.promptChars),
 		schemaChars: input.wireSchemaJson.length, schemaTokens: tokens(input.wireSchemaJson.length),
-		declaredToolsChars: profile.declaredToolsJson.length, declaredToolsTokens: tokens(profile.declaredToolsJson.length),
+		declaredToolsChars: declaredToolsJson.length, declaredToolsTokens: tokens(declaredToolsJson.length),
 		nativeReserveTokens: profile.nativeReserveTokens, transportReserveTokens: profile.transportReserveTokens,
 		completionReserveTokens: profile.completionReserveTokens, inspectionReserveTokens: profile.inspectionReserveTokens,
 		hostContextReserveTokens: host,
@@ -125,7 +132,7 @@ export function measureReviewBudget(policy: ReviewBudgetPolicy, input: {
 		+ components.nativeReserveTokens + components.transportReserveTokens + components.completionReserveTokens
 		+ components.inspectionReserveTokens + host + components.retryHeadroomTokens;
 	integer(estimatedTotalTokens);
-	return Object.freeze({ ...components, estimatedTotalTokens, remainingTokens: policy.totalTokens - estimatedTotalTokens,
+	return Object.freeze({ ...components, estimatedTotalTokens, remainingTokens: components.limitTokens - estimatedTotalTokens,
 		estimatorVersion: policy.estimatorVersion, qualification: profile.qualification });
 }
 

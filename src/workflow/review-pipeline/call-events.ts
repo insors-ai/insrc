@@ -25,13 +25,13 @@ export interface ReviewCallEvent {
 	readonly errorCode?: ReviewCallErrorCode | undefined;
 }
 
-const uuid = (value: string): string | undefined => /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value) ? value : undefined;
+export const safeReviewId = (value: string): string | undefined => /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value) ? value : undefined;
 const member = (value: string, values: readonly string[]): string => values.includes(value) ? value : 'other';
 
 /** Unknown labels/IDs are never echoed into persistent call events. */
 export function reviewCallEvent(job: ReviewPipelineJob, call: ReviewCall, budget: ReviewBudgetBreakdown, event: ReviewCallOutcome, durationMs: number, errorCode?: ReviewCallErrorCode): ReviewCallEvent {
 	return {
-		event, reviewId: uuid(job.reviewId), callId: uuid(call.callId),
+		event, reviewId: safeReviewId(job.reviewId), callId: safeReviewId(call.callId),
 		chunkId: call.carries.chunkId !== undefined && /^c\d+$/.test(call.carries.chunkId) ? call.carries.chunkId : undefined,
 		dimension: member(job.dimension, ['adherence', 'conventions', 'coverage', 'functional-coverage', 'quality', 'diagram', 'ux', 'premise', 'template']),
 		stage: member(call.stage, ['judge', 'compare', 'pair', 'extract', 'probe', 'verify', 'template', 'run', 'skip', 'gather', 'reduce']),

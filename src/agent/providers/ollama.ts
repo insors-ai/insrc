@@ -1,5 +1,5 @@
-import type { OllamaMessage } from './ollama-wire.js';
-import { toOllamaMessages } from './ollama-wire.js';
+import type { OllamaMessage, OllamaTool } from './ollama-wire.js';
+import { toOllamaMessages, toOllamaTools } from './ollama-wire.js';
 import { randomUUID } from 'node:crypto';
 
 import { Ollama } from 'ollama';
@@ -17,8 +17,8 @@ import type {
   ToolCall,
 } from '../../shared/types.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
-import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS } from '../../workflow/review-pipeline/budget.js';
-import { preflightProviderReviewBudget, reviewWireSchemaJson } from './review-budget.js';
+import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
+import { preflightProviderReviewBudget, reviewToolsJson, reviewWireSchemaJson } from './review-budget.js';
 import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from '../../analyze/context/tool-surface.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { getLogger } from '../../shared/logger.js';
@@ -169,10 +169,13 @@ export class OllamaProvider implements LLMProvider {
   readonly supportsTools = true;
 
   getReviewBudgetProfile(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile {
+    let declaredToolsJson: string;
+    try { declaredToolsJson = JSON.stringify(executionKind === 'reviewer-session' ? toOllamaTools(getReadOnlyTools()) : []); }
+    catch { throw new ReviewBudgetError('native-budget-unqualified'); }
     return freezeReviewBudgetProfile({
       profileVersion: 1, providerId: `ollama:${this.model}`, transport: 'ollama', transportVersion: 'ollama-chat-review-v1',
-      schemaDialect: 'json-v1', promptDialect: 'ollama-chat-v1', qualification: 'managed-estimate',
-      declaredToolsJson: JSON.stringify(executionKind === 'reviewer-session' ? toOllamaTools(getReadOnlyTools()) : []),
+      schemaDialect: 'json-v1', promptDialect: 'ollama-chat-v1', qualification: 'managed-estimate', contextWindowTokens: this.numCtx,
+      declaredToolsJson,
       nativeReserveTokens: REVIEW_BUDGET_DEFAULTS.nativeReserveTokens,
       transportReserveTokens: REVIEW_BUDGET_DEFAULTS.transportReserveTokens,
       completionReserveTokens: REVIEW_BUDGET_DEFAULTS.completionReserveTokens,
@@ -376,6 +379,7 @@ export class OllamaProvider implements LLMProvider {
         // A cancelled call is AbortError whatever the fetch rejected with (an abort
         // with a custom reason rejects with that reason). Never retried.
         if (opts.signal?.aborted === true) throw abortError();
+        if (err instanceof ReviewBudgetError) throw err;
         lastErr = err;
         if (!opts.reviewBudget && attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
           const delayMs = TRANSIENT_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
@@ -446,6 +450,14 @@ export class OllamaProvider implements LLMProvider {
     // maps to OpenAI-shape; whether the local model actually honors
     // it is per-family (no enforcement guarantees).
     const ollamaToolChoice = toOllamaToolChoice(opts.toolChoice, tools);
+    if (opts.reviewBudget) {
+      const kind = opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured';
+      const profile = this.getReviewBudgetProfile(kind);
+      const declaredToolsJson = reviewToolsJson(profile, opts.tools ?? []);
+      if (declaredToolsJson !== profile.declaredToolsJson) throw new ReviewBudgetError('budget-profile-mismatch');
+      const wireSchemaJson = reviewWireSchemaJson(profile, typeof ollamaFormat === 'object' ? ollamaFormat as StructuredSchema : ollamaFormat ? { format: ollamaFormat } : {});
+      preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(ollamaMessages).length, wireSchemaJson, opts.maxTokens, declaredToolsJson);
+    }
     const response = await this.clientFor(opts.signal).chat({
       model: this.model,
       messages: ollamaMessages,
@@ -459,7 +471,7 @@ export class OllamaProvider implements LLMProvider {
       stream: true,
       options: {
         num_ctx: this.numCtx,
-        num_predict: opts.maxTokens ?? 8_192,
+        num_predict: opts.maxTokens ?? opts.reviewBudget?.outputAllowanceTokens ?? 8_192,
         ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
       },
     });
@@ -546,6 +558,7 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {
+    if (opts.reviewBudget) throw new ReviewBudgetError('native-budget-unqualified');
     const ollamaMessages = toOllamaMessages(messages);
 
     try {
@@ -605,7 +618,7 @@ export class OllamaProvider implements LLMProvider {
         if (opts?.reviewBudget) {
           const kind = opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured';
           const profile = this.getReviewBudgetProfile(kind);
-          preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(msgs).length, reviewWireSchemaJson(profile, schema), opts.maxTokens);
+          preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(msgs).length, reviewWireSchemaJson(profile, schema), opts.maxTokens, '[]');
         }
         try {
           // Stream instead of collect-and-parse so we can (a) bridge
@@ -746,26 +759,6 @@ const REVIEW_SESSION_MAX_TURNS = 40;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-interface OllamaTool {
-  type: 'function';
-  function: {
-    name: string;
-    description: string;
-    parameters: Record<string, unknown>;
-  };
-}
-
-function toOllamaTools(tools: ToolDefinition[]): OllamaTool[] {
-  return tools.map(t => ({
-    type: 'function' as const,
-    function: {
-      name: t.name,
-      description: t.description,
-      parameters: t.inputSchema,
-    },
-  }));
-}
 
 interface OllamaToolCall {
   function: {

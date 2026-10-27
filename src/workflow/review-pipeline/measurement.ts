@@ -25,5 +25,5 @@ export function candidateChars(policy: ReviewBudgetPolicy | undefined, prompt: C
 	const id = '00000000-0000-0000-0000-000000000000';
 	const messages = envelopeMessages(id, prompt.messages);
 	const breakdown = requestBudget(policy, messages, envelopeSchema(id, prompt.schema), phase);
-	return Math.max(breakdown.promptChars, Math.ceil(breakdown.estimatedTotalTokens / policy.totalTokens * textLimit));
+	return Math.max(breakdown.promptChars, Math.ceil(breakdown.estimatedTotalTokens / breakdown.limitTokens * textLimit));
 }

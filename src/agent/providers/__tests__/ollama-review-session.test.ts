@@ -69,7 +69,7 @@ function results(messages: readonly LLMMessage[]): Array<{ content: string; isEr
 /** A local server speaking Ollama's streamed chat. `answer` gets each request's
  *  body and its number (1-based) and returns the chunks to stream, 'hang' to
  *  start answering and never finish, or 'cut' to end the stream with no final chunk (a transient error). */
-async function fakeOllama(answer: (body: OllamaBody, n: number) => object[] | 'hang' | 'cut'): Promise<{ provider: OllamaProvider; bodies: OllamaBody[]; close: () => Promise<void> }> {
+async function fakeOllama(answer: (body: OllamaBody, n: number) => object[] | 'hang' | 'cut', numCtx?: number, model = 'test-model'): Promise<{ provider: OllamaProvider; bodies: OllamaBody[]; close: () => Promise<void> }> {
 	const bodies: OllamaBody[] = [];
 	const server = createServer((req, res) => {
 		let raw = '';
@@ -92,7 +92,7 @@ async function fakeOllama(answer: (body: OllamaBody, n: number) => object[] | 'h
 	});
 	await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
 	return {
-		provider: new OllamaProvider('test-model', `http://127.0.0.1:${(server.address() as AddressInfo).port}`),
+		provider: new OllamaProvider(model, `http://127.0.0.1:${(server.address() as AddressInfo).port}`, numCtx),
 		bodies,
 		close: async () => { server.closeAllConnections(); await new Promise<void>(r => server.close(() => r())); },
 	};
@@ -434,12 +434,13 @@ test('cancelling an Ollama reviewer session mid tool loop aborts the in-flight t
 test('explicit managed profile and unsupported native-hard qualification refusal', async () => {
 	const { createReviewBudgetPolicy, admitReviewBudget, ReviewBudgetError } = await import('../../../workflow/review-pipeline/budget.js');
 	const { reviewWireSchemaJson } = await import('../review-budget.js');
-	const fixture = await fakeOllama(() => [{ message: { role: 'assistant', content: '{"ok":true}' }, done: true }]);
+	const fixture = await fakeOllama(() => [{ message: { role: 'assistant', content: '{"ok":true}' }, done: true }], 262144);
 	try {
 		const schema = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
 		const profile = fixture.provider.getReviewBudgetProfile('structured');
 		assert.equal(profile.qualification, 'managed-estimate');
 		assert.equal(profile.inspectionReserveTokens, 0);
+		assert.equal(profile.contextWindowTokens, 262144);
 		assert.ok(Object.isFrozen(profile));
 		const session = fixture.provider.getReviewBudgetProfile('reviewer-session');
 		assert.equal(session.inspectionReserveTokens, 24576);
@@ -466,7 +467,9 @@ test('explicit managed profile and unsupported native-hard qualification refusal
 		const sessionBudget = { ...budget, policy: sessionPolicy, admitted: admitReviewBudget(sessionPolicy, { promptChars: 100, wireSchemaJson, phase: 'planning' }) };
 		const complete = fixture.provider.complete.bind(fixture.provider);
 		fixture.provider.complete = async (turns, opts) => {
-			assert.equal(opts?.reviewBudget, sessionBudget, 'reviewer tool-loop receives the immutable contract');
+			assert.equal(opts?.reviewBudget?.policy, sessionBudget.policy, 'reviewer tool-loop retains the immutable policy');
+			assert.equal(opts?.reviewBudget?.callId, sessionBudget.callId);
+			assert.ok(opts.reviewBudget!.admitted.remainingTokens >= 0);
 			return complete(turns, opts);
 		};
 		const { serialiseMessages } = await import('../cli-wire.js');
@@ -477,4 +480,76 @@ test('explicit managed profile and unsupported native-hard qualification refusal
 		assert.equal(planned.promptChars, JSON.stringify((fixture.bodies[1] as unknown as { messages: unknown }).messages).length, 'planning accounts the exact flattened single-user native session prompt');
 		assert.equal(fixture.bodies.length, 3, 'one budgeted inspection turn and one budgeted final answer');
 	} finally { await fixture.close(); }
+});
+
+test('inspection growth and final structured answer cannot bypass the inclusive budget or truncate evidence', async () => {
+	const { createReviewBudgetPolicy, admitReviewBudget, measureReviewBudget, ReviewBudgetError } = await import('../../../workflow/review-pipeline/budget.js');
+	const { reviewWireSchemaJson } = await import('../review-budget.js');
+	const { toOllamaMessages } = await import('../ollama-wire.js');
+	const { readFileSync } = await import('node:fs');
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-budgeted-ollama-'));
+	const huge = 'PRIVATE_REQUIRED_EVIDENCE'.repeat(25000);
+	writeFileSync(join(repo, 'evidence.txt'), huge);
+	const budgetFor = (provider: OllamaProvider, schema: import('../../../shared/types.js').StructuredSchema) => {
+		const profile = provider.getReviewBudgetProfile('reviewer-session');
+		const policy = createReviewBudgetPolicy(profile, 'reviewer-session');
+		const wireSchemaJson = reviewWireSchemaJson(profile, schema);
+		return { policy, admitted: admitReviewBudget(policy, { promptChars: JSON.stringify(toOllamaMessages([{ role: 'user', content: 'review' }])).length, wireSchemaJson, phase: 'planning' }), outputAllowanceTokens: 8192, reviewId: 'fixture-review', callId: 'fixture-call', stage: 'template', role: 'single', attempt: 1 };
+	};
+	try {
+		const growth = await fakeOllama((_body, n) => n === 1 ? asksTool('file_read', { path: 'evidence.txt' }) : says('{"answer":"must not be returned"}'), 262144);
+		try {
+			const budget = budgetFor(growth.provider, ANSWER_SCHEMA);
+			await assert.rejects(() => growth.provider.runReviewSession('review', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => {
+				assert.ok(e instanceof ReviewBudgetError); assert.equal(e.code, 'review-budget-exceeded');
+				assert.ok(e.breakdown!.promptChars >= huge.length, 'the full tool output is counted'); return true;
+			});
+			assert.equal(growth.bodies.length, 1, 'no second HTTP/model request is sent after inspection overflow');
+			assert.equal(readFileSync(join(repo, 'evidence.txt'), 'utf8'), huge);
+			assert.equal((growth.bodies[0] as unknown as { options: { num_predict: number } }).options.num_predict, 8192);
+		} finally { await growth.close(); }
+
+		const closing = await fakeOllama(() => says('draft'.repeat(1000)), 262144);
+		try {
+			const base = budgetFor(closing.provider, ANSWER_SCHEMA);
+			const allowance = measureReviewBudget(base.policy, { promptChars: 100, wireSchemaJson: JSON.stringify(ANSWER_SCHEMA), phase: 'planning' }).remainingTokens;
+			assert.ok(allowance > 10000);
+			const schema = { ...ANSWER_SCHEMA, description: 'r'.repeat(Math.min(150000, Math.floor(allowance * 3 * 0.75))) };
+			const before = JSON.stringify(schema);
+			const budget = budgetFor(closing.provider, schema);
+			await assert.rejects(() => closing.provider.runReviewSession('review', schema, { cwd: repo, deadlineMs: 10000, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			assert.equal(closing.bodies.length, 1, 'final closing instruction plus native schema is refused before its model call');
+			assert.equal(JSON.stringify(schema), before, 'the schema is not shortened to fit');
+		} finally { await closing.close(); }
+
+		const direct = await fakeOllama(() => says('must not be sent'), 262144, 'qwen3-coder:test');
+		try {
+			const { getReadOnlyTools } = await import('../../../analyze/context/tool-surface.js');
+			const tools = getReadOnlyTools();
+			const budget = budgetFor(direct.provider, ANSWER_SCHEMA);
+			await assert.rejects(() => direct.provider.complete([{ role: 'user', content: huge }], { tools, reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			await assert.rejects(() => direct.provider.complete([{ role: 'user', content: 'review' }], { tools: [], reviewBudget: budget }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
+			await assert.rejects(() => direct.provider.complete([{ role: 'user', content: 'review' }], { tools, reviewBudget: budget, maxTokens: 8193 }), e => e instanceof ReviewBudgetError && e.code === 'budget-profile-mismatch');
+			const messages: LLMMessage[] = [{ role: 'system', content: 'Review.' }, { role: 'user', content: 'check' }];
+			const input = { promptChars: JSON.stringify(toOllamaMessages(messages)).length, wireSchemaJson: '{}', phase: 'dispatch' as const };
+			const needed = measureReviewBudget(budget.policy, input).estimatedTotalTokens;
+			const exact = createReviewBudgetPolicy(budget.policy.profile, 'reviewer-session', needed);
+			const exactBudget = { ...budget, policy: exact, admitted: admitReviewBudget(exact, input) };
+			await assert.rejects(() => direct.provider.complete(messages, { tools, reviewBudget: exactBudget, disableThinking: true }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			assert.equal(messages[0]!.content, 'Review.', 'provider prefix normalization never mutates caller history');
+			assert.equal(direct.bodies.length, 0, 'final wire checks cover direct calls, tool/output changes and added model prefixes');
+		} finally { await direct.close(); }
+
+		const small = await fakeOllama(() => says('{"answer":"must not be returned"}'), 16384);
+		try {
+			const profile = small.provider.getReviewBudgetProfile('reviewer-session');
+			const policy = createReviewBudgetPolicy(profile, 'reviewer-session');
+			assert.equal(policy.totalTokens, 128000, 'configured total is not rewritten');
+			const breakdown = measureReviewBudget(policy, { promptChars: 10, wireSchemaJson: JSON.stringify(ANSWER_SCHEMA), phase: 'dispatch' });
+			assert.equal(breakdown.limitTokens, 16384);
+			assert.equal(breakdown.configuredLimitTokens, 128000);
+			await assert.rejects(() => small.provider.runReviewSession('review', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 10000, reviewBudget: { policy, admitted: breakdown, outputAllowanceTokens: 8192, reviewId: 'r', callId: 'c', stage: 'template', role: 'single', attempt: 1 } }), e => e instanceof ReviewBudgetError && e.code === 'review-budget-exceeded');
+			assert.equal(small.bodies.length, 0, 'an insufficient native context never silently truncates the review');
+		} finally { await small.close(); }
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

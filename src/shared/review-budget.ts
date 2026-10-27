@@ -19,6 +19,8 @@ export interface ReviewProviderBudgetProfile {
 	readonly qualification: ReviewBudgetQualification;
 	/** Serialized declared tool manifest, including observable wire framing. */
 	readonly declaredToolsJson: string;
+	/** Known native context size (or controller-declared size); only lowers admission. */
+	readonly contextWindowTokens?: number | undefined;
 	readonly nativeReserveTokens: number;
 	readonly transportReserveTokens: number;
 	readonly completionReserveTokens: number;
@@ -38,6 +40,7 @@ export interface ReviewBudgetPolicy {
 /** Numeric metadata only; the original request and schema are never retained here. */
 export interface ReviewBudgetBreakdown {
 	readonly limitTokens: number;
+	readonly configuredLimitTokens: number;
 	readonly promptChars: number;
 	readonly promptTokens: number;
 	readonly schemaChars: number;

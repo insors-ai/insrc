@@ -93,7 +93,10 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 				raw = await untilAborted(send(provider, call, budget, signal), signal);
 			} catch (err) {
 				throwIfAborted(signal);
-				if (err instanceof ReviewBudgetError) { errorCode = 'budget-refused'; throw err; }
+				if (err instanceof ReviewBudgetError) {
+					if (err.breakdown) admitted = err.breakdown;
+					errorCode = 'budget-refused'; throw err;
+				}
 				if (isAbortError(err)) throw err;
 				if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') { errorCode = 'timeout'; throw deadlineError(job, adapter); }
 				const failure = classify(err);

@@ -44,6 +44,8 @@ const { IpcServer, directDispatch } = await import('../../server.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { runPruneSweep } = await import('../../prune-timer.js');
 const { emitTodosEvent, scheduleTodosRetention, subscribe: subscribeTodos } = await import('../../todos-rpc.js');
+const { IndexerService } = await import('../../../indexer/index.js');
+const { IndexQueue } = await import('../../queue.js');
 const { createUnderstandingRoutes } = await import('../../understanding-rpc.js');
 const { UnderstandingService } = await import('../../../understanding/service.js');
 const { ThreadServices } = await import('../main-services.js');
@@ -383,4 +385,28 @@ test('a todos.subscribe stream holds no lock; a push during maintenance is skipp
 		aborter.abort();
 		await stream;
 	}
+});
+
+test("an edit's settle pass that comes due during maintenance waits for the maintenance lock instead of failing, and runs after it", { timeout: 60_000 }, async () => {
+	const watcher = { onEvents() {}, async addRepo() {}, async removeRepo() {}, async addConfigDir() {} } as never;
+	class Settling extends IndexerService {
+		constructor() { super(null as never, new IndexQueue(), watcher, undefined, 300); }
+	}
+	const svc = new Settling();
+	await svc.start([{ path: REPO, name: 'fixture', addedAt: new Date().toISOString(), status: 'ready' }]);
+	const waiting = (): number => getLockManager().query().pending.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+	// The edit is indexed; its settle is due 300 ms later, while maintenance holds the lock.
+	await svc.processJob({ kind: 'file', filePath: join(REPO, 'src', 'a.ts'), event: 'update' });
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	await until(() => svc._armedSettleTimersForTest() === 0, 'the settle timer to fire');
+	await until(() => waiting() === 1, 'the settle pass to wait for maintenance');
+	let settled = false;
+	void svc._settlePassesDoneForTest().then(() => { settled = true; });
+	await tick(300);
+	assert.equal(settled, false, 'the settle pass has not run during maintenance');
+	maintenance.release();
+	await maintenance.done;
+	await until(() => settled, 'the settle pass to run after maintenance');
+	assert.equal(waiting(), 0);
 });

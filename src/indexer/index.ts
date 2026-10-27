@@ -17,6 +17,7 @@ import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, rea
 import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
+import { withBackgroundHold } from '../shared/locks/maintenance-lock.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
 import { resolveMessagingEndpoints } from './messaging-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
@@ -871,7 +872,8 @@ export class IndexerService {
     if (existing !== undefined) clearTimeout(existing);
     const timer = setTimeout(() => {
       this.settleTimers.delete(repoPath);
-      const pass = this.runSettlePass(repoPath).catch(err => {
+      // A background write: with daemon threads it waits for maintenance (bounded) instead of failing (Epic 86197ac6 s2).
+      const pass = withBackgroundHold(() => this.runSettlePass(repoPath)).catch(err => {
         const msg = err instanceof Error ? err.message : String(err);
         log.warn({ repo: repoPath, err: msg }, 'settle pass failed');
       });

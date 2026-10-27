@@ -33,6 +33,13 @@ async function until(cond: () => boolean, what: string): Promise<void> {
 	for (let i = 0; i < 1000; i++) { if (cond()) return; await tick(); }
 	assert.fail(`timed out waiting for: ${what}`);
 }
+/** `p`, or a failure naming `what` after `ms`: a lost notification fails the test instead of hanging it. */
+async function within<T>(p: Promise<T>, what: string, ms = 5_000): Promise<T> {
+	let timer: NodeJS.Timeout | undefined;
+	try {
+		return await Promise.race([p, new Promise<never>((_r, reject) => { timer = setTimeout(() => reject(new Error(`timed out waiting for: ${what}`)), ms); })]);
+	} finally { clearTimeout(timer); }
+}
 
 test('the code-busy and stopping words track the index lane and stop()', async () => {
 	const block = createIndexingBlock();
@@ -40,40 +47,45 @@ test('the code-busy and stopping words track the index lane and stop()', async (
 	const q = new IndexQueue({ indexingBlock: block });
 	const gates = new Map<string, ReturnType<typeof gate>>();
 	const running = q.start(async job => { if (job.kind === 'file') await (gates.get(job.filePath) ?? gate()).wait; });
-	assert.deepEqual([reader.codeBusy, reader.stopping], [false, false]);
+	try {
+		assert.deepEqual([reader.codeBusy, reader.stopping], [false, false]);
 
-	// A summary job does not make code busy.
-	q.enqueue({ kind: 'doc-summarise-entity', entityId: 'e1' });
-	await tick();
-	assert.equal(reader.codeBusy, false);
+		// A summary job does not make code busy.
+		q.enqueue({ kind: 'doc-summarise-entity', entityId: 'e1' });
+		await tick();
+		assert.equal(reader.codeBusy, false);
 
-	// Queued and running index jobs do; the word clears when the lane is empty and idle.
-	gates.set(join(A, 'a.ts'), gate());
-	gates.set(join(A, 'b.ts'), gate());
-	q.enqueue(file('a.ts'));
-	assert.equal(reader.codeBusy, true, 'busy as soon as an index job is queued');
-	q.enqueue(file('b.ts'));
-	await until(() => q.laneStatus().index.running, 'a.ts to start');
-	let waited = false;
-	const idleWait = reader.waitForCodeIdle().then(() => { waited = true; });
-	gates.get(join(A, 'a.ts'))!.open();
-	await until(() => q.laneStatus().index.depth === 0 && q.laneStatus().index.running, 'b.ts to start');
-	assert.equal(reader.codeBusy, true, 'still busy while b.ts runs');
-	assert.equal(waited, false);
-	gates.get(join(A, 'b.ts'))!.open();
-	await idleWait;
-	assert.equal(reader.codeBusy, false);
+		// Queued and running index jobs do; the word clears when the lane is empty and idle.
+		gates.set(join(A, 'a.ts'), gate());
+		gates.set(join(A, 'b.ts'), gate());
+		q.enqueue(file('a.ts'));
+		assert.equal(reader.codeBusy, true, 'busy as soon as an index job is queued');
+		q.enqueue(file('b.ts'));
+		await until(() => q.laneStatus().index.running, 'a.ts to start');
+		let waited = false;
+		const idleWait = reader.waitForCodeIdle().then(() => { waited = true; });
+		gates.get(join(A, 'a.ts'))!.open();
+		await until(() => q.laneStatus().index.depth === 0 && q.laneStatus().index.running, 'b.ts to start');
+		assert.equal(reader.codeBusy, true, 'still busy while b.ts runs');
+		assert.equal(waited, false);
+		gates.get(join(A, 'b.ts'))!.open();
+		await within(idleWait, 'the code-idle wait to end when the lane empties');
+		assert.equal(reader.codeBusy, false);
 
-	// stop() sets the stopping word, which also ends a code-idle wait.
-	gates.set(join(A, 'c.ts'), gate());
-	q.enqueue(file('c.ts'));
-	await until(() => q.laneStatus().index.running, 'c.ts to start');
-	const stopWait = reader.waitForCodeIdle();
-	q.stop();
-	assert.equal(reader.stopping, true);
-	await stopWait;
-	gates.get(join(A, 'c.ts'))!.open();
-	await running;
+		// stop() sets the stopping word, which also ends a code-idle wait.
+		gates.set(join(A, 'c.ts'), gate());
+		q.enqueue(file('c.ts'));
+		await until(() => q.laneStatus().index.running, 'c.ts to start');
+		const stopWait = reader.waitForCodeIdle();
+		q.stop();
+		assert.equal(reader.stopping, true);
+		await within(stopWait, 'stop() to end the code-idle wait');
+	} finally {
+		// Whatever failed: every gate opened and the queue stopped, so nothing is left running.
+		for (const g of gates.values()) g.open();
+		q.stop();
+		await within(running, 'the queue to stop');
+	}
 });
 
 test('pause() resolves once no job is in flight and no job starts until resume()', async () => {

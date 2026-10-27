@@ -120,8 +120,11 @@ test("a replacement code-indexing worker's job waits for the job the exited one 
 		running--;
 	}, () => undefined);
 	first.port2.postMessage({ kind: 'request', requestId: 'old', method: SUMMARY_JOB, params: { kind: 'doc-summarise-repo', repoPath: '/old' }, stream: true });
-	await new Promise(r => setTimeout(r, 30));
-	first.port2.close();   // the code-indexing worker exited; its job is still finishing
+	for (const deadline = Date.now() + 5_000; events.length === 0;) {
+		assert.ok(Date.now() < deadline, 'the old job to start');
+		await new Promise(r => setTimeout(r, 5));
+	}
+	first.port2.close();   // the code-indexing worker exited; its job (started) is still finishing
 	await new Promise(r => setTimeout(r, 30));   // its port's close arrives before the replacement's port, as in the daemon
 	const second = new MessageChannel();
 	link.rebind(second.port1);

@@ -92,11 +92,18 @@ async function holdAJob(): Promise<() => Promise<void>> {
 	const granted = new Promise<void>(r => { grant = r; });
 	const done = getLockManager().request(MAINTENANCE_LOCK, { mode: 'exclusive', timeoutMs: 60_000 }, async () => { grant(); await gate; });
 	await granted;
-	const enqueued = await askPort(INDEXING_PORT.enqueue, { kind: 'full', repoPath: REPO }, true);
-	assert.equal(enqueued.error, undefined);
-	const waiting = (): boolean => getLockManager().query().pending.some(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared');
-	await until(waiting, 'the job to wait for the maintenance lock');
-	return async () => { release(); await done; };
+	const letRun = async (): Promise<void> => { release(); await done; };
+	try {
+		const enqueued = await askPort(INDEXING_PORT.enqueue, { kind: 'full', repoPath: REPO }, true);
+		assert.equal(enqueued.error, undefined);
+		const waiting = (): boolean => getLockManager().query().pending.some(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared');
+		await until(waiting, 'the job to wait for the maintenance lock');
+	} catch (err) {
+		// A failed setup still gives the lock back, so later jobs and the teardown are not blocked.
+		await letRun();
+		throw err;
+	}
+	return letRun;
 }
 
 before(async () => {

@@ -298,6 +298,8 @@ After a 'file' job completes, the daemon sets the registered repo's lastIndexed 
   - **resolved**: Verify before proceeding — Verified 2026-10-27 in src/workflow/code-review/grounding.ts:88-113: symbols are built by looping each changed file's entities, so an entity-less file adds none; the code-review step handler falls back to the diff review only when the whole symbols list is empty (handler.ts:305-372). The omission in a mixed set is confirmed. _(2026-10-27T06:43:15.519Z)_
 - `q3d42c913` — Graded partial in the audit (alt2): the Story has no acceptance criteria, Epic constraints or HLD contracts, so the three scored constraints were taken from the approved issue's fix intent.
   - **resolved**: Explicitly adopt issue intent — User chose option 1: the approved issue's fix intent is the scoring basis for the three constraints; the audit stays graded partial because the Story has no acceptance criteria, Epic constraints or HLD contracts. _(2026-10-27T06:48:16.439Z)_
+- `qbd1ff74d` — The Story title still says 'the wait cannot deadlock'; the design does not address a wait deadlock because the controller-side wait is bounded by codeReview.freshnessTimeoutMs, and the review-session timeout is handled in another session.
+  - **resolved**: Rename to bounded freshness wait — User chose option 1: the Story is about the bounded controller-side freshness wait and stale-file indexing; the review-session timeout is out of scope (another session). The approved issue and LLD keep their original title text. _(2026-10-27T06:52:02.757Z)_
 
 ## Citations
 

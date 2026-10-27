@@ -99,6 +99,13 @@
         "choice": "Explicitly adopt issue intent",
         "rationale": "User chose option 1: the approved issue's fix intent is the scoring basis for the three constraints; the audit stays graded partial because the Story has no acceptance criteria, Epic constraints or HLD contracts.",
         "resolvedAt": "2026-10-27T06:48:16.439Z"
+      },
+      "qbd1ff74d": {
+        "question": "The Story title still says 'the wait cannot deadlock'; the design does not address a wait deadlock because the controller-side wait is bounded by codeReview.freshnessTimeoutMs, and the review-session timeout is handled in another session.",
+        "status": "resolved",
+        "choice": "Rename to bounded freshness wait",
+        "rationale": "User chose option 1: the Story is about the bounded controller-side freshness wait and stale-file indexing; the review-session timeout is out of scope (another session). The approved issue and LLD keep their original title text.",
+        "resolvedAt": "2026-10-27T06:52:02.757Z"
       }
     }
   },

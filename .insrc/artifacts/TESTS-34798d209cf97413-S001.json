@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:13:13.967Z",
+    "updatedAt": "2026-10-27T09:23:56.707Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -1553,6 +1553,68 @@
               },
               {
                 "title": "DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "9222dca90",
+        "ranAt": "2026-10-27T09:23:56.707Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DIFF-FINGERPRINT-SNAPSHOT",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: exact BUILD approval exclusions preserve identity while semantic fields and capture races fail closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DIFF-IDENTITY-TESTS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
+                "title": "DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed states, reports and absence each affect identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7582,
+            "titles": [
+              {
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-FINGERPRINT-SNAPSHOT: exact BUILD approval exclusions preserve identity while semantic fields and capture races fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed states, reports and absence each affect identity",
                 "result": "pass"
               }
             ],

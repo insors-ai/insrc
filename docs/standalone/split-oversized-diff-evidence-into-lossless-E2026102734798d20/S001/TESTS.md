@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -339,3 +339,26 @@ Run at 2026-10-27T09:13:13.967Z on commit `7f3c1889b`. Tests check: **passed**. 
 | `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts` | 0 | 28 | 0.7 s |  |
 | `src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts` | 0 | 2 | 0.5 s |  |
 | `src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts` | 0 | 5 | 0.8 s |  |
+
+## t12
+
+Run at 2026-10-27T09:23:56.707Z on commit `9222dca90`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-FINGERPRINT-SNAPSHOT**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence | `src/workflow/code-review/__tests__/input-fingerprint.test.ts` |
+| pass | DIFF-FINGERPRINT-SNAPSHOT: exact BUILD approval exclusions preserve identity while semantic fields and capture races fail closed | `src/workflow/code-review/__tests__/input-fingerprint.test.ts` |
+
+**integration: DIFF-IDENTITY-TESTS**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed states, reports and absence each affect identity | `src/workflow/code-review/__tests__/input-fingerprint.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/input-fingerprint.test.ts` | 0 | 3 | 7.6 s |  |

@@ -889,10 +889,14 @@ export async function compactGraphStore(opts: { readonly beforeRename?: () => Pr
 	// holds, and the last committed transaction, before and after the copy.
 	// Don't go through `backupGraphStore` because it asserts _instance !=
 	// null -- which we'll need to clear in step 2 before the rename.
+	// Writes queued before this point commit first, so the copy holds them.
+	await inst.root.committed;
 	const txnBefore = lastTxnId(inst);
 	const counts = entryCounts(inst);
 	await inst.root.backup(compactPath, true);
-	// A write committed while the copy was taken is not in it: nothing is swapped.
+	// A write committed while the copy was taken is not in it: nothing is swapped. Queued writes
+	// are drained before the check, so none can commit during the close below, after it passed.
+	await inst.root.committed;
 	if (lastTxnId(inst) !== txnBefore) {
 		rmSync(compactPath, { force: true });
 		throw new LmdbStoreError('compact: a write was committed while the copy was taken; nothing renamed');

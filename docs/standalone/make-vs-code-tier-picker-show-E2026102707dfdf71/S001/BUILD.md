@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-27T06:52:23.695Z  ·  **Updated:** 2026-10-27T06:55:46.827Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-27T06:52:23.695Z  ·  **Updated:** 2026-10-27T07:36:36.990Z
 
-**Commit:** e4352d82d
+**Commit:** 63e5e48e0
 
 ## Scope
 
@@ -26,5 +26,5 @@ The VS Code tier picker now marks as current the tier the daemon actually runs; 
 
 ## Changes
 
-- `vscode-plugin/src/models/__tests__/model-tier-picker.test.ts` — **insrc-build** (2026-10-27T06:55:46.827Z)
-- `vscode-plugin/src/models/model-tier-picker.ts` — **insrc-build** (2026-10-27T06:55:46.827Z)
+- `vscode-plugin/src/models/__tests__/model-tier-picker.test.ts` — **insrc-build** (2026-10-27T07:36:36.990Z)
+- `vscode-plugin/src/models/model-tier-picker.ts` — **insrc-build** (2026-10-27T07:36:36.990Z)

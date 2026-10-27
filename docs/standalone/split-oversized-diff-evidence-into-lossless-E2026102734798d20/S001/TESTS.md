@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -228,3 +228,26 @@ Run at 2026-10-27T08:48:00.264Z on commit `deedc5f2c`. Tests check: **passed**. 
 | `src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts` | 0 | 6 | 1.1 s |  |
 | `src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts` | 0 | 3 | 0.6 s |  |
 | `src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts` | 0 | 2 | 0.5 s |  |
+
+## t9
+
+Run at 2026-10-27T08:53:02.435Z on commit `2092cd6d7`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-TIME-PLAN**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-TIME-PLAN: real primary plans freeze 1/5/20 chunk budgets and aggregate five model dimensions with deterministic zero counts | `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` |
+| pass | DIFF-TIME-PLAN: preparation elapsed time is charged before execution and can exhaust the derived root budget without a model call | `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` |
+
+**integration: DIFF-TIME-FIXED**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-TIME-FIXED: serial children activate on execution and retain their original deadlines through corrections, redivision and gather | `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-pipeline/__tests__/diff-timing.test.ts` | 0 | 3 | 0.5 s |  |

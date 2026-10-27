@@ -47,8 +47,13 @@ test('DIFF-TIME-FIXED: serial children activate on execution and retain their or
  const initialCall = a.pending[0]!;
  const corrected = applyFailure(a, first.adapter, initialCall.callId, 'invalid-answer', undefined, { now: 2000, reasons: ['test correction'] });
  assert.equal(corrected.timing, a.timing); assert.equal(corrected.deadlineAt, a.deadlineAt);
- const refused = applyFailure(a, first.adapter, initialCall.callId, 'input-too-large', 3500, { now: 3000 });
- assert.equal(refused.timing, a.timing); assert.equal(refused.timing!.primaryChunkCount, 5);
+ const broadSnapshot = toySnapshot(Array.from({ length: 5 }, (_, i) => atom(i, 400)));
+ const broad = prepareDimensionJob(() => toyAdapter(broadSnapshot) as unknown as ReviewAdapter<DimensionResult>, subject, { symbols: [] }, { inputBudgetChars: 4000 } as LLMProvider, { groundingMode: 'degraded', snapshot: broadSnapshot, now: () => 1000 });
+ const broadRoot = createReviewTimingPlan([broad], 1000), broadJob = activateDimensionTiming(broad, broadRoot, 1000);
+ assert.equal(broadJob.plan.single, true);
+ const refused = applyFailure(broadJob, broad.adapter, broadJob.pending[0]!.callId, 'size-refusal', 2000, { now: 3000 });
+ assert.equal(refused.plan.single, false); assert.ok(refused.plan.chunks.length > 1);
+ assert.equal(refused.timing, broadJob.timing); assert.equal(refused.timing!.primaryChunkCount, 1);
  let current = b;
  for (const call of current.pending) current = applyOutput(current, later.adapter, call.callId, { callId: call.callId, answer: { seen: call.carries.atomIds, notes: [{ key: 'parent', text: 'parent evidence' }] } }, 3_000_000);
  assert.equal(current.timing, b.timing);

@@ -183,6 +183,23 @@ test('compactGraphStore with a beforeRename hook that returns false: no rename, 
 	assert.equal(await countOutEdges(), 1_010);
 });
 
+test('compactGraphStore with a beforeRename hook that throws: rejects with the cause, no rename, the compacted copy is removed and the original store reopens with its data', async () => {
+	await getGraphStore();
+	await bulkInsertEdges(5_000);
+	await deleteEdges(0, 4_000);
+	const ino = statSync(lmdbPath).ino;
+	await assert.rejects(
+		() => compactGraphStore({ beforeRename: async () => { throw new Error('the worker channel closed'); } }),
+		(e: unknown) => e instanceof Error && e.name === 'LmdbStoreError' && /the check before the rename failed: the worker channel closed; nothing renamed/.test(e.message),
+	);
+	assert.equal(statSync(lmdbPath).ino, ino, 'graph.lmdb was not renamed or replaced');
+	assert.ok(!existsSync(`${lmdbPath}.compact`), 'the compacted copy is removed');
+	assert.ok(!existsSync(`${lmdbPath}.bak`), 'no backup was made');
+	assert.equal(await countOutEdges(), 1_000);
+	await bulkInsertEdges(10, 1_000_000);
+	assert.equal(await countOutEdges(), 1_010);
+});
+
 test('compactGraphStore with a hook returning true or no hook returns today\'s CompactResult', async () => {
 	await getGraphStore();
 	await bulkInsertEdges(5_000);

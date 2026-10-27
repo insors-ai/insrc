@@ -23883,6 +23883,10 @@
         ],
         [
           "storage-call",
+          "errMessage"
+        ],
+        [
+          "storage-call",
           "finishVerifiedCompaction"
         ],
         [
@@ -23912,6 +23916,10 @@
         [
           "storage-call",
           "fsyncFile"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
         ],
         [
           "storage-call",
@@ -24040,6 +24048,10 @@
         [
           "storage-call",
           "LmdbStoreCorrupted"
+        ],
+        [
+          "storage-call",
+          "LmdbStoreError"
         ],
         [
           "storage-call",
@@ -24466,6 +24478,10 @@
           "rmSync"
         ],
         [
+          "filesystem-write",
+          "rmSync"
+        ],
+        [
           "storage-call",
           "root.childTransaction"
         ],
@@ -24658,9 +24674,9 @@
           "writeSchemaVersion"
         ]
       ],
-      "siteCount": 245,
-      "sitesDigest": "dfd78fc8bda28b800b8e7b1f963a314ef3553b3bd7f71888e47b9eb7368fe63c",
-      "sourceDigest": "5265c6541d7ae0d368c9c649b62a6cd7bd25945d51eaf28e48bd682140d767d7",
+      "siteCount": 249,
+      "sitesDigest": "d553925472efe0c228196e70bf9414e1c960e47fb933cca3f23244ac6970d466",
+      "sourceDigest": "32080f729d88e3ea77c675d809ab2321d5d7ae4f8f2f000a4f410dd372f7e412",
       "boundaries": [
         "diagnostic",
         "filesystem-open",

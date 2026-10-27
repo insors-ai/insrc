@@ -913,11 +913,21 @@ export async function compactGraphStore(opts: { readonly beforeRename?: () => Pr
 		throw new LmdbStoreError(`compact: close failed: ${errMessage(e)}`, e);
 	}
 
-	// Step 2b: the caller's last check before the files change.
-	if (opts.beforeRename !== undefined && !(await opts.beforeRename())) {
-		rmSync(compactPath, { force: true });
-		await getGraphStore();
-		throw new LmdbStoreError('compact: the environment was still open; nothing renamed');
+	// Step 2b: the caller's last check before the files change. Refused, or failing, nothing is
+	// renamed: the copy is removed and the original reopened before the call rejects.
+	if (opts.beforeRename !== undefined) {
+		let proceed: boolean;
+		try { proceed = await opts.beforeRename(); }
+		catch (e) {
+			rmSync(compactPath, { force: true });
+			await getGraphStore();
+			throw new LmdbStoreError(`compact: the check before the rename failed: ${errMessage(e)}; nothing renamed`, e);
+		}
+		if (!proceed) {
+			rmSync(compactPath, { force: true });
+			await getGraphStore();
+			throw new LmdbStoreError('compact: the environment was still open; nothing renamed');
+		}
 	}
 
 	// Step 3: the swap, safe against a crash at any point. The copy is on disk

@@ -70,8 +70,7 @@ import {
 import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient, IndexJob } from '../shared/types.js';
-import { basename } from 'node:path';
-import { requestedAtFor, requestUnindexedFiles, type FreshnessRequests } from './freshness-request.js';
+import { basename, isAbsolute, join } from 'node:path';
 import type { ConfigStore } from '../config/store.js';
 import { applyConfigWrite } from './config-write.js';
 import { getModelRegistry } from './model-registry.js';
@@ -161,7 +160,7 @@ export interface HandlerRuntime {
 export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	const { db, configStore, queue, indexer, startedAt } = deps;
 	/** When codeReview.freshness last asked the queue to index each file (absolute path); read back as requestedAt. */
-	const freshnessRequests: FreshnessRequests = new Map();
+	const freshnessRequests = new Map<string, number>();
 	// Shared session-purge pipeline. Used by `agent.discard`,
 	// `session.delete`, and `session.deleteBulk` so they don't drift.
 	// plans/session-delete.md Phase B.
@@ -621,11 +620,18 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 					const ms = typeof li === 'number' ? li : Date.parse(String(li));
 					return Number.isFinite(ms) ? ms : 0;
 				},
-				requestedAt: (r: string, f: string) => requestedAtFor(freshnessRequests, r, f),
+				requestedAt: (r: string, f: string) => freshnessRequests.get(isAbsolute(f) ? f : join(r, f)),
 				...graphDeps,
 			});
 			// The reply: the FreshnessResult, after the unindexed files were queued and the queue state re-read.
-			return await requestUnindexedFiles(queue, freshnessRequests, repoPath, computed);
+			if (computed.unindexedFiles.length === 0) return computed;
+			for (const file of computed.unindexedFiles) {
+				const filePath = isAbsolute(file) ? file : join(repoPath, file);
+				queue.enqueue({ kind: 'file', filePath, event: 'update' });
+				freshnessRequests.set(filePath, Date.now());
+			}
+			const work = await queue.codeIndexWorkFor(repoPath);
+			return { ...computed, isProcessing: work.inFlight || work.pending > 0, inFlight: work.inFlight, pendingCodeIndexJobs: work.pending };
 		},
 
 		'repo.reindex': async (params) => {

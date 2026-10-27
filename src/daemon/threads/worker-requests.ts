@@ -70,25 +70,36 @@ export function serveRequests(port: Port, unheld: ForwardRequest, opts: ServeReq
 			port.postMessage({ kind: 'complete', requestId } satisfies CompletionEnvelope);
 		}).catch(() => { /* A closed channel owns no delivery target. */ });
 		let ended = false;
+		// A frame that could not be sent ended the stream with an error in its place: later frames
+		// are dropped, and the handler is cancelled (at once, or when forward returns its cancel).
+		let failed = false;
+		let cancel: (() => void) | undefined;
 		const deliver: DeliverEnvelope = (envelope) => {
+			if (failed) return;
 			if (envelope.kind === 'reply') { ended = true; if (!lifetime) inflight.delete(requestId); }
 			else {
 				const stream = (envelope.frame as IpcStreamMessage).stream;
 				if (stream === 'done' || stream === 'error') { ended = true; if (!lifetime) inflight.delete(requestId); }
 			}
-			post(port, envelope, method);
+			if (post(port, envelope, method) || envelope.kind === 'reply' || ended) return;
+			failed = true;
+			ended = true;
+			if (!lifetime) inflight.delete(requestId);
+			cancel?.();
 		};
-		const cancel = forward(lifetime ? { ...msg, lifetime } : msg, deliver);
-		if (lifetime || !ended) inflight.set(requestId, cancel);
+		cancel = forward(lifetime ? { ...msg, lifetime } : msg, deliver);
+		if (failed) cancel();
+		else if (lifetime || !ended) inflight.set(requestId, cancel);
 	};
 	port.on('message', onMessage);
 	return () => port.off('message', onMessage);
 }
 
-/** Send a reply or frame; one that cannot be cloned is replaced by a named error. */
-function post(port: Port, envelope: ReplyEnvelope | FrameEnvelope, method: string): void {
+/** Send a reply or frame; one that cannot be cloned is replaced by a named error (and false is returned). */
+function post(port: Port, envelope: ReplyEnvelope | FrameEnvelope, method: string): boolean {
 	try {
 		port.postMessage(envelope);
+		return true;
 	} catch (err) {
 		const why = err instanceof Error ? err.message : String(err);
 		const error = `the result of ${method} could not be returned: ${why}`;
@@ -96,5 +107,6 @@ function post(port: Port, envelope: ReplyEnvelope | FrameEnvelope, method: strin
 		port.postMessage(envelope.kind === 'reply'
 			? { kind: 'reply', requestId: envelope.requestId, error } satisfies ReplyEnvelope
 			: { kind: 'frame', requestId: envelope.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } } satisfies FrameEnvelope);
+		return false;
 	}
 }

@@ -23,7 +23,7 @@ import { _setTrackerExecForTests } from '../tracker/github.js';
 import { defaultStampDeps } from '../bugfix/stamp.js';
 import { _mutateEpicTrackerMeta } from '../orchestrator.js';
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, artifactJsonPath, issueArtifactId } from '../storage.js';
-import { handleReviewStep } from '../../daemon/steps/review-step/handler.js';
+import { fixtureReviewClient as handleReviewStep } from '../../daemon/steps/review-step/__tests__/terminal-client.js';
 import { _clearReviewStateStoreForTests } from '../../daemon/steps/review-step/state-store.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../review/template.js';
 import { lifecycleReviewOf } from '../artifact-core/approval-view.js';

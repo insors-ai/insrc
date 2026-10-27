@@ -46,7 +46,7 @@ export const GUARDED_ENTRY_POINTS: readonly EntryPoint[] = [
 	{ file: 'src/workflow/gates.ts',                               fn: 'approveArtifactByJsonPath', calls: ['authorizeApproval'], min: 1 },
 	{ file: 'src/workflow/gates.ts',                               fn: 'approveWorkflowTarget',  calls: ['authorizeApproval'], min: 1 },
 	{ file: 'src/workflow/review/resolve.ts',                      fn: 'resolveReviewFinding',   calls: ['authorizeFindingApply'], min: 1 },
-	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts',     fn: 'handleVerdicts',         calls: ['reviewFixModeFor'], min: 1 },
+	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts',     fn: 'persistPremiseVerdicts',         calls: ['reviewFixModeFor'], min: 1 },
 	{ file: 'src/workflow/review/run-artifact.ts',                 fn: 'reviewArtifactFile',     calls: ['reviewFixModeFor'], min: 1 },
 	// handing a stage over: parking reads the holder through the gate, and resuming asks the author gate
 	{ file: 'src/workflow/team/handoff.ts',                        fn: 'parkPlan',               calls: ['readHolder'],      min: 1 },

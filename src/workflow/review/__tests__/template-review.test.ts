@@ -276,13 +276,13 @@ test('T12 a DEF review and an ISSUE review still run extract, probe and verify w
 
 // --- T16 -----------------------------------------------------------------------
 
-test('T16 the first session gets the whole limit, and the limit defaults by intent', async () => {
+test('T16 the first session gets the lesser of its role limit and the single-work-unit budget', async () => {
 	const spec = fakeProvider([answer(SPEC)]);
 	await run(spec);
-	assert.equal(spec.sessions[0]!.deadlineMs, LIMIT.feature, 'a standalone feature design by default');
+	assert.equal(spec.sessions[0]!.deadlineMs, Math.min(LIMIT.feature, 10 * MIN), 'a standalone feature design by default');
 	const issue = fakeProvider([answer(ISSUE)]);
 	await run(issue, { intent: 'issue' });
-	assert.equal(issue.sessions[0]!.deadlineMs, LIMIT.issue);
+	assert.equal(issue.sessions[0]!.deadlineMs, Math.min(LIMIT.issue, 10 * MIN));
 	const epic = fakeProvider([answer(SPEC)]);
 	await run(epic, { deadlineMs: 8 * MIN });
 	assert.equal(epic.sessions[0]!.deadlineMs, 8 * MIN);
@@ -355,8 +355,8 @@ test('a design answering an ISSUE is reviewed once with the ISSUE template and t
 		})]);
 		const res = await reviewFile(d, f);
 		assert.equal(f.sessions.length, 1, 'one session, no second pass');
-		// Real clock: the session gets the ISSUE limit less the moment before it starts, never more.
-		assert.ok(f.sessions[0]!.deadlineMs <= LIMIT.issue && f.sessions[0]!.deadlineMs > LIMIT.issue - 1_000, `${f.sessions[0]!.deadlineMs} of ${LIMIT.issue}`);
+		// Real clock: the role cap is clamped to remaining logical-work time.
+		assert.ok(f.sessions[0]!.deadlineMs <= Math.min(LIMIT.issue, 10 * MIN) && f.sessions[0]!.deadlineMs > Math.min(LIMIT.issue, 10 * MIN) - 1_000, `${f.sessions[0]!.deadlineMs} of ${LIMIT.issue}`);
 		assert.equal(f.sessions[0]!.cwd, d.repo);
 		assert.equal(res.report.template, 'design-issue');
 		assert.equal(res.report.verdict, 'warn');
@@ -389,7 +389,7 @@ test('a design under an Epic gets the SPEC template and the Epic limit; a standa
 			// injected-clock T16 tests pin the exact arithmetic): the session gets the limit
 			// less that moment, never more.
 			const given = f.sessions[0]!.deadlineMs;
-			assert.ok(given <= limit && given > limit - 1_000, `${given} of ${limit}`);
+			assert.ok(given <= Math.min(limit, 10 * MIN) && given > Math.min(limit, 10 * MIN) - 1_000, `${given} of ${limit}`);
 		} finally { d.cleanup(); }
 	}
 });

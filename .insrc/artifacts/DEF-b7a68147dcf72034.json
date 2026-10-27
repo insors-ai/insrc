@@ -28,7 +28,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 5,
         "contentHash": "2b0200a88a1d410f43b8eeb6ec24f6d8497d55d8c3dcb71c33ecc42d17792656",
@@ -63,15 +63,15 @@
         }
       },
       "approval": {
-        "revision": 4,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-26T13:30:33.652Z",
+        "at": "2026-10-27T10:41:37.414Z",
         "override": {
-          "reason": "Daemon review of DEF revision 4 not run: the revision 3 review timed out after 90 minutes with no result. The only content change in revision 4 is the new section 6.10 for Story s10, split out of s7 on the user's decision on 2026-10-26; its premises (src/workflow/tracker/github.ts and its callers, src/cli/services/workflow.ts, src/workflow/team/signoff.ts) were checked by hand against the code. Approved by the user."
+          "reason": "Revision 5 only aligns Story s7 with its narrowing, per docs/plans/tool-registry.md and the user's decision of 2026-10-27; no other section changed; written by hand because the define workflow has no revise path, integrity check ok. Daemon review not run. Approved by the user."
         }
       }
     },

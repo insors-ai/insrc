@@ -86,7 +86,7 @@ function connect(store: LocalStepStateStore): () => { worker: Worker; ask: (m: R
 	return () => {
 		const { port1: main, port2: workerPort } = new MessageChannel();
 		serveHub(main, stepStateHubHandlers(store));
-		const worker = new Worker(join(HERE, 'helpers', 'step-state-worker.ts'), { workerData: { port: workerPort }, transferList: [workerPort] });
+		const worker = new Worker(join(HERE, 'helpers', 'step-state-worker-bootstrap.mjs'), { workerData: { port: workerPort }, transferList: [workerPort] });
 		const inbox: Record<string, unknown>[] = [];
 		const waiting: ((m: Record<string, unknown>) => void)[] = [];
 		worker.on('message', (m: Record<string, unknown>) => { const w = waiting.shift(); if (w !== undefined) w(m); else inbox.push(m); });
@@ -156,4 +156,74 @@ test('step state minted in one worker is read in another after the first exits',
 	} finally {
 		await second.worker.terminate();
 	}
+});
+
+test('atomic review claim commit generation recovery receipt and pinned-capacity invariants', async () => {
+	let now = 1000;
+	const store = new LocalStepStateStore(() => now);
+	for (const kind of ['review', 'code-review'] as const) {
+		const token = await store.mintReviewState(kind, { source: ['original'] }, { generation: 0, callId: 'call-1' });
+		const access = { kind, token, generation: 0, callId: 'call-1', owner: 'owner-1' };
+		const r = await store.claimReviewState<{ source: string[] }>(access);
+		assert.equal(r.status, 'claimed'); if (r.status !== 'claimed') throw new Error('expected claim');
+		r.payload.source.push('mutated');
+		assert.deepEqual((await store.read<{ source: string[] }>(kind, token))!.payload.source, ['original']);
+		await assert.rejects(store.claimReviewState({ ...access, owner: 'owner-2' }), /busy/);
+		await assert.rejects(store.commitReviewState({ ...r.claim, owner: 'owner-2' }, { status: 'completed', receipt: { status: 'completed', callId: 'call-1' } }), /owner-mismatch/);
+		await assert.rejects(store.release(kind, token), /invalid/);
+		await assert.rejects(store.releaseReviewClaim(r.claim, false as true), /uncertain/);
+		await assert.rejects(store.claimReviewState(access), /busy/);
+		await store.releaseReviewClaim(r.claim, true); // validation failed before any write
+		const retry = await store.claimReviewState(access);
+		if (retry.status !== 'claimed') throw new Error('expected retry');
+		await assert.rejects(store.releaseReviewClaim(r.claim, true), /owner-mismatch/);
+		const next = await store.commitReviewState(retry.claim, { status: 'pending', callId: 'call-2', payload: { source: 'next' } });
+		assert.equal(next.generation, 1);
+		assert.equal(next.token === token, kind === 'review');
+		await assert.rejects(store.claimReviewState(access), /stale/);
+		const final = await store.claimReviewState({ ...access, token: next.token, generation: 1, callId: 'call-2' });
+		if (final.status !== 'claimed') throw new Error('expected final');
+		// Clone failure has a proven no-write outcome; claim stays exclusive until explicitly released.
+		await assert.rejects(store.commitReviewState(final.claim, { status: 'pending', callId: 'bad', payload: { f: () => 1 } }));
+		await assert.rejects(store.claimReviewState({ ...access, token: next.token, generation: 1, callId: 'call-2' }), /busy/);
+		const receipt = { status: 'completed' as const, callId: 'call-2', artifactId: 'CR-abc-s1', runId: 'cr-1' };
+		await assert.rejects(store.commitReviewState(final.claim, { status: 'completed', receipt: { ...receipt, runId: 'x'.repeat(257) } }), /invalid/);
+		const completed = await store.commitReviewState(final.claim, { status: 'completed', receipt });
+		assert.equal(completed.generation, 2);
+		assert.deepEqual(await store.claimReviewState({ ...access, token: next.token, generation: 1, callId: 'call-2', owner: 'other' }), { status: 'completed', receipt });
+		await assert.rejects(store.commitReviewState(final.claim, { status: 'completed', receipt }), /owner-mismatch/);
+		assert.equal((await store.read(kind, next.token))!.payload, undefined, 'receipt retains no source');
+	}
+	const uncertain = await store.mintReviewState('review', {}, { generation: 0, callId: 'uncertain' });
+	const access = { kind: 'review' as const, token: uncertain, generation: 0, callId: 'uncertain', owner: 'lost' };
+	const claimed = await store.claimReviewState(access); if (claimed.status !== 'claimed') throw new Error('expected claim');
+	await store.invalidateReviewOwner('lost'); // ambiguous write or owner loss, never retry automatically
+	await assert.rejects(store.claimReviewState(access), /uncertain/);
+	await assert.rejects(store.commitReviewState(claimed.claim, { status: 'pending', callId: 'late', payload: {} }), /uncertain/);
+	const unrelated = await store.mintReviewState('review', {}, { generation: 0, callId: 'unrelated' });
+	assert.equal((await store.claimReviewState({ ...access, token: unrelated, callId: 'unrelated', owner: 'independent' })).status, 'claimed');
+	const pinned = new LocalStepStateStore(() => now);
+	for (let i = 0; i < 100; i++) {
+		const token = await pinned.mintReviewState('review', { i }, { generation: 0, callId: `c-${i}` });
+		await pinned.claimReviewState({ kind: 'review', token, generation: 0, callId: `c-${i}`, owner: 'live' });
+	}
+	now += 2 * HOUR;
+	await assert.rejects(pinned.mint('review', {}), /capacity/);
+	assert.equal(pinned.listLocal('review').length, 100, 'TTL never sweeps pinned work');
+	await pinned.invalidateReviewOwner('live');
+	await pinned.mintReviewState('review', {}, { generation: 0, callId: 'after-loss' });
+	assert.equal(await pinned.sizeForTests('review'), 100, 'uncertain tombstones stay bounded');
+	const receipts = new LocalStepStateStore(() => now);
+	let first: string | undefined;
+	for (let i = 0; i < 101; i++) {
+		const token = await receipts.mintReviewState('review', {}, { generation: 0, callId: `r-${i}` }); first ??= token;
+		const r = await receipts.claimReviewState({ kind: 'review', token, generation: 0, callId: `r-${i}`, owner: 'o' });
+		if (r.status !== 'claimed') throw new Error('expected claim');
+		await receipts.commitReviewState(r.claim, { status: 'completed', receipt: { status: 'completed', callId: `r-${i}` } });
+		now++;
+	}
+	assert.equal(await receipts.sizeForTests('review'), 100);
+	assert.equal(await receipts.read('review', first!), undefined);
+	now += 2 * HOUR; await receipts.mint('review', {});
+	assert.equal(await receipts.sizeForTests('review'), 1, 'receipts expire under existing TTL');
 });

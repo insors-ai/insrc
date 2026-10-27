@@ -1,8 +1,8 @@
 {
   "task": "t3",
   "tests": {
-    "total": 27,
-    "passed": 27,
+    "total": 29,
+    "passed": 29,
     "failed": 0,
     "skipped": 0,
     "log": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task03-reader-tests.txt"
@@ -12,5 +12,10 @@
   },
   "behavior": "Public tool limits unchanged. Review reader retries complete exact-path diffs per file, increasing capture up to64MiB then refuses explicitly. Injected incomplete/truncated/missing text refuses before grounding. Real3MiB single-line evidence retained through final marker.",
   "fullSweep": "Deferred until all implementation tasks complete",
-  "pending": "Daemon build validation"
+  "pending": "Daemon revalidation of corrected task3",
+  "initialDaemonValidation": {
+    "passed": false,
+    "reason": "Header-only/partial hunks and missing earlier per-unit sections were not validated. Initial typecheck also saw a concurrent todos-rpc.ts error outside task source; current rerun passes."
+  },
+  "correction": "Validate each source capture before combination: declared old/new hunk ranges and total numstat insertions/deletions, metadata-only changes, and reject unflagged missing/partial units. Preserve trailing diff context rather than trimEnd."
 }

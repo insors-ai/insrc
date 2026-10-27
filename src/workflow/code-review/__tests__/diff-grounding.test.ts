@@ -228,8 +228,8 @@ test('a base and globs: the RANGE is read first, then the working tree, both wit
 
 test("a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope", async () => {
 	const r = recordingDeps({
-		range: () => ({ files: [fileStat('src/story.ts', 'modified', 2, 1)], body: diffBody('src/story.ts'), truncated: false, storyPaths: ['src/story.ts'] }),
-		working: () => ({ files: [fileStat('src/story.ts', 'modified', 3, 0), fileStat('src/wip.ts')], body: diffBody('src/wip.ts', 'src/story.ts'), truncated: false }),
+		range: () => ({ files: [fileStat('src/story.ts')], body: diffBody('src/story.ts'), truncated: false, storyPaths: ['src/story.ts'] }),
+		working: () => ({ files: [fileStat('src/story.ts'), fileStat('src/wip.ts')], body: diffBody('src/wip.ts', 'src/story.ts'), truncated: false }),
 	});
 	const res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS });
 	assert.deepEqual(res.changedFiles, ['src/story.ts']);
@@ -436,9 +436,9 @@ test('without hunksByFile buildDiffSymbols splits the body as before', async () 
 	// With hunksByFile, the map wins over the body.
 	const withMap: DiffGroundingDeps = {
 		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
-		rangeDiff:       async () => ({ files: [fileStat('src/a.ts')], body: diffBody('src/a.ts'), truncated: false, hunksByFile: new Map([['src/a.ts', 'FROM-THE-MAP']]) }),
+		rangeDiff:       async () => ({ files: [fileStat('src/a.ts')], body: diffBody('src/a.ts'), truncated: false, hunksByFile: new Map([['src/a.ts', diffBody('src/a.ts').replace('+new src/a.ts', '+FROM-THE-MAP')]]) }),
 	};
-	assert.equal(sigOf(await assembleDiffCodeReviewGrounding('/repo', withMap, BASE), 'src/a.ts'), 'FROM-THE-MAP');
+	assert.match(sigOf(await assembleDiffCodeReviewGrounding('/repo', withMap, BASE), 'src/a.ts'), /\+FROM-THE-MAP/);
 });
 
 test('the range diff applies the exclusions to every per-unit call', async () => {
@@ -466,13 +466,7 @@ test('a truncated per-unit call marks the grounding truncated and a storyChangeS
 		units: [{ kind: 'commit', ref: 'c1', from: 'p1', to: 'c1', paths: ['shared.txt'] }],
 		sharedPaths: ['shared.txt'], foldedPaths: [],
 	};
-	const out = await storyRangeDiff('/repo', 'base', set, undefined, async () => ({ files: [fileStat('shared.txt')], body: diffBody('shared.txt'), truncated: true }));
-	assert.equal(out.truncated, true);
-	const deps: DiffGroundingDeps = {
-		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
-		rangeDiff:       async () => out,
-	};
-	await assert.rejects(assembleDiffCodeReviewGrounding('/repo', deps, { base: 'base' }), /Incomplete diff capture/);
+	await assert.rejects(storyRangeDiff('/repo', 'base', set, undefined, async () => ({ files: [fileStat('shared.txt')], body: diffBody('shared.txt'), truncated: true })), /Incomplete diff capture/);
 
 	// An unresolvable base: the real rangeDiff raises DiffUnavailableError, and
 	// so does the assembler; nothing steps down to the last commit (ISSUE-b97752e9).
@@ -516,4 +510,30 @@ test('DIFF-READER: a real file larger than the public tool hard cap is recovered
 		assert.ok(signature.includes(`+${payload.trimEnd()}`), 'entire giant line, including its final marker, is retained');
 		assert.ok(!signature.includes('truncated') && !signature.includes('[no hunk text'));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence', async () => {
+	for (const body of [
+		'diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts',
+		'diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-old',
+		diffBody('a.ts') + '\n+undeclared extra line',
+	]) {
+		const { deps } = fakeDeps({ range: { files: [fileStat('a.ts')], body, truncated: false } });
+		await assert.rejects(assembleDiffCodeReviewGrounding('/repo', deps, BASE), /Incomplete unified hunks/);
+	}
+	const { deps } = fakeDeps({ range: { files: [fileStat('a.ts', 'modified', 2, 2)], body: diffBody('a.ts'), truncated: false } });
+	await assert.rejects(assembleDiffCodeReviewGrounding('/repo', deps, BASE), /Incomplete unified hunks/, 'a whole omitted hunk cannot hide behind a complete first hunk');
+});
+
+test('DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file', async () => {
+	const set: StoryChangeSet = { paths: ['a.ts'], sharedPaths: ['a.ts'], foldedPaths: [], units: [
+		{ kind: 'commit', ref: 'c1', from: 'p1', to: 'c1', paths: ['a.ts'] },
+		{ kind: 'commit', ref: 'c2', from: 'c1', to: 'c2', paths: ['a.ts'] },
+	] };
+	let calls = 0;
+	await assert.rejects(storyRangeDiff('/repo', 'base', set, undefined, async () => {
+		calls++;
+		return { files: [fileStat('a.ts')], body: calls === 1 ? '' : diffBody('a.ts'), truncated: false };
+	}), /Missing complete diff evidence/);
+	assert.equal(calls, 1, 'the first incomplete unit is refused before another can overwrite it');
 });

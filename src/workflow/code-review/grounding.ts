@@ -254,6 +254,44 @@ export interface DiffGroundingResult {
 	readonly excludedFromScope?: readonly string[] | undefined;
 }
 
+/** Validate every file and every declared unified hunk before captures are combined. */
+export function assertCompleteDiff(diff: DiffResult): void {
+	if (diff.truncated) throw new DiffUnavailableError('Incomplete diff capture: complete evidence is required before review');
+	const sections = diff.hunksByFile ?? splitDiffByFile(diff.body);
+	for (const file of diff.files) {
+		if (file.change === 'binary') continue;
+		const text = sections.get(file.path) ?? sections.get(file.origPath ?? '');
+		if (!text) throw new DiffUnavailableError(`Missing complete diff evidence for ${file.path}`);
+		let old = 0, next = 0, adds = 0, removes = 0, hunks = 0, headerZone = true;
+		const bad = (): never => { throw new DiffUnavailableError(`Incomplete unified hunks for ${file.path}`); };
+		for (const line of text.split('\n')) {
+			if (line.startsWith('diff --git ')) { if (old !== 0 || next !== 0) bad(); headerZone = true; continue; }
+			const header = /^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@/.exec(line);
+			if (header !== null) {
+				if (old !== 0 || next !== 0) bad();
+				old = header[1] === undefined ? 1 : Number(header[1]); next = header[2] === undefined ? 1 : Number(header[2]); hunks++; headerZone = false;
+				if (!Number.isSafeInteger(old) || !Number.isSafeInteger(next)) bad();
+				continue;
+			}
+			if (line.startsWith('\\ No newline at end of file')) continue;
+			if (old === 0 && next === 0) { if (!headerZone && /^[ +\-]/.test(line)) bad(); continue; }
+			if (line.startsWith('+')) { next--; adds++; }
+			else if (line.startsWith('-')) { old--; removes++; }
+			else if (line.startsWith(' ')) { old--; next--; }
+			else bad();
+			if (old < 0 || next < 0) bad();
+		}
+		if (old !== 0 || next !== 0 || adds !== file.insertions || removes !== file.deletions) bad();
+		if (hunks === 0) {
+			const metadataOnly = (/^old mode /m.test(text) && /^new mode /m.test(text))
+				|| (/^rename from /m.test(text) && /^rename to /m.test(text))
+				|| (/^copy from /m.test(text) && /^copy to /m.test(text))
+				|| /^(new file mode|deleted file mode) /m.test(text);
+			if (!metadataOnly) bad();
+		}
+	}
+}
+
 /**
  * Assemble the diff-only (degraded) grounding for the Story's changed set.
  * Read-only. The Story's commits since its range base decide the set
@@ -286,14 +324,8 @@ export async function assembleDiffCodeReviewGrounding(
 	const storyPaths = new Set(ranged.storyPaths ?? ranged.files.map(f => f.path));
 	const rangedHunks = ranged.hunksByFile ?? splitDiffByFile(ranged.body);
 	const workingHunks = working.hunksByFile ?? splitDiffByFile(working.body);
-	if (ranged.truncated || working.truncated) throw new DiffUnavailableError('Incomplete diff capture: complete evidence is required before review');
-	for (const [diff, sections] of [[ranged, rangedHunks], [working, workingHunks]] as const) {
-		for (const file of diff.files) {
-			if (file.change !== 'binary' && !(sections.get(file.path) ?? sections.get(file.origPath ?? ''))) {
-				throw new DiffUnavailableError(`Missing complete diff evidence for ${file.path}`);
-			}
-		}
-	}
+	assertCompleteDiff(ranged);
+	assertCompleteDiff(working);
 	const stats = new Map<string, GitDiffFileStat>();
 	const hunks = new Map<string, string>();
 	for (const f of ranged.files) {
@@ -359,7 +391,7 @@ export function splitDiffByFile(body: string): Map<string, string> {
 		const path = diffHeaderNewPath(section.slice(0, section.indexOf('\n') >= 0 ? section.indexOf('\n') : section.length));
 		if (path) {
 			const prior = map.get(path);
-			map.set(path, prior === undefined ? section.trimEnd() : `${prior}\n${section.trimEnd()}`);
+			map.set(path, prior === undefined ? section.replace(/\n$/, '') : `${prior}\n${section.replace(/\n$/, '')}`);
 		}
 	}
 	return map;
@@ -491,6 +523,7 @@ export async function storyRangeDiff(
 	const stats = new Map<string, GitDiffFileStat>();
 	let truncated = false;
 	const collect = (d: DiffResult): void => {
+		assertCompleteDiff(d);
 		truncated ||= d.truncated;
 		const split = splitDiffByFile(d.body);
 		for (const f of d.files) {

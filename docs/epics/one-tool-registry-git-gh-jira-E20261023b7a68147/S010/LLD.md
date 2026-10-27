@@ -518,6 +518,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Update s9 after s10 lands — User decision: s10 lands first. _(2026-10-27T14:46:37.184Z)_
 - `qf9c81a27` — A tool lacking a field a wrapper returns is fixed inside this Story only when no other Story owns that tool; otherwise it is a back-flow. Known now: gh_pr_view lacks the review fields (extended here).
   - **resolved**: Targeted extension _(2026-10-27T14:47:31.998Z)_
+- `q22f76c0e` — gh_pr_view is extended additively here (jsonFields allowlist) because readSignoffState needs mergedAt, reviewDecision and reviews; the owner of s5 can object, in which case the field list moves to a back-flow before the build.
+  - **resolved**: Extend gh_pr_view in s10 _(2026-10-27T14:48:26.968Z)_
 
 ## Citations
 

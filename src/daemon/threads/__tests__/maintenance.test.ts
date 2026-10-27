@@ -62,6 +62,25 @@ import type { StartedWorker } from '../workers.js';
 // ---------------------------------------------------------------------------
 
 describe('unit', () => {
+	test('with idleMs 0, a non-admin request in flight or a busy lane still means not idle: tick does not compact', async () => {
+		let lanesIdle = true;
+		let compactions = 0;
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			now: () => 1_000, lanesIdle: () => lanesIdle, healthy: () => true,
+			reclaimable: () => ({ fileBytes: 100, reclaimableBytes: 50, reclaimablePct: 50 }),
+			workers: { live: () => [], created: () => 0 },
+			compact: async () => { compactions++; return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 }; },
+		});
+		const end = c.requestArrived('session.list', 'session');
+		assert.equal(await c.tick(), 'not-idle', 'a request in flight');
+		end();
+		lanesIdle = false;
+		assert.equal(await c.tick(), 'not-idle', 'a busy lane');
+		assert.equal(compactions, 0);
+		await c.stop();
+	});
+
 	test('maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does', async () => {
 		let clock = 1_000;
 		let lanesIdle = true;

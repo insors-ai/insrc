@@ -117,14 +117,20 @@ export class MaintenanceController {
 
 	/** How long the daemon has been idle (0 while a non-admin request runs or a lane is busy). */
 	idleForMs(): number {
-		if (this.inFlight > 0 || !this.deps.lanesIdle()) return 0;
+		if (this.busy()) return 0;
 		return this.now() - this.lastActivity;
+	}
+
+	/** A non-admin request runs or a lane is busy (so not idle, whatever idleMs is configured). */
+	private busy(): boolean {
+		return this.inFlight > 0 || !this.deps.lanesIdle();
 	}
 
 	/** Check now whether to run idle maintenance, and run it if so. */
 	async tick(): Promise<TickOutcome> {
 		if (this.stopped) return 'not-idle';
 		if (this.running !== undefined) return 'running';
+		if (this.busy()) return 'not-idle';
 		const idleMs = this.idleForMs();
 		if (idleMs < this.deps.config.idleMs) return 'not-idle';
 		if (!this.deps.healthy()) {

@@ -15653,7 +15653,7 @@
       ],
       "siteCount": 14,
       "sitesDigest": "7b30c9ebca0497eeb929dd61b2062c0223fbfc1d30adcfb6c0de1445fc658c57",
-      "sourceDigest": "b63586a9ce056264c2fdd83e1e0317285056e14cbdbc0549fbaf03d33280b570",
+      "sourceDigest": "dffcf6c3aea9ceff46e9d80bbed8e6a935e81e7255dede5bc17bebb7ceb42e7b",
       "boundaries": [
         "diagnostic",
         "storage-call",
@@ -31279,6 +31279,26 @@
         "diagnostic",
         "serialization",
         "unresolved-call"
+      ]
+    },
+    "src/shared/locks/maintenance-lock.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "Shared maintenance-lock helper (shared lock request wrappers) is not an authorization boundary; its only boundary sites are a diagnostic logger warning while background work waits for maintenance.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "48fcfea2d80fdf5d456ce7c509c417400be1b46ca5f0a520b54a15b4d75b73a4",
+      "sourceDigest": "d28caf037dedcb2b326bf4febe64953d3178e4d72f5214f44392991c885ada65",
+      "boundaries": [
+        "diagnostic"
       ]
     },
     "src/shared/logger.ts": {

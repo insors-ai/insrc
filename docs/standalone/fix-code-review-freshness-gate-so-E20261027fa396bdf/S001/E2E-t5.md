@@ -1,6 +1,8 @@
 # s1/t5 live check (builder-reported, 2026-10-27)
 
-**Setup.** The shared daemon (pid 2316252) runs from `~/.insrc/daemon`, a checkout synced from GitHub origin, so restarting it would not load these unpushed commits. A second daemon was started from this working tree (HEAD ae156482d plus another session's uncommitted edits, `node --import tsx/esm src/daemon/index.ts`) under an isolated `HOME=/tmp/s1-home` (own socket and store). A temp repo `/tmp/s1-repo` (`src/base.ts`) was added with `repo.add` and left until idle. Each check polled `codeReview.freshness` (repo `/tmp/s1-repo`, epic `fa396bdf197b8e8b`, story `s1`) every second until the file was not stale. The temp daemon and both temp directories were removed afterwards.
+Second run, on the rebuilt compiled daemon; the first run (same replies) used the tsx source entry.
+
+**Setup.** The shared daemon (pid 2316252) runs from `~/.insrc/daemon`, a checkout synced from GitHub origin, so restarting it would not load these unpushed commits. The daemon was rebuilt with `npm run build` (tsc, typecheck:tools, forbidden-spawn scan, assets; all succeeded; `out/indexer/watcher.js` contains `adoptDirectory`) and a second daemon was started from the compiled entry, `node out/daemon/index.js`, of this working tree (HEAD d7f628c1e's code plus another session's uncommitted edits) under an isolated `HOME=/tmp/s1-home` (own socket and store). A temp repo `/tmp/s1-repo` (`src/base.ts`) was added with `repo.add` and left until idle. Each check polled `codeReview.freshness` (repo `/tmp/s1-repo`, epic `fa396bdf197b8e8b`, story `s1`) every second until the file was not stale. The temp daemon and both temp directories were removed afterwards.
 
 **Idle baseline** (6 polls, 10 s apart, `changedFiles: ["src/base.ts"]`), each reply:
 `{"isProcessing": false, "inFlight": false, "pendingCodeIndexJobs": 0, "staleFiles": [], "unindexedFiles": []}`

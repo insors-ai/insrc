@@ -64,7 +64,7 @@ Git, GitHub and Jira are reached in two unrelated ways. The daemon offers agents
 
 **s7:**
 
-- **E20261023b7a68147:S007:FR001** — The list of replaced call sites is recorded and each one is covered by a test that runs through the registry.
+- **E20261023b7a68147:S007:FR001** — The tools and checks the later call-site moves rely on exist and each is covered by a test: the tracker family, the four new git tools, the validated caller on tools.call and the scan.
 
 ## 3. Non-goals
 
@@ -196,11 +196,11 @@ Agents and workflows can read and change Jira issues, move them through their wo
 - **ac5:** Given the user has a CLI other than acli for Jira, when a Jira tool is invoked, then it does not use that CLI.
 - **ac6:** Given an operation that acli does not offer, when the registry's Jira tools are listed, then it is absent and is named as unsupported instead of being approximated.
 
-### 6.7 STORY-b7a68147dcf72034-s7 — Move every direct git and gh call onto the registry and remove the old paths
+### 6.7 STORY-b7a68147dcf72034-s7 — Give workflow calls the registry's rules and add the tools and checks the call-site moves build on
 
-**User value:** `size: XL`
+**User value:** `size: L`
 
-The workflow, the daemon and the terminal client's approval service follow the same rules as agents, and no backend code path can run git or gh around them.
+A call made by the workflow or the daemon follows the same hook, approval, cancellation and result rules as an agent's, and the tools and the scan that Stories s9 and s10 need to move every direct git and gh call exist before they start.
 
 **Depends on:** `s1`, `s2`, `s3`, `s4`, `s5`
 
@@ -208,12 +208,11 @@ The workflow, the daemon and the terminal client's approval service follow the s
 
 **Acceptance criteria:**
 
-- **ac1:** Given each place in the workflow library, the daemon and the terminal client's approval service that runs git or gh itself today, when the change is complete, then it performs the operation by calling a registry tool through the executor. _(operationalizes `k6`)_
-- **ac2:** Given the old runGit, commitAndPushArtifacts and github.ts shell-outs, when the change is complete, then they no longer exist and a check fails the build if a new direct git or gh call appears in the backend outside the registry. _(operationalizes `k6`)_
-- **ac3:** Given a workflow stage that pushes, signs off or hands over, when it runs after the change, then it produces the same artifacts, commits and tracker records as before.
-- **ac4:** Given a rule registered on a tool, when a workflow call to that tool succeeds, then the rule runs as it does for an agent call. _(operationalizes `k4`)_
-- **ac5:** Given a workflow call to a destructive tool with no client attached, when the approval request expires, then the workflow stage fails with the denial reported and does not continue. _(operationalizes `k5`)_
-- **ac6:** Given the list of call sites taken from a complete search of the backend source, when the change is complete, then every site on the list has moved, and the list is kept with the change so none is missed. _(operationalizes `k6`)_
+- **ac1:** Given a rule registered on a tool, when a workflow call to that tool succeeds, then the rule runs as it does for an agent call. _(operationalizes `k4`)_
+- **ac2:** Given a workflow call to a destructive tool with no client attached, when the approval request expires, then the workflow stage fails with the denial reported and does not continue. _(operationalizes `k5`)_
+- **ac3:** Given a tool call whose abort signal fires before its tool starts, when the executor reaches the tool, then it rechecks the signal first and starts nothing that was aborted; the git tools the team policy refresh uses carry the signal and the remaining time, and the cat-file tool takes an optional time limit that can only be lowered (1 to 30000 ms).
+- **ac4:** Given the gh calls of src/workflow/tracker/github.ts and the git commands config, ls-remote, update-ref and rm, when the registry's tools are listed, then each is reachable through a named, typed tool (the tracker family has fixed endpoints and raw gh api stays excluded), and the git and gh tools are checked as typed when the project is built.
+- **ac5:** Given a request to run a tool through tools.call, and the code of the backend outside the registry, when the request names its caller, and the build runs, then the request accepts only the callers agent, daemon and workflow, and the build lists every direct git or gh spawn, wrapper call and direct builtin execute call outside the registry, in report mode.
 
 ### 6.8 STORY-b7a68147dcf72034-s8 — Reach the rest of git through named, typed tools
 

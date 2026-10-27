@@ -1,0 +1,46 @@
+{
+  "issue": "ISSUE-5384820ac9eb0fd3",
+  "lld": "LLD-34798d209cf97413-S001",
+  "status": "proposed extension; not covered by the third-round design PASS",
+  "userRequirement": "The time budget should be10 minutes times the number of chunks, including larger reviews rather than a fixed20-minute maximum.",
+  "millisecondsPerChunk": 600000,
+  "counting": {
+    "perReviewJob": "N=max(1, initially planned primary review chunks). A complete single-call job counts as one chunk.",
+    "wholeCodeReview": "Sum the planned primary chunk counts/budgets across its model-dimension jobs; expose the per-dimension breakdown and total in progress metadata.",
+    "notNewChunks": [
+      "retries",
+      "correction attempts",
+      "replacement subchunks from size-refusal redivision",
+      "gather/reduction/duplicate-comparison calls"
+    ],
+    "reason": "These calls consume the original budget; they do not restart or inflate the clock."
+  },
+  "budget": {
+    "formula": "jobBudgetMs=600000*N; reviewBudgetMs=sum(jobBudgetMs)",
+    "start": "Use one captured start time per admitted review/job and a fixed deadline; planning/preparation time after admission and all execution/gather time consume it. Freshness admission is separate.",
+    "perCall": "At dispatch use the lesser of the per-call allowance and remaining job/review time; apply the deadline to structured calls as well as reviewer-session calls.",
+    "examplesMinutes": {
+      "1chunk": 10,
+      "5chunks": 50,
+      "20chunks": 200
+    },
+    "validation": "Reject invalid/non-finite/unsafe chunk counts or arithmetic; honor deadlines without native timer overflow or resetting on heartbeat."
+  },
+  "waitingAndStalls": {
+    "currentCodeReviewIdleMs": 1200000,
+    "currentCodeReviewDefaultCeilingMs": 14400000,
+    "meaning": "The current20-minute setting is an idle-progress watchdog, not the whole-run ceiling. Keep healthy-progress/stall detection separate from the new chunk-derived total.",
+    "outerWait": "Propagate prepared chunk count, budget and remaining time to daemon/client waiters. Fixed20/30-minute or4-hour caps must not silently cut a healthy review short when its derived budget is larger.",
+    "hostTransport": "A tools/call request was observed timing out after300s while the daemon later completed. If the host cap cannot track the derived deadline, use bounded resumable status/continuation on the same review job, rather than duplicate model work or abandoning the final result.",
+    "cancellation": "User cancellation stops the existing job; status polling must never launch a second independent review."
+  },
+  "acceptance": [
+    "At N=1,5,20 the planned budgets are10,50,200 minutes.",
+    "A fake clock proves timeout exactly at the derived deadline, and each call receives only remaining time.",
+    "Retry, redivision and gather do not reset or extend the original deadline.",
+    "A healthy multi-chunk review may run past20 minutes within its calculated total; stalled progress remains independently detectable.",
+    "Outer wait/continuation survives a short host timeout without starting duplicate reviews and returns the actual recorded result.",
+    "The128K complete-call input cap and independent/degraded review semantics remain unchanged."
+  ],
+  "reviewGate": "The original design completed three rounds and passed. This new timing extension needs a newly authorized review cycle before it can be included in the approved implementation contract."
+}

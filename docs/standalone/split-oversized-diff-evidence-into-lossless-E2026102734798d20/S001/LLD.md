@@ -475,3 +475,21 @@ Model JSON parent containers and entry identities explicitly, with source coordi
 - **[[c15]]** `code` `src/workflow/review-pipeline/job.ts:108-131` — "enterStage currently accepts singleCalls when they fit; fragmented parent obligations need an explicit force-chunk selection contract."
 - **[[c16]]** `prior-artifact` `docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-round2.json`
 - **[[c17]]** `prior-artifact` `docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round3.json` — "Current companion render evidence after canonical third-round regeneration."
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 12 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-27T05:34:49.876Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

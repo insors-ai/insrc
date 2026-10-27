@@ -117,6 +117,13 @@
         "status": "resolved",
         "choice": "Keep the stated split",
         "resolvedAt": "2026-10-27T14:42:09.048Z"
+      },
+      "qd5acbe72": {
+        "question": "ac5 scope transfer: the DEF criteria that delete the old paths and run the scan in failing mode were moved to s9 by DEF revision 6 (approved 2026-10-27, user decision 'option 1'); this LLD relies on that approved revision, and docs/plans/tool-registry.md is updated to record it as settled.",
+        "status": "resolved",
+        "choice": "Honor the approved transfer",
+        "rationale": "User decision, DEF revision 6.",
+        "resolvedAt": "2026-10-27T14:43:53.674Z"
       }
     }
   },

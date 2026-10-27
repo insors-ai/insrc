@@ -510,6 +510,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Resolve names during planning — Each test maps to an existing file or a named new file. _(2026-10-27T14:40:12.116Z)_
 - `qf649066e` — src/workflow/tracker/attach.ts:55 and the signoff commit-and-push are taken by s10; the three runGit calls in src/workflow/team/signoff.ts stay with s9.
   - **resolved**: Keep the stated split _(2026-10-27T14:42:09.048Z)_
+- `qd5acbe72` — ac5 scope transfer: the DEF criteria that delete the old paths and run the scan in failing mode were moved to s9 by DEF revision 6 (approved 2026-10-27, user decision 'option 1'); this LLD relies on that approved revision, and docs/plans/tool-registry.md is updated to record it as settled.
+  - **resolved**: Honor the approved transfer — User decision, DEF revision 6. _(2026-10-27T14:43:53.674Z)_
 
 ## Citations
 

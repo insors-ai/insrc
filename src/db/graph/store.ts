@@ -943,8 +943,14 @@ export async function compactGraphStore(opts: { readonly beforeRename?: () => Pr
 		if (existsSync(lockPath)) rmSync(lockPath, { force: true });
 	} catch (e) {
 		if (e instanceof SimulatedCrash) throw e;
-		// The store name still holds the original or the copy; the next open sorts out the rest.
-		throw new LmdbStoreError(`compact: the swap failed: ${errMessage(e)}`, e);
+		// The store name still holds the original or the copy: reopen now, which checks it against
+		// the manifest (restoring the original where needed), so the store is open again before
+		// maintenance releases its lock and requests are accepted.
+		const swapError = new LmdbStoreError(`compact: the swap failed: ${errMessage(e)}`, e);
+		try { await getGraphStore(); } catch (reopen) {
+			throw new LmdbStoreError(`${swapError.message}; reopening the store also failed: ${errMessage(reopen)}`, e);
+		}
+		throw swapError;
 	}
 
 	// Step 4: re-open the env at the original path; the open checks the copy
@@ -1027,19 +1033,28 @@ interface CompactionManifest {
 /** Where compaction stops as if the process were killed there (tests only). */
 export type CompactionCrashPoint = 'before-swap' | 'after-manifest' | 'after-link' | 'after-rename';
 let _crashAt: CompactionCrashPoint | undefined;
+/** Tests only: at the crash point, fail with an ordinary error (a failed filesystem call) instead of a simulated crash. */
+let _failInstead = false;
 
 /** Thrown at the simulated crash point: nothing after it runs, so the files are as a kill -9 there leaves them. */
 export class SimulatedCrash extends Error {
 	constructor(readonly point: CompactionCrashPoint) { super(`simulated crash at ${point}`); }
 }
 
-/** Tests only: make the next compaction stop at `point`, leaving the files as a crash there would. */
-export function setCompactionCrashPointForTests(point: CompactionCrashPoint | undefined): void {
+/**
+ * Tests only: make the next compaction stop at `point`, leaving the files as a crash there
+ * would; with `fail`, it fails there with an ordinary error instead (a failed filesystem call).
+ */
+export function setCompactionCrashPointForTests(point: CompactionCrashPoint | undefined, opts: { readonly fail?: boolean } = {}): void {
 	_crashAt = point;
+	_failInstead = opts.fail === true;
 }
 
 function crashPoint(point: CompactionCrashPoint): void {
-	if (_crashAt === point) { _crashAt = undefined; throw new SimulatedCrash(point); }
+	if (_crashAt !== point) return;
+	_crashAt = undefined;
+	if (_failInstead) { _failInstead = false; throw new Error(`simulated failure at ${point}`); }
+	throw new SimulatedCrash(point);
 }
 
 /** The outcome of the last check of a swapped-in copy on open (read by compactGraphStore). */

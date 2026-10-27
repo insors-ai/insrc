@@ -143,6 +143,8 @@ test('daemon.status, repo.list, debug-status, config.show, config.catalog and gu
 	await until(indexPassRunning, 'the indexing pass');
 	const txn = holdWriteTxn(20_000);
 	await txn.open;
+	let txnClosed = false;
+	void txn.done.then(() => { txnClosed = true; });
 
 	const p99: Record<string, number> = {};
 	for (const [method, params] of ADMIN_METHODS) {
@@ -157,6 +159,7 @@ test('daemon.status, repo.list, debug-status, config.show, config.catalog and gu
 		p99[method] = times[Math.ceil(0.99 * times.length) - 1]!;
 	}
 	assert.ok(indexPassRunning(), 'the indexing pass was still running after the measurements');
+	assert.equal(txnClosed, false, 'the other worker\'s write transaction was open for every measurement');
 	for (const [method, ms] of Object.entries(p99)) assert.ok(ms <= 100, `${method}: p99 ${ms.toFixed(1)} ms (all: ${JSON.stringify(p99)})`);
 	await txn.done;
 });

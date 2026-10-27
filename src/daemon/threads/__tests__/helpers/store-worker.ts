@@ -101,9 +101,10 @@ parentPort!.on('message', async (m: Op) => {
 		} else if (m.op === 'hold-write-txn') {
 			// An LMDB write transaction kept open for `ms` (this thread is blocked meanwhile).
 			const s = await getGraphStore();
-			parentPort!.postMessage({ op: m.op, started: true });
 			s.root.transactionSync(() => {
 				s.meta.put('held-write-txn', Buffer.from([1]));
+				// Inside the transaction: it is open (holding LMDB's writer lock) when this is reported.
+				parentPort!.postMessage({ op: m.op, started: true });
 				const end = Date.now() + m.ms;
 				while (Date.now() < end) { /* the transaction stays open */ }
 			});

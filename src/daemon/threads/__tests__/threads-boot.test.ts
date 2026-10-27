@@ -92,9 +92,9 @@ test("SIGTERM during an indexing pass: workers stop, the queue drains, the main 
 				await new Promise(r => setTimeout(r, 10));
 			}
 			process.kill(daemon.pid, 'SIGTERM');
-			const killer = setTimeout(() => process.kill(daemon.pid, 'SIGKILL'), 30_000);
-			assert.equal(await daemon.exited, 0, 'the daemon exited cleanly after SIGTERM');
-			clearTimeout(killer);
+			const killer = setTimeout(() => { if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL'); }, 30_000);
+			try { assert.equal(await daemon.exited, 0, 'the daemon exited cleanly after SIGTERM'); }
+			finally { clearTimeout(killer); }
 		} finally {
 			if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL');
 		}
@@ -137,9 +137,9 @@ test('daemon.shutdown during maintenance is refused with the activity and reason
 			await assert.rejects(rpc(daemon.sock, 'daemon.shutdown'), /^Error: daemon busy: compaction since \S+ \(0 min idle, [0-9.]+% \/ [0-9]+ MB reclaimable\); retry later$/);
 			assert.equal(alive(daemon.pid), true, 'still running: the shutdown request was refused');
 			process.kill(daemon.pid, 'SIGTERM');
-			const killer = setTimeout(() => process.kill(daemon.pid, 'SIGKILL'), 30_000);
-			assert.equal(await daemon.exited, 0, 'a clean exit after the compaction');
-			clearTimeout(killer);
+			const killer = setTimeout(() => { if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL'); }, 30_000);
+			try { assert.equal(await daemon.exited, 0, 'a clean exit after the compaction'); }
+			finally { clearTimeout(killer); }
 		} finally {
 			if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL');
 		}

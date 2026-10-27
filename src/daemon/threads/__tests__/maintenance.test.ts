@@ -115,7 +115,13 @@ describe('unit', () => {
 		lanesIdle = false;
 		assert.equal(c.idleForMs(), 0, 'a busy lane');
 		assert.equal(await c.tick(), 'not-idle');
+		// Lane work that outlasts idleMs: when it ends, idle starts again from the last time it was seen busy.
+		clock += 120_000;
+		assert.equal(await c.tick(), 'not-idle');
 		lanesIdle = true;
+		assert.equal(c.idleForMs(), 0, 'the busy lane restarted the idle window');
+		assert.equal(await c.tick(), 'not-idle');
+		clock += 60_000;
 		assert.equal(await c.tick(), 'below-threshold');
 		assert.equal(reclaimableAsked.length, 2);
 		// Never while the store is not healthy.

@@ -121,9 +121,15 @@ export class MaintenanceController {
 		return this.now() - this.lastActivity;
 	}
 
-	/** A non-admin request runs or a lane is busy (so not idle, whatever idleMs is configured). */
+	/**
+	 * A non-admin request runs or a lane is busy (so not idle, whatever idleMs is configured).
+	 * Busy lane work is activity: the idle window starts again when it is seen.
+	 */
 	private busy(): boolean {
-		return this.inFlight > 0 || !this.deps.lanesIdle();
+		if (this.inFlight > 0) return true;
+		if (this.deps.lanesIdle()) return false;
+		this.lastActivity = this.now();
+		return true;
 	}
 
 	/** Check now whether to run idle maintenance, and run it if so. */

@@ -28,7 +28,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 6,
         "contentHash": "c3a5665c38a38a64754ab19e95ac8acb582215e672a58a8486f420e670156661",
@@ -63,15 +63,15 @@
         }
       },
       "approval": {
-        "revision": 5,
+        "revision": 6,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-27T10:41:37.414Z",
+        "at": "2026-10-27T13:21:36.194Z",
         "override": {
-          "reason": "Revision 5 only aligns Story s7 with its narrowing, per docs/plans/tool-registry.md and the user's decision of 2026-10-27; no other section changed; written by hand because the define workflow has no revise path, integrity check ok. Daemon review not run. Approved by the user."
+          "reason": "Revision 6 reorders s10 and s9 at the user's decision of 2026-10-27, moves the deletions and the failing scan to s9, and widens s10's terminal-client criterion to team.ts and the other services; written by hand because the define workflow has no revise path, integrity check ok. Daemon review not run. Approved by the user."
         }
       }
     },

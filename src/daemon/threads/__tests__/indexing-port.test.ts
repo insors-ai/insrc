@@ -111,6 +111,19 @@ test("codeReview.freshness on the main thread gets the code-indexing worker's co
 	assert.equal(result.isProcessing, work.inFlight || work.pending > 0);
 });
 
+test("the main thread's depthForRepo asks the code-indexing worker's queue", async () => {
+	portCalls.length = 0;
+	assert.equal(await port.depthForRepo(REPO), 0, 'nothing queued for the indexed fixture');
+	const asked = portCalls.filter(c => c.method === INDEXING_PORT.depthForRepo);
+	assert.equal(asked.length, 1, 'one request to the worker');
+	assert.equal(asked[0]!.result, 0);
+	// repo.stats through the main thread's tables reads the same answer.
+	const stats = await main.rpcHandlers['repo.stats']!({ repoPath: REPO }) as { pendingJobs?: number } | { error: string };
+	assert.equal('error' in stats ? stats.error : undefined, undefined);
+	assert.equal((stats as { pendingJobs: number }).pendingJobs, 0);
+	assert.ok(portCalls.filter(c => c.method === INDEXING_PORT.depthForRepo).length >= 2, 'repo.stats asked the worker too');
+});
+
 test('a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker', async () => {
 	const client = createInDaemonClient(main.rpcHandlers, main.streamHandlers, {
 		route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) },

@@ -124,7 +124,7 @@ export interface RuntimeQueue {
 	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } };
 	enqueue(job: IndexJob): void;
 	codeIndexWorkFor(repoPath: string): CodeIndexWork | Promise<CodeIndexWork>;
-	depthForRepo(repoPath: string): number;
+	depthForRepo(repoPath: string): number | Promise<number>;
 }
 
 /** What the handlers use of the indexer. */
@@ -372,7 +372,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { repoPath } = (params ?? {}) as { repoPath?: unknown };
 			const repos = await listRepos(db);
 			const store = await getGraphStore();
-			const all = await withCompleteness(collectRepoStats(store, repos, queue), s => s.repoPath);
+			const all = await withCompleteness(await collectRepoStats(store, repos, queue), s => s.repoPath);
 			if (typeof repoPath === 'string' && repoPath.length > 0) {
 				const one = all.find(s => s.repoPath === repoPath);
 				return one ?? { error: `repo.stats: ${repoPath} is not a registered repo` };

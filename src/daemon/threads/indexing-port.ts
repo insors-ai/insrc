@@ -67,9 +67,9 @@ export class IndexingPortClient implements RuntimeQueue, RuntimeIndexer {
 		return await this.request(INDEXING_PORT.codeIndexWorkFor, { repoPath }) as CodeIndexWork;
 	}
 
-	/** repo.stats, its only caller, runs on the code-indexing worker against the real queue. */
-	depthForRepo(_repoPath: string): number {
-		throw new Error('depthForRepo is answered on the code-indexing worker; ask it with INDEXING_PORT.depthForRepo');
+	/** The repository's queued jobs, answered by the code-indexing worker's queue. */
+	async depthForRepo(repoPath: string): Promise<number> {
+		return await this.request(INDEXING_PORT.depthForRepo, { repoPath }) as number;
 	}
 
 	async addRepo(repoPath: string): Promise<void> { await this.request(INDEXING_PORT.addRepo, { repoPath }); }

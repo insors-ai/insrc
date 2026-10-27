@@ -1,0 +1,177 @@
+{
+  "review": {
+    "artifact": "design.story",
+    "stage": "design.story",
+    "verdict": "block",
+    "findings": [
+      {
+        "claimId": "coverage-of-intent.1",
+        "ref": "coverage-of-intent",
+        "item": "coverage-of-intent",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design covers the filed defect and subsequent chunk-derived timing requirement while preserving the stated non-goals.",
+        "evidence": "ISSUE.md requires complete attributable evidence, the configured input limit, independent degraded review, preservation of S003 evidence/release state, and an actual reproduction retry. time-budget-proposal.json requires 600000 ms per initially planned primary chunk, fixed deadlines and resumable ownership. These requirements have corresponding contracts and tests in the LLD; implementation gaps are identified below. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E202610265384820a/ISSUE.md, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/time-budget-proposal.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+        "action": "Retain these requirements when correcting the affected contracts.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "current-behaviour.1",
+        "ref": "current-behaviour",
+        "item": "current-behaviour",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Current diff grounding produces one indivisible row per file, including explicit degraded evidence markers.",
+        "evidence": "buildDiffSymbols maps diff.files to entityId `diff:${f.path}`, places hunks in signature, sets empty caller/callee/test arrays and coverageEligible:false, and appends '[diff truncated \u2014 reviewed over a bounded slice]'. codeReviewMaterial serializes each row into one atom. The existing truncation test explicitly asserts that a bounded slice remains reviewable. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts]",
+        "action": "Preserve binary attribution and degraded coverage while replacing the explicitly identified truncated-review behavior.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "current-behaviour.2",
+        "ref": "current-behaviour",
+        "item": "current-behaviour",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Complete-call schema accounting, structured deadlines and detached review ownership are additions to the current implementation.",
+        "evidence": "promptChars accepts messages only. withDeadline filters pending calls to execution.mode === 'reviewer-session'; nextCalls likewise bypasses deadline enforcement without such calls. codeReviewRunStart forwards its request signal to the runner, and the in-daemon client's cancellation aborts the inner handler. These bodies substantiate the design's baseline. The analyzer returned incomplete graph coverage, so these conclusions use direct source inspection. [files: src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/daemon-client.ts]",
+        "action": "Keep bounded-input enforcement and timed-operation behavior explicitly scoped as proposed changes.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "new-versus-reuse.1",
+        "ref": "new-versus-reuse",
+        "item": "new-versus-reuse",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Existing keyed notes, reduction and obligation gathering provide the proposed parent-adjudication foundation, but parent-note validation and forced chunk selection are new.",
+        "evidence": "chunkNotesFrom extracts optional keyed notes; startGather collects them and requests each material obligation; requestNoteCall reduces oversized evidence. Quality's current schema requires only ['findings','descriptions'], and relationCall returns [] unless a matching 'calls' relation exists. enterStage currently accepts fitting singleCalls, while commit gathers only when !plan.single. The proposed parent-note requirements and requiresChunking flag address real missing behavior. [files: src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/code-review.ts]",
+        "action": "Implement the new validation and selection contracts before relying on the reused gather machinery.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "new-versus-reuse.2",
+        "ref": "new-versus-reuse",
+        "item": "new-versus-reuse",
+        "kind": "semantic",
+        "severity": "MED",
+        "premise": "Sparse sibling relations and parent gather are sufficient to avoid quadratic fragment-pair work in quality review.",
+        "evidence": "The LLD promises to 'avoid new quadratic fragment-pair generation'. However, modelDimensionAdapter always adds compareStage and pairStage for quality. compareStage takes every described atom in later chunks, without checking parent identity or relations; compareCalls uses `firsts.flatMap(a => seconds.map(b => compareCall(a, b, execution)))`. Fragmenting one file therefore introduces cross-chunk sibling comparisons independently of sparse material connectivity, with potentially quadratic comparison work and candidates. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+        "action": "Specify parent-aware duplicate handling and its change sites. Define how sibling fragments avoid inappropriate symbol-pair expansion while retaining intended duplication coverage, and extend DIFF-SCALE to exercise these stages.",
+        "fixability": "manual",
+        "outcome": "does-not-hold"
+      },
+      {
+        "claimId": "change-sites.1",
+        "ref": "change-sites",
+        "item": "change-sites",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The adapter-factory budget change has five production model callers and two deterministic callers.",
+        "evidence": "Direct search and inspection confirm runDimensionJob calls in adherence, conventions, coverage, quality, functional-coverage, UX and diagram. The five model callers currently invoke modelDimensionAdapter without a limit argument. runDimensionJob currently calls build(snapshot) and independently passes reviewLimitChars() to createReviewJob. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/ux/index.ts, src/workflow/code-review/dimensions/diagram/index.ts]",
+        "action": "Apply the authoritative-limit callback change across all seven callers as specified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "change-sites.2",
+        "ref": "change-sites",
+        "item": "change-sites",
+        "kind": "semantic",
+        "severity": "HIGH",
+        "premise": "The resumable-operation inventory includes the transport contracts required to carry start/status/cancel requests and pending replies.",
+        "evidence": "Both socket and in-daemon clients use src/shared/review-stream.ts. Its codeReviewRequestParams explicitly reconstructs the request using only epicHash, storyId, repo, client, groundingMode and fallbackReason, so operation/reviewHandle would be discarded. CodeReviewStreamResult requires runId and artifact, and StepDaemonClient.codeReviewStream promises that final-only result. The listed src/mcp/daemon-client.ts does not exist; the real client is src/daemon/steps/daemon-client.ts. Leaving these contracts unchanged breaks the proposed pending/status path. [files: src/shared/review-stream.ts, src/daemon/steps/daemon-client.ts, src/mcp/daemon-stream.ts, src/daemon/steps/code-review-step/handler.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+        "action": "Add the shared request serializer, discriminated control-result types and real in-daemon client to the design inventory. Specify pending-versus-final handling for both transports and their callers.",
+        "fixability": "manual",
+        "outcome": "does-not-hold"
+      },
+      {
+        "claimId": "data-compatibility.1",
+        "ref": "data-compatibility",
+        "item": "data-compatibility",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Optional fragment provenance and optional execution flags can preserve existing graph rows and avoid a persistent database migration.",
+        "evidence": "ChangedSymbolSummary is an application grounding type, and codeReviewMaterial embeds its serialized row in runtime ReviewMaterial. ReviewPipelineJob holds its snapshot as serializable job data; code-review step state is held in memory through the shared store. The proposed fields need not alter LMDB/Lance entity storage or existing graph entity IDs. The design explicitly restarts old whole-file jobs instead of rewriting their snapshots. [files: src/workflow/code-review/types.ts, src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/daemon/steps/code-review-step/state-store.ts, src/daemon/threads/step-state.ts]",
+        "action": "Preserve absent-field defaults and make old-job restart behavior explicit in implementation and regression coverage.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "data-compatibility.2",
+        "ref": "data-compatibility",
+        "item": "data-compatibility",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The necessary parent/fragment relationships and the linked evidence-flow diagram are documented adequately.",
+        "evidence": "Sections 3.1 and 3.4 specify file-to-fragments ownership as 1:N, fragment-to-parent as exactly one, parent-to-obligation as 1:1, ordered ranges and legacy compatibility. I inspected the structured sequence definition, generated HTML and saved timing-cycle screenshot. The HTML SHA256 matches its render record, d9fc110705667abe489678f215e30f5d89fc40ecc05d23d7bd6261b076309c19; the six participants and nine messages are readable. This verifies the saved static render, not a fresh browser run or interactive controls. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle1.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle1.png]",
+        "action": "Retain the relationship prose. Adding operation/waiter lifelines would help explain the timing extension, but is optional given the existing ownership prose.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "boundaries.1",
+        "ref": "boundaries",
+        "item": "boundaries",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The standalone correction extends existing shared surfaces without replacing the established review architecture.",
+        "evidence": "Artifact metadata records standalone:true and sizeClass:'bugfix'. The existing pipeline HLD establishes indivisible atoms, serial calls, adapter-owned gather and optional execution contracts. Pre-partitioning diff evidence into atoms and adding optional adapter/execution fields fit those extension points. The LLD retains CLI-owned OAuth, independent reviewer routing and separate design-review timing semantics rather than introducing another runner or REST provider. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/types.ts, src/shared/types.ts, src/daemon/code-review-rpc.ts]",
+        "action": "Keep additions scoped to the documented bounded/timed route and preserve defaults for unrelated shared-contract consumers.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "error-paths.1",
+        "ref": "error-paths",
+        "item": "error-paths",
+        "kind": "semantic",
+        "severity": "HIGH",
+        "premise": "Existing redivision can recover whenever a divisible diff fragment exceeds a lower effective limit or a reduced refusal budget.",
+        "evidence": "planChunks treats each atom as indivisible and executes `if (alone > hard) throw new AtomTooLargeError(...)`. job.redivide only repacks the same atom IDs. Meanwhile buildDiffSymbols accepts only DiffResult, before runDimensionJob computes the provider-aware effective limit. An allowed 16384-character span cannot fit a 12000-character cap even when smaller source spans would fit; existing redivision cannot repair that. The LLD specifies no budget-aware partitioning or provenance-preserving fragment subdivision seam. [files: src/workflow/review-pipeline/prepare.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/limit.ts, src/workflow/code-review/grounding.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+        "action": "Define how initial fragments fit the authoritative complete-call budget and how a refused singleton diff fragment is handled without losing evidence or violating snapshot/provenance and frozen timing counts. Add a regression where fixed context fits but a permitted fragment does not.",
+        "fixability": "manual",
+        "outcome": "does-not-hold"
+      },
+      {
+        "claimId": "error-paths.2",
+        "ref": "error-paths",
+        "item": "error-paths",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design explicitly detects unsupported bounded execution, incomplete parent evidence and late/cancelled results before publishing completion.",
+        "evidence": "The proposed contracts require advertised boundedStructuredInput support, terminal unsupported-bounded-input handling, exact per-fragment note ownership and complete parent coverage. They also require pre/post-call and final-publication deadline checks plus owned shutdown. These are necessary extensions: driver.classify currently treats unrecognized errors as transient, gather has a generic NO_EVIDENCE branch, and runner finalization currently lacks a last signal/deadline check. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/code-review/runner.ts, src/shared/process-group.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+        "action": "Implement the stated terminal-error distinction, provenance checks and publication checks; do not rely on the current generic behavior.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "tests.1",
+        "ref": "tests",
+        "item": "tests",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "All six acceptance labels map to concrete proposed tests using suitable existing testing seams.",
+        "evidence": "The acceptanceMapping covers ac1 through ac6 with named span, budget, gather, compatibility, reproduction and timing/resumption subjects. Existing diff-grounding tests inject DiffGroundingDeps; pipeline tests drive real adapters/jobs; long-review.test.ts uses a fake clock through the step, in-daemon client, RPC and runner. The plan explicitly replaces truncated-slice success assertions and distinguishes the actual runtime smoke test from scripted providers. This verifies test design and mapping, not future test results. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts, src/daemon/steps/code-review-step/__tests__/long-review.test.ts, src/daemon/steps/__tests__/in-daemon-client.test.ts]",
+        "action": "Retain the mapping and extend DIFF-SCALE, DIFF-COMPAT and DIFF-WAIT-RESUME for the specific gaps above. Report the real S003 smoke as pending until approved runtime activation permits it.",
+        "fixability": "manual",
+        "outcome": "holds"
+      }
+    ],
+    "counts": {
+      "high": 2,
+      "med": 1,
+      "low": 10,
+      "unverified": 0
+    },
+    "template": "design-spec",
+    "reviewedAt": "2026-10-27T06:05:20.333Z",
+    "model": "cli-codex:gpt-6.1-sol",
+    "reviewedBy": "daemon"
+  },
+  "hostResult": "MCP tools/call timed out at300s; daemon continued and stamped this independent review.",
+  "cycleRound": 2
+}

@@ -25,168 +25,7 @@
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
-    "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design covers the filed correction intent, including complete attributable evidence, bounded calls, independent degraded review and the actual S003 retry.",
-          "evidence": "The approved ISSUE requires retaining every changed entry, preserving the configured limit and independent degraded review, keeping S003 inventory contents and release state intact, and retrying S003. Sections 2 and 5–7 address these requirements. The blocker record confirms the 443605/384000 and 1838027/600000 failures, restoredReviewChunkTokens:128000 and releaseEnabled:false. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E202610265384820a/ISSUE.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-review-blocker.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
-          "action": "Retain these constraints through implementation and record the actual smoke outcome, including any runtime activation blocker.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Current diff grounding produces one indivisible review row per file, and current prompt measurement omits the supplied output schema.",
-          "evidence": "buildDiffSymbols maps diff.files to rows with entityId `diff:${f.path}` and signature `hunks + truncNote`. codeReviewMaterial serializes each complete row into one atom. promptChars accepts only messages and counts their content, role headings and separators; it never receives the schema. prepare.planChunks throws AtomTooLargeError when one atom's rendered call exceeds hard. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/prepare.ts]",
-          "action": "Implement fragmentation before atom construction and include enveloped schemas in every relevant measurement.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Quality currently lacks parent obligations and evidence notes, and the existing single-call fast path bypasses gather.",
-          "evidence": "qualitySpec supplies no obligations. Its chunk schema requires findings/descriptions, while chunkNotesFrom reads an optional notes array. enterStage accepts fitting singleCalls; commit starts gather only when `!next.plan.single`. codeReviewGather.relationCall returns no calls unless a matching 'calls' relation exists. The proposed parent obligations, mandatory notes and requiresChunking flag address these actual gaps. [files: src/workflow/code-review/dimensions/quality.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/job.ts]",
-          "action": "Keep the explicit forced planning route and the below-limit fragmented-file regression.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing serial job, keyed notes, reduction provenance and gather interfaces provide the proposed reuse points.",
-          "evidence": "runReviewJob sends only calls[0] and awaits it, passing internalRetry:false. GatherPlan already exposes notesFrom, reduceCall, obligationCall, validation and merge. startGather extracts keyed notes; reductions retain carried atom IDs and record source note IDs in noteProvenance. Parent completeness validation is correctly described as an addition rather than existing behavior. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts]",
-          "action": "Reuse these interfaces while adding parent coverage validation before adjudication and preserving terminal failure semantics.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Bounded isolated structured execution requires new provider enforcement; ordinary structured completion does not already guarantee it.",
-          "evidence": "ProviderCapabilities and StructuredCompletionOpts contain neither boundedStructuredInput nor boundedInput. CliProvider's current structured branches serialize messages and invoke ordinary CLI arguments. Its Codex branch writes codexStrictSchema(schema), so the supplied schema can expand before dispatch. The design explicitly adds capability admission, isolation verification and normalized pre-spawn measurement. [files: src/shared/types.ts, src/agent/providers/cli-provider.ts, src/agent/providers/structured-output.ts, src/workflow/review-pipeline/driver.ts]",
-          "action": "Verify actual CLI isolation support before advertising enforcement, and keep unsupported admission terminal as specified.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The authoritative budget callback change identifies all seven production runDimensionJob callers and distinguishes the five adapters that capture budgets.",
-          "evidence": "Direct source search confirms callers in adherence, conventions, coverage, quality, functional-coverage, UX and diagram. The first five construct modelDimensionAdapter; UX and diagram construct deterministicDimensionAdapter. Currently runDimensionJob calls build(snapshot), then independently passes reviewLimitChars() to createReviewJob, while modelDimensionAdapter independently defaults its own limit. The proposed second argument closes this divergence. Analyzer caller results were incomplete and were supplemented by direct search. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/ux/index.ts, src/workflow/code-review/dimensions/diagram/index.ts]",
-          "action": "Forward the identical effective value through all five model factories and cover both deterministic callers as specified.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The complete-input change inventory covers the production measurement helpers, dispatch boundary and transport declarations.",
-          "evidence": "Production promptChars calls occur in job.ts and the gather/duplicate adapters, matching the inventory. job.issue creates the actual envelope schema, driver.send constructs StructuredCompletionOpts, and CliProvider normalizes the Codex schema before spawning. The design names these sites plus shared option/capability declarations and persisted ExecutionMode intent. [files: src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/types.ts, src/shared/types.ts, src/agent/providers/cli-provider.ts]",
-          "action": "Update each helper to measure its actual enveloped schema and retain the provider guard after normalization.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Optional fragment metadata can preserve legacy graph rows and public review results without rewriting persistent domain data.",
-          "evidence": "ChangedSymbolSummary is a grounding DTO with optional coverage fields; ReviewMaterial serializes its rows without allocating source entities. Diff rows already have coverageEligible:false, and prepareCoverageGrounding returns no symbols for degraded mode. The proposed fields describe evidence ownership, retain original file identity and leave DimensionResult unchanged. Migration explicitly restarts old whole-file jobs instead of rewriting their snapshots. [files: src/workflow/code-review/types.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/review-pipeline/types.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
-          "action": "Keep absent-metadata behavior explicit and enforce the documented fresh-job requirement during rollout.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design preserves independent daemon review, Story scope, degraded verdict limits and CLI-owned cloud access.",
-          "evidence": "code-review-rpc rejects daemon-authored builds before provider construction, stamps reviewedBy:'daemon', scopes degraded subjects to diff.changedFiles and passes capVerdictAtWarn:true. runner awaits judges serially and validates the resulting artifact before writing. The design retains these entry points and uses LLMProvider/CliProvider rather than introducing REST access or changing the release gate. [files: src/daemon/code-review-rpc.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/author.ts, src/agent/providers/cli-provider.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
-          "action": "Retain these entry-point protections and result filters when integrating the new material.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.2",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The changed evidence relationships and interaction boundary are adequately documented, with a consistent generated sequence companion.",
-          "evidence": "The prose specifies parent-to-fragments ownership and order, contiguous half-open ranges, parent-to-obligation cardinality and legacy compatibility. The stored sequenceDefinition matches the generated HTML's six participants and nine messages. I inspected sequence-render-round3.png: the sequence is visible and consistent with those messages. Both HTML and screenshot SHA-256 values match the render record. This verifies the saved render; interactive pan/zoom was not exercised. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round3.png]",
-          "action": "Maintain the definition and generated companion together. The prose adequately describes the relationships; an additional ERD or UX mock is unnecessary.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design states detectable failures and handling for incomplete evidence, integrity errors, oversized calls, unsupported transport and unfinished review work.",
-          "evidence": "The git reader exposes truncation and rejects incomplete numstat; grounding currently emits missing-hunk/truncation markers. Pipeline size refusals trigger redivision, semantic failures trigger validation, and runner exceptions prevent review writes. The design explicitly changes truncated evidence to recover-or-stop, requires complete parent provenance, forbids dropping oversized repair instructions and makes unsupported transport terminal. These additions address current behavior: driver.classify treats unknown errors as transient, and applyFailure can omit an oversized correction. [files: src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/job.ts, src/workflow/code-review/runner.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
-          "action": "Implement the stated terminal admission and repair-overflow handling explicitly; preserve failure before artifact creation.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The acceptance mapping covers the correction intent and the newly introduced contracts using available test seams.",
-          "evidence": "The mapping covers partition/coordinates/integrity/reader behavior, complete budgets and transport admission, serial fragment coverage and parent adjudication, compatibility, factory limit propagation, forced chunking and the actual S003 retry. Existing tests provide injectable DiffGroundingDeps, real jobs with scripted structured answers and fake CLI schema capture. DIFF-READER explicitly replaces the legacy assertion 'a bounded slice is still reviewable, not an error'. This verifies the proposed mapping and available seams, not execution of future tests. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts, src/workflow/review-pipeline/__tests__/code-review-divided.test.ts, src/agent/providers/__tests__/cli-codex-strict-schema.test.ts, src/agent/providers/__tests__/input-budget.test.ts]",
-          "action": "Implement the named regressions, including cross-fragment parent findings and zero-call unsupported admission; record smoke execution separately from deterministic tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-27T05:34:49.876Z",
-      "model": "cli-codex:gpt-6.1-sol",
-      "reviewedBy": "daemon"
-    }
+    "authoredBy": "controller"
   },
   "body": {
     "hldContextSlice": {
@@ -205,12 +44,12 @@
     },
     "summary": {
       "audience": "technical",
-      "prose": "Large diff files become ordered, attributable review spans that feed the existing serial chunk and gather pipeline. Every diff-review call stays within128000 estimated input tokens, including its envelopes, schema, context, carried notes/history and repair instructions. The daemon still reviews controller-authored code, and diff-only results retain their degraded coverage limit."
+      "prose": "Large diff files become ordered, attributable review spans that feed the existing serial chunk and gather pipeline. Every diff-review call stays within128000 estimated input tokens, including its envelopes, schema, context, carried notes/history and repair instructions. The daemon still reviews controller-authored code, and diff-only results retain their degraded coverage limit. The code-review time budget is 10 minutes per initially planned primary model-review chunk, aggregated across serial dimensions. Retries, repairs, redivision and gather consume that fixed allowance; bounded status waits resume the same daemon-owned operation."
     },
     "contractDetails": {
       "summary": {
         "audience": "technical",
-        "prose": "Large diff files become ordered, attributable review spans that feed the existing serial chunk and gather pipeline. Every diff-review call stays within128000 estimated input tokens, including its envelopes, schema, context, carried notes/history and repair instructions. The daemon still reviews controller-authored code, and diff-only results retain their degraded coverage limit."
+        "prose": "Large diff files become ordered, attributable review spans that feed the existing serial chunk and gather pipeline. Every diff-review call stays within128000 estimated input tokens, including its envelopes, schema, context, carried notes/history and repair instructions. The daemon still reviews controller-authored code, and diff-only results retain their degraded coverage limit. The code-review time budget is 10 minutes per initially planned primary model-review chunk, aggregated across serial dimensions. Retries, repairs, redivision and gather consume that fixed allowance; bounded status waits resume the same daemon-owned operation."
       },
       "surfaceLevel": "internal-shared",
       "api": [
@@ -242,7 +81,8 @@
             "Parent file -> ordered fragments is one-to-many; each fragment belongs to exactly one parent. Text ranges partition the captured diff with no gaps/overlap, and concatenation reproduces it exactly.",
             "Use a conservative16Ki-character maximum raw span, preferring complete diff lines; a longer line uses Unicode-safe continuation spans with exact offsets. Repeated bounded header/context metadata is separate from the original evidence ranges.",
             "Deduplicate changedFiles in first-seen order; findings retain the original file path and old/new line/column or explicit diff-offset coordinates.",
-            "Existing truncation/missing-hunk markers remain honest; fragmenting never changes incomplete input into complete evidence."
+            "Existing truncation/missing-hunk markers remain honest; fragmenting never changes incomplete input into complete evidence.",
+            "The 16Ki raw spans are staging maxima, not guaranteed final atoms. Before job preparation a dimension-specific fitDiffMaterial seam partitions these spans further using its authoritative effective cap and actual enveloped chunk schema/context; see budget-aware material contract. Original captured parent text/digests remain immutable."
           ]
         },
         {
@@ -416,7 +256,8 @@
             "Recheck complete size immediately before every provider submission; no LLM calls run in parallel.",
             "A retry includes only explicitly rendered bounded repair/history content; if it cannot fit, redivide/reduce or fail without stamping a completed review.",
             "Provider/system protocol overhead is conservatively accounted at the existing application input-estimation boundary; do not claim exact native-token counting. Any extra application-controlled CLI instructions/schema are included or disabled.",
-            "The driver receives the same effective job.plan.limitChars chosen at job creation and sends boundedInput:{maxInputChars:job.plan.limitChars,contextMode:isolated-structured} for every bounded chunk/gather/reduction/repair call. Unsupported-bounded-input is terminal, not a transient retry."
+            "The driver receives the same effective job.plan.limitChars chosen at job creation and sends boundedInput:{maxInputChars:job.plan.limitChars,contextMode:isolated-structured} for every bounded chunk/gather/reduction/repair call. Unsupported-bounded-input is terminal, not a transient retry.",
+            "Timed code-review calls use the immutable primary-chunk deadline for structured and reviewer-session execution. Retries/gather/redivision do not extend time; reject late results and cancel outstanding work."
           ]
         },
         {
@@ -470,7 +311,9 @@
           "postconditions": [
             "For degraded diff mode compute effectiveLimitChars=min(reviewLimitChars(),384000,provider.inputBudgetChars when defined). Pass this identical value into adapter creation and createJob, so job.plan.limitChars is the authoritative cap.",
             "All model/gather calls in a degraded diff job use structured execution with optional inputContext:isolated. The driver maps that execution marker and job.plan.limitChars to the shared boundedInput option. Other execution modes preserve defaults.",
-            "Invoke build(snapshot,effectiveLimitChars). Update adherence, conventions, coverage, quality and functional-coverage factories to pass that exact second argument as modelDimensionAdapter's limitChars, instead of taking its independent default. Its duplicate planning, gather note caps and createJob all receive this identical value. The UX/diagram deterministic factories may ignore the additional callback argument because they capture no separate adapter budget; their job still uses the effective cap."
+            "Invoke build(snapshot,effectiveLimitChars). Update adherence, conventions, coverage, quality and functional-coverage factories to pass that exact second argument as modelDimensionAdapter's limitChars, instead of taking its independent default. Its duplicate planning, gather note caps and createJob all receive this identical value. The UX/diagram deterministic factories may ignore the additional callback argument because they capture no separate adapter budget; their job still uses the effective cap.",
+            "When called by the prepared runner, consume the identical prepared job/adapter and activated timing context instead of constructing a second job. The compatibility wrapper prepares and executes once for direct callers; it also derives the same per-job budget.",
+            "Before initial prepare, use fitDiffMaterial to make each final diff atom fit the actual complete call; freeze timing counts only after that measured partition. Provider refusal may create a controlled descendant material revision under the unchanged initial timing plan."
           ]
         },
         {
@@ -681,6 +524,79 @@
             "src/workflow/review-pipeline/code-review.ts:154",
             "src/workflow/review-pipeline/job.ts"
           ]
+        },
+        {
+          "entity": "Prepared serial code-review timing plan",
+          "change": "field-add",
+          "details": "Add PreparedDimensionReview containing the exact immutable snapshot, adapter and prepared ReviewPipelineJob, plus dimension and primaryChunkCount. JudgeSlot gains prepare(subject,grounding,provider,ctx):PreparedDimensionReview and execute(prepared,provider,ctx):Promise<DimensionResult>; production model slots use this seam. Refactor runDimensionJob into reusable prepareDimensionJob/executeDimensionJob, retaining its wrapper for direct callers. All five model factories share their existing spec and effective-limit callback; never prepare by executing a judge or returning fake empty findings. Prepare every effective dimension serially before the first LLM call, then execute the exact prepared jobs serially. Deterministic UX/diagram slots declare zero model chunks. For each model dimension N=max(1, initial planned primary chunks); a fitting single-call plan counts one. Freeze counts and initial primary IDs before execution. Whole-review chunkCount=sum(N) across effective model dimensions; the all-deterministic case uses an operational minimum of one. budgetMs=600000*chunkCount, with per-dimension breakdown. IDs are dimension-qualified; no double-count of the same job. Validate finite safe positive integer arithmetic. Preparation after admission counts in the root elapsed budget; index freshness admission precedes this clock. Root startedAt is captured before grounding/preparation and root deadline is startedAt+budgetMs after planning. During preparation retain the idle/stall watchdog, then reject if elapsed already exhausts the derived deadline. Planning makes no LLM calls. The immutable source snapshot and initial timing count cannot change at dispatch. Controlled provenance-preserving descendant repartition after refusal is allowed as specified below; it does not change the frozen timing count. [c18] [c19]",
+          "callSites": [
+            "src/workflow/code-review/runner.ts",
+            "src/workflow/code-review/types.ts",
+            "src/workflow/review-pipeline/code-review.ts",
+            "src/workflow/code-review/dimensions/adherence.ts",
+            "src/workflow/code-review/dimensions/conventions.ts",
+            "src/workflow/code-review/dimensions/coverage.ts",
+            "src/workflow/code-review/dimensions/quality.ts",
+            "src/workflow/code-review/dimensions/functional-coverage.ts",
+            "src/workflow/code-review/dimensions/ux/index.ts",
+            "src/workflow/code-review/dimensions/diagram/index.ts"
+          ]
+        },
+        {
+          "entity": "Immutable review deadlines",
+          "change": "field-add",
+          "details": "Add ReviewTimingPlan {startedAt,budgetMs,deadlineAt,chunkCount,dimensions:[{dimension,primaryChunkCount,budgetMs}]} to the code-review runtime context/progress; ReviewPipelineJob carries optional timing {primaryChunkCount,budgetMs,startedAt,deadlineAt,rootDeadlineAt}. Activate each serial child when execution starts: childDeadline=min(rootDeadline,childStartedAt+600000*N). Do not start all child clocks at root admission. Freeze root and child deadlines; retries, correction, replacement subchunks, reductions, parent gather and duplicate comparisons never increase N or reset clocks. Extend current withDeadline/nextCalls enforcement to structured as well as reviewer-session calls for these timed code-review jobs, while retaining unrelated design-review semantics. At dispatch use min(existing per-call timeout, child remaining, root remaining); check signals/deadlines before and after calls/stages and immediately before final artifact publication. Late valid output is rejected, never stamped. Abort outstanding CLI/provider work on deadline/cancel using the existing signal path; await owned shutdown before terminal cleanup. Keep idle/stall watchdog separate, reset only on real progress, never on status polls. Remove fixed overall wait ceilings for this timed route: existing 4h total, 20/30min outer caps and CLI constructor limits must not truncate a healthy derived budget. Retain existing shorter per-call and idle limits as explicitly different failure causes; root budget is an upper bound, not a promise to tolerate a hung call. Absolute timestamps and bounded timer slices avoid Node timer overflow; no arbitrary chunk-count ceiling or budget clamp. [c20] [c21]",
+          "callSites": [
+            "src/workflow/review-pipeline/types.ts",
+            "src/workflow/review-pipeline/job.ts",
+            "src/workflow/review-pipeline/driver.ts",
+            "src/workflow/code-review/runner.ts",
+            "src/daemon/code-review-rpc.ts",
+            "src/daemon/steps/code-review-step/handler.ts",
+            "src/mcp/daemon-stream.ts"
+          ]
+        },
+        {
+          "entity": "Resumable code-review wait ownership",
+          "change": "field-add",
+          "details": "Extend existing codeReview.run IPC request additively with operation?:start|status|cancel and reviewHandle?:string. Omission preserves legacy streaming behavior; the new step path uses operation:start. Admission resolves scope, source fingerprint and independent reviewer before creating an in-memory daemon-owned operation with opaque unguessable handle, daemon epoch, AbortController, prepared timing plan, progress and eventual outcome. One target/source fingerprint owns at most one active review: repeated start joins it; different source fingerprint for the same active target returns review-conflict instead of competing artifact writers. Operation owns model execution, not a socket/request AbortSignal. Socket/host timeout detaches only the waiter. Explicit cancel aborts the operation and prevents final publication. status/cancel require handle plus matching repo/target; handles carry no source text or credentials. Status is read-only and never reexecutes models or replans. Every control request returns a terminal stream frame within 200 seconds: {status:pending,reviewHandle,progress,timing?} or cached existing final outcome/error. Timing is absent while preparation is incomplete and shown once frozen. insrc_code_review_step keeps phase:start and adds a discriminated pending-review state variant containing the handle/target/epoch; returns next:review_pending,state and guidance to call start with that state. In pending-review state proceed:false means explicit cancellation; in existing freshness state proceed:false retains degraded diff fallback. Update schema/help/guide with this distinction; no session-bound review gate bypass. Poll once per bounded tool turn; no duplicate start on host timeout. Active operation handles are held in the runtime registry independent of the shared one-hour step token TTL/LRU. Pending continuation tokens are pinned/refreshed until operation deadline plus a 10-minute terminal grace; during preparation idle watchdog bounds lifetime. Terminal outcomes are retained for that grace then evicted, active operations are never LRU-evicted. Daemon restart reports lost operation, never completion; new review requires fresh explicit start. Only the existing validated final run writes CR, once, under ownership and signal/deadline checks. No persistent DB or new general workflow runner. [c21] [c22] In src/shared/review-stream.ts retain CodeReviewStreamResult {runId,artifact} for legacy streams, add CodeReviewControlParams as a discriminated union: start carries operation:start plus normal target/grounding fields; status/cancel carry operation and reviewHandle plus matching repo/epicHash/storyId. Extend codeReviewRequestParams to preserve validated operation/reviewHandle rather than reconstructing and dropping them. Add CodeReviewControlResult = {status:pending,reviewHandle,progress,timing?} | {status:done,reviewHandle,result:CodeReviewStreamResult} | {status:failed,reviewHandle,error,reason} | {status:cancelled,reviewHandle}. Add codeReviewControl(params,opts):Promise<CodeReviewControlResult> alongside codeReviewStream in both StepDaemonClient and socket exports; both use the same serializer and discriminate/validate terminal frame data at runtime. The existing legacy codeReviewStream remains final-only. The step switches on status: only done.result enters existing artifact/independent-review validation; pending returns continuation, failed/cancelled report no CR. runReviewStream transport cancel still closes/aborts the request waiter, but the operation-mode handler deliberately detaches this signal from operation execution; legacy stream cancellation stays unchanged. Both transports test the same request/reply fixtures, pending requires no artifact, and malformed done cannot be accepted.",
+          "callSites": [
+            "src/daemon/code-review-rpc.ts",
+            "src/daemon/code-review-operations.ts",
+            "src/daemon/steps/code-review-step/handler.ts",
+            "src/daemon/steps/code-review-step/types.ts",
+            "src/daemon/steps/code-review-step/state-store.ts",
+            "src/daemon/threads/step-state.ts",
+            "src/daemon/steps/daemon-client.ts",
+            "src/mcp/daemon-stream.ts",
+            "src/mcp/server.ts",
+            "src/shared/review-stream.ts",
+            "src/prompts/steering-block.md"
+          ]
+        },
+        {
+          "entity": "Budget-aware diff partition and refusal recovery",
+          "change": "invariant-change",
+          "details": "Add fitDiffMaterial(sourceSnapshot,dimensionSpec,effectiveLimitChars,revision):ReviewMaterial in a diff-fragment material helper reused by prepareDimensionJob. The immutable snapshot retains complete parent evidence; each dimension owns a derived material view, never mutates the shared snapshot. Render the real candidate singleton chunk including complete context, parent descriptors, envelope and schema. Starting with <=16Ki staging spans, recursively halve an oversized text range at Unicode-safe boundaries, regenerate full index/count/coordinates/digests and all affected obligations/adjacency, then remeasure. Pack only after every required singleton fits. Measure fixed framing with a minimal nonempty Unicode span: if even that cannot fit, explicitly refuse irreducible context; no recursion without size progress. Initial primary count is frozen only after this fit+packing. On a provider size refusal, the existing atom-only redivide path must intercept a singleton diff fragment: derive a smaller descendant material revision from the SAME original evidence using the refused cap and the same fitting function. Restart only that dimension as a new revision/job with new call IDs, discarding its old model outputs/notes/findings (never combine old and new ownership); abort/await any owned call first. Retain frozen root/child deadlines, original primary count/budget and a replacement-lineage record. All other dimensions retain their prepared source view; execute revisions serially. Descendant IDs include original parent, absolute range and revision digest; every revision still partitions the original text without gaps/overlap. Rebuild stage closures, chunk material, obligations and parent notes consistently; adapters cannot retain stale cached material. The original primary IDs remain audit/timing provenance and map to descendant ranges, not new budget credits. Repeated refusals must strictly reduce offending text range/cap or terminate. No whole-file reread, byte loss, uncontrolled snapshot change, reused invalid notes or deadline extension. Non-diff indivisible atoms retain named AtomTooLargeError. If time expires during replacement, no completed CR. [c23]",
+          "callSites": [
+            "src/workflow/review-pipeline/adapters/diff-fragments.ts",
+            "src/workflow/review-pipeline/code-review.ts",
+            "src/workflow/review-pipeline/job.ts",
+            "src/workflow/review-pipeline/prepare.ts",
+            "src/workflow/code-review/grounding.ts"
+          ]
+        },
+        {
+          "entity": "Parent-aware diff duplication coverage",
+          "change": "invariant-change",
+          "details": "Quality fragment rows represent ranges, not independent symbols. In code-review-duplicates.ts exclude all rows carrying diff-fragment metadata from descriptionsOf/compareStage/pairStage symbol candidates; validate/reject fragment IDs injected into those pair answers. Ordinary graph/small unfragmented symbol comparisons retain existing semantics. Do not create every sibling pair or every fragment-to-foreign-symbol pair. Parent quality adjudication explicitly checks duplication among that parent fragments using all required notes. Add one diff-duplication check-item obligation for the whole fragmented diff scope, owning every diff-fragment ID (and bounded descriptions of nonfragment changed evidence), separate from per-parent obligations. Require keyed duplication facts in each fragment note, preserving source ranges, logical behavior and potential counterpart identifiers even when there is no local finding. The existing obligation gather/reduction mechanism receives all these validated facts and adjudicates cross-parent duplication once with original-file/line provenance; do not simply skip duplication coverage. Bounded reductions retain the complete note-ID/range coverage ledger and both facts needed for a candidate; no raw parent reinsertion. The pipeline may use staged bounded reduction but does not enumerate a Cartesian product of fragment pairs. Missing/foreign notes fail, not NO_EVIDENCE success. Validate counterpart references against the original changed scope. This preserves a diff-only duplication judgment rather than claiming graph symbol coverage. Every replacement revision regenerates both parent and global duplication obligations. DIFF-SCALE covers actual compare and pair execution, not just material adjacency. [c24]",
+          "callSites": [
+            "src/workflow/review-pipeline/code-review.ts",
+            "src/workflow/review-pipeline/adapters/code-review-material.ts",
+            "src/workflow/review-pipeline/adapters/code-review-chunk.ts",
+            "src/workflow/review-pipeline/adapters/code-review-duplicates.ts",
+            "src/workflow/review-pipeline/adapters/code-review-gather.ts"
+          ]
         }
       ],
       "interactionWithShared": []
@@ -757,6 +673,79 @@
           "src/workflow/review-pipeline/code-review.ts:154",
           "src/workflow/review-pipeline/job.ts"
         ]
+      },
+      {
+        "entity": "Prepared serial code-review timing plan",
+        "change": "field-add",
+        "details": "Add PreparedDimensionReview containing the exact immutable snapshot, adapter and prepared ReviewPipelineJob, plus dimension and primaryChunkCount. JudgeSlot gains prepare(subject,grounding,provider,ctx):PreparedDimensionReview and execute(prepared,provider,ctx):Promise<DimensionResult>; production model slots use this seam. Refactor runDimensionJob into reusable prepareDimensionJob/executeDimensionJob, retaining its wrapper for direct callers. All five model factories share their existing spec and effective-limit callback; never prepare by executing a judge or returning fake empty findings. Prepare every effective dimension serially before the first LLM call, then execute the exact prepared jobs serially. Deterministic UX/diagram slots declare zero model chunks. For each model dimension N=max(1, initial planned primary chunks); a fitting single-call plan counts one. Freeze counts and initial primary IDs before execution. Whole-review chunkCount=sum(N) across effective model dimensions; the all-deterministic case uses an operational minimum of one. budgetMs=600000*chunkCount, with per-dimension breakdown. IDs are dimension-qualified; no double-count of the same job. Validate finite safe positive integer arithmetic. Preparation after admission counts in the root elapsed budget; index freshness admission precedes this clock. Root startedAt is captured before grounding/preparation and root deadline is startedAt+budgetMs after planning. During preparation retain the idle/stall watchdog, then reject if elapsed already exhausts the derived deadline. Planning makes no LLM calls. The immutable source snapshot and initial timing count cannot change at dispatch. Controlled provenance-preserving descendant repartition after refusal is allowed as specified below; it does not change the frozen timing count. [c18] [c19]",
+        "callSites": [
+          "src/workflow/code-review/runner.ts",
+          "src/workflow/code-review/types.ts",
+          "src/workflow/review-pipeline/code-review.ts",
+          "src/workflow/code-review/dimensions/adherence.ts",
+          "src/workflow/code-review/dimensions/conventions.ts",
+          "src/workflow/code-review/dimensions/coverage.ts",
+          "src/workflow/code-review/dimensions/quality.ts",
+          "src/workflow/code-review/dimensions/functional-coverage.ts",
+          "src/workflow/code-review/dimensions/ux/index.ts",
+          "src/workflow/code-review/dimensions/diagram/index.ts"
+        ]
+      },
+      {
+        "entity": "Immutable review deadlines",
+        "change": "field-add",
+        "details": "Add ReviewTimingPlan {startedAt,budgetMs,deadlineAt,chunkCount,dimensions:[{dimension,primaryChunkCount,budgetMs}]} to the code-review runtime context/progress; ReviewPipelineJob carries optional timing {primaryChunkCount,budgetMs,startedAt,deadlineAt,rootDeadlineAt}. Activate each serial child when execution starts: childDeadline=min(rootDeadline,childStartedAt+600000*N). Do not start all child clocks at root admission. Freeze root and child deadlines; retries, correction, replacement subchunks, reductions, parent gather and duplicate comparisons never increase N or reset clocks. Extend current withDeadline/nextCalls enforcement to structured as well as reviewer-session calls for these timed code-review jobs, while retaining unrelated design-review semantics. At dispatch use min(existing per-call timeout, child remaining, root remaining); check signals/deadlines before and after calls/stages and immediately before final artifact publication. Late valid output is rejected, never stamped. Abort outstanding CLI/provider work on deadline/cancel using the existing signal path; await owned shutdown before terminal cleanup. Keep idle/stall watchdog separate, reset only on real progress, never on status polls. Remove fixed overall wait ceilings for this timed route: existing 4h total, 20/30min outer caps and CLI constructor limits must not truncate a healthy derived budget. Retain existing shorter per-call and idle limits as explicitly different failure causes; root budget is an upper bound, not a promise to tolerate a hung call. Absolute timestamps and bounded timer slices avoid Node timer overflow; no arbitrary chunk-count ceiling or budget clamp. [c20] [c21]",
+        "callSites": [
+          "src/workflow/review-pipeline/types.ts",
+          "src/workflow/review-pipeline/job.ts",
+          "src/workflow/review-pipeline/driver.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/daemon/code-review-rpc.ts",
+          "src/daemon/steps/code-review-step/handler.ts",
+          "src/mcp/daemon-stream.ts"
+        ]
+      },
+      {
+        "entity": "Resumable code-review wait ownership",
+        "change": "field-add",
+        "details": "Extend existing codeReview.run IPC request additively with operation?:start|status|cancel and reviewHandle?:string. Omission preserves legacy streaming behavior; the new step path uses operation:start. Admission resolves scope, source fingerprint and independent reviewer before creating an in-memory daemon-owned operation with opaque unguessable handle, daemon epoch, AbortController, prepared timing plan, progress and eventual outcome. One target/source fingerprint owns at most one active review: repeated start joins it; different source fingerprint for the same active target returns review-conflict instead of competing artifact writers. Operation owns model execution, not a socket/request AbortSignal. Socket/host timeout detaches only the waiter. Explicit cancel aborts the operation and prevents final publication. status/cancel require handle plus matching repo/target; handles carry no source text or credentials. Status is read-only and never reexecutes models or replans. Every control request returns a terminal stream frame within 200 seconds: {status:pending,reviewHandle,progress,timing?} or cached existing final outcome/error. Timing is absent while preparation is incomplete and shown once frozen. insrc_code_review_step keeps phase:start and adds a discriminated pending-review state variant containing the handle/target/epoch; returns next:review_pending,state and guidance to call start with that state. In pending-review state proceed:false means explicit cancellation; in existing freshness state proceed:false retains degraded diff fallback. Update schema/help/guide with this distinction; no session-bound review gate bypass. Poll once per bounded tool turn; no duplicate start on host timeout. Active operation handles are held in the runtime registry independent of the shared one-hour step token TTL/LRU. Pending continuation tokens are pinned/refreshed until operation deadline plus a 10-minute terminal grace; during preparation idle watchdog bounds lifetime. Terminal outcomes are retained for that grace then evicted, active operations are never LRU-evicted. Daemon restart reports lost operation, never completion; new review requires fresh explicit start. Only the existing validated final run writes CR, once, under ownership and signal/deadline checks. No persistent DB or new general workflow runner. [c21] [c22] In src/shared/review-stream.ts retain CodeReviewStreamResult {runId,artifact} for legacy streams, add CodeReviewControlParams as a discriminated union: start carries operation:start plus normal target/grounding fields; status/cancel carry operation and reviewHandle plus matching repo/epicHash/storyId. Extend codeReviewRequestParams to preserve validated operation/reviewHandle rather than reconstructing and dropping them. Add CodeReviewControlResult = {status:pending,reviewHandle,progress,timing?} | {status:done,reviewHandle,result:CodeReviewStreamResult} | {status:failed,reviewHandle,error,reason} | {status:cancelled,reviewHandle}. Add codeReviewControl(params,opts):Promise<CodeReviewControlResult> alongside codeReviewStream in both StepDaemonClient and socket exports; both use the same serializer and discriminate/validate terminal frame data at runtime. The existing legacy codeReviewStream remains final-only. The step switches on status: only done.result enters existing artifact/independent-review validation; pending returns continuation, failed/cancelled report no CR. runReviewStream transport cancel still closes/aborts the request waiter, but the operation-mode handler deliberately detaches this signal from operation execution; legacy stream cancellation stays unchanged. Both transports test the same request/reply fixtures, pending requires no artifact, and malformed done cannot be accepted.",
+        "callSites": [
+          "src/daemon/code-review-rpc.ts",
+          "src/daemon/code-review-operations.ts",
+          "src/daemon/steps/code-review-step/handler.ts",
+          "src/daemon/steps/code-review-step/types.ts",
+          "src/daemon/steps/code-review-step/state-store.ts",
+          "src/daemon/threads/step-state.ts",
+          "src/daemon/steps/daemon-client.ts",
+          "src/mcp/daemon-stream.ts",
+          "src/mcp/server.ts",
+          "src/shared/review-stream.ts",
+          "src/prompts/steering-block.md"
+        ]
+      },
+      {
+        "entity": "Budget-aware diff partition and refusal recovery",
+        "change": "invariant-change",
+        "details": "Add fitDiffMaterial(sourceSnapshot,dimensionSpec,effectiveLimitChars,revision):ReviewMaterial in a diff-fragment material helper reused by prepareDimensionJob. The immutable snapshot retains complete parent evidence; each dimension owns a derived material view, never mutates the shared snapshot. Render the real candidate singleton chunk including complete context, parent descriptors, envelope and schema. Starting with <=16Ki staging spans, recursively halve an oversized text range at Unicode-safe boundaries, regenerate full index/count/coordinates/digests and all affected obligations/adjacency, then remeasure. Pack only after every required singleton fits. Measure fixed framing with a minimal nonempty Unicode span: if even that cannot fit, explicitly refuse irreducible context; no recursion without size progress. Initial primary count is frozen only after this fit+packing. On a provider size refusal, the existing atom-only redivide path must intercept a singleton diff fragment: derive a smaller descendant material revision from the SAME original evidence using the refused cap and the same fitting function. Restart only that dimension as a new revision/job with new call IDs, discarding its old model outputs/notes/findings (never combine old and new ownership); abort/await any owned call first. Retain frozen root/child deadlines, original primary count/budget and a replacement-lineage record. All other dimensions retain their prepared source view; execute revisions serially. Descendant IDs include original parent, absolute range and revision digest; every revision still partitions the original text without gaps/overlap. Rebuild stage closures, chunk material, obligations and parent notes consistently; adapters cannot retain stale cached material. The original primary IDs remain audit/timing provenance and map to descendant ranges, not new budget credits. Repeated refusals must strictly reduce offending text range/cap or terminate. No whole-file reread, byte loss, uncontrolled snapshot change, reused invalid notes or deadline extension. Non-diff indivisible atoms retain named AtomTooLargeError. If time expires during replacement, no completed CR. [c23]",
+        "callSites": [
+          "src/workflow/review-pipeline/adapters/diff-fragments.ts",
+          "src/workflow/review-pipeline/code-review.ts",
+          "src/workflow/review-pipeline/job.ts",
+          "src/workflow/review-pipeline/prepare.ts",
+          "src/workflow/code-review/grounding.ts"
+        ]
+      },
+      {
+        "entity": "Parent-aware diff duplication coverage",
+        "change": "invariant-change",
+        "details": "Quality fragment rows represent ranges, not independent symbols. In code-review-duplicates.ts exclude all rows carrying diff-fragment metadata from descriptionsOf/compareStage/pairStage symbol candidates; validate/reject fragment IDs injected into those pair answers. Ordinary graph/small unfragmented symbol comparisons retain existing semantics. Do not create every sibling pair or every fragment-to-foreign-symbol pair. Parent quality adjudication explicitly checks duplication among that parent fragments using all required notes. Add one diff-duplication check-item obligation for the whole fragmented diff scope, owning every diff-fragment ID (and bounded descriptions of nonfragment changed evidence), separate from per-parent obligations. Require keyed duplication facts in each fragment note, preserving source ranges, logical behavior and potential counterpart identifiers even when there is no local finding. The existing obligation gather/reduction mechanism receives all these validated facts and adjudicates cross-parent duplication once with original-file/line provenance; do not simply skip duplication coverage. Bounded reductions retain the complete note-ID/range coverage ledger and both facts needed for a candidate; no raw parent reinsertion. The pipeline may use staged bounded reduction but does not enumerate a Cartesian product of fragment pairs. Missing/foreign notes fail, not NO_EVIDENCE success. Validate counterpart references against the original changed scope. This preserves a diff-only duplication judgment rather than claiming graph symbol coverage. Every replacement revision regenerates both parent and global duplication obligations. DIFF-SCALE covers actual compare and pair execution, not just material adjacency. [c24]",
+        "callSites": [
+          "src/workflow/review-pipeline/code-review.ts",
+          "src/workflow/review-pipeline/adapters/code-review-material.ts",
+          "src/workflow/review-pipeline/adapters/code-review-chunk.ts",
+          "src/workflow/review-pipeline/adapters/code-review-duplicates.ts",
+          "src/workflow/review-pipeline/adapters/code-review-gather.ts"
+        ]
       }
     ],
     "interactionWithShared": [],
@@ -796,6 +785,20 @@
           "response": "Preserve existing stop/fail semantics; no fabricated complete verdict and no parallel retry. Missing parent evidence never uses the generic no-evidence-success branch.",
           "userImpact": "Review stays pending with its actual failure cause.",
           "recoverable": true
+        },
+        {
+          "scenario": "Derived review deadline expires, explicit cancellation, or idle/stall failure.",
+          "detection": "Injectable monotonic elapsed clock/absolute deadline and existing progress watchdog; distinguish deadline from idle and cancel.",
+          "response": "Abort owned execution, reject late output and publish no completed CR. Preserve terminal cause for bounded status retrieval; polling cannot reset timers.",
+          "userImpact": "Review remains pending with counts, elapsed time and failure cause.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Host wait ends, duplicate start, stale handle, restart or changed source during an active review.",
+          "detection": "Daemon-owned operation registry validates handle, epoch, target and source fingerprint.",
+          "response": "Detach waiter without cancelling the review; same source joins, changed source conflicts. Missing/restarted operation is explicitly lost, never a fabricated success. Explicit cancel stops the real operation.",
+          "userImpact": "Resume the same review through returned state; start afresh only after terminal/lost state is reported.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -826,6 +829,10 @@
         {
           "input": "Fragmented diff whose complete quality prompt fits one call.",
           "expected": "requiresChunking explicitly selects measured chunk mode and parent gather; a single planned chunk is still plan.single:false and must produce parent notes."
+        },
+        {
+          "input": "1, 5 or 20 initial chunks; retries, split replacement chunks, zero-model dimensions, huge/invalid count or multi-hour review.",
+          "expected": "10, 50 or 200 minutes respectively, per-dimension sums explicit. Retry/splits never extend; deterministic slots count zero; invalid/overflow values fail admission and long timers use slices. One fitting primary call counts one."
         }
       ],
       "invariantsToPreserve": [
@@ -905,6 +912,33 @@
           "fixturesNeeded": [
             "Existing S003 approved contract/build/evidence. No automatic user-daemon restart, release enablement, evidence deletion or override approval; report runtime reload needs honestly."
           ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove chunk-derived deadlines and resumable ownership using fake clocks and scripted providers, without wall-clock waits.",
+          "subjects": [
+            "DIFF-TIME-PLAN: 1/5/20 primary chunks yield 600000/3000000/12000000ms; five model dimensions aggregate correctly, deterministic slots count zero, fitting single-call counts one; all prepared before first completion and execution uses identical job IDs/snapshot/caps.",
+            "DIFF-TIME-FIXED: root includes grounding/preparation, later serial child receives its own allowance capped by root remaining; repair/retry/gather/duplicates/redivision never extend either clock; structured and reviewer-session dispatch receive min(per-call,remaining); late output produces no CR.",
+            "DIFF-TIME-OUTER: healthy >20/30min and >4h derived jobs survive outer waiting caps under fake time; idle/stall and explicit cancel still abort owned execution; integer overflow/invalid counts and timer overflow handled safely.",
+            "DIFF-WAIT-RESUME: >300s review returns pending within200s and repeated status/resume/start joins one execution; disconnect does not cancel, explicit cancel does, stale/lost handle never succeeds; changed source conflicts, active state survives1h TTL/LRU, terminal grace cleans up and exactly one valid CR is written.",
+            "DIFF-WAIT-COMPAT: legacy stream without operation, freshness proceed:false diff fallback, pending proceed:false cancellation, session refusal, target authorization and independent-review routing remain intact."
+          ],
+          "fixturesNeeded": [
+            "Injectable clocks/timers, captured provider timeout/signal assertions, real IPC transport with scripted long operation and shared state-store lifecycle fixtures. No real long sleeps or fabricated reviewer verdicts."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Regress the three blocking findings from timing-cycle round2.",
+          "subjects": [
+            "DIFF-LOW-CAP: 16384-character staging span with effective12000 complete-input cap and fitting fixed context is subdivided before preparation; every call fits, reconstruction exact, initial N reflects final fitted primary plan. A fixed-context-too-large control refuses without calls.",
+            "DIFF-REFUSAL-SPAN: singleton provider size refusal creates smaller descendant revision, discards old dimension outputs/notes and rebuilds all obligations/closures, then completes all original bytes; original timing N/deadlines unchanged. Repeated no-progress refusal and exhausted time fail with no CR. Include emoji boundaries and cross-fragment correctness regression after repartition.",
+            "DIFF-SCALE-DUPLICATES: drive actual quality compare/pair/gather for hundreds of fragments: no fragment IDs enter symbol pair comparisons and no quadratic fragment candidates/calls are generated. Existing graph symbol pair behavior preserved. Within-parent and cross-parent duplication only detectable from separate notes is found with correct provenance, including fragmented versus nonfragment evidence.",
+            "DIFF-WAIT-TRANSPORT: both shared serializer and real socket/in-daemon clients carry start/status/cancel+handle unchanged; pending has no artifact, done.result preserves existing validation, failed/cancelled/malformed variants cannot stamp; waiter timeout detaches and explicit cancel stops the one operation."
+          ],
+          "fixturesNeeded": [
+            "Real pipeline/adapter stage fixtures plus shared serializer, socket and in-daemon scripted transport fixtures, fake timers, small provider cap and scripted refusal."
+          ]
         }
       ],
       "acceptanceMapping": [
@@ -924,7 +958,9 @@
             "DIFF-REPAIR",
             "DIFF-TRANSPORT",
             "DIFF-ADMISSION",
-            "DIFF-FACTORY-LIMIT"
+            "DIFF-FACTORY-LIMIT",
+            "DIFF-LOW-CAP",
+            "DIFF-REFUSAL-SPAN"
           ]
         },
         {
@@ -934,7 +970,8 @@
             "DIFF-GATHER",
             "DIFF-SCALE",
             "DIFF-PARENT-QUALITY",
-            "DIFF-FITS-ONE-CALL"
+            "DIFF-FITS-ONE-CALL",
+            "DIFF-SCALE-DUPLICATES"
           ]
         },
         {
@@ -948,12 +985,23 @@
           "provingTests": [
             "DIFF-S003-RETRY"
           ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "DIFF-TIME-PLAN",
+            "DIFF-TIME-FIXED",
+            "DIFF-TIME-OUTER",
+            "DIFF-WAIT-RESUME",
+            "DIFF-WAIT-COMPAT",
+            "DIFF-WAIT-TRANSPORT"
+          ]
         }
       ]
     },
     "migration": {
       "stateBefore": "s1 locates buildDiffSymbols emitting a file-level review summary, codeReviewMaterial turning each row into an indivisible atom, and the existing serial planChunks/runReviewJob pipeline. promptChars callers span job, gather and duplicate planning. The filed S003 reproduction exceeds the current per-call budget before a review is recorded; the original128000 setting has been restored.",
-      "stateAfter": "Fresh diff-review jobs hold complete ordered evidence spans and use the existing bounded serial chunk/gather pipeline. Complete calls include their schema and all supplied context/history under at most128000 estimated tokens. Existing public IPC method names, source-symbol reviews, provider OAuth ownership, S003 historical evidence and disabled release state are preserved.",
+      "stateAfter": "Fresh diff-review jobs hold complete ordered evidence spans and use the existing bounded serial chunk/gather pipeline. Complete calls include their schema and all supplied context/history under at most128000 estimated tokens. Existing public IPC method names, source-symbol reviews, provider OAuth ownership, S003 historical evidence and disabled release state are preserved. The code-review time budget is 10 minutes per initially planned primary model-review chunk, aggregated across serial dimensions. Retries, repairs, redivision and gather consume that fixed allowance; bounded status waits resume the same daemon-owned operation.",
       "migrationSteps": [
         {
           "order": 1,
@@ -972,16 +1020,21 @@
         },
         {
           "order": 4,
-          "action": "Run only relevant tests during implementation, then one combined Node22 build and focused review/provider regression sweep. Where existing production-source audit checks require refreshed hashes/classifications for changed review code, update only reviewed source metadata under this fix; retain S003's original measurements and pending proofs. Do not compact/delete/split the audit datasets as a workaround.",
+          "action": "Add preparation/execution seam, freeze per-dimension/aggregate timing, enforce deadlines across both execution modes, then add daemon-owned bounded start/status/cancel waits and token lifecycle. Update code-review tool schema/help and canonical shipped guide to teach same-state continuation. Runtime activation follows normal approval; design-artifact review timing is outside this change.",
           "rollbackable": true
         },
         {
           "order": 5,
+          "action": "Run only relevant tests during implementation, then one combined Node22 build and focused review/provider regression sweep. Where existing production-source audit checks require refreshed hashes/classifications for changed review code, update only reviewed source metadata under this fix; retain S003's original measurements and pending proofs. Do not compact/delete/split the audit datasets as a workaround.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
           "action": "After approved runtime activation is available, retry the actual S003 independent diff review at128000. Do not restart an in-use daemon automatically; retain any runtime-activation or review error as pending evidence.",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "Internal additive metadata/options only. Rows without fragment provenance retain legacy semantics, and graph-based source-symbol identities and existing review result shapes remain compatible. No new IPC method or persistent domain schema. Existing pending jobs with old whole-file snapshots are restarted as new jobs; no in-place job rewrite or fabricated continuation. Non-review CLI completions retain defaults; bounded diff calls fail explicitly if isolation cannot be enforced.",
+      "backwardCompat": "Internal additive metadata/options only. Rows without fragment provenance retain legacy semantics, and graph-based source-symbol identities and existing review result shapes remain compatible. No new IPC method or persistent domain schema. Existing codeReview.run gains optional operation/handle fields and control-frame responses for opted-in clients; absent operation retains legacy streaming. Existing step phases stay unchanged; pending-review next/state is additive and its cancellation semantics are documented. Existing pending jobs with old whole-file snapshots are restarted as new jobs; no in-place job rewrite or fabricated continuation. Non-review CLI completions retain defaults; bounded diff calls fail explicitly if isolation cannot be enforced.",
       "zeroDowntime": false,
       "dataRewriteRequired": false
     },
@@ -1023,7 +1076,7 @@
     "openQuestions": [],
     "sequenceDefinition": {
       "id": "diff-review-complete-input-budget",
-      "narrative": "The sequence shows where complete diff evidence is divided and where all supplied context/history/schema must be counted before a serial model call. Parent-file provenance flows through every chunk into gather; the budget guard can stop a call without dropping evidence.",
+      "narrative": "The sequence shows where complete diff evidence is divided and where all supplied context/history/schema must be counted before a serial model call. Parent-file provenance flows through every chunk into gather; the budget guard can stop a call without dropping evidence. Preparation freezes primary chunk counts and 10-minute-per-chunk budgets before any model call; all later work consumes the same deadline. A daemon-owned operation outlives a bounded status waiter.",
       "participants": [
         {
           "id": "snapshot",
@@ -1038,12 +1091,12 @@
         {
           "id": "planner",
           "label": "Planner",
-          "description": "Groups complete spans and explicit neighbour/context notes into measurable calls."
+          "description": "Groups complete spans and explicit neighbour/context notes into measurable calls. Prepares exact jobs/counts before execution and freezes aggregate/child timing."
         },
         {
           "id": "guard",
           "label": "Input guard",
-          "description": "Counts envelopes, actual schema, context, history and correction content against the128K cap."
+          "description": "Counts envelopes, actual schema, context, history and correction content against the128K cap. Also enforces remaining immutable deadline before dispatch and after completion."
         },
         {
           "id": "provider",
@@ -1073,13 +1126,13 @@
           "from": "planner",
           "to": "guard",
           "label": "Full request + schema",
-          "description": "Payload-only size is insufficient; all added material consumes the same cap."
+          "description": "Payload-only size is insufficient; all added material consumes the same cap. Freeze initial primary count N and 600000*N allowance; root aggregates dimensions and includes post-admission preparation."
         },
         {
           "from": "guard",
           "to": "provider",
           "label": "Fit check, then submit",
-          "description": "Oversized calls are redivided/reduced or refused before dispatch."
+          "description": "Oversized calls are redivided/reduced or refused before dispatch. Submit with min(per-call timeout, child remaining, root remaining); late answers cannot finalize."
         },
         {
           "from": "provider",
@@ -1104,7 +1157,7 @@
           "from": "guard",
           "to": "provider",
           "label": "Next isolated call",
-          "description": "No opaque session transcript is resumed."
+          "description": "No opaque session transcript is resumed. Same fixed deadline; retry, gather and redivision do not extend it. Bounded status waits retain the same operation."
         },
         {
           "from": "provider",
@@ -1222,6 +1275,59 @@
       "kind": "prior-artifact",
       "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round3.json",
       "quotedText": "Current companion render evidence after canonical third-round regeneration."
+    },
+    {
+      "id": "c18",
+      "kind": "stakeholder",
+      "ref": "User instruction 2026-10-27",
+      "quotedText": "The time budget should be 10 minutes times number of chunks; fresh review cycle explicitly authorized."
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/workflow/code-review/runner.ts:172-242",
+      "quotedText": "Current runner constructs one snapshot then invokes judge slots serially; preparation/execution separation is an explicit addition."
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/job.ts",
+      "quotedText": "Current withDeadline/nextCalls applies only to reviewer-session pending calls; structured deadline enforcement must be added."
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/daemon/steps/code-review-step/handler.ts:733-746",
+      "quotedText": "Current defaults distinguish four-hour total wait from twenty-minute idle wait. Derived code-review timing replaces fixed total ceiling, not idle detection."
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/daemon/steps/code-review-step/state-store.ts",
+      "quotedText": "Opaque code-review state currently uses shared TTL/LRU. New active operation ownership and pinning must explicitly outlive one-hour idle token expiry."
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/prepare.ts",
+      "quotedText": "planChunks rejects an oversized singleton atom; current job.redivide repacks atom IDs and cannot subdivide a diff range."
+    },
+    {
+      "id": "c24",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/adapters/code-review-duplicates.ts",
+      "quotedText": "compareStage selects later-chunk descriptions without parent filtering and compareCalls forms every pair of batches; sparse material relations alone do not bound this work."
+    },
+    {
+      "id": "c25",
+      "kind": "code",
+      "ref": "src/shared/review-stream.ts",
+      "quotedText": "codeReviewRequestParams currently reconstructs only legacy fields, and CodeReviewStreamResult requires runId/artifact; new control variants must be explicit in both transports."
+    },
+    {
+      "id": "c26",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-timing-cycle1-round2.json"
     }
   ]
 }

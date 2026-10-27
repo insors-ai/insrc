@@ -1,0 +1,14 @@
+{
+  "outcome": "transport-error",
+  "code": "step-failed",
+  "message": "Connection to daemon closed before a reply. No review verdict stamped at time of capture.",
+  "cycleRound": 3,
+  "fixesSinceRound2": [
+    "Shared request serializer/control result union and both actual transports specified.",
+    "Complete-call-budget-aware initial partition and provenance-preserving singleton-refusal revision specified under unchanged timing.",
+    "Fragment rows excluded from symbol Cartesian comparisons; parent/global duplication gather retains intended coverage."
+  ],
+  "cycleLimitReached": true,
+  "daemonEvidence": "daemon.13.log records workflow.review aborted during daemon shutdown; workers exited/stores closed/bye at2026-10-27T06:16:09Z. No review recorded.",
+  "presentation": "insrc_present attempted; unavailable because daemon is not running."
+}

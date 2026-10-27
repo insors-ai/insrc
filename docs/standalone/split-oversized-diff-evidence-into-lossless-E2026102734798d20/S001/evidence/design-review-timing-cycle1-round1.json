@@ -1,0 +1,8 @@
+{
+  "outcome": "tool-input-error",
+  "code": "internal",
+  "message": "insrc_review_step resolved the JSON path to an absent sibling .md in .insrc/artifacts. No review verdict stamped.",
+  "artifactArgument": ".insrc/artifacts/LLD-34798d209cf97413-S001.json",
+  "correction": "Use canonical docs standalone LLD.md path in round2.",
+  "countsTowardCycleLimit": true
+}

@@ -1,7 +1,7 @@
 {
   "issue": "ISSUE-5384820ac9eb0fd3",
   "lld": "LLD-34798d209cf97413-S001",
-  "status": "proposed extension; not covered by the third-round design PASS",
+  "status": "Integrated into revised LLD; awaiting newly authorized independent review cycle",
   "userRequirement": "The time budget should be10 minutes times the number of chunks, including larger reviews rather than a fixed20-minute maximum.",
   "millisecondsPerChunk": 600000,
   "counting": {

@@ -21,6 +21,7 @@ import { existsSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync, s
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MessageChannel } from 'node:worker_threads';
+import { createHash } from 'node:crypto';
 
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-maintenance-'));
 process.env['HOME'] = HOME;
@@ -217,10 +218,21 @@ function makeController(config: Partial<MaintenanceConfig>, extra: Partial<Maint
 	return c;
 }
 /** Entries per named database, as the test reads them. */
-async function fingerprint(): Promise<Record<string, number>> {
+async function fingerprint(): Promise<Record<string, string>> {
+	// Every key and value of every named database, hashed in order: a lost, added or changed row changes it.
 	const s = await getGraphStore();
-	const out: Record<string, number> = {};
-	for (const [name, db] of Object.entries(s)) if (name !== 'root') out[name] = ((db as { getStats(): unknown }).getStats() as { entryCount: number }).entryCount;
+	const bytes = (v: unknown): Buffer => Buffer.isBuffer(v) ? v : v instanceof Uint8Array ? Buffer.from(v) : Buffer.from(JSON.stringify(v, (_k, x: unknown) => typeof x === 'bigint' ? `${x}n` : x) ?? 'undefined');
+	const out: Record<string, string> = {};
+	for (const [name, db] of Object.entries(s)) {
+		if (name === 'root') continue;
+		const h = createHash('sha256');
+		let n = 0;
+		for (const { key, value } of (db as { getRange(): Iterable<{ key: unknown; value: unknown }> }).getRange()) {
+			h.update(bytes(key)); h.update('\0'); h.update(bytes(value)); h.update('\n');
+			n++;
+		}
+		out[name] = `${n}:${h.digest('hex')}`;
+	}
 	return out;
 }
 /** Rows written and deleted, so the file has space to give back. */
@@ -408,6 +420,18 @@ describe('integration', () => {
 		assert.equal((await ask('index.file', { filePath: join(REPO, 'src', 'after.ts'), event: 'create' })).error, undefined);
 		assert.equal((await writerOp({ op: 'write-config-and-artifact', tag: 'after' }))['ok'], true);
 		await until(async () => (await findEntitiesByFile(await getDb(), join(REPO, 'src', 'after.ts'))).length > 0, 'the code-indexing worker\'s write');
+		// The document-summary worker's write: a document indexed after maintenance, then summarised (the
+		// test summariser records each summary in the store). The admin worker writes nothing to the store.
+		mkdirSync(join(REPO, 'docs'), { recursive: true });
+		writeFileSync(join(REPO, 'docs', 'after.md'), '# After maintenance\n\nA document indexed and summarised after the compaction.\n');
+		assert.equal((await ask('index.file', { filePath: join(REPO, 'docs', 'after.md'), event: 'create' })).error, undefined);
+		const docs = async () => (await findEntitiesByFile(await getDb(), join(REPO, 'docs', 'after.md'))).filter(e => e.kind === 'document' || e.kind === 'section');
+		await until(async () => (await docs()).length > 0, 'the document indexed');
+		await router.request('indexing', INDEXING_PORT.enqueue, { kind: 'doc-summarise-repo', repoPath: REPO });
+		await until(async () => {
+			const store = await getGraphStore();
+			return (await docs()).some(d => store.meta.get(`test-summary:${d.id}`) !== undefined);
+		}, 'the document-summary worker\'s write', 60_000);
 		assert.deepEqual((await getGraphStore()).meta.get('main-after'), Buffer.from([1]));
 		assert.equal((await new ConfigStore(null).getEntry('cfg-after'))?.body, 'body of cfg-after', 'the store worker\'s write');
 		assert.equal(statSync(PATHS.lmdb).ino, compacted, 'every write went to the compacted file');

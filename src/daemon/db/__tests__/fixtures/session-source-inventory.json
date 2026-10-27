@@ -15905,6 +15905,10 @@
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "sites": [
         [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
           "storage-call",
           "getDb"
         ],
@@ -15917,17 +15921,25 @@
           "parentPort!.postMessage"
         ],
         [
+          "storage-call",
+          "s.meta.put"
+        ],
+        [
           "unresolved-call",
           "Watcher"
         ],
         [
           "unresolved-call",
           "Watcher"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "7e1396ebca6b6dad66a012b93fc680b5d3f938ea67be286001cab0e1cb4e4df1",
-      "sourceDigest": "f81d1ecedfd67b3db39210cf1b2599165baa8643d047b8c311f392eded438b34",
+      "siteCount": 8,
+      "sitesDigest": "773bf96c1dde296c7d5fc4c0f840e9dae9109dec99c582ff65e528010ebf5b9d",
+      "sourceDigest": "2d1634c56edcac391e51cb5dc2da85e7fce701024de74eb05662fe25ad3ae516",
       "boundaries": [
         "serialization",
         "storage-call",

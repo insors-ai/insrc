@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 87 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -481,4 +481,33 @@ Run at 2026-10-27T10:47:29.400Z on commit `cf0cad096`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/code-review-control.test.ts` | 0 | 5 | 0.6 s |  |
+
+## t17
+
+Run at 2026-10-27T10:56:02.829Z on commit `9d87b90e1`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-WAIT-RESUME**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-WAIT-RESUME: pending turns join one owner beyond300s, retain the same state/deadline and consume exactly one final review | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
+| pass | DIFF-WAIT-RESUME: lifecycle pin survives initial planning, over1h idle clients and LRU pressure then terminal grace expires without polling | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
+| pass | DIFF-WAIT-RESUME: transient waiter failures keep the same token; foreign target, daemon loss never claim a CR | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
+| pass | DIFF-WAIT-RESUME: malformed final or a changed daemon epoch is rejected before consuming a pending result | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
+| pass | DIFF-WAIT-RESUME: shared and hub leases protect all active entries from TTL/LRU and expire at a fixed terminal deadline | `src/daemon/threads/__tests__/step-state.test.ts` |
+
+**integration: DIFF-WAIT-COMPAT**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-WAIT-COMPAT: freshness decline starts a degraded review while pending decline explicitly cancels owned work | `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` |
+| pass | DIFF-WAIT-COMPAT: legacy streams remain final-only and retain their existing final result shape | `src/shared/__tests__/code-review-control.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/code-review-step/__tests__/pending-review.test.ts` | 0 | 5 | 0.5 s |  |
+| `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 4 | 0.8 s |  |
 | `src/shared/__tests__/code-review-control.test.ts` | 0 | 5 | 0.6 s |  |

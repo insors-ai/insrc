@@ -35,7 +35,7 @@ import { PATHS } from '../../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../../workflow/code-review/subject.js';
 import { codeReviewControlResult, CEILING_TIMEOUT, IDLE_TIMEOUT, ReviewStreamError } from '../../../shared/review-stream.js';
 import type { CodeReviewControlParams, CodeReviewControlResult, CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../shared/review-stream.js';
-import { codeReviewOperations } from '../../code-review-operations.js';
+import { canonicalReviewRepository, codeReviewOperations } from '../../code-review-operations.js';
 import type { CodeReviewOperationRegistry } from '../../code-review-operations.js';
 import { stepDaemonClient } from '../daemon-client.js';
 import type { StepDaemonClient } from '../daemon-client.js';
@@ -267,7 +267,7 @@ async function handleStart(
 	if (resuming) {
 		const payload = await loadState(step.state!);   // throws StateTokenNotFound → caught in dispatch
   if (payload.kind === 'daemon-review-pending') {
-   if ((step.repo !== undefined && step.repo !== payload.repo) || (step.epicHash !== undefined && step.epicHash !== payload.epicHash) || (step.storyId !== undefined && step.storyId !== payload.storyId)) return errorResult('review-target-mismatch', 'Pending continuation target cannot be changed.', false);
+   if ((step.repo !== undefined && canonicalReviewRepository(step.repo) !== canonicalReviewRepository(payload.repo)) || (step.epicHash !== undefined && step.epicHash !== payload.epicHash) || (step.storyId !== undefined && step.storyId !== payload.storyId)) return errorResult('review-target-mismatch', 'Pending continuation target cannot be changed.', false);
    return resumeDaemonReview(payload, step.state!, deps, step.proceed === false);
   }
 		repo = payload.repo; epicHash = payload.epicHash; storyId = payload.storyId;
@@ -881,7 +881,7 @@ async function startDaemonReview(subject: CodeReviewSubject, mode: 'full' | 'deg
   const fingerprint = deps.captureInput?.(subject), cra = codeReviewSubjectPathArgs(subject);
   const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
   const reply = codeReviewControlResult(await deps.reviewControl!(params, controlOpts(deps)), params);
-  const payload: CodeReviewPendingState = { kind: 'daemon-review-pending', repo: subject.repoPath, epicHash: subject.epicHash, storyId: subject.storyId, reviewHandle: reply.reviewHandle, daemonEpoch: reply.daemonEpoch, mode, paths,
+  const payload: CodeReviewPendingState = { kind: 'daemon-review-pending', repo: canonicalReviewRepository(subject.repoPath), epicHash: subject.epicHash, storyId: subject.storyId, reviewHandle: reply.reviewHandle, daemonEpoch: reply.daemonEpoch, mode, paths,
    ...(reason !== undefined ? { fallbackReason: reason } : {}), ...(fingerprint !== undefined ? { reviewInputFingerprint: fingerprint } : {}) };
   return await consumeControlReply(reply, payload, undefined, deps);
  } catch (err) {

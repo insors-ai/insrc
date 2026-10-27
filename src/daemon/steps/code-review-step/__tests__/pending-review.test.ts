@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { CodeReviewOperationRegistry, codeReviewOperationIdleMs, CODE_REVIEW_TERMINAL_GRACE_MS } from '../../../code-review-operations.js';
 import { LocalStepStateStore, installStepStateStore } from '../../../threads/step-state.js';
 import { canonicalIdentityJson, identityDigest } from '../../../../shared/review-input-identity.js';
@@ -19,7 +22,11 @@ const FRESH = { ok: true as const, isProcessing: false, inFlight: false, pending
 function result(mode: 'full' | 'degraded'): CodeReviewStreamResult {
  return { runId: 'cr-1', artifact: { meta: { workflow: 'code-review', schemaVersion: 1, createdAt: '2026-10-27T00:00:00Z', elapsedMs: 1, repoIndexedAt: null, runId: 'cr-1', epicHash: target.epicHash, storyId: target.storyId, repoPath: target.repo, reviewedBy: 'daemon', reviewInputSchemaVersion: 1, reviewInputFingerprint: fingerprint }, body: { kind: 'code-review', subject: { changedFiles: ['src/a.ts'] }, epicHash: target.epicHash, storyId: target.storyId, groundingMode: mode, verdict: mode === 'full' ? 'pass' : 'warn', counts: { high: 0, med: 0, low: 0 }, dimensions: (['adherence', 'conventions', 'coverage', 'quality'] as const).map(dimension => ({ dimension, findings: [] })) } } };
 }
-async function harness() {
+async function harness(requestedRepo = target.repo) {
+ const localHeader = { ...header, repoPath: (() => { try { return realpathSync(requestedRepo); } catch { return requestedRepo; } })() };
+ const fingerprint = { ...localHeader, digest: identityDigest(canonicalIdentityJson(localHeader)) };
+ const operationTarget = { ...target, repo: fingerprint.repoPath };
+ const requestedSubject = { ...subject, repoPath: requestedRepo };
  let now = 1_000, executions = 0, writes = 0, subjects = 0, fresh = FRESH, controlError: Error | undefined;
  let finish!: () => void, progress!: (frame: CodeReviewProgress) => void, ownerSignal!: AbortSignal;
  const store = new LocalStepStateStore(() => now); installStepStateStore(store); await _clearCodeReviewStateStoreForTests();
@@ -27,7 +34,7 @@ async function harness() {
  const controls: CodeReviewControlParams[] = [];
  let overrideReply: unknown;
  const deps: CodeReviewStepDeps = {
-  resolveSubject: async () => { subjects++; return { ok: true, subject }; },
+  resolveSubject: async () => { subjects++; return { ok: true, subject: requestedSubject }; },
   fetchFreshness: async () => fresh,
   fetchGrounding: async () => ({ ok: true, grounding: { symbols: [{ entityId: 's1', file: 'src/a.ts', kind: 'function', name: 'a', signature: 'a()', callers: [], callees: [], testsReaching: [] }] } }),
   assembleDiffGrounding: async () => { throw new Error('Daemon-owned review must assemble its own diff'); },
@@ -41,13 +48,13 @@ async function harness() {
    const handle = p.operation === 'start' ? registry.start({ fingerprint, startedAt: now, execute: async (signal, emit) => {
     executions++; ownerSignal = signal; progress = emit;
     await new Promise<void>((resolve, reject) => { finish = resolve; signal.addEventListener('abort', () => reject(signal.reason), { once: true }); });
-    writes++; return result(p.groundingMode ?? 'full');
+    writes++; const final = result(p.groundingMode ?? 'full'); return { ...final, artifact: { ...final.artifact, meta: { ...final.artifact.meta, repoPath: fingerprint.repoPath, reviewInputFingerprint: fingerprint } } };
    } }) : p.reviewHandle;
-   return p.operation === 'cancel' ? registry.cancel(handle, target, { waitMs: 0 }) : registry.wait(handle, target, { waitMs: 0 });
+   return p.operation === 'cancel' ? registry.cancel(handle, operationTarget, { waitMs: 0 }) : registry.wait(handle, operationTarget, { waitMs: 0 });
   },
  };
  const call = async (input: unknown): Promise<CodeReviewStepOutput> => JSON.parse((await handleCodeReviewStep(input, deps)).content[0]!.text) as CodeReviewStepOutput;
- const start = () => call({ phase: 'start', ...target });
+ const start = () => call({ phase: 'start', ...target, repo: requestedRepo });
  return { deps, store, registry, call, start, controls, setNow: (n: number) => { now = n; }, setStale: () => { fresh = { ...FRESH, staleFiles: ['src/a.ts'] }; }, setReply: (r: unknown) => { overrideReply = r; }, setError: (e?: Error) => { controlError = e; }, finish: () => finish(), progress: (frame: CodeReviewProgress) => progress(frame), signal: () => ownerSignal, counts: () => ({ executions, writes, subjects }), close: async () => { await registry.close(); await _clearCodeReviewStateStoreForTests(); } };
 }
 const timing = (startedAt: number, count = 30): ReviewTimingPlan => ({ startedAt, chunkCount: count, budgetMs: count * 600_000, deadlineAt: startedAt + count * 600_000, dimensions: [{ dimension: 'quality', primaryChunkCount: count, primaryChunkIds: Array.from({ length: count }, (_, i) => `quality:c${i}`), budgetMs: count * 600_000 }] });
@@ -125,4 +132,19 @@ test('DIFF-WAIT-RESUME: malformed final or a changed daemon epoch is rejected be
    const refused = await h.call({ phase: 'start', state: pending.state }); assert.ok(refused.next === 'error'); assert.equal(h.counts().writes, 0);
   } finally { await h.close(); }
  }
+});
+
+
+test('DIFF-WAIT-RESUME: a repository alias attaches its pending token to the canonical owner and resumes through either path', async () => {
+ const parent = mkdtempSync(join(tmpdir(), 'review-step-alias-')), repo = join(parent, 'repo'), alias = join(parent, 'alias');
+ mkdirSync(repo); symlinkSync(repo, alias);
+ const h = await harness(alias);
+ try {
+  const pending = await h.start(); assert.ok(pending.next === 'review_pending', JSON.stringify(pending));
+  const state = await loadState(pending.state); assert.equal(state.repo, realpathSync(repo));
+  const resumedAlias = await h.call({ phase: 'start', state: pending.state, repo: alias }); assert.ok(resumedAlias.next === 'review_pending'); assert.equal(resumedAlias.state, pending.state);
+  const resumedPhysical = await h.call({ phase: 'start', state: pending.state, repo }); assert.ok(resumedPhysical.next === 'review_pending'); assert.equal(h.counts().executions, 1);
+  h.finish(); await Promise.resolve(); await Promise.resolve();
+  const done = await h.call({ phase: 'start', state: pending.state, repo: alias }); assert.ok(done.next === 'done', JSON.stringify(done)); assert.equal(h.counts().writes, 1);
+ } finally { await h.close(); rmSync(parent, { recursive: true, force: true }); }
 });

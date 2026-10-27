@@ -1,6 +1,7 @@
 /** Daemon-memory ownership for resumable code reviews. Request waiters never own model execution. */
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { PATHS } from '../shared/paths.js';
 import type { CodeReviewControlResult, CodeReviewStreamResult } from '../shared/review-stream.js';
 import type { CodeReviewProgress } from '../workflow/code-review/runner.js';
@@ -52,10 +53,13 @@ interface RegistryOptions {
  readonly idleMs?: number | undefined;
  readonly epoch?: string | undefined;
 }
+export function canonicalReviewRepository(repo: string): string {
+ try { return realpathSync(repo); } catch { return resolve(repo); }
+}
 const keyOf = (target: ReviewOperationTarget): string => {
  const ordinal = /^s([0-9]+)$/i.exec(target.storyId)?.[1];
  if (ordinal === undefined) throw new ReviewOperationError('review-target-mismatch', 'Invalid review target Story');
- return JSON.stringify([target.repo, target.epicHash, BigInt(ordinal).toString()]);
+ return JSON.stringify([canonicalReviewRepository(target.repo), target.epicHash, BigInt(ordinal).toString()]);
 };
 const message = (err: unknown): string => err instanceof Error ? err.message : String(err);
 const reason = (err: unknown): string => err instanceof Error && 'code' in err && typeof err.code === 'string' ? err.code : 'review-failed';

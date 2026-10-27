@@ -120,3 +120,15 @@ test('DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed stat
   mkdirSync(f.artifact('TESTS')); assert.throws(f.read, ReviewInputUnavailableError);
  } finally { f.cleanup(); }
 });
+
+test('DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS', () => {
+ const f = fixture();
+ try {
+  const admitted = f.read(), originalOrder = [...admitted.subject.changedFiles]; assert.ok(originalOrder.length > 1);
+  assert.equal(captureReviewInputFingerprint({ ...admitted.subject, changedFiles: [...originalOrder].reverse() }).digest, admitted.fingerprint.digest);
+  assert.deepEqual(admitted.subject.changedFiles, originalOrder, 'comparison never mutates the actual subject or fingerprint ordering');
+  for (const changedFiles of [originalOrder.slice(1), [...originalOrder, originalOrder[0]!], [...originalOrder, 'src/foreign.ts']]) assert.throws(() => captureReviewInputFingerprint({ ...admitted.subject, changedFiles }), ReviewInputChangedError);
+  const reorderedTests = structuredClone(f.tests); reorderedTests.body.tasks.reverse(); f.save('TESTS', reorderedTests);
+  assert.throws(() => captureReviewInputFingerprint(admitted.subject), ReviewInputChangedError);
+ } finally { f.cleanup(); }
+});

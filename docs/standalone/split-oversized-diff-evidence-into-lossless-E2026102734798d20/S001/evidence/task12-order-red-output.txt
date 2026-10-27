@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint
+not ok 1 - DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint
+  ---
+  duration_ms: 2774.743958
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/code-review-publication.test.ts:1:12689'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"error":"Review inputs changed during capture; restart the independent review","reason":"review-input-changed","recoverable":false}
+    
+    'error' !== 'done'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'done'
+  actual: 'error'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/code-review-publication.test.ts:197:42)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# [17:32:07] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122326897-g8vwb3"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# Subtest: DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS
+not ok 2 - DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS
+  ---
+  duration_ms: 510.775333
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/workflow/code-review/__tests__/input-fingerprint.test.ts:1:9505'
+  failureType: 'testCodeFailure'
+  error: 'Review inputs changed during capture; restart the independent review'
+  code: 'review-input-changed'
+  name: 'ReviewInputChangedError'
+  stack: |-
+    captureReviewInputFingerprint (/Users/subhagho/work/projects/insors/insrc/src/workflow/code-review/input-fingerprint.ts:150:118)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/workflow/code-review/__tests__/input-fingerprint.test.ts:128:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4397.661708

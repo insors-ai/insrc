@@ -2,9 +2,9 @@
   "version": 1,
   "taskId": "t23",
   "test": "DIFF-S003-RETRY",
-  "status": "pending-runtime-activation-approval",
-  "attemptPerformed": false,
-  "reportedResult": null,
+  "status": "pending-corrected-runtime",
+  "attemptPerformed": true,
+  "reportedResult": "fail",
   "target": {
     "repo": "/Users/subhagho/work/projects/insors/insrc",
     "epicHash": "484fcef7efaf229e",
@@ -28,9 +28,26 @@
   "requiredAuthorization": "Activate the verified built runtime and restart the shared daemon, then perform the actual S003 retry and independent code review of this Story.",
   "planPath": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/PLAN.md",
   "planConstraint": "No automatic daemon restart or release changes; if activation unavailable preserve pending proof honestly, never script a fake review success.",
-  "independentCodeReviewStatus": "not-run; pending approved runtime activation",
+  "independentCodeReviewStatus": "not-run; pending corrected runtime to avoid the same admission defect",
   "globalConfigurationChanged": false,
   "releaseGatesChanged": false,
   "historicalS003EvidenceChanged": false,
-  "recordedAt": "2026-10-27T14:59:31.375898+00:00"
+  "recordedAt": "2026-10-27T14:59:31.375898+00:00",
+  "initialActivationRequest": {
+    "status": "pending-runtime-activation-approval",
+    "requiredAuthorization": "Activate the verified built runtime and restart the shared daemon, then perform the actual S003 retry and independent code review of this Story.",
+    "observedDaemon": {
+      "checkedAt": "2026-10-27T14:58:30.631Z",
+      "installedCommit": "2e448ba15d362ec927b7f736fcd1775ebd6cea99",
+      "queueDepth": 8,
+      "storeFailure": null
+    }
+  },
+  "runtimeRetryEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-first-runtime-retry.json",
+  "activationConfirmedByUser": true,
+  "installedCommitAtAttempt": "841891ec449d3612c8269b112a9e4d5d3d0b405b",
+  "requiredAction": "User updates/restarts daemon after the validated path-order correction is committed and pushed; then rerun S003 and the independent code review.",
+  "requiredCorrectedSourceSha256": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
+  "localPreparationEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-order-fixed-local.json",
+  "updatedAt": "2026-10-27T17:37:45.511195+00:00"
 }

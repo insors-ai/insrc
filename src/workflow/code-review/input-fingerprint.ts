@@ -142,7 +142,10 @@ export function readReviewInputSnapshot(repo: string, epic: string, story: strin
  }
 }
 function subjectEvidence(subject: CodeReviewSubject): unknown {
- return { changedFiles: subject.changedFiles, approvedLld: subject.approvedLld, approvedPlan: subject.approvedPlan, build: canonicalReviewBuild(subject.buildRecord), tests: subject.testRecord ?? null };
+ // Admission compares path membership: commit-order resolution and lexical diff
+ // preparation may order the same files differently. Keep duplicate paths visible
+ // and retain every ordered record/TESTS array and the snapshot digest unchanged.
+ return { changedFiles: [...subject.changedFiles].sort(), approvedLld: subject.approvedLld, approvedPlan: subject.approvedPlan, build: canonicalReviewBuild(subject.buildRecord), tests: subject.testRecord ?? null };
 }
 /** Admission also binds persisted record/contract evidence to the already resolved subject. */
 export function captureReviewInputFingerprint(subject: CodeReviewSubject): ReviewInputFingerprint {

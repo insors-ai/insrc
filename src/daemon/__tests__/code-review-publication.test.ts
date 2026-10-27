@@ -1,3 +1,7 @@
+import { resolveCodeReviewSubject } from '../../workflow/code-review/subject.js';
+import { assembleDiffCodeReviewGrounding } from '../../workflow/code-review/grounding.js';
+import { resolveStoryRangeBase } from '../../workflow/runners/build/range-base.js';
+import { LEDGER_EXCLUDE_GLOBS } from '../../workflow/runners/build/changed-files.js';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -177,5 +181,21 @@ test('DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to
   assert.equal(result.approved.length, 0); assert.equal(result.skipped.length, 1);
   const current = JSON.parse(readFileSync(f.path('BUILD'), 'utf8'));
   assert.equal(current.meta.authoredBy, 'controller'); assert.equal(current.meta.approvedAt, undefined);
+ } finally { f.cleanup(); }
+});
+
+
+test('DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint', async () => {
+ const f = fixture();
+ try {
+  writeFileSync(join(f.repo, 'src/0-first.ts'), 'export const first = 3;\n'); f.git('add', 'src/0-first.ts'); f.git('commit', '-qm', 'later Story file sorts before its first file', '-m', `Insrc-Story: ${epicHash}/${storyId}`);
+  const resolved = await resolveCodeReviewSubject(f.repo, epicHash, storyId); assert.ok(resolved.ok); if (!resolved.ok) return;
+  const diff = await assembleDiffCodeReviewGrounding(f.repo, undefined, { base: resolveStoryRangeBase(f.repo, epicHash, storyId), excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${epicHash}/${storyId}` });
+  assert.notDeepEqual(diff.changedFiles, resolved.subject.changedFiles, 'exercise actual chronological versus lexical path ordering');
+  assert.deepEqual([...diff.changedFiles].sort(), [...resolved.subject.changedFiles].sort());
+  const before = readReviewInputSnapshot(f.repo, epicHash, storyId).fingerprint;
+  const out = await daemonRun(f); assert.equal(out.frames.at(-1)!.stream, 'done', JSON.stringify(out.frames.at(-1)!.data)); assert.ok(out.calls > 0); assert.equal(out.writes, 2);
+  const artifact = JSON.parse(readFileSync(f.path('CR'), 'utf8')); assert.equal(artifact.meta.reviewInputFingerprint.digest, before.digest);
+  assert.deepEqual(compareReviewInputFingerprint(artifact.meta.reviewInputFingerprint, f.repo, epicHash, storyId), { status: 'fresh' });
  } finally { f.cleanup(); }
 });

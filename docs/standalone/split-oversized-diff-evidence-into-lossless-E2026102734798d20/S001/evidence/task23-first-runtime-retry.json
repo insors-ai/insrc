@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "attemptedAt": "2026-10-27T17:22:00Z",
+  "installedCommit": "841891ec449d3612c8269b112a9e4d5d3d0b405b",
+  "daemonPid": 17075,
+  "runtimeExecutable": "/opt/homebrew/Cellar/node/26.5.1/bin/node",
+  "runtimeEntry": "/Users/subhagho/.insrc/daemon/out/daemon/index.js",
+  "reviewChunkTokens": 128000,
+  "target": {
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s3"
+  },
+  "replies": [
+    {
+      "next": "confirm_wait",
+      "isProcessing": true,
+      "staleFiles": []
+    },
+    {
+      "next": "error",
+      "error": {
+        "code": "review-input-changed",
+        "message": "Review inputs changed during capture; restart the independent review",
+        "retryable": false
+      }
+    }
+  ],
+  "result": "fail",
+  "completedReviewArtifact": false,
+  "diagnosis": "Stable321-file scope is reordered by actual diff preparation; subject admission compared arrays in order. Local regression correction passes without a model review claim."
+}

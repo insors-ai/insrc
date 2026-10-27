@@ -1,0 +1,8 @@
+{
+  "status": "local-preparation-pass",
+  "liveDaemonReviewPerformed": false,
+  "files": 321,
+  "symbols": 570,
+  "pathOrderDiffers": true,
+  "admissionDigestMatchesSnapshot": true
+}

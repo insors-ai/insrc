@@ -39335,7 +39335,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "57be849bcf593c5c394e010622b2a4883d0a042e11b243edcb37b92d3c32d7ac",
-      "sourceDigest": "3415f43db4721b007a4aa452e6ffed7412001a3826a3b929b1dfbcc20029ec34",
+      "sourceDigest": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -40436,7 +40436,7 @@
     "shared/structured-input.ts": "3840bd12f581ab53350e17c1598b0f70f4efa8078b6e74db66a25a75af2d8834",
     "workflow/approval-owner.ts": "95e555c3eb3e9634126ea626340fe34ebc57061b0a03e93aed7e418215bffd0d",
     "workflow/code-review/diff-spans.ts": "0bb80be8b23fe1b679c32a2c939dc58101aa1d57fbd67a8564c6bdcd507fe39e",
-    "workflow/code-review/input-fingerprint.ts": "3415f43db4721b007a4aa452e6ffed7412001a3826a3b929b1dfbcc20029ec34",
+    "workflow/code-review/input-fingerprint.ts": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
     "workflow/code-review/publication.ts": "e0fa14157025a6db4a8ed465704c5939f880fc38cb2d6eda7972b360650385d2",
     "workflow/review-pipeline/adapters/diff-fragments.ts": "0d7b27c2ce0c61ead9d4a3a038c7a1fda2c384acb40d7a5cddc8f182c52444af",
     "workflow/review-pipeline/adapters/diff-parent-evidence.ts": "c659127bae0d3023eaabbe5f86671f497acd69e403602a1aff6308be063512e6",

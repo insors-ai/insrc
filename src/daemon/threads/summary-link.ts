@@ -69,7 +69,13 @@ export class SummaryRunner {
 
 	/** Connect to a new summary worker (the last one exited). */
 	rebind(port: MessagePort): void {
-		this.port?.close();
+		const old = this.port;
+		if (old !== undefined) {
+			// The old port's close may not have been seen yet: fail its jobs now, or they would wait for good.
+			this.port = undefined;
+			old.close();
+			this.abandon('the document-summary worker is gone');
+		}
 		this.bind(port);
 		this.connect(port);
 	}
@@ -156,9 +162,17 @@ export class SummaryWorkerLink implements IndexerQueue {
 
 	/** Connect to a new code-indexing worker (the last one exited). */
 	rebind(port: MessagePort): void {
-		this.port.close();
+		const old = this.port;
 		this.port = port;
+		old.close();
+		// As on the old port's close (which may not have been seen yet): its job stops, its edits get none.
+		this.dropOld();
 		this.bind(port);
+	}
+
+	private dropOld(): void {
+		this.abandoned = true;
+		for (const [id, resolve] of this.edits) { this.edits.delete(id); resolve(undefined); }
 	}
 
 	private bind(port: MessagePort): void {
@@ -173,9 +187,8 @@ export class SummaryWorkerLink implements IndexerQueue {
 		});
 		port.on('close', () => {
 			if (this.port !== port) return;
-			this.abandoned = true;
 			// No answer will come for an edit asked of the exited worker.
-			for (const [id, resolve] of this.edits) { this.edits.delete(id); resolve(undefined); }
+			this.dropOld();
 		});
 	}
 

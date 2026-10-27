@@ -136,3 +136,24 @@ test("a replacement code-indexing worker's job waits for the job the exited one 
 	assert.equal(link.isStopping, false, 'the new job is not stopped');
 	second.port2.close();
 });
+
+test("rebinding before the old port's close is seen settles what waited on it: the code end's job fails, the summary end's edit gets none", async () => {
+	// Code end: a job in flight on the old summary worker, then a new port at once.
+	const first = new MessageChannel();
+	const runner = new SummaryRunner(first.port1, () => undefined, () => {});
+	const inFlight = runner.run(JOB);
+	await new Promise(r => setTimeout(r, 10));
+	const second = new MessageChannel();
+	runner.rebind(second.port1);   // before first.port1's close event
+	assert.equal(await settled(inFlight), 'rejected: summary job abandoned: the document-summary worker is gone');
+	// Summary end: an edit asked of the old code-indexing worker, then a new port at once.
+	const block = new IndexingBlock(createIndexingBlock());
+	const a = new MessageChannel();
+	const link = new SummaryWorkerLink(a.port1, block);
+	const edit = link.takeDocSummaryEdit();
+	const b = new MessageChannel();
+	link.rebind(b.port1);
+	assert.equal(await settled(edit), 'resolved');
+	assert.equal(await edit, undefined);
+	for (const p of [first.port2, second.port2, second.port1, a.port2, b.port1, b.port2]) p.close();
+});

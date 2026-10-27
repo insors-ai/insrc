@@ -155,6 +155,13 @@
         "status": "resolved",
         "choice": "Add here, back-flow on objection",
         "resolvedAt": "2026-10-27T14:48:55.712Z"
+      },
+      "qc97c1249": {
+        "question": "Approved with an override after 12 review rounds in 3 cycles (last round 1 HIGH: the identity and draft-issue denial catches, added to the design afterward and not re-reviewed).",
+        "status": "resolved",
+        "choice": "Proceed under the override",
+        "rationale": "User approved the LLD with an override.",
+        "resolvedAt": "2026-10-27T14:49:13.839Z"
       }
     }
   },

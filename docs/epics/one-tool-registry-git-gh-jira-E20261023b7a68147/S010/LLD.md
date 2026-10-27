@@ -522,6 +522,8 @@ Each of the 38 wrappers' call sites and the client services is rewritten to buil
   - **resolved**: Extend gh_pr_view in s10 _(2026-10-27T14:48:26.968Z)_
 - `qad6f946b` — git_push gains the additive input configured here, and the owner of s4's tools can object; in that case the push parity moves to a back-flow before the build.
   - **resolved**: Add here, back-flow on objection _(2026-10-27T14:48:55.712Z)_
+- `qc97c1249` — Approved with an override after 12 review rounds in 3 cycles (last round 1 HIGH: the identity and draft-issue denial catches, added to the design afterward and not re-reviewed).
+  - **resolved**: Proceed under the override — User approved the LLD with an override. _(2026-10-27T14:49:13.839Z)_
 
 ## Citations
 

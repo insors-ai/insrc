@@ -66,6 +66,8 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 	const qwen = ollama.models.find(m => m.id === 'qwen3.6:27b');
 	assert.deepEqual(qwen?.inputLimit, { unit: 'tokens', max: 32768 });
 	assert.equal(ollama.toolLoopModel, 'qwen3.6:27b');
+	const qwen38 = ollama.models.find(m => m.id === 'qwen3.8:27b');
+	assert.deepEqual([qwen38?.efforts, qwen38?.inputLimit], [[], { unit: 'tokens', max: 32768 }], 'qwen3.8:27b listed with the local context window');
 
 	// Tier defaults equal SHIPPED_MODEL_DEFAULTS (cli-claude) and the installer's Codex block.
 	for (const tier of ['core', 'mid', 'cheap'] as const) {

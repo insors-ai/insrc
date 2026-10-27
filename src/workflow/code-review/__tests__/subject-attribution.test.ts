@@ -30,7 +30,7 @@ import { assembleDiffCodeReviewGrounding } from '../grounding.js';
 import { stampBuildStart } from '../../runners/build/range-base.js';
 import { _setRepoSchemaGuardForTests } from '../../../daemon/repo-schema-guard.js';
 import { codeReviewRunStart } from '../../../daemon/code-review-rpc.js';
-import { fixtureCodeReviewClient as handleCodeReviewStep } from '../../../daemon/steps/code-review-step/__tests__/controller-client.js';
+import { handleCodeReviewStep } from '../../../daemon/steps/code-review-step/handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../../../daemon/steps/code-review-step/state-store.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
@@ -244,7 +244,7 @@ test('a Story with no attributable change declines with no-build-record on the g
 		const step = JSON.parse(out.content[0]!.text) as { next: string; error?: { code: string; message: string } };
 		assert.equal(step.next, 'error', JSON.stringify(step));
 		assert.equal(step.error?.code, 'no-subject');
-		assert.equal(step.error?.message, 'no-subject', 'controller refusal exposes a bounded diagnostic, not raw diff details');
+		assert.match(step.error?.message ?? '', /no-build-record/);
 
 		assert.equal(judged, 0, 'no judge ran');
 		assert.deepEqual(writes, [], 'no record was written');

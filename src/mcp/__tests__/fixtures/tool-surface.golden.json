@@ -321,7 +321,7 @@
 	{
 		"name": "insrc_code_review_step",
 		"title": "insrc code review (by the other party, multi-turn)",
-		"description": "CODE review of a Story's built code across four dimensions (adherence / conventions / coverage / quality), by the party that did NOT write the code. The rule runs in both directions: code the daemon wrote is reviewed by YOU (the controller); code YOU wrote (a build you drove with insrc_build_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it by the Story's BUILD record. Either way the result is a block/warn/pass CodeReviewArtifact at CR-<epic>-<story>, and completing the Story (approving its BUILD record) REQUIRES one, done by the other party.\n\nWhen the daemon is the reviewer, phase='start' asks the daemon, waits (up to the configured outer wait) and returns { next: 'done', verdict, counts, path, jsonPath, reviewedBy: 'daemon', groundingMode }. A stale index first returns { next: 'confirm_wait', staleFiles, state }: ask the user, then call phase='start' again with that state and `proceed` (true = wait for a fresh index, false = review the diff). A diff review is recorded `degraded` and is `warn` at best. If the daemon review does not complete, it returns next:'error' naming the cause and stamps nothing; it never falls back to a review by you.\n\nController loop (daemon-written code): supply reviewBudget={version:1,profile,hostContextReserveTokens} with an explicit controller-reserved profile and a fresh host-context estimate on every turn. The server pins its own cap/profile, budgets the complete response, and returns one assigned request in prompts, its versioned reply schema, call metadata, timing and state. Do not append whole grounding. Execute that request and submit phase='judgements' with reply={version:1,generation,callId,answer}, state and reviewBudget. Repeat until done; all dimension/chunk/obligation calls must finish before persistence. A controller confirm_wait resumes phase='start' with the same versioned reply and answer={proceed:true|false}. Old raw judgement arrays and old controller tokens refuse explicitly. A completed final-call replay returns already_completed. Host context is declared/reserved, never measured or a verified hard native ceiling. Scope-dropped findings remain on the record and are excluded from verdict/counts.",
+		"description": "CODE review of a Story's built code across four dimensions (adherence / conventions / coverage / quality), by the party that did NOT write the code. The rule runs in both directions: code the daemon wrote is reviewed by YOU (the controller); code YOU wrote (a build you drove with insrc_build_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it by the Story's BUILD record. Either way the result is a block/warn/pass CodeReviewArtifact at CR-<epic>-<story>, and completing the Story (approving its BUILD record) REQUIRES one, done by the other party.\n\nWhen the daemon is the reviewer, phase='start' asks the daemon, waits (up to 30 minutes) and returns { next: 'done', verdict, counts, path, jsonPath, reviewedBy: 'daemon', groundingMode }. A stale index first returns { next: 'confirm_wait', staleFiles, state }: ask the user, then call phase='start' again with that state and `proceed` (true = wait for a fresh index, false = review the diff). A diff review is recorded `degraded` and is `warn` at best. If the daemon review does not complete, it returns next:'error' naming the cause and stamps nothing; it never falls back to a review by you.\n\nYour multi-turn loop (daemon-written code only):\n\n  1. phase='start' with { epicHash, storyId, repo? }. Server resolves the subject (declines with an error if there is no approved contract / build) and fetches grounding, returning { next: 'emit_judgements', prompts, schema, grounding, state } — `prompts` are the four per-dimension charges, `grounding` is the ground truth you judge against.\n  2. Emit the judgements JSON ({ judgements: DimensionResult[] } — one per dimension, each finding a `file:line` location), then phase='judgements' with judgements=<your JSON> + state. Server folds + persists and returns { next: 'done', verdict, counts, path, jsonPath }. When findings were dropped because their file is outside the Story's changed set, the frame also carries `scopeDropped` { count, changedFiles, byDimension }: those findings are NOT in `verdict`/`counts`; they are kept on the record as each dimension's `outOfScope`.\n\nPreserve `state` verbatim between calls; a malformed turn returns a next:'error' frame naming the fault (nothing is written).",
 		"inputSchema": {
 			"type": "object",
 			"properties": {
@@ -344,133 +344,6 @@
 				"repo": {
 					"type": "string",
 					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
-				},
-				"reviewBudget": {
-					"description": "Required for controller review: refreshed host-context estimate and explicit controller-reserved profile.",
-					"type": "object",
-					"properties": {
-						"version": {
-							"type": "number",
-							"const": 1
-						},
-						"hostContextReserveTokens": {
-							"type": "integer",
-							"minimum": 0,
-							"maximum": 9007199254740991
-						},
-						"profile": {
-							"type": "object",
-							"properties": {
-								"profileVersion": {
-									"type": "number",
-									"const": 1
-								},
-								"providerId": {
-									"type": "string",
-									"minLength": 1,
-									"maxLength": 128
-								},
-								"transport": {
-									"type": "string",
-									"const": "controller"
-								},
-								"transportVersion": {
-									"type": "string",
-									"minLength": 1,
-									"maxLength": 128
-								},
-								"schemaDialect": {
-									"type": "string",
-									"const": "controller-json-v1"
-								},
-								"promptDialect": {
-									"type": "string",
-									"const": "controller-frame-v1"
-								},
-								"qualification": {
-									"type": "string",
-									"const": "controller-reserved"
-								},
-								"declaredToolsJson": {
-									"type": "string"
-								},
-								"contextWindowTokens": {
-									"type": "integer",
-									"exclusiveMinimum": 0,
-									"maximum": 9007199254740991
-								},
-								"nativeReserveTokens": {
-									"type": "integer",
-									"minimum": 0,
-									"maximum": 9007199254740991
-								},
-								"transportReserveTokens": {
-									"type": "integer",
-									"minimum": 0,
-									"maximum": 9007199254740991
-								},
-								"completionReserveTokens": {
-									"type": "integer",
-									"exclusiveMinimum": 0,
-									"maximum": 9007199254740991
-								},
-								"inspectionReserveTokens": {
-									"type": "integer",
-									"minimum": 0,
-									"maximum": 9007199254740991
-								}
-							},
-							"required": [
-								"profileVersion",
-								"providerId",
-								"transport",
-								"transportVersion",
-								"schemaDialect",
-								"promptDialect",
-								"qualification",
-								"declaredToolsJson",
-								"nativeReserveTokens",
-								"transportReserveTokens",
-								"completionReserveTokens",
-								"inspectionReserveTokens"
-							],
-							"additionalProperties": false
-						}
-					},
-					"required": [
-						"version",
-						"hostContextReserveTokens",
-						"profile"
-					],
-					"additionalProperties": false
-				},
-				"reply": {
-					"description": "Versioned reply for the single pending call; required for controller continuations.",
-					"type": "object",
-					"properties": {
-						"version": {
-							"type": "number",
-							"const": 1
-						},
-						"generation": {
-							"type": "integer",
-							"minimum": 0,
-							"maximum": 9007199254740991
-						},
-						"callId": {
-							"type": "string",
-							"format": "uuid",
-							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-						},
-						"answer": {}
-					},
-					"required": [
-						"version",
-						"generation",
-						"callId",
-						"answer"
-					],
-					"additionalProperties": false
 				},
 				"judgements": {
 					"type": "object",
@@ -595,7 +468,7 @@
 	{
 		"name": "insrc_review_step",
 		"title": "insrc review (by the other party, multi-turn)",
-		"description": "Review of a persisted workflow artifact by the party that did NOT author it. The rule runs in both directions: an artifact the daemon authored is reviewed by YOU (the controller); an artifact YOU authored (through insrc_workflow_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it.\n\nWhen the daemon is the reviewer, phase='start' itself asks the daemon, waits (up to about 31 minutes for an HLD or LLD; up to 90 for a DEF, whose review has measured about 13) and returns { next: 'done', verdict, counts, report, applied, pending, reviewedBy: 'daemon' } — there is no further turn. If the daemon is not running, is too old to know the request, fails, or passes the wait limit, it returns next:'error' naming the cause and stamps nothing. It never falls back to a review by you; fix the cause and call again, or let the user approve with an override reason.\n\nWhen YOU are the reviewer (a daemon-authored artifact), the server does the DETERMINISTIC parts (read the artifact, gather evidence by re-running probes against real source, assemble + persist the report) and YOU emit the claims + the verdicts. Either way the review is recorded on the lifecycle, and approval REQUIRES it: a DEF, HLD or LLD with no review, or one reviewed by the party that authored it, is withheld, as is one whose verdict blocks.\n\nController review: supply reviewBudget={version:1,profile,hostContextReserveTokens} with an explicit controller-reserved profile on start and every continuation. Host context is declared/reserved, never measured. The server returns one complete admitted prompt and its versioned schema, call metadata, timing and state. Execute only that request and submit reply={version:1,generation,callId,answer} with a fresh reviewBudget and state. Use phase='claims' after emit_claims, phase='verdicts' after emit_verdicts, or phase='findings' after emit_findings. Extraction must finish before deterministic evidence gathering; each verification request owns exactly its assigned claims. Repeat returned continuations until done. All claims/template items must validate before persistence. Whole grounding is not appended, required evidence is never truncated, and an indivisible oversized request refuses explicitly. Legacy raw arrays and stale tokens cannot bypass the new contract; completed final-call replay returns already_completed. The returned prompt, schema and guidance are authoritative.",
+		"description": "Review of a persisted workflow artifact by the party that did NOT author it. The rule runs in both directions: an artifact the daemon authored is reviewed by YOU (the controller); an artifact YOU authored (through insrc_workflow_step), or whose author is not recorded, is reviewed by the daemon. The same model on both sides is fine; the reviewer must be the other party. You do not choose: call phase='start' and the tool routes it.\n\nWhen the daemon is the reviewer, phase='start' itself asks the daemon, waits (up to about 31 minutes for an HLD or LLD; up to 90 for a DEF, whose review has measured about 13) and returns { next: 'done', verdict, counts, report, applied, pending, reviewedBy: 'daemon' } — there is no further turn. If the daemon is not running, is too old to know the request, fails, or passes the wait limit, it returns next:'error' naming the cause and stamps nothing. It never falls back to a review by you; fix the cause and call again, or let the user approve with an override reason.\n\nWhen YOU are the reviewer (a daemon-authored artifact), the server does the DETERMINISTIC parts (read the artifact, gather evidence by re-running probes against real source, assemble + persist the report) and YOU emit the claims + the verdicts. Either way the review is recorded on the lifecycle, and approval REQUIRES it: a DEF, HLD or LLD with no review, or one reviewed by the party that authored it, is withheld, as is one whose verdict blocks.\n\nYour multi-turn loop (daemon-authored artifacts only):\n\n  1. phase='start' with { artifact, repo? }. `artifact` is the `.md` (or `.json`) path. Server returns { next: 'emit_claims', prompt, schema, state }.\n  2. Emit the claims JSON (the artifact's load-bearing premises + their deterministic probes) matching the schema, then phase='claims' with claims=<your JSON> + state. The server re-runs the probes and returns { next: 'emit_verdicts', prompt, schema, evidence, state } — `evidence` is the ground truth you MUST judge against.\n  3. Emit the verdicts JSON (one entry per claim, keyed by claimId), then phase='verdicts' with verdicts=<your JSON> + state. Server returns { next: 'done', verdict, counts, report, applied, pending } once the amended artifact + stamped review are written to disk.\n\nDESIGN documents (an HLD or LLD) take a shorter path: phase='start' returns { next: 'emit_findings', template, prompt, schema, state } — a fixed review checklist. Check every item against the real code and docs with your own tools (use insrc analyze for drill-down), then call phase='findings' with findings=<your JSON> + state. Each premise is reported as `holds`, `does-not-hold` or `could-not-verify`; only `does-not-hold` blocks approval. An answer that breaks the checklist is rejected with the reasons and stamps nothing.\n\nThe `guidance` field on each response explains the next call; `prompt` + `schema` are authoritative. Preserve `state` verbatim between calls.",
 		"inputSchema": {
 			"type": "object",
 			"properties": {
@@ -616,133 +489,6 @@
 				"repo": {
 					"type": "string",
 					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
-				},
-				"reviewBudget": {
-					"description": "Required before controller review prompts or continuations: explicit profile and refreshed host-context reserve.",
-					"type": "object",
-					"properties": {
-						"version": {
-							"type": "number",
-							"const": 1
-						},
-						"hostContextReserveTokens": {
-							"type": "integer",
-							"minimum": 0,
-							"maximum": 9007199254740991
-						},
-						"profile": {
-							"type": "object",
-							"properties": {
-								"profileVersion": {
-									"type": "number",
-									"const": 1
-								},
-								"providerId": {
-									"type": "string",
-									"minLength": 1,
-									"maxLength": 128
-								},
-								"transport": {
-									"type": "string",
-									"const": "controller"
-								},
-								"transportVersion": {
-									"type": "string",
-									"minLength": 1,
-									"maxLength": 128
-								},
-								"schemaDialect": {
-									"type": "string",
-									"const": "controller-json-v1"
-								},
-								"promptDialect": {
-									"type": "string",
-									"const": "controller-frame-v1"
-								},
-								"qualification": {
-									"type": "string",
-									"const": "controller-reserved"
-								},
-								"declaredToolsJson": {
-									"type": "string"
-								},
-								"contextWindowTokens": {
-									"type": "integer",
-									"exclusiveMinimum": 0,
-									"maximum": 9007199254740991
-								},
-								"nativeReserveTokens": {
-									"type": "integer",
-									"minimum": 0,
-									"maximum": 9007199254740991
-								},
-								"transportReserveTokens": {
-									"type": "integer",
-									"minimum": 0,
-									"maximum": 9007199254740991
-								},
-								"completionReserveTokens": {
-									"type": "integer",
-									"exclusiveMinimum": 0,
-									"maximum": 9007199254740991
-								},
-								"inspectionReserveTokens": {
-									"type": "integer",
-									"minimum": 0,
-									"maximum": 9007199254740991
-								}
-							},
-							"required": [
-								"profileVersion",
-								"providerId",
-								"transport",
-								"transportVersion",
-								"schemaDialect",
-								"promptDialect",
-								"qualification",
-								"declaredToolsJson",
-								"nativeReserveTokens",
-								"transportReserveTokens",
-								"completionReserveTokens",
-								"inspectionReserveTokens"
-							],
-							"additionalProperties": false
-						}
-					},
-					"required": [
-						"version",
-						"hostContextReserveTokens",
-						"profile"
-					],
-					"additionalProperties": false
-				},
-				"reply": {
-					"description": "Versioned answer for the one assigned pending call.",
-					"type": "object",
-					"properties": {
-						"version": {
-							"type": "number",
-							"const": 1
-						},
-						"generation": {
-							"type": "integer",
-							"minimum": 0,
-							"maximum": 9007199254740991
-						},
-						"callId": {
-							"type": "string",
-							"format": "uuid",
-							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-						},
-						"answer": {}
-					},
-					"required": [
-						"version",
-						"generation",
-						"callId",
-						"answer"
-					],
-					"additionalProperties": false
 				},
 				"claims": {
 					"type": "object",

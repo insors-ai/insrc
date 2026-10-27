@@ -23,7 +23,7 @@ after(async () => {
 
 import type { LLMMessage, LLMProvider, LLMResponse, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { lifecycleFor, resetLifecycleRegistry, roundWriterFor } from '../../../daemon/lifecycle-registry.js';
-import { fixtureReviewClient as handleReviewStep } from '../../../daemon/steps/review-step/__tests__/terminal-client.js';
+import { handleReviewStep } from '../../../daemon/steps/review-step/handler.js';
 import { _clearReviewStateStoreForTests } from '../../../daemon/steps/review-step/state-store.js';
 import { reviewArtifactFile } from '../../review/run-artifact.js';
 import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';

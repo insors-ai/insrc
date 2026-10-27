@@ -3578,5 +3578,6 @@
   ],
   "sourceDrift": [],
   "gitStatusAfter": "?? node_modules\n",
-  "assessment": "Initial verification snapshot; introduced integration failures found and corrected before final verification. Complete raw log remains at the recorded absolute path with its exact SHA256."
+  "assessment": "Initial verification snapshot; introduced integration failures found and corrected before final verification. Complete raw log remains at the recorded absolute path with its exact SHA256.",
+  "archivedLog": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task22-first-full-sweep-output.txt"
 }

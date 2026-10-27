@@ -1,0 +1,10 @@
+{
+  "html": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html",
+  "htmlSha256": "5d3e38ec0263477cb37ec5b13f6ec7de64318a06dca4b5275579258aa10475b2",
+  "screenshot": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle3-round2.png",
+  "verification": "Headless Chrome static render inspected: six participants/nine messages readable with controller narrative. Identity/writer changes are in LLD prose; controls not exercised.",
+  "viewport": {
+    "width": 1440,
+    "height": 1800
+  }
+}

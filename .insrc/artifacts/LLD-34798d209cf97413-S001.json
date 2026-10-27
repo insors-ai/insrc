@@ -29,7 +29,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "pass",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -37,9 +37,21 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers the filed oversized-diff defect and the subsequent chunk-derived timing requirement while preserving the stated non-goals.",
-          "evidence": "The approved ISSUE requires complete attributable evidence, unchanged configured limits, independent degraded review, preservation of S003 evidence/release state, and an actual reproduction retry. The timing proposal specifies 600000 milliseconds per initial primary chunk, excluding retries/gather from additional budget credits. Sections 2–7 design these behaviors, including low-cap fitting, refusal recovery, fixed deadlines, resumable waits and the S003 smoke test. [files: .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/time-budget-proposal.json, src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/limit.ts]",
-          "action": "None.",
+          "premise": "The design covers the approved oversized-diff correction and documented chunk-derived timing requirement.",
+          "evidence": "The approved ISSUE requires bounded attributable evidence without truncation, preserved limits, independent degraded review, unchanged S003 evidence/release state, and an actual retry. Sections 2–7 address these requirements. The timing proposal specifies 600000 milliseconds per initial primary chunk, fixed across retries and gather; §§3.7–3.9 implement that accounting and resumable ownership. [files: .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/time-budget-proposal.json, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts]",
+          "action": "No correction identified.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Relationship documentation and the supplied sequence companion adequately explain the proposed evidence model and primary interaction.",
+          "evidence": "The prose specifies file-to-fragment ownership, ordered partitioning, parent-to-obligation cardinality, note ownership and replacement lineage. The stored sequence definition matches the companion’s six participants and nine messages. The HTML SHA256 matches the render evidence, and I inspected its screenshot: the diagram is readable and consistent with the primary flow. Interactive controls were not exercised; operation and publication details are documented in prose. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle3-round2.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle3-round2.png]",
+          "action": "No additional mandatory visual identified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -49,9 +61,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Current diff grounding creates one indivisible file atom and permits explicitly marked truncated evidence.",
-          "evidence": "buildDiffSymbols maps each file to entityId `diff:${f.path}`, stores its hunks in signature, and sets coverageEligible:false. Its truncation marker says '[diff truncated — reviewed over a bounded slice]'. codeReviewMaterial serializes each complete row into one atom. Existing diff-grounding tests expressly accept the truncation marker. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts]",
-          "action": "None; the proposed recovery/refusal tests correctly identify an intentional behavior change.",
+          "premise": "Current diff grounding produces indivisible file rows, and current prompt measurement excludes the supplied schema.",
+          "evidence": "buildDiffSymbols maps each file to entityId `diff:${f.path}` with its hunks in signature and coverageEligible:false. codeReviewMaterial serializes each complete row into one atom. promptChars accepts only messages and counts content, role headings and separators; job sizing does not add schema serialization. These match the stated failure mechanism. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/prepare.ts]",
+          "action": "No correction identified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -61,9 +73,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Current measurement omits the separately supplied schema, and current pipeline deadlines apply specifically to reviewer-session calls.",
-          "evidence": "promptChars accepts only messages and counts serialized text/headings/separators. job.sentChars measures envelopeMessages without envelopeSchema. withDeadline filters pending calls to execution.mode==='reviewer-session'; nextCalls returns pending calls unchanged when no reviewer-session call is present. The driver submits structured calls serially without a complete-input dispatch guard. [files: src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts]",
-          "action": "None; the design explicitly identifies the accounting and structured-deadline extensions.",
+          "premise": "Completion currently refreshes BUILD metadata and change-log observations, so fingerprint stability requires actual writer changes.",
+          "evidence": "ensureBuildRecordOnCompletion supplies `createdAt: now, updatedAt: now` and collects entries with `timestamp: now`. collectBuildChangeLog constructs fresh entries. mergeWithPrior preserves createdAt but otherwise spreads incoming metadata/body over prior values, and persistBuildRecord writes both files unconditionally. Section 3.16 correctly addresses these mutations rather than excluding them from identity. [files: src/workflow/runners/build/completion-record.ts, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "No correction identified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -73,9 +85,21 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing gather/reduction and duplicate stages are reusable, but fragment-parent obligations and adjudication require the additions described.",
-          "evidence": "GatherPlan already supports keyed notes, obligation calls, reduction calls and provenance; ReviewObligation already permits kind:'check-item'. Current quality chunks require findings/descriptions and have no required notes. relationCall returns [] for non-calls relations. Duplicate compareCalls explicitly forms every pair of description batches. Thus sparse adjacency alone would not supply parent correctness or avoid fragment duplication comparisons; the design adds both missing mechanisms. [files: src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts, src/workflow/review-pipeline/job.ts]",
-          "action": "None.",
+          "premise": "The existing serial job and keyed-note gather machinery are valid reuse points, but parent quality adjudication and fragment-aware duplication require the additions specified.",
+          "evidence": "runReviewJob dispatches only calls[0] and awaits it. startGather extracts keyed notes and schedules obligation calls with bounded reduction and provenance. Existing quality chunks require findings/descriptions, material returns `obligations: []`, and relationCall returns no checks for non-calls relations. Duplicate comparison forms batch pairs. The design explicitly adds the missing parent/global obligations and excludes fragment rows from symbol-pair comparison. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts]",
+          "action": "No correction identified.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Verified bounded CLI execution is new functionality, and the design correctly requires enforcement rather than assuming current structured output provides isolation.",
+          "evidence": "ProviderCapabilities and StructuredCompletionOpts currently contain neither boundedStructuredInput nor boundedInput. completeStructuredOnce serializes messages and supplies schema arguments; Codex additionally transforms the schema through codexStrictSchema. These methods do not currently enforce the proposed isolation contract. Sections 3.3 and 3.12 explicitly require normalization, capability verification, enforcement and refusal before dispatch. [files: src/shared/types.ts, src/agent/providers/cli-provider.ts, src/mcp/forward-step.ts]",
+          "action": "Implement and verify the specified boundary before advertising support; existing structuredOutput support alone is insufficient.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -85,9 +109,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The adapter-budget callback change identifies all seven production runDimensionJob callers.",
-          "evidence": "Direct search confirms five model callers—adherence, conventions, coverage, quality and functional-coverage—and two deterministic callers—diagram and UX. Currently runDimensionJob invokes build(snapshot), then independently passes reviewLimitChars() to createReviewJob; modelDimensionAdapter also has its own default. The proposed second callback argument closes this actual propagation gap. Analyzer relationship coverage was incomplete, so caller enumeration was checked directly. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/diagram/index.ts, src/workflow/code-review/dimensions/ux/index.ts]",
-          "action": "None.",
+          "premise": "The adapter-budget callback inventory includes all current production dimension callers.",
+          "evidence": "Direct search finds seven production runDimensionJob calls: adherence, conventions, coverage, quality, functional-coverage, UX and diagram. The first five construct modelDimensionAdapter without forwarding a limit; the latter two construct deterministicDimensionAdapter. Current runDimensionJob independently calls reviewLimitChars for createReviewJob. Sections 3.5 and 3.7 identify the required propagation and preparation sites. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/ux/index.ts, src/workflow/code-review/dimensions/diagram/index.ts]",
+          "action": "No correction identified. The analyzer returned an off-topic, incomplete bundle; caller verification used direct search and source reads.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -96,12 +120,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Extending enforceCodeReviewGate alone prevents every existing BUILD approval route from consuming a stale fingerprinted review.",
-          "evidence": "The TUI approve service directly executes `const approval = approveArtifactByJsonPath(...)`. That lower-level function calls otherPartyReviewGap, whose BUILD branch reads the CR and assigns `reviewer = reviewerPartyOf(cr.meta)`; it checks existence and reviewer party, but never calls enforceCodeReviewGate. Only approveWorkflowTarget calls enforceCodeReviewGate, and its current refusal branch is `if (gate.status === 'blocked')`. Section 3.13 omits src/workflow/gates.ts from its change sites and does not extend the common approval boundary. As written, stale fingerprinted CRs can still authorize BUILD approval through the TUI. [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/workflow/code-review/gate.ts, src/workflow/__tests__/other-party-review-gate.test.ts, src/workflow/__tests__/approve-codereview-gate.test.ts]",
-          "action": "Add freshness enforcement at the shared BUILD approval boundary used by approveArtifactByJsonPath, and update the workflow approval outcome handling as needed. Specify stale-review and override behavior explicitly. Add regressions through both approveWorkflowTarget and the TUI approve service.",
+          "severity": "LOW",
+          "premise": "The design covers both BUILD approval entry points and the control-message serialization boundary.",
+          "evidence": "approveWorkflowTarget performs its code-review preflight and completion hook, while cli/services/workflow.approve directly calls approveArtifactByJsonPath before tracker/commit effects. The low-level function currently checks reviewer identity without source freshness. Separately, codeReviewRequestParams reconstructs legacy fields and CodeReviewStreamResult requires runId/artifact. Sections 3.9 and 3.14 explicitly modify these boundaries and their consumers. [files: src/workflow/gates.ts, src/workflow/code-review/gate.ts, src/cli/services/workflow.ts, src/shared/review-stream.ts, src/daemon/steps/daemon-client.ts, src/mcp/daemon-stream.ts]",
+          "action": "No correction identified.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.1",
@@ -109,9 +133,21 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Optional fragment/provider/fingerprint fields and explicit state invalidation can preserve legacy records and opted-out transport behavior without a database rewrite.",
-          "evidence": "ChangedSymbolSummary, StructuredCompletionOpts and ProviderCapabilities are shared TypeScript contracts that support the proposed optional additions. CR validation does not reject additional metadata. Current step state is in-memory opaque payload data, copied with structuredClone, rather than a persistent domain table. The design explicitly retains legacy final-only streams and unfingerprinted records, and requires restart for old degraded snapshots instead of fabricating an in-place conversion. [files: src/workflow/code-review/types.ts, src/shared/types.ts, src/shared/review-stream.ts, src/workflow/code-review/runner.ts, src/daemon/threads/step-state.ts, src/daemon/steps/code-review-step/state-store.ts]",
-          "action": "None; implement the stated legacy branches explicitly.",
+          "premise": "The proposed migration distinguishes legacy records and requests from newly bounded records and incompatible pending states.",
+          "evidence": "Current jobs and code-review continuation payloads are held in memory, and legacy codeReview.run returns the final-only stream shape. The design preserves omitted-operation behavior, restarts old oversized/degraded states, leaves graph identities unchanged, and treats only genuinely absent fingerprint fields as legacy. Partial, malformed and unsupported fingerprint metadata explicitly fail closed. [files: src/workflow/review-pipeline/types.ts, src/daemon/steps/code-review-step/types.ts, src/daemon/steps/code-review-step/state-store.ts, src/shared/review-stream.ts, src/workflow/code-review/gate.ts]",
+          "action": "No correction identified.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "TESTS identity must preserve record state, timestamps and array order; the design accounts for those verdict-bearing distinctions.",
+          "evidence": "testRecordState distinguishes absent, record and unreadable; readTestRecord collapses the latter two non-record outcomes to null for the subject. testRecordView selects runs by ranAt, prefers failing/malformed evidence on ties, and otherwise retains order-dependent choices. Builder-reported evidence also affects the view. Section 3.15 hashes complete ordered TESTS content, explicit state and the presented view, including malformed/raw-input handling. [files: src/workflow/runners/build/test-record.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/dimensions/test-record-view.ts, src/workflow/code-review/dimensions/coverage.ts]",
+          "action": "No correction identified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -121,21 +157,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed daemon/controller split preserves existing independent-review ownership and CLI-based cloud access.",
-          "evidence": "codeReviewRunStart refuses daemon-authored BUILD records before resolving a provider. beginDiffOnlyReview routes non-daemon authors to reviewByDaemon and currently emits controller judgments for daemon-authored code. The design replaces that degraded controller protocol while retaining this routing. CliProvider already owns local claude/codex subprocess invocation; the proposed helper reuses that boundary and introduces no direct cloud REST provider. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/author.ts, src/agent/providers/cli-provider.ts, AGENTS.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.2",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The relationship documentation and linked companion adequately explain the proposed evidence ownership and interaction boundaries.",
-          "evidence": "The design specifies file-to-fragment ownership, ordered partitioning, parent obligations, global duplication ownership and revision compatibility in prose. I inspected the canonical sequence definition, generated HTML source and saved rendered screenshot. The HTML SHA256 matches the render record, 259c7a8a6dadb1292ee2a0f5b9eeb14773e2e2bba3af3c7223debafe64f59cfb. The six participants and nine messages are readable and consistent with the described capture/fit/review/gather flow. This verifies the saved static rendering; no fresh browser render or interactive-control verification was performed. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle2-round3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle2-round3.png]",
-          "action": "No additional ERD or UX mock is necessary. Optionally add controller-helper and status-wait lifelines for easier navigation; their ownership is already specified in prose.",
+          "premise": "The design preserves the shared provider, review-pipeline and S003 ownership boundaries while extending the bounded diff route.",
+          "evidence": "The artifact is standalone with no parent-HLD contracts. The shared pipeline documents serial execution and a three-characters-per-token estimate, implemented by reviewLimitChars. The design retains these, CLI-owned OAuth and reviewer routing; unrelated completion options default unchanged and design-review timing is excluded. S003 is used as reproduction evidence and smoke validation, with its inventories and disabled release state explicitly preserved. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/limit.ts, src/agent/providers/cli-provider.ts, src/daemon/code-review-rpc.ts]",
+          "action": "No correction identified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -145,9 +169,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Incomplete capture, oversized singleton fragments and invalid parent evidence have explicit detection and failure/recovery contracts.",
-          "evidence": "The real reader exposes truncation and git_diff has a 256KiB default and 2MiB hard capture cap. Existing pipeline redivision repacks atom IDs; it cannot split a singleton's text. The design addresses those distinct limits through reader recovery-or-refusal, measured Unicode-safe repartition, no-progress termination and immutable revision provenance. It also requires missing parent/global notes to fail before adjudication instead of using the existing NO_EVIDENCE path. [files: src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts]",
-          "action": "None.",
+          "premise": "Incomplete evidence, oversized singleton spans and missing parent notes have explicit detection and non-success outcomes.",
+          "evidence": "The current reader exposes truncation and can emit missing-hunk markers; planChunks rejects an oversized singleton; existing gather permits NO_EVIDENCE. The design explicitly replaces truncated-slice acceptance, fits spans against real complete calls, requires strictly progressing refusal recovery, validates every fragment note and prohibits the ordinary no-evidence success path for parent/global obligations. Irreducible context and unsupported transport terminate without a completed review. [files: src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/review-pipeline/prepare.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts]",
+          "action": "No correction identified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -157,9 +181,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design explicitly separates waiter detachment, operation cancellation, deadline expiry and unsupported bounded execution.",
-          "evidence": "Currently runReviewStream invokes transport.cancel on timeout/abort, and the in-daemon transport aborts its handler signal. Current code-review tokens also share one-hour TTL/LRU eviction. Sections 3.8–3.12 explicitly replace these behaviors for opted-in operations: separate operation ownership, pinned active state, immutable deadlines, terminal capability refusal, late-answer rejection and cancellation of owned execution. Legacy request cancellation remains separately defined. [files: src/shared/review-stream.ts, src/daemon/steps/daemon-client.ts, src/daemon/threads/step-state.ts, src/workflow/review-pipeline/driver.ts, src/daemon/steps/code-review-step/handler.ts]",
-          "action": "None.",
+          "premise": "Timeout, disconnection, cancellation and stale-input handling cover the current lifecycle gaps without manufacturing completion.",
+          "evidence": "Current job deadlines apply to reviewer-session calls, stream timeout cancels its transport, continuation state has a one-hour TTL/100-entry LRU, and runCodeReview writes after judgment without final identity validation. Sections 3.7–3.14 explicitly add structured deadlines, operation-owned cancellation, waiter detachment, pinned active state, replay/lost-operation handling, mandatory publication revalidation and non-overridable stale-review approval refusal. [files: src/workflow/review-pipeline/job.ts, src/shared/review-stream.ts, src/daemon/threads/step-state.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts, src/workflow/gates.ts]",
+          "action": "No correction identified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -169,21 +193,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each listed acceptance criterion maps to concrete proposed tests using appropriate existing test seams.",
-          "evidence": "The ac1–ac6 mapping covers partition/reader integrity, complete-input transport, gather/duplication, compatibility/publication identity, the actual S003 retry, and timing/resumable ownership. Existing divided-review tests exercise production adapters/runner with scripted providers; review-stream tests use real Unix sockets and manual timers; diff-grounding tests provide injectable readers and temporary git repositories. These support the proposed test approach. This is verification of the test design, not a claim that the new tests exist or pass. [files: src/workflow/review-pipeline/__tests__/code-review-divided.test.ts, src/mcp/__tests__/review-stream.test.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/__tests__/other-party-review-gate.test.ts, package.json]",
-          "action": "Extend DIFF-PUBLISH-GATE with both approval-entry-point regressions identified under change-sites.",
+          "premise": "Each stated acceptance criterion has concrete planned tests, including the real integration boundaries affected by the design.",
+          "evidence": "The mapping covers evidence partition/reader integrity (ac1), complete-call transport and lower-cap/refusal behavior (ac2), parent and duplication gather (ac3), compatibility/freshness/TESTS/completion writers and both approval routes (ac4), actual S003 retry (ac5), and fixed timing/resumable transport/controller waits (ac6). Existing suites provide relevant seams. Crucially, the plan replaces truncated-slice acceptance and strengthens completion tests beyond the current assertion that repeated writes merely leave one BUILD file. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/review-pipeline/__tests__/code-review-divided.test.ts, src/workflow/runners/build/__tests__/completion-record.test.ts, src/workflow/__tests__/other-party-review-gate.test.ts, src/workflow/__tests__/approve-build-record-completion.test.ts, src/daemon/steps/code-review-step/__tests__/long-review.test.ts]",
+          "action": "No test-design correction identified. These are planned tests; this review does not claim they are implemented or passing.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 1,
+        "high": 0,
         "med": 0,
-        "low": 11,
+        "low": 14,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-27T06:36:47.683Z",
+      "reviewedAt": "2026-10-27T07:00:15.769Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }
@@ -781,7 +805,7 @@
         {
           "entity": "Review input identity and publication revalidation",
           "change": "field-add",
-          "details": "At admission capture a canonical ReviewInputFingerprint with schemaVersion and digest over resolved target/repo identity, Story range base and HEAD, complete scoped diff content plus path/status/mode/rename/binary identities, changed-file contents needed by the grounding snapshot, effective approved contract/plan identities and content digests, and BUILD artifact content digest including authoredBy/build revision. Hash deterministic structured inputs; exclude timestamps/progress-only noise explicitly rather than substituting mtime for content. Snapshot capture must be consistent: compare pre/post identity while reading and retry or refuse source-changed; do not attach a fingerprint for different bytes than the snapshot. Store the admitted fingerprint and expected author in the daemon operation and controller state. Both review routes re-resolve/recompute source/contract/BUILD identity immediately before final publication even if no second start request occurs. Require author still matches independent reviewer routing; same filenames with different BUILD content, contract edits, source edits, new commits, changed uncommitted bytes or changed Story ownership all invalidate. A mismatch terminates with review-input-changed, cancels/settles owned work and writes no new CR; no auto-rebase/restart, no false completed response. Add a runner pre-publication validation hook supplied by the real RPC/controller handler (required for new timed/bounded review paths), invoked after dimension completion and immediately before the existing atomic artifact writer, under per-target operation ownership and remaining deadline/signal checks. Legacy injected direct-runner callers retain their defaults, but production new routes cannot omit the hook. Persist optional meta.reviewInputFingerprint plus reviewInputSchemaVersion on CR, required for all newly bounded/timed reviews. Do not mutate the historical S003 evidence as part of this identity. Extend enforceCodeReviewGate to recompute/compare any recorded fingerprint against current source/approved contracts/BUILD; mismatch or unavailable identity refuses the gate as stale-review even if verdict/counts are otherwise acceptable. Legacy CR without fingerprint retains explicit legacy compatibility; it is not relabeled as newly verified. This gate check closes edits after the final pre-write check, including edits between check and atomic rename, and keeps later source edits from reusing a verdict. Recheck after publication before reporting done; if identity changed in that narrow interval report stale-review/no accepted completion, leaving the fingerprinted record unusable by the gate rather than deleting another owner’s artifact. Existing previous CR is not overwritten on a mismatch detected before writing; per-target ownership prevents competing review writers. This is content identity verification, not a new index-freshness dependency. [c29]",
+          "details": "At admission capture a canonical ReviewInputFingerprint with schemaVersion and digest over resolved target/repo identity, Story range base and HEAD, complete scoped diff content plus path/status/mode/rename/binary identities, changed-file contents needed by the grounding snapshot, effective approved contract/plan identities and content digests, and canonical review-relevant BUILD content digest including authoredBy/build revision (excluding exactly the approval/audit fields named in Shared BUILD approval freshness enforcement). Hash deterministic structured inputs; exclude timestamps/progress-only noise explicitly rather than substituting mtime for content. Snapshot capture must be consistent: compare pre/post identity while reading and retry or refuse source-changed; do not attach a fingerprint for different bytes than the snapshot. Store the admitted fingerprint and expected author in the daemon operation and controller state. Both review routes re-resolve/recompute source/contract/BUILD identity immediately before final publication even if no second start request occurs. Require author still matches independent reviewer routing; same filenames with different BUILD content, contract edits, source edits, new commits, changed uncommitted bytes or changed Story ownership all invalidate. A mismatch terminates with review-input-changed, cancels/settles owned work and writes no new CR; no auto-rebase/restart, no false completed response. Add a runner pre-publication validation hook supplied by the real RPC/controller handler (required for new timed/bounded review paths), invoked after dimension completion and immediately before the existing atomic artifact writer, under per-target operation ownership and remaining deadline/signal checks. Legacy injected direct-runner callers retain their defaults, but production new routes cannot omit the hook. Persist optional meta.reviewInputFingerprint plus reviewInputSchemaVersion on CR, required for all newly bounded/timed reviews. Do not mutate the historical S003 evidence as part of this identity. Extend enforceCodeReviewGate to recompute/compare any recorded fingerprint against current source/approved contracts/BUILD; mismatch or unavailable identity refuses the gate as stale-review even if verdict/counts are otherwise acceptable. Legacy CR without fingerprint retains explicit legacy compatibility; it is not relabeled as newly verified. This gate check closes edits after the final pre-write check, including edits between check and atomic rename, and keeps later source edits from reusing a verdict. Recheck after publication before reporting done; if identity changed in that narrow interval report stale-review/no accepted completion, leaving the fingerprinted record unusable by the gate rather than deleting another owner’s artifact. Existing previous CR is not overwritten on a mismatch detected before writing; per-target ownership prevents competing review writers. This is content identity verification, not a new index-freshness dependency. [c29] Freshness also runs at the common approveArtifactByJsonPath BUILD boundary; enforcing only the workflow wrapper is insufficient. See shared BUILD approval contract for non-overridable identity failures, outcome projection and exact canonical exclusions. The canonical input also includes separate verdict-bearing TESTS record state/content and ordering semantics as specified in Verdict-bearing TESTS input identity; source/BUILD alone is insufficient.",
           "callSites": [
             "src/daemon/code-review-rpc.ts",
             "src/daemon/code-review-operations.ts",
@@ -791,6 +815,46 @@
             "src/workflow/code-review/runner.ts",
             "src/workflow/code-review/gate.ts",
             "src/workflow/storage.ts"
+          ]
+        },
+        {
+          "entity": "Shared BUILD approval freshness enforcement",
+          "change": "invariant-change",
+          "details": "Add synchronous checkBuildReviewFreshness(jsonPath,buildMeta):ReviewFreshnessResult at src/workflow/gates.ts, called by approveArtifactByJsonPath for every BUILD before override handling and immediately before approvedAt/writeAtomic. Resolve repo/target from the canonical artifact-store path and validated BUILD identity; malformed/conflicting identity fails closed for a fingerprinted/new bounded CR. Reuse one synchronous canonical fingerprint reader/comparator from input-fingerprint.ts (read-only file/git operations, no LLM or client DB access), so both this synchronous common boundary and enforceCodeReviewGate judge the same identity. Result is fresh|legacy|stale-review; stale-review includes reason mismatch|unavailable|invalid and a message, not invented findings/counts. If the CR records reviewInputFingerprint/schemaVersion, validate fingerprint shape/version and current canonical source/contract/BUILD identity; malformed, unsupported-version, unreadable current identity or mismatch is stale-review. Never fall through to legacy/no-review on invalid fingerprint metadata. Legacy CR with both fingerprint fields genuinely absent retains documented old behavior; missing CR still follows mandatory independent-review rules. New timed/bounded CR publication requires both fields. A mixed partial fingerprint is invalid, not legacy. Check independent author as well as identity using the existing otherPartyReviewGap. Do not synthesize a review or call models from approval. A stale-review unconditionally throws ReviewBlockedError with summary stale-review before any approvedAt/rangeBase/reviewOverride write, tracker push, commit or follow-on; existing approval state/previous artifact remains unchanged. overrideReview and codeReview.enforce:false do NOT bypass input identity: an override may accept findings or the existing legacy missing/same-party policy, but cannot make a different source snapshot current. Error says run a new independent review, not supply an override. No new stale override field or automatic acknowledgement. [c31] Extend CodeReviewGateResult and CodeReviewApprovalOutcome with distinct status:stale-review plus reason/message and optional recorded identity; do not relabel it a block verdict or manufacture counts. enforceCodeReviewGate checks freshness BEFORE pass/warn/block and advisory/override verdict handling. approveWorkflowTarget skips both blocked and stale-review, preserving reason in codeReview outcomes; projectGateOutcome and response schema/renderers must handle the new discriminant exhaustively. The shared low-level approval check remains authoritative even when the wrapper is skipped, or inputs change between wrapper preflight and low-level write. TUI approve already calls approveArtifactByJsonPath directly: propagate the same ReviewBlockedError and withhold tracker/commit side effects; test the service entry point rather than a mock of only the wrapper. Other artifacts retain their existing policy. Include any IPC/shared/CLI outcome consumers located by direct caller/type-use search during implementation, with relevant contract tests; do not leave a default branch that accepts unknown stale status. Read/revalidate as near to atomic approval write as possible; after writing a fingerprinted BUILD approval, verify identity again before returning success or triggering tracker/follow-on. If a race is detected, restore only the prior approval metadata under the same per-target owned writer, report stale-review and run no completion side effects; never overwrite concurrent source/BUILD body edits. Later edits invalidate reuse of the recorded CR through the shared gate; they cannot turn the old review into evidence for the new snapshot. Canonical BUILD identity hashes reviewed semantic content and author, not raw artifact bytes that approval itself changes: exclude exactly meta.approvedAt, meta.rejectedAt, meta.rejectReason, meta.reviewOverride and fingerprint-derived approval outcome/audit fields; exclude no source/contract/rangeBase/task/body/author fields. Document the canonicalization version and explicit exclusions in input-fingerprint.ts; no broad metadata stripping. No-op ledger completion merges are fingerprint-stable; a substantive ensureBuildRecordOnCompletion change invalidates the prior CR and requests fresh review. Test an unchanged review -> successful BUILD approval -> reapproval without self-invalidating solely because approvedAt/audit changed. Unknown fingerprint versions cannot silently use different exclusions. No-op completion stability requires the explicit completion writer reconciliation/preservation change described in Idempotent completion BUILD ledger preservation; retaining timestamps is an actual writer change, not a new fingerprint body exclusion.",
+          "callSites": [
+            "src/workflow/gates.ts",
+            "src/workflow/code-review/gate.ts",
+            "src/workflow/code-review/input-fingerprint.ts",
+            "src/cli/services/workflow.ts",
+            "src/workflow/__tests__/other-party-review-gate.test.ts",
+            "src/workflow/__tests__/approve-codereview-gate.test.ts"
+          ]
+        },
+        {
+          "entity": "Verdict-bearing TESTS input identity",
+          "change": "invariant-change",
+          "details": "ReviewInputFingerprint includes the separately persisted TESTS record, even though ledger files are excluded from source diffs. Use the same canonical artifact path/target and testRecordState reader as resolveCodeReviewSubject, captured consistently with the subject. Encode state kind absent|record|unreadable explicitly. For record, hash the complete canonical TESTS JSON (object keys canonicalized, ARRAY ORDER PRESERVED), including all tasks, taskId, ranAt, commit, tests, files, titles/results, timeouts/exit codes, malformed nested values, builder-reported evidence and top-level metadata. Do not strip any TESTS timestamp: task ranAt determines latest-run selection, valid beats invalid, failure wins a tie, and array order can decide remaining ties. Include the actual testRecordView presented to the judge or its canonical digest alongside the record state, with BUILD task results already covered by BUILD identity; verify capture did not race. For unreadable state include deterministic reason category and available raw byte digest if readable-but-invalid; if raw input cannot be read consistently, refuse admission/publication/gate comparison as unavailable identity rather than pretending the prior TESTS evidence is current. Absent TESTS is a valid explicit state reflecting unverified coverage, not a manufactured passing test; appearance/disappearance changes identity. Presence-to-unreadable, malformed replacement, ranAt-only change that selects another run, reordered tied runs, changed titles, reported outcome/evidence and pass-to-fail all invalidate. Recompute this same identity at daemon/controller publication, shared BUILD approval and enforceCodeReviewGate. A TESTS-only persist after admission is detected without BUILD/source changes or a second start. No LLM call or manual client result can bypass these checks. TESTS remains a nonapprovable record; this adds identity verification, not approval for TESTS. [c34]",
+          "callSites": [
+            "src/workflow/code-review/input-fingerprint.ts",
+            "src/workflow/code-review/subject.ts",
+            "src/workflow/code-review/dimensions/coverage.ts",
+            "src/workflow/code-review/dimensions/test-record-view.ts",
+            "src/workflow/runners/build/test-record.ts",
+            "src/daemon/code-review-rpc.ts",
+            "src/daemon/steps/code-review-step/controller-pipeline.ts",
+            "src/workflow/code-review/gate.ts",
+            "src/workflow/gates.ts"
+          ]
+        },
+        {
+          "entity": "Idempotent completion BUILD ledger preservation",
+          "change": "invariant-change",
+          "details": "Implement the promised no-op stability in the writers; do not expand fingerprint exclusions to hide generated BUILD-body mutations. In completion-record.ts, load the valid prior BUILD before constructing the completion candidate. collectBuildChangeLog may still produce observations at now, but reconcile completion observations against prior entries by canonical target path and applicable version, retaining the prior complete author/timestamp/version entry for an unchanged target. An omitted completion version does not erase a prior known version; compare against the resolved current Story commit before preserving. Keep original deterministic ordering for unchanged entries, remove entries genuinely outside the newly scoped changed set and append genuinely new entries in deterministic collector order with new timestamps. A source-byte change in an existing file is still caught by source fingerprint even when the file-list entry is retained; this preservation never claims unchanged file contents. Define a completion-specific semantic candidate comparison after task merge, stable folder identity and resolved Story commit: compare all persisted fields except newly generated candidate meta.createdAt/meta.updatedAt and completion-observation timestamps that are explicitly reconciled back to the prior entry. Keep prior createdAt already handled by mergeWithPrior. If the resulting semantic candidate equals prior, retain prior meta.updatedAt, the exact prior body.changeLog and all prior fields; skip JSON/Markdown writes where bytes already match and return existing canonical paths. Do not refresh a known BUILD author or completion/approval fields merely because the hook ran. If tasks/results, scoped files/version, resolved Story commit, standalone/folder identity or other semantic fields actually differ, persist the substantive change with updatedAt and only genuinely new entry timestamps; the old CR must then be stale. Missing/malformed prior follows the existing fresh-record path but cannot reuse an old fingerprinted CR. Add an explicit completion mode/option to persistBuildRecord/mergeWithPrior rather than applying time suppression to genuine validate writes; default normal persistence behavior remains intact. List completion-record.ts, changed-files.ts and standalone-record.ts as production change sites. Do not mutate TESTS ranAt to obtain BUILD stability. [c35]",
+          "callSites": [
+            "src/workflow/runners/build/completion-record.ts",
+            "src/workflow/runners/build/changed-files.ts",
+            "src/workflow/runners/build/standalone-record.ts",
+            "src/workflow/gates.ts"
           ]
         }
       ],
@@ -964,7 +1028,7 @@
       {
         "entity": "Review input identity and publication revalidation",
         "change": "field-add",
-        "details": "At admission capture a canonical ReviewInputFingerprint with schemaVersion and digest over resolved target/repo identity, Story range base and HEAD, complete scoped diff content plus path/status/mode/rename/binary identities, changed-file contents needed by the grounding snapshot, effective approved contract/plan identities and content digests, and BUILD artifact content digest including authoredBy/build revision. Hash deterministic structured inputs; exclude timestamps/progress-only noise explicitly rather than substituting mtime for content. Snapshot capture must be consistent: compare pre/post identity while reading and retry or refuse source-changed; do not attach a fingerprint for different bytes than the snapshot. Store the admitted fingerprint and expected author in the daemon operation and controller state. Both review routes re-resolve/recompute source/contract/BUILD identity immediately before final publication even if no second start request occurs. Require author still matches independent reviewer routing; same filenames with different BUILD content, contract edits, source edits, new commits, changed uncommitted bytes or changed Story ownership all invalidate. A mismatch terminates with review-input-changed, cancels/settles owned work and writes no new CR; no auto-rebase/restart, no false completed response. Add a runner pre-publication validation hook supplied by the real RPC/controller handler (required for new timed/bounded review paths), invoked after dimension completion and immediately before the existing atomic artifact writer, under per-target operation ownership and remaining deadline/signal checks. Legacy injected direct-runner callers retain their defaults, but production new routes cannot omit the hook. Persist optional meta.reviewInputFingerprint plus reviewInputSchemaVersion on CR, required for all newly bounded/timed reviews. Do not mutate the historical S003 evidence as part of this identity. Extend enforceCodeReviewGate to recompute/compare any recorded fingerprint against current source/approved contracts/BUILD; mismatch or unavailable identity refuses the gate as stale-review even if verdict/counts are otherwise acceptable. Legacy CR without fingerprint retains explicit legacy compatibility; it is not relabeled as newly verified. This gate check closes edits after the final pre-write check, including edits between check and atomic rename, and keeps later source edits from reusing a verdict. Recheck after publication before reporting done; if identity changed in that narrow interval report stale-review/no accepted completion, leaving the fingerprinted record unusable by the gate rather than deleting another owner’s artifact. Existing previous CR is not overwritten on a mismatch detected before writing; per-target ownership prevents competing review writers. This is content identity verification, not a new index-freshness dependency. [c29]",
+        "details": "At admission capture a canonical ReviewInputFingerprint with schemaVersion and digest over resolved target/repo identity, Story range base and HEAD, complete scoped diff content plus path/status/mode/rename/binary identities, changed-file contents needed by the grounding snapshot, effective approved contract/plan identities and content digests, and canonical review-relevant BUILD content digest including authoredBy/build revision (excluding exactly the approval/audit fields named in Shared BUILD approval freshness enforcement). Hash deterministic structured inputs; exclude timestamps/progress-only noise explicitly rather than substituting mtime for content. Snapshot capture must be consistent: compare pre/post identity while reading and retry or refuse source-changed; do not attach a fingerprint for different bytes than the snapshot. Store the admitted fingerprint and expected author in the daemon operation and controller state. Both review routes re-resolve/recompute source/contract/BUILD identity immediately before final publication even if no second start request occurs. Require author still matches independent reviewer routing; same filenames with different BUILD content, contract edits, source edits, new commits, changed uncommitted bytes or changed Story ownership all invalidate. A mismatch terminates with review-input-changed, cancels/settles owned work and writes no new CR; no auto-rebase/restart, no false completed response. Add a runner pre-publication validation hook supplied by the real RPC/controller handler (required for new timed/bounded review paths), invoked after dimension completion and immediately before the existing atomic artifact writer, under per-target operation ownership and remaining deadline/signal checks. Legacy injected direct-runner callers retain their defaults, but production new routes cannot omit the hook. Persist optional meta.reviewInputFingerprint plus reviewInputSchemaVersion on CR, required for all newly bounded/timed reviews. Do not mutate the historical S003 evidence as part of this identity. Extend enforceCodeReviewGate to recompute/compare any recorded fingerprint against current source/approved contracts/BUILD; mismatch or unavailable identity refuses the gate as stale-review even if verdict/counts are otherwise acceptable. Legacy CR without fingerprint retains explicit legacy compatibility; it is not relabeled as newly verified. This gate check closes edits after the final pre-write check, including edits between check and atomic rename, and keeps later source edits from reusing a verdict. Recheck after publication before reporting done; if identity changed in that narrow interval report stale-review/no accepted completion, leaving the fingerprinted record unusable by the gate rather than deleting another owner’s artifact. Existing previous CR is not overwritten on a mismatch detected before writing; per-target ownership prevents competing review writers. This is content identity verification, not a new index-freshness dependency. [c29] Freshness also runs at the common approveArtifactByJsonPath BUILD boundary; enforcing only the workflow wrapper is insufficient. See shared BUILD approval contract for non-overridable identity failures, outcome projection and exact canonical exclusions. The canonical input also includes separate verdict-bearing TESTS record state/content and ordering semantics as specified in Verdict-bearing TESTS input identity; source/BUILD alone is insufficient.",
         "callSites": [
           "src/daemon/code-review-rpc.ts",
           "src/daemon/code-review-operations.ts",
@@ -974,6 +1038,46 @@
           "src/workflow/code-review/runner.ts",
           "src/workflow/code-review/gate.ts",
           "src/workflow/storage.ts"
+        ]
+      },
+      {
+        "entity": "Shared BUILD approval freshness enforcement",
+        "change": "invariant-change",
+        "details": "Add synchronous checkBuildReviewFreshness(jsonPath,buildMeta):ReviewFreshnessResult at src/workflow/gates.ts, called by approveArtifactByJsonPath for every BUILD before override handling and immediately before approvedAt/writeAtomic. Resolve repo/target from the canonical artifact-store path and validated BUILD identity; malformed/conflicting identity fails closed for a fingerprinted/new bounded CR. Reuse one synchronous canonical fingerprint reader/comparator from input-fingerprint.ts (read-only file/git operations, no LLM or client DB access), so both this synchronous common boundary and enforceCodeReviewGate judge the same identity. Result is fresh|legacy|stale-review; stale-review includes reason mismatch|unavailable|invalid and a message, not invented findings/counts. If the CR records reviewInputFingerprint/schemaVersion, validate fingerprint shape/version and current canonical source/contract/BUILD identity; malformed, unsupported-version, unreadable current identity or mismatch is stale-review. Never fall through to legacy/no-review on invalid fingerprint metadata. Legacy CR with both fingerprint fields genuinely absent retains documented old behavior; missing CR still follows mandatory independent-review rules. New timed/bounded CR publication requires both fields. A mixed partial fingerprint is invalid, not legacy. Check independent author as well as identity using the existing otherPartyReviewGap. Do not synthesize a review or call models from approval. A stale-review unconditionally throws ReviewBlockedError with summary stale-review before any approvedAt/rangeBase/reviewOverride write, tracker push, commit or follow-on; existing approval state/previous artifact remains unchanged. overrideReview and codeReview.enforce:false do NOT bypass input identity: an override may accept findings or the existing legacy missing/same-party policy, but cannot make a different source snapshot current. Error says run a new independent review, not supply an override. No new stale override field or automatic acknowledgement. [c31] Extend CodeReviewGateResult and CodeReviewApprovalOutcome with distinct status:stale-review plus reason/message and optional recorded identity; do not relabel it a block verdict or manufacture counts. enforceCodeReviewGate checks freshness BEFORE pass/warn/block and advisory/override verdict handling. approveWorkflowTarget skips both blocked and stale-review, preserving reason in codeReview outcomes; projectGateOutcome and response schema/renderers must handle the new discriminant exhaustively. The shared low-level approval check remains authoritative even when the wrapper is skipped, or inputs change between wrapper preflight and low-level write. TUI approve already calls approveArtifactByJsonPath directly: propagate the same ReviewBlockedError and withhold tracker/commit side effects; test the service entry point rather than a mock of only the wrapper. Other artifacts retain their existing policy. Include any IPC/shared/CLI outcome consumers located by direct caller/type-use search during implementation, with relevant contract tests; do not leave a default branch that accepts unknown stale status. Read/revalidate as near to atomic approval write as possible; after writing a fingerprinted BUILD approval, verify identity again before returning success or triggering tracker/follow-on. If a race is detected, restore only the prior approval metadata under the same per-target owned writer, report stale-review and run no completion side effects; never overwrite concurrent source/BUILD body edits. Later edits invalidate reuse of the recorded CR through the shared gate; they cannot turn the old review into evidence for the new snapshot. Canonical BUILD identity hashes reviewed semantic content and author, not raw artifact bytes that approval itself changes: exclude exactly meta.approvedAt, meta.rejectedAt, meta.rejectReason, meta.reviewOverride and fingerprint-derived approval outcome/audit fields; exclude no source/contract/rangeBase/task/body/author fields. Document the canonicalization version and explicit exclusions in input-fingerprint.ts; no broad metadata stripping. No-op ledger completion merges are fingerprint-stable; a substantive ensureBuildRecordOnCompletion change invalidates the prior CR and requests fresh review. Test an unchanged review -> successful BUILD approval -> reapproval without self-invalidating solely because approvedAt/audit changed. Unknown fingerprint versions cannot silently use different exclusions. No-op completion stability requires the explicit completion writer reconciliation/preservation change described in Idempotent completion BUILD ledger preservation; retaining timestamps is an actual writer change, not a new fingerprint body exclusion.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/code-review/gate.ts",
+          "src/workflow/code-review/input-fingerprint.ts",
+          "src/cli/services/workflow.ts",
+          "src/workflow/__tests__/other-party-review-gate.test.ts",
+          "src/workflow/__tests__/approve-codereview-gate.test.ts"
+        ]
+      },
+      {
+        "entity": "Verdict-bearing TESTS input identity",
+        "change": "invariant-change",
+        "details": "ReviewInputFingerprint includes the separately persisted TESTS record, even though ledger files are excluded from source diffs. Use the same canonical artifact path/target and testRecordState reader as resolveCodeReviewSubject, captured consistently with the subject. Encode state kind absent|record|unreadable explicitly. For record, hash the complete canonical TESTS JSON (object keys canonicalized, ARRAY ORDER PRESERVED), including all tasks, taskId, ranAt, commit, tests, files, titles/results, timeouts/exit codes, malformed nested values, builder-reported evidence and top-level metadata. Do not strip any TESTS timestamp: task ranAt determines latest-run selection, valid beats invalid, failure wins a tie, and array order can decide remaining ties. Include the actual testRecordView presented to the judge or its canonical digest alongside the record state, with BUILD task results already covered by BUILD identity; verify capture did not race. For unreadable state include deterministic reason category and available raw byte digest if readable-but-invalid; if raw input cannot be read consistently, refuse admission/publication/gate comparison as unavailable identity rather than pretending the prior TESTS evidence is current. Absent TESTS is a valid explicit state reflecting unverified coverage, not a manufactured passing test; appearance/disappearance changes identity. Presence-to-unreadable, malformed replacement, ranAt-only change that selects another run, reordered tied runs, changed titles, reported outcome/evidence and pass-to-fail all invalidate. Recompute this same identity at daemon/controller publication, shared BUILD approval and enforceCodeReviewGate. A TESTS-only persist after admission is detected without BUILD/source changes or a second start. No LLM call or manual client result can bypass these checks. TESTS remains a nonapprovable record; this adds identity verification, not approval for TESTS. [c34]",
+        "callSites": [
+          "src/workflow/code-review/input-fingerprint.ts",
+          "src/workflow/code-review/subject.ts",
+          "src/workflow/code-review/dimensions/coverage.ts",
+          "src/workflow/code-review/dimensions/test-record-view.ts",
+          "src/workflow/runners/build/test-record.ts",
+          "src/daemon/code-review-rpc.ts",
+          "src/daemon/steps/code-review-step/controller-pipeline.ts",
+          "src/workflow/code-review/gate.ts",
+          "src/workflow/gates.ts"
+        ]
+      },
+      {
+        "entity": "Idempotent completion BUILD ledger preservation",
+        "change": "invariant-change",
+        "details": "Implement the promised no-op stability in the writers; do not expand fingerprint exclusions to hide generated BUILD-body mutations. In completion-record.ts, load the valid prior BUILD before constructing the completion candidate. collectBuildChangeLog may still produce observations at now, but reconcile completion observations against prior entries by canonical target path and applicable version, retaining the prior complete author/timestamp/version entry for an unchanged target. An omitted completion version does not erase a prior known version; compare against the resolved current Story commit before preserving. Keep original deterministic ordering for unchanged entries, remove entries genuinely outside the newly scoped changed set and append genuinely new entries in deterministic collector order with new timestamps. A source-byte change in an existing file is still caught by source fingerprint even when the file-list entry is retained; this preservation never claims unchanged file contents. Define a completion-specific semantic candidate comparison after task merge, stable folder identity and resolved Story commit: compare all persisted fields except newly generated candidate meta.createdAt/meta.updatedAt and completion-observation timestamps that are explicitly reconciled back to the prior entry. Keep prior createdAt already handled by mergeWithPrior. If the resulting semantic candidate equals prior, retain prior meta.updatedAt, the exact prior body.changeLog and all prior fields; skip JSON/Markdown writes where bytes already match and return existing canonical paths. Do not refresh a known BUILD author or completion/approval fields merely because the hook ran. If tasks/results, scoped files/version, resolved Story commit, standalone/folder identity or other semantic fields actually differ, persist the substantive change with updatedAt and only genuinely new entry timestamps; the old CR must then be stale. Missing/malformed prior follows the existing fresh-record path but cannot reuse an old fingerprinted CR. Add an explicit completion mode/option to persistBuildRecord/mergeWithPrior rather than applying time suppression to genuine validate writes; default normal persistence behavior remains intact. List completion-record.ts, changed-files.ts and standalone-record.ts as production change sites. Do not mutate TESTS ranAt to obtain BUILD stability. [c35]",
+        "callSites": [
+          "src/workflow/runners/build/completion-record.ts",
+          "src/workflow/runners/build/changed-files.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/gates.ts"
         ]
       }
     ],
@@ -1041,6 +1145,13 @@
           "detection": "Canonical admitted content identity is compared at final publication and gate evaluation; no second start is necessary.",
           "response": "Before writing, terminate review-input-changed without a new CR. If the source changes after publication check, fingerprint validation refuses stale gate consumption and post-publication check reports no accepted completion.",
           "userImpact": "Fresh independent review is required for the changed inputs; the old verdict cannot authorize the current Story.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Stale fingerprinted CR reaches direct/TUI BUILD approval, including with findings override or enforcement disabled.",
+          "detection": "Shared approveArtifactByJsonPath identity check and final pre-write revalidation; workflow wrapper reports the same distinct stale-review status.",
+          "response": "Refuse without approval/follow-on/tracker/commit side effects; input identity cannot be overridden by accepting review findings. Report new independent review required.",
+          "userImpact": "Both approval entry points consistently withhold completion for the changed Story.",
           "recoverable": true
         }
       ],
@@ -1208,6 +1319,33 @@
           "fixturesNeeded": [
             "Real RPC/controller-to-runner-to-gate fixture with mutable temp git repo and actual BUILD/contract artifacts, controlled pre-publication hook barriers, captured atomic writes and fake clock."
           ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Close the TUI/low-level BUILD approval bypass with consistent freshness and override semantics.",
+          "subjects": [
+            "DIFF-APPROVE-COMMON: through real approveArtifactByJsonPath, a stale/malformed/partial/unsupported fingerprint or unavailable identity refuses before any write. Repeat with overrideReview and enforcement off; neither bypasses stale-review. Unchanged fingerprinted input and genuine legacy CR exercise their documented policies.",
+            "DIFF-APPROVE-WORKFLOW: through approveWorkflowTarget single and batch routes, stale-review appears in skipped/codeReview outcomes with reason, no approvedAt or follow-on; a sibling fresh artifact may still follow existing batch policy. Type projections/renderers preserve the new status rather than treating nonblocked as success.",
+            "DIFF-APPROVE-TUI: call real cli/services/workflow.approve with stale review and overrides; common check refuses, tracker/commit/follow-on spies see zero calls, artifact unchanged. Fresh input still follows existing approval behavior.",
+            "DIFF-APPROVE-IDENTITY: successful approval and reapproval do not invalidate BUILD identity solely through exact approval/audit fields; substantive BUILD/author/contract/rangeBase/source edits do. No-op completion merge stays stable; substantive completion merge requires a new review.",
+            "DIFF-APPROVE-RACE: mutate source between wrapper preflight and common boundary, and between common check/write; return stale-review without accepted completion or side effects, preserve current body/foreign edits and remove only owned new approval metadata. Recheck stale identity on later gate consumption."
+          ],
+          "fixturesNeeded": [
+            "Real temp git Story/BUILD/CR fixture, real common/workflow/TUI approval entry points, injected file-write barriers and side-effect spies, explicit fingerprinted versus legacy cases."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Regress TESTS-only input changes and real completion-writer no-op instability.",
+          "subjects": [
+            "DIFF-IDENTITY-TESTS: daemon and controller review fixture changes only TESTS after admission: pass->fail, absent->present, present->absent, malformed/unreadable replacement, builder-reported result/evidence and ranAt-only selection change all prevent publication. Preserve task/file array order and failure-tie semantics; no BUILD/source edit or repeated start required.",
+            "DIFF-APPROVE-TESTS: fingerprinted CR then TESTS-only mutation refuses common approval, approveWorkflowTarget and real TUI approve, including override/enforcement off. Unchanged TESTS identity succeeds under existing verdict policy; unreadable current input fails closed.",
+            "DIFF-COMPLETION-NOOP: using real collectBuildChangeLog -> ensureBuildRecordOnCompletion -> persistBuildRecord/mergeWithPrior on an existing reviewed BUILD at later fake time, unchanged semantics retains exact prior updatedAt/changeLog author/timestamp/version/order and stable fingerprint, then real workflow approval/reapproval succeeds. Assert no JSON/MD write for byte-identical no-op.",
+            "DIFF-COMPLETION-CHANGE: real writer with changed task result, scoped file membership/version, Story commit or folder identity persists a substantive update and invalidates old CR. Completion cannot erase known version/author, mutate TESTS ranAt or hide source-byte changes. Validate-mode writes retain their existing genuine-run behavior."
+          ],
+          "fixturesNeeded": [
+            "Real temporary git Story and TESTS/BUILD records, injected clocks and captured atomic writes, coverage testRecordView tie/latest-run fixtures, real completion writer and all approval entry points."
+          ]
         }
       ],
       "acceptanceMapping": [
@@ -1253,7 +1391,16 @@
             "DIFF-PUBLISH-SOURCE",
             "DIFF-PUBLISH-BUILD",
             "DIFF-PUBLISH-GATE",
-            "DIFF-FINGERPRINT-SNAPSHOT"
+            "DIFF-FINGERPRINT-SNAPSHOT",
+            "DIFF-APPROVE-COMMON",
+            "DIFF-APPROVE-WORKFLOW",
+            "DIFF-APPROVE-TUI",
+            "DIFF-APPROVE-IDENTITY",
+            "DIFF-APPROVE-RACE",
+            "DIFF-IDENTITY-TESTS",
+            "DIFF-APPROVE-TESTS",
+            "DIFF-COMPLETION-NOOP",
+            "DIFF-COMPLETION-CHANGE"
           ]
         },
         {
@@ -1627,6 +1774,40 @@
       "id": "c30",
       "kind": "prior-artifact",
       "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-timing-cycle2-round2.json"
+    },
+    {
+      "id": "c31",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:584-735",
+      "quotedText": "approveArtifactByJsonPath is the shared approval entry point; its BUILD other-party check currently reads CR reviewer identity without source freshness."
+    },
+    {
+      "id": "c32",
+      "kind": "code",
+      "ref": "src/cli/services/workflow.ts:159-181",
+      "quotedText": "TUI approve calls approveArtifactByJsonPath directly before tracker/commit side effects, bypassing approveWorkflowTarget."
+    },
+    {
+      "id": "c33",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-timing-cycle2-round3.json"
+    },
+    {
+      "id": "c34",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/test-record-view.ts",
+      "quotedText": "Coverage selects each file’s latest run by ranAt and failure tie rules; separate TESTS changes are verdict-bearing even when BUILD/source are unchanged."
+    },
+    {
+      "id": "c35",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/completion-record.ts",
+      "quotedText": "Completion currently supplies now for updatedAt and change-log timestamps before persistBuildRecord merges the new body; explicit no-op preservation is required."
+    },
+    {
+      "id": "c36",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/design-review-timing-cycle3-round1.json"
     }
   ]
 }

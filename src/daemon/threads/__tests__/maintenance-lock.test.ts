@@ -47,6 +47,7 @@ const { emitTodosEvent, scheduleTodosRetention, subscribe: subscribeTodos } = aw
 const { IndexerService } = await import('../../../indexer/index.js');
 const { IndexQueue } = await import('../../queue.js');
 const { DEFAULT_MAINTENANCE_CONFIG, MaintenanceController } = await import('../maintenance.js');
+const { holdingForward } = await import('../maintenance-entry.js');
 const { createUnderstandingRoutes } = await import('../../understanding-rpc.js');
 const { UnderstandingService } = await import('../../../understanding/service.js');
 const { ThreadServices } = await import('../main-services.js');
@@ -442,4 +443,25 @@ test("an edit's settle pass that comes due during maintenance waits for the main
 	await maintenance.done;
 	await until(() => settled, 'the settle pass to run after maintenance');
 	assert.equal(waiting(), 0);
+});
+
+test('a cancelled stream with no request lifetime keeps its maintenance hold until its handler sends its terminal frame', { timeout: 30_000 }, async () => {
+	const heldShared = (): number => getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+	let finish!: () => void;
+	let deliverTo!: (e: FrameEnvelope) => void;
+	// A stream handler that, once cancelled, takes a while to finish (a write unwinding) and then ends.
+	const forward = holdingForward((request, deliver) => {
+		deliverTo = deliver as (e: FrameEnvelope) => void;
+		finish = () => deliver({ kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'done', data: {} } } satisfies FrameEnvelope);
+		return () => {};
+	});
+	const frames: unknown[] = [];
+	const cancel = forward({ kind: 'request', requestId: 'stream-1', method: 'x.stream', params: {}, stream: true } satisfies RequestEnvelope, e => frames.push(e));
+	await until(() => heldShared() === 1, 'the stream under its hold');
+	assert.ok(deliverTo !== undefined);
+	cancel();
+	await tick(300);
+	assert.equal(heldShared(), 1, 'still held after the cancel: the handler has not finished');
+	finish();
+	await until(() => heldShared() === 0, 'the hold released at the terminal frame');
 });

@@ -23,6 +23,13 @@ import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 /** Methods that run without the request hold. */
 export const UNHELD_METHODS: ReadonlySet<string> = new Set(['daemon.status', 'daemon.compact', 'understanding.watch', 'todos.subscribe']);
 
+/**
+ * How long a cancelled stream with no request lifetime keeps its hold for the
+ * handler to send its terminal frame; after it, the hold is released anyway so
+ * a handler that never ends cannot block maintenance for good.
+ */
+export const CANCELLED_STREAM_SETTLE_MS = 10_000;
+
 /** `forward`, with each request run under the maintenance lock's shared hold. */
 export function holdingForward(forward: ForwardRequest): ForwardRequest {
 	return (request, deliver) => {
@@ -66,7 +73,9 @@ export function holdingForward(forward: ForwardRequest): ForwardRequest {
 			request.lifetime?.abort();
 			if (cancel) cancel();
 			else complete();
-			if (request.stream && !request.lifetime) release();
+			// A stream with no lifetime is held until its handler's terminal frame (bounded), not
+			// released at the cancel: the handler may still be finishing a write.
+			if (request.stream && !request.lifetime) setTimeout(() => release(), CANCELLED_STREAM_SETTLE_MS).unref();
 		};
 	};
 }

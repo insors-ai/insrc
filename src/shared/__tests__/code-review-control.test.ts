@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createConnection, createServer, type Socket } from 'node:net';
-import { rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -66,7 +66,12 @@ test('DIFF-WAIT-TRANSPORT: shared serializer and both actual transports preserve
 });
 
 test('DIFF-WAIT-TRANSPORT: pending artifacts, malformed/foreign finals and unknown variants are refused by socket and in-daemon helpers', async () => {
+ const finding = (extra: Record<string, unknown>) => ({ ...done, result: { ...final, artifact: { ...final.artifact, body: { ...final.artifact.body, counts: { high: 0, med: 0, low: 1 }, dimensions: final.artifact.body.dimensions.map(d => d.dimension === 'quality' ? { ...d, findings: [{ dimension: 'quality', severity: 'LOW', location: 'src/a.ts:1', message: 'quality observation', ...extra }] } : d) } } } });
+ const otherHeader = { ...header, repoPath: '/different-repository' };
+ const other = { ...otherHeader, digest: identityDigest(canonicalIdentityJson(otherHeader)) };
  const bad = [
+  finding({ findingKind: 'invalid' }), finding({ expectationRef: 42 }), finding({ symbolId: 42 }), finding({ counterpartRef: 42 }),
+  { ...done, result: { ...final, artifact: { ...final.artifact, meta: { ...final.artifact.meta, repoPath: other.repoPath, reviewInputFingerprint: other } } } },
   { ...pending, artifact: {} }, { ...pending, result: final }, { ...pending, daemonEpoch: '' }, { ...pending, status: 'unknown' },
   { ...done, result: {} }, { ...done, result: { ...final, artifact: { ...final.artifact, meta: { ...final.artifact.meta, schemaVersion: 99 } } } }, { ...done, reviewHandle: 'foreign-handle' },
   { ...done, result: { ...final, artifact: { ...final.artifact, meta: { ...final.artifact.meta, reviewedBy: 'controller' } } } },
@@ -108,4 +113,19 @@ test('DIFF-TIME-OUTER: both transport waiters cap at 200 seconds without killing
    finish(); const result = await owner.wait(reviewHandle, target, { waitMs: 1000 }); assert.equal(result.status, 'done');
   } finally { finish?.(); await h.close(); await owner.close(); }
  }
+});
+
+
+test('DIFF-WAIT-TRANSPORT: repository checks accept physical aliases and reject a different repository with otherwise matching identity', async () => {
+ const parent = mkdtempSync(join(tmpdir(), 'insrc-control-alias-')), repo = join(parent, 'repo'), alias = join(parent, 'alias');
+ mkdirSync(repo); symlinkSync(repo, alias);
+ const aliasHeader = { ...header, repoPath: realpathSync(repo) }, fp = { ...aliasHeader, digest: identityDigest(canonicalIdentityJson(aliasHeader)) };
+ const reply = { ...done, result: { ...final, artifact: { ...final.artifact, meta: { ...final.artifact.meta, repoPath: fp.repoPath, reviewInputFingerprint: fp } } } };
+ try {
+  for (const kind of ['socket', 'in-daemon'] as const) {
+   const h = await harness(kind, async (_params, send) => send({ id: 0, stream: 'done', data: reply }));
+   try { assert.equal((await h.control({ ...target, repo: alias, operation: 'status', reviewHandle: handle })).status, 'done'); await assert.rejects(h.control({ ...target, repo: parent, operation: 'status', reviewHandle: handle }), protocol); }
+   finally { await h.close(); }
+  }
+ } finally { rmSync(parent, { recursive: true, force: true }); }
 });

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 75 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 79 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -452,3 +452,32 @@ Run at 2026-10-27T10:15:13.904Z on commit `e92c06614`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/code-review-control.test.ts` | 0 | 2 | 4.1 s |  |
 | `src/daemon/__tests__/code-review-operations.test.ts` | 0 | 4 | 0.5 s |  |
+
+## t16
+
+Run at 2026-10-27T10:33:09.278Z on commit `7b6822e02`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-TIME-OUTER**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-TIME-OUTER: both transport waiters cap at 200 seconds without killing the daemon owner, and preserve long derived budgets | `src/shared/__tests__/code-review-control.test.ts` |
+
+**integration: DIFF-WAIT-COMPAT**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-WAIT-COMPAT: legacy streams remain final-only and retain their existing final result shape | `src/shared/__tests__/code-review-control.test.ts` |
+
+**integration: DIFF-WAIT-TRANSPORT**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-WAIT-TRANSPORT: shared serializer and both actual transports preserve start/status/cancel and discriminate every reply | `src/shared/__tests__/code-review-control.test.ts` |
+| pass | DIFF-WAIT-TRANSPORT: pending artifacts, malformed/foreign finals and unknown variants are refused by socket and in-daemon helpers | `src/shared/__tests__/code-review-control.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/code-review-control.test.ts` | 0 | 4 | 0.6 s |  |

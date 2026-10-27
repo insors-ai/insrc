@@ -11,6 +11,8 @@
  * c2ba6fa6, Story s11).
  */
 
+import { realpathSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { isReviewInputFingerprint, REVIEW_INPUT_SCHEMA_VERSION } from './review-input-identity.js';
 import type { CodeReviewProgress } from '../workflow/code-review/runner.js';
 import { CODE_REVIEW_SCHEMA_VERSION } from '../workflow/code-review/types.js';
@@ -325,22 +327,55 @@ export function codeReviewControlWaitOpts(opts: ReviewStreamOpts): ReviewStreamO
  if (!Number.isSafeInteger(opts.timeoutMs) || opts.timeoutMs <= 0) protocol('invalid control wait limit');
  return { ...opts, timeoutMs: Math.min(opts.timeoutMs, 200_000) };
 }
+function sameRepository(actual: string, requested: string | undefined): boolean {
+ if (requested === undefined || resolve(actual) === resolve(requested)) return true;
+ try { return realpathSync(actual) === realpathSync(requested); } catch { return false; }
+}
+const optionalStrings = (value: Record<string, unknown>, keys: readonly string[]): boolean => keys.every(key => value[key] === undefined || typeof value[key] === 'string');
+function findingValid(value: unknown, dimension: string): boolean {
+ return record(value) && value['dimension'] === dimension && typeof value['severity'] === 'string' && ['HIGH', 'MED', 'LOW'].includes(value['severity']) && nonempty(value['location']) && nonempty(value['message'])
+  && optionalStrings(value, ['expectationRef', 'counterpartRef', 'symbolId'])
+  && (value['confidence'] === undefined || value['confidence'] === 'breach' || value['confidence'] === 'observation')
+  && (value['findingKind'] === undefined || (typeof value['findingKind'] === 'string' && ['symbol-coverage', 'promised-test', 'other'].includes(value['findingKind'])));
+}
+function rangeValid(value: unknown): boolean {
+ return record(value) && nonempty(value['atomId']) && nonempty(value['parentId']) && integer(value['startOffset']) && integer(value['endOffset']) && value['endOffset'] > value['startOffset'] && typeof value['parentDigest'] === 'string' && /^[a-f0-9]{64}$/.test(value['parentDigest']);
+}
+function dimensionExtrasValid(value: Record<string, unknown>, dimension: string): boolean {
+ if (value['outOfScope'] !== undefined && (!Array.isArray(value['outOfScope']) || !value['outOfScope'].every(f => findingValid(f, dimension)))) return false;
+ if (value['lowered'] !== undefined && (!Array.isArray(value['lowered']) || !value['lowered'].every(f => record(f) && nonempty(f['location']) && nonempty(f['reason']) && optionalStrings(f, ['symbolId', 'expectationRef'])))) return false;
+ for (const [key, required] of [['parts', ['map', 'reduce', 'compare']], ['pipelineCalls', ['chunk', 'obligation', 'relation', 'merge']]] as const) {
+  const count = value[key]; if (count !== undefined && (!record(count) || !required.every(k => integer(count[k])))) return false;
+ }
+ if (value['materialRevisions'] !== undefined) {
+  if (!Array.isArray(value['materialRevisions'])) return false;
+  for (const revision of value['materialRevisions']) {
+   if (!record(revision) || !['fromReviewId', 'toReviewId', 'refusedCallId'].every(k => nonempty(revision[k])) || !['fromMaterialHash', 'toMaterialHash'].every(k => typeof revision[k] === 'string' && /^[a-f0-9]{64}$/.test(revision[k])) || !integer(revision['limitChars']) || revision['limitChars'] === 0 || !Array.isArray(revision['initialPrimary']) || !revision['initialPrimary'].every(p => record(p) && nonempty(p['id']) && Array.isArray(p['ranges']) && p['ranges'].every(rangeValid)) || !Array.isArray(revision['descendantRanges']) || !revision['descendantRanges'].every(rangeValid)) return false;
+   const time = revision['timing']; if (!record(time) || !['primaryChunkCount', 'budgetMs', 'startedAt', 'deadlineAt', 'rootDeadlineAt'].every(k => integer(time[k])) || (time['budgetMs'] as number) !== (time['primaryChunkCount'] as number) * 600_000 || (time['deadlineAt'] as number) > (time['rootDeadlineAt'] as number) || (time['deadlineAt'] as number) < (time['startedAt'] as number)) return false;
+  }
+ }
+ return true;
+}
 function finalControlResult(value: unknown, params: CodeReviewControlParams): CodeReviewStreamResult {
  const result = legacyCodeReviewResult(value), artifact = result.artifact;
  const meta = artifact.meta, body = artifact.body;
  if (!record(meta) || !record(body) || meta.workflow !== 'code-review' || meta.schemaVersion !== CODE_REVIEW_SCHEMA_VERSION || !nonempty(meta.createdAt) || !Number.isFinite(Date.parse(meta.createdAt)) || !integer(meta.elapsedMs) || (meta.repoIndexedAt !== null && !integer(meta.repoIndexedAt)) || meta.runId !== result.runId || meta.reviewedBy !== 'daemon' || body.kind !== 'code-review' || !['full', 'degraded'].includes(body.groundingMode) || meta.epicHash !== params.epicHash || !sameStory(meta.storyId, params.storyId) || body.epicHash !== meta.epicHash || body.storyId !== meta.storyId) protocol('malformed or foreign final review');
+ if (!sameRepository(meta.repoPath, params.repo)) protocol('final repository differs from the requested review');
  if (params.operation === 'start' && body.groundingMode !== (params.groundingMode ?? 'full')) protocol('final grounding mode differs from the requested review');
  if (meta.reviewInputSchemaVersion !== REVIEW_INPUT_SCHEMA_VERSION || !isReviewInputFingerprint(meta.reviewInputFingerprint) || meta.reviewInputFingerprint.epicHash !== meta.epicHash || meta.reviewInputFingerprint.storyId !== meta.storyId || meta.reviewInputFingerprint.repoPath !== meta.repoPath || meta.reviewInputFingerprint.author === 'daemon') protocol('final review has invalid input identity or author');
  if (!record(body.subject) || !Array.isArray(body.subject.changedFiles) || !body.subject.changedFiles.every(nonempty) || new Set(body.subject.changedFiles).size !== body.subject.changedFiles.length) protocol('malformed final subject');
  const counts = body.counts;
  if (!record(counts) || !integer(counts.high) || !integer(counts.med) || !integer(counts.low) || !Array.isArray(body.dimensions) || body.dimensions.length < 4) protocol('malformed final review counts/dimensions');
+ for (const key of ['sharedWithExcluded', 'excludedFromScope']) { const paths = (body.subject as unknown as Record<string, unknown>)[key]; if (paths !== undefined && (!Array.isArray(paths) || !paths.every(nonempty))) protocol('malformed final subject paths'); }
+ if (body.subject.changeSetAttribution !== undefined && !['working-tree', 'first-parent-range', 'story-trailer'].includes(body.subject.changeSetAttribution)) protocol('malformed attribution');
  const actual = { high: 0, med: 0, low: 0 }; let previous = -1;
  for (const dimension of body.dimensions) {
   if (!record(dimension) || typeof dimension.dimension !== 'string' || !Array.isArray(dimension.findings)) protocol('malformed final dimension');
+  if (!dimensionExtrasValid(dimension, dimension.dimension)) protocol('malformed optional dimension fields');
   const at = (DIMENSIONS as readonly string[]).indexOf(dimension.dimension);
   if (at <= previous || at < 0 || (previous < 3 && at !== previous + 1)) protocol('missing, duplicate or unordered final dimension'); previous = at;
   for (const finding of dimension.findings) {
-   if (!record(finding) || typeof finding.severity !== 'string' || !['HIGH', 'MED', 'LOW'].includes(finding.severity) || !nonempty(finding.location) || !nonempty(finding.message) || finding.dimension !== dimension.dimension || (finding.confidence !== undefined && finding.confidence !== 'breach' && finding.confidence !== 'observation') || (finding.counterpartRef !== undefined && !nonempty(finding.counterpartRef))) protocol('malformed final finding');
+   if (!findingValid(finding, dimension.dimension)) protocol('malformed final finding');
    if (finding.severity === 'HIGH') actual.high++; else if (finding.severity === 'MED') actual.med++; else actual.low++;
   }
  }

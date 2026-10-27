@@ -351,7 +351,8 @@ export class IndexQueue {
         lane.inFlight = null;
         this.changed(lane === this.lanes.index ? 'index' : 'summary');
         if (lane === this.lanes.index && lane.jobs.length === 0) this.releaseIndexIdleWaiters();
-        if (this.paused && !this.isProcessing) this.releaseQuietWaiters();
+        // A pause() waiting for quiet resolves once nothing is in flight, even if resume() came first.
+        if (!this.isProcessing) this.releaseQuietWaiters();
       }
     }
   }
@@ -388,8 +389,6 @@ export class IndexQueue {
   /** Let both lanes take jobs again after pause(). */
   resume(): void {
     this.paused = false;
-    // A pause() still waiting for quiet resolves too: the queue is no longer paused.
-    this.releaseQuietWaiters();
     this.releaseResumeWaiters();
   }
 

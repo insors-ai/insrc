@@ -164,7 +164,7 @@ test('every lane change publishes the lane\'s depth and processing, and lane ord
 	assert.deepEqual(published, ['summary 1', 'summary 1 sweep 2/5', 'summary 0 sweep 2/5']);
 });
 
-test('resume() while a pause() still waits for the job in flight resolves that pause instead of leaving it pending', async () => {
+test('a pause() whose resume() came first still resolves only once the job in flight has finished, never before', async () => {
 	const q = new IndexQueue();
 	const g = gate();
 	const running = q.start(async () => { await g.wait; });
@@ -172,12 +172,12 @@ test('resume() while a pause() still waits for the job in flight resolves that p
 	await until(() => q.laneStatus().index.running, 'the job to start');
 	let settled = false;
 	const pausing = q.pause().then(() => { settled = true; });
-	await tick();
-	assert.equal(settled, false);
 	q.resume();
-	await pausing;
-	assert.equal(settled, true, 'the pause resolved at the resume');
+	for (let i = 0; i < 5; i++) await tick();
+	assert.equal(settled, false, 'not before the job in flight finished');
 	g.open();
+	await pausing;
+	assert.equal(settled, true, 'resolved once the job finished, not left pending');
 	q.stop();
 	await running;
 });

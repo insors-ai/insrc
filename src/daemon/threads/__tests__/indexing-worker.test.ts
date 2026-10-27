@@ -39,6 +39,8 @@ const { Router } = await import('../router.js');
 const { startClassWorker } = await import('../workers.js');
 const { INDEXING_DRAINED, INDEXING_PORT, INDEXING_STOP_OP } = await import('../indexing-port.js');
 const { pushToWorker } = await import('../channel.js');
+const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
+const { MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
 import type { ReplyEnvelope, RequestEnvelope } from '../channel.js';
 
 // Real paths: the watcher reports events under the real path (/private/var on macOS).
@@ -66,6 +68,34 @@ async function until(cond: () => Promise<boolean> | boolean, what: string, ms = 
 		if (Date.now() > deadline) assert.fail(`timed out waiting for: ${what}`);
 		await new Promise(r => setTimeout(r, 50));
 	}
+}
+
+/** Post a request straight to the worker's port; resolves with its reply. */
+function askPort(method: string, params: unknown, underHold?: boolean): Promise<ReplyEnvelope> {
+	const requestId = `p${++seq}`;
+	return new Promise(resolve => {
+		const onMessage = (m: ReplyEnvelope): void => { if (m.requestId === requestId) { indexingPort.off('message', onMessage); resolve(m); } };
+		indexingPort.on('message', onMessage);
+		indexingPort.postMessage({ kind: 'request', requestId, method, params, stream: false, ...(underHold === true ? { underHold } : {}) } satisfies RequestEnvelope);
+	});
+}
+/**
+ * A job held on the worker's queue: the test holds the maintenance lock exclusively and
+ * enqueues a job (as a nested call under its hold), which then waits for the lock with
+ * the queue busy. Resolves once the job is waiting; the returned call lets it run.
+ */
+async function holdAJob(): Promise<() => Promise<void>> {
+	let release!: () => void;
+	const gate = new Promise<void>(r => { release = r; });
+	let grant!: () => void;
+	const granted = new Promise<void>(r => { grant = r; });
+	const done = getLockManager().request(MAINTENANCE_LOCK, { mode: 'exclusive', timeoutMs: 60_000 }, async () => { grant(); await gate; });
+	await granted;
+	const enqueued = await askPort(INDEXING_PORT.enqueue, { kind: 'full', repoPath: REPO }, true);
+	assert.equal(enqueued.error, undefined);
+	const waiting = (): boolean => getLockManager().query().pending.some(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared');
+	await until(waiting, 'the job to wait for the maintenance lock');
+	return async () => { release(); await done; };
 }
 
 before(async () => {
@@ -131,16 +161,21 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
 			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },
 			'docSummary.restoreFromBackup': r => assert.equal(r.error, 'docSummary.restoreFromBackup: backupPath must be a string', 'its own validation ran'),
-			// Work was just queued by the calls above: today's busy refusal, from the worker's real queue.
+			// A job held running: today's busy refusal, from the worker's real queue.
 			'daemon.compact': r => assert.match(r.error ?? '', /^daemon\.compact: indexer is busy \(queue=\d+, processing=(true|false)\)\./),
 		};
 		sent.length = 0;
 		for (const [method, params] of calls) {
-			const reply = await ask(method, params);
+			// daemon.compact is asked while a job is held running, so the queue is busy for certain.
+			let reply: ReplyEnvelope;
+			if (method === 'daemon.compact') {
+				const letRun = await holdAJob();
+				try { reply = await ask(method, params); } finally { await letRun(); }
+			} else reply = await ask(method, params);
 			assert.ok(expect[method] !== undefined, `an expected outcome for ${method}`);
 			expect[method]!(reply);
 		}
-		assert.deepEqual(sent, calls.map(([m]) => m), 'every indexing method went to the code-indexing worker');
+		assert.deepEqual(sent.filter(m => !m.startsWith('indexing.port.')), calls.map(([m]) => m), 'every indexing method went to the code-indexing worker');
 		const indexingMethods = methodClasses.entries().filter(e => e.cls === 'indexing').map(e => e.method).sort();
 		assert.deepEqual(indexingMethods, calls.map(([m]) => m).sort(), 'and these are all of them');
 	} finally {
@@ -193,14 +228,9 @@ test("recorded responses of repo.stats and daemon.compact equal the single-threa
 		shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined,
 	});
 	const todayRefusal = await singleBusy.rpcHandlers['daemon.compact']!(undefined).then(() => '', (e: Error) => e.message);
-	const enqueued = await new Promise<ReplyEnvelope>(resolve => {
-		const requestId = 'enq';
-		const onMessage = (m: ReplyEnvelope): void => { if (m.requestId === requestId) { indexingPort.off('message', onMessage); resolve(m); } };
-		indexingPort.on('message', onMessage);
-		indexingPort.postMessage({ kind: 'request', requestId, method: INDEXING_PORT.enqueue, params: { kind: 'full', repoPath: REPO }, stream: false });
-	});
-	assert.equal(enqueued.error, undefined);
-	const threadedRefusal = (await ask('daemon.compact')).error ?? '';
+	const letRun = await holdAJob();
+	let threadedRefusal: string;
+	try { threadedRefusal = (await ask('daemon.compact')).error ?? ''; } finally { await letRun(); }
 	const shape = /^daemon\.compact: indexer is busy \(queue=\d+, processing=(true|false)\)\. Wait for indexing to drain before compacting\.$/;
 	assert.match(todayRefusal, shape);
 	assert.match(threadedRefusal, shape);

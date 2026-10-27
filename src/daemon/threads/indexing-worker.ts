@@ -79,7 +79,9 @@ onIndexRunsChanged(runs => {
 	if (now !== running) {
 		running = now;
 		const pending = publishStore().then(() => {
-			if (storeFirst === pending) storeFirst = undefined;
+			// A newer store publication is still pending: it publishes the runs, after its own status.
+			if (storeFirst !== pending) return;
+			storeFirst = undefined;
 			board.publishIndexRuns(latest);
 		});
 		storeFirst = pending;

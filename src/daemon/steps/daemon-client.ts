@@ -110,7 +110,8 @@ export function createInDaemonClient(
 				throw new Error(err instanceof Error ? err.message : String(err));
 			}
 		}
-		const handler = unary[method];
+		// Own entries only, as directDispatch: a method named like an inherited property is unknown.
+		const handler = Object.hasOwn(unary, method) ? unary[method] : undefined;
 		if (handler === undefined) throw new Error(`unknown method: ${method}`);
 		try {
 			return await handler(params) as T;
@@ -125,7 +126,7 @@ export function createInDaemonClient(
 	const streamRequest = <T>(method: string, params: Record<string, unknown>, opts: ReviewStreamOpts): Promise<T> =>
 		runReviewStream<T>(method, opts, (sink) => {
 			const inner = new AbortController();
-			const handler = stream[method];
+			const handler = Object.hasOwn(stream, method) ? stream[method] : undefined;
 			if (handler === undefined) {
 				sink.fail('unknown-method', `${method}: this daemon does not support the request (unknown method: ${method}).`);
 				return { end: () => {}, cancel: () => inner.abort() };

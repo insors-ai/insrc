@@ -321,3 +321,12 @@ test('in-daemon review client: the codeReview.freshness reply keeps inFlight and
 	assert.deepEqual(await client.fetchCodeReviewFreshness({ repo: '/r', epicHash: 'e', storyId: 's', changedFiles: ['src/a.ts'] }),
 		{ ok: true, isProcessing: true, inFlight: false, pendingCodeIndexJobs: 2, staleFiles: ['src/a.ts'] });
 });
+
+test('the in-daemon client treats a method named like an inherited property (toString, constructor) as an unknown method, as directDispatch does', async () => {
+	const { createInDaemonClient } = await import('../daemon-client.js');
+	const client = createInDaemonClient({ 'x.ok': async () => 'ok' }, {});
+	assert.equal(await client.request('x.ok', {}), 'ok');
+	for (const method of ['toString', 'constructor', 'hasOwnProperty']) {
+		await assert.rejects(client.request(method, {}), new RegExp(`^Error: unknown method: ${method}$`), method);
+	}
+});

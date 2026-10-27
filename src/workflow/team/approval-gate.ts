@@ -111,7 +111,7 @@ async function authorizeStageChange(jsonPath: string, decide: Decide, metaOverri
 		const storyId = meta?.storyId ?? fromName?.storyId;
 		if (typeof epicHash !== 'string' || (!EPIC_WORKFLOWS.has(workflow ?? '') && typeof storyId !== 'string')) {
 			// The stage cannot be told: only a repo that enforces claims (or whose policy cannot be read) refuses
-			const enforced = claimsEnforcedFor(repoPath);
+			const enforced = await claimsEnforcedFor(repoPath);
 			if (enforced === 'no') return undefined;
 			return { outcome: { kind: 'refused', reason: enforced === 'yes' ? 'cannot tell which stage this approval is for (the artifact has no epic or story)' : enforced }, subject: undefined };
 		}
@@ -126,7 +126,7 @@ async function authorizeStageChange(jsonPath: string, decide: Decide, metaOverri
 		const tasks = standalone ? { ok: true as const, ids: [] as string[] } : taskIdsOf(repoPath, epicHash, storyId as string);
 		if (!tasks.ok) {
 			// Cannot tell which Tasks the Story has: refuse where claims are enforced, so a Task claim is never skipped
-			const enforced = claimsEnforcedFor(repoPath);
+			const enforced = await claimsEnforcedFor(repoPath);
 			if (enforced === 'no') return undefined;
 			return { outcome: { kind: 'refused', reason: enforced === 'yes' ? tasks.reason : enforced }, subject: undefined };
 		}

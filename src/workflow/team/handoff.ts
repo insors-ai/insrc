@@ -670,7 +670,7 @@ export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly 
 
 		const registered = await verifyReceivingRepo(repo, undefined, deps);
 		if (!registered.ok) return refused(registered.reason);
-		const enforced = claimsEnforcedFor(repo);
+		const enforced = await claimsEnforcedFor(repo);
 		if (enforced !== 'yes') return refused(enforced === 'no' ? 'this repository does not enforce claims, so there is nothing to take over' : enforced);
 
 		// the stage: the one asked for (it must fit the unit) or the one the committed artifacts say is next

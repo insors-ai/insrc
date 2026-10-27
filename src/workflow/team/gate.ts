@@ -166,7 +166,7 @@ export type TeamContext =
  * Does this repo enforce claims? 'no' with no policy, teamMode false or claimsEnforced false (no tracker is
  * touched); a string is the reason the policy could not be read.
  */
-export function claimsEnforcedFor(repo: string): 'yes' | 'no' | string {
+export async function claimsEnforcedFor(repo: string): Promise<'yes' | 'no' | string> {
 	try {
 		const policy = (testDeps.readPolicy ?? policyReader)(repo);
 		if (!policy.ok) return `the team policy cannot be read: ${policy.reason}`;
@@ -180,7 +180,7 @@ export function claimsEnforcedFor(repo: string): 'yes' | 'no' | string {
  */
 export async function actingUser(repo: string): Promise<string | undefined> {
 	try {
-		if (claimsEnforcedFor(repo) !== 'yes') return undefined;
+		if (await claimsEnforcedFor(repo) !== 'yes') return undefined;
 		const loaded = await (testDeps.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim']));
 		if (!loaded.ok) return undefined;
 		const who = await loaded.value.whoAmI();

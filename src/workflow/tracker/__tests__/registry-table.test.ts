@@ -200,6 +200,45 @@ describe('registry-table.test.ts: one case per issue, comment, label, milestone 
 		await assert.rejects(table().queryTasks('o', 'r', {}), rejectedGh());
 	});
 
+	it('every row, on a gh failure, gives its old failure: a thrown GhCommandError of the right kind, or its best-effort result; void rows resolve to undefined on success', async () => {
+		const t = table();
+		const hard: Array<[string, () => Promise<unknown>]> = [
+			['ghCreateIssue', () => t.ghCreateIssue('o', 'r', 'T', 'B', [])],
+			['ghCreateIssueTyped', () => t.ghCreateIssueTyped('o', 'r', 'T', 'B', [], 'Task')],
+			['ghLinkSubIssue', () => t.ghLinkSubIssue('o', 'r', 'o/r#1', 2)],
+			['ghGetIssueId', () => t.ghGetIssueId('o', 'r', 'o/r#1')],
+			['ghGetIssueBody', () => t.ghGetIssueBody('o', 'r', 'o/r#1')],
+			['ghEditIssueBody', () => t.ghEditIssueBody('o', 'r', 'o/r#1', 'b')],
+			['ghComment', () => t.ghComment('o', 'r', 'o/r#1', 'b')],
+			['ghListIssueComments', () => t.ghListIssueComments('o', 'r', 'o/r#1')],
+			['ghPostCommentReturningId', () => t.ghPostCommentReturningId('o', 'r', 'o/r#1', 'b')],
+			['ghCloseIssue', () => t.ghCloseIssue('o', 'r', 'o/r#1')],
+			['ghGetIssueState', () => t.ghGetIssueState('o', 'r', 'o/r#1')],
+			['ghFindIssueByLabelsStrict', () => t.ghFindIssueByLabelsStrict('o', 'r', ['a'])],
+			['ghListIssuesByLabelsStrict', () => t.ghListIssuesByLabelsStrict('o', 'r', ['a'])],
+			['ghListIssuesByTitleTokenStrict', () => t.ghListIssuesByTitleTokenStrict('o', 'r', 'x')],
+			['ghAttachMilestone', () => t.ghAttachMilestone('o', 'r', 'o/r#1', 'M')],
+			['queryTasks', () => t.queryTasks('o', 'r', {})],
+			['listMyOpenTasks', () => t.listMyOpenTasks('o', 'r')],
+		];
+		for (const [kind, stderr] of [['rejected', 'HTTP 404: not found'], ['missing-signin', 'gh auth login'], ['rejected', 'HTTP 500: boom']] as const) {
+			gh([['*', '', 1, stderr]]);
+			for (const [name, call] of hard) await assert.rejects(call(), rejectedGh(kind), `${name} on ${stderr}`);
+		}
+		// best-effort rows give their old fallback for every gh failure
+		gh([fail404()]);
+		assert.equal(await t.ghCreateLabel('o', 'r', 'x'), false);
+		assert.equal(await t.ghFindIssueByLabels('o', 'r', ['a']), undefined);
+		assert.equal(await t.ghEnsureMilestone('o', 'r', 'M'), undefined);
+		// the void rows resolve to undefined on success
+		gh([['*', '{"number":1,"title":"t","state":"OPEN","id":5,"linked":true,"url":"https://github.com/o/r/issues/1#c"}']]);
+		assert.equal(await t.ghLinkSubIssue('o', 'r', 'o/r#1', 2), undefined);
+		assert.equal(await t.ghEditIssueBody('o', 'r', 'o/r#1', 'b'), undefined);
+		assert.equal(await t.ghComment('o', 'r', 'o/r#1', 'b'), undefined);
+		assert.equal(await t.ghCloseIssue('o', 'r', 'o/r#1'), undefined);
+		assert.equal(await t.ghAttachMilestone('o', 'r', 'o/r#1', 'M'), undefined);
+	});
+
 	it('a denial is thrown, never swallowed, in every kind of row (best effort or not)', async () => {
 		gh([['*', '{}']]);
 		_setApprovalGateForTests(() => decline);
@@ -218,7 +257,7 @@ describe('registry-table.test.ts: one case per issue, comment, label, milestone 
 		await assert.rejects(t.ghEditIssueBody('o', 'r', 'o/r#1', 'x'), (err: unknown) => err instanceof ToolDenied);
 	});
 
-	it('a conversion failure or a schema mismatch throws a rejected error even in a best-effort row', async () => {
+	it('a schema mismatch throws a rejected error even in a best-effort row (no row of this table converts text, so conversion-failed cannot arise here)', async () => {
 		// the issue list answers a number as a string: the output schema check fails (schema-mismatch)
 		gh([['*issue*list*', '[{"number":"12","title":"t","state":"OPEN"}]']]);
 		await assert.rejects(table().ghFindIssueByLabels('o', 'r', ['a']), rejectedGh());

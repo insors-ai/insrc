@@ -294,6 +294,8 @@ After a 'file' job completes, the daemon sets the registered repo's lastIndexed 
 
 - `q71ed78b7` — Graded partial in the audit (ts1): the Story record has no acceptance criteria; ac1 to ac6 were written in this LLD from the approved issue's fix intent and the review rounds.
   - **resolved**: Confirm LLD as baseline — User chose option 2: ac1 to ac6 in the approved LLD govern acceptance; derived from the approved issue's fix intent and the review rounds; the Story record stays without criteria. _(2026-10-27T06:42:17.229Z)_
+- `qc02cc01e` — That an entity-less changed file is left out of a full review's grounding rests on review round 1; only the symbol list of grounding.ts was read here.
+  - **resolved**: Verify before proceeding — Verified 2026-10-27 in src/workflow/code-review/grounding.ts:88-113: symbols are built by looping each changed file's entities, so an entity-less file adds none; the code-review step handler falls back to the diff review only when the whole symbols list is empty (handler.ts:305-372). The omission in a mixed set is confirmed. _(2026-10-27T06:43:15.519Z)_
 
 ## Citations
 

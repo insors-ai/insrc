@@ -85,6 +85,13 @@
         "choice": "Confirm LLD as baseline",
         "rationale": "User chose option 2: ac1 to ac6 in the approved LLD govern acceptance; derived from the approved issue's fix intent and the review rounds; the Story record stays without criteria.",
         "resolvedAt": "2026-10-27T06:42:17.229Z"
+      },
+      "qc02cc01e": {
+        "question": "That an entity-less changed file is left out of a full review's grounding rests on review round 1; only the symbol list of grounding.ts was read here.",
+        "status": "resolved",
+        "choice": "Verify before proceeding",
+        "rationale": "Verified 2026-10-27 in src/workflow/code-review/grounding.ts:88-113: symbols are built by looping each changed file's entities, so an entity-less file adds none; the code-review step handler falls back to the diff review only when the whole symbols list is empty (handler.ts:305-372). The omission in a mixed set is confirmed.",
+        "resolvedAt": "2026-10-27T06:43:15.519Z"
       }
     }
   },

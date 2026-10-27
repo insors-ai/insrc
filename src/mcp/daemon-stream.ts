@@ -32,11 +32,11 @@ import type { InsrcGuideResult } from '../daemon/guide-sections.js';
 import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
 import type { WorkflowReviewDone } from '../daemon/workflow-review-rpc.js';
 import {
-	codeReviewRequestParams, freshnessFromReply, groundingFromReply, reviewArtifactRequestParams, runReviewStream, unavailableFromError,
+	codeReviewControlRequestParams, codeReviewControlResult, codeReviewControlWaitOpts, legacyCodeReviewRequestParams, legacyCodeReviewResult, freshnessFromReply, groundingFromReply, reviewArtifactRequestParams, runReviewStream, unavailableFromError,
 } from '../shared/review-stream.js';
 import type {
 	CodeReviewFreshnessResult, CodeReviewGroundingResult,
-	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
+	CodeReviewControlParams, CodeReviewControlResult, CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
 } from '../shared/review-stream.js';
 
 // Moved to src/shared/review-stream.ts (Epic c2ba6fa6, Story s11) so the
@@ -44,7 +44,7 @@ import type {
 // existing importers are unchanged.
 export { ReviewStreamError } from '../shared/review-stream.js';
 export type {
-	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
+	CodeReviewControlParams, CodeReviewControlResult, CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
 } from '../shared/review-stream.js';
 
 const log = getLogger('mcp:workflow-run');
@@ -484,10 +484,16 @@ export function reviewArtifactStream(
 }
 
 /** Ask the daemon to review a Story's code (`codeReview.run`). */
-export function codeReviewStream(
+export async function codeReviewStream(
 	params: CodeReviewStreamParams,
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
 ): Promise<CodeReviewStreamResult> {
-	return reviewStreamRequest<CodeReviewStreamResult>('codeReview.run', codeReviewRequestParams(params), opts, deps);
+	return legacyCodeReviewResult(await reviewStreamRequest<unknown>('codeReview.run', legacyCodeReviewRequestParams(params), opts, deps));
+}
+
+
+/** A bounded wait on a daemon-owned code-review operation. */
+export async function codeReviewControl(params: CodeReviewControlParams, opts: ReviewStreamOpts, deps: ReviewStreamDeps = {}): Promise<CodeReviewControlResult> {
+ return codeReviewControlResult(await reviewStreamRequest<unknown>('codeReview.run', codeReviewControlRequestParams(params), codeReviewControlWaitOpts(opts), deps), params);
 }

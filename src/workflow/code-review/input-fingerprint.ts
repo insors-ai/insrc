@@ -6,7 +6,8 @@
  * No fingerprint-derived approval audit fields exist in v1's BUILD writer.
  */
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { canonicalIdentityJson, identityDigest as hash, isReviewInputFingerprint, REVIEW_INPUT_SCHEMA_VERSION } from '../../shared/review-input-identity.js';
+export { isReviewInputFingerprint, REVIEW_INPUT_SCHEMA_VERSION } from '../../shared/review-input-identity.js';
 import { existsSync, lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { ReviewBlockedError, ArtifactMissingError, ArtifactNotApprovedError, requireApprovedLld, requireApprovedPlan } from '../gates.js';
@@ -20,16 +21,14 @@ import { authorPartyOf } from '../review/party.js';
 import { testRecordView } from './dimensions/test-record-view.js';
 import type { CodeReviewSubject, ReviewInputFingerprint } from './types.js';
 
-export const REVIEW_INPUT_SCHEMA_VERSION = 1;
 export const BUILD_APPROVAL_IDENTITY_EXCLUSIONS = Object.freeze(['approvedAt', 'rejectedAt', 'rejectReason', 'reviewOverride'] as const);
-const hash = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex');
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export function canonicalReviewJson(value: unknown): string {
- const encoded = JSON.stringify(value, (_key, v: unknown) => object(v) ? Object.fromEntries(Object.keys(v).sort().map(k => [k, v[k]])) : v);
- if (encoded === undefined) throw new ReviewInputUnavailableError('Input has no canonical JSON representation');
- return encoded;
+ try { return canonicalIdentityJson(value); }
+ catch (err) { throw new ReviewInputUnavailableError(err instanceof Error ? err.message : String(err)); }
 }
+
 export function canonicalReviewBuild(value: unknown): unknown {
  if (!object(value) || !object(value['meta'])) return value;
  const meta = { ...value['meta'] };
@@ -150,12 +149,7 @@ export function captureReviewInputFingerprint(subject: CodeReviewSubject): Revie
  if (canonicalReviewJson(subjectEvidence(subject)) !== canonicalReviewJson(subjectEvidence(captured.subject))) throw new ReviewInputChangedError();
  return captured.fingerprint;
 }
-export function isReviewInputFingerprint(value: unknown): value is ReviewInputFingerprint {
- if (!object(value) || value['schemaVersion'] !== REVIEW_INPUT_SCHEMA_VERSION || typeof value['repoPath'] !== 'string' || !isAbsolute(value['repoPath']) || typeof value['epicHash'] !== 'string' || !/^[a-f0-9]{16}$/.test(value['epicHash']) || typeof value['storyId'] !== 'string' || !/^s[0-9]+$/i.test(value['storyId']) || typeof value['author'] !== 'string' || !['controller', 'daemon', 'unknown'].includes(value['author'])) return false;
- for (const key of ['digest', 'sourceDigest', 'contractDigest', 'buildDigest', 'testsDigest']) if (typeof value[key] !== 'string' || !/^[a-f0-9]{64}$/.test(value[key])) return false;
- const { digest, ...payload } = value;
- return digest === hash(canonicalReviewJson(payload));
-}
+
 export type ReviewInputComparison = { readonly status: 'fresh' } | { readonly status: 'stale-review'; readonly reason: 'invalid' | 'unavailable' | 'mismatch'; readonly message: string };
 export function compareReviewInputFingerprint(recorded: unknown, repo: string, epic: string, story: string): ReviewInputComparison {
  if (!isReviewInputFingerprint(recorded)) return { status: 'stale-review', reason: 'invalid', message: 'Invalid or unsupported review input fingerprint; run a new independent review' };

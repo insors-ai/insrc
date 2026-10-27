@@ -327,7 +327,7 @@ async function codeReviewControlStart(params: CodeReviewRunParams & { readonly r
    });
   }
   if (handle === undefined) throw new ReviewOperationError('review-operation-lost', 'No owned review handle was supplied');
-  const waitMs = Math.max(0, Math.min(deps.controlWaitMs ?? CODE_REVIEW_CONTROL_WAIT_MS, CODE_REVIEW_CONTROL_WAIT_MS - (Date.now() - requestStarted)));
+  const waitMs = Math.max(0, Math.min(deps.controlWaitMs ?? 180_000, 180_000 - (Date.now() - requestStarted)));
   const outcome = params.operation === 'cancel' ? await registry.cancel(handle, target, { signal: waiterSignal, waitMs }) : await registry.wait(handle, target, { signal: waiterSignal, waitMs });
   send({ id: 0, stream: 'done', data: outcome });
  } catch (err) {

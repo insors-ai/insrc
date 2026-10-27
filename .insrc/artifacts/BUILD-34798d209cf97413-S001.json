@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:56:20.732Z",
+    "updatedAt": "2026-10-27T10:15:13.904Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
@@ -67,9 +67,13 @@
       {
         "id": "t14",
         "passed": true
+      },
+      {
+        "id": "t15",
+        "passed": true
       }
     ],
-    "summary": "Publication race tests now call the real code-review and common BUILD approval gates and prove stale fingerprints are unusable with enforcement off and overrides. Added their minimal fail-closed guards; task20 still owns richer stale outcome projection/approval rollback. Existing approval tests exposed known-author loss for a legacy missing-createdAt BUILD, corrected by retaining that author while seeding time.",
+    "summary": "Add daemon-owned start/join/status/cancel operations with immutable fingerprint/timing, opaque epoch handles, bounded detached waiters, conflicts, progress-only idle resets, terminal grace and shutdown settlement; legacy streams remain compatible.",
     "testRecord": {
       "md": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/TESTS.md"
     },
@@ -79,583 +83,618 @@
           "file": ".insrc/artifacts/PLAN-34798d209cf97413-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task01-checks.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task01-pipeline-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/complete-input.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-duplicates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-gather.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/envelope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/job.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task02-bounded-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task02-checks.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task02-provider-pipeline-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/bounded-input.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/agent/providers/bounded-input.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/shared/structured-input.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task03-checks.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task03-reader-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/grounding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task04-checks.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task04-span-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diff-spans.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/diff-spans.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task05-checks.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task05-fit-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/diff-material-fit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-material.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/diff-fragments.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/code-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task06-checks.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task06-parent-tests.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/diff-parent-quality.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-chunk.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/diff-parent-evidence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task07-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/diff-duplication.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task08-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/adherence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/conventions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/diagram/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/quality.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/ux/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/runner.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/prepared-dimensions.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task09-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/diff-timing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/timing.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task10-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/diff-refusal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task11-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/timed-dispatch.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task12-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/input-fingerprint.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/input-fingerprint.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task13-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/completion-identity.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/changed-files.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/completion-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/standalone-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task14-validation.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/code-review-publication.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/code-review-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/code-review-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/__tests__/long-review.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/publication.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-27T09:56:20.732Z"
+        "timestamp": "2026-10-27T10:15:13.904Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task15-validation.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:15:13.904Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/code-review-control.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:15:13.904Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/code-review-operations.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:15:13.904Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/code-review-operations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:15:13.904Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:15:13.904Z"
       }
     ],
-    "commit": "161256f3b"
+    "commit": "e92c06614"
   }
 }

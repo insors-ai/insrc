@@ -11,7 +11,10 @@
  * c2ba6fa6, Story s11).
  */
 
-import type { CodeReviewArtifact, CodeReviewFallbackReason, CodeReviewGrounding } from '../workflow/code-review/types.js';
+import { isReviewInputFingerprint, REVIEW_INPUT_SCHEMA_VERSION } from './review-input-identity.js';
+import type { CodeReviewProgress } from '../workflow/code-review/runner.js';
+import { CODE_REVIEW_SCHEMA_VERSION } from '../workflow/code-review/types.js';
+import type { CodeReviewArtifact, CodeReviewFallbackReason, CodeReviewGrounding, ReviewTimingPlan } from '../workflow/code-review/types.js';
 
 /** Why a review request did not produce a review. */
 export type ReviewStreamFailure =
@@ -66,6 +69,16 @@ export interface CodeReviewStreamResult {
 	readonly runId:    string;
 	readonly artifact: CodeReviewArtifact;
 }
+
+/** Operation requests are separate from legacy final-only streaming requests. */
+export type CodeReviewControlParams =
+ | (CodeReviewStreamParams & { readonly operation: 'start'; readonly reviewHandle?: never })
+ | { readonly operation: 'status' | 'cancel'; readonly reviewHandle: string; readonly repo?: string | undefined; readonly epicHash: string; readonly storyId: string };
+export type CodeReviewControlResult = { readonly daemonEpoch: string } & (
+ | { readonly status: 'pending'; readonly reviewHandle: string; readonly progress: readonly CodeReviewProgress[]; readonly timing?: ReviewTimingPlan | undefined }
+ | { readonly status: 'done'; readonly reviewHandle: string; readonly result: CodeReviewStreamResult }
+ | { readonly status: 'failed'; readonly reviewHandle: string; readonly error: string; readonly reason: string }
+ | { readonly status: 'cancelled'; readonly reviewHandle: string });
 
 // ---------------------------------------------------------------------------
 // The code-review grounding and freshness replies, shaped the same way by the
@@ -122,14 +135,26 @@ export function reviewArtifactRequestParams(params: ReviewArtifactStreamParams):
 }
 
 /** The parameters `codeReview.run` is sent. */
-export function codeReviewRequestParams(params: CodeReviewStreamParams): Record<string, unknown> {
-	return {
+export function codeReviewRequestParams(params: CodeReviewStreamParams | CodeReviewControlParams): Record<string, unknown> {
+ const control = params as CodeReviewStreamParams & { operation?: unknown; reviewHandle?: unknown };
+ if (control.operation !== undefined) {
+  if (typeof control.operation !== 'string' || !['start', 'status', 'cancel'].includes(control.operation)) throw new ReviewStreamError('protocol', 'Invalid code-review control operation');
+  if (params.repo !== undefined && (typeof params.repo !== 'string' || params.repo.length === 0)) throw new ReviewStreamError('protocol', 'Control repository must be a nonempty path');
+  if (control.client !== undefined && control.client !== 'claude' && control.client !== 'codex') throw new ReviewStreamError('protocol', 'Invalid invoking control client');
+  if (control.groundingMode !== undefined && control.groundingMode !== 'full' && control.groundingMode !== 'degraded') throw new ReviewStreamError('protocol', 'Invalid control grounding mode');
+  if (typeof params.epicHash !== 'string' || params.epicHash.length === 0 || typeof params.storyId !== 'string' || params.storyId.length === 0) throw new ReviewStreamError('protocol', 'Control requests require a target');
+  if (control.operation === 'start' ? control.reviewHandle !== undefined : typeof control.reviewHandle !== 'string' || control.reviewHandle.length === 0) throw new ReviewStreamError('protocol', 'Invalid control review handle');
+  if (control.operation !== 'start' && [control.client, control.groundingMode, control.fallbackReason].some(v => v !== undefined)) throw new ReviewStreamError('protocol', 'Status/cancel cannot change review inputs');
+ } else if (control.reviewHandle !== undefined) throw new ReviewStreamError('protocol', 'Review handles require a control operation');
+ return {
+  ...(control.operation !== undefined ? { operation: control.operation } : {}),
+  ...(control.reviewHandle !== undefined ? { reviewHandle: control.reviewHandle } : {}),
 		epicHash: params.epicHash,
 		storyId:  params.storyId,
 		...(params.repo          !== undefined ? { repo:          params.repo }          : {}),
-		...(params.client        !== undefined ? { client:        params.client }        : {}),
-		...(params.groundingMode !== undefined ? { groundingMode: params.groundingMode } : {}),
-		...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}),
+		...(control.client        !== undefined ? { client:        control.client }        : {}),
+		...(control.groundingMode !== undefined ? { groundingMode: control.groundingMode } : {}),
+		...(control.fallbackReason !== undefined ? { fallbackReason: control.fallbackReason } : {}),
 	};
 }
 
@@ -260,4 +285,87 @@ export function runReviewStream<T>(
 		}
 		if (pending !== undefined) release(pending);
 	});
+}
+
+
+const record = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const nonempty = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+const DIMENSIONS = ['adherence', 'conventions', 'coverage', 'quality', 'functional-coverage', 'diagram', 'ux'] as const;
+const PHASES = ['grounding', 'timing', 'dimension-start', 'call', 'dimension-done', 'finalize', 'done', 'error'];
+function protocol(message: string): never { throw new ReviewStreamError('protocol', `codeReview.run: ${message}`); }
+const integer = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
+const sameStory = (a: unknown, b: unknown): boolean => typeof a === 'string' && typeof b === 'string' && /^s[0-9]+$/i.test(a) && /^s[0-9]+$/i.test(b) && BigInt(a.slice(1)) === BigInt(b.slice(1));
+function timingResult(value: unknown): ReviewTimingPlan {
+ if (!record(value) || !integer(value['startedAt']) || !integer(value['chunkCount']) || value['chunkCount'] < 1 || !integer(value['budgetMs']) || value['budgetMs'] !== value['chunkCount'] * 600_000 || !integer(value['deadlineAt']) || value['deadlineAt'] !== value['startedAt'] + value['budgetMs'] || !Array.isArray(value['dimensions'])) protocol('malformed timing plan');
+ let chunks = 0; const seen = new Set<string>(), ids = new Set<string>();
+ for (const entry of value['dimensions']) {
+  if (!record(entry) || !nonempty(entry['dimension']) || !(DIMENSIONS as readonly string[]).includes(entry['dimension']) || seen.has(entry['dimension']) || !integer(entry['primaryChunkCount']) || !integer(entry['budgetMs']) || entry['budgetMs'] !== entry['primaryChunkCount'] * 600_000 || !Array.isArray(entry['primaryChunkIds']) || entry['primaryChunkIds'].length !== entry['primaryChunkCount']) protocol('malformed dimension timing');
+  seen.add(entry['dimension']); chunks += entry['primaryChunkCount'];
+  for (const id of entry['primaryChunkIds']) { if (!nonempty(id) || ids.has(id) || !id.startsWith(entry['dimension'] + ':')) protocol('malformed primary timing identity'); ids.add(id); }
+ }
+ if (Math.max(1, chunks) !== value['chunkCount']) protocol('timing count does not match its dimensions');
+ return structuredClone(value) as unknown as ReviewTimingPlan;
+}
+/** Keep legacy calls final-only; operation data must never be cast as a final CR. */
+export function legacyCodeReviewRequestParams(params: CodeReviewStreamParams): Record<string, unknown> {
+ if ('operation' in params || 'reviewHandle' in params) protocol('use codeReviewControl for operation requests');
+ return codeReviewRequestParams(params);
+}
+export function legacyCodeReviewResult(value: unknown): CodeReviewStreamResult {
+ if (!record(value) || 'status' in value || !nonempty(value['runId']) || !record(value['artifact'])) protocol('legacy stream did not return a final review');
+ return value as unknown as CodeReviewStreamResult;
+}
+export function codeReviewControlRequestParams(params: CodeReviewControlParams): Record<string, unknown> {
+ if (!record(params) || typeof params['operation'] !== 'string') protocol('control requests require an operation');
+ return codeReviewRequestParams(params);
+}
+
+/** Client waits end before the host ceiling; stopping the transport only detaches this waiter. */
+export function codeReviewControlWaitOpts(opts: ReviewStreamOpts): ReviewStreamOpts {
+ if (!Number.isSafeInteger(opts.timeoutMs) || opts.timeoutMs <= 0) protocol('invalid control wait limit');
+ return { ...opts, timeoutMs: Math.min(opts.timeoutMs, 200_000) };
+}
+function finalControlResult(value: unknown, params: CodeReviewControlParams): CodeReviewStreamResult {
+ const result = legacyCodeReviewResult(value), artifact = result.artifact;
+ const meta = artifact.meta, body = artifact.body;
+ if (!record(meta) || !record(body) || meta.workflow !== 'code-review' || meta.schemaVersion !== CODE_REVIEW_SCHEMA_VERSION || !nonempty(meta.createdAt) || !Number.isFinite(Date.parse(meta.createdAt)) || !integer(meta.elapsedMs) || (meta.repoIndexedAt !== null && !integer(meta.repoIndexedAt)) || meta.runId !== result.runId || meta.reviewedBy !== 'daemon' || body.kind !== 'code-review' || !['full', 'degraded'].includes(body.groundingMode) || meta.epicHash !== params.epicHash || !sameStory(meta.storyId, params.storyId) || body.epicHash !== meta.epicHash || body.storyId !== meta.storyId) protocol('malformed or foreign final review');
+ if (params.operation === 'start' && body.groundingMode !== (params.groundingMode ?? 'full')) protocol('final grounding mode differs from the requested review');
+ if (meta.reviewInputSchemaVersion !== REVIEW_INPUT_SCHEMA_VERSION || !isReviewInputFingerprint(meta.reviewInputFingerprint) || meta.reviewInputFingerprint.epicHash !== meta.epicHash || meta.reviewInputFingerprint.storyId !== meta.storyId || meta.reviewInputFingerprint.repoPath !== meta.repoPath || meta.reviewInputFingerprint.author === 'daemon') protocol('final review has invalid input identity or author');
+ if (!record(body.subject) || !Array.isArray(body.subject.changedFiles) || !body.subject.changedFiles.every(nonempty) || new Set(body.subject.changedFiles).size !== body.subject.changedFiles.length) protocol('malformed final subject');
+ const counts = body.counts;
+ if (!record(counts) || !integer(counts.high) || !integer(counts.med) || !integer(counts.low) || !Array.isArray(body.dimensions) || body.dimensions.length < 4) protocol('malformed final review counts/dimensions');
+ const actual = { high: 0, med: 0, low: 0 }; let previous = -1;
+ for (const dimension of body.dimensions) {
+  if (!record(dimension) || typeof dimension.dimension !== 'string' || !Array.isArray(dimension.findings)) protocol('malformed final dimension');
+  const at = (DIMENSIONS as readonly string[]).indexOf(dimension.dimension);
+  if (at <= previous || at < 0 || (previous < 3 && at !== previous + 1)) protocol('missing, duplicate or unordered final dimension'); previous = at;
+  for (const finding of dimension.findings) {
+   if (!record(finding) || typeof finding.severity !== 'string' || !['HIGH', 'MED', 'LOW'].includes(finding.severity) || !nonempty(finding.location) || !nonempty(finding.message) || finding.dimension !== dimension.dimension || (finding.confidence !== undefined && finding.confidence !== 'breach' && finding.confidence !== 'observation') || (finding.counterpartRef !== undefined && !nonempty(finding.counterpartRef))) protocol('malformed final finding');
+   if (finding.severity === 'HIGH') actual.high++; else if (finding.severity === 'MED') actual.med++; else actual.low++;
+  }
+ }
+ if (actual.high !== counts.high || actual.med !== counts.med || actual.low !== counts.low) protocol('final counts do not match findings');
+ const verdict = actual.high > 0 ? 'block' : actual.med > 0 || body.groundingMode === 'degraded' ? 'warn' : 'pass';
+ if (body.verdict !== verdict) protocol('final verdict does not match findings');
+ return structuredClone(result);
+}
+/** Both transports discriminate before any caller can consume a final artifact. */
+export function codeReviewControlResult(value: unknown, params: CodeReviewControlParams): CodeReviewControlResult {
+ if (!record(value) || !nonempty(value['reviewHandle']) || !nonempty(value['daemonEpoch']) || 'artifact' in value) protocol('malformed control reply');
+ if (params.operation !== 'start' && value['reviewHandle'] !== params.reviewHandle) protocol('reply names a different review handle');
+ const base = { reviewHandle: value['reviewHandle'], daemonEpoch: value['daemonEpoch'] };
+ switch (value['status']) {
+  case 'pending': {
+   if ('result' in value || !Array.isArray(value['progress'])) protocol('pending reply cannot carry a final artifact');
+   const progress = value['progress'].map(frame => {
+    if (!record(frame) || typeof frame['phase'] !== 'string' || !PHASES.includes(frame['phase']) || (frame['dimension'] !== undefined && !(DIMENSIONS as readonly unknown[]).includes(frame['dimension'])) || (frame['detail'] !== undefined && typeof frame['detail'] !== 'string')) protocol('malformed progress');
+    return { phase: frame['phase'], ...(frame['dimension'] !== undefined ? { dimension: frame['dimension'] } : {}), ...(frame['detail'] !== undefined ? { detail: frame['detail'] } : {}) } as CodeReviewProgress;
+   });
+   return { ...base, status: 'pending', progress, ...(value['timing'] !== undefined ? { timing: timingResult(value['timing']) } : {}) };
+  }
+  case 'done': return { ...base, status: 'done', result: finalControlResult(value['result'], params) };
+  case 'failed': if ('result' in value || !nonempty(value['error']) || !nonempty(value['reason'])) protocol('malformed failed reply'); return { ...base, status: 'failed', error: value['error'], reason: value['reason'] };
+  case 'cancelled': if ('result' in value) protocol('cancelled reply cannot carry a final artifact'); return { ...base, status: 'cancelled' };
+  default: return protocol('unknown control status');
+ }
 }

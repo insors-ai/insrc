@@ -1,6 +1,6 @@
 /** Daemon-memory ownership for resumable code reviews. Request waiters never own model execution. */
 import { randomUUID } from 'node:crypto';
-import type { CodeReviewStreamResult } from '../shared/review-stream.js';
+import type { CodeReviewControlResult, CodeReviewStreamResult } from '../shared/review-stream.js';
 import type { CodeReviewProgress } from '../workflow/code-review/runner.js';
 import type { ReviewInputFingerprint, ReviewTimingPlan } from '../workflow/code-review/types.js';
 import { isReviewInputFingerprint } from '../workflow/code-review/input-fingerprint.js';
@@ -10,11 +10,8 @@ export const CODE_REVIEW_CONTROL_WAIT_MS = 200_000;
 export const CODE_REVIEW_TERMINAL_GRACE_MS = 600_000;
 const DEFAULT_IDLE_MS = 1_200_000;
 export interface ReviewOperationTarget { readonly repo: string; readonly epicHash: string; readonly storyId: string }
-export type CodeReviewOperationResult = { readonly daemonEpoch: string } & (
- | { readonly status: 'pending'; readonly reviewHandle: string; readonly progress: readonly CodeReviewProgress[]; readonly timing?: ReviewTimingPlan | undefined }
- | { readonly status: 'done'; readonly reviewHandle: string; readonly result: CodeReviewStreamResult }
- | { readonly status: 'failed'; readonly reviewHandle: string; readonly error: string; readonly reason: string }
- | { readonly status: 'cancelled'; readonly reviewHandle: string });
+export type CodeReviewOperationResult = CodeReviewControlResult;
+
 export class ReviewOperationError extends Error {
  constructor(readonly code: string, message: string) { super(message); this.name = 'ReviewOperationError'; }
 }

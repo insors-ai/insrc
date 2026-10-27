@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 69 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 75 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -425,3 +425,30 @@ Run at 2026-10-27T09:56:20.732Z on commit `161256f3b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/code-review-publication.test.ts` | 0 | 9 | 16.1 s |  |
+
+## t15
+
+Run at 2026-10-27T10:15:13.904Z on commit `e92c06614`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: DIFF-TIME-OUTER**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-TIME-OUTER: a healthy operation exceeds four hours, polls add no time, and root/idle deadlines remain terminal | `src/daemon/__tests__/code-review-operations.test.ts` |
+
+**integration: DIFF-WAIT-RESUME**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | DIFF-WAIT-RESUME: repeated starts and bounded detached waiters share one execution and one immutable cached result | `src/daemon/__tests__/code-review-operations.test.ts` |
+| pass | DIFF-WAIT-RESUME: explicit cancel and daemon close abort and await owner settlement; restart never accepts an old handle | `src/daemon/__tests__/code-review-operations.test.ts` |
+| pass | DIFF-WAIT-RESUME: cached completion is not proof of fresh inputs and timing cannot be extended by progress | `src/daemon/__tests__/code-review-operations.test.ts` |
+| pass | DIFF-WAIT-RESUME: real operation RPC returns pending, detaches a request abort, joins starts and caches one final CR | `src/daemon/__tests__/code-review-control.test.ts` |
+| pass | DIFF-WAIT-RESUME: real operation RPC conflicts on changed source and explicit cancellation stops the owner without a CR | `src/daemon/__tests__/code-review-control.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/code-review-control.test.ts` | 0 | 2 | 4.1 s |  |
+| `src/daemon/__tests__/code-review-operations.test.ts` | 0 | 4 | 0.5 s |  |

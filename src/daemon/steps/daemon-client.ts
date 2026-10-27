@@ -26,7 +26,7 @@ import { failureMessage } from '../server.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
 import type { MethodClass } from '../threads/channel.js';
 import {
-	codeReviewRequestParams,
+ codeReviewControlRequestParams, codeReviewControlResult, codeReviewControlWaitOpts, legacyCodeReviewRequestParams, legacyCodeReviewResult,
 	freshnessFromReply,
 	groundingFromReply,
 	reviewArtifactRequestParams,
@@ -36,6 +36,7 @@ import {
 import type {
 	CodeReviewFreshnessResult,
 	CodeReviewGroundingResult,
+ CodeReviewControlParams, CodeReviewControlResult,
 	CodeReviewStreamParams,
 	CodeReviewStreamResult,
 	ReviewArtifactStreamParams,
@@ -47,6 +48,7 @@ export { waitText } from '../../shared/review-stream.js';
 
 /** The daemon requests a step handler makes, in the socket client's shapes. */
 export interface StepDaemonClient {
+ readonly codeReviewControl: (params: CodeReviewControlParams, opts: ReviewStreamOpts) => Promise<CodeReviewControlResult>;
 	readonly reviewArtifactStream:     (params: ReviewArtifactStreamParams, opts: ReviewStreamOpts) => Promise<WorkflowReviewDone>;
 	readonly codeReviewStream:         (params: CodeReviewStreamParams, opts: ReviewStreamOpts) => Promise<CodeReviewStreamResult>;
 	readonly fetchCodeReviewGrounding: (params: { repo: string; epicHash: string; storyId: string }) => Promise<CodeReviewGroundingResult>;
@@ -144,7 +146,8 @@ export function createInDaemonClient(
 	return {
 		request: <T>(method: string, params: unknown) => call<T>(method, params),
 		reviewArtifactStream: (params, opts) => streamRequest<WorkflowReviewDone>('workflow.review', reviewArtifactRequestParams(params), opts),
-		codeReviewStream:     (params, opts) => streamRequest<CodeReviewStreamResult>('codeReview.run', codeReviewRequestParams(params), opts),
+		codeReviewStream: async (params, opts) => legacyCodeReviewResult(await streamRequest<unknown>('codeReview.run', legacyCodeReviewRequestParams(params), opts)),
+  codeReviewControl: async (params, opts) => codeReviewControlResult(await streamRequest<unknown>('codeReview.run', codeReviewControlRequestParams(params), codeReviewControlWaitOpts(opts)), params),
 		fetchCodeReviewGrounding: (params) =>
 			call<Parameters<typeof groundingFromReply>[0]>('codeReview.grounding', params).then(groundingFromReply, unavailableFromError),
 		fetchCodeReviewFreshness: (params) =>

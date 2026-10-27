@@ -527,6 +527,7 @@ async function main(): Promise<void> {
 	//
 	// With the graph store's locks lost none of this applies: see
 	// ./shutdown.ts, which holds the sequence.
+	let reviewOperationsClosing: Promise<void> | undefined;
 	const shutdown = createShutdown({
 		log,
 		stopBackgroundWork: () => {
@@ -541,11 +542,13 @@ async function main(): Promise<void> {
 			void maintenance?.stop();
 			stopIndexing();
 			void disposeChatHandlers();
+   reviewOperationsClosing = (async () => { await (await import('./code-review-operations.js')).codeReviewOperations.close(); })();
 			void server.close();
 		},
 		queueDone,
 		closeStores: async () => {
 			await connectionTestSupervisor.shutdown();
+   await reviewOperationsClosing;
 			await server.flushPendingWrites(1000);
 			server.disconnectClients();
 			// closeDb() is a no-op post-LMDB migration (kept for

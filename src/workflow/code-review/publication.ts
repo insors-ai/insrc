@@ -22,7 +22,7 @@ export function assertReviewFingerprintCurrent(fingerprint: ReviewInputFingerpri
 }
 /** One owner may publish a target at a time; release cannot remove a later owner's claim. */
 export function claimReviewPublication(fingerprint: ReviewInputFingerprint, reviewer: Party): ReviewPublicationGuard {
- const key = JSON.stringify([fingerprint.repoPath, fingerprint.epicHash, Number(fingerprint.storyId.slice(1))]);
+ const key = JSON.stringify([fingerprint.repoPath, fingerprint.epicHash, BigInt(fingerprint.storyId.slice(1)).toString()]);
  if (owners.has(key)) throw new Error('An independent review already owns this publication target');
  assertReviewFingerprintCurrent(fingerprint, reviewer);
  const owner = randomUUID(); owners.set(key, owner);

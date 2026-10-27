@@ -1,0 +1,5 @@
+Task 15 focused verification
+Node 22 TypeScript --noEmit: pass.
+Affected lifecycle/publication/RPC/controller/timed-dispatch run: 94 tests, all pass. Final registry/RPC lifecycle run: 6 tests, all pass.
+Daemon-memory owner retains execution promise, immutable input fingerprint, epoch/unguessable handle, fixed timing, actual-progress idle watchdog and10-minute terminal cache. Matching starts join one owner; changed active input conflicts. Request cancellation detaches only a bounded waiter; explicit cancel and shutdown abort and await owned work. Status does not replan/execute/reset clocks; cached done rechecks current identity, and lost/foreign handles cannot succeed. Fake-clock fixtures exercise more than4h healthy execution, idle/root expiry, retention and restart; real RPC fixture writes one CR across pending/join/status and writes none after explicit cancel/conflict. Legacy stream omission remains unchanged.
+Shared serializer/transport integration remains task16 and step continuation/pinning task17. No daemon restart or config changes. Full sweep deferred to task22. Daemon validation follows commit.

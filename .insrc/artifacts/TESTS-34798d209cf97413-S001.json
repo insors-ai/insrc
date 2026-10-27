@@ -4,7 +4,7 @@
     "epicHash": "34798d209cf97413",
     "storyId": "S001",
     "createdAt": "2026-10-27T07:28:19.979Z",
-    "updatedAt": "2026-10-27T09:48:16.793Z",
+    "updatedAt": "2026-10-27T09:56:20.732Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-27T05:09:56.523Z",
     "epicSlug": "split-oversized-diff-evidence-into-lossless"
@@ -1703,8 +1703,8 @@
       },
       {
         "taskId": "t14",
-        "commit": "f97e952ac",
-        "ranAt": "2026-10-27T09:48:16.793Z",
+        "commit": "161256f3b",
+        "ranAt": "2026-10-27T09:56:20.732Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1754,6 +1754,11 @@
                 "file": "src/daemon/__tests__/code-review-publication.test.ts",
                 "title": "DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/code-review-publication.test.ts",
+                "title": "DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1777,7 +1782,7 @@
             "file": "src/daemon/__tests__/code-review-publication.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 14383,
+            "durationMs": 16118,
             "titles": [
               {
                 "title": "DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite",
@@ -1809,6 +1814,10 @@
               },
               {
                 "title": "DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review",
                 "result": "pass"
               }
             ],

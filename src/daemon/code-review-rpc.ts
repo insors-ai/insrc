@@ -18,6 +18,10 @@
  * validate-then-write, no-pass-on-failure) lives in `runCodeReview`.
  */
 
+import { realpathSync } from 'node:fs';
+import { CodeReviewOperationRegistry, codeReviewOperations, CODE_REVIEW_CONTROL_WAIT_MS, ReviewOperationError } from './code-review-operations.js';
+import type { CodeReviewProgress as OperationProgress } from '../workflow/code-review/runner.js';
+import { assertReviewFingerprintCurrent } from '../workflow/code-review/publication.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
 import { SamePartyReviewError } from '../workflow/review/party.js';
@@ -48,6 +52,8 @@ type CodeReviewSubjectResolution = Awaited<ReturnType<typeof resolveCodeReviewSu
 const CODE_REVIEW_CLI_TIMEOUT_MS = 2_700_000;
 
 interface CodeReviewRunParams {
+ readonly operation?: 'start' | 'status' | 'cancel' | undefined;
+ readonly reviewHandle?: string | undefined;
 	readonly repo?:     string;
 	readonly epicHash:  string;
 	readonly storyId:   string;
@@ -66,6 +72,10 @@ interface CodeReviewRunParams {
 /** The collaborators of {@link codeReviewRunStart}. Every one defaults to the
  *  real thing; a test replaces the ones it needs to. */
 export interface CodeReviewRunDeps {
+ readonly operations?: CodeReviewOperationRegistry | undefined;
+ readonly controlWaitMs?: number | undefined;
+ /** Supplied only by the owned-operation runner, never accepted from raw request JSON. */
+ readonly startedAtMs?: number | undefined;
  /** Explicit legacy injected-test seam; shipped calls always use the enforcing capture default. */
  readonly captureInput?: ((subject: CodeReviewSubject) => ReviewInputFingerprint | undefined) | undefined;
 	readonly resolveSubject?: ((repoPath: string, epicHash: string, storyId: string) => Promise<CodeReviewSubjectResolution>) | undefined;
@@ -100,6 +110,7 @@ export async function codeReviewRunStart(
 		return;
 	}
 
+ if (params.operation !== undefined) return codeReviewControlStart({ ...params, repo: repoPath }, send, signal, deps);
  let publication: ReviewPublicationGuard | undefined;
 	try {
 		// 2. Resolve the fixed subject. A DECLINE (no approved contract / build) is
@@ -121,7 +132,7 @@ export async function codeReviewRunStart(
 			return;
 		}
 
-		const admittedAt = Date.now();
+		const admittedAt = deps.startedAtMs ?? Date.now();
   const fingerprint = (deps.captureInput ?? captureReviewInputFingerprint)(resolved.subject);
   publication = fingerprint === undefined ? undefined : claimReviewPublication(fingerprint, 'daemon');
 
@@ -141,7 +152,7 @@ export async function codeReviewRunStart(
 			reviewedBy: 'daemon' as const,
 			onProgress: (f: CodeReviewProgress) => send({
 				id: 0, stream: 'progress',
-				data: { kind: 'stage', operation: 'codeReview.run', stageId: f.phase, stageLabel: [f.phase, f.dimension, f.detail].filter(Boolean).join(' · '), index: stageIndex++, total: null },
+				data: { kind: 'stage', operation: 'codeReview.run', stageId: f.phase, stageLabel: [f.phase, f.dimension, f.detail].filter(Boolean).join(' · '), index: stageIndex++, total: null, reviewProgress: f },
 			}),
 		};
 		let outcome: Awaited<ReturnType<typeof RunCodeReview>>;
@@ -225,7 +236,13 @@ function parseParams(raw: unknown): CodeReviewRunParams {
 	if (fallbackReason !== undefined && mode !== 'degraded') {
 		throw new Error('codeReview.run: `fallbackReason` is only accepted with groundingMode \'degraded\'');
 	}
+ const operation = o['operation'], reviewHandle = o['reviewHandle'];
+ if (operation !== undefined && operation !== 'start' && operation !== 'status' && operation !== 'cancel') throw new Error('codeReview.run: invalid operation');
+ if ((operation === 'status' || operation === 'cancel') && (typeof reviewHandle !== 'string' || reviewHandle.length === 0)) throw new Error('codeReview.run: status/cancel requires reviewHandle');
+ if (reviewHandle !== undefined && operation !== 'status' && operation !== 'cancel') throw new Error('codeReview.run: reviewHandle requires status/cancel');
 	return {
+  ...(operation !== undefined ? { operation } : {}),
+  ...(typeof reviewHandle === 'string' ? { reviewHandle } : {}),
 		epicHash,
 		storyId,
 		...(typeof o['repo'] === 'string' ? { repo: o['repo'] } : {}),
@@ -269,3 +286,62 @@ function modelLabelFor(
 }
 
 export { buildAuthorParty };
+
+
+/** Operation-mode RPC: the request owns only this bounded waiter, never the review's signal. */
+async function codeReviewControlStart(params: CodeReviewRunParams & { readonly repo: string }, send: (msg: IpcStreamMessage) => void, waiterSignal: AbortSignal, deps: CodeReviewRunDeps): Promise<void> {
+ const requestStarted = Date.now(), registry = deps.operations ?? codeReviewOperations;
+ try {
+  const repo = realpathSync(params.repo), target = { repo, epicHash: params.epicHash, storyId: params.storyId };
+  let handle = params.reviewHandle;
+  if (params.operation === 'start') {
+   const resolved = await boundedAdmission((deps.resolveSubject ?? (await import('../workflow/code-review/subject.js')).resolveCodeReviewSubject)(repo, params.epicHash, params.storyId), waiterSignal);
+   if (!resolved.ok) throw new ReviewOperationError('no-build-record', `codeReview.run declined: ${resolved.reason}`);
+   if (buildAuthorParty(repo, params.epicHash, params.storyId) === 'daemon') throw new SamePartyReviewError('daemon', `the code of Story ${params.storyId}`);
+   const fingerprint = (deps.captureInput ?? captureReviewInputFingerprint)(resolved.subject);
+   if (fingerprint === undefined) throw new ReviewOperationError('review-input-unavailable', 'Owned reviews require an admitted input fingerprint');
+   if (waiterSignal.aborted) throw Object.assign(new Error('Review admission aborted'), { name: 'AbortError' });
+   if (Date.now() - requestStarted >= CODE_REVIEW_CONTROL_WAIT_MS) throw new ReviewOperationError('review-admission-timeout', 'Review admission exceeded the bounded request wait; no review was started');
+   handle = registry.start({ fingerprint, inputKey: JSON.stringify({ fingerprint: fingerprint.digest, mode: params.groundingMode ?? 'full', fallbackReason: params.fallbackReason ?? null }), startedAt: requestStarted,
+    validateDone: () => assertReviewFingerprintCurrent(fingerprint, 'daemon'),
+    execute: async (ownerSignal, progress) => {
+     let terminal: IpcStreamMessage | undefined;
+     await codeReviewRunStart({ repo, epicHash: params.epicHash, storyId: params.storyId,
+      ...(params.client !== undefined ? { client: params.client } : {}), ...(params.groundingMode !== undefined ? { groundingMode: params.groundingMode } : {}), ...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}),
+     }, frame => {
+      if (frame.stream === 'progress') {
+       const data = frame.data as { reviewProgress?: OperationProgress } | undefined;
+       if (data?.reviewProgress !== undefined) progress(data.reviewProgress);
+      } else if (frame.stream === 'done' || frame.stream === 'error') terminal = frame;
+     }, ownerSignal, { ...deps, startedAtMs: requestStarted, captureInput: subject => {
+      const current = captureReviewInputFingerprint(subject);
+      if (current.digest !== fingerprint.digest) throw new ReviewOperationError('review-input-changed', 'Review inputs changed after admission; start a new review');
+      return fingerprint;
+     } });
+     if (terminal?.stream !== 'done') {
+      const error = terminal?.data as { error?: string; reason?: string } | undefined;
+      throw new ReviewOperationError(error?.reason ?? 'review-failed', error?.error ?? 'Owned review ended without a result');
+     }
+     return terminal.data as import('../shared/review-stream.js').CodeReviewStreamResult;
+    },
+   });
+  }
+  if (handle === undefined) throw new ReviewOperationError('review-operation-lost', 'No owned review handle was supplied');
+  const waitMs = Math.max(0, Math.min(deps.controlWaitMs ?? CODE_REVIEW_CONTROL_WAIT_MS, CODE_REVIEW_CONTROL_WAIT_MS - (Date.now() - requestStarted)));
+  const outcome = params.operation === 'cancel' ? await registry.cancel(handle, target, { signal: waiterSignal, waitMs }) : await registry.wait(handle, target, { signal: waiterSignal, waitMs });
+  send({ id: 0, stream: 'done', data: outcome });
+ } catch (err) {
+  send({ id: 0, stream: 'error', data: { error: err instanceof Error ? err.message : String(err), ...(err instanceof Error && 'code' in err && typeof err.code === 'string' ? { reason: err.code } : {}), recoverable: false } });
+ }
+}
+async function boundedAdmission<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+ if (signal.aborted) throw Object.assign(new Error('Review admission aborted'), { name: 'AbortError' });
+ return await new Promise<T>((resolve, reject) => {
+  let settled = false;
+  const finish = (error: unknown, value?: T): void => { if (settled) return; settled = true; clearTimeout(timer); signal.removeEventListener('abort', aborted); if (error !== undefined) reject(error); else resolve(value as T); };
+  const aborted = (): void => finish(Object.assign(new Error('Review admission aborted'), { name: 'AbortError' }));
+  const timer = setTimeout(() => finish(new ReviewOperationError('review-admission-timeout', 'Review admission exceeded the bounded request wait')), CODE_REVIEW_CONTROL_WAIT_MS);
+  signal.addEventListener('abort', aborted, { once: true });
+  work.then(value => finish(undefined, value), err => finish(err));
+ });
+}

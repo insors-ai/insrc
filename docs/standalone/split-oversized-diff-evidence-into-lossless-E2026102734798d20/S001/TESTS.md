@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 69 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -394,7 +394,7 @@ Run at 2026-10-27T09:35:11.544Z on commit `f95fb9657`. Tests check: **passed**. 
 
 ## t14
 
-Run at 2026-10-27T09:48:16.793Z on commit `f97e952ac`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T09:56:20.732Z on commit `161256f3b`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: DIFF-PUBLISH-SOURCE**
 
@@ -412,6 +412,7 @@ Run at 2026-10-27T09:48:16.793Z on commit `f97e952ac`. Tests check: **passed**. 
 | pass | DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity | `src/daemon/__tests__/code-review-publication.test.ts` |
 | pass | DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models | `src/daemon/__tests__/code-review-publication.test.ts` |
 | pass | DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result | `src/daemon/__tests__/code-review-publication.test.ts` |
+| pass | DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review | `src/daemon/__tests__/code-review-publication.test.ts` |
 
 **integration: DIFF-IDENTITY-TESTS**
 
@@ -423,4 +424,4 @@ Run at 2026-10-27T09:48:16.793Z on commit `f97e952ac`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/code-review-publication.test.ts` | 0 | 8 | 14.4 s |  |
+| `src/daemon/__tests__/code-review-publication.test.ts` | 0 | 9 | 16.1 s |  |

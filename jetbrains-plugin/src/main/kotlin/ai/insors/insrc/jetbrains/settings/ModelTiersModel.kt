@@ -135,16 +135,11 @@ class ModelTiersModel(
         family(s.pendingRunner)?.let { served(it, s.pendingModel) }
 
     /**
-     * The effort choices for a tier: '' (the CLI default) plus the pending model's efforts.
-     * Only a configured model the definitions do not list (still pending unchanged) also
-     * shows its stored effort, so the combo can display what is configured.
+     * The effort choices for a tier: exactly '' (the CLI default) plus the pending model's
+     * efforts from the definitions — only '' for a model the definitions do not list.
      */
-    fun effortOptions(tier: String): List<String> {
-        val s = state(tier)
-        val efforts = listOf("") + (pendingModelDef(s)?.efforts ?: emptyList())
-        val unlistedAsConfigured = !s.saved.listed && s.pendingRunner == s.saved.runner && s.pendingModel == s.saved.model
-        return if (unlistedAsConfigured && s.pendingEffort !in efforts) efforts + s.pendingEffort else efforts
-    }
+    fun effortOptions(tier: String): List<String> =
+        listOf("") + (pendingModelDef(state(tier))?.efforts ?: emptyList())
 
     /** Clear a pending effort the pending model does not accept. */
     private fun dropUnacceptedEffort(s: TierState) {

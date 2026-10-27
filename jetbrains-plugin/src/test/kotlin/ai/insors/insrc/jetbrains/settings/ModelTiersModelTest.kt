@@ -131,6 +131,8 @@ class ModelTiersModelTest {
         val stale = ModelTiersModel(catalog("mid.runner" to "cli-claude", "mid.model" to "c-old"), defs)
         assertEquals(Triple("cli-claude", "c-old", ""), current(stale, "mid"))
         assertEquals(ModelChoice.CurrentNotInCatalog("c-old"), stale.selectedModelChoice("mid"))
+        val staleEffort = ModelTiersModel(catalog("mid.runner" to "cli-claude", "mid.model" to "c-old", "mid.effort" to "invented"), defs)
+        assertEquals(listOf(""), staleEffort.effortOptions("mid"), "no effort outside the definitions is offered")
         assertTrue(stale.note("mid")!!.contains("not listed"))
         stale.selectModel("mid", "c-big")
         assertTrue(stale.modelOptions("mid").none { it is ModelChoice.CurrentNotInCatalog }, "not offered again once changed away")

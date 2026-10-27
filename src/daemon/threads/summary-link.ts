@@ -47,6 +47,20 @@ export const SUMMARY_TAKE_EDIT = 'summary.takeEdit';
 /** A sweep-progress frame of a summary job. */
 type SweepFrame = { readonly stream: 'sweep'; readonly data: SummarySweepProgress | null };
 
+/** A summary job: run on the document-summary worker, handed over by the summary lane. */
+export const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';
+
+/**
+ * The code-indexing queue's job runner. A job runs under the maintenance lock's shared hold,
+ * waiting for maintenance rather than failing. A summary job (with a summary worker) is not held
+ * here: the summary worker takes the job's hold. Held on both ends, a maintenance pending between
+ * the two shared requests would block the second (writer preference) while it waited on the first.
+ */
+export function runIndexJob(job: IndexJob, summaries: SummaryRunner | undefined, processJob: (job: IndexJob) => Promise<void>): Promise<void> {
+	if (summaries !== undefined && isSummaryJob(job)) return summaries.run(job);
+	return withBackgroundHold(() => processJob(job));
+}
+
 /** The code-indexing worker's end: runs summary jobs on the summary worker. */
 export class SummaryRunner {
 	private seq = 0;
@@ -214,9 +228,9 @@ export class SummaryWorkerLink implements IndexerQueue {
 			port.postMessage({ kind: 'frame', requestId: m.requestId, frame: { stream: 'sweep', data: now ?? null } satisfies SweepFrame } satisfies FrameEnvelope);
 		};
 		const ticker = setInterval(report, 200);
-		// Under this worker's own shared maintenance hold: the code-indexing worker's hold ends with it,
-		// and this job may still be finishing a document then. (Maintenance starts only with both lanes
-		// idle, so it is never pending while a summary job runs: this wait does not block it.)
+		// The job's only shared maintenance hold, taken here: the code-indexing worker does not hold it
+		// for summary jobs (a second shared request after a pending maintenance would wait on the first),
+		// and this job may outlive that worker's wait for it (a rebind abandons the wait).
 		return withBackgroundHold(() => run(m.params as IndexJob)).then(
 			() => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId } satisfies ReplyEnvelope); },
 			(err: unknown) => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId, error: err instanceof Error ? err.message : String(err) } satisfies ReplyEnvelope); },

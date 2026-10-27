@@ -35,7 +35,7 @@ import { MAINTENANCE_RUN_OP, SHUTDOWN_OP } from './main-services.js';
 import type { WorkerConnection } from './main-services.js';
 import { methodClasses } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
-import { SUMMARY_PORT_OP, SummaryRunner } from './summary-link.js';
+import { runIndexJob, SUMMARY_PORT_OP, SummaryRunner } from './summary-link.js';
 import { startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
@@ -156,16 +156,10 @@ serveRequests(init.hubPort, directDispatch(table), { beforeTestExit: () => watch
 // The store slot before the queue starts, so the admin worker's first status has it.
 await publishStore();
 await service.start(await listRepos(db));
-// Summary jobs run on the document-summary worker, handed over by the summary lane.
-const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';
-// Each job runs under the maintenance lock's shared hold, waiting for maintenance rather than failing.
+// Each job under the maintenance lock's shared hold (runIndexJob); summary jobs run on the document-summary worker.
 const queueDone = queue.start(async job => {
-	try {
-		await withBackgroundHold(async () => {
-			if (summaries !== undefined && isSummaryJob(job)) await summaries.run(job);
-			else await service.processJob(job);
-		});
-	} finally { void publishStore(); }
+	try { await runIndexJob(job, summaries, j => service.processJob(j)); }
+	finally { void publishStore(); }
 });
 
 // Shutdown: stop the queue and the watcher, and report once both are done.

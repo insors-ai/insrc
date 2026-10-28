@@ -147,6 +147,22 @@ export interface HandlerRuntimeDeps {
 	readonly attachedClients: () => AttachedClient[];
 	/** The understanding service once it has opened (after the server listens), else undefined. */
 	readonly understandingService: () => UnderstandingService | undefined;
+	/**
+	 * With daemon threads (s3): the nested in-daemon call, so the session purge reaches the chat
+	 * pool and the todos bus on the thread that holds them. Absent, the purge calls them here.
+	 */
+	readonly nestedCall?: ((method: string, params: unknown) => Promise<unknown>) | undefined;
+}
+
+/** Served to in-daemon calls only, never over the socket (s3): the purge's chat-pool drop on the thread that holds the pool. */
+export function inDaemonOnlyHandlers(): RpcHandlers {
+	return {
+		'chat.dropSession': async (params) => {
+			const { dropSessionFromPool } = await import('./chat-handler.js');
+			dropSessionFromPool((params as { sessionId: string }).sessionId);
+			return { ok: true };
+		},
+	};
 }
 
 export interface HandlerRuntime {
@@ -178,7 +194,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		//    subsequent deletes don't race with a live run touching the
 		//    same rows.
 		try {
-			dropSessionFromPool(sessionId);
+			if (deps.nestedCall !== undefined) await deps.nestedCall('chat.dropSession', { sessionId });
+			else dropSessionFromPool(sessionId);
 		} catch (err) {
 			log.warn({ err: (err as Error).message, sessionId }, 'purgeSession: pool.drop failed');
 		}
@@ -204,10 +221,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		let todosListsDeleted = 0;
 		let todosItemsDeleted = 0;
 		try {
-			const cleanupResult = await todosRpc.cleanup(db, {
-				caller: 'system',
-				sessionIds: [sessionId],
-			});
+			const cleanupParams = { caller: 'system' as const, sessionIds: [sessionId] };
+			const cleanupResult = deps.nestedCall !== undefined
+				? await deps.nestedCall('todos.cleanup', cleanupParams) as Awaited<ReturnType<typeof todosRpc.cleanup>>
+				: await todosRpc.cleanup(db, cleanupParams);
 			if (!('error' in cleanupResult)) {
 				todosListsDeleted = cleanupResult.deletedListCount;
 				todosItemsDeleted = cleanupResult.deletedItemCount;

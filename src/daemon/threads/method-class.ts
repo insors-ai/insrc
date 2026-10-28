@@ -271,6 +271,28 @@ export const FIFO_EXEMPT_METHODS: ReadonlySet<string> = new Set([
 	'workflow.run.poll', 'workflow.run.abort',
 ]);
 
+/** Methods the shared-state worker serves to in-daemon calls only; the socket answers them 'unknown method' (s3). */
+export const IN_DAEMON_SHARED_METHODS: ReadonlySet<string> = new Set(['chat.dropSession']);
+
+/** What a thread's in-daemon route knows: the classes routed to workers, and whether it is the shared-state worker. */
+export interface InDaemonRouteView {
+	readonly routed: ReadonlySet<MethodClass>;
+	readonly onSharedWorker: boolean;
+}
+
+/**
+ * Where a nested in-daemon call runs (s3): an admin or indexing method on its class's worker
+ * when that class is routed; a shared-state method on the shared-state worker once session
+ * work is routed, unless this is that worker; anything else inline, on the calling thread.
+ */
+export function inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodClass; readonly shared?: true } | undefined {
+	const cls = methodClasses.classOf(method);
+	if (cls !== undefined && cls !== 'session' && view.routed.has(cls)) return { cls };
+	const shared = SHARED_STATE_METHODS.has(method) || IN_DAEMON_SHARED_METHODS.has(method);
+	if (shared && view.routed.has('session') && !view.onSharedWorker) return { cls: 'session', shared: true };
+	return undefined;
+}
+
 /** These operations own process-local admission and transport lifetimes. */
 export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'db.listConnections','db.listDriverKinds','db.saveConnection','db.deleteConnection','db.testConnection',

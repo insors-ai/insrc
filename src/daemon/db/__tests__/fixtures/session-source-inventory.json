@@ -12754,6 +12754,10 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "serialization",
           "JSON.parse"
         ],
@@ -13050,9 +13054,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 184,
-      "sitesDigest": "552fadddbe2e68ae83937e09db71000715d39b1c47bd7c3f3006d6d30711d3d3",
-      "sourceDigest": "24157c4f183a068b73fbcabe3eae2cf5f107278dd646bdf5a7142fa109bd5a66",
+      "siteCount": 185,
+      "sitesDigest": "54d9dc6898de8ceb9c27f012072b4f770bec47c2cce8982990201b2d0a618918",
+      "sourceDigest": "455cd9fa0eecde2d05aa09349696da79b0492105b3f4bfafd244ab9196bb22a2",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -13336,7 +13340,7 @@
       ],
       "siteCount": 66,
       "sitesDigest": "01c65e021f0cc5b336b0f1b25d1b013da57dead37e47bd005a9fc7ba26ca72ca",
-      "sourceDigest": "220d1c0a991f0f9b07eebe9387610ef5df2db7c494475e8c3c46a8ed10f4b1d7",
+      "sourceDigest": "fbf904c4126b977ba98569d202a9435e8e9b734f9d2a80ce92c4dcc0613e17f7",
       "boundaries": [
         "diagnostic",
         "filesystem-write",

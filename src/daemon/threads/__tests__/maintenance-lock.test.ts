@@ -51,7 +51,7 @@ const { holdingForward } = await import('../maintenance-entry.js');
 const { createUnderstandingRoutes } = await import('../../understanding-rpc.js');
 const { UnderstandingService } = await import('../../../understanding/service.js');
 const { ThreadServices } = await import('../main-services.js');
-const { methodClasses } = await import('../method-class.js');
+const { inDaemonTarget, methodClasses } = await import('../method-class.js');
 const { Router } = await import('../router.js');
 const { startClassWorker } = await import('../workers.js');
 const { INDEXING_DRAINED, INDEXING_STOP_OP } = await import('../indexing-port.js');
@@ -234,7 +234,7 @@ test("an exclusive maintenance request that becomes pending while a session requ
 				await asked;
 				return router.request(cls, method, params);
 			};
-			const client = createInDaemonClient(rpc, {}, { route: { classOf: methodClasses.classOf, routed, request: route } });
+			const client = createInDaemonClient(rpc, {}, { route: { targetOf: method => inDaemonTarget(method, { routed, onSharedWorker: false }), request: route } });
 			const result = await client.request('repo.reindex', { path: REPO });
 			pendingWhileNestedRan = maintenance !== undefined && !maintenance.isGranted();
 			order.push('nested');

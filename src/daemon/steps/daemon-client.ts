@@ -77,9 +77,9 @@ export function stepDaemonClient(): StepDaemonClient {
  * (admin, indexing) is sent to that class's worker instead of the local table.
  */
 export interface InDaemonRoute {
-	readonly classOf: (method: string) => MethodClass | undefined;
-	readonly routed: ReadonlySet<MethodClass>;
-	readonly request: (cls: MethodClass, method: string, params: unknown) => Promise<unknown>;
+	/** Where `method` runs: undefined inline here, else the target (s3: decided per method, see inDaemonTarget). */
+	readonly targetOf: (method: string) => { readonly cls: MethodClass; readonly shared?: true | undefined } | undefined;
+	readonly request: (cls: MethodClass, method: string, params: unknown, opts?: { readonly shared?: true | undefined }) => Promise<unknown>;
 }
 
 /** Test seam: the timer the wait limit uses; and the route to the daemon's workers. */
@@ -87,6 +87,8 @@ export interface InDaemonClientDeps {
 	readonly setTimer?:   ((fn: () => void, ms: number) => unknown) | undefined;
 	readonly clearTimer?: ((handle: unknown) => void) | undefined;
 	readonly route?:      InDaemonRoute | undefined;
+	/** Methods served to in-daemon calls only (never over the socket), after the thread's own table. */
+	readonly inDaemonOnly?: RpcHandlers | undefined;
 }
 
 /** The in-daemon client, plus a unary request to any served method (for nested calls). */
@@ -101,17 +103,18 @@ export function createInDaemonClient(
 	deps:   InDaemonClientDeps = {},
 ): InDaemonClient {
 	const call = async <T>(method: string, params: unknown): Promise<T> => {
-		const cls = deps.route?.classOf(method);
-		if (deps.route !== undefined && cls !== undefined && deps.route.routed.has(cls)) {
-			// Served on the class's worker, whose reply already carries the reduced error message.
+		const target = deps.route?.targetOf(method);
+		if (deps.route !== undefined && target !== undefined) {
+			// Served on another worker, whose reply already carries the reduced error message.
 			try {
-				return await deps.route.request(cls, method, params) as T;
+				return await deps.route.request(target.cls, method, params, target.shared ? { shared: true } : {}) as T;
 			} catch (err) {
 				throw new Error(err instanceof Error ? err.message : String(err));
 			}
 		}
 		// Own entries only, as directDispatch: a method named like an inherited property is unknown.
-		const handler = Object.hasOwn(unary, method) ? unary[method] : undefined;
+		const inDaemonOnly = deps.inDaemonOnly ?? {};
+		const handler = Object.hasOwn(unary, method) ? unary[method] : Object.hasOwn(inDaemonOnly, method) ? inDaemonOnly[method] : undefined;
 		if (handler === undefined) throw new Error(`unknown method: ${method}`);
 		try {
 			return await handler(params) as T;

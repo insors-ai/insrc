@@ -21,7 +21,8 @@ import { Worker } from 'node:worker_threads';
 
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-method-class-'));
 process.env['HOME'] = HOME;
-const { FIFO_EXEMPT_METHODS, SHARED_STATE_METHODS, methodClasses } = await import('../method-class.js');
+const { FIFO_EXEMPT_METHODS, SHARED_STATE_METHODS, inDaemonTarget, methodClasses } = await import('../method-class.js');
+const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -90,6 +91,35 @@ test('method sets: every served chat.*, todos.* and understanding.* method is in
 	assert.ok(family.includes('chat.start') && family.includes('todos.subscribe') && family.includes('understanding.watch'), 'the three families are served');
 	assert.deepEqual(family.filter(m => !SHARED_STATE_METHODS.has(m)).sort(), [], 'every one runs on the shared-state worker');
 	assert.deepEqual([...SHARED_STATE_METHODS].filter(m => !/^(chat|todos|understanding)\./.test(m)), [], 'and nothing else does');
+});
+
+test('in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline', async () => {
+	const allRouted = new Set(['admin', 'indexing', 'session'] as const);
+	const view = { routed: allRouted, onSharedWorker: false };
+	assert.deepEqual(inDaemonTarget('repo.list', view), { cls: 'admin' });
+	assert.deepEqual(inDaemonTarget('repo.reindex', view), { cls: 'indexing' });
+	assert.deepEqual(inDaemonTarget('chat.list', view), { cls: 'session', shared: true });
+	assert.deepEqual(inDaemonTarget('todos.cleanup', view), { cls: 'session', shared: true });
+	assert.deepEqual(inDaemonTarget('chat.dropSession', view), { cls: 'session', shared: true }, 'the in-daemon-only purge method too');
+	assert.equal(inDaemonTarget('session.list', view), undefined, 'any other session method runs inline');
+	assert.equal(inDaemonTarget('chat.list', { routed: allRouted, onSharedWorker: true }), undefined, 'inline on the shared-state worker itself');
+	assert.equal(inDaemonTarget('chat.list', { routed: new Set(['admin', 'indexing'] as const), onSharedWorker: false }), undefined, 'inline while session work is not routed');
+	assert.equal(inDaemonTarget('repo.list', { routed: new Set(['indexing'] as const), onSharedWorker: false }), undefined, 'a class not routed runs inline, as before');
+	// The client follows it: routed calls go out with their target, the rest run on its own tables.
+	const sent: unknown[] = [];
+	const client = createInDaemonClient({ 'session.list': async () => 'inline' }, {}, {
+		inDaemonOnly: { 'chat.dropSession': async () => 'in-daemon-only inline' },
+		route: { targetOf: m => inDaemonTarget(m, view), request: async (cls, method, _p, opts) => { sent.push({ cls, method, opts }); return 'sent'; } },
+	});
+	assert.equal(await client.request('session.list', {}), 'inline');
+	assert.equal(await client.request('chat.list', {}), 'sent');
+	assert.equal(await client.request('repo.list', {}), 'sent');
+	assert.deepEqual(sent, [{ cls: 'session', method: 'chat.list', opts: { shared: true } }, { cls: 'admin', method: 'repo.list', opts: {} }]);
+	const onShared = createInDaemonClient({}, {}, {
+		inDaemonOnly: { 'chat.dropSession': async () => 'in-daemon-only inline' },
+		route: { targetOf: m => inDaemonTarget(m, { routed: allRouted, onSharedWorker: true }), request: async () => assert.fail('the shared-state worker serves its own families') },
+	});
+	assert.equal(await onShared.request('chat.dropSession', { sessionId: 's' }), 'in-daemon-only inline');
 });
 
 test('the method-class module loads on a worker without importing a handler module', async () => {

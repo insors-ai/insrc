@@ -44,7 +44,7 @@ import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth } from './shutdown.js';
-import { buildHandlerRuntime } from './handler-runtime.js';
+import { buildHandlerRuntime, inDaemonOnlyHandlers } from './handler-runtime.js';
 import { openManagedRoot } from './db/management-startup.js';
 import { managementMarkerExists } from './db/managed-store.js';
 import { connectionsPath } from './db/config.js';
@@ -61,7 +61,7 @@ import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } fr
 import { readInstalledCommit } from './installed-commit.js';
 import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, threadsEnabled } from './threads/main-services.js';
 import { MaintenanceController } from './threads/maintenance.js';
-import { methodClasses } from './threads/method-class.js';
+import { inDaemonTarget, methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
 import { IndexingPortClient } from './threads/indexing-port.js';
 import type { RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
@@ -447,12 +447,20 @@ async function main(): Promise<void> {
 		shutdown: reason => shutdown(reason),
 		attachedClients: () => server.attachedClients(),
 		understandingService: () => understandingService,
+		// With daemon threads the session purge reaches the chat pool and todos bus through a nested call (s3).
+		...(router !== undefined ? { nestedCall: (method: string, params: unknown) => inDaemon.request(method, params) } : {}),
 	});
-	// A step handler's nested call to an admin or indexing method goes to that
-	// class's worker (daemon threads); session methods run here, as before.
-	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers, router !== undefined
-		? { route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) } }
-		: {}));
+	// A step handler's nested call goes to the worker inDaemonTarget names (an admin or indexing
+	// method to its class's worker; a shared-state method to the shared-state worker once session
+	// work is routed); anything else runs here, as before.
+	const inDaemon = createInDaemonClient(rpcHandlers, streamHandlers, {
+		inDaemonOnly: inDaemonOnlyHandlers(),
+		...(router !== undefined ? { route: {
+			targetOf: (method: string) => inDaemonTarget(method, { routed, onSharedWorker: false }),
+			request: (cls: MethodClass, method: string, params: unknown, opts?: { readonly shared?: true | undefined }) => router.request(cls, method, params, opts),
+		} } : {}),
+	});
+	installStepDaemonClient(inDaemon);
 	// With daemon threads, the router is the server's forward (Epic 86197ac6
 	// s2): routed classes go to their workers, everything else runs here.
 	const local = directDispatch(rpcHandlers, streamHandlers);

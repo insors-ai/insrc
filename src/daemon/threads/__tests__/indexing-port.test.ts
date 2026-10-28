@@ -33,7 +33,7 @@ const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { queueStatusFromBoard } = await import('../../status.js');
 const { ThreadServices } = await import('../main-services.js');
-const { methodClasses } = await import('../method-class.js');
+const { inDaemonTarget, methodClasses } = await import('../method-class.js');
 const { Router } = await import('../router.js');
 const { startClassWorker } = await import('../workers.js');
 const { IndexingPortClient, INDEXING_DRAINED, INDEXING_PORT, INDEXING_STOP_OP } = await import('../indexing-port.js');
@@ -125,7 +125,7 @@ test("the main thread's depthForRepo asks the code-indexing worker's queue", asy
 
 test('a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker', async () => {
 	const client = createInDaemonClient(main.rpcHandlers, main.streamHandlers, {
-		route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) },
+		route: { targetOf: method => inDaemonTarget(method, { routed, onSharedWorker: false }), request: (cls, method, params) => router.request(cls, method, params) },
 	});
 	sent.length = 0;
 	assert.deepEqual(await client.request('repo.reindex', { path: REPO }), { ok: true });

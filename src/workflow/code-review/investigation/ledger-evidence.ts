@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { validateLedgerBasis } from './ledger-catalog.js';
-import { ledgerDigest, ledgerSnapshot, requireText } from './ledger-identity.js';
+import { ledgerDigest, ledgerSnapshot, requireText, ledgerEqual as same } from './ledger-identity.js';
 import { ReviewLedgerError } from './ledger-types.js';
 import type { EvidenceV1, LedgerAttempt, LedgerBasis, TrustedInspectionReceipt } from './ledger-types.js';
 
@@ -11,7 +11,6 @@ export function validateAttempt(attempt: LedgerAttempt, basis: LedgerBasis): voi
 function validRange(range: readonly [number,number] | null): boolean {
  return range===null || (Array.isArray(range)&&range.length===2&&range.every(Number.isSafeInteger)&&range[0]>=1&&range[1]>=range[0]);
 }
-const same=(a:unknown,b:unknown)=>ledgerDigest(a)===ledgerDigest(b);
 function sourceProof(receipt:TrustedInspectionReceipt,basis:LedgerBasis): void {
  const read=receipt.readReceipt;
  if(!read || read.sourceDigest!==receipt.source.digest || read.contentRef!==receipt.contentRef

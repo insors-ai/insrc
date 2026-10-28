@@ -1,11 +1,10 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { validateLedgerBasis, initializeReviewLedger } from './ledger-catalog.js';
 import { admitLedgerEvidence, evidenceFromReceipt, validateAttempt } from './ledger-evidence.js';
-import { coverageRowId, ledgerDigest, ledgerSnapshot, requireText } from './ledger-identity.js';
+import { coverageRowId, ledgerDigest, ledgerSnapshot, requireText, ledgerEqual as same } from './ledger-identity.js';
 import { LEDGER_LIMITS, ReviewLedgerError } from './ledger-types.js';
 import type { CoverageV1, EvidenceV1, LedgerBasis, LedgerDelta, LedgerFinding, LedgerValidationContext, ReviewLedgerV1, TrustedInspectionReceipt } from './ledger-types.js';
 export { initializeReviewLedger } from './ledger-catalog.js';
-const same=(a:unknown,b:unknown)=>ledgerDigest(a)===ledgerDigest(b);
 function strings(value:unknown):value is readonly string[]{return Array.isArray(value)&&value.every(v=>typeof v==='string'&&v.trim().length>0)&&new Set(value).size===value.length;}
 function unique<T>(values:readonly T[],key:(value:T)=>string):Map<string,T>{
  const map=new Map<string,T>();for(const value of values){const id=key(value);requireText(id,'record id');if(map.has(id))throw new ReviewLedgerError('conflicting-replay','Duplicate ledger record id.');map.set(id,value);}return map;

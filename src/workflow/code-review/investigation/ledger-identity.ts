@@ -17,3 +17,6 @@ export function coverageRowId(subjectDigest: string, requirement: Pick<LedgerReq
 export function requireText(value: unknown, what: string): asserts value is string {
  if (typeof value !== 'string' || !value.trim()) throw new ReviewLedgerError('invalid-input', `Missing ${what}.`);
 }
+
+/** One canonical comparison rule for evidence and ledger transitions. */
+export function ledgerEqual(a: unknown, b: unknown): boolean { return ledgerDigest(a) === ledgerDigest(b); }

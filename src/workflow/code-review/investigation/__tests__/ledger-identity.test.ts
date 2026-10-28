@@ -1,11 +1,12 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { coverageRowId, ledgerDigest, ledgerSnapshot } from '../ledger-identity.js';
+import { coverageRowId, ledgerDigest, ledgerSnapshot, ledgerEqual } from '../ledger-identity.js';
 import { digestValue } from '../identity.js';
 import type { CoverageV1, ReviewLedgerV1, LedgerDelta } from '../ledger-types.js';
 test('sc2 contracts, canonical identities and bounded immutable values',()=>{
  const value={ nested:{ b:2,a:1 } };const copy=ledgerSnapshot(value);assert.ok(Object.isFrozen(copy.nested));assert.notEqual(value.nested,copy.nested);
+ assert.equal(ledgerEqual({a:1,b:2},{b:2,a:1}),true);assert.equal(ledgerEqual({a:1},{a:2}),false);
  assert.equal(ledgerDigest(value),digestValue(value));assert.equal(ledgerDigest(value),ledgerDigest({nested:{a:1,b:2}}));
  assert.notEqual(coverageRowId('s',{category:'task',requirementRef:'t1'}),coverageRowId('s',{category:'change',requirementRef:'t1'}));
  assert.notEqual(coverageRowId('s',{category:'task',requirementRef:'t1'}),coverageRowId('other',{category:'task',requirementRef:'t1'}));

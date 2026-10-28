@@ -45,6 +45,20 @@ test('TargetRegistry refuses a second live admin, indexing, unattributed or same
 	assert.equal(r.targetFor('session', { label: 'cli', pid: 1 }), undefined, 'an unknown session has no target yet');
 });
 
+test('registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker', () => {
+	const r = new TargetRegistry();
+	r.register({ threadId: 11, cls: 'session', unattributed: true });
+	r.register({ threadId: 12, cls: 'session', shared: true });
+	r.register({ threadId: 13, cls: 'session', session: { label: 'mcp', pid: 42 } });
+	assert.equal(r.targetFor('session')?.threadId, 11, 'no identity: the unattributed target');
+	assert.equal(r.targetFor('session', undefined, { shared: true })?.threadId, 12, 'only a shared lookup reaches the shared-state target');
+	assert.equal(r.targetFor('session', { label: 'mcp', pid: 42 })?.threadId, 13);
+	assert.throws(() => r.register({ threadId: 14, cls: 'session', shared: true }), TargetConflictError, 'one live shared-state target');
+	r.unregister(12);
+	assert.equal(r.targetFor('session', undefined, { shared: true }), undefined);
+	assert.equal(r.targetFor('session')?.threadId, 11, 'the unattributed target is untouched');
+});
+
 test('a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op', () => {
 	const r = new TargetRegistry();
 	r.register({ threadId: 1, cls: 'admin' });

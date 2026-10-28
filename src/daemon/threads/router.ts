@@ -66,6 +66,8 @@ interface Held {
 	readonly request: LocalRequestEnvelope;
 	readonly deliver: DeliverEnvelope;
 	readonly timer: NodeJS.Timeout;
+	/** Held for the shared-state target (Router.request with shared), not the class's own. */
+	readonly shared?: true | undefined;
 	cancelled: boolean;
 	/** Set once the request has been sent to a worker. */
 	sentTo?: number;
@@ -129,9 +131,10 @@ export class Router {
 	 * Ask the worker of `cls` directly (not through classOf): the indexing port
 	 * and in-daemon calls. Held like a socket request while no worker is
 	 * registered. underHold marks a call made under the caller's maintenance
-	 * hold; by default, whether this context holds it (a nested call).
+	 * hold; by default, whether this context holds it (a nested call). shared sends a
+	 * session-class call to the shared-state worker (s3); it never enters a session FIFO.
 	 */
-	request(cls: MethodClass, method: string, params: unknown, opts: { readonly underHold?: boolean | undefined } = {}): Promise<unknown> {
+	request(cls: MethodClass, method: string, params: unknown, opts: { readonly underHold?: boolean | undefined; readonly shared?: true | undefined } = {}): Promise<unknown> {
 		const request: LocalRequestEnvelope = {
 			kind: 'request', requestId: `internal-${++this.seq}`, method, params, stream: false,
 			...((opts.underHold ?? holdsMaintenanceLock()) ? { underHold: true } : {}),
@@ -141,9 +144,9 @@ export class Router {
 				if (envelope.kind !== 'reply') return;
 				if (envelope.error !== undefined) reject(new Error(envelope.error)); else resolve(envelope.result);
 			};
-			const target = this.opts.registry.targetFor(cls);
+			const target = this.opts.registry.targetFor(cls, undefined, { shared: opts.shared });
 			if (target !== undefined && this.ports.has(target.threadId)) this.send(target.threadId, request, deliver);
-			else this.hold(cls, request, deliver);
+			else this.hold(cls, request, deliver, () => {}, opts.shared);
 		});
 	}
 
@@ -202,7 +205,7 @@ export class Router {
 				h.localCancel = this.local(h.request, h.deliver);
 				continue;
 			}
-			const target = this.opts.registry.targetFor(h.cls);
+			const target = this.opts.registry.targetFor(h.cls, undefined, { shared: h.shared });
 			if (target === undefined || !this.ports.has(target.threadId)) continue;
 			this.release(h);
 			h.sentTo = target.threadId;
@@ -222,9 +225,9 @@ export class Router {
 		return () => this.cancel(threadId, request);
 	}
 
-	private hold(cls: MethodClass, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}): () => void {
+	private hold(cls: MethodClass, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}, shared?: true): () => void {
 		const held: Held = {
-			cls, request, deliver, cancelled: false,
+			cls, request, deliver, cancelled: false, ...(shared ? { shared } : {}),
 			timer: setTimeout(() => {
 				this.release(held);
 				if (held.cancelled) return;

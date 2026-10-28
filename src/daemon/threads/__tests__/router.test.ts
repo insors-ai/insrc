@@ -192,3 +192,33 @@ test('a unary request cancelled while held for a worker ends its activity: the r
 	assert.equal(inFlight, 0, 'the held request no longer counts as activity');
 	assert.deepEqual(replies, [], 'no reply for a cancelled request');
 });
+
+test('router: Router.request with shared reaches the shared-state target and is held while none is registered', async () => {
+	const registry = new (await import('../registry.js')).TargetRegistry();
+	const router = new Router({ classOf, registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}), holdMs: 10_000 });
+	// Two in-thread "workers": the unattributed one and the shared-state one, each naming itself.
+	const unattributed = new MessageChannel();
+	const shared = new MessageChannel();
+	const stops = [
+		serveRequests(unattributed.port2, directDispatch({ 'x.who': async () => 'unattributed' })),
+		serveRequests(shared.port2, directDispatch({ 'x.who': async () => 'shared' })),
+	];
+	try {
+		registry.register({ threadId: 901, cls: 'session', unattributed: true });
+		router.attach(901, unattributed.port1);
+		assert.equal(await router.request('session', 'x.who', null), 'unattributed', 'without shared: the unattributed target');
+		let answered: unknown;
+		const held = router.request('session', 'x.who', null, { shared: true }).then(r => { answered = r; });
+		await new Promise(r => setTimeout(r, 30));
+		assert.equal(answered, undefined, 'held while no shared-state target is registered (not sent to the unattributed one)');
+		registry.register({ threadId: 902, cls: 'session', shared: true });
+		router.attach(902, shared.port1);
+		await held;
+		assert.equal(answered, 'shared', 'sent to the shared-state target once it registered');
+		assert.equal(await router.request('session', 'x.who', null, { shared: true }), 'shared');
+	} finally {
+		for (const stop of stops) stop();
+		router.detach(901); router.detach(902);
+		for (const c of [unattributed, shared]) { c.port1.close(); c.port2.close(); }
+	}
+});

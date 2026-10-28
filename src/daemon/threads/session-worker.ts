@@ -8,6 +8,11 @@
  * requests (or, as the unattributed worker, those with no client identity) with the
  * daemon's own handler runtime, each under the maintenance lock's request hold.
  *
+ * Started with `shared: true` it is the shared-state worker instead: it hosts the one copy
+ * of the chat session pool, the understanding service and the todos retention sweep, serves
+ * the chat, todos and understanding families (and the in-daemon-only chat.dropSession), and
+ * runs those families' nested calls inline.
+ *
  * Its queue and indexer are the indexing port, reached through the main thread's router;
  * a step handler's nested call runs here unless inDaemonTarget names another thread (an
  * admin or indexing method, or a chat, todos or understanding method, which the
@@ -17,6 +22,11 @@
 import { parentPort, threadId, workerData } from 'node:worker_threads';
 
 import { ConfigStore } from '../../config/store.js';
+import { UnderstandingService } from '../../understanding/service.js';
+import { getLogger } from '../../shared/logger.js';
+import { PATHS } from '../../shared/paths.js';
+import { initChatHandlers } from '../chat-handler.js';
+import { scheduleTodosRetention } from '../todos-rpc.js';
 import { getDb } from '../../db/client.js';
 import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { buildHandlerRuntime, inDaemonOnlyHandlers } from '../handler-runtime.js';
@@ -35,7 +45,9 @@ import type { StatusSnapshot } from './status-board.js';
 import { startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
-const init = workerData as WorkerConnection['workerData'];
+const log = getLogger('session-worker');
+const init = workerData as WorkerConnection['workerData'] & { readonly shared?: true | undefined };
+const onSharedWorker = init.shared === true;
 const hub = startDaemonWorker(init);
 const board = new StatusBoardClient(hub);
 // Detached runs started here are mirrored to the board, so any thread answers their polls.
@@ -55,17 +67,18 @@ const noQueueState = {
 const port = new IndexingPortClient((method, params) => route('indexing', method, params), noQueueState);
 
 let inDaemon: InDaemonClient | undefined;
+let understanding: UnderstandingService | undefined;
 const runtime = buildHandlerRuntime({
 	db, configStore, queue: port, indexer: port, startedAt: Date.now(),
 	shutdown: reason => hub.send(SHUTDOWN_OP, reason),
 	attachedClients: () => [],
-	understandingService: () => undefined,
+	understandingService: () => understanding,
 	nestedCall: (method, params) => inDaemon!.request(method, params),
 });
 const routed: ReadonlySet<MethodClass> = new Set<MethodClass>(['admin', 'indexing', 'session']);
 inDaemon = createInDaemonClient(runtime.rpcHandlers, runtime.streamHandlers, {
 	inDaemonOnly: inDaemonOnlyHandlers(),
-	route: { targetOf: method => inDaemonTarget(method, { routed, onSharedWorker: false }), request: route },
+	route: { targetOf: method => inDaemonTarget(method, { routed, onSharedWorker }), request: route },
 });
 installStepDaemonClient(inDaemon);
 
@@ -86,6 +99,19 @@ function testHandlers(): RpcHandlers {
 	};
 }
 
-const rpc: RpcHandlers = process.env['INSRC_TEST_HOOKS'] === '1' ? { ...runtime.rpcHandlers, ...testHandlers() } : runtime.rpcHandlers;
+if (onSharedWorker) {
+	initChatHandlers();
+	// The daemon's socket listens before this worker starts; the service is a client of it.
+	try { understanding = await UnderstandingService.open(PATHS.sockFile); }
+	catch { log.warn('understanding service unavailable: initialization checks failed'); }
+	scheduleTodosRetention(db);
+}
+
+const rpc: RpcHandlers = {
+	...runtime.rpcHandlers,
+	// Sent here only by other threads' nested calls: the socket never routes to it by name.
+	...(onSharedWorker ? inDaemonOnlyHandlers() : {}),
+	...(process.env['INSRC_TEST_HOOKS'] === '1' ? testHandlers() : {}),
+};
 serveRequests(init.hubPort, directDispatch(rpc, runtime.streamHandlers));
 parentPort!.postMessage('worker-ready');

@@ -13551,7 +13551,7 @@
       ],
       "siteCount": 66,
       "sitesDigest": "01c65e021f0cc5b336b0f1b25d1b013da57dead37e47bd005a9fc7ba26ca72ca",
-      "sourceDigest": "fbf904c4126b977ba98569d202a9435e8e9b734f9d2a80ce92c4dcc0613e17f7",
+      "sourceDigest": "3633992ce79febc8e87f6951f68c62c99e99324c226b28bf7f9ef401eaaf8dae",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -15924,18 +15924,27 @@
           "getDb"
         ],
         [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
           "serialization",
           "hub.send"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "serialization",
           "parentPort!.postMessage"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "b6d71ee181f211d7e05342f399d162ed4eb73374d7a0bf636b503258ab17463d",
-      "sourceDigest": "2e03547db2bdb48b502a2e0bb03f0243168e2f8872d20fffcac065789e47fd48",
+      "siteCount": 5,
+      "sitesDigest": "de8dae8e095bd52b50efe758f279a78c4b36947ff9dd3322cf34dd189b9f74a9",
+      "sourceDigest": "3a7e54cbb9861b6433f52559845487ab6b039f81a2bcd6cc07365c38c4edffd6",
       "boundaries": [
+        "diagnostic",
         "serialization",
         "storage-call"
       ]

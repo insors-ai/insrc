@@ -481,13 +481,18 @@ async function main(): Promise<void> {
 		});
 	}
 
-	// Initialize chat session pool
-	initChatHandlers();
+	// The chat session pool, the understanding service and the todos retention sweep are one
+	// process-wide copy each: hosted here unless session work is routed to workers, when the
+	// shared-state worker hosts them (Epic 86197ac6 s3).
+	const hostsSharedState = !routed.has('session');
+	if (hostsSharedState) initChatHandlers();
 
 	await server.listen();
-	try {
-		understandingService = await UnderstandingService.open(PATHS.sockFile);
-	} catch { log.warn('understanding service unavailable: initialization checks failed'); }
+	if (hostsSharedState) {
+		try {
+			understandingService = await UnderstandingService.open(PATHS.sockFile);
+		} catch { log.warn('understanding service unavailable: initialization checks failed'); }
+	}
 	log.info('ready');
 
 	// Phase 1 cleanup: orphan-handoff worktree scan stripped along with
@@ -499,7 +504,7 @@ async function main(): Promise<void> {
 	// 8b. Todos retention sweep (plans/todo-framework.md Phase 2).
 	// Fires once at boot and every 24 h; drops archived todo lists
 	// untouched for 90 days.
-	const stopTodosRetention = todosRpc.scheduleTodosRetention(db);
+	const stopTodosRetention = hostsSharedState ? todosRpc.scheduleTodosRetention(db) : () => {};
 
 	// 8c. Periodic LMDB reader-table re-check. Defensive sweep every
 	//     5 minutes for slots left over from a daemon process that
@@ -545,7 +550,7 @@ async function main(): Promise<void> {
 			// No new maintenance; one still waiting for its lock gives up (one compacting is waited for below).
 			void maintenance?.stop();
 			stopIndexing();
-			void disposeChatHandlers();
+			if (hostsSharedState) void disposeChatHandlers();
    reviewOperationsClosing = (async () => { await (await import('./code-review-operations.js')).codeReviewOperations.close(); })();
 			void server.close();
 		},

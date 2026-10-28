@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -236,3 +236,25 @@ Run at 2026-10-28T11:17:46.173Z on commit `bccc20bed`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 3 | 3.9 s |  |
+
+## t10
+
+Run at 2026-10-28T11:22:52.060Z on commit `29d2430be`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**smoke: boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0 | `src/daemon/threads/__tests__/threads-boot.test.ts` |
+
+**smoke: boot: threads disabled runs every session method on the main thread as today**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | boot: threads disabled runs every session method on the main thread as today | `src/daemon/threads/__tests__/threads-boot.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 5 | 18.9 s |  |

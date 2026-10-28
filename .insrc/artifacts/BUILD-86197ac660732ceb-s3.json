@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s3",
     "createdAt": "2026-10-28T06:11:04.160Z",
-    "updatedAt": "2026-10-28T11:17:46.173Z",
+    "updatedAt": "2026-10-28T11:22:52.060Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -46,9 +46,13 @@
       {
         "id": "t9",
         "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
       }
     ],
-    "summary": "A pool worker's exit fails its served and its session's queued requests ('session worker failed: …') and ends its running detached runs 'error' with a named reason; workflow.run.abort reaches the run's owner from any session; the pool starts the shared-state worker on need and again after it exits.",
+    "summary": "With daemon threads the daemon routes session work through the session pool, starts the shared-state worker after the socket listens, and releases the session workers at shutdown before the stores close; with threads disabled nothing changes.",
     "testRecord": {
       "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S003/TESTS.md"
     },
@@ -58,219 +62,226 @@
           "file": "src/daemon/threads/__tests__/registry-board.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/router.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/router.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/workflow-run-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/run-board-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/workflow-run-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/daemon-client.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/helpers/shared-fake-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/indexing-port.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/purge-shared.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-86197ac660732ceb-s3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/session-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/indexing-port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/main-services.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/session-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/shared-state-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/config-catalog-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/config/config-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/session-pool.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/session-pool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/router-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/session-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/session-routing.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-28T11:17:46.173Z"
+        "timestamp": "2026-10-28T11:22:52.060Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/threads-boot.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T11:22:52.060Z"
       }
     ],
-    "commit": "bccc20bed"
+    "commit": "29d2430be"
   }
 }

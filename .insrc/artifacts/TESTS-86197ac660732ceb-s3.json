@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s3",
     "createdAt": "2026-10-28T06:11:04.160Z",
-    "updatedAt": "2026-10-28T11:10:37.130Z",
+    "updatedAt": "2026-10-28T11:17:46.173Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -638,6 +638,76 @@
               },
               {
                 "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "bccc20bed",
+        "ranAt": "2026-10-28T11:17:46.173Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3854,
+            "titles": [
+              {
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              },
+              {
+                "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              },
+              {
+                "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -208,3 +208,31 @@ Run at 2026-10-28T11:10:37.130Z on commit `364788cb5`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/router-session.test.ts` | 0 | 3 | 0.6 s |  |
+
+## t9
+
+Run at 2026-10-28T11:17:46.173Z on commit `bccc20bed`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: failure: a session worker exit fails only its running and queued requests; the next request gets a new worker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | failure: a session worker exit fails only its running and queued requests; the next request gets a new worker | `src/daemon/threads/__tests__/session-failure.test.ts` |
+
+**integration: runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason | `src/daemon/threads/__tests__/session-failure.test.ts` |
+
+**integration: shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one | `src/daemon/threads/__tests__/session-failure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 3 | 3.9 s |  |

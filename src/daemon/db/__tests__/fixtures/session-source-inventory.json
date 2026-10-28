@@ -16008,6 +16008,10 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "diagnostic",
           "log.warn"
         ],
@@ -16016,9 +16020,9 @@
           "parentPort!.postMessage"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "f9a795f74ed0e92a3e370e73595e0b71eb81bb48334c74d43b25820e15e17c0c",
-      "sourceDigest": "2683e95ffe51a9d4aa4593f395253451bd3b0a3eaec249dcaf139a3b26edd3ae",
+      "siteCount": 7,
+      "sitesDigest": "8dd8d3f552b7ef2265d2fe0e921cd235231dec33b8e9b43988a453093e4fb922",
+      "sourceDigest": "687811ee1285503dc8417ea8d5d4bb273c9cc395b4db99a9ce2cb062d84548ec",
       "boundaries": [
         "diagnostic",
         "serialization",

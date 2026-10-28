@@ -34,6 +34,8 @@ import { directDispatch } from '../server.js';
 import type { RpcHandlers } from '../server.js';
 import type { LLMProvider } from '../../shared/types.js';
 import type { PreparedWorkflowRun } from '../workflow-rpc.js';
+import { getStepStateStore } from './step-state.js';
+import type { StepKind } from './step-state.js';
 import { createInDaemonClient, installStepDaemonClient } from '../steps/daemon-client.js';
 import type { InDaemonClient } from '../steps/daemon-client.js';
 import { setRunBoard } from '../workflow-run-registry.js';
@@ -101,6 +103,51 @@ function testHandlers(): RpcHandlers {
 			return { threadId, tag: (params as { tag?: unknown } | null)?.tag, startedAt, endedAt: Date.now() };
 		},
 		'test.nested': async () => ({ threadId, nested: await inDaemon!.request('session.list', {}) }),
+		'test.throw': async () => { throw new Error('the test handler threw'); },
+		// A detached stub workflow run on this worker with a provider that records its calls: none may overlap (k6).
+		'test.recordedRun': async (params) => {
+			const { repo, runId } = params as { repo: string; runId: string };
+			const { pollWorkflowRun, startWorkflowRun } = await import('../workflow-run-registry.js');
+			const answers: unknown[] = [
+				{ workflow: 'stub', steps: [{ id: 's1', runner: 'echo.a', params: {} }, { id: 's2', runner: 'echo.b', params: {} }, { id: 's3', runner: 'echo.c', params: {} }] },
+				{ body: { title: 'Demo', summary: 'A demo summary grounded in a step [[c1]].', bulletList: ['first point [[c1]]'] }, citations: [{ id: 'c1', kind: 'step-output', ref: 's1' }] },
+			];
+			let active = 0;
+			let maxActive = 0;
+			const calls: { startedAt: number; endedAt: number }[] = [];
+			const recording = {
+				supportsTools: false,
+				capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
+				complete: async () => { throw new Error('unused'); },
+				stream: () => { throw new Error('unused'); },
+				embed: async () => [],
+				completeStructured: async () => {
+					active++; maxActive = Math.max(maxActive, active);
+					const startedAt = Date.now();
+					await new Promise(r => setTimeout(r, 50));
+					active--;
+					calls.push({ startedAt, endedAt: Date.now() });
+					return answers.shift();
+				},
+			} as unknown as LLMProvider;
+			startWorkflowRun({ workflow: 'stub', focus: 'recorded run', repo }, {
+				prepare: () => ({
+					intent: { workflow: 'stub', focus: 'recorded run', repoPath: repo, repoIndexedAt: null, params: {} },
+					runId, epicKey: `test-${runId}`, provider: recording, modelLabel: 'test:recording', clientDefault: undefined, review: false,
+				}) as unknown as PreparedWorkflowRun,
+			});
+			while (pollWorkflowRun(runId, 0).status === 'running') await new Promise(r => setTimeout(r, 20));
+			return { threadId, status: pollWorkflowRun(runId, 0).status, calls, maxActive };
+		},
+		// The step-state store as a step handler on this worker sees it (the shared store, through the hub).
+		'test.stepState': async (params) => {
+			const { op, kind, token, payload } = params as { op: 'mint' | 'read' | 'update'; kind: StepKind; token?: string; payload?: unknown };
+			const store = getStepStateStore();
+			if (op === 'mint') return { threadId, token: await store.mint(kind, payload) };
+			if (op === 'update') return { threadId, token: await store.update(kind, token, payload) };
+			const entry = await store.read(kind, token!);
+			return { threadId, payload: entry?.payload ?? null };
+		},
 		// A detached stub workflow run owned by this worker, whose model never answers, so it stays running.
 		'test.startRun': async (params) => {
 			const { repo, runId } = params as { repo: string; runId: string };

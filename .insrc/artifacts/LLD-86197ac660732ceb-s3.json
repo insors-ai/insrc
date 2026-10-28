@@ -218,7 +218,9 @@
         "rationale": "User decision 2026-10-28: s3 tests the four process-wide families it found (chat session pool, todos event bus, understanding service, workflow run registry) and that each has exactly one owner thread. The exhaustive sweep of every module-scope mutable value reachable from a session handler (the HLD risk-table item at HLD.md:408, assigned to s1 but never delivered) is a follow-up, logged as plans/module-state-inventory-sweep.md.",
         "resolvedAt": "2026-10-28T06:03:07.267Z"
       }
-    }
+    },
+    "staleAckedAt": "2026-10-28T06:03:34.403Z",
+    "staleAckedReason": "The only HLD change since approval is AMD-86197ac660732ceb-1 (sc3 ThreadTarget.shared), which this LLD itself proposed and is designed against; approved by the user 2026-10-28 together with the LLD."
   },
   "body": {
     "summary": {

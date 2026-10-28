@@ -15900,7 +15900,23 @@
         ],
         [
           "serialization",
+          "send"
+        ],
+        [
+          "serialization",
+          "send"
+        ],
+        [
+          "serialization",
           "this.ports.get(threadId)?.postMessage"
+        ],
+        [
+          "serialization",
+          "this.send"
+        ],
+        [
+          "serialization",
+          "this.send"
         ],
         [
           "serialization",
@@ -15915,9 +15931,9 @@
           "this.send"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "c57bfe4ffa1690615a2b8913fd3ad828599d44584d353948c1ce3fe982e3e4ec",
-      "sourceDigest": "3d64b66d9d3c76c3c455deaf1be47b9cd37b50acf7bdfb81bdbd3a240fafc3b5",
+      "siteCount": 11,
+      "sitesDigest": "9697b3d645baafbba30709a50899e97691bd98c91f236028732854963357615f",
+      "sourceDigest": "7d19fd638a6bd1b3e8f388e945b340a020233c7943af257544425e523efbd18e",
       "boundaries": [
         "diagnostic",
         "serialization"

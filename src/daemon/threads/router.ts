@@ -13,6 +13,15 @@
  *
  * A request whose worker is not registered (it is starting or being replaced)
  * is held until one registers, at most holdMs, then answered with an error.
+ *
+ * Session work (s3), once routed: a chat, todos or understanding method goes to the
+ * shared-state worker; any other session-class method to its session's worker from the
+ * session pool, or to the unattributed worker when the request carries no client
+ * identity. A session's requests run one at a time in arrival order (its FIFO, held here):
+ * each is sent once the one before it ended (its reply, its stream's done or error frame,
+ * or its cancel). Subscriptions and the methods that observe or control a running request
+ * (FIFO_EXEMPT_METHODS) are sent at once, and the unattributed worker's requests interleave
+ * as on a single thread. Requests bound to a connection session stay on this thread.
  */
 
 import type { MessagePort } from 'node:worker_threads';
@@ -22,8 +31,8 @@ import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
 import type { RequestLifetime } from '../request-context.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
-import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope } from './channel.js';
-import { MAIN_DAEMON_CONNECTION_METHODS } from './method-class.js';
+import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope, SessionId } from './channel.js';
+import { FIFO_EXEMPT_METHODS, MAIN_DAEMON_CONNECTION_METHODS, SHARED_STATE_METHODS } from './method-class.js';
 import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry } from './registry.js';
@@ -42,8 +51,43 @@ export interface RouterOptions {
 	readonly local: ForwardRequest;
 	readonly holdMs?: number | undefined;
 	/** Told of every request as it arrives; the call it returns is made when the request ends (idle detection). */
-	readonly onRequest?: ((method: string, cls: MethodClass | undefined) => () => void) | undefined;
+	readonly onRequest?: ((method: string, cls: MethodClass | undefined) => () => void) | undefined;	/** The session pool, once session work is routed (s3): a session's worker, and its requests' activity. */
+	readonly sessions?: RouterSessions | undefined;
 }
+
+/** The session pool as the router uses it (s3, sc6). */
+export interface RouterSessions {
+	/** The session's worker (the unattributed worker for no session), started if it has none. */
+	workerFor(session?: SessionId): Promise<{ readonly threadId: number }>;
+	/** A request of the session started on its worker, and ended. */
+	started(session: SessionId | undefined): void;
+	ended(session: SessionId | undefined): void;
+	/** How many of the session's requests wait in its FIFO. */
+	setQueued(session: SessionId | undefined, queued: number): void;
+}
+
+/** One request in a session's FIFO. */
+interface Queued {
+	readonly request: LocalRequestEnvelope;
+	started: boolean;
+	/** Sends the request to its worker; set once started. */
+	cancel?: () => void;
+	run(): void;
+	drop(): void;
+}
+
+interface Fifo {
+	readonly session: SessionId;
+	running?: Queued | undefined;
+	readonly waiting: Queued[];
+}
+
+/** A reply, or a stream's last frame: the request has ended. */
+const isTerminal = (envelope: ReplyEnvelope | FrameEnvelope): boolean => {
+	if (envelope.kind === 'reply') return true;
+	const stream = (envelope.frame as IpcStreamMessage).stream;
+	return stream === 'done' || stream === 'error';
+};
 
 interface Pending {
 	readonly lifetime?: RequestLifetime | undefined;
@@ -85,6 +129,7 @@ export class Router {
 	private readonly listeners = new Map<number, (msg: unknown) => void>();
 	private readonly pending = new Map<string, Pending>();
 	private readonly held = new Set<Held>();
+	private readonly fifos = new Map<string, Fifo>();
 	private readonly holdMs: number;
 	/** opts.local, each request under the maintenance lock's request hold. */
 	private readonly local: ForwardRequest;
@@ -122,9 +167,107 @@ export class Router {
 	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}): () => void {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
 			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
+		if (cls === 'session' && this.opts.sessions !== undefined) return this.dispatchSession(request, deliver, dropped);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
 		return this.hold(cls, request, deliver, dropped);
+	}
+
+	/** A session-class request (s3): to the shared-state worker or the session's worker, through the session's FIFO unless exempt or unattributed. */
+	private dispatchSession(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
+		const shared = SHARED_STATE_METHODS.has(request.method);
+		const send = (d: DeliverEnvelope): () => void => shared
+			? this.toShared(request, d, dropped)
+			: this.toSessionWorker(request.session, request, d, dropped);
+		if (request.session === undefined || FIFO_EXEMPT_METHODS.has(request.method)) return send(deliver);
+		return this.enqueue(request.session, request, deliver, send, dropped);
+	}
+
+	/** To the shared-state worker, held (as any routed request) while none is registered. */
+	private toShared(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
+		const target = this.opts.registry.targetFor('session', undefined, { shared: true });
+		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
+		return this.hold('session', request, deliver, dropped, true);
+	}
+
+	/** To the session's worker (the unattributed worker for no session), started by the pool if it has none. */
+	private toSessionWorker(session: SessionId | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
+		const sessions = this.opts.sessions!;
+		let cancelled = false;
+		let sent: (() => void) | undefined;
+		let ended = false;
+		const end = (): void => { if (!ended) { ended = true; sessions.ended(session); } };
+		const fail = (error: string): void => {
+			try {
+				deliver(request.stream
+					? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } }
+					: { kind: 'reply', requestId: request.requestId, error });
+			} finally { request.lifetime?.complete(); end(); }
+		};
+		const tracked: DeliverEnvelope = envelope => {
+			try { deliver(envelope); } finally { if (isTerminal(envelope)) end(); }
+		};
+		sessions.started(session);
+		void sessions.workerFor(session).then(
+			worker => {
+				if (cancelled) { end(); return; }
+				if (!this.ports.has(worker.threadId)) { fail('the session\'s worker thread is not available'); return; }
+				sent = this.send(worker.threadId, request, tracked);
+			},
+			(err: unknown) => { if (!cancelled) fail(err instanceof Error ? err.message : String(err)); else end(); },
+		);
+		return () => {
+			cancelled = true;
+			if (sent !== undefined) { sent(); return; }
+			request.lifetime?.abort();
+			request.lifetime?.complete();
+			end();
+			dropped();
+		};
+	}
+
+	/** Through the session's FIFO: sent once the session's previous request has ended. */
+	private enqueue(session: SessionId, request: LocalRequestEnvelope, deliver: DeliverEnvelope, send: (d: DeliverEnvelope) => () => void, dropped: () => void): () => void {
+		const key = `${session.label}:${session.pid}`;
+		let fifo = this.fifos.get(key);
+		if (fifo === undefined) { fifo = { session, waiting: [] }; this.fifos.set(key, fifo); }
+		const f = fifo;
+		const item: Queued = {
+			request, started: false,
+			run: () => {
+				item.started = true;
+				item.cancel = send(envelope => {
+					try { deliver(envelope); } finally { if (isTerminal(envelope)) this.next(key, item); }
+				});
+			},
+			drop: () => {
+				request.lifetime?.abort();
+				request.lifetime?.complete();
+				dropped();
+			},
+		};
+		if (f.running === undefined) { f.running = item; item.run(); }
+		else { f.waiting.push(item); this.opts.sessions!.setQueued(session, f.waiting.length); }
+		return () => {
+			if (!item.started) {
+				const at = f.waiting.indexOf(item);
+				if (at >= 0) { f.waiting.splice(at, 1); this.opts.sessions!.setQueued(session, f.waiting.length); }
+				item.drop();
+				return;
+			}
+			item.cancel?.();
+			this.next(key, item);
+		};
+	}
+
+	/** `item` ended (or was cancelled): the next request of its session's FIFO starts. */
+	private next(key: string, item: Queued): void {
+		const fifo = this.fifos.get(key);
+		if (fifo === undefined || fifo.running !== item) return;
+		fifo.running = fifo.waiting.shift();
+		this.opts.sessions!.setQueued(fifo.session, fifo.waiting.length);
+		if (fifo.running !== undefined) fifo.running.run();
+		else this.fifos.delete(key);
 	}
 
 	/**

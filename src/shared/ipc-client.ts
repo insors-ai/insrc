@@ -48,21 +48,24 @@ export async function rpc<T = unknown>(
   method: string,
   params: unknown = {},
   connect: () => Socket = () => createConnection(PATHS.sockFile),
-  opts?: { readonly timeoutMs?: number | undefined },
+  opts?: { readonly timeoutMs?: number | undefined; readonly closeAware?: boolean | undefined },
 ): Promise<T> {
   return new Promise<T>((resolveReply, rejectReply) => {
     const socket = connect();
     let   buffer = '';
 
-    // Opt-in deadline (Story s3). Without `timeoutMs` nothing below changes the
-    // request: no timer, no extra listeners, no destroy. With it, the request also
-    // rejects on the deadline and on the socket ending or closing before a reply,
-    // and the socket is destroyed and the timer cleared on every outcome.
+    // Opt-in deadline (Story s3). Without `timeoutMs` (or `closeAware`) nothing below changes the
+    // request: no timer, no extra listeners, no destroy. With `timeoutMs` the request also
+    // rejects on the deadline and on the socket ending or closing before a reply, and the
+    // socket is destroyed and the timer cleared on every outcome. `closeAware` (Story s10) is
+    // the same end and close handling with NO timer: a long call, such as an approval that waits
+    // on a person, is never cut short, but a daemon that goes away is not waited for either.
     const timeoutMs = opts?.timeoutMs;
+    const watched = timeoutMs !== undefined || opts?.closeAware === true;
     let settled = false;
     let timer: NodeJS.Timeout | undefined;
     const settle = (fn: () => void): void => {
-      if (timeoutMs === undefined) { fn(); return; }
+      if (!watched) { fn(); return; }
       if (settled) return;
       settled = true;
       if (timer !== undefined) clearTimeout(timer);
@@ -72,8 +75,8 @@ export async function rpc<T = unknown>(
     const resolve = (v: T): void => settle(() => resolveReply(v));
     const reject = (e: Error): void => settle(() => rejectReply(e));
 
-    if (timeoutMs !== undefined) {
-      timer = setTimeout(() => reject(new Error(`daemon did not reply within ${timeoutMs} ms (timeout)`)), timeoutMs);
+    if (watched) {
+      if (timeoutMs !== undefined) timer = setTimeout(() => reject(new Error(`daemon did not reply within ${timeoutMs} ms (timeout)`)), timeoutMs);
       const closed = (): void => reject(new Error('daemon closed the connection before replying (closed)'));
       socket.on('end', closed);
       socket.on('close', closed);

@@ -49,7 +49,7 @@ function assertSource(state: Payload): void {
 	catch (error) { if (error instanceof SamePartyReviewError) throw error; throw new ReviewTerminalError('review-source-changed'); }
 }
 function adapterFor(state: Payload, deps: ReviewStepDeps): ReviewAdapter<unknown> {
-	const snapshot = state.controller.job?.snapshot ?? designReviewSnapshot(state.markdown);
+	const snapshot = state.controller.job?.snapshot ?? designReviewSnapshot(state.markdown, state.mdPath);
 	return (state.templateIntent === undefined
 		? premiseAdapter(snapshot, { stage: state.stage, repo: state.repo, readEntitiesForRepo: deps.readEntitiesForRepo,
 			onSourceRootFallback: () => deps.progress?.({ kind: 'review-grounding', mode: 'degraded' }) })
@@ -128,7 +128,7 @@ export async function startControllerDesignReview(state: ReviewStepStatePayload,
 		phase: state.templateIntent !== undefined ? 'findings' : 'claims', schema: {}, deadlineAt: now + 600000, budgetMs: 600000, ...(templateLimitMs !== undefined ? { templateLimitMs } : {}) } };
 	payload = { ...payload, controller: { ...payload.controller, sourceDigest: sourceDigest(payload) } };
 	const adapter = adapterFor(payload, deps);
-	const job = createReviewJob(adapter, 'controller', designReviewSnapshot(payload.markdown), prepared.policy.totalTokens * 3, { budgetPolicy: prepared.policy, now });
+	const job = createReviewJob(adapter, 'controller', designReviewSnapshot(payload.markdown, payload.mdPath), prepared.policy.totalTokens * 3, { budgetPolicy: prepared.policy, now });
 	const ready = await admit({ ...payload, controller: { ...payload.controller, job } }, prepared.declaration, deps);
 	owner().assertActive(); assertSource(ready.state);
 	const token = await getStepStateStore().mintReviewState('review', ready.state, ready.state.controller);

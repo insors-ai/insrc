@@ -250,6 +250,7 @@ export interface ReviewMaterialSnapshot {
 	readonly grounding?:    unknown;
 	readonly fileFacts?:    Readonly<Record<string, { readonly exists: boolean }>> | undefined;
 	readonly documentText?: string | undefined;
+	readonly artifactPath?: string | undefined;
 	readonly claims?:       readonly unknown[] | undefined;
 	readonly evidence?:     readonly unknown[] | undefined;
 }

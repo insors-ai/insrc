@@ -40,6 +40,7 @@ export type ReviewPhase = 'extract' | 'probe' | `verify:${string}` | 'template' 
 
 export interface RunReviewOpts {
 	readonly repo: string;
+	readonly artifactPath?: string | undefined;
 	readonly stage: string;
 	readonly provider: LLMProvider;
 	readonly model: string;
@@ -89,7 +90,7 @@ export async function runReview(
 	// per premise; the pipeline re-issues a failed call once, and a premise whose
 	// call fails twice is recorded as not judged (MED), the rest kept.
 	let sourceRootFallback: string | undefined;
-	const snapshot = designReviewSnapshot(artifactMarkdown);
+	const snapshot = designReviewSnapshot(artifactMarkdown, opts.artifactPath);
 	const adapter = premiseAdapter(snapshot, {
 		stage, repo, readEntitiesForRepo: opts.readEntitiesForRepo,
 		onSourceRootFallback: reason => { sourceRootFallback = reason; },

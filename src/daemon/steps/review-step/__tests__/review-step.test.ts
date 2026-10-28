@@ -74,7 +74,7 @@ const CLAIMS = {
 			id: 'c-inv', ref: 's1/t1', kind: 'inventory',
 			text: 'There are exactly two exported constants in foo.',
 			anchors: ['src/foo.ts'],
-			probe: { greps: ['^export const'] },
+			probe: { greps: ['^export const'], grepScope: 'repository' },
 		},
 		{
 			id: 'c-cite', ref: 's1/t2', kind: 'citation',

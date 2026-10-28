@@ -14,7 +14,7 @@ import { safeReviewFailure } from '../../shared/review-failure.js';
  * the LLM never asserts grounding it wasn't handed.
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
@@ -55,6 +55,7 @@ async function runGrep(
 ): Promise<GrepResult> {
 	const matches: string[] = [];
 	let truncated = false;
+	let error: string | undefined;
 	for (const root of roots) {
 		if (matches.length >= MATCH_CAP) { truncated = true; break; }
 		const remaining = MATCH_CAP - matches.length;
@@ -69,15 +70,16 @@ async function runGrep(
 			// the net result is an honest empty — same as the old behaviour.
 			const msg = err instanceof Error ? err.message : String(err);
 			log.warn({ root: root.path, errorCode: safeReviewFailure(err) }, 'review:probe: grep errored on root; skipping');
+			error = 'search-incomplete';
 			continue;
 		}
 		const prefix = rootPrefix(repoPath, root);
 		for (const h of data.hits) {
 			matches.push(prefix === '' ? `${h.path}:${h.line}:${h.text}` : `${prefix}/${h.path}:${h.line}:${h.text}`);
 		}
-		if (data.truncated) truncated = true;
+		if (data.truncated || data.omitted.skippedFiles.length > 0 || data.omitted.shortenedLines.length > 0 || data.omitted.perFileLimitReached || data.omitted.outputDiscarded) truncated = true;
 	}
-	return { pattern, matches, truncated };
+	return { pattern, matches, truncated, ...(error !== undefined ? { error } : {}) };
 }
 
 // ---------------------------------------------------------------------------
@@ -139,43 +141,82 @@ function existenceMatches(pattern: string, repoPath: string, roots: readonly Sou
 // ---------------------------------------------------------------------------
 
 /** Parse a `path:line` anchor. Tolerates a trailing `:col`. */
-function parseAnchor(anchor: string): { path: string; line: number } | null {
-	// Split on the LAST colon-number groups: `path:line` or `path:line:col`.
-	const m = /^(.*?):(\d+)(?::\d+)?$/.exec(anchor.trim());
-	if (m === null) return null;
-	const path = m[1];
-	const lineStr = m[2];
-	if (path === undefined || lineStr === undefined || path.length === 0) return null;
-	const line = Number.parseInt(lineStr, 10);
-	if (!Number.isFinite(line) || line < 1) return null;
-	return { path, line };
+const MAX_READ_LINES = 200;
+const MAX_EVIDENCE_CHARS = 16_000;
+const MAX_PROBE_FILE_BYTES = 2 * 1024 * 1024;
+
+function parseAnchor(anchor: string): { path: string; line: number; end: number } | null {
+	const m = /^(.*?):(\d+)(?:-(\d+)|:(\d+))?$/.exec(anchor.trim());
+	if (!m?.[1] || !m[2]) return null;
+	const line = Number(m[2]), end = m[3] === undefined ? line : Number(m[3]);
+	if (![line, end].every(Number.isSafeInteger) || line < 1 || end < line
+		|| (m[4] !== undefined && (!Number.isSafeInteger(Number(m[4])) || Number(m[4]) < 1))) return null;
+	return { path: m[1], line, end };
 }
 
-/** Resolve `path` inside `repoPath`, refusing escapes outside the repo. */
+/** Lexical and real paths must remain inside the repository, including symlinks. */
 function resolveInRepo(repoPath: string, path: string): string | null {
-	const root = resolve(repoPath);
-	const abs = isAbsolute(path) ? normalize(path) : normalize(join(root, path));
+	const root = resolve(repoPath), abs = resolve(root, path);
 	if (abs !== root && !abs.startsWith(root + sep)) return null;
+	try {
+		const realRoot = realpathSync(root), real = realpathSync(abs);
+		if (real !== realRoot && !real.startsWith(realRoot + sep)) return null;
+	} catch { /* Missing/unreadable is classified by the read, never treated as an escape. */ }
 	return abs;
 }
 
-/** Confirm one `path:line` anchor against the real file. */
+function fileText(path: string): string {
+	const stat = statSync(path);
+	if (!stat.isFile()) throw Object.assign(new Error(), { code: 'NOT_FILE' });
+	if (stat.size > MAX_PROBE_FILE_BYTES) throw Object.assign(new Error(), { code: 'TOO_LARGE' });
+	return readFileSync(path, 'utf8');
+}
+
 function runRead(anchor: string, repoPath: string): ReadResult {
 	const parsed = parseAnchor(anchor);
-	if (parsed === null) return { anchor, found: false };
+	if (parsed === null) return { anchor, found: false, error: 'invalid-anchor' };
 	const abs = resolveInRepo(repoPath, parsed.path);
-	if (abs === null) return { anchor, found: false };
+	if (abs === null) return { anchor, found: false, error: 'forbidden-path' };
 	try {
-		const content = readFileSync(abs, 'utf8');
-		const lines = content.split('\n');
-		const idx = parsed.line - 1;
-		if (idx < 0 || idx >= lines.length) return { anchor, found: false };
-		const line = lines[idx];
-		if (line === undefined) return { anchor, found: false };
-		return { anchor, found: true, line };
-	} catch {
-		return { anchor, found: false };
+		const lines = fileText(abs).split('\n');
+		if (parsed.line > lines.length || parsed.end > lines.length) return { anchor, found: false, error: 'out-of-range' };
+		const end = Math.min(parsed.end, parsed.line + MAX_READ_LINES - 1);
+		const full = lines.slice(parsed.line - 1, end).join('\n');
+		return { anchor, found: true, line: full.slice(0, MAX_EVIDENCE_CHARS),
+			...(parsed.end !== parsed.line ? { lineStart: parsed.line, lineEnd: end } : {}),
+			...(end < parsed.end || full.length > MAX_EVIDENCE_CHARS ? { truncated: true } : {}) };
+	} catch (err) {
+		const code = (err as NodeJS.ErrnoException).code;
+		return { anchor, found: false, error: code === 'ENOENT' ? 'missing-file' : code === 'TOO_LARGE' ? 'file-too-large' : 'unreadable-file' };
 	}
+}
+
+/** File-local search avoids a global cap being consumed by unrelated artifacts. */
+function scopedGrep(pattern: string, repoPath: string, files: readonly string[], opts?: GatherEvidenceOpts): GrepResult {
+	const scope = Array.isArray(files) ? files.join(', ') : 'invalid', matches: string[] = [];
+	let truncated = false;
+	if (!Array.isArray(files) || files.length === 0 || files.length > 32 || files.some(file => typeof file !== 'string' || file.trim().length === 0)) return { pattern, matches, truncated, scope, error: 'invalid-scope' };
+	let regex: RegExp;
+	try { regex = new RegExp(pattern); } catch { return { pattern, matches, truncated, scope, error: 'invalid-pattern' }; }
+	for (const file of [...new Set(files)]) {
+		const abs = resolveInRepo(repoPath, file);
+		if (abs === null) return { pattern, matches, truncated: true, scope, error: 'forbidden-scope' };
+		try {
+			const isArtifact = opts?.artifactPath !== undefined && abs === resolve(repoPath, opts.artifactPath);
+			const content = isArtifact && opts?.artifactText !== undefined ? opts.artifactText : fileText(abs);
+			if (Buffer.byteLength(content, 'utf8') > MAX_PROBE_FILE_BYTES) throw new Error('file-too-large');
+			const lines = content.split('\n');
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i]!;
+				if (!regex.test(line)) continue;
+				if (matches.length >= MATCH_CAP) { truncated = true; break; }
+				const text = line.slice(0, 2000);
+				if (text.length < line.length) truncated = true;
+				matches.push(`${relative(repoPath, abs)}:${i + 1}:${text}`);
+			}
+		} catch { return { pattern, matches, truncated: true, scope, error: 'scope-unreadable' }; }
+	}
+	return { pattern, matches, truncated, scope };
 }
 
 // ---------------------------------------------------------------------------
@@ -189,6 +230,9 @@ function runRead(anchor: string, repoPath: string): ReadResult {
  * the input.
  */
 export interface GatherEvidenceOpts {
+	readonly artifactPath?: string | undefined;
+	/** Frozen reviewed text, including an amended document during automatic re-review. */
+	readonly artifactText?: string | undefined;
 	/** Reads the repository's indexed entities for the source roots. Omitted by
 	 *  a review inside the daemon and by the MCP server's review step, which
 	 *  keep the default reader (the store). */
@@ -215,6 +259,22 @@ export async function gatherEvidence(claims: Claim[], repoPath: string, opts?: G
 	for (const claim of claims) {
 		const grepResults: GrepResult[] = [];
 		for (const pattern of claim.probe.greps ?? []) {
+			try { new RegExp(pattern); } catch {
+				grepResults.push({ pattern, matches: [], truncated: false, error: 'invalid-pattern' });
+				continue;
+			}
+			const explicit = claim.probe.grepFiles;
+			const scope = claim.probe.grepScope;
+			if (opts?.artifactPath !== undefined && ['inventory', 'ordering', 'closed-union'].includes(claim.kind) && scope === undefined && explicit === undefined) {
+				grepResults.push({ pattern, matches: [], truncated: false, error: 'scope-required' });
+				continue;
+			}
+			if (scope === 'artifact' || explicit !== undefined || (scope !== undefined && scope !== 'repository')) {
+				if ((scope === 'artifact' && (explicit !== undefined || opts?.artifactPath === undefined)) || (scope !== undefined && scope !== 'artifact' && scope !== 'repository')) {
+					grepResults.push({ pattern, matches: [], truncated: false, error: 'invalid-scope', scope: scope ?? 'files' });
+				} else grepResults.push(scopedGrep(pattern, repoPath, scope === 'artifact' ? [opts!.artifactPath!] : explicit ?? [], opts));
+				continue;
+			}
 			const gr = await runGrep(pattern, repoPath, roots);
 			// Augment with filename-existence notes so the judge doesn't false-flag
 			// a file that exists on disk but is referenced in no file body.

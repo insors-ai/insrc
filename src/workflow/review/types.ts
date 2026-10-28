@@ -82,13 +82,21 @@ export interface ProposedFix {
 /**
  * A deterministic probe attached to a claim: the ripgrep patterns that
  * would re-derive an inventory / union, and the `path:line` anchors that
- * would confirm a citation. Both optional — a semantic claim may carry
+ * would confirm a citation. Each claim owns one Probe; a probe may issue many greps/reads. Its optional scope applies
+ * to all its greps, never its citation reads. Artifact scope refers to the one frozen
+ * reviewed document; explicit files are 1..32 repo-contained paths. Legacy probes
+ * without scope retain repository searching when no reviewed artifact is known.
+ * Both optional — a semantic claim may carry
  * only reads, an inventory claim only greps.
  */
 export interface Probe {
 	/** ripgrep patterns (argv-safe; NEVER shell-interpolated). */
 	readonly greps?: readonly string[] | undefined;
-	/** `path:line` anchors to confirm verbatim. */
+	/** Artifact structure uses the frozen reviewed document; repository retains legacy source searches. */
+	readonly grepScope?: 'artifact' | 'repository' | undefined;
+	/** Optional explicit repo-contained files; never silently widened on failure. */
+	readonly grepFiles?: readonly string[] | undefined;
+	/** Single-line, column or inclusive line-range anchors; bounded reads disclose truncation. */
 	readonly reads?: readonly string[] | undefined;
 }
 
@@ -109,6 +117,8 @@ export interface GrepResult {
 	readonly matches: readonly string[];
 	/** Set when the match set was capped at the cap limit. */
 	readonly truncated: boolean;
+	readonly scope?: string | undefined;
+	readonly error?: string | undefined;
 }
 
 export interface ReadResult {
@@ -116,6 +126,10 @@ export interface ReadResult {
 	readonly found: boolean;
 	/** The actual line at the anchor, when found. */
 	readonly line?: string | undefined;
+	readonly error?: 'invalid-anchor' | 'forbidden-path' | 'missing-file' | 'unreadable-file' | 'out-of-range' | 'file-too-large' | undefined;
+	readonly truncated?: boolean | undefined;
+	readonly lineStart?: number | undefined;
+	readonly lineEnd?: number | undefined;
 }
 
 export interface Evidence {

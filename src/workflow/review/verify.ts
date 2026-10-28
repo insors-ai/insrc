@@ -108,6 +108,8 @@ const SYSTEM = [
 	'matches, files, or grounding you were not handed. If the evidence is empty or',
 	'does not address the premise, the premise is UNVERIFIABLE (severity MED).',
 	'',
+	'Evidence errors, forbidden reads, truncated results, and invalid scope are limitations, never proof that a file or implementation is missing. Do not infer a complete inventory from capped or wrong-scope matches.',
+	'',
 	'Assign `severity` by MATERIALITY — does the defect break the work, or is it mere',
 	'imprecision? The test for HIGH is a statable failure, and it cuts BOTH ways: if you',
 	'CAN state a concrete build-breaking failure you MUST assign HIGH (do not soften a real',
@@ -163,11 +165,11 @@ function renderEvidence(claim: Claim, evidence: Evidence): string {
 		lines.push('(no probes were run for this premise — treat as UNVERIFIABLE)');
 	}
 	for (const g of evidence.grepResults) {
-		lines.push(`grep /${g.pattern}/ → ${g.matches.length} match(es)${g.truncated ? ' [TRUNCATED at cap]' : ''}`);
+		lines.push(`grep /${g.pattern}/ → ${g.matches.length} match(es)${g.truncated ? ' [TRUNCATED at cap]' : ''}${g.scope !== undefined ? ' [scope: ' + g.scope + ']' : ''}${g.error !== undefined ? ' [EVIDENCE ERROR: ' + g.error + ']' : ''}`);
 		for (const m of g.matches) lines.push(`    ${m}`);
 	}
 	for (const r of evidence.reads) {
-		lines.push(r.found ? `read ${r.anchor} → FOUND: ${r.line ?? ''}` : `read ${r.anchor} → NOT FOUND`);
+		lines.push(r.found ? `read ${r.anchor} → FOUND${r.truncated ? ' [TRUNCATED; requested evidence is incomplete]' : ''}: ${r.line ?? ''}` : r.error !== undefined && r.error !== 'missing-file' ? `read ${r.anchor} → EVIDENCE ERROR: ${r.error} (not proof of a missing file)` : `read ${r.anchor} → NOT FOUND${r.error !== undefined ? ' [' + r.error + ']' : ''}`);
 	}
 	return lines.join('\n');
 }

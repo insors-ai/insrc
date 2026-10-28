@@ -36,8 +36,8 @@ import { attemptsText } from './job.js';
 import type { AdapterStage, NotJudged, ReviewAdapter, ReviewMaterialSnapshot, StageAnswer, StageOutputs } from './types.js';
 
 /** A design review's snapshot: the document, taken once. */
-export function designReviewSnapshot(documentText: string): ReviewMaterialSnapshot {
-	return { kind: 'design-review', documentText };
+export function designReviewSnapshot(documentText: string, artifactPath?: string): ReviewMaterialSnapshot {
+	return { kind: 'design-review', documentText, ...(artifactPath !== undefined ? { artifactPath } : {}) };
 }
 
 /** The record of a premise whose judgement failed every attempt: MED, never a pass (ISSUE-d4b2cd1c).
@@ -80,7 +80,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		id: 'extract', kind: 'model', after: [], onCallFailure: 'fail-review',
 		// Today's extract prompt; like every structured review call, it runs in the repository (HLD).
 		singleCalls: () => {
-			const { system, user } = buildExtractPrompt(document, opts.stage);
+			const { system, user } = buildExtractPrompt(document, opts.stage, snapshot.artifactPath);
 			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-extract') } }];
 		},
 		chunkCalls: () => [],
@@ -101,6 +101,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		singleCalls: () => [], chunkCalls: () => [],
 		run: async (_prior, snap) => gatherEvidence([...(snap.claims ?? []) as Claim[]], opts.repo, {
 			readEntitiesForRepo: opts.readEntitiesForRepo,
+			artifactPath: snap.artifactPath, artifactText: snap.documentText,
 			onSourceRootFallback: reason => opts.onSourceRootFallback?.(reason),
 		}),
 		snapshotField: 'evidence',

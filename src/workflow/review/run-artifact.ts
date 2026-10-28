@@ -102,7 +102,7 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 		: undefined;
 
 	const base = {
-		repo: opts.repo, stage, provider: opts.provider, model: opts.model,
+		repo: opts.repo, artifactPath: opts.mdPath, stage, provider: opts.provider, model: opts.model,
 		...(design !== undefined ? { intent: design.intent, deadlineMs: design.deadlineMs } : {}),
 		...(opts.blockOn !== undefined ? { blockOn: opts.blockOn } : {}),
 		...(opts.reviewedAt !== undefined ? { reviewedAt: opts.reviewedAt } : {}),

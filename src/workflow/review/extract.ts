@@ -57,6 +57,8 @@ export const EXTRACT_SCHEMA: StructuredSchema = {
 						additionalProperties: false,
 						properties: {
 							greps: { type: 'array', items: { type: 'string' } },
+							grepScope: { type: 'string', enum: ['artifact', 'repository'] },
+							grepFiles: { type: 'array', minItems: 1, items: { type: 'string', minLength: 1 } },
 							reads: { type: 'array', items: { type: 'string' } },
 						},
 					},
@@ -72,7 +74,7 @@ interface RawClaim {
 	readonly kind: ClaimKind;
 	readonly text: string;
 	readonly anchors?: readonly string[] | undefined;
-	readonly probe?: { readonly greps?: readonly string[] | undefined; readonly reads?: readonly string[] | undefined } | undefined;
+	readonly probe?: { readonly greps?: readonly string[] | undefined; readonly reads?: readonly string[] | undefined; readonly grepScope?: 'artifact' | 'repository' | undefined; readonly grepFiles?: readonly string[] | undefined } | undefined;
 }
 
 interface ClaimsEnvelope {
@@ -99,9 +101,12 @@ function systemPrompt(stage: string): string {
 		'  - ordering          : a "depends on" / sequencing claim',
 		'',
 		'For each premise emit a `probe` — the DETERMINISTIC re-derivation:',
-		'  - `greps`: ripgrep PATTERNS (regex, passed as argv — no shell) that, run over `src/`,',
+		'  - `greps`: regex patterns, never shell commands; repository probes search the real source roots.',
 		'    would re-derive the inventory / union / member list or locate the cited symbol.',
-		'  - `reads`: `path:line` anchors (e.g. `src/foo.ts:42`) that would CONFIRM a citation verbatim.',
+		'  - `reads`: repo-contained path:line, path:line:column or inclusive path:start-end anchors.',
+		'  - `grepScope`: use artifact for counts, dependencies and citation usage INSIDE THIS DOCUMENT; use repository for codebase inventories and external source facts.',
+		'  - `grepFiles`: explicit repo-relative files when a probe must inspect particular other artifacts or source files. Do not combine with artifact scope.',
+		'Never use a repository-wide Depends on, kN or cN search to judge this artifact itself. Artifact scope searches the frozen reviewed text only.',
 		'Prefer a grep that RE-DERIVES a count over one that merely restates it. A count/inventory',
 		'premise MUST carry at least one `greps` pattern; a `file:line` citation MUST carry a `reads` anchor.',
 		'List the premise\'s `anchors` (the file paths / symbols / `file:line`s it names).',
@@ -137,11 +142,13 @@ function systemPrompt(stage: string): string {
 export function buildExtractPrompt(
 	artifactMarkdown: string,
 	stage:            string,
+	artifactPath?: string,
 ): { system: string; user: string } {
 	return {
 		system: systemPrompt(stage),
 		user: [
 			'Extract the load-bearing premises of the artifact below. Emit the claims JSON now.',
+			...(artifactPath !== undefined ? ['Reviewed artifact path: ' + artifactPath] : []),
 			'',
 			'--- ARTIFACT MARKDOWN (stage: ' + stage + ') ---',
 			artifactMarkdown,
@@ -207,6 +214,8 @@ function normalizeClaims(raw: readonly RawClaim[] | undefined): Claim[] {
 			probe: {
 				...(greps.length > 0 ? { greps } : {}),
 				...(reads.length > 0 ? { reads } : {}),
+				...(c.probe?.grepScope !== undefined ? { grepScope: c.probe.grepScope } : {}),
+				...(c.probe?.grepFiles !== undefined ? { grepFiles: c.probe.grepFiles } : {}),
 			},
 		});
 	}

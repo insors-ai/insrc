@@ -406,7 +406,7 @@ test('every premise judgement carries the design-verify cap and silence limit', 
 		const s = stallingProvider(0);
 		await runReview(ARTIFACT, { repo, stage: 'plan', provider: s.provider, ...BASE_OPTS });
 		assert.equal(s.verifyOpts.length, 3);
-		for (const o of s.verifyOpts) assert.deepEqual([o.timeoutMs, o.stallMs], [VERIFY_CALL_TIMEOUT_MS, VERIFY_CALL_STALL_MS]);
+		for (const o of s.verifyOpts) assert.deepEqual([o.timeoutMs, o.stallMs], [Math.min(VERIFY_CALL_TIMEOUT_MS, 300_000), VERIFY_CALL_STALL_MS]);
 		assert.deepEqual([VERIFY_CALL_TIMEOUT_MS, VERIFY_CALL_STALL_MS], [600_000, 90_000]);
 	} finally { cleanup(); }
 });

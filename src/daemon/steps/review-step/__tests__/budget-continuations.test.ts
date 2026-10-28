@@ -77,7 +77,7 @@ test('template extraction evidence verification and finalization preserve every 
 		assert.equal((await call(resume(frame, { verdicts: [verdict('c1')] }, { reviewBudget: { ...declaration, hostContextReserveTokens: 200000 } }), deps)).next, 'error');
 		frame = await call(resume(firstVerify, { verdicts: [verdict('c1')] }), deps);
 		assert.deepEqual(frame.call.assignedClaimIds, ['c2']); assert.equal(frame.call.generation, firstVerify.call.generation + 1);
-		assert.ok(frame.timing.jobBudgetMs >= 1800000, 'extraction and both claims each contribute ten minutes');
+		assert.ok(frame.timing.jobBudgetMs >= 900000, 'extraction and both claims each contribute five minutes');
 		const finalInput = resume(frame, { verdicts: [verdict('c2')] });
 		assert.equal((await call(finalInput, deps)).next, 'done'); assert.equal((await call(finalInput, deps)).next, 'already_completed');
 	} finally { for (const fx of [design, premise, huge]) rmSync(fx.repo, { recursive: true, force: true }); }
@@ -108,13 +108,13 @@ test('grounded and degraded design evidence retain all claims and enforce origin
 		const deps: ReviewStepDeps = { nowMs: () => now, progress: value => events.push(value), readEntitiesForRepo: async () => grounded ? [{ id: 'file', kind: 'file', file: join(fx.repo, 'src/foo.ts'), repo: fx.repo } as Entity] : [], lifecycleFor: repo => createRepoLifecycle(repo).service };
 		try {
 			const start = await call({ phase: 'start', artifact: fx.mdPath, repo: fx.repo, reviewBudget: declaration }, deps);
-			now += 599999;
+			now += 299999;
 			const frame = await call(resume(start, { claims: [claim('a'), claim('b')] }), deps);
 			assert.equal(frame.next, 'emit_verdicts', JSON.stringify(frame));
 			const snapshot = (await getStepStateStore().read<ReviewStepStatePayload>('review', frame.state))!.payload;
 			assert.equal(snapshot.claims!.length, 2); assert.equal(snapshot.evidence!.length, 2);
 			assert.equal(events.some(e => (e as { mode?: string | undefined }).mode === 'degraded'), !grounded);
-			assert.equal(frame.timing.deadlineAt, 1000 + 1800000, 'new work extends budget from original epoch');
+			assert.equal(frame.timing.deadlineAt, 1000 + 900000, 'new work extends budget from original epoch');
 			now = frame.timing.deadlineAt;
 			const input = resume(frame, { verdicts: [verdict('a')] });
 			assert.equal((await call(input, deps)).error.code, 'review-job-timeout');

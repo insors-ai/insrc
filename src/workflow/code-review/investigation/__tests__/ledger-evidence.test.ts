@@ -4,14 +4,7 @@ import assert from 'node:assert/strict';
 import { basisFixture } from './ledger-fixtures.js';
 import { admitLedgerEvidence } from '../ledger-evidence.js';
 import type { LedgerBasis, TrustedInspectionReceipt } from '../ledger-types.js';
-import { sourceReference } from '../source.js';
-export function inspectionFixture(basis:LedgerBasis=basisFixture()):TrustedInspectionReceipt {
- const digest='a'.repeat(64),contentRef=`git-blob:${'e'.repeat(40)}`,lines:[number,number]=[1,1];
- return {receiptId:'read-1',attempt:{runId:basis.runId,subjectDigest:basis.subject.subjectDigest,attemptId:'attempt-1'},kind:'changed-block',
-  source:{path:'a.ts',revision:'d'.repeat(40),digest,lines},role:'changed-scope',completeness:'complete',limitations:[],contentRef,
-  readReceipt:{reference:sourceReference({kind:'blob',oid:'e'.repeat(40),start:1,end:1}),sourceDigest:digest,contentRef,text:'old\n',lines,completeness:'complete',limitations:[]},
-  blockId:'block-1',artifactId:null,testResult:null,index:null};
-}
+import { inspectionFixture } from './ledger-fixtures.js';
 test('Trusted receipt admission, provenance, completeness and replay',()=>{
  const basis=basisFixture(),receipt=inspectionFixture(basis),evidence=admitLedgerEvidence(basis,receipt,receipt.attempt);
  assert.equal(evidence.role,'changed-scope');assert.equal(evidence.evidenceId,admitLedgerEvidence(basis,receipt,receipt.attempt).evidenceId);

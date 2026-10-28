@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { basisFixture } from './ledger-fixtures.js';
-import { inspectionFixture } from './ledger-evidence.test.js';
+import { inspectionFixture } from './ledger-fixtures.js';
 import { admitLedgerEvidence } from '../ledger-evidence.js';
 import { initializeReviewLedger, applyReviewLedgerDelta, validateReviewLedger } from '../ledger.js';
 import { appendImpactRequirements } from '../ledger-catalog.js';

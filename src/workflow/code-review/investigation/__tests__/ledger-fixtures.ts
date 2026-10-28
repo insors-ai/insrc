@@ -3,6 +3,8 @@ import type { LldArtifact } from '../../../artifacts/lld.js';
 import type { PlanArtifact } from '../../../artifacts/plan.js';
 import { identifySubject } from '../identity.js';
 import { buildLedgerBasis } from '../ledger-catalog.js';
+import { sourceReference } from '../source.js';
+import type { LedgerBasis, TrustedInspectionReceipt } from '../ledger-types.js';
 import type { LedgerCatalogInput } from '../ledger-catalog.js';
 const meta={workflow:'design.story' as const,runId:'lld-run',repoPath:'/repo',createdAt:'2026-10-28T00:00:00Z',elapsedMs:0,repoIndexedAt:null,schemaVersion:1,epicHash:'c32aa60534232f36',epicSlug:'test',storyId:'s1',revision:1};
 export function catalogFixture(): LedgerCatalogInput {
@@ -16,3 +18,11 @@ export function catalogFixture(): LedgerCatalogInput {
  return {runId:'run-1',subject,repoPath:'/repo',epicHash:meta.epicHash,policyVersion:'review-policy-v1',criteria:['adherence','conventions','coverage','quality'].map(id=>({id,text:`Judge ${id}`,allowNotApplicable:id==='adherence'})),lld:{pin:lldPin,artifact:lld},plan:{pin:planPin,artifact:plan},upstream:[]};
 }
 export const basisFixture=()=>buildLedgerBasis(catalogFixture());
+
+export function inspectionFixture(basis:LedgerBasis=basisFixture()):TrustedInspectionReceipt {
+ const digest='a'.repeat(64),contentRef=`git-blob:${'e'.repeat(40)}`,lines:[number,number]=[1,1];
+ return {receiptId:'read-1',attempt:{runId:basis.runId,subjectDigest:basis.subject.subjectDigest,attemptId:'attempt-1'},kind:'changed-block',
+  source:{path:'a.ts',revision:'d'.repeat(40),digest,lines},role:'changed-scope',completeness:'complete',limitations:[],contentRef,
+  readReceipt:{reference:sourceReference({kind:'blob',oid:'e'.repeat(40),start:1,end:1}),sourceDigest:digest,contentRef,text:'old\n',lines,completeness:'complete',limitations:[]},
+  blockId:'block-1',artifactId:null,testResult:null,index:null};
+}

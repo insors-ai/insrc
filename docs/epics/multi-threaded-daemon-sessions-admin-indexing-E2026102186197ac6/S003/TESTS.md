@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -258,3 +258,49 @@ Run at 2026-10-28T11:22:52.060Z on commit `29d2430be`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 5 | 18.9 s |  |
+
+## t11
+
+Run at 2026-10-28T11:32:55.336Z on commit `d3224a1c4`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: ac1: session B is answered on its own thread while session A's worker spins**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac1: session B is answered on its own thread while session A's worker spins | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**integration: ac2/ac3: one session over two connections runs in order on one worker thread, released after idle**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac2/ac3: one session over two connections runs in order on one worker thread, released after idle | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**integration: ac4: a session worker failure is contained; a throwing handler keeps its worker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac4: a session worker failure is contained; a throwing handler keeps its worker | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**unit: ac5: no Promise.all over provider calls in the new modules**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac5: no Promise.all over provider calls in the new modules | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**integration: ac5: a recording provider shows a session method's provider calls strictly sequential**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac5: a recording provider shows a session method's provider calls strictly sequential | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**integration: ac6: a token of each step kind resumes on a new worker after an idle release**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac6: a token of each step kind resumes on a new worker after an idle release | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/s3-acceptance.test.ts` | 0 | 6 | 20.1 s |  |

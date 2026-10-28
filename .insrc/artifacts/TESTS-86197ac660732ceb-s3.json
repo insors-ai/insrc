@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s3",
     "createdAt": "2026-10-28T06:11:04.160Z",
-    "updatedAt": "2026-10-28T11:22:52.060Z",
+    "updatedAt": "2026-10-28T11:32:55.336Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -773,6 +773,127 @@
               },
               {
                 "title": "boot: threads disabled runs every session method on the main thread as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "d3224a1c4",
+        "ranAt": "2026-10-28T11:32:55.336Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ac1: session B is answered on its own thread while session A's worker spins",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "title": "ac1: session B is answered on its own thread while session A's worker spins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac2/ac3: one session over two connections runs in order on one worker thread, released after idle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "title": "ac2/ac3: one session over two connections runs in order on one worker thread, released after idle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac4: a session worker failure is contained; a throwing handler keeps its worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "title": "ac4: a session worker failure is contained; a throwing handler keeps its worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac5: no Promise.all over provider calls in the new modules",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "title": "ac5: no Promise.all over provider calls in the new modules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac5: a recording provider shows a session method's provider calls strictly sequential",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "title": "ac5: a recording provider shows a session method's provider calls strictly sequential",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ac6: a token of each step kind resumes on a new worker after an idle release",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+                "title": "ac6: a token of each step kind resumes on a new worker after an idle release",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 20130,
+            "titles": [
+              {
+                "title": "ac1: session B is answered on its own thread while session A's worker spins",
+                "result": "pass"
+              },
+              {
+                "title": "ac2/ac3: one session over two connections runs in order on one worker thread, released after idle",
+                "result": "pass"
+              },
+              {
+                "title": "ac4: a session worker failure is contained; a throwing handler keeps its worker",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: no Promise.all over provider calls in the new modules",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a recording provider shows a session method's provider calls strictly sequential",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: a token of each step kind resumes on a new worker after an idle release",
                 "result": "pass"
               }
             ],

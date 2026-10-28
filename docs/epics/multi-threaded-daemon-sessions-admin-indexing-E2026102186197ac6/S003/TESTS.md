@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -304,3 +304,25 @@ Run at 2026-10-28T11:32:55.336Z on commit `d3224a1c4`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/s3-acceptance.test.ts` | 0 | 6 | 20.1 s |  |
+
+## t12
+
+Run at 2026-10-28T11:36:36.954Z on commit `83fa705f6`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**smoke: ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**integration: parity: moved session methods answer over the socket as the single-thread daemon does**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | parity: moved session methods answer over the socket as the single-thread daemon does | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/s3-acceptance.test.ts` | 0 | 8 | 38.7 s |  |

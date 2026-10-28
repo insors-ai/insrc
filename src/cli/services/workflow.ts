@@ -104,6 +104,14 @@ export function chainText(repoPath: string, epicHash: string): string {
 	return formatChainReport(buildChainReport(repoPath, epicHash));
 }
 
+/** The error of a daemon answer `{ error }`; a refusal keeps the name the terminal's commands print it by (the error crossed the socket as text). */
+export function refusalErrorOf(failed: { readonly error: string; readonly refusal?: { readonly kind: string; readonly text: string } | undefined }): Error {
+	const error = new Error(failed.error);
+	if (failed.refusal?.kind === 'review-blocked') Object.assign(error, { name: 'ReviewBlockedError', summary: failed.refusal.text });
+	if (failed.refusal?.kind === 'team-refused') Object.assign(error, { name: 'TeamGateRefusedError', reason: failed.refusal.text });
+	return error;
+}
+
 /**
  * The call of a daemon method (Story s10): `rpc` that rejects on a premature close and sets no timer. An older daemon that does not know the
  * method is a clear error and nothing runs locally in its place. A `{ error }` answer is thrown as the error it names.
@@ -125,12 +133,7 @@ export async function callDaemon<T>(method: string, params: unknown, connect?: (
 		throw err;
 	}
 	if (reply !== null && typeof reply === 'object' && 'error' in reply && typeof (reply as { error: unknown }).error === 'string') {
-		const failed = reply as { error: string; refusal?: { kind: string; text: string } };
-		const error = new Error(failed.error);
-		// a refusal keeps the name the terminal's commands print it by (the error crossed the socket as text)
-		if (failed.refusal?.kind === 'review-blocked') Object.assign(error, { name: 'ReviewBlockedError', summary: failed.refusal.text });
-		if (failed.refusal?.kind === 'team-refused') Object.assign(error, { name: 'TeamGateRefusedError', reason: failed.refusal.text });
-		throw error;
+		throw refusalErrorOf(reply as { error: string; refusal?: { kind: string; text: string } });
 	}
 	return reply as T;
 }

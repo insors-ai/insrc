@@ -11,7 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { approve } from '../../cli/services/workflow.js';
+import { approveThroughPipeline as approve } from './helpers/approve-pipeline.js';
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
 import { hldArtifactPaths, lldArtifactPaths, planArtifactPaths } from '../storage.js';
 import { type TrackerExec } from '../tracker/github.js';

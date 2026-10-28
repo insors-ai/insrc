@@ -223,7 +223,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['workflow.run.abort', 'session', false],
 	['workflow.run.poll', 'session', false],
 	['workflow.run.start', 'session', false],
-	// Session: approval, team hand-over, feedback and identity, repo settings and conversion, tracker attach and sync.
+	// Session: approval, team hand-over, claim and release, feedback and identity, repo settings and conversion, tracker attach, sync and setup, the approve pipeline, review and finding resolution.
 	['approval.answer', 'session', false],
 	['artifact.feedback.add', 'session', false],
 	['artifact.feedback.list', 'session', false],
@@ -233,11 +233,19 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['repo.settings.get', 'session', false],
 	['repo.settings.set', 'session', false],
 	['repo.trackerConfig.ensure', 'session', false],
+	['team.claim', 'session', false],
 	['team.park', 'session', false],
+	['team.refresh', 'session', false],
+	['team.release', 'session', false],
 	['team.resume', 'session', false],
 	['team.settle', 'session', false],
 	['tracker.attach', 'session', false],
+	['tracker.setup', 'session', false],
+	['tracker.sync', 'session', false],
 	['tracker.syncComments', 'session', false],
+	['workflow.approvePipeline', 'session', false],
+	['workflow.reviewArtifact', 'session', false],
+	['workflow.resolveFinding', 'session', false],
 	// Session: every stream method.
 	['analyze.run.start', 'session', true],
 	['approval.subscribe', 'session', true],

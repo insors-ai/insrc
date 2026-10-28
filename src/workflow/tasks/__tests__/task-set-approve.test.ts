@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { approve } from '../../../cli/services/workflow.js';
+import { approveThroughPipeline as approve } from '../../__tests__/helpers/approve-pipeline.js';
 import { followOnTasksSync } from '../../../daemon/tasks-sync.js';
 import { approveJson } from '../../__tests__/helpers/approve.js';
 import { approvalStateOf } from '../../artifact-core/approval-view.js';

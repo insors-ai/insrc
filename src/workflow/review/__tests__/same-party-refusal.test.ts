@@ -31,7 +31,7 @@ afterAll(async () => {
 	rmSyncForStore(STORE_DIR, { recursive: true, force: true });
 });
 
-import { reviewArtifact } from '../../../cli/services/workflow.js';
+import { handleReviewArtifact } from '../../../daemon/team-review-handlers.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { reviewArtifactFile, SamePartyReviewError } from '../index.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../template.js';
@@ -119,12 +119,12 @@ for (const kind of ['DEF', 'LLD'] as const) {
 	}
 }
 
-test('T15 the TUI review service surfaces the refusal, naming a controller review or an override', async () => {
+test('T15 the daemon method the TUI review service calls surfaces the refusal, naming a controller review or an override', async () => {
 	for (const kind of ['DEF', 'LLD'] as const) {
 		const f = fixture(kind, { authoredBy: 'daemon' });
 		try {
 			const before = readFileSync(f.json, 'utf8');
-			await assert.rejects(reviewArtifact(f.repo, f.md), (e: unknown) => {
+			await assert.rejects(handleReviewArtifact({ repoPath: f.repo, artifactPath: f.md }), (e: unknown) => {
 				assert.ok(e instanceof SamePartyReviewError, `got ${String(e)}`);
 				assert.match(e.message, /controller review \(insrc_review_step/);
 				assert.match(e.message, /override reason at approval/);

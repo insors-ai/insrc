@@ -78,7 +78,8 @@ export async function reconcilePlanFollowOn(path: string): Promise<{ readonly en
 			},
 		};
 	}
-	if ('error' in sync) return { stop: true, entry: { kind: 'tasks-sync', artifactPath: path, ok: false, note: sync.error, taskSync: sync } };
+	// an ordinary failure of the reconciliation never fails the approval or the steps after it, as before; only a denial stops them
+	if ('error' in sync) return { stop: false, sync, entry: { kind: 'tasks-sync', artifactPath: path, ok: false, note: sync.error, taskSync: sync } };
 	return {
 		stop: false, sync,
 		entry: {

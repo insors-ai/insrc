@@ -172,7 +172,10 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 
 		// the terminal runs the gate in its own process (no run store): its refusals offer to park an uncommitted draft
 		registerParkOfferProvider(undefined);
-		const services = makeServices();   // registers the terminal's provider
+		// the claim runs at the daemon: its handler stands in for it here, with the provider this process registers
+		const base = makeServices();   // registers a provider for this process
+		const { handleTeamClaim } = await import('../../../daemon/team-review-handlers.js');
+		const services = { ...base, team: { ...base.team, teamClaim: (repoPath: string, unit: never) => handleTeamClaim({ repoPath, unit }) } };
 		const term = { repoPath: repo, onLog: () => undefined, services } as unknown as CommandCtx;
 		const draft = join(repo, `docs/epics/tag-filtering-E20260718${HASH.slice(0, 8)}/S001/LLD.md`);
 		assert.deepEqual(await runCommand(`team claim ${HASH} s1`, term), ['✗ not claimed — held by bob'], 'no draft: no offer');

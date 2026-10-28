@@ -28,7 +28,7 @@ export async function handleWorkflowApprove(
 	repoEnv: string | undefined,
 	deps: WorkflowApproveDeps = {},
 ): Promise<WorkflowApproveResult | { error: string }> {
-	const p = (params ?? {}) as { repo?: string; artifactPath?: string; epicHash?: string; overrideReview?: string; actor?: unknown };
+	const p = (params ?? {}) as { repo?: string; artifactPath?: string; epicHash?: string; overrideReview?: string; actor?: unknown; skipKinds?: boolean };
 	const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv) ?? '';
 	// repo is only needed to locate the epic's artifacts dir for a batch; a single artifactPath names its own repository.
 	if (p.epicHash !== undefined && repoPath.length === 0) {
@@ -51,6 +51,7 @@ export async function handleWorkflowApprove(
 		...(p.artifactPath !== undefined ? { artifactPath: p.artifactPath } : {}),
 		...(p.epicHash !== undefined ? { epicHash: p.epicHash } : {}),
 		...(p.overrideReview !== undefined ? { overrideReview: p.overrideReview } : {}),
+		...(p.skipKinds === true ? { skipKinds: true } : {}),
 		lifecycle,
 		actor,
 	});
@@ -78,7 +79,7 @@ export async function handleApprovePipeline(
 	if (p.withTracker !== undefined && typeof p.withTracker !== 'boolean') return { error: 'workflow.approvePipeline: `withTracker` must be a boolean' };
 	const withTracker = p.withTracker !== false;
 	// the terminal names the artifact by its .md or its .json path; the approval is made on the json
-	const r = await handleWorkflowApprove({ ...(params as object), artifactPath: jsonPathForMd(p.artifactPath), epicHash: undefined }, repoEnv, { ...deps, followOn: followOnFor(withTracker) });
+	const r = await handleWorkflowApprove({ ...(params as object), artifactPath: jsonPathForMd(p.artifactPath), epicHash: undefined, skipKinds: true }, repoEnv, { ...deps, followOn: followOnFor(withTracker) });
 	if ('error' in r) return r;
 	const first = r.approved[0];
 	if (first === undefined) {

@@ -825,6 +825,8 @@ export interface WorkflowApproveRequest {
 	readonly artifactPath?:  string;
 	readonly epicHash?:      string;
 	readonly overrideReview?: string;
+	/** Name the cause of a review block or a team refusal on each skipped entry (`kind`); absent, the entries are exactly as before. */
+	readonly skipKinds?:     boolean | undefined;
 	/**
 	 * The lifecycle service. The full integrity check (the head against the change log) runs through it before a BUILD record is
 	 * touched or anything is approved, the approval is applied through it, the log is kept in step with the BUILD record hook, and a
@@ -1007,9 +1009,9 @@ export async function approveWorkflowTarget(
 			completeAfter = true;
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
-				skipped.push({ path: jsonPath, reason: err.summary, kind: 'review-blocked' });
+				skipped.push({ path: jsonPath, reason: err.summary, ...(req.skipKinds === true ? { kind: 'review-blocked' as const } : {}) });
 			} else if (err instanceof TeamGateRefusedError) {
-				skipped.push({ path: jsonPath, reason: err.reason, kind: 'team-refused' });
+				skipped.push({ path: jsonPath, reason: err.reason, ...(req.skipKinds === true ? { kind: 'team-refused' as const } : {}) });
 			} else if (err instanceof LifecycleConflictError || err instanceof ReviewRequiredError || err instanceof IllegalTransitionError) {
 				skipped.push({ path: jsonPath, reason: err.message });
 			} else {

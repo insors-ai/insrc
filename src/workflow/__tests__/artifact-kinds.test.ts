@@ -12,7 +12,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, existsSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { approve as tuiApprove, reject as tuiReject, listEpics } from '../../cli/services/workflow.js';
+import { reject as tuiReject, listEpics } from '../../cli/services/workflow.js';
+import { approveThroughPipeline as tuiApprove } from './helpers/approve-pipeline.js';
 import { listAmendments, nextAmendmentId } from '../amendments/store.js';
 import { scanLldStaleness } from '../amendments/staleness.js';
 import type { HldArtifact } from '../artifacts/hld.js';
@@ -188,8 +189,9 @@ test("approval of a TESTS record by its md path and by its json path through the
 		unchanged();
 
 		// The TUI's service, which calls them directly.
-		await assert.rejects(tuiApprove(md, false), (err: unknown) => err instanceof NotApprovableError && err.message.startsWith('not-approvable:'));
-		await assert.rejects(tuiApprove(json, false, 'because'), NotApprovableError);
+		// the terminal's approve runs at the daemon, which refuses it in the same words (the error crosses the socket as text)
+		await assert.rejects(tuiApprove(md, false), (err: unknown) => err instanceof Error && err.message.startsWith('not-approvable:'));
+		await assert.rejects(tuiApprove(json, false, 'because'), (err: unknown) => err instanceof Error && err.message.startsWith('not-approvable:'));
 		await assert.rejects(tuiReject(md, 'no'), NotApprovableError);
 		await assert.rejects(tuiReject(json, 'no'), NotApprovableError);
 		unchanged();

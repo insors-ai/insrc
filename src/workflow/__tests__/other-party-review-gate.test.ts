@@ -17,7 +17,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { approve as tuiApprove } from '../../cli/services/workflow.js';
+import { approveThroughPipeline as tuiApprove } from './helpers/approve-pipeline.js';
 import { approvalStateOf, lifecycleOfMeta } from '../artifact-core/approval-view.js';
 import { approveWorkflowTarget, ReviewBlockedError } from '../gates.js';
 import { approveJson } from './helpers/approve.js';
@@ -65,6 +65,11 @@ const metaOf = (p: string) => (JSON.parse(readFileSync(p, 'utf8')) as { meta: Re
 const isApproved = (p: string): boolean => approvalStateOf(metaOf(p)) === 'approved';
 /** The reason the approval was given over a block or a missing review, or undefined. */
 const overrideOf = (p: string): string | undefined => ((lifecycleOfMeta(metaOf(p))?.['approval'] as { override?: { reason: string } } | undefined)?.override)?.reason;
+
+/** The terminal's approve runs at the daemon, which answers a review block as its kind and summary (the full message stays on the in-process error). */
+async function blockedAtDaemon(fn: () => Promise<unknown>, summary: RegExp): Promise<void> {
+	await assert.rejects(fn(), (e: unknown) => { assert.ok(e instanceof Error && e.name === 'ReviewBlockedError', `got ${String(e)}`); assert.match((e as { summary: string }).summary, summary); return true; });
+}
 
 /** A call that must be withheld by the review rule, with the summary and message it gives. */
 async function blocked(fn: () => Promise<unknown>, summary: RegExp, message?: RegExp): Promise<void> {
@@ -271,16 +276,16 @@ test('T7 the TUI approve service applies the same rules: it calls the same funct
 	const r = repo();
 	try {
 		const p = build(r.dir, 'controller');
-		await blocked(() => tuiApprove(p, false), /completion requires a code review; none was run/, /Run insrc_code_review_step first/);
+		await blockedAtDaemon(() => tuiApprove(p, false), /completion requires a code review; none was run/);
 		writeCR(r.dir, 's1', { reviewedBy: 'controller' });
-		await blocked(() => tuiApprove(p, false), /code review was done by the party that authored the work \(controller\)/, /insrc_code_review_step/);
+		await blockedAtDaemon(() => tuiApprove(p, false), /code review was done by the party that authored the work \(controller\)/);
 		assert.ok(!isApproved(p));
 		const out = await tuiApprove(p, false, 'approved from the TUI');
 		assert.equal(out.approval.path, p);
 		assert.equal(overrideOf(p), 'approved from the TUI');
 
 		const def = write(r.dir, `DEF-${HASH}.json`, { workflow: 'define', authoredBy: 'controller' });
-		await blocked(() => tuiApprove(def, false), /approval requires a review; none was run/);
+		await blockedAtDaemon(() => tuiApprove(def, false), /approval requires a review; none was run/);
 		stampOtherPartyReview(def);
 		await tuiApprove(def, false);
 		assert.ok(isApproved(def));

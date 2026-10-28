@@ -28,6 +28,7 @@ import * as registry from '../workflow-run-registry.js';
 import type { StartRunDeps } from '../workflow-run-registry.js';
 import type { LLMProvider, LLMMessage, StructuredSchema } from '../../shared/types.js';
 import type { PreparedWorkflowRun } from '../workflow-rpc.js';
+import { StatusBoard } from '../threads/status-board.js';
 
 // ---------------------------------------------------------------------------
 // Fakes (mirrors workflow-rpc.test.ts).
@@ -93,6 +94,7 @@ async function pollUntilTerminal(runId: string, timeoutMs = 5000): Promise<regis
 
 afterEach(() => {
 	registry._resetWorkflowRuns();
+	registry.setRunBoard(undefined);
 });
 
 // ---------------------------------------------------------------------------
@@ -199,5 +201,49 @@ test('abortWorkflowRun flips a running run to aborted; unknown runId → ok:fals
 
 		assert.deepEqual(registry.abortWorkflowRun('nope'), { ok: false });
 		release?.();   // unstick the hanging promise so the process can exit
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('workflow run registry: poll from the board returns frames since cursor, model, result and error; unknown after forgetRun', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-reg-board-'));
+	try {
+		const board = new StatusBoard();
+		registry.setRunBoard(board);
+		const { runId } = registry.startWorkflowRun({ workflow: 'stub', focus: 'demo stub run', repo }, stubDeps(repo, new FakeProvider([STUB_PLAN, STUB_ARTIFACT]), 'wf-reg-board'));
+		const done = await pollUntilTerminal(runId);
+		assert.equal(done.status, 'done');
+		const local = registry.pollWorkflowRun(runId, 0);
+		// This thread's own runs are dropped: every answer below comes from the board alone.
+		registry._resetWorkflowRuns();
+		const all = await registry.pollRun(runId, 0);
+		assert.deepEqual(all, local, 'the board answers exactly what the owner would: frames, cursor, model, result');
+		const record = board.snapshot().runs.find(r => r.runId === runId)!;
+		assert.equal(record.ownerThreadId, (await import('node:worker_threads')).threadId);
+		const tail = await registry.pollRun(runId, 2);
+		assert.deepEqual(tail.frames, local.frames.slice(2), 'frames since the cursor');
+		assert.equal(tail.cursor, local.cursor);
+		// A run that ended in an error carries it on the board too.
+		board.publishRun({ ...record, runId: 'wf-err', status: 'error', error: 'workflow.run: boom', result: undefined });
+		assert.equal((await registry.pollRun('wf-err', 0)).error, 'workflow.run: boom');
+		board.forgetRun(runId);
+		const gone = await registry.pollRun(runId, 0);
+		assert.equal(gone.status, 'unknown');
+		assert.deepEqual(gone.frames, []);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('workflow run registry: with threads disabled start/poll/abort answer as today', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-reg-local-'));
+	try {
+		registry.setRunBoard(undefined);
+		const { runId } = registry.startWorkflowRun({ workflow: 'stub', focus: 'demo stub run', repo }, stubDeps(repo, new FakeProvider([STUB_PLAN, STUB_ARTIFACT]), 'wf-reg-local'));
+		assert.equal((await registry.pollRun(runId, 0)).status, 'running', 'polled from this thread\'s own runs while it runs');
+		const done = await pollUntilTerminal(runId);
+		assert.equal(done.status, 'done');
+		// Once it has ended the frames stop changing: the handler's poll is exactly today's local poll.
+		assert.deepEqual(await registry.pollRun(runId, 0), registry.pollWorkflowRun(runId, 0), 'the handler\'s poll is today\'s local poll');
+		assert.deepEqual(await registry.pollRun(runId, 1), registry.pollWorkflowRun(runId, 1));
+		assert.deepEqual(registry.abortWorkflowRun('wf-missing'), { ok: false });
+		assert.equal((await registry.pollRun('wf-missing', 0)).status, 'unknown');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

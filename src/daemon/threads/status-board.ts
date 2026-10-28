@@ -120,6 +120,9 @@ export class StatusBoard {
 		this.runs.set(run.runId, run);
 	}
 
+	/** Remove a run the owner's retention evicted (an additive sc4 method, s3); a later poll for it answers 'unknown'. */
+	forgetRun(runId: string): void { this.runs.delete(runId); }
+
 	/** Remove a thread's status (its worker exited or was released). */
 	forget(threadId: number): void { this.threads.delete(threadId); }
 
@@ -140,7 +143,7 @@ export class StatusBoard {
 
 const OPS = {
 	publish: 'board.publish', publishIndexing: 'board.publishIndexing', publishLane: 'board.publishLane', publishClients: 'board.publishClients',
-	publishRun: 'board.publishRun', publishStore: 'board.publishStore', snapshot: 'board.snapshot',
+	publishRun: 'board.publishRun', forgetRun: 'board.forgetRun', publishStore: 'board.publishStore', snapshot: 'board.snapshot',
 	publishIndexRuns: 'board.publishIndexRuns',
 } as const;
 
@@ -152,6 +155,7 @@ export function statusBoardHubHandlers(board: StatusBoard): HubHandlers {
 		[OPS.publishLane]:     a => { const { lane, status, sweep } = a as { lane: 'index' | 'summary'; status: LaneStatus; sweep?: SummarySweepProgress }; board.publishLane(lane, status, sweep); },
 		[OPS.publishClients]:  a => board.publishClients(a as readonly AttachedClientSnapshot[]),
 		[OPS.publishRun]:      a => board.publishRun(a as RunRecord),
+		[OPS.forgetRun]:       a => board.forgetRun(a as string),
 		[OPS.publishStore]:    a => board.publishStore(a as StoreStatusSnapshot),
 		[OPS.snapshot]:        () => board.snapshot(),
 		[OPS.publishIndexRuns]: a => board.publishIndexRuns(a as readonly IndexRunView[]),
@@ -168,6 +172,7 @@ export class StatusBoardClient {
 	}
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.hub.send(OPS.publishClients, clients); }
 	publishRun(run: RunRecord): void { this.hub.send(OPS.publishRun, run); }
+	forgetRun(runId: string): void { this.hub.send(OPS.forgetRun, runId); }
 	publishStore(store: StoreStatusSnapshot): void { this.hub.send(OPS.publishStore, store); }
 	publishIndexRuns(runs: readonly IndexRunView[]): void { this.hub.send(OPS.publishIndexRuns, runs); }
 	snapshot(): Promise<StatusSnapshot> { return this.hub.request<StatusSnapshot>(OPS.snapshot, null); }

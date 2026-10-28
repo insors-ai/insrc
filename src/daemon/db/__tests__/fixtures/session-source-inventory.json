@@ -13052,7 +13052,7 @@
       ],
       "siteCount": 184,
       "sitesDigest": "552fadddbe2e68ae83937e09db71000715d39b1c47bd7c3f3006d6d30711d3d3",
-      "sourceDigest": "0d103f46b2ba5c4e7d437c72f7b2f0bee144a0c702430c8fd40694e45f90fd1d",
+      "sourceDigest": "24157c4f183a068b73fbcabe3eae2cf5f107278dd646bdf5a7142fa109bd5a66",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -15731,11 +15731,15 @@
         [
           "serialization",
           "this.hub.send"
+        ],
+        [
+          "serialization",
+          "this.hub.send"
         ]
       ],
-      "siteCount": 10,
-      "sitesDigest": "f19dbc2a1566b58d893066b7136112bd4f29028ae170ff553819257aaee09125",
-      "sourceDigest": "34856c12b55e9d43519003150de982e9a142a3c9f737cb37328a9292af832f14",
+      "siteCount": 11,
+      "sitesDigest": "7ec341728c3963d89f0caba3dc588c6d933ba97660a25cb1f15ea09ff42ea7f4",
+      "sourceDigest": "5245fb165f7c4dd1481994766d7f4a23d6d55af72698ec04b2ec234d3c28ea92",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -18824,13 +18828,34 @@
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "serialization",
+          "publish"
+        ],
+        [
+          "serialization",
+          "publish"
+        ],
+        [
+          "serialization",
+          "publish"
+        ],
+        [
+          "serialization",
+          "publish"
+        ],
+        [
+          "serialization",
+          "publish"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "f67fe64e87b0c43400e006665aafe3ce33ac1c2b4e0e5acf3185c741f41fbf85",
-      "sourceDigest": "296dfe48fc8166d753220b49f24a402688be7a6db5d0bf6764b2030079370516",
+      "siteCount": 8,
+      "sitesDigest": "222c86d7e5fe48ab57f377f7c40ea16e0971e296a13116c9c47f95af2a699d22",
+      "sourceDigest": "e1490b73b9f94a01064d6a21d6ab379d6d2941f13a041afcff26e73219a8c739",
       "boundaries": [
-        "diagnostic"
+        "diagnostic",
+        "serialization"
       ]
     },
     "src/db/compaction.ts": {

@@ -19,9 +19,12 @@
  * same provider as the streaming path.
  */
 
+import { threadId } from 'node:worker_threads';
+
 import { getLogger } from '../shared/logger.js';
 import { runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { appendProgressLog } from '../workflow/storage.js';
+import type { RunRecord, StatusSnapshot } from './threads/status-board.js';
 import {
 	formatProgressDetail,
 	prepareWorkflowRun,
@@ -75,6 +78,33 @@ const runs = new Map<string, RunState>();
  *  (a running run is never evicted). Simple size-cap GC — no timers. */
 const MAX_RUNS = 64;
 
+/**
+ * Where detached runs are mirrored for other threads (Epic 86197ac6 s3, sc4): the status
+ * board, or a worker's client of it. Without one (daemon threads off) polls answer from
+ * this thread's own runs, as before.
+ */
+export interface RunBoard {
+	publishRun(run: RunRecord): void;
+	forgetRun(runId: string): void;
+	snapshot(): StatusSnapshot | Promise<StatusSnapshot>;
+}
+let board: RunBoard | undefined;
+
+/** Mirror this thread's runs to `b` (undefined: stop mirroring). */
+export function setRunBoard(b: RunBoard | undefined): void {
+	board = b;
+}
+
+/** The run's full poll state, published after every frame and at its end; the owner is this thread. */
+function publish(state: RunState): void {
+	board?.publishRun({
+		runId: state.runId, status: state.status, ownerThreadId: threadId, startedAt: state.startedAt, model: state.model,
+		frames: [...state.frames],
+		...(state.result !== undefined ? { result: state.result } : {}),
+		...(state.error !== undefined ? { error: state.error } : {}),
+	});
+}
+
 /** Test seam: clear the registry between cases. */
 export function _resetWorkflowRuns(): void {
 	runs.clear();
@@ -97,13 +127,14 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 	const abort = new AbortController();
 	const state: RunState = { runId, status: 'running', frames: [], model: modelLabel, abort, startedAt: Date.now() };
 	runs.set(runId, state);
+	publish(state);
 	gc();
 
 	// Fire-and-forget: build the same drive closure as the streaming handler,
 	// but land progress frames in the state buffer instead of the socket.
 	const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
 		runId, epicKey, modelLabel, signal: abort.signal, router, cfg, repoPath,
-		onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); state.frames.push(f); },
+		onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); state.frames.push(f); publish(state); },
 		...(review !== undefined ? { review } : {}),
 	});
 	// Establish the sc6 RoutingSeamContext (S005) around the drive so the deep
@@ -120,6 +151,7 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 			// Refresh the seeded run-wide label with the artifact's per-output
 			// attribution summary (S004/sc5) so `poll` surfaces the real models used.
 			state.model = result.model;
+			publish(state);
 			log.info({ runId, path: result.path }, 'workflow.run (async) done');
 		},
 		(err: unknown) => {
@@ -130,6 +162,7 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 				state.status = 'error';
 				state.error  = err instanceof Error ? err.message : String(err);
 			}
+			publish(state);
 			log.warn({ runId, status: state.status, err: state.error }, 'workflow.run (async) ended non-ok');
 		},
 	);
@@ -156,6 +189,27 @@ export function pollWorkflowRun(runId: string, cursor = 0): PollResult {
 	};
 }
 
+/**
+ * The poll the workflow.run.poll handler answers: from the board when this thread mirrors
+ * runs there (so any thread answers for any owner), else from this thread's own runs.
+ */
+export async function pollRun(runId: string, cursor = 0): Promise<PollResult> {
+	if (board === undefined) return pollWorkflowRun(runId, cursor);
+	const record = (await board.snapshot()).runs.find(r => r.runId === runId);
+	if (record === undefined) {
+		return { status: 'unknown', frames: [], cursor, error: `workflow.run: unknown runId '${runId}'` };
+	}
+	const from = cursor > 0 ? cursor : 0;
+	return {
+		status: record.status,
+		frames: record.frames.slice(from) as WorkflowProgress[],
+		cursor: record.frames.length,
+		model:  record.model,
+		...(record.result !== undefined ? { result: record.result as RunWorkflowResult } : {}),
+		...(record.error  !== undefined ? { error:  record.error }  : {}),
+	};
+}
+
 /** Abort a running run: signal the driver (checked at every step) and flip the
  *  status to `'aborted'` if it was still running. Idempotent; `ok:false` for an
  *  unknown runId. */
@@ -163,7 +217,7 @@ export function abortWorkflowRun(runId: string): { ok: boolean } {
 	const state = runs.get(runId);
 	if (state === undefined) return { ok: false };
 	state.abort.abort();
-	if (state.status === 'running') state.status = 'aborted';
+	if (state.status === 'running') { state.status = 'aborted'; publish(state); }
 	return { ok: true };
 }
 
@@ -177,5 +231,6 @@ function gc(): void {
 	for (const s of terminal) {
 		if (runs.size <= MAX_RUNS) break;
 		runs.delete(s.runId);
+		board?.forgetRun(s.runId);
 	}
 }

@@ -136,3 +136,29 @@ test('a status published from a worker appears in a main-thread snapshot', async
 		await worker.terminate();
 	}
 });
+
+test('board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread', async () => {
+	const { mkdtempSync, rmSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-run-board-'));
+	const board = new StatusBoard();
+	const { port1: main, port2: workerPort } = new MessageChannel();
+	serveHub(main, statusBoardHubHandlers(board));
+	const worker = new Worker(join(HERE, 'helpers', 'run-board-worker.ts'), { workerData: { port: workerPort, repo }, transferList: [workerPort] });
+	try {
+		const msg = await new Promise<{ threadId: number; runId: string }>((res, rej) => { worker.once('message', res); worker.once('error', rej); });
+		const record = board.snapshot().runs.find(r => r.runId === msg.runId);
+		assert.ok(record !== undefined, 'the worker\'s run is on the main-thread board');
+		assert.equal(record.ownerThreadId, msg.threadId, 'owned by the thread that published it');
+		assert.notEqual(record.ownerThreadId, 0, 'not the main thread');
+		assert.equal(record.status, 'done');
+		assert.ok(record.frames.length > 0, 'its progress frames came with it');
+		worker.postMessage('forget');
+		await new Promise<void>((res, rej) => { worker.once('message', () => res()); worker.once('error', rej); });
+		assert.equal(board.snapshot().runs.some(r => r.runId === msg.runId), false, 'forgotten through the hub');
+	} finally {
+		main.close();
+		await worker.terminate();
+		rmSync(repo, { recursive: true, force: true });
+	}
+});

@@ -1589,7 +1589,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'workflow.run.poll': async (params) => {
 			const mod = await import('./workflow-run-registry.js');
 			const p = (params ?? {}) as { runId?: string; cursor?: number };
-			return mod.pollWorkflowRun(String(p.runId ?? ''), p.cursor ?? 0);
+			return mod.pollRun(String(p.runId ?? ''), p.cursor ?? 0);
 		},
 		'workflow.run.abort': async (params) => {
 			const mod = await import('./workflow-run-registry.js');

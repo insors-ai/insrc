@@ -189,6 +189,13 @@
         "choice": "Trust CLAUDE.md as sole source",
         "rationale": "node:test via tsx is the repo's only test runner (CLAUDE.md build section), and every existing thread test (src/daemon/threads/__tests__) uses it.",
         "resolvedAt": "2026-10-28T05:28:29.500Z"
+      },
+      "q5bd35adf": {
+        "question": "alt2 (partial): s3 scores every alternative against ac1-ac7 and sc1-sc6, but not against the Epic constraints k1-k7 as separate entries. k1, k2, k6 and k7 are covered through the acceptance criteria that operationalize them; k3, k4 and k5 are not scored separately.",
+        "status": "resolved",
+        "choice": "Document-as-is",
+        "rationale": "k3 (two indexing threads), k4 (daemon-only store access) and k5 (unchanged IPC contract) hold identically under a1, a2 and a3: none of them moves indexing, opens a store outside the daemon or changes a method or response shape, so they do not discriminate between the alternatives.",
+        "resolvedAt": "2026-10-28T05:29:40.599Z"
       }
     }
   },

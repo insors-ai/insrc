@@ -210,6 +210,13 @@
         "choice": "Defer to Epic 484fcef7, descope s3",
         "rationale": "User decision 2026-10-28: s3 leaves src/daemon/threads/channel.ts alone; connection-scoped requests (trusted connectionSession, session-memory execution, MAIN_DAEMON_CONNECTION_METHODS) keep running on the main thread, and FR4 / s4 ac1 stay unmet for them. A work item is logged (plans/connection-session-worker-crossing.md) to let them cross the worker channel once the other session's work (Epic 484fcef7 BUILD approvals and Story 34798d20) is complete.",
         "resolvedAt": "2026-10-28T06:00:08.633Z"
+      },
+      "qd4a9c775": {
+        "question": "The HLD risk table (docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/HLD.md:408) assigned the module-scope state inventory to s1, but none exists; this LLD classifies the process-wide families it found (chat pool, todos bus, understanding service, run registry). Should the full inventory be delivered here, as a test over every module-scope mutable value reachable from a session handler, or tracked separately?",
+        "status": "resolved",
+        "choice": "Ship found families, track the gap separately",
+        "rationale": "User decision 2026-10-28: s3 tests the four process-wide families it found (chat session pool, todos event bus, understanding service, workflow run registry) and that each has exactly one owner thread. The exhaustive sweep of every module-scope mutable value reachable from a session handler (the HLD risk-table item at HLD.md:408, assigned to s1 but never delivered) is a follow-up, logged as plans/module-state-inventory-sweep.md.",
+        "resolvedAt": "2026-10-28T06:03:07.267Z"
       }
     }
   },

@@ -21,7 +21,7 @@ import { Worker } from 'node:worker_threads';
 
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-method-class-'));
 process.env['HOME'] = HOME;
-const { methodClasses } = await import('../method-class.js');
+const { FIFO_EXEMPT_METHODS, SHARED_STATE_METHODS, methodClasses } = await import('../method-class.js');
 const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -77,6 +77,19 @@ test('coverage: the method set equals the keys of the constructed rpcHandlers an
 	} finally {
 		rmSync(HOME, { recursive: true, force: true });
 	}
+});
+
+test('method sets: every shared-state and FIFO-exempt member is a session-class method', () => {
+	assert.ok(SHARED_STATE_METHODS.size > 0 && FIFO_EXEMPT_METHODS.size > 0);
+	for (const m of [...SHARED_STATE_METHODS, ...FIFO_EXEMPT_METHODS]) assert.equal(methodClasses.classOf(m), 'session', m);
+});
+
+test('method sets: every served chat.*, todos.* and understanding.* method is in the shared-state set', () => {
+	const { rpc, stream } = servedTables();
+	const family = [...rpc, ...stream].filter(m => /^(chat|todos|understanding)\./.test(m));
+	assert.ok(family.includes('chat.start') && family.includes('todos.subscribe') && family.includes('understanding.watch'), 'the three families are served');
+	assert.deepEqual(family.filter(m => !SHARED_STATE_METHODS.has(m)).sort(), [], 'every one runs on the shared-state worker');
+	assert.deepEqual([...SHARED_STATE_METHODS].filter(m => !/^(chat|todos|understanding)\./.test(m)), [], 'and nothing else does');
 });
 
 test('the method-class module loads on a worker without importing a handler module', async () => {

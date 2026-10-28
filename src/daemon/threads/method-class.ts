@@ -253,6 +253,24 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 	entries: (): readonly MethodClassEntry[] => ENTRIES,
 });
 
+/** The session-class families whose state is one process-wide copy (s3): chat (the chat session pool), todos (the todos event bus) and understanding (the understanding service). */
+const SHARED_STATE_FAMILIES = ['chat.', 'todos.', 'understanding.'] as const;
+
+/** The session-class methods served on the one shared-state worker (s3), so their state stays whole. */
+export const SHARED_STATE_METHODS: ReadonlySet<string> = new Set(
+	ENTRIES.filter(e => e.cls === 'session' && SHARED_STATE_FAMILIES.some(f => e.method.startsWith(f))).map(e => e.method),
+);
+
+/**
+ * The session-class methods a session's FIFO does not hold back (s3): subscriptions, and
+ * methods that observe or control a request of the same session that is still running.
+ */
+export const FIFO_EXEMPT_METHODS: ReadonlySet<string> = new Set([
+	'understanding.watch', 'todos.subscribe',
+	'chat.cancel', 'chat.inject', 'chat.redirect', 'chat.status',
+	'workflow.run.poll', 'workflow.run.abort',
+]);
+
 /** These operations own process-local admission and transport lifetimes. */
 export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'db.listConnections','db.listDriverKinds','db.saveConnection','db.deleteConnection','db.testConnection',

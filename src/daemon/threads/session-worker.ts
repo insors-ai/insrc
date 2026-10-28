@@ -32,6 +32,8 @@ import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { buildHandlerRuntime, inDaemonOnlyHandlers } from '../handler-runtime.js';
 import { directDispatch } from '../server.js';
 import type { RpcHandlers } from '../server.js';
+import type { LLMProvider } from '../../shared/types.js';
+import type { PreparedWorkflowRun } from '../workflow-rpc.js';
 import { createInDaemonClient, installStepDaemonClient } from '../steps/daemon-client.js';
 import type { InDaemonClient } from '../steps/daemon-client.js';
 import { setRunBoard } from '../workflow-run-registry.js';
@@ -92,10 +94,33 @@ function testHandlers(): RpcHandlers {
 		},
 		'test.order': async (params) => {
 			const startedAt = Date.now();
+			// exitAfterMs: the worker exits while this request is still running (a crashed session worker).
+			const exitAfterMs = (params as { exitAfterMs?: number } | null)?.exitAfterMs;
+			if (exitAfterMs !== undefined) setTimeout(() => process.exit(1), exitAfterMs);
 			await new Promise(r => setTimeout(r, Number((params as { ms?: number } | null)?.ms ?? 0)));
 			return { threadId, tag: (params as { tag?: unknown } | null)?.tag, startedAt, endedAt: Date.now() };
 		},
 		'test.nested': async () => ({ threadId, nested: await inDaemon!.request('session.list', {}) }),
+		// A detached stub workflow run owned by this worker, whose model never answers, so it stays running.
+		'test.startRun': async (params) => {
+			const { repo, runId } = params as { repo: string; runId: string };
+			const { startWorkflowRun } = await import('../workflow-run-registry.js');
+			const silent = {
+				supportsTools: false,
+				capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
+				complete: () => new Promise<never>(() => {}),
+				stream: () => { throw new Error('unused'); },
+				embed: async () => [],
+				completeStructured: () => new Promise<never>(() => {}),
+			} as unknown as LLMProvider;
+			return startWorkflowRun({ workflow: 'stub', focus: 'test run', repo }, {
+				// As the registry's own tests prepare a stub run: no router or config is reached before the model.
+				prepare: () => ({
+					intent: { workflow: 'stub', focus: 'test run', repoPath: repo, repoIndexedAt: null, params: {} },
+					runId, epicKey: `test-${runId}`, provider: silent, modelLabel: 'test:silent', clientDefault: undefined, review: false,
+				}) as unknown as PreparedWorkflowRun,
+			});
+		},
 	};
 }
 

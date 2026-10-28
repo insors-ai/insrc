@@ -15929,11 +15929,15 @@
         [
           "serialization",
           "this.send"
+        ],
+        [
+          "serialization",
+          "this.send"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "9697b3d645baafbba30709a50899e97691bd98c91f236028732854963357615f",
-      "sourceDigest": "7d19fd638a6bd1b3e8f388e945b340a020233c7943af257544425e523efbd18e",
+      "siteCount": 12,
+      "sitesDigest": "2f107b5cd66b1f4370db6e995316b1e8b6830cc71adc00868e441bae7df863c0",
+      "sourceDigest": "e2091ec507f472e2b9746e9bf0e88957c5d2b91596efce69b6cd8dd2f47d8b8c",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -15953,6 +15957,14 @@
         ],
         [
           "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "this.info"
+        ],
+        [
+          "diagnostic",
           "this.info"
         ],
         [
@@ -15964,9 +15976,9 @@
           "this.info"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "90ec354e8198a0a6b3f011a636e6fe5b074f6ebf000599413ca1108238e4f9c3",
-      "sourceDigest": "0f67715d8c4e31c98cca7da2de4619beb97bc4c25205a4fb156653ac52e3157e",
+      "siteCount": 7,
+      "sitesDigest": "e58ee2316448633eedac37497c8bfc876b4ee2798d03e0ec8b9d04b61a6464e7",
+      "sourceDigest": "557bdcae967c9360ef04bba6d60a2dd8099bdda0750aec0803e5a20bcf525c2f",
       "boundaries": [
         "diagnostic"
       ]
@@ -15988,6 +16000,10 @@
           "hub.send"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "diagnostic",
           "log.warn"
         ],
@@ -15996,13 +16012,14 @@
           "parentPort!.postMessage"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "de8dae8e095bd52b50efe758f279a78c4b36947ff9dd3322cf34dd189b9f74a9",
-      "sourceDigest": "3a7e54cbb9861b6433f52559845487ab6b039f81a2bcd6cc07365c38c4edffd6",
+      "siteCount": 6,
+      "sitesDigest": "f9a795f74ed0e92a3e370e73595e0b71eb81bb48334c74d43b25820e15e17c0c",
+      "sourceDigest": "2683e95ffe51a9d4aa4593f395253451bd3b0a3eaec249dcaf139a3b26edd3ae",
       "boundaries": [
         "diagnostic",
         "serialization",
-        "storage-call"
+        "storage-call",
+        "unresolved-call"
       ]
     },
     "src/daemon/threads/status-board.ts": {
@@ -16056,7 +16073,7 @@
       ],
       "siteCount": 11,
       "sitesDigest": "7ec341728c3963d89f0caba3dc588c6d933ba97660a25cb1f15ea09ff42ea7f4",
-      "sourceDigest": "5245fb165f7c4dd1481994766d7f4a23d6d55af72698ec04b2ec234d3c28ea92",
+      "sourceDigest": "be7ad4621e22c03e6273236ce28680e92c282e3a4a6a2ec2f9649484f89f0040",
       "boundaries": [
         "diagnostic",
         "serialization"

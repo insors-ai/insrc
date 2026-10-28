@@ -59,6 +59,8 @@ export interface RouterOptions {
 export interface RouterSessions {
 	/** The session's worker (the unattributed worker for no session), started if it has none. */
 	workerFor(session?: SessionId): Promise<{ readonly threadId: number }>;
+	/** The shared-state worker, started if it has none. */
+	sharedWorker(): Promise<{ readonly threadId: number }>;
 	/** A request of the session started on its worker, and ended. */
 	started(session: SessionId | undefined): void;
 	ended(session: SessionId | undefined): void;
@@ -69,6 +71,7 @@ export interface RouterSessions {
 /** One request in a session's FIFO. */
 interface Queued {
 	readonly request: LocalRequestEnvelope;
+	readonly deliver: DeliverEnvelope;
 	started: boolean;
 	/** Sends the request to its worker; set once started. */
 	cancel?: () => void;
@@ -130,6 +133,9 @@ export class Router {
 	private readonly pending = new Map<string, Pending>();
 	private readonly held = new Set<Held>();
 	private readonly fifos = new Map<string, Fifo>();
+	private sessions: RouterSessions | undefined;
+	/** The thread that owns a detached run (the status board), for workflow.run.abort. */
+	private runOwner: ((runId: string) => number | undefined) | undefined;
 	private readonly holdMs: number;
 	/** opts.local, each request under the maintenance lock's request hold. */
 	private readonly local: ForwardRequest;
@@ -137,7 +143,37 @@ export class Router {
 
 	constructor(private readonly opts: RouterOptions) {
 		this.holdMs = opts.holdMs ?? DEFAULT_HOLD_MS;
+		this.sessions = opts.sessions;
 		this.local = holdingForward(opts.local);
+	}
+
+	/** Route session work through the session pool from now on (s3); `runOwner` names a detached run's owner thread. */
+	useSessions(sessions: RouterSessions, runOwner?: (runId: string) => number | undefined): void {
+		this.sessions = sessions;
+		this.runOwner = runOwner;
+	}
+
+	/**
+	 * A pool worker exited (s3): the requests it was serving are answered 'session worker
+	 * failed: <reason>' (an error frame for a stream), and so are its session's queued ones.
+	 */
+	failWorker(threadId: number, reason: string, session?: SessionId): void {
+		const error = `session worker failed: ${reason}`;
+		const answer = (requestId: string, stream: boolean, deliver: DeliverEnvelope): void => {
+			deliver(stream
+				? { kind: 'frame', requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } }
+				: { kind: 'reply', requestId, error });
+		};
+		if (session !== undefined) {
+			// The queue first: the running request's failure below would otherwise send the next one to the dead worker.
+			const fifo = this.fifos.get(`${session.label}:${session.pid}`);
+			for (const item of fifo?.waiting.splice(0) ?? []) {
+				try { answer(item.request.requestId, item.request.stream, item.deliver); }
+				finally { item.request.lifetime?.complete(); }
+			}
+			if (fifo !== undefined) this.sessions?.setQueued(session, 0);
+		}
+		for (const orphan of this.detach(threadId)) answer(orphan.requestId, orphan.stream, orphan.deliver);
 	}
 
 	/** The forward the IpcServer uses. */
@@ -167,7 +203,7 @@ export class Router {
 	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}): () => void {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
 			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
-		if (cls === 'session' && this.opts.sessions !== undefined) return this.dispatchSession(request, deliver, dropped);
+		if (cls === 'session' && this.sessions !== undefined) return this.dispatchSession(request, deliver, dropped);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
 		return this.hold(cls, request, deliver, dropped);
@@ -175,6 +211,11 @@ export class Router {
 
 	/** A session-class request (s3): to the shared-state worker or the session's worker, through the session's FIFO unless exempt or unattributed. */
 	private dispatchSession(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
+		// An abort goes to the thread that owns the run, whichever session sends it.
+		if (request.method === 'workflow.run.abort') {
+			const owner = this.runOwner?.(String((request.params as { runId?: unknown } | null)?.runId ?? ''));
+			if (owner !== undefined && this.ports.has(owner)) return this.send(owner, request, deliver);
+		}
 		const shared = SHARED_STATE_METHODS.has(request.method);
 		const send = (d: DeliverEnvelope): () => void => shared
 			? this.toShared(request, d, dropped)
@@ -183,20 +224,26 @@ export class Router {
 		return this.enqueue(request.session, request, deliver, send, dropped);
 	}
 
-	/** To the shared-state worker, held (as any routed request) while none is registered. */
+	/** To the shared-state worker, which the pool starts (again, after an exit) when there is none. */
 	private toShared(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
 		const target = this.opts.registry.targetFor('session', undefined, { shared: true });
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
-		return this.hold('session', request, deliver, dropped, true);
+		return this.toPoolWorker(() => this.sessions!.sharedWorker(), request, deliver, dropped);
 	}
 
 	/** To the session's worker (the unattributed worker for no session), started by the pool if it has none. */
 	private toSessionWorker(session: SessionId | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
-		const sessions = this.opts.sessions!;
+		const sessions = this.sessions!;
+		sessions.started(session);
+		return this.toPoolWorker(() => sessions.workerFor(session), request, deliver, dropped, () => sessions.ended(session));
+	}
+
+	/** To a pool worker once `worker` resolves; `done` runs once when the request ends, fails or is cancelled first. */
+	private toPoolWorker(worker: () => Promise<{ readonly threadId: number }>, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void, done: () => void = () => {}): () => void {
 		let cancelled = false;
 		let sent: (() => void) | undefined;
 		let ended = false;
-		const end = (): void => { if (!ended) { ended = true; sessions.ended(session); } };
+		const end = (): void => { if (!ended) { ended = true; done(); } };
 		const fail = (error: string): void => {
 			try {
 				deliver(request.stream
@@ -207,8 +254,7 @@ export class Router {
 		const tracked: DeliverEnvelope = envelope => {
 			try { deliver(envelope); } finally { if (isTerminal(envelope)) end(); }
 		};
-		sessions.started(session);
-		void sessions.workerFor(session).then(
+		void worker().then(
 			worker => {
 				if (cancelled) { end(); return; }
 				if (!this.ports.has(worker.threadId)) { fail('the session\'s worker thread is not available'); return; }
@@ -233,7 +279,7 @@ export class Router {
 		if (fifo === undefined) { fifo = { session, waiting: [] }; this.fifos.set(key, fifo); }
 		const f = fifo;
 		const item: Queued = {
-			request, started: false,
+			request, deliver, started: false,
 			run: () => {
 				item.started = true;
 				item.cancel = send(envelope => {
@@ -247,11 +293,11 @@ export class Router {
 			},
 		};
 		if (f.running === undefined) { f.running = item; item.run(); }
-		else { f.waiting.push(item); this.opts.sessions!.setQueued(session, f.waiting.length); }
+		else { f.waiting.push(item); this.sessions!.setQueued(session, f.waiting.length); }
 		return () => {
 			if (!item.started) {
 				const at = f.waiting.indexOf(item);
-				if (at >= 0) { f.waiting.splice(at, 1); this.opts.sessions!.setQueued(session, f.waiting.length); }
+				if (at >= 0) { f.waiting.splice(at, 1); this.sessions!.setQueued(session, f.waiting.length); }
 				item.drop();
 				return;
 			}
@@ -265,7 +311,7 @@ export class Router {
 		const fifo = this.fifos.get(key);
 		if (fifo === undefined || fifo.running !== item) return;
 		fifo.running = fifo.waiting.shift();
-		this.opts.sessions!.setQueued(fifo.session, fifo.waiting.length);
+		this.sessions!.setQueued(fifo.session, fifo.waiting.length);
 		if (fifo.running !== undefined) fifo.running.run();
 		else this.fifos.delete(key);
 	}
@@ -289,6 +335,7 @@ export class Router {
 			};
 			const target = this.opts.registry.targetFor(cls, undefined, { shared: opts.shared });
 			if (target !== undefined && this.ports.has(target.threadId)) this.send(target.threadId, request, deliver);
+			else if (opts.shared && this.sessions !== undefined) this.toPoolWorker(() => this.sessions!.sharedWorker(), request, deliver, () => {});
 			else this.hold(cls, request, deliver, () => {}, opts.shared);
 		});
 	}

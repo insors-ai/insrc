@@ -120,6 +120,13 @@ export class StatusBoard {
 		this.runs.set(run.runId, run);
 	}
 
+	/** The owner thread exited (s3): each of its runs still running ends 'error' with `error`, keeping its frames. */
+	failRunsOwnedBy(threadId: number, error: string): void {
+		for (const run of this.runs.values()) {
+			if (run.ownerThreadId === threadId && run.status === 'running') this.runs.set(run.runId, { ...run, status: 'error', error });
+		}
+	}
+
 	/** Remove a run the owner's retention evicted (an additive sc4 method, s3); a later poll for it answers 'unknown'. */
 	forgetRun(runId: string): void { this.runs.delete(runId); }
 

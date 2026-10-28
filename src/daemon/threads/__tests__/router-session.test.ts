@@ -88,7 +88,9 @@ function harness(): Harness {
 	const workers = new Map<string, number>();
 	const pool = { started: [] as string[], ended: [] as string[], queued: [] as number[] };
 	const keyOf = (s?: SessionId): string => s === undefined ? 'unattributed' : `${s.label}:${s.pid}`;
+	let sharedId = -1;
 	const sessions: RouterSessions = {
+		sharedWorker: async () => ({ threadId: sharedId }),
 		workerFor: async s => {
 			const key = keyOf(s);
 			let id = workers.get(key);
@@ -99,8 +101,8 @@ function harness(): Harness {
 		ended: s => pool.ended.push(keyOf(s)),
 		setQueued: (_s, n) => pool.queued.push(n),
 	};
-	(router as unknown as { opts: { sessions: RouterSessions } }).opts.sessions = sessions;
-	const sharedId = startWorker('shared');
+	router.useSessions(sessions);
+	sharedId = startWorker('shared');
 	registry.register({ threadId: sharedId, cls: 'session', shared: true });
 	return {
 		router, log, gates, pool,

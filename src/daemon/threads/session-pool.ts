@@ -49,14 +49,14 @@ export class SessionWorkerStartError extends Error {
 export interface SessionPoolDeps {
 	readonly options: SessionPoolOptions;
 	readonly registry: TargetRegistry;
-	/** Start a session worker (startWorker in the daemon); `name` identifies it in logs. */
-	readonly start: (name: string) => Promise<StartedWorker>;
+	/** Start a session worker (startWorker in the daemon); `name` identifies it in logs; `shared` starts the shared-state worker. */
+	readonly start: (name: string, opts?: { readonly shared?: true | undefined }) => Promise<StartedWorker>;
 	/** The router's attach and detach of a worker's channel. */
 	readonly attach: (threadId: number, port: StartedWorker['port']) => void;
 	readonly detach: (threadId: number) => void;
 	/** Detached runs still running that the thread owns (the status board). */
 	readonly activeRuns: (threadId: number) => number;
-	/** The worker exited on its own (not released): the router fails what it was serving (s3/t9). */
+	/** The worker exited on its own (not released), before its channel is forgotten: the router fails what it was serving. */
 	readonly exited?: ((info: SessionWorkerInfo, code: number) => void) | undefined;
 	readonly now?: (() => number) | undefined;
 	readonly pidAlive?: ((pid: number) => boolean) | undefined;
@@ -65,6 +65,7 @@ export interface SessionPoolDeps {
 interface Entry {
 	readonly key: string;
 	readonly session?: SessionId | undefined;
+	readonly shared: boolean;
 	readonly started: StartedWorker;
 	readonly createdAt: number;
 	lastRequestAt: number;
@@ -74,6 +75,7 @@ interface Entry {
 }
 
 const UNATTRIBUTED = 'session:unattributed';
+const SHARED = 'session:shared';
 const keyOf = (session: SessionId | undefined): string => session === undefined ? UNATTRIBUTED : `session:${session.label}:${session.pid}`;
 
 /** Whether a process is alive: signal 0 checks existence only (EPERM means it exists under another user). */
@@ -99,6 +101,14 @@ export class SessionPool {
 	/** The session's worker (the unattributed worker for no session), started and registered if it has none. One start at a time per session. */
 	async workerFor(session?: SessionId): Promise<SessionWorkerInfo> {
 		return this.info(await this.entryFor(session));
+	}
+
+	/**
+	 * The shared-state worker (chat, todos, understanding), started on first need and again by
+	 * the next request after it exited; it is never idle-released (it hosts the chat processes).
+	 */
+	async sharedWorker(): Promise<SessionWorkerInfo> {
+		return this.info(await this.entryFor(undefined, true));
 	}
 
 	/** One entry per live worker, for status and the idle sweep. */
@@ -132,7 +142,7 @@ export class SessionPool {
 	async sweep(): Promise<void> {
 		const now = this.now();
 		for (const e of [...this.entries.values()]) {
-			if (e.inFlight > 0 || e.queued > 0 || this.deps.activeRuns(e.started.threadId) > 0) continue;
+			if (e.shared || e.inFlight > 0 || e.queued > 0 || this.deps.activeRuns(e.started.threadId) > 0) continue;
 			const idle = now - e.lastRequestAt >= this.deps.options.idleTimeoutMs;
 			const gone = e.session !== undefined && !this.pidAlive(e.session.pid);
 			if (!idle && !gone) continue;
@@ -167,35 +177,41 @@ export class SessionPool {
 		};
 	}
 
-	private entryFor(session: SessionId | undefined): Promise<Entry> {
-		const key = keyOf(session);
+	private entryFor(session: SessionId | undefined, shared = false): Promise<Entry> {
+		const key = shared ? SHARED : keyOf(session);
 		const live = this.entries.get(key);
 		if (live !== undefined) return Promise.resolve(live);
 		const pending = this.starting.get(key);
 		if (pending !== undefined) return pending;
-		const start = this.startEntry(key, session).finally(() => this.starting.delete(key));
+		const start = this.startEntry(key, session, shared).finally(() => this.starting.delete(key));
 		this.starting.set(key, start);
 		return start;
 	}
 
-	private async startEntry(key: string, session: SessionId | undefined): Promise<Entry> {
+	private async startEntry(key: string, session: SessionId | undefined, shared: boolean): Promise<Entry> {
 		let started: StartedWorker;
 		try {
-			started = await this.deps.start(session === undefined ? 'unattributed' : `session ${session.label}:${session.pid}`);
+			started = shared
+				? await this.deps.start('shared-state', { shared: true })
+				: await this.deps.start(session === undefined ? 'unattributed' : `session ${session.label}:${session.pid}`);
 		} catch (err) {
 			throw new SessionWorkerStartError(err instanceof Error ? err.message : String(err));
 		}
 		const now = this.now();
-		const entry: Entry = { key, session, started, createdAt: now, lastRequestAt: now, inFlight: 0, queued: 0, released: false };
-		this.deps.registry.register(session === undefined
-			? { threadId: started.threadId, cls: 'session', unattributed: true }
-			: { threadId: started.threadId, cls: 'session', session });
+		const entry: Entry = { key, session, shared, started, createdAt: now, lastRequestAt: now, inFlight: 0, queued: 0, released: false };
+		this.deps.registry.register(shared
+			? { threadId: started.threadId, cls: 'session', shared: true }
+			: session === undefined
+				? { threadId: started.threadId, cls: 'session', unattributed: true }
+				: { threadId: started.threadId, cls: 'session', session });
 		this.deps.attach(started.threadId, started.port);
 		this.entries.set(key, entry);
 		started.worker.once('exit', code => {
 			if (entry.released) return;
-			this.forget(entry);
-			this.deps.exited?.(this.info(entry), code);
+			log.warn({ session, shared, threadId: started.threadId, code }, 'session pool: a session worker exited');
+			// Told first, while the worker's channel is still known, so what it was serving can be failed.
+			try { this.deps.exited?.(this.info(entry), code); }
+			finally { this.forget(entry); }
 		});
 		return entry;
 	}

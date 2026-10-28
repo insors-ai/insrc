@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d3e37300-a4b8-40a3-9c60-918a5c0655bb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.414Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route controller code reviews through admitted continuations",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b914493f3a94cc8f33a31d50642d18f34237f4a952c34fcacdb3ce174a52e620",
+        "at": "2026-10-27T06:35:54.417Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.417Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route controller code reviews through admitted continuations",
+    "summary": "Update actual code-review MCP registration, input/state schemas and full/degraded handler paths. Acquire explicit controller-reserved declarations, measure the entire response frame, and use atomic versioned pending-call continuations and shared pipeline splitting rather than unbudgeted four-prompt bundles.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "src/mcp/server.ts and daemon types register the new declaration/envelope contract; missing, malformed, stale or unqualified controller input refuses before prompt exposure.",
+      "Full and degraded responses include every prompt/schema/grounding/framing component in admission; four individually fitting prompts whose combined frame exceeds the cap split or explicitly refuse.",
+      "One pending admitted call per turn carries correct IDs/material; no unmeasured whole grounding is appended. Matching replies advance state atomically and all dimensions/obligations complete before final persistence.",
+      "Controller host context remains caller-declared/reserved, never server-measured; caller cannot increase the pinned cap and must refresh host reserve before each next emission.",
+      "Initial/resume/confirm_wait/judgements, old-token/replay, concurrent-finalization, error recovery and chunk-scaled deadline cases are covered without weakening other-party or source/lifecycle checks."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/handler.test.ts: full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption"
+      },
+      {
+        "level": "integration",
+        "name": "src/mcp/__tests__/review-budget-schema.test.ts: registered code-review declaration envelope and schema lookup match runtime contracts"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

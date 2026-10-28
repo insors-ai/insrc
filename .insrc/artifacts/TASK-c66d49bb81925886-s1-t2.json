@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bf7b6bc0-443c-4429-9949-35478e6ae003",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.338Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add versioned logical and Avro schemas",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "abe80e3b7a98fbef30f014ed4b2fdc69c3838a909220b1fa431f6bb9b8266764",
+        "at": "2026-10-26T12:50:51.338Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.339Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add versioned logical and Avro schemas",
+    "summary": "Add proposed src/workflow/usage/ledger-record.v1.schema.json, src/workflow/usage/ledger-record.v1.avsc.json and src/workflow/usage/schemas.ts. Statically import JSON with ESM attributes, define typed nullable context/observation/control records and validate in-memory record encoding only.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Logical schema rejects unknown fields/kinds, illegal payload combinations, unsafe counts and invalid null/default shapes.",
+      "Avro record fixtures round-trip exact safe counters, nullable model/counter fields and both transfer modes without opaque transcript blobs.",
+      "Production imports cause schema JSON emission under NodeNext/resolveJsonModule; no source-tree fs lookup, Avro file/header writer or copy-assets assumption is introduced."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/schema-contract.test.ts: closed logical schema and in-memory typed Avro round-trips, null defaults, exact counters and illegal payload cases"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

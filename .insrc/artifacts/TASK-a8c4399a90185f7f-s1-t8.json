@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3aa663cd-7f43-4733-95f2-7c25451191cb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.404Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add atomic review-state claims and recovery",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dfe45f7e48a6aef2ae4090813bbeffeadba99f4e49ae59528031248956493b03",
+        "at": "2026-10-27T06:35:54.407Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.408Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add atomic review-state claims and recovery",
+    "summary": "Extend LocalStepStateStore/SharedStepStateStore and hub proxy/bindings with review/code-review-scoped claim/commit/release/invalidate operations, generation/call matching and bounded completion receipts. Do not change analyze/workflow lifecycle or add a database. Owner validation consumes a trusted internal context supplied by the lifecycle task.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Atomic central claim permits one owner for a pending generation/call; cross-owner or stale commits/releases refuse. A non-consuming read never grants replay protection.",
+      "Missing declaration or invalid reply before side effects leaves state reusable; final claim remains exclusive through persistence and commits only on success.",
+      "Ambiguous persistence/cancel/owner loss invalidates rather than blindly regranting work; late owners are fenced; replay of a successful final call returns a bounded receipt without writing twice.",
+      "Live claims are pinned against ordinary TTL/capacity eviction, count against existing bounds, and explicit capacity errors replace silent eviction when all entries are pinned.",
+      "Local and real hub-worker tests exercise generation, duplicate requests, before/after-write failure, receipt bounds and unrelated-token independence."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/threads/__tests__/step-state.test.ts: atomic review claim commit generation recovery receipt and pinned-capacity invariants"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-state-concurrency.test.ts: two actual hub connections cannot consume or persist the same pending call twice"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

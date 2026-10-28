@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c5e29788-588f-494e-92f0-9554a50d45df",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.423Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Complete budgeted controller design-review flows",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "25c89deaf36aa9913b2b8cb5aad5f9e6d8ffb59e2679810b127ff0895608bee7",
+        "at": "2026-10-27T06:35:54.426Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.426Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Complete budgeted controller design-review flows",
+    "summary": "Integrate review-step MCP registration, state/types/host dispatch, template/extract start, claims/evidence, findings and verdicts with admitted complete frames, existing pipeline adapters, exact-set terminal checks and atomic owner recovery. Keep existing outer phase names while versioning continuation payloads.",
+    "size": "L",
+    "order": 12,
+    "acceptanceChecks": [
+      "All actual controller emission sites (template, extraction, batched verification) use complete-frame inclusive admission and explicit controller-reserved profiles; no daemon-only implementation is advertised as all-review coverage.",
+      "Existing adapters preserve all source/claims/obligations across one-call-per-turn continuations; evidence gathering occurs only after complete extraction and finalization only after all required work validates.",
+      "Both terminal handlers decode callId/answer and enforce exact expected sets before persistence under the trusted atomic claim; missing declarations, stale tokens, replay and interrupted writes have the approved recovery behavior.",
+      "New registered MCP schemas and returned inner schemas agree with handlers and schema lookup; old clients/tokens receive explicit incompatibility/refusal rather than a silent budget bypass.",
+      "Template/grounded/full/degraded controller cases, dynamic host reserve and chunk time, cancellation, real two-worker duplicate submissions and cross-protocol resume mismatches are verified."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts: template extraction evidence verification and finalization preserve every required claim through admitted controller turns"
+      },
+      {
+        "level": "integration",
+        "name": "src/mcp/__tests__/review-budget-schema.test.ts: registered design-review phases validate declarations envelopes stale states and host-reserve qualification"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

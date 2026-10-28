@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 4,
+        "contentHash": "d3836bd1a4df1cd612fdd6df8f8559bac2f16048015bfefee0d7d0390c18f4a7",
+        "at": "2026-10-27T10:07:34.839Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793095579378-afrh02",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T10:06:19.378Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 75459,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "epicSlug": "fix-code-review-freshness-gate-so",
+    "standalone": true,
+    "revision": 4
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/indexer/__tests__/watcher-new-directories.test.ts",
+        "src/indexer/watcher.ts",
+        "src/daemon/handler-runtime.ts",
+        "src/workflow/code-review/__tests__/freshness.test.ts",
+        "src/workflow/code-review/freshness.ts",
+        "src/daemon/__tests__/code-review-freshness-request.test.ts",
+        "src/daemon/__tests__/handler-runtime.test.ts",
+        "src/daemon/freshness-request.ts",
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts"
+      ],
+      "buildFingerprint": "bc3c0e69ea2263cdbd8f489629a46b63746dee2ced2069006f5248bfcca0fa1c",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts"
+      ],
+      "excludedFromScope": [
+        ".insrc/artifacts/HLD-c66d49bb81925886.log.jsonl",
+        ".insrc/artifacts/LLD-b7a68147dcf72034-s7.log.jsonl",
+        "plans/model-token-usage-implementation.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/indexer/watcher.ts:174",
+            "message": "releaseDirectory removes the entry before awaiting subscription creation or unsubscribe completion. Since delete events invoke it without awaiting it (line 125), a subsequent removeRepo() or close() cannot find or await that release and can resolve while the directory subscription still exists. Keep outstanding releases tracked until cleanup completes so both lifecycle methods await them.",
+            "expectationRef": "LLD contractDetails.api Watcher.removeRepo: resolves once the repo subscription and every per-directory subscription are released; Watcher.close: resolves once every subscription is released."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "functional-coverage",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-916fbed3-aec1-449b-97e2-6219ff0dfcfd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.345Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Resolve correction and aggregate observation bases",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0589971983a3bbea8eedae81073fb245ffdaa4d34d18bc0043a29e2d7ec0c46a",
+        "at": "2026-10-26T12:50:51.345Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.345Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve correction and aggregate observation bases",
+    "summary": "Extend private reducer graph/basis logic for terminal/correction heads and explicit aggregate/leaf reconciliation. Preserve originals, validate current candidate sets and surface missing/forked/cyclic/conflicting references.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Out-of-order complete closure is permutation-invariant; missing starts/predecessors, multiple unlinked finishes, correction forks/cycles and cross-group references cannot select a speculative winner.",
+      "A full replacement correction contributes once; selected/excluded observation heads are unique/disjoint and account for the current candidate set.",
+      "Aggregate fallback and qualified complete-leaf decomposition never overlap; partial leaves cannot manufacture residuals or a physical-call count.",
+      "New candidates or stale corrected heads invalidate an old reconciliation until an explicit successor covers them."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/reconciliation.test.ts: replacement corrections, forks/cycles/missing refs, aggregate fallback/decomposition and stale/new candidate invalidation"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/reducer.test.ts: shuffled complete groups and repeated delivery retain deterministic basis/totals"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3750b17b-b811-4ad8-a5bd-00958e22821b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.697Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "git_push configured input",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f0aaffe8e8e5ccb598704f63c1c6dc7f3abcad139a1206c58f3e37301f32bed1",
+        "at": "2026-10-27T16:08:33.697Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.698Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "git_push configured input",
+    "summary": "Add the additive configured input to git_push (boolean, mutually exclusive with remote, ref and every force input, never destructive, approval class unchanged) that runs a plain git push; every existing call is unchanged. Flag the s4 owner's objection path.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "configured true runs plain git push and honours an alternate push remote, a differently named upstream and reports a missing upstream",
+      "configured combined with remote, ref or force is rejected; calls without configured are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "git-push-configured.test.ts: configured true runs plain git push with an alternate push remote, a differently named upstream and a missing upstream; combined inputs are rejected; existing calls are unchanged"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

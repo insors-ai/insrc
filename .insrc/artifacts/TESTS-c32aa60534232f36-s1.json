@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "6bd540c7c7b0d4635a443677aad7bcf605e6f517352dfa1b3fb9627cd8b348ee",
+        "at": "2026-10-28T12:57:37.802Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s1",
+    "createdAt": "2026-10-28T12:35:44.800Z",
+    "updatedAt": "2026-10-28T12:57:37.753Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "50ae942af",
+        "ranAt": "2026-10-28T12:35:44.800Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sc1/sc6 canonical identity, invalid value and type contract fixtures",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/identity.test.ts",
+                "title": "sc1/sc6 canonical identity, invalid value and type contract fixtures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 379,
+            "titles": [
+              {
+                "title": "sc1/sc6 canonical identity, invalid value and type contract fixtures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "98aecbe22",
+        "ranAt": "2026-10-28T12:40:14.335Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Exact parent/blob/change-kind packet and hardened reader reuse fixtures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/git-packets.test.ts",
+                "title": "Exact parent/blob/change-kind packet and hardened reader reuse fixtures",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/git-packets.test.ts",
+                "title": "packet extraction refuses unsupported files and preserves zero-count ranges",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/git-packets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 703,
+            "titles": [
+              {
+                "title": "Exact parent/blob/change-kind packet and hardened reader reuse fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "packet extraction refuses unsupported files and preserves zero-count ranges",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c621851b9",
+        "ranAt": "2026-10-28T12:45:19.657Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Approved task projection, trusted attribution and freshness fixtures",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/subject.test.ts",
+                "title": "Approved task projection, trusted attribution and freshness fixtures",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/subject.test.ts",
+                "title": "planless provenance and present unapproved PLAN are distinct",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/subject.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 990,
+            "titles": [
+              {
+                "title": "Exact parent/blob/change-kind packet and hardened reader reuse fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "packet extraction refuses unsupported files and preserves zero-count ranges",
+                "result": "pass"
+              },
+              {
+                "title": "Approved task projection, trusted attribution and freshness fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "planless provenance and present unapproved PLAN are distinct",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "f8b686d8b",
+        "ranAt": "2026-10-28T12:50:03.692Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Bounded immutable source navigation and reference isolation fixtures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/source.test.ts",
+                "title": "Bounded immutable source navigation and reference isolation fixtures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/source.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1116,
+            "titles": [
+              {
+                "title": "Exact parent/blob/change-kind packet and hardened reader reuse fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "packet extraction refuses unsupported files and preserves zero-count ranges",
+                "result": "pass"
+              },
+              {
+                "title": "Approved task projection, trusted attribution and freshness fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "planless provenance and present unapproved PLAN are distinct",
+                "result": "pass"
+              },
+              {
+                "title": "Bounded immutable source navigation and reference isolation fixtures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "28b18ad6c",
+        "ranAt": "2026-10-28T12:57:37.753Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Cross-module adversarial scope and legacy/corpus regression fixtures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/adversarial.test.ts",
+                "title": "Cross-module adversarial scope and legacy/corpus regression fixtures",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/adversarial.test.ts",
+                "title": "explicit merge parent, pinned binary and symlink context boundaries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/adversarial.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 858,
+            "titles": [
+              {
+                "title": "Cross-module adversarial scope and legacy/corpus regression fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "explicit merge parent, pinned binary and symlink context boundaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

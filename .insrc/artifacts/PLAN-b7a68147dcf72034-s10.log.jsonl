@@ -1,0 +1,1 @@
+364	{"artifactId":"PLAN-b7a68147dcf72034-s10","entry":{"id":"afa40d9a9a204013bd0cb228fe0f2892","actor":{"id":"insrc:approval","kind":"system","properties":{}},"timestamp":"2026-10-27T16:08:33.362Z","operation":"approve","revision":{"number":1,"contentHash":"3356d430fc9ed9d87ff0f80a4c02e408e99e985167cac38c8e9155baf28bf7e7"},"status":{"from":"draft","to":"approved"}}}

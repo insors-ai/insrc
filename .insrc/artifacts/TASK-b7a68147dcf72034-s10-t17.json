@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4e994176-b2a5-425f-8efa-3e4ffc44de5e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.715Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Daemon: team and review methods",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bbc3d4f3b04f8cddc2cd9ce2a471b17576deb240e3c07024f36640a7199af3b8",
+        "at": "2026-10-27T16:08:33.715Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.716Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon: team and review methods",
+    "summary": "Add team.refresh {repoPath, branch?}, team.claim and team.release {repoPath, unit}, workflow.reviewArtifact {repoPath, artifactPath} and workflow.resolveFinding {artifactPath, findingId, action, note?}, each returning what the client service returns today and letting a ToolDenied reach the client as an error; register them in the handler contract key-set cases.",
+    "size": "M",
+    "order": 17,
+    "acceptanceChecks": [
+      "each method returns the old result and refusals with claims enforced",
+      "handler.test.ts and handler-runtime.test.ts key-set cases list the new methods"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "review-resolve-daemon.test.ts: with claims enforced, reviewArtifact and resolveFinding run through the daemon methods and return the old results and refusals"
+      },
+      {
+        "level": "integration",
+        "name": "handler-runtime.test.ts: team.refresh, team.claim and team.release are registered and return the old results"
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

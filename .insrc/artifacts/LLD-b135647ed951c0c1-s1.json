@@ -1,0 +1,487 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793099452991-11r744",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T11:15:03.755Z",
+    "epicCreatedAt": "2026-10-27T11:15:03.755Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 249118,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b135647ed951c0c1",
+    "epicSlug": "add-json-hosts-form-gh-auth",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793099452991-11r744",
+    "hldEffectiveHash": "b135647ed951c0c1e9f81d55fb1af8317bca5c0f54e5f8f4f18651f2f244d705",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One new op in one existing tool file with its coverage row and tests; one obvious approach.",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "83723a6863d79863fd300176fbf7ace22a9d32fd4983ffe5c090d0ae63a08f51",
+        "at": "2026-10-27T11:18:38.640Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-10-27T11:21:00.419Z",
+        "report": {
+          "entityId": "LLD-b135647ed951c0c1-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-001d551503413e7a3c83da19fcf2e981"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T11:21:00.422Z"
+      }
+    },
+    "rangeBase": "80de63301b2de476ecd7868cba8063a28c9220d4"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The gh_auth tool gets a fourth op, hosts, that runs `gh auth status --json hosts` and returns the signed-in hosts and accounts as parsed JSON under its own typed output. It runs under a 15 second limit, refuses output over 256 KB, and reports a missing gh, a timeout, a non-zero exit and a cut or oversized output as different diagnostics. It never falls back to the text form, so a gh without --json fails as it does today. The existing status, switch and logout ops, and the tool id, do not change."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Add a JSON hosts form of gh auth status to gh_auth"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ghAuthTool (op hosts added)",
+          "signature": "ghAuthTool.execute({ op: 'hosts' }, deps): Promise<ToolResult>; output data: { op: 'hosts'; hosts: Record<string, Array<{ state: string; login: string } & Record<string, unknown>>> }",
+          "parameters": [
+            {
+              "name": "op",
+              "type": "'hosts'",
+              "purpose": "Selects the new op; it takes no other field.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ToolResult with data { op: 'hosts', hosts }",
+            "meaning": "The object gh prints under `hosts`: one array of account objects per host, each with at least state and login (the fields githubIdentities reads); any other field gh prints is kept as it is."
+          },
+          "errors": [
+            {
+              "type": "ToolFailure kind 'missing-tool'",
+              "condition": "gh is not on PATH or failed to spawn (ghFailureOf, src/daemon/tools/builtins/gh/helpers.ts:202)"
+            },
+            {
+              "type": "ToolFailure kind 'timed-out'",
+              "condition": "gh did not finish within 15 s"
+            },
+            {
+              "type": "ToolFailure kind 'rejected', 'missing-signin' or 'unreachable'",
+              "condition": "gh exited non-zero (including 'unknown flag: --json' on gh 2.46.0); the kind follows the text of gh's message as in ghFailureOf"
+            },
+            {
+              "type": "ToolFailure kind 'rejected'",
+              "condition": "the output was cut at the capture cap, is longer than 256 KB in bytes, is not JSON, or has no hosts object of arrays with a string state and login on each account"
+            }
+          ],
+          "preconditions": [
+            "gh is installed and recent enough to accept `auth status --json hosts`."
+          ],
+          "postconditions": [
+            "Runs exactly `gh auth status --json hosts`: no -h, no text conversion, no model call.",
+            "The existing ops status, switch and logout and the tool id gh_auth are byte-for-byte unchanged in behaviour.",
+            "The GH_COVERAGE row for the command `auth status` lists the op as 'status,hosts'."
+          ]
+        },
+        {
+          "name": "buildAuthHosts (new, module-private build function)",
+          "signature": "async function buildAuthHosts(c: BuildContext): Promise<Record<string, unknown> | ToolResult>",
+          "parameters": [
+            {
+              "name": "c",
+              "type": "BuildContext",
+              "purpose": "The captured stdout, stderr, input and deps of the op (src/daemon/tools/builtins/gh/op-table.ts:148).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ hosts: ... } | ToolResult>",
+            "meaning": "The parsed hosts, or a failed ToolResult."
+          },
+          "errors": [
+            {
+              "type": "ToolFailure kind 'rejected'",
+              "condition": "c.truncated, stdout longer than 256 KB (256 * 1024 bytes, counted with Buffer.byteLength), JSON parse error, or the shape check fails"
+            }
+          ],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Pure: no I/O, no model call."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "gh_auth op hosts output",
+        "change": "new",
+        "details": "{ hosts: Record<string, Array<{ state: string, login: string, ...other fields kept>>> }. state and login are required because they are what the consumer reads; the other fields are not listed because gh's field set differs between versions and none was observed on this machine (gh 2.46.0 does not support --json for auth status). The existing status op keeps its own output {hosts: Array<{host, login, active, state: 'logged-in'|'failed'}>} from the text conversion; the two have the same property name hosts but different shapes, and the op name tells them apart.",
+        "callSites": [
+          "src/daemon/tools/builtins/gh/account.ts:160",
+          "src/understanding/identity.ts:105"
+        ]
+      },
+      {
+        "entity": "GH_COVERAGE row for auth status",
+        "change": "field-modify",
+        "details": "The row for the command 'auth status' has op 'status'; its op field already accepts a comma-separated list (GhCoverageRow, read with split(',') by gh-coverage.test.ts and gh-inputs.test.ts), so the row becomes op 'status,hosts'. No second row and no change to either check.",
+        "callSites": [
+          "src/daemon/tools/builtins/gh/coverage.ts:22",
+          "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts:11"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "gh is not installed or cannot be spawned",
+          "detection": "ghExec reports spawnError and ghFailureOf returns kind 'missing-tool' (src/daemon/tools/builtins/gh/helpers.ts:202)",
+          "response": "The op returns that failure unchanged; the consumer reads kind 'missing-tool' as missing-integration.",
+          "userImpact": "The identity lookup reports missing-integration, as today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "gh is older than the --json support (2.46.0 here)",
+          "detection": "gh exits non-zero with 'unknown flag: --json'; ghFailureOf returns kind 'rejected' (the text matches neither the sign-in nor the network pattern)",
+          "response": "The failure is returned with gh's message; no retry with the text form.",
+          "userImpact": "The identity lookup reports unavailable, as it does today on this machine, which the Story s9 criterion ac4 allows.",
+          "recoverable": true
+        },
+        {
+          "scenario": "gh does not finish within 15 s",
+          "detection": "ghFailureOf returns kind 'timed-out' naming the command and the limit",
+          "response": "Returned unchanged.",
+          "userImpact": "unavailable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "gh is not signed in or has no network",
+          "detection": "non-zero exit whose text matches GH_AUTH_RE (kind 'missing-signin') or GH_NETWORK_RE (kind 'unreachable')",
+          "response": "Returned unchanged.",
+          "userImpact": "unavailable, with a message that says why.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The output is cut at the capture cap or is longer than 256 KB",
+          "detection": "ctx.truncated (the capture cap is 4 MiB; without maxBytes a cut is a 'rejected' failure in ghFailureOf) or Buffer.byteLength(ctx.stdout, 'utf8') greater than 262144 (256 * 1024) in buildAuthHosts, so multibyte text is counted in bytes as the captured output is",
+          "response": "A failed result of kind 'rejected' that says the output is too large; nothing is parsed.",
+          "userImpact": "unavailable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The output is not JSON or lacks the expected shape",
+          "detection": "JSON.parse throws, or the parsed value has no hosts object whose values are arrays of objects with string state and login",
+          "response": "A failed result of kind 'rejected' naming what was missing; the executor's schema check also rejects a result that does not fit the declared output.",
+          "userImpact": "unavailable; no partial hosts are returned.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "gh prints {\"hosts\":{}} (not signed in to any host)",
+          "expected": "The op succeeds with hosts {}; the consumer decides it means disconnected."
+        },
+        {
+          "input": "An account object has fields the schema does not list",
+          "expected": "They are kept; only state and login are required."
+        },
+        {
+          "input": "A host has an empty account array",
+          "expected": "Accepted: the value is an array of zero accounts."
+        },
+        {
+          "input": "Several accounts on one host, some with state other than 'success'",
+          "expected": "All are returned as gh printed them; filtering by state belongs to the consumer."
+        },
+        {
+          "input": "Output of exactly 256 KB",
+          "expected": "Accepted; only output longer than 256 KB is refused."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "gh_auth's existing ops status, switch and logout keep their commands, fields, limits (30 s), approval classes and output shapes, and the tool id stays gh_auth (k7).",
+          "source": "c3"
+        },
+        {
+          "text": "A spawn error (missing-tool) and a timeout (timed-out) keep their own ToolFailure kinds; a non-zero exit (rejected, missing-signin, or unreachable when the text names a network failure) and a cut capture (rejected) are told apart by their messages, as ghFailureOf produces them today. The new op adds no failure kind and no handling of its own for them.",
+          "source": "c3"
+        },
+        {
+          "text": "The text-converted status op still reads gh's text and converts it; the new op never calls the model.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test), assert/strict; gh tests in src/daemon/tools/builtins/gh/__tests__ with the fake gh executable of _fakegh.ts; use --test-force-exit.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The op's arguments, limit, output shape and every failure, against a fake gh.",
+          "subjects": [
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the hosts op runs exactly `gh auth status --json hosts` with a 15 s limit and no other argument, and returns the hosts object as gh printed it with extra account fields kept",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a missing gh, a timeout, a non-zero exit (including unknown flag --json), a cut capture and output over 256 KB are five different diagnostics (kinds missing-tool, timed-out, rejected for the non-zero exit, rejected for the cut capture, rejected for the over-size output, each with its own message) and a network failure is kind unreachable, and nothing is returned as data",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: valid JSON whose account fields hold multibyte text is accepted at exactly 262144 bytes and refused at 262145 bytes even when its character count is below 262144",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a gh that outlives the hosts limit (lowered through registerGhLimits for the test, restored afterwards) is a timed-out failure that names the command and the limit",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output of exactly 256 KB is accepted and output of 256 KB plus one byte is refused",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output that is not JSON, has no hosts object, or has an account without a string state or login is refused with no partial data",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: an empty hosts object and a host with no accounts are accepted",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the ops status, switch and logout still have their commands, fields, 30 s limits, approval classes and output shapes, and the hosts op makes no model call"
+          ],
+          "fixturesNeeded": [
+            "the fake gh executable in src/daemon/tools/builtins/gh/__tests__/_fakegh.ts",
+            "registerGhLimits (src/daemon/tools/builtins/gh/op-table.ts:479) to lower the limit in one test"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The family tables and the coverage record accept the new op.",
+          "subjects": [
+            "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts: the existing coverage check passes with the hosts op recorded for the command auth status, and all 69 tools are still registered",
+            "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts: the limit table has gh_auth.hosts at 15 s",
+            "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts: the hosts output schema validates a real-shape sample and rejects a sample without login",
+            "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts: the family sweep exercises gh_auth.hosts from the hosts case in _family-rows.ts (JSON stdout, exact argv, class none, 15 s limit) and gh-output-schemas.test.ts validates its output"
+          ],
+          "fixturesNeeded": [
+            "GH_COVERAGE",
+            "the registered gh limits",
+            "the ROWS3 family fixtures in _family-rows.ts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the hosts op runs exactly `gh auth status --json hosts` with a 15 s limit and no other argument, and returns the hosts object as gh printed it with extra account fields kept",
+            "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts: the limit table has gh_auth.hosts at 15 s",
+            "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts: the family sweep exercises gh_auth.hosts from the hosts case in _family-rows.ts (JSON stdout, exact argv, class none, 15 s limit) and gh-output-schemas.test.ts validates its output"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a missing gh, a timeout, a non-zero exit (including unknown flag --json), a cut capture and output over 256 KB are five different diagnostics (kinds missing-tool, timed-out, rejected for the non-zero exit, rejected for the cut capture, rejected for the over-size output, each with its own message) and a network failure is kind unreachable, and nothing is returned as data",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output of exactly 256 KB is accepted and output of 256 KB plus one byte is refused",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: valid JSON whose account fields hold multibyte text is accepted at exactly 262144 bytes and refused at 262145 bytes even when its character count is below 262144",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a gh that outlives the hosts limit (lowered through registerGhLimits for the test, restored afterwards) is a timed-out failure that names the command and the limit"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output that is not JSON, has no hosts object, or has an account without a string state or login is refused with no partial data",
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: an empty hosts object and a host with no accounts are accepted",
+            "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts: the hosts output schema validates a real-shape sample and rejects a sample without login"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the ops status, switch and logout still have their commands, fields, 30 s limits, approval classes and output shapes, and the hosts op makes no model call"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts: the existing coverage check passes with the auth status row listing the ops 'status,hosts', and all 69 tools are still registered"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "gh_auth has three ops: status (plain `gh auth status`, 30 s, text converted by the model into an array of {host, login, active, state}), switch and logout (s1 bundle 1). Nothing in the registry runs `gh auth status --json hosts`; the only consumer that needs it, githubIdentities, spawns gh itself (s1 bundle 3). GH_COVERAGE records `auth status` against op status (s1 bundle 4).",
+      "stateAfter": "gh_auth has a fourth op, hosts, that runs `gh auth status --json hosts` under a 15 s limit and returns the parsed hosts object, with its own failures for a missing gh, a timeout, a non-zero exit and an over-size or malformed output. The three existing ops are unchanged. GH_COVERAGE lists the op for `auth status`, the limit table has it at 15 s and the family fixtures exercise it.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the hosts op and its build function to the gh_auth op list in the account file, with its output schema.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Change the GH_COVERAGE row for `auth status` to op 'status,hosts' and register the 15 s limit for gh_auth.hosts; no check is changed.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add a hosts case to the family fixtures (ROWS3 in _family-rows.ts) with JSON stdout, the exact argv, class none and the 15 s limit, so the family sweeps in gh-family-tools.test.ts and gh-output-schemas.test.ts exercise the new op.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the new test file and the contract cases (including multibyte size cases and a timeout case that lowers the limit through registerGhLimits); run the gh suites and the typecheck.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Purely additive: a new op name on an existing tool. The tool id gh_auth, the ops status, switch and logout, their inputs, limits, approval classes and outputs do not change, and the registry's tool count stays 69. A client that does not know the op ignores it.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "New op hosts on gh_auth with a custom JSON build",
+        "oneLineSummary": "Add a fourth op to ghAuthTool that runs `gh auth status --json hosts` with limitS 15 and a custom build that parses the JSON object and fails when stdout is over 256 KB.",
+        "approach": "In src/daemon/tools/builtins/gh/account.ts add an OpDef named hosts: command ['auth','status'], args [lit('--json','hosts')], cls none, limitS 15, no fields, out custom with a shape {hosts: Record<host, Array<{state, login, active, host, tokenSource, ...optional fields>}>} built from the parsed stdout. The build returns a failed ToolResult (kind rejected) when ctx.stdout is longer than 256 KB, when the JSON does not parse, or when hosts is not an object of arrays. Spawn error, timeout and non-zero exit are reported by the existing ghFailureOf (missing-tool, timed-out, rejected / missing-signin). The existing status, switch and logout ops are unchanged. A row for the new op is added to the coverage table.",
+        "pros": [
+          "Smallest change that fully meets the Story: one op, no new tool id, no change to the shared op table.",
+          "Reuses ghFailureOf, so the spawn-error, timeout and non-zero-exit cases are already separate failure kinds.",
+          "Typed output of its own, so the text-converted status op keeps its shape and its model conversion."
+        ],
+        "cons": [
+          "The 256 KB limit is checked after capture (the capture cap stays 4 MiB), so a larger output is read before it is refused.",
+          "Two ops now run the same gh command with different flags, which the one-row-per-command coverage rule must accommodate."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Add a json flag to the existing status op",
+        "oneLineSummary": "status gains an optional boolean json field that adds `--json hosts` and returns the JSON-built hosts instead of the text-converted ones.",
+        "approach": "Add a field json to the status op; when true, the arguments carry `--json hosts` and the build parses JSON, otherwise it converts text as today. One op, two behaviours.",
+        "pros": [
+          "No new op name.",
+          "One coverage row stays accurate for the command."
+        ],
+        "cons": [
+          "The output shape would depend on the input (two different shapes and state vocabularies: 'logged-in'|'failed' versus 'success' etc.), which a typed op with one output schema cannot declare honestly.",
+          "Changes an existing op that agents use (k7: existing ids keep their meaning).",
+          "Needs a conditional limit (15 s versus 30 s), which the op table gives per op, not per input."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates the unchanged-ops, limit and typed-output requirements (req1, req2, req5)."
+      },
+      {
+        "id": "a3",
+        "name": "A capture cap that fails on a cut, in the op table",
+        "oneLineSummary": "Extend the op table so an op can declare a capture cap whose cut is a failure, then use it for hosts with 256 KB.",
+        "approach": "Add an OpDef option (for example maxBytesFail) that sets ghExec's maxBytes without cutIsAnswer, so a stdout over the cap is a 'rejected' failure at capture time. Then add the hosts op as in a1 using it with 256 KB.",
+        "pros": [
+          "The 256 KB limit is enforced while capturing, so a huge output is never held in memory beyond the cap.",
+          "A reusable option for later ops."
+        ],
+        "cons": [
+          "Changes the shared op table and the executor path for all gh families, which the Story does not need: the output of auth status is a few hundred bytes.",
+          "Widens the test surface (every family's capture tests) for one op.",
+          "Adds an option nobody else has asked for."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Meets the requirements but widens the shared op table and its tests for an output that is a few hundred bytes; ranked second behind a1."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The Story record has no acceptance criteria; ac1 to ac5 were written in the test strategy from the Story text and each has proving tests. Confirm them as the acceptance baseline, or add them to the Story. The originating request is the Story's userValue text in the Story record (the user's 2026-10-27 request to add the JSON hosts form for Story s9 of the one-tool-registry epic).",
+      "The JSON field set gh prints under `hosts` on a gh that supports `auth status --json` is not verified: gh 2.46.0 here rejects --json, so no real output was seen. The schema requires only state and login (taken from src/understanding/identity.ts:105) and keeps other fields. The build should check the real shape against a newer gh when one is available, and until then the contract tests use a sample shaped like the consumer's parse.",
+      "Alternative scoring (alt2): there are no Story criteria, shared contracts or Epic constraints, so the alternatives were scored against six requirements read from the Story text (req1 to req6).",
+      "Invariant sources (ep3): all three invariants cite c3; the evidence is in s1 bundles 1 and 2.",
+      "The account objects carry Record<string, unknown> beyond state and login, deliberately, because gh's field set differs between versions; this is the one unknown-typed part of the output.",
+      "Review round 1 (2026-10-27) found: the 256 KB check counted code units not bytes (now Buffer.byteLength); the failure kinds are not all distinct (now described as different diagnostics, with unreachable named); the coverage row takes a comma-separated op list (now 'status,hosts', no check change); the family fixtures and sweeps need a hosts case (now in the plan); the fake gh sleeps 5 s, shorter than the 15 s limit, and the byte-boundary tests lacked multibyte cases (now a limit-lowering seam and multibyte cases). The content was changed by hand through the lifecycle service, revision 2, and is not yet re-reviewed."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "the gh_auth tool and its op table (read from the files; the analyzer call graph was not run)",
+      "quotedText": "ghAuthTool through defineGhFamily with three ops: status, switch and logout"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "how a gh op reports spawn errors, timeouts, truncation and non-zero exits",
+      "quotedText": "a spawn error is kind 'missing-tool'; a timeout is 'timed-out'; a stdout cut at the capture cap is 'rejected' unless the op declares maxBytes"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "the gh_auth tool and its op table; how a gh op reports failures",
+      "quotedText": "the existing ops status, switch and logout and the failure kinds of ghFailureOf"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "the consumer and the installed gh",
+      "quotedText": "githubIdentities runs `gh auth status --json hosts` with timeoutMs 15000 and maxBytes 256 KB"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/account.ts:171",
+      "quotedText": "id: 'gh_auth', dashSafe: true"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/understanding/identity.ts:105",
+      "quotedText": "const status = await run(['gh', 'auth', 'status', '--json', 'hosts'], { timeoutMs: 15_000, maxBytes: 256 * 1024 });"
+    }
+  ]
+}

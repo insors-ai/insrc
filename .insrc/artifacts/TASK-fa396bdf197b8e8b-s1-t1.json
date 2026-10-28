@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5750b5a9-92ed-4e76-98b7-7c50d0782647",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T07:57:47.638Z",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Watch and scan new directories in the Watcher",
+      "parent": {
+        "entityId": "STORY-fa396bdf197b8e8b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fa396bdf197b8e8b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "278687097d5e0c033afb1f5e917b0723b89aaa4f7e275d43b0aaad581b1b8f90",
+        "at": "2026-10-27T07:57:47.638Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T07:57:47.639Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Watch and scan new directories in the Watcher",
+    "summary": "In src/indexer/watcher.ts keep the repo's ignore list per repo and a Map of per-directory subscriptions. On a create event for a directory under a watched repo (not a symbolic link, no ignored segment), when it has subdirectories subscribe to it first, then walk its tree and push a create event for every file, skipping ignored directories and symbolic links; events from the new subscription go through the same debounce and handlers and a create event for a directory inside it is handled the same way. Release the subscription on a delete event for the directory, and release them all in removeRepo (those under the repo) and close. Add src/indexer/__tests__/watcher-new-directories.test.ts with the real @parcel/watcher in temporary directories; every wait polls for the expected event with a time limit instead of sleeping a fixed time.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "After addRepo, mkdir -p a/b/c with a file written at once yields a create event for that file, and a file written in a/b/c three seconds later yields an event too",
+      "A tree created in one call yields a create event for every file in it, including nested ones, and a symbolic link to a directory is not followed",
+      "Files in a new node_modules directory or in an ignored subdirectory of a new directory yield no events, at creation or when written later",
+      "After a new nested directory is deleted and created again with the same path, files written in it are reported again",
+      "After close() no handler is called for later writes, and after removeRepo() the repo's per-directory subscriptions deliver nothing",
+      "The public methods addRepo, removeRepo and close keep their signatures and the {type, path} event shape, and src/daemon/index.ts and src/daemon/threads/indexing-worker.ts need no edit",
+      "The watcher test file waits by polling with a time limit and passes in three consecutive runs"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/watcher-new-directories.test.ts: after addRepo, mkdir -p a/b/c with a file written in it at once yields a create event for that file, and a second file written in a/b/c three seconds later yields an event too (the case that produced no event before the fix)"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/watcher-new-directories.test.ts: a directory tree with files created in one call yields a create event for every file in the tree, including files in nested directories, and a symbolic link to a directory is not followed"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/watcher-new-directories.test.ts: files inside a new directory whose name is on the ignore list (node_modules) and inside an ignored subdirectory of a new directory yield no events, at creation and when written later"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/watcher-new-directories.test.ts: after a new nested directory is deleted and created again with the same path, files written in it are reported again"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/watcher-new-directories.test.ts: after close() no handler is called for later writes, and after removeRepo() the repo's per-directory subscriptions deliver nothing"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

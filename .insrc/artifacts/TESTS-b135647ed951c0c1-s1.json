@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "1e533307955bd1f416fd88abb80d6828fc2aa9fd7fadd7356fc2392d252d461d",
+        "at": "2026-10-27T11:28:35.454Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b135647ed951c0c1",
+    "storyId": "s1",
+    "createdAt": "2026-10-27T11:28:35.347Z",
+    "updatedAt": "2026-10-27T11:28:35.347Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-27T11:15:03.755Z",
+    "epicSlug": "add-json-hosts-form-gh-auth",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "55d4a00c6",
+        "ranAt": "2026-10-27T11:28:35.347Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the hosts op runs exactly `gh auth status --json hosts` with a 15 s limit and no other argument, and returns the hosts object as gh printed it with extra account fields kept",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the hosts op runs exactly `gh auth status --json hosts` with a 15 s limit and no other argument, and returns the hosts object as gh printed it with extra account fields kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a missing gh, a timeout, a non-zero exit (including unknown flag --json), a cut capture and output over 256 KB are five different diagnostics (kinds missing-tool, timed-out, rejected for the non-zero exit, rejected for the cut capture, rejected for the over-size output, each with its own message) and a network failure is kind unreachable, and nothing is returned as data",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a missing gh, a timeout, a non-zero exit (including unknown flag --json), a cut capture and output over 256 KB are five different diagnostics (kinds missing-tool, timed-out, rejected for the non-zero exit, rejected for the cut capture, rejected for the over-size output, each with its own message) and a network failure is kind unreachable, and nothing is returned as data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: valid JSON whose account fields hold multibyte text is accepted at exactly 262144 bytes and refused at 262145 bytes even when its character count is below 262144",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: valid JSON whose account fields hold multibyte text is accepted at exactly 262144 bytes and refused at 262145 bytes even when its character count is below 262144",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a gh that outlives the hosts limit (lowered through registerGhLimits for the test, restored afterwards) is a timed-out failure that names the command and the limit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a gh that outlives the hosts limit (lowered through registerGhLimits for the test, restored afterwards) is a timed-out failure that names the command and the limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output of exactly 256 KB is accepted and output of 256 KB plus one byte is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output of exactly 256 KB is accepted and output of 256 KB plus one byte is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output that is not JSON, has no hosts object, or has an account without a string state or login is refused with no partial data",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output that is not JSON, has no hosts object, or has an account without a string state or login is refused with no partial data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: an empty hosts object and a host with no accounts are accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: an empty hosts object and a host with no accounts are accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the ops status, switch and logout still have their commands, fields, 30 s limits, approval classes and output shapes, and the hosts op makes no model call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the ops status, switch and logout still have their commands, fields, 30 s limits, approval classes and output shapes, and the hosts op makes no model call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts: the existing coverage check passes with the hosts op recorded for the command auth status, and all 69 tools are still registered",
+            "level": "contract",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts",
+                "title": "gh-coverage.test.ts: the existing coverage check passes with the hosts op recorded for the command auth status, and all 69 tools are still registered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts: the limit table has gh_auth.hosts at 15 s",
+            "level": "contract",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts",
+                "title": "gh-timeouts.test.ts: the limit table has gh_auth.hosts at 15 s",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts: the hosts output schema validates a real-shape sample and rejects a sample without login",
+            "level": "contract",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts",
+                "title": "gh-output-schemas.test.ts: the hosts output schema validates a real-shape sample and rejects a sample without login",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts: the family sweep exercises gh_auth.hosts from the hosts case in _family-rows.ts (JSON stdout, exact argv, class none, 15 s limit) and gh-output-schemas.test.ts validates its output",
+            "level": "contract",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts",
+                "title": "gh-family-tools.test.ts: the family sweep exercises gh_auth.hosts from the hosts case in _family-rows.ts (JSON stdout, exact argv, class none, 15 s limit) and gh-output-schemas.test.ts validates its output",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2611,
+            "titles": [
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the hosts op runs exactly `gh auth status --json hosts` with a 15 s limit and no other argument, and returns the hosts object as gh printed it with extra account fields kept",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a missing gh, a timeout, a non-zero exit (including unknown flag --json), a cut capture and output over 256 KB are five different diagnostics (kinds missing-tool, timed-out, rejected for the non-zero exit, rejected for the cut capture, rejected for the over-size output, each with its own message) and a network failure is kind unreachable, and nothing is returned as data",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: valid JSON whose account fields hold multibyte text is accepted at exactly 262144 bytes and refused at 262145 bytes even when its character count is below 262144",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: a gh that outlives the hosts limit (lowered through registerGhLimits for the test, restored afterwards) is a timed-out failure that names the command and the limit",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output of exactly 256 KB is accepted and output of 256 KB plus one byte is refused",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: output that is not JSON, has no hosts object, or has an account without a string state or login is refused with no partial data",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: an empty hosts object and a host with no accounts are accepted",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts: the ops status, switch and logout still have their commands, fields, 30 s limits, approval classes and output shapes, and the hosts op makes no model call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4672,
+            "titles": [
+              {
+                "title": "gh-coverage.test.ts: every installed gh command has a GH_COVERAGE row, covered rows name registered tools and ops, excluded rows have a reason, and all 69 tools are registered (68 that serve a gh command and gh_tracker)",
+                "result": "pass"
+              },
+              {
+                "title": "gh-coverage.test.ts: the coverage table names the tracker family as s7's amendment and keeps raw gh api excluded",
+                "result": "pass"
+              },
+              {
+                "title": "gh-coverage.test.ts: the plan note lists the tools s7 built, marks the callTool prerequisite done and states the s9 and s10 hand-over",
+                "result": "pass"
+              },
+              {
+                "title": "gh-coverage.test.ts: the existing coverage check passes with the hosts op recorded for the command auth status, and all 69 tools are still registered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1272,
+            "titles": [
+              {
+                "title": "gh-family-tools.test.ts: issue, pr, release asset, repo, run, workflow and project ops build the argv the table gives and return the literal op",
+                "result": "pass"
+              },
+              {
+                "title": "gh-family-tools.test.ts: a mutation reports the URL gh printed as its target, else the input identifier, and a read reports its rows and items",
+                "result": "pass"
+              },
+              {
+                "title": "gh-family-tools.test.ts: label, gist, secret, variable, cache, ssh-key and gpg-key ops build the argv the table gives and return the literal op",
+                "result": "pass"
+              },
+              {
+                "title": "gh-family-tools.test.ts: secret and variable set deliver the value on standard input or through envFile and never in argv",
+                "result": "pass"
+              },
+              {
+                "title": "gh-family-tools.test.ts: search, ruleset, org, auth, status, codespace, config and extension ops build the argv the table gives and return the literal op",
+                "result": "pass"
+              },
+              {
+                "title": "gh-family-tools.test.ts: the data of config, org, codespace logs and the text conversions",
+                "result": "pass"
+              },
+              {
+                "title": "gh-family-tools.test.ts: codespace create always passes --default-permissions and has no defaultPermissions field",
+                "result": "pass"
+              },
+              {
+                "title": "gh-family-tools.test.ts: the family sweep exercises gh_auth.hosts from the hosts case in _family-rows.ts (JSON stdout, exact argv, class none, 15 s limit) and gh-output-schemas.test.ts validates its output",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2265,
+            "titles": [
+              {
+                "title": "gh-output-schemas.test.ts: issue and pr tool results validate against their output schemas for success and failure",
+                "result": "pass"
+              },
+              {
+                "title": "gh-output-schemas.test.ts: every output of a family tool carries the literal op and validates for success and failure",
+                "result": "pass"
+              },
+              {
+                "title": "gh-output-schemas.test.ts: the hosts output schema validates a real-shape sample and rejects a sample without login",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2601,
+            "titles": [
+              {
+                "title": "gh-timeouts.test.ts: ghTimeoutMs gives each job the limit in the table and a missing key the class default",
+                "result": "pass"
+              },
+              {
+                "title": "gh-timeouts.test.ts: no existing tool's limit is below its limit today",
+                "result": "pass"
+              },
+              {
+                "title": "gh-timeouts.test.ts: no ghExec call in issue.ts or pr.ts passes its own timeout",
+                "result": "pass"
+              },
+              {
+                "title": "gh-timeouts.test.ts: no ghExec call in repo.ts, release.ts or project.ts passes its own timeout and clone keeps 600 s",
+                "result": "pass"
+              },
+              {
+                "title": "gh-timeouts.test.ts: a fake gh that outlives its limit ends with timed-out naming the command and the limit, a mutating time-out adds that the outcome is unknown, and no ghExec call outside the table passes its own timeout",
+                "result": "pass"
+              },
+              {
+                "title": "gh-timeouts.test.ts: the limit table has gh_auth.hosts at 15 s",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

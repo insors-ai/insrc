@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f6367ca7-0a78-4050-8aee-7ad4cbdd7ef0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.465Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Shared process lifecycle and spawnManaged",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "09d37226972b8450c905c556e86c2a887021e6a719da2f92448fbd9bdbc642d3",
+        "at": "2026-10-26T18:21:16.465Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.466Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Shared process lifecycle and spawnManaged",
+    "summary": "In shell-helper.ts add one lifecycle: effective signal tested before spawn, own process group on non-win32, group kill on abort/time-out/stderr overflow, 2 s bounded settlement destroying streams and clearing timers. runShell and runShellBytes use it (additive aborted field); add spawnManaged returning the discriminated union.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "An already-aborted signal starts no process in runShell, runShellBytes or spawnManaged",
+      "A descendant holding the pipes is killed and the call settles within 2 s after abort and time-out",
+      "A call that is neither aborted nor timed out settles on close as before",
+      "spawnManaged child is unreadable without narrowing on spawned"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/shell-helper-abort.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/shell-helper-tree-kill.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/spawn-managed.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-cat-file-tree-kill.test.ts"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

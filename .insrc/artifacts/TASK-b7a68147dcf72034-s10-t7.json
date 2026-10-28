@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1acd5d47-65e7-40a3-afc6-fe0273fbb48a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.702Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "commitAndPushArtifactsViaRegistry",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "72b5b51f4f415455bb9d17971cf2e84fce5ca1afbb7a9405401f0c152392107a",
+        "at": "2026-10-27T16:08:33.702Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.703Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "commitAndPushArtifactsViaRegistry",
+    "summary": "Add the registry commit-and-push sequence git_rev_parse, existence filter, git_stage, git_diff staged, git_commit, git_push with configured true, with the old result reasons, ToolDenied thrown with phase, committed flag and staged paths on denial, and the 'nothing staged' read from the typed diff.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "same CommitArtifactsResult and reasons as the old function for not a work tree, no files on disk, nothing staged, git add failure, commit failure and rejected push",
+      "a denial at each phase throws ToolDenied with the phase, committed flag and staged paths; denied commit leaves the paths staged (index checked)",
+      "mixed existing and missing paths stage only the existing ones; alternate push remote, differently named upstream and missing upstream behave as the old helper"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "commit-and-push-registry.test.ts: same results and reasons as the old function for each case; denial at each phase throws ToolDenied; denied commit leaves the paths staged; mixed and all-missing paths; three push configurations"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

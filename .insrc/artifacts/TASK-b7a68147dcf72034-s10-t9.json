@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ee85ff2f-8e61-4a34-a28a-ce80d2a9852d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.705Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Team gate functions: async with denial rethrow",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0c9661dde816f03f5dd25e5906e6ddc26f3013dfd7245407733abaf933307c56",
+        "at": "2026-10-27T16:08:33.705Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.706Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Team gate functions: async with denial rethrow",
+    "summary": "Make actingUser, teamContext, readHolder, teamGate, claim, release, reviewFixDecision, claimsEnforcedFor, authorizeStageChange, authorizeApproval, authorizeFindingApply, reviewFixModeFor, assertMayAuthor, assertMayBuild, parkPlan and resumeCheck asynchronous and add the ToolDenied rethrow before every catch-all listed in the LLD (gate.ts :183 :282 :308 :338 :348, approval-gate.ts :41 :57 :84 :134).",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "each gate returns the same outcome or raises the same refusal as before",
+      "a ToolDenied thrown from the port stops the stage and never becomes undefined, a generic refusal or report-only"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "team-gates-async.test.ts: the gate functions return the same outcomes and refusals with an async port"
+      },
+      {
+        "level": "unit",
+        "name": "team-gates-denial.test.ts: a denial stops the stage as ToolDenied and is never undefined, a generic refusal or report-only"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

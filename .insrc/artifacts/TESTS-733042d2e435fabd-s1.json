@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "b51c1b64d97d022863376f76fa6d7dad90a1bc14443bc29dd6db2bf3b98a0a30",
+        "at": "2026-10-27T12:55:06.527Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "733042d2e435fabd",
+    "storyId": "s1",
+    "createdAt": "2026-10-27T11:56:36.914Z",
+    "updatedAt": "2026-10-27T12:55:06.126Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-27T11:44:58.541Z",
+    "epicSlug": "add-optional-output-budget-git-ls",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "2c9fd8c38",
+        "ranAt": "2026-10-27T12:55:06.126Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: maxBytes is accepted as an integer from 1 to 52428800 and refused as 0, a negative, a fraction or 52428801 by the input schema, and every other input of the tool is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts",
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: maxBytes is accepted as an integer from 1 to 52428800 and refused as 0, a negative, a fraction or 52428801 by the input schema, and every other input of the tool is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: with no maxBytes a listing over 10 MiB is a rejected failure, as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts",
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: with no maxBytes a listing over 10 MiB is a rejected failure, as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: with maxBytes 52428800 a listing between 10 MiB and 50 MiB is returned whole",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts",
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: with maxBytes 52428800 a listing between 10 MiB and 50 MiB is returned whole",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: a listing of exactly maxBytes bytes is returned and one of maxBytes plus one byte is a rejected failure that returns no files, with multibyte names counted in bytes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts",
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: a listing of exactly maxBytes bytes is returned and one of maxBytes plus one byte is a rejected failure that returns no files, with multibyte names counted in bytes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: each of the six other readGit-based tools (git_ls_tree, git_rev_parse, git_for_each_ref, git_path_history, git_rev_list and git_hash_object) still cuts at 10 MiB and passes no maxBytes, and git_ls_files still runs the same argv and refuses a NUL in a path before any command runs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts",
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: each of the six other readGit-based tools (git_ls_tree, git_rev_parse, git_for_each_ref, git_path_history, git_rev_list and git_hash_object) still cuts at 10 MiB and passes no maxBytes, and git_ls_files still runs the same argv and refuses a NUL in a path before any command runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-read-cut.test.ts: git_rev_parse and git_hash_object return a rejected failure that says the output was cut and no data when the capture is cut (for git_hash_object also when the retained text is a valid object name followed by output that overflowed), and return the same results as before for output that fits",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-read-cut.test.ts",
+                "title": "src/daemon/tools/builtins/git/__tests__/git-read-cut.test.ts: git_rev_parse and git_hash_object return a rejected failure that says the output was cut and no data when the capture is cut (for git_hash_object also when the retained text is a valid object name followed by output that overflowed), and return the same results as before for output that fits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+            "level": "contract",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5747,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 805,
+            "titles": [
+              {
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: maxBytes is accepted as an integer from 1 to 52428800 and refused as 0, a negative, a fraction or 52428801 by the input schema, and every other input of the tool is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: with no maxBytes a listing over 10 MiB is a rejected failure, as before",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: with maxBytes 52428800 a listing between 10 MiB and 50 MiB is returned whole",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: a listing of exactly maxBytes bytes is returned and one of maxBytes plus one byte is a rejected failure that returns no files, with multibyte names counted in bytes",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts: each of the six other readGit-based tools (git_ls_tree, git_rev_parse, git_for_each_ref, git_path_history, git_rev_list and git_hash_object) still cuts at 10 MiB and passes no maxBytes, and git_ls_files still runs the same argv and refuses a NUL in a path before any command runs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-read-cut.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 586,
+            "titles": [
+              {
+                "title": "src/daemon/tools/builtins/git/__tests__/git-read-cut.test.ts: git_rev_parse and git_hash_object return a rejected failure that says the output was cut and no data when the capture is cut (for git_hash_object also when the retained text is a valid object name followed by output that overflowed), and return the same results as before for output that fits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

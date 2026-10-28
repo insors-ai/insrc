@@ -1,0 +1,529 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793187743306-ckhhax",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T11:46:34.941Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 250592,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "hldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "4918e38ad8f30a49ac1860b173eb511eedfb548d4e058a99251cc487bde19a8b",
+        "at": "2026-10-28T11:51:09.439Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 3,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-10-28T11:53:02.100Z",
+        "report": {
+          "entityId": "LLD-c32aa60534232f36-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-bb8ce0e170ef8a82f2169d6155270c83"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T11:56:19.695Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Prepare a fixed review subject from approved work and explicitly selected commits. Preserve exact changed-block provenance and make before/after source navigable without reading the working tree. Define the runtime ports needed by later Stories without activating the new engine.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a daemon-owned durable investigation state machine with provider-independent accepted state. Seed each run with sc1's approved tasks/checks, artifact references and explicit commit packets, not embedded source partitions. Source-only and indexed-impact runs use identical packets, obligations, reviewer policy and completion checks; only the indexed capability in sc3 differs. Substantive judgments remain the independent agent's job; deterministic guards validate identity, evidence provenance, coverage and publication, not semantic correctness. Reuse existing LLMProvider/CliProvider read-only execution, budget admission, source freshness, ownership and canonical artifact lifecycle; introduce the investigation protocol and durable accepted-state store behind the existing code-review entrypoints. Checkpoint cadence is per reviewed commit-packet block, independently of continuation boundaries and run time limits; multiple block checkpoints may be accepted within one managed reviewer session.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "ImmutableReviewSubjectV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "The only authority for changed scope. Exact selected commit packets identify relevant parent-relative blocks; frozen context can include other source only as context. No HEAD/working-tree diff fallback.",
+          "interfaceSketch": "interface ReviewSubjectV1 {\n readonly version: 1; readonly subjectId: string; readonly subjectDigest: string;\n readonly repoId: string; readonly rootArtifactId: string; readonly storyId: string;\n readonly build: { readonly artifactId: string; readonly revision: number; readonly sourceCommit: string };\n readonly contracts: readonly { readonly artifactId: string; readonly path: string; readonly revision: number; readonly contentDigest: string }[];\n readonly taskBasis: 'approved-plan' | 'approved-upstream';\n readonly tasks: readonly { readonly id: string; readonly description: string; readonly acceptanceChecks: readonly { readonly id: string; readonly text: string }[] }[];\n readonly packets: readonly CommitPacketV1[]; readonly contextTree: string;\n readonly ambiguities: readonly string[];\n}\ninterface CommitPacketV1 {\n readonly packetId: string; readonly commitId: string; readonly parentId: string;\n readonly attribution: { readonly basis: string; readonly evidenceRefs: readonly string[] };\n readonly blocks: readonly { readonly blockId: string; readonly oldPath: string | null; readonly newPath: string | null; readonly oldBlob: string | null; readonly newBlob: string | null; readonly oldLines: readonly [number, number] | null; readonly newLines: readonly [number, number] | null; readonly kind: 'text' | 'binary' | 'rename' | 'mode' | 'delete' | 'add'; readonly attributionRefs: readonly string[] }[];\n}",
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "ReviewRuntimePortsV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Foundational type-level ports avoid making the investigation Story depend backwards on recovery. s4 implements durable storage, s3 uses the port, and s6 composes production adapters. Usage observations flow to existing usage contracts with a durable pending outbox when a writer is unavailable.",
+          "interfaceSketch": "interface ReviewRuntimePortsV1 {\n readonly readEvidence: (subjectId: string, reference: string) => Promise<ReviewReadReceiptV1>;\n readonly stageImmutableValue: (runId: string, value: Readonly<Record<string, unknown>> | string) => Promise<{ readonly reference: string; readonly digest: string }>;\n readonly appendTransition: (runId: string, generation: number, expectedSequence: number, transitionRef: string) => Promise<{ readonly sequence: number; readonly checkpointDigest: string }>;\n readonly recordAttemptUsage: (observation: ReviewUsageObservationV1) => Promise<{ readonly state: 'recorded' | 'pending' | 'unavailable'; readonly receiptRef: string | null }>;\n}\ninterface ReviewUsageObservationV1 {\n readonly runId: string; readonly attemptId: string; readonly observationId: string;\n readonly activity: 'code-review'; readonly chargedArtifactId: string; readonly subjectArtifactId: string;\n readonly providerRequestId: string | null; readonly quality: 'reported' | 'estimated' | 'unavailable';\n readonly providerId: string; readonly modelId: string | null;\n readonly granularity: 'model-call' | 'invocation-total' | 'cumulative-snapshot';\n readonly counters: { readonly inputUncachedTokens: number | null; readonly cacheReadTokens: number | null; readonly cacheWriteTokens: number | null; readonly outputTokens: number | null; readonly reasoningTokens: number | null };\n readonly nativeObservationRef: string | null;\n readonly allowanceTokens: number; readonly elapsedActiveMs: number;\n}\ninterface ReviewReadReceiptV1 {\n readonly reference: string; readonly sourceDigest: string; readonly contentRef: string; readonly text: string | null;\n readonly lines: readonly [number, number] | null;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n}",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc6"
+        ],
+        "depends": [],
+        "internal": "Own subject preparation, attribution ambiguity detection, exact Git commit/blob/block navigation and frozen context binding. Define foundational runtime-port types only; do not implement task investigation, a recovery store or new accounting storage. No generic HEAD/working-tree diff may select scope."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1",
+            "sc6"
+          ],
+          "internal": "Own required-row enumeration, evidence identity/provenance and coverage relationships/dispositions. Reuse subject inputs and runtime ports. Keep ledger validation helpers private; do not execute reviewer turns or publish CRs."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc6"
+          ],
+          "internal": "Own independent read-only task-directed continuation behavior, on-demand source navigation, optional indexed caller/impact enrichment, budget admission, bounded retry/pause and attempt usage emission through foundational ports. In-memory ports are test scaffolding while production selection remains disabled until s4/s6; no durable storage implementation or terminal approval logic. Publish and acknowledge incremental block progress within continuations, with partial cross-block assessments recorded rather than lost. Domain progress contracts only; no competing MCP phase/schema ownership. External registration belongs to s6."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Own durable implementation of foundational acceptance/usage-outbox ports, append/replay/checkpoint integrity, lease/generation fencing, uncertain attempts and compatibility/time recovery. Do not alter review criteria or introduce a usage warehouse. Its recovery implementation is composed by downstream s6 rather than consumed backwards by s3. Persist/replay block-level evidence and assessment receipts independently of final provider-call completion."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Own completion coverage/freshness/party validation, canonical CR adaptation and idempotent terminal publication receipts. Reuse existing lifecycle and severity/confidence policy. Do not let a completion request, missing evidence or a failed run masquerade as a completed verdict."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own production composition, equivalent MCP/daemon/controller start/status/resume/cancel adapters, status/usage presentation fields, explicit engine rollout/rollback, legacy compatibility and evaluation fixtures. No client opens stores directly; no client-specific board UI or design-review replacement. Sole new-engine MCP adapter/schema owner; reconcile 8315a11f/S005 legacy sc7 as specified in the architecture and record code-only supersession before opt-in. Verify routing partitions across both installation orders."
+        }
+      ],
+      "rolloutPhase": "A — scoped subject and foundational ports",
+      "nonFunctional": {
+        "performance": "No eager whole-source or whole-contract repetition and no mandatory call-per-clause. Bounded read ranges and explicit evidence references prevent unbounded request growth.128K inclusive estimated admission and five-minute continuation cap; default120active-minute/24continuation limits pause with durable progress and explicit extension rather than claim success. Use deterministic/mock providers for routine tests; measure authorized live comparisons against recorded baselines before claiming savings. Block checkpoint acceptance is independent of run duration:120minutes is a pause ceiling, never a save interval. Grouping several block assessments in one session remains allowed.",
+        "security": "Daemon owns runtime state and DB access; cloud access remains LLMProvider/CliProvider only. Independent reviewer identity is checked at start and publication. Source reads are pinned and read-only; untrusted repository text is data, not tool/policy authority. Trusted evidence reads cannot escape the declared snapshot/approved-artifact view, graph queries bind to the registered source repo and declared dependency closure, and native adapters that cannot meet pinning/read-only capability refuse explicitly. Private runtime state uses restrictive access; metadata diagnostics contain no raw prompts/evidence.",
+        "observability": "Expose run/subject/engine/policy IDs, owner generation, attempt lifecycle, required/covered/unverified rows, pause/stale causes and resume compatibility. Show managed attempt count/active time, observed usage quality and unknown/pending observations distinctly from reservations and estimates. Emit status/heartbeats without replaying accepted work; transport disconnect is not a review verdict. Keep human-readable review reports only in /tmp. Surface latest accepted block/progress receipt and outstanding block IDs so clients can distinguish durable block progress from provider-session liveness.",
+        "durability": "Journal-committed acceptance precedes acknowledgment; snapshots/checkpoints are reconstructible and verified against immutable evidence/answer blobs. Detect torn tails and corruption, fence concurrent owners and late replies, preserve uncertain provider outcomes and idempotent completion/usage receipts. Pauses do not erase consumed execution time. Legacy runs are explicitly non-resumable; runtime data remains outside artifact JSON and excluded from changed scope. Every reviewed block is journal-committed before its durable acknowledgment and cursor advancement, even while a native session continues. Accepted block state survives an uncertain or failed enclosing attempt; only unfinished/unacknowledged work is resumed."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ReviewSubjectV1",
+          "signature": "interface ReviewSubjectV1 {\n readonly version: 1; readonly subjectId: string; readonly subjectDigest: string;\n readonly repoId: string; readonly rootArtifactId: string; readonly storyId: string;\n readonly build: { readonly artifactId: string; readonly revision: number; readonly sourceCommit: string };\n readonly contracts: readonly { readonly artifactId: string; readonly path: string; readonly revision: number; readonly contentDigest: string }[];\n readonly taskBasis: 'approved-plan' | 'approved-upstream';\n readonly tasks: readonly { readonly id: string; readonly description: string; readonly acceptanceChecks: readonly { readonly id: string; readonly text: string }[] }[];\n readonly packets: readonly CommitPacketV1[]; readonly contextTree: string;\n readonly ambiguities: readonly string[];\n}\ninterface CommitPacketV1 {\n readonly packetId: string; readonly commitId: string; readonly parentId: string;\n readonly attribution: { readonly basis: string; readonly evidenceRefs: readonly string[] };\n readonly blocks: readonly { readonly blockId: string; readonly oldPath: string | null; readonly newPath: string | null; readonly oldBlob: string | null; readonly newBlob: string | null; readonly oldLines: readonly [number, number] | null; readonly newLines: readonly [number, number] | null; readonly kind: 'text' | 'binary' | 'rename' | 'mode' | 'delete' | 'add'; readonly attributionRefs: readonly string[] }[];\n}",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewSubjectV1",
+            "meaning": "Immutable sc1 value admitted only from verified artifact snapshots and exact selected Git commit/parent objects."
+          },
+          "errors": [
+            {
+              "type": "SubjectPreparationError",
+              "condition": "Typed invalid-input, unapproved-contract, stale-contract, invalid-object, ambiguous-attribution, unsupported-change or resource-limit; never silently truncate/admit."
+            }
+          ],
+          "preconditions": [
+            "Internal preparation request carries repo/root/story/build identity, explicit commit IDs with parent choice and attribution evidence; pinned approved PLAN/LLD or legitimate approved upstream basis.",
+            "Commit ownership proof and selected hunk identities are validated against trusted build attribution, never accepted merely because caller supplied arbitrary evidenceRef strings."
+          ],
+          "postconditions": [
+            "No HEAD/worktree diff establishes scope; all packets use full object IDs and actual parent membership.",
+            "Subject digest is SHA256 of deterministic canonical JSON excluding subjectId/subjectDigest; identity derived from digest. Mode/index excluded so identical inputs yield same subject.",
+            "Preparation revalidates artifact revisions/content and input bindings before returning. Later freshness validation compares the same pins, not moving HEAD."
+          ]
+        },
+        {
+          "name": "ReviewRuntimePortsV1",
+          "signature": "interface ReviewRuntimePortsV1 {\n readonly readEvidence: (subjectId: string, reference: string) => Promise<ReviewReadReceiptV1>;\n readonly stageImmutableValue: (runId: string, value: Readonly<Record<string, unknown>> | string) => Promise<{ readonly reference: string; readonly digest: string }>;\n readonly appendTransition: (runId: string, generation: number, expectedSequence: number, transitionRef: string) => Promise<{ readonly sequence: number; readonly checkpointDigest: string }>;\n readonly recordAttemptUsage: (observation: ReviewUsageObservationV1) => Promise<{ readonly state: 'recorded' | 'pending' | 'unavailable'; readonly receiptRef: string | null }>;\n}\ninterface ReviewUsageObservationV1 {\n readonly runId: string; readonly attemptId: string; readonly observationId: string;\n readonly activity: 'code-review'; readonly chargedArtifactId: string; readonly subjectArtifactId: string;\n readonly providerRequestId: string | null; readonly quality: 'reported' | 'estimated' | 'unavailable';\n readonly providerId: string; readonly modelId: string | null;\n readonly granularity: 'model-call' | 'invocation-total' | 'cumulative-snapshot';\n readonly counters: { readonly inputUncachedTokens: number | null; readonly cacheReadTokens: number | null; readonly cacheWriteTokens: number | null; readonly outputTokens: number | null; readonly reasoningTokens: number | null };\n readonly nativeObservationRef: string | null;\n readonly allowanceTokens: number; readonly elapsedActiveMs: number;\n}\ninterface ReviewReadReceiptV1 {\n readonly reference: string; readonly sourceDigest: string; readonly contentRef: string; readonly text: string | null;\n readonly lines: readonly [number, number] | null;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n}",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewRuntimePortsV1",
+            "meaning": "Type-only sc6 contract; s4 backend and s6 composition remain deferred."
+          },
+          "errors": [
+            {
+              "type": "ReviewRuntimePortError",
+              "condition": "Named backend error contract for invalid identity/value, stale generation, sequence conflict or unknown evidence reference; implemented by s4, not s1."
+            }
+          ],
+          "preconditions": [
+            "Central stageImmutableValue accepts objects and strings; serialization and digesting belong to the backend, never every caller."
+          ],
+          "postconditions": [
+            "Retain HLD read receipt and usage observation fields exactly, including all five nullable counters and observation granularity; no usage warehouse."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewSubjectV1 / CommitPacketV1",
+        "change": "new",
+        "details": "sc1 is normative. Subject owns 1..N packets; packet owns 1..N selected blocks; each block belongs to exactly one parent-relative packet. Artifact references are immutable non-owned pins, 1..N per subject. A commit may have several explicit parent packets, never an implicit first-parent merge choice. Resolve commit parents and blobs using argv-only read-only Git plumbing; no replace refs, external diff/textconv or shell interpolation. Verify selected parent is actual direct parent, unique full hashes and exact file/blob/mode metadata. Root commits: refuse explicitly in v1 because required parentId cannot encode empty-tree provenance. Submodules and unsupported Git object formats refuse explicitly until supported. Object IDs must match repo format. Paths are exact repo-relative Git paths, parsed NUL-delimited, never interpreted as filesystem symlink targets or Git options. Per-file zero-context canonical hunks supply stable block identity; old/new line spans are one-based inclusive, null for zero-line side. Added/deleted/binary/rename/mode changes retain typed non-text entries plus textual hunks where applicable. Attribution must cover each admitted block against trusted scope evidence; mixed commits with no verified block ownership refuse. No inference from file ownership alone. Empty/ambiguous/truncated selection returns error, not a vacuous subject. Navigation uses pinned blobs/contextTree only; HEAD changes do not add scope. Bounded reads return explicit partial/unavailable receipts with digest and range, never silently truncated complete content. No graph/index needed. Implementation layout (all proposed): src/workflow/code-review/investigation/types.ts exports exact sc1/sc6 values; subject.ts owns prepareReviewSubject(request,deps): Promise<ReviewSubjectV1> and assertReviewSubjectFresh(subject,deps): Promise<void>; git-packets.ts owns read-only exact object/packet extraction; source.ts owns readReviewSource(subject,reference,limits,deps): Promise<ReviewReadReceiptV1>; index.ts exports these internal entrypoints. These helpers implement sc1, not additional cross-Story protocols. No call sites are claimed before s6 integration. Git deps expose argv-array execution returning bytes with timeout/output caps; no generic shell executor. Attribution algorithm: the trusted preparation dependency resolves selected full commits from a pinned build scope record and checks exact root/story identity and selection membership. A full-commit ownership record may admit all canonical changes only if it attests exclusive Story ownership; an Insrc-Story trailer alone is a candidate filter, not exclusive hunk proof. For mixed commits the trusted record supplies exact parent/blob/hunk-content digests and mode/rename/non-text entry selectors; compare each against recomputed entries, fail unmatched/overlapping/conflicting ownership. Omitted entries are excluded with attribution rationale available to diagnostics. Caller-provided evidence strings without a matching trusted record cannot authorize scope. Missing historical hunk proof yields ambiguity requiring an explicit human scope attestation recorded by the upstream scope owner, not an LLM guess. s1 consumes that immutable attestation; it does not build its UI or a new ledger. Stable IDs bind commit,parent,path,blobs,kind,ranges and normalized exact hunk bytes; duplicate metadata/text representations have distinct IDs. Do not conflate an entire changed file with one textual hunk. REUSE CORRECTION [[c7]]: git-packets.ts is a narrow packet/hunk interpretation adapter over createGitRunner and BinaryGitRunner from src/design/corpus/sources/git-reader.ts, not a second process runner or Git environment implementation. Reuse GIT_READ_ARGS/gitEnvironment and existing timeout/stdout/stderr/cancellation guards through createGitRunner unchanged. Retain local repo read-only/no-lazy-fetch behavior. Reuse readPinnedSources for regular-file commit/path acquisition where its request contract fits; it alone does not expose commit parents, object identities, mode/rename changes or raw blob references. For those extra sc1 metadata needs, make minimal additive named exports of the existing decodeObject and treeEntry helpers from that same I/O module and reuse their framing/hash/tree validation; do not copy them into investigation. Keep pure corpus barrels unchanged; workflow imports explicit I/O module, with no corpus DB/storage initialization. Preserve existing helper behavior/signatures/errors and test the additive export seam. New logic is only explicit parent/packet/hunk selection, trusted attribution and review-reference projection. Map SourceReaderError/ValidationResult failures to SubjectPreparationError without swallowing missing/digest/limit distinctions.",
+        "callSites": []
+      },
+      {
+        "entity": "Pinned approved work and task basis",
+        "change": "new",
+        "details": "Request references existing build and approved artifact snapshots, retaining their identity/revision/digest. Validate root/story membership, lifecycle approval current revision and upstream compatibility, with integrity errors distinct from absence. Approved PLAN maps ordered task IDs, full title/summary and every acceptance check with stable task-scoped ordinal IDs. An existing unapproved/stale PLAN is not a legitimate planless route: refuse. Approved-upstream route requires explicit recognized build-route provenance and preserves upstream obligations without inventing PLAN task IDs; tasks may be empty while contracts retain authoritative requirements. Pin artifact bytes/content consistently and recheck before admission; immutable snapshot must be supplied to later readers rather than reread mutable markdown. Snapshot input validation belongs to a typed trusted dependency supplying canonical artifact envelope plus lifecycle/integrity result; it must not accept an arbitrary caller-provided approved boolean. The daemon composition uses its existing artifact lifecycle service; s1 fixtures inject deterministic equivalents. BUILD need not be approved (code review precedes BUILD approval), but must identify the correct root/Story and sourceCommit from a verified build scope record. Plan tasks preserve title plus summary; acceptance-check IDs are task ID plus one-based ordinal, with their exact text. Approved-upstream requirements stay in pinned contract snapshots and taskBasis, not fabricated plan tasks. ContextTree is the explicit build sourceCommit tree, verified as a tree; sourceCommit must match the trusted scope record, never ambient HEAD. One subject owns 1 build pin and 1 context tree reference; build/contract snapshots and source objects are shared immutable references, not copied ownership of external artifacts.",
+        "callSites": []
+      },
+      {
+        "entity": "ReviewRuntimePortsV1 / ReviewReadReceiptV1 / ReviewUsageObservationV1",
+        "change": "new",
+        "details": "Copy approved sc6 fields as type-only exports. Ports refer to subject/run IDs but do not own subjects or create evidence/coverage rows. s4 supplies durable run ownership and usage pending outbox; s3 owns investigation; s2 owns evidence ledger. Keep foundational types free from imports of later Story types. Proposed implementation files under src/workflow/code-review/investigation/; no MCP facade registration or production engine selection in s1. Canonical JSON accepts plain JSON records/arrays/scalars, sorts object keys, preserves array order and rejects cycles, undefined, non-finite numbers and non-plain prototypes; strings are treated as strings, not pre-parsed JSON. s1 subject hashing uses this same documented canonical value representation; stageImmutableValue remains a type-level port whose s4 backend centralizes serialization. Subject freezing is recursive defensive copying; external mutation cannot change an admitted digest. REUSE CORRECTION [[c6]]: subject identity calls existing canonicalJson/hashCanonical from src/design/corpus/canonical.ts directly. No new serializer, cloned implementation or alternate key-order algorithm is permitted. Use explicit maxBytes no greater than existing CORPUS_LIMITS.packageBytes (64MiB), default subject ceiling 1MiB; oversize subject is typed resource-limit, never truncated or hashed as partial. Preserve existing depth/safe-number/Unicode/accessor/symbol/sparse-array validation. Existing artifact lifecycle contentHash semantics remain unchanged; subject digest is its own versioned canonical projection. Translate CorpusInputError schema/limit errors at the subject boundary while retaining original cause. s4 later reuses this central primitive behind stageImmutableValue; s1 implements no storage backend.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "Own deterministic preparation, input validation, packet provenance and pinned source navigation. Existing legacy grounding is unchanged and cannot serve as new scope authority."
+      },
+      {
+        "contractId": "sc6",
+        "role": "implements",
+        "howDetails": "Define type-only ports and usage/read receipt values, with central object serialization contract; no durable backend, controller progress protocol or accounting implementation."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Untrusted or ambiguous changed scope",
+          "detection": "Reject empty/duplicate selections, parent-not-member, unresolved revision expressions, missing trusted attribution for a selected hunk, mismatch between recorded selector and recomputed canonical hunk.",
+          "response": "Typed ambiguous-attribution/invalid-object refusal, listing affected packet/block without admitting partial subject; no HEAD fallback.",
+          "userImpact": "Supply explicit verifiable scope or resolve attribution before review.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unapproved/stale/corrupt artifact or mixed Story",
+          "detection": "Compare canonical artifact identity, lifecycle approved revision and content digest to loaded snapshots; verify build/root/story linkage and recheck pins at end.",
+          "response": "Typed distinct contract/integrity failure; never downgrade an unapproved PLAN to planless.",
+          "userImpact": "Approve or refresh the correct upstream artifacts.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsafe or oversized source navigation",
+          "detection": "Validate subject-bound blob/reference allowlist, integer range bounds and per-read byte/line caps; Git process timeout/output cap; validate tree object and blob metadata.",
+          "response": "Explicit partial/unavailable read receipt for bounded valid reads; preparation output exhaustion is resource-limit error, never incomplete complete manifest.",
+          "userImpact": "Navigate smaller ranges or explicitly revise limits; invalid references fail.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing objects or unsupported provenance",
+          "detection": "Git cat-file object checks, parent array, object-format detection, diff raw modes reveal missing commit/blob, root commit, submodule or unsupported format.",
+          "response": "Typed refusal with precise reason; no working tree substitution, shell fallback or object fetching.",
+          "userImpact": "Restore local objects or provide supported subject.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two selected commits change and later revert the same block",
+          "expected": "Retain both parent-relative packets and provenance; no net diff cancellation."
+        },
+        {
+          "input": "Merge commit with selected parent and shared file",
+          "expected": "Check direct parent relation, retain explicit parent packet; mixed ownership needs block proof, never silently choose parent one."
+        },
+        {
+          "input": "Rename plus textual edits, zero-line insertions/deletions, binary and mode changes",
+          "expected": "Preserve metadata entries and each selected textual hunk; null absent line side; blobs and paths remain navigable."
+        },
+        {
+          "input": "Legitimate approved issue build without PLAN; index offline",
+          "expected": "Explicit upstream basis, no invented task IDs; same source-only subject works."
+        },
+        {
+          "input": "Foreign HEAD advances after preparation",
+          "expected": "Subject stays pinned; new HEAD does not alter selected scope. Changed approved artifact pins still mark stale."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Legacy grounding and realDiffGroundingDeps stay unchanged; s1 adds isolated preparation rather than replacing existing review dispatch. Grounded by s1 contracts/grounding analyze bundle.",
+          "source": "c1"
+        },
+        {
+          "text": "Preserve existing Insrc-Story attribution fixture behavior while adding strict explicit packet admission; do not widen legacy scope by failure. Grounded by s1 attribution/test analyze bundle.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Node node:test and node:assert/strict via tsx (verify imports in the cited diff-attribution fixtures; analyzer test.locate was broad, not framework proof). No live LLM tests needed.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Validate canonical identity, approval/task projection, attribution and type-only ports.",
+          "subjects": [
+            "review-s1-ac1 packet parity and complete task/check projection",
+            "review-s1-ac2 forged/missing evidence, duplicate selectors and ambiguous mixed hunks refusal",
+            "review-s1-ac3 planless route provenance, unapproved PLAN cannot fall back",
+            "review-s1-ac4 artifact revision/content race rejection",
+            "Canonical digest stable across key order, meaningful changes invalidate, no mode dependency",
+            "sc6 accepts object|string centrally and preserves nullable five-counter usage observation without later-story imports",
+            "Reuse canonicalJson/hashCanonical: same accepted bytes/digest as existing helper, invalid-value errors preserved and limits explicit; no second serializer."
+          ],
+          "fixturesNeeded": [
+            "Pinned artifact/build snapshots, trusted attribution records, fake bounded Git port with deterministic objects"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove real read-only Git objects define scope independently of worktree and index.",
+          "subjects": [
+            "review-s1-ac1 add/delete/rename-with-edit/binary/mode and explicit merge parent packet contents",
+            "review-s1-ac2 shared commits/files, foreign hunks and unrelated HEAD changes excluded; intermediate edits/reverts retained",
+            "review-s1-ac3 source navigation works offline; no source symlink following",
+            "review-s1-ac4 immutable reads and missing-object rejection; changed pinned contracts stale",
+            "NUL-delimited whitespace/Unicode/leading-dash paths; no external diff/textconv or replacement refs",
+            "Zero-count ranges, oversized output/time refusal; root/submodule/unsupported format explicit rejection"
+          ],
+          "fixturesNeeded": [
+            "Small isolated temp Git repositories; no mutations of shared checkout; clean environment strips inherited Git overrides"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Keep legacy review behavior and HLD contract structure intact.",
+          "subjects": [
+            "Existing grounding/attribution tests unchanged",
+            "Owned sc1/sc6 exported types match HLD, no MCP registration or engine activation",
+            "Existing corpus canonical and Git reader fixture suites remain unchanged; additive decodeObject/treeEntry exports preserve identity validation; workflow import causes no DB access."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "review-s1-ac1 unit packet parity and task/check projection",
+            "review-s1-ac1 real Git change-kind fixtures"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "review-s1-ac2 forged/mixed evidence rejection",
+            "review-s1-ac2 real concurrent foreign commit/hunk and revert fixtures"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "review-s1-ac3 legitimate upstream basis and unapproved PLAN refusal",
+            "review-s1-ac3 offline pinned source navigation"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "review-s1-ac4 artifact pin race/mismatch",
+            "review-s1-ac4 missing objects and immutable navigation"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "s1 analyze bundles locate legacy storyRangeDiff/realDiffGroundingDeps and attribution fixtures; legacy grounding can use range/net diff. No new subject/runtime-port symbol was found, with graph limitations disclosed.",
+      "stateAfter": "Add isolated internal sc1 preparation/navigation and sc6 type definitions, leaving production routing and persisted artifact shapes unchanged. Later s6 composes/adopts; no existing run is migrated.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add foundational sc1/sc6 types and explicit input/attribution validation within the owned module. Reuse src/design/corpus/canonical.ts and src/design/corpus/sources/git-reader.ts; only additive helper exports if needed, preserving original corpus call sites and pure barrels.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add pinned Git packet extraction, deterministic subject preparation and bounded object navigation with focused fixtures.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Publish internal exports for later Stories and run owned tests plus legacy attribution regression subset; do not connect MCP or activate engine.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API/schema change, no predecessor S005 ownership change. Legacy code/design review entrypoints continue untouched. Rollback removes unused internal module only; no durable data format is created by s1. Reuse introduces an explicit workflow-to-corpus utility dependency, not corpus storage or a new public MCP contract. Additive exports preserve corpus APIs; no shared helper behavior is rewritten.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Explicit manifest and pinned object reader",
+        "oneLineSummary": "Build sc1 from explicit commits and attributed block selections; resolve exact Git objects.",
+        "approach": "A pure preparation core validates approved input snapshots and explicit parent-relative commit selections. A bounded Git adapter resolves full object IDs, canonical diff blocks and immutable source reads. Caller supplies attribution evidence; mixed or missing proof refuses admission. sc6 remains type-only, production integration later.",
+        "pros": [
+          "Small complete s1 boundary",
+          "No generic range-to-HEAD fallback",
+          "Deterministic fixtures without providers"
+        ],
+        "cons": [
+          "Attribution proof must be supplied and validated; cannot infer ownership from changed paths alone"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Pre-materialized packet import",
+        "oneLineSummary": "Accept complete signed/digested packets, independently verify all objects and blocks.",
+        "approach": "A producer emits the complete sc1 packet graph and a verifier recomputes Git metadata, ranges, digests and attribution before admitting it. The same reader serves immutable objects and sc6 stays type-only. Producer and verifier share canonical packet rules.",
+        "pros": [
+          "Separates production from admission",
+          "Supports offline interchange"
+        ],
+        "cons": [
+          "Duplicate producer/verifier surface",
+          "No requested interchange consumer yet"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Correct but larger than needed."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1/analyzeBundles/0",
+      "quotedText": "Analyzer symbol.locate found storyRangeDiff and usage.example its realDiffGroundingDeps caller. Proposed ReviewSubjectV1/ReviewRuntimePortsV1 not found. StoryChangeSet data-model trace empty, graph explicitly incomplete. Source inspection confirms legacy storyRangeDiff can net base-to-HEAD for plain paths, so it is not the immutable-packet contract and cannot be reused as scope authority."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1/analyzeBundles/1",
+      "quotedText": "Analyzer bounded search.text found Insrc-Story attribution fixtures. test.locate returned broad unrelated matches and provides no targeted coverage proof; inspect actual scope tests before designing verification."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/HLD-c32aa60534232f36.json",
+      "quotedText": "Approved revision6 sc1/sc6 and s1 scope."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/story-commits.ts:55-95"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/plan.ts:64-75"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/design/corpus/canonical.ts:23-87",
+      "quotedText": "Reuse canonicalJson/hashCanonical validation and bounds, not a duplicate serializer."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/design/corpus/sources/git-reader.ts:15-186",
+      "quotedText": "Reuse createGitRunner/readPinnedSources and minimally expose existing object/tree helpers where packet metadata requires them."
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90583491-c48b-449f-a1a8-91759a87c9ac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.696Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "gh_pr_view jsonFields extension",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "97bf46c096ad88f65ac6cc8d907a0a125dea87129807e075bbfb8ba35a1ffca2",
+        "at": "2026-10-27T16:08:33.696Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.696Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "gh_pr_view jsonFields extension",
+    "summary": "Add the optional jsonFields input to gh_pr_view limited to the allowlist state, mergedAt, reviewDecision, reviews, headRefName, url, and admit those fields in its output schema; default fields and every existing result stay unchanged. Flag the s5 owner's objection path.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "gh_pr_view with jsonFields returns mergedAt, reviewDecision and reviews; without it the result is byte-identical to before",
+      "a field outside the allowlist is rejected as an input mismatch"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "pr-view-fields.test.ts: gh_pr_view with jsonFields returns mergedAt, reviewDecision and reviews; the default result is unchanged; a field outside the allowlist is rejected"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-06837532-a809-4907-a5cd-34e7f2fc5767",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.714Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Daemon: workflow.approvePipeline, tracker.sync, tracker.setup",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8894c101e39874bf38d22298e978110c88ef0abdca6bfcbcf499b51848d69f98",
+        "at": "2026-10-27T16:08:33.714Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.715Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon: workflow.approvePipeline, tracker.sync, tracker.setup",
+    "summary": "Add the versioned workflow.approvePipeline (workflow.approve delegates to it with withTracker true) with the ordered pipeline approval, Task reconciliation, one publication, check-in commit, attach, attach commit; split followOnTasksSync so publication happens once; add the additive followOn kinds and the taskSync payload; add tracker.sync {repoPath, epicHash} and tracker.setup {repoPath, opts}; register the methods in the handler contract key-set cases. The pipeline catches ToolDenied only at its step boundaries.",
+    "size": "L",
+    "order": 16,
+    "acceptanceChecks": [
+      "withTracker false stops after approval and Task reconciliation",
+      "a plan approval publishes exactly once",
+      "a denial at any step records that followOn entry ok false and runs no later step",
+      "workflow.approve (MCP) behaves as today through the delegation",
+      "handler.test.ts and handler-runtime.test.ts key-set cases list the new methods"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "workflow-approve-pipeline.test.ts: withTracker false stops after approval and Task reconciliation; a plan approval publishes exactly once; a denial at publication stops the check-in commit and attach"
+      },
+      {
+        "level": "integration",
+        "name": "workflow-approve-followon.test.ts: the additive follow-on kinds carry their payloads"
+      },
+      {
+        "level": "integration",
+        "name": "handler-runtime.test.ts: workflow.approvePipeline, tracker.sync and tracker.setup are registered and return the old results"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

@@ -1,0 +1,305 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793194236466-12u092",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:32:41.643Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 123992,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s2",
+    "lldRunId": "wf-1793193382852-fg6stx",
+    "lldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d9153fedf56f53870b4044f090a8ebd9fdf643352090e95c9ebab4dff035528a",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:34:48.394Z"
+      }
+    },
+    "rangeBase": "28b18ad6c7f29c30a7cd4c3bd942a624710d3327"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build an immutable ledger that accounts for every approved obligation and scoped change, admitting only verified inspection evidence. Validate shared evidence links and updates without losing unresolved work or finding history. Reuse the completed subject layer and existing obligation helpers while leaving legacy execution unchanged.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define sc2 ledger contracts and immutable basis",
+        "summary": "Add exact sc2 EvidenceV1/CoverageV1/ReviewLedgerV1 types and typed catalog, trusted-receipt, attempt and delta inputs in ledger-types.ts. Reuse s1 canonical snapshot/hash/freeze helpers and explicit metadata/count limits.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Exact HLD sc2 fields retained; sc1/sc6 imported, never duplicated or redesigned.",
+          "Trusted adapter outputs remain separate from reviewer proposals; named ReviewLedgerError causes and typed limits explicit.",
+          "Canonical IDs bind subject, requirement namespace and provenance; defensive copies/frozen outputs reject invalid or oversized metadata.",
+          "Focused contract/identity tests pass; no store, model, MCP or verdict implementation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc2 contracts, canonical identities and bounded immutable values"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Enumerate every required coverage row from pinned work",
+        "summary": "Add ledger-catalog.ts and initialization. Enumerate task/check, design/upstream, every selected text/non-text block and versioned criteria; append trusted impact rows without widening packet scope. Reuse unchanged adherenceObligations via complete sc2-local typed CodeReviewSubject projection.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "review-s2-ac1: deterministic row universe retains tasks/checks/design/criteria and all selected blocks, including unplanned/deleted/binary work.",
+          "Legacy helper/types/caller files unchanged; only new local projection uses real pinned contract values and exact selected paths, with no partial type cast or legacy resolver call.",
+          "Known LLD exclusions explicit; testStrategy/FR/companion obligations remain accounted for; unclassified sections refuse; legitimate planless upstream gets required whole-contract row without invented tasks.",
+          "Rows start pending with stable identities; duplicate/conflicting catalog identities reject; focused planned/planless/classification tests pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "review-s2-ac1 complete catalog, legacy projection and planless obligations"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Admit evidence only from verified inspection receipts",
+        "summary": "Add evidence validation/admission helpers for source, artifact, test and index-impact evidence. Bind authenticated attempt, subject pins, immutable content and inspected bounds; preserve completeness and originating attempt.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Reject forged/mismatched source metadata, reference/range/subject/attempt and changed-scope claims; context and caller impact cannot create changed scope.",
+          "Reuse sc1/sc6 receipts; verified adapters supply path/revision or test/index metadata absent from minimal read receipt; no execution or graph query in sc2.",
+          "Complete read of failed/skipped test or stale/incomplete index is not proof of a passing test/no impact; limitations and native result provenance remain explicit.",
+          "Identical evidence replay idempotent, conflicting content under same ID rejected, original attempt retained; focused provenance tests pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Trusted receipt admission, provenance, completeness and replay"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Apply atomic immutable coverage and finding deltas",
+        "summary": "Implement ledger.ts pure apply/validate operations: admit evidence/findings then row assessments, resolve all references and validate the complete candidate before returning a frozen new value.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "review-s2-ac2: evidence can support many independently assessed rows; note-only/uninspected/partial/unavailable evidence cannot silently satisfy coverage.",
+          "Non-pending assessments require rationale/authenticated attempt; findings have criterion/severity/confidence and evidence/expectation links; pending never implies completion.",
+          "review-s2-ac3: required rows and findings never disappear; row updates preserve linked history; unknown/foreign/dangling references and dropped rows reject atomically.",
+          "Identical replay stable; conflicting IDs reject; discovered impact rows append through trusted catalog; no durable fencing/persistence or terminal approval logic.",
+          "Focused adversarial atomicity, replay, mutation and retention tests pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "review-s2-ac2/ac3 atomic many-to-many coverage and history retention"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Validate pinned-source integration and unchanged legacy behavior",
+        "summary": "Complete cross-module sc1 receipt-to-ledger and approved-work catalog integration fixtures; verify all LLD test subjects, focused legacy obligation/canonical/sc1 regressions and production build. Publish internal exports for downstream Stories.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Every LLD subject mapped to concrete test cases; all three ACs proven with deterministic providers/adapters and no live LLM suite.",
+          "Real s1 receipts preserve partial bounds and context role through many-to-many ledger updates; foreign references, unresolved changes and planless basis behave as designed.",
+          "Existing adherenceObligations signature/outputs/callers unchanged; existing code-review-gather and sc1/canonical fixtures pass.",
+          "Production build passes; test/build evidence recorded. No public MCP, CR schema, DB, accounting or production engine changes.",
+          "Run one required independent code review after build; avoid automatic repeated rounds and inspect concrete evidence before requesting more."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Pinned sc1-to-ledger integration and legacy obligation compatibility"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "review-s2-ac1 exact row universe: tasks/checks/pinned design/upstream clauses/all packet blocks/criteria and append-only discovered impacts",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s2-ac2 shared evidence supports several independently assessed rows; note-only/uninspected/partial/unavailable satisfaction rejected",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s2-ac3 delete/binary/unplanned/unavailable changes remain explicit rows across updates",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reject wrong subject/run/attempt, forged receipt metadata, dangling links, dropped rows/findings, conflicting IDs and oversized candidates atomically",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Identical replay preserves original evidence attempt and byte-stable ledger; input mutation cannot change accepted value",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Known LLD sections reuse existing obligation keys/exclusions; test/FR/companion obligations remain covered and unknown sections refuse",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Read pinned source through s1 then admit evidence, bind multiple rows and preserve partial limits; foreign context cannot become changed scope",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Approved-plan and planless bases enumerate complete obligation sets; absent plan never invents tasks",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing adherenceObligations signature/callers remain unchanged; sc2 typed projection produces the same clause catalog on pinned inputs; canonical/s1 fixtures stay green",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails and owned sc2 boundary"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 immutable identities, trusted inputs and metadata limits"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 required-row catalog and unchanged legacy compatibility projection"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 evidence admission and provenance rules"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 atomic coverage/finding deltas and error paths"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy and additive migration"
+    }
+  ]
+}

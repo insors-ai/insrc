@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e43adbdb-7a08-4823-b223-0f05ce0e0904",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.371Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Exclude generated JSONL histories before review scoping",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e2bcf207333ff208a3e26e56381dc044bafcf824cba342b42b3fc2f64ba34496",
+        "at": "2026-10-27T06:35:54.374Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.375Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Exclude generated JSONL histories before review scoping",
+    "summary": "Extend the existing flat ledger exclusion in src/workflow/runners/build/changed-files.ts to generated .jsonl sidecars. Verify real git staged/unstaged/range and Story-attributed selection, code-review subject and freshness inputs. Preserve nested user-authored templates/formats and every canonical history file.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "Flat .insrc/artifacts/*.jsonl is excluded through the same shared seam as existing generated JSON; histories remain on disk and no source or approvals are rewritten.",
+      "Nested templates/formats/user JSONL, source and config changes remain reviewable; both full/graph and degraded/diff subjects consume the filtered set before freshness.",
+      "Real-git regression covers range, staged, unstaged and Story attribution, not only a string/glob assertion."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: generated flat JSONL exclusion preserves nested user files across staged unstaged and range changes"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: Story-attributed graph and diff subjects exclude generated sidecars before freshness"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

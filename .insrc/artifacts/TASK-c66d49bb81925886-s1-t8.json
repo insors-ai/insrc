@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9947a183-6bd7-43fa-affc-55c98507c27f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.346Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate cumulative baseline intervals",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee759dd2e5e912c5180e008ff148c9792c4532f1d2c266492a77b6fc987facfa",
+        "at": "2026-10-26T12:50:51.346Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.346Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate cumulative baseline intervals",
+    "summary": "Extend reducer basis logic for qualified cumulative evidence: select one endpoint/baseline interval, allow explicitly reference-only prior-invocation baselines and prevent overlapping deltas from being added.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Baseline, intermediate frames and reference-only records do not add consumption; two endpoints sharing a baseline are overlapping candidates, not two charges.",
+      "Same-session/model-slice monotone fixtures produce exact disjoint counter deltas only for the selected validated interval.",
+      "Missing/reset/different-session/model or unknown bucket baselines yield explicit unknown/partial outcomes; no timestamp winner or cross-session subtraction.",
+      "Cross-invocation baselines are accepted only under declared reference-only closure and qualified native session/model evidence."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/reducer.test.ts: cumulative selected interval, reference-only cross-invocation baseline, common-baseline overlap, resets and model/session mismatches"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

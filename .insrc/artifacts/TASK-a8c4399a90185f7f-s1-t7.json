@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1f019ac9-3af0-400f-95ea-c99924d374c9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.400Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Scale total deadlines by current logical review chunks",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee77428e7fc5241d7ff95597477e0042b27b20645998b1bffa489922ba1bd2eb",
+        "at": "2026-10-27T06:35:54.403Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.403Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Scale total deadlines by current logical review chunks",
+    "summary": "Implement the approved logical-work lineage and original-epoch time accounting across job/driver, source/structured/reviewer calls, downstream stages and template helpers. Preserve selected role-specific attempt ceilings and clamp by remaining total; update timeout messages and setting descriptions without changing stored user configuration.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "Total budget=600000ms times current admitted logical work chunks; N1/2/5/7 yields10/20/50/70 minutes from one original execution start.",
+      "Genuine subdivision replaces parent entitlement with child leaves; later required stage work counts once. Retries/corrections/new call IDs for the same work do not add time or reset clocks.",
+      "Expired work cannot be revived by late answers/refusals/replanning. Driver enforces the remaining deadline with cancellation/race even if a provider ignores timeout options.",
+      "Code-review10-minute and design12/18/24-minute role caps (upTo30-minute attempt maximum) are retained and clamped by remaining total; whole-job allocation is never mistakenly capped at30 minutes.",
+      "Template helpers/settings and timeout callbacks report live derived totals; metadata distinguishes per-attempt, job, freshness and external MCP transport timeouts and explicitly flags shorter outer ceilings."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: logical chunk counts control total deadlines without retry resets parent double-counting or expired-job revival"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review/__tests__/template-review.test.ts: role-specific attempt ceilings remain distinct from dynamic chunk-scaled total time"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts: effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

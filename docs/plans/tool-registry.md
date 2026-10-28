@@ -498,7 +498,7 @@ Run once after t12, in foreground chunks, `npx tsx --test --test-force-exit` per
 
 Round 1 of the s9 LLD review (daemon, 8 HIGH 2 MED, `LLD-b7a68147dcf72034-s9`, draft, not approved) found that `src/cli/services/team.ts` imports `refreshPolicy` and runs it in the terminal client's process, and that the moved team helpers need the daemon's registry. The user decided: **s10 lands first** (the terminal client is moved onto the daemon before s9 moves the workflow library's sites). This reverses the dependency recorded on 2026-10-26 (s10 depends on s9).
 
-Consequence still to be settled with the user: s10's DEF criteria ac5 (delete runGit, runGitAsync, runGh, commitAndPushArtifacts, createGitRunner and the test seam, and run the scan in failing mode) and ac6 (regenerate the migration record and the inventory) cannot hold before s9 has moved its sites, because s9 still calls runGit and runGitAsync. Those two criteria have to move to s9 or to a closing Story.
+Consequence, settled with the user on 2026-10-27 (DEF revision 6 approved; option 1): s10's DEF criteria ac5 (delete runGit, runGitAsync, runGh, commitAndPushArtifacts, createGitRunner and the test seam, and run the scan in failing mode) and ac6 (regenerate the migration record and the inventory) cannot hold before s9 has moved its sites, because s9 still calls runGit and runGitAsync. Those two criteria moved to s9 (its new ac7 and ac8); s10 keeps the old paths unchanged (its ac5).
 
 Also found while preparing the s9 second draft: a client reaching `refreshPolicy` is not a `tools.call` (that request runs one registry tool); it needs a daemon method for the team refresh, which is s10's design.
 

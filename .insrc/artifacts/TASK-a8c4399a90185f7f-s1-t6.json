@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4ed80a37-e44c-4c87-af66-3fdb2c0e573e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.395Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bound managed inspection growth and final-answer requests",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1d51329fbcbb8d41e41ada349878b1e5955d1cae0c2db69839928ee1cd2c4751",
+        "at": "2026-10-27T06:35:54.398Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.399Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bound managed inspection growth and final-answer requests",
+    "summary": "Propagate the optional review budget through Ollama-managed source inspection, runReadOnlyToolLoop and emitStructuredAnswer. Recheck the complete accumulated conversation/tool/schema request before each model turn and final answer, using the shared execution/error/telemetry contract. Leave analyzer and other non-review callers unchanged.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Initial managed request, every tool-loop model turn and final structured answer include actual accumulated conversation, declared tools, closing instruction/schema, all profile reserves and output allowance.",
+      "An initially fitting request whose tool history grows beyond the cap refuses before the next model call; it never truncates required evidence or returns a partial review.",
+      "Supported provider output limits receive the reserved completion allowance; native/estimated values are never reported as measured hard bounds.",
+      "Final-answer and provider correction paths have no budget exemption; typed refusals retain safe diagnostics and cancellation reaches loop/tool/provider work.",
+      "Review budget propagation is opt-in and sentinel-safe; analyzer/non-review consumers without the new option keep their existing contract."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/agent/__tests__/read-only-tool-loop.test.ts: review-only admission rechecks accumulated tools and history before every model turn"
+      },
+      {
+        "level": "integration",
+        "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: inspection growth and final structured answer cannot bypass the inclusive budget or truncate evidence"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

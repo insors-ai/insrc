@@ -1,0 +1,355 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793188581945-ouv6c2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T11:58:21.380Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 118406,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s1",
+    "lldRunId": "wf-1793187743306-ckhhax",
+    "lldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1911df33bd930602fbadc4483510ab901ac12332a1baca396f1a086260a216ed",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T12:34:32.043Z"
+      }
+    },
+    "rangeBase": "fbc1cfa1a945908780ad3bd88e683ece43d93df0"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build a strict internal review subject from approved work and explicitly attributed commit packets, with bounded navigation of pinned source. Reuse existing canonicalization and hardened Git helpers. Keep the current review engine and MCP protocols unchanged until later integration.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define immutable subject and foundational runtime contracts",
+        "summary": "Add exact sc1/sc6 types and typed preparation inputs/errors under investigation/types.ts. Define trusted artifact/build-scope dependencies and limits without implementing later-story stores. Reuse existing canonical JSON and hashing directly.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Export all HLD sc1/sc6 fields, including object|string staging and nullable usage counters; no imports from later Story implementations.",
+          "Preparation inputs distinguish trusted snapshot/provenance dependencies from untrusted selectors; named error causes remain explicit.",
+          "Canonical hash projection and recursive defensive freezing use existing canonicalJson/hashCanonical with explicit limits; reject invalid values.",
+          "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc1/sc6 canonical identity, invalid value and type contract fixtures"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Extract exact parent-relative Git packets using existing hardened readers",
+        "summary": "Add git-packets.ts over existing createGitRunner; minimally export decodeObject/treeEntry from corpus Git reader without changing behavior. Resolve full commits/actual selected parents, raw metadata and canonical text/non-text blocks with blob provenance.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "No HEAD/worktree/range diff selects scope; selected parent is direct parent and every referenced object is verified.",
+          "Represent add/delete/rename-with-edit/binary/mode and one-based inclusive ranges, including null zero-line side; preserve successive edits/reverts.",
+          "NUL-safe paths, no external diff/textconv/replacement refs/network/shell, bounded argv-only processes through existing runner.",
+          "Root commits/submodules/unsupported objects/limits produce explicit refusal; no silent truncation or fallback.",
+          "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Exact parent/blob/change-kind packet and hardened reader reuse fixtures"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Prepare subjects from approved work and trusted block attribution",
+        "summary": "Add subject.ts to validate root/story/build/artifact bindings, project exact PLAN tasks/checks or legitimate approved upstream basis, verify each selected block against trusted scope records and compute stable immutable subject identity.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "All four Story AC obligations are represented: matching mode-independent packets, complete tasks/checks, explicit planless basis and revalidated freshness.",
+          "Caller evidence strings or Story trailer alone cannot attest exclusive block ownership; mixed/forged/overlapping/ambiguous selectors refuse admission.",
+          "Unapproved/stale/corrupt existing PLAN never becomes planless; BUILD need not be approved but source and membership must match trusted scope.",
+          "ContextTree binds explicit build sourceCommit; subject/packet/block identity stable and digest-sensitive; recheck input pins before returning.",
+          "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Approved task projection, trusted attribution and freshness fixtures"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add bounded pinned source navigation and freshness guards",
+        "summary": "Add source.ts and internal exports. Read only subject-bound blob/context-tree or approved immutable snapshot references using existing reader helpers; distinguish complete/partial/unavailable. Add assertReviewSubjectFresh against the original pins.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Foreign HEAD/worktree/symlink content cannot alter pinned source or widen changed scope; context-only reads stay contextual.",
+          "Validate reference allowlist/ranges and resource caps; partial/unavailable have explicit limitations, source digest and requested range.",
+          "Contract revision/digest/source binding mismatch refuses stale subject without treating unrelated HEAD movement as changed scope.",
+          "No runtime ledger/store/accounting backend, MCP registration or engine activation.",
+          "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Bounded immutable source navigation and reference isolation fixtures"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Prove packet isolation, recovery inputs and compatibility with focused fixtures",
+        "summary": "Complete deterministic real-temp-Git integration and adversarial fixtures covering approved LLD test strategy, run focused investigation/corpus/legacy attribution subsets and production build. Record validation evidence without claiming later-story recovery implementation.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "All ac1-ac4 proving tests and LLD unit/integration/contract subjects are mapped and pass without live providers.",
+          "Exercise foreign commits/hunks/HEAD movement, merges, intermediate revert, change kinds, path edge cases, object failures, limits, invalid artifacts and planless provenance.",
+          "Corpus helper tests and existing legacy attribution behavior stay green; no production routing change or data rewrite.",
+          "Build and validation records include exact tests/results and independent code review follows the approved workflow."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Cross-module adversarial scope and legacy/corpus regression fixtures"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "review-s1-ac1 packet parity and complete task/check projection",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s1-ac2 forged/missing evidence, duplicate selectors and ambiguous mixed hunks refusal",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s1-ac3 planless route provenance, unapproved PLAN cannot fall back",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s1-ac4 artifact revision/content race rejection",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Canonical digest stable across key order, meaningful changes invalidate, no mode dependency",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "sc6 accepts object|string centrally and preserves nullable five-counter usage observation without later-story imports",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reuse canonicalJson/hashCanonical: same accepted bytes/digest as existing helper, invalid-value errors preserved and limits explicit; no second serializer.",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s1-ac1 add/delete/rename-with-edit/binary/mode and explicit merge parent packet contents",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s1-ac2 shared commits/files, foreign hunks and unrelated HEAD changes excluded; intermediate edits/reverts retained",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s1-ac3 source navigation works offline; no source symlink following",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s1-ac4 immutable reads and missing-object rejection; changed pinned contracts stale",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "NUL-delimited whitespace/Unicode/leading-dash paths; no external diff/textconv or replacement refs",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Zero-count ranges, oversized output/time refusal; root/submodule/unsupported format explicit rejection",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing grounding/attribution tests unchanged",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Owned sc1/sc6 exported types match HLD, no MCP registration or engine activation",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing corpus canonical and Git reader fixture suites remain unchanged; additive decodeObject/treeEntry exports preserve identity validation; workflow import causes no DB access.",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails and sc1 subject data model"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc6 runtime ports and canonical reuse"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 exact Git packets and hardened reader reuse"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 approved work projection and trusted attribution"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 error paths, source navigation and freshness"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy and additive migration"
+    }
+  ]
+}

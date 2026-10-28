@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-62add356-48be-49b2-a8d7-0c003a3ea3db",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T12:34:32.402Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extract exact parent-relative Git packets using existing hardened readers",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "869e44cba867643e2861d41387accb336945373f4afa33d4f133b14ef1d21143",
+        "at": "2026-10-28T12:34:32.402Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T12:34:32.403Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extract exact parent-relative Git packets using existing hardened readers",
+    "summary": "Add git-packets.ts over existing createGitRunner; minimally export decodeObject/treeEntry from corpus Git reader without changing behavior. Resolve full commits/actual selected parents, raw metadata and canonical text/non-text blocks with blob provenance.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "No HEAD/worktree/range diff selects scope; selected parent is direct parent and every referenced object is verified.",
+      "Represent add/delete/rename-with-edit/binary/mode and one-based inclusive ranges, including null zero-line side; preserve successive edits/reverts.",
+      "NUL-safe paths, no external diff/textconv/replacement refs/network/shell, bounded argv-only processes through existing runner.",
+      "Root commits/submodules/unsupported objects/limits produce explicit refusal; no silent truncation or fallback.",
+      "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Exact parent/blob/change-kind packet and hardened reader reuse fixtures"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

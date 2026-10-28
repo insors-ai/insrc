@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c8d1bbe4-5e9e-4191-a6f0-d37ea9dd7a1e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:34:48.709Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Validate pinned-source integration and unchanged legacy behavior",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "40230f30b0af95de7944bff6c06ed75d1ef92070c64c45b110eeb7ea104a1f67",
+        "at": "2026-10-28T13:34:48.709Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:34:48.710Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate pinned-source integration and unchanged legacy behavior",
+    "summary": "Complete cross-module sc1 receipt-to-ledger and approved-work catalog integration fixtures; verify all LLD test subjects, focused legacy obligation/canonical/sc1 regressions and production build. Publish internal exports for downstream Stories.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Every LLD subject mapped to concrete test cases; all three ACs proven with deterministic providers/adapters and no live LLM suite.",
+      "Real s1 receipts preserve partial bounds and context role through many-to-many ledger updates; foreign references, unresolved changes and planless basis behave as designed.",
+      "Existing adherenceObligations signature/outputs/callers unchanged; existing code-review-gather and sc1/canonical fixtures pass.",
+      "Production build passes; test/build evidence recorded. No public MCP, CR schema, DB, accounting or production engine changes.",
+      "Run one required independent code review after build; avoid automatic repeated rounds and inspect concrete evidence before requesting more."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Pinned sc1-to-ledger integration and legacy obligation compatibility"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

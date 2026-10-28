@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5683b79-c836-4076-9ac5-d769de6d9e70",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:34:48.705Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Enumerate every required coverage row from pinned work",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a248fb6452289a0753a38c982989778ab5e0d1cc725aad56ff5ac180fa7fddac",
+        "at": "2026-10-28T13:34:48.705Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:34:48.705Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Enumerate every required coverage row from pinned work",
+    "summary": "Add ledger-catalog.ts and initialization. Enumerate task/check, design/upstream, every selected text/non-text block and versioned criteria; append trusted impact rows without widening packet scope. Reuse unchanged adherenceObligations via complete sc2-local typed CodeReviewSubject projection.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "review-s2-ac1: deterministic row universe retains tasks/checks/design/criteria and all selected blocks, including unplanned/deleted/binary work.",
+      "Legacy helper/types/caller files unchanged; only new local projection uses real pinned contract values and exact selected paths, with no partial type cast or legacy resolver call.",
+      "Known LLD exclusions explicit; testStrategy/FR/companion obligations remain accounted for; unclassified sections refuse; legitimate planless upstream gets required whole-contract row without invented tasks.",
+      "Rows start pending with stable identities; duplicate/conflicting catalog identities reject; focused planned/planless/classification tests pass."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "review-s2-ac1 complete catalog, legacy projection and planless obligations"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

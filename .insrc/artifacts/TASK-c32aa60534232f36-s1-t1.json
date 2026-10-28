@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09f5c45f-181a-47b7-bd3f-5f8e8c1049b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T12:34:32.400Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define immutable subject and foundational runtime contracts",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c9205a2549b99b1914736ce875e5e5f334cbbd2707493a4e0d1c40ae0750fc42",
+        "at": "2026-10-28T12:34:32.401Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T12:34:32.401Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define immutable subject and foundational runtime contracts",
+    "summary": "Add exact sc1/sc6 types and typed preparation inputs/errors under investigation/types.ts. Define trusted artifact/build-scope dependencies and limits without implementing later-story stores. Reuse existing canonical JSON and hashing directly.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Export all HLD sc1/sc6 fields, including object|string staging and nullable usage counters; no imports from later Story implementations.",
+      "Preparation inputs distinguish trusted snapshot/provenance dependencies from untrusted selectors; named error causes remain explicit.",
+      "Canonical hash projection and recursive defensive freezing use existing canonicalJson/hashCanonical with explicit limits; reject invalid values.",
+      "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sc1/sc6 canonical identity, invalid value and type contract fixtures"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

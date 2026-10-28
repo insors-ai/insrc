@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aae5670c-8c4a-4cde-9369-e33b37a0c6d8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.343Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build bounded group reduction and exact totals",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9043cb4ad3af6d902ae62d584671d64b85d3bcf59679e68b64b50b66074b7a8e",
+        "at": "2026-10-26T12:50:51.343Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.344Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build bounded group reduction and exact totals",
+    "summary": "Implement the core of proposed src/workflow/usage/reducer.ts: bounded collection, event/call identity consistency, closure checks, deterministic notice ordering and exact reported/estimated metric partitions. Keep incomplete behavior internal until final composition; do not publish a stubbed reducer API.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Validate at most 1024 records/8 MiB per group and compare unique input IDs/count/digest to the expected descriptor; duplicate delivery is non-additive.",
+      "Exact bigint accumulation returns decimal strings, including safe-input sums beyond Number.MAX_SAFE_INTEGER; reasoning is never added twice.",
+      "Known zero, partial counters, pending/interrupted/unavailable/legacy/missing and failed calls with reported consumption remain distinct.",
+      "Iterator failure/cancellation or resource overflow rejects with no successful partial total; frozen input remains unchanged.",
+      "Count every received row and canonical byte against the processing budget, including identical replay floods; separately compare unique IDs/count/digest for closure."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/reducer.test.ts: bounded unique/input accounting, exact bigint metrics and known/estimated/pending/unavailable partitions"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/usage/__tests__/domain-contract.test.ts: truncated closure, iterator failure/cancellation, duplicate flood and no successful resource-truncated total"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

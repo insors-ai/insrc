@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1429fd8a-880c-4a7b-af00-f69263b47853",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.342Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement charged-subject attribution policy",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "530b5ead8b40423144a9483e850addc02d1c811cb8d476c6325ed670a6ac55fc",
+        "at": "2026-10-26T12:50:51.342Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.342Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement charged-subject attribution policy",
+    "summary": "Implement proposed src/workflow/usage/attribution.ts with the mandatory normalized activity table and supplied binding consistency checks. Consume ArtifactIds syntax/kinds without resolving actual repository roots or instrumenting dispatch.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "DEF/HLD/LLD/PLAN/TASK/BUILD/ISSUE/SPEC and nested context positive cases charge the exact approved subject.",
+      "Design reviews require the reviewed LLD; task work/validation requires its TASK; shared validation/code review requires story BUILD. CR/TASKS/summary references never add charges.",
+      "Wrong kind/hash/story/task/subject, missing parent context and unsupported activities produce explicit notices without root fallback, registry changes or provider calls."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/attribution.test.ts: full positive/negative charged-subject table, context inheritance and non-additive reference cases"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

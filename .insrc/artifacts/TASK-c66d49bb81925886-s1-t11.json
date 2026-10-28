@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6a1f39ab-afcf-4b11-b355-747bad72a3c6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.349Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Compose public contracts and verify packaged handoff",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "12b71467e815a52cb77c7d04f1f9fd8db320f6fb469bd7954860481a1b232c47",
+        "at": "2026-10-26T12:50:51.349Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.350Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Compose public contracts and verify packaged handoff",
+    "summary": "Publish complete runtime implementations and schema/type exports from proposed src/workflow/usage/index.ts, then run the public domain-contract fixtures and compiled-output schema smoke checks. Validate the additive migration and sc1/sc2 handoff to later stories.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "UsageReducer.validate/reduce and UsageAttributionPolicy.validate match approved HLD/LLD signatures and all six acceptance criteria pass through the public domain surface.",
+      "No placeholder implementations, hidden filesystem/provider/DB side effects or sibling service activation remain; immutable source facts and typed effective ownership agree across replay/permutation fixtures.",
+      "In a private /tmp fixture containing copied compiled usage/identity modules, package metadata and dependency access but no source tree, production exports load both schemas under the supported Node runtime. Do not move/delete workspace src; schema digests and record round-trips match source fixtures.",
+      "Run npm run build, npx tsx --test 'src/workflow/usage/__tests__/*.test.ts' and npx tsx --test src/workflow/__tests__/artifact-ids.test.ts. Report unrelated baseline failures without scope expansion; document no data rewrite and optional-owner compatibility."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/usage/__tests__/domain-contract.test.ts: complete public domain surface, ownership/basis consistency, replay/permutation and no sibling side effects"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/usage/__tests__/schema-contract.test.ts: isolated /tmp compiled-output imports with no source tree and matching schema digests"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-ids.test.ts: existing canonical identity regression suite"
+      },
+      {
+        "level": "integration",
+        "name": "npm run build and the focused src/workflow/usage/__tests__/*.test.ts suite pass or unrelated baseline blockers are explicitly identified"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

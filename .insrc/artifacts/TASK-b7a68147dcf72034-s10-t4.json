@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-85af80cd-735b-4fd5-a5d1-c890a90ea438",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.698Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Replacement table: issue, comment, label and milestone rows",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c28d2dcd2701696c1ace985ab1a6bdaaec19850bd0fdb9643f91efb301c4b7f0",
+        "at": "2026-10-27T16:08:33.698Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.699Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replacement table: issue, comment, label and milestone rows",
+    "summary": "Create the replacement-table module in the daemon-side workflow code (its path is fixed here) with the rows for ghCreateLabel, ghCreateIssue, ghCreateIssueTyped, ghLinkSubIssue, ghGetIssueId, ghGetIssueBody, ghEditIssueBody, ghComment, ghListIssueComments, ghPostCommentReturningId, ghCloseIssue, ghGetIssueState, ghFindIssueByLabels and its Strict form, ghListIssuesByLabelsStrict, ghListIssuesByTitleTokenStrict, ghEnsureMilestone, ghAttachMilestone, queryTasks and listMyOpenTasks, each over callTool with the wrapper's old result, best-effort result and failure mapping from t1.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "one recorded-executor case per row returns the old value and the old failure kind",
+      "best-effort rows return false, undefined or [] only for gh failures and throw for denial, conversion-failed and schema-mismatch"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registry-table.test.ts: one case per issue, comment, label, milestone and task-query row, including best-effort rows and the rule that a denial is thrown, never swallowed"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

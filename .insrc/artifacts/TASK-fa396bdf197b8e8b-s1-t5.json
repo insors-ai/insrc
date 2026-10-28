@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-52ec7608-8dba-4041-b34d-118144c1ee3d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T07:57:47.644Z",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Check the fix end to end on a rebuilt daemon (reported by the builder)",
+      "parent": {
+        "entityId": "STORY-fa396bdf197b8e8b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fa396bdf197b8e8b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fa396bdf197b8e8b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-fa396bdf197b8e8b-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "180ba53582eaa0c097598f35aab07b5439d8746c59ff7b3279bb63b29830693d",
+        "at": "2026-10-27T07:57:47.644Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T07:57:47.645Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Check the fix end to end on a rebuilt daemon (reported by the builder)",
+    "summary": "Rebuild the daemon and restart it, then with it running create mkdir -p dir/sub with a small .ts file at once and another file three seconds later, and see both indexed without a restart; then edit an already indexed file and see it fresh. The build gate cannot run this, so the builder reports the result with the codeReview.freshness replies as evidence.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "codeReview.freshness reports a file written at once into a directory created with mkdir -p as not stale within seconds, and the file written three seconds later too, with no restart in between",
+      "An edit of an already indexed file is reported fresh after the gate's request",
+      "The reply of each check is quoted in the report"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Reported by the builder, not run by the gate: with the rebuilt daemon running, create mkdir -p dir/sub with a small .ts file in it at once, then another file three seconds later, and see both indexed (codeReview.freshness reports them not stale) without a restart; then edit an already indexed file and see it fresh"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

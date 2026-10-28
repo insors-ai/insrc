@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8f511834-5037-4dec-8c15-17d88401127f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T07:57:47.645Z",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Clean up after the end-to-end check",
+      "parent": {
+        "entityId": "STORY-fa396bdf197b8e8b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fa396bdf197b8e8b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fa396bdf197b8e8b-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e29b4d3f33d396fac274b75a1101fcdebd37ce5cb6626d153944456ebd81d7cc",
+        "at": "2026-10-27T07:57:47.645Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T07:57:47.646Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Clean up after the end-to-end check",
+    "summary": "Remove the probe files and directories created for t5, confirm config.json has logLevel info, and confirm the daemon is running at the info level.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "No probe file or directory remains in the repo and git status shows no stray file from the check",
+      "config.json has logLevel info and the daemon's log shows no debug lines after its latest start"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Reported by the builder: git status lists no probe file, config.json has logLevel info, and the daemon log has no debug lines after its latest start"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b186fb30-2e65-40d8-a7a9-2093673e9556",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.381Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prepare provider-qualified wire budget profiles",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "29ee8f38e7ba6e8b4d42ba68dd75f0cb3b947fbc683d59a2be346fafba5c5904",
+        "at": "2026-10-27T06:35:54.385Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.385Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prepare provider-qualified wire budget profiles",
+    "summary": "Implement the pure provider profile capability for CliProvider and OllamaProvider, including actual Codex strict/enveloped schema and Claude/Ollama JSON schema serialization. Propagate additive review budget options through src/shared/types.ts. Recheck final provider serialization against the same profile; no global config writes, API auth changes or invented native hard-bound claims.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Selected profile is available before planning, serializable/frozen and identifies provider/transport/version, schema dialect, declared tools and explicit native/output/inspection reserves.",
+      "Planner and provider account the same final wire schema, including envelope and Codex strict transformation; unknown normalization/profile mismatch refuses before a model call.",
+      "Provider review options carry the approved policy and call IDs; structured and reviewer-session paths preserve read-only permissions, OAuth, deadline and abort behavior.",
+      "Fake CLI/provider contracts prove normalization, missing-profile rejection and qualification without live credentials or native-token claims."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/agent/providers/__tests__/cli-review-session.test.ts: provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes"
+      },
+      {
+        "level": "unit",
+        "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: explicit managed profile and unsupported native-hard qualification refusal"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

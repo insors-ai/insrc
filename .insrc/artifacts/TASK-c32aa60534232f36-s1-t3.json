@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c54a2d52-dbce-4370-bc75-9f187e389ffa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T12:34:32.404Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prepare subjects from approved work and trusted block attribution",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "309a30e6f960d50e91ac345c7b118d51704d4dc914cf1edad3c795f3e4f4604e",
+        "at": "2026-10-28T12:34:32.404Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T12:34:32.404Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prepare subjects from approved work and trusted block attribution",
+    "summary": "Add subject.ts to validate root/story/build/artifact bindings, project exact PLAN tasks/checks or legitimate approved upstream basis, verify each selected block against trusted scope records and compute stable immutable subject identity.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "All four Story AC obligations are represented: matching mode-independent packets, complete tasks/checks, explicit planless basis and revalidated freshness.",
+      "Caller evidence strings or Story trailer alone cannot attest exclusive block ownership; mixed/forged/overlapping/ambiguous selectors refuse admission.",
+      "Unapproved/stale/corrupt existing PLAN never becomes planless; BUILD need not be approved but source and membership must match trusted scope.",
+      "ContextTree binds explicit build sourceCommit; subject/packet/block identity stable and digest-sensitive; recheck input pins before returning.",
+      "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Approved task projection, trusted attribution and freshness fixtures"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-23d6a35e-dd0c-4793-9b6c-89aa520da7ae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.466Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Git helper aborted case, readGit signal and refresh tool signal passing",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9e514f75bac0213c57cc63494860a95825921e2fd7c88d32438341a0b5b37bd6",
+        "at": "2026-10-26T18:21:16.467Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.467Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Git helper aborted case, readGit signal and refresh tool signal passing",
+    "summary": "Add the aborted case to fail(), the optional signal to readGit, pass deps.signal explicitly in git_fetch, git_fetch_refs, git_rev_parse, git_symbolic_ref, git_ls_tree and git_show (checked between its three commands), and add the lowerable timeoutMs (1 to 30000) to git_cat_file.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Each refresh tool returns a rejected failure on an aborted signal and starts no later command",
+      "Successive calls sharing one deadline signal stop at the deadline and later calls never spawn",
+      "git_cat_file timeoutMs accepts 1 to 30000 and keeps today's default and messages"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-abort.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-shared-deadline.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-cat-file-timeout.test.ts"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

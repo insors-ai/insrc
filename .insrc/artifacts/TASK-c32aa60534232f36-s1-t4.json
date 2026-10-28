@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5ac8b4c2-9983-4e17-9a2b-eb770eb6391d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T12:34:32.405Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add bounded pinned source navigation and freshness guards",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "03522b6ffb8c1eada52af4659919a7a04470d56bfe27df686e584ea734e21a83",
+        "at": "2026-10-28T12:34:32.405Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T12:34:32.405Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add bounded pinned source navigation and freshness guards",
+    "summary": "Add source.ts and internal exports. Read only subject-bound blob/context-tree or approved immutable snapshot references using existing reader helpers; distinguish complete/partial/unavailable. Add assertReviewSubjectFresh against the original pins.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Foreign HEAD/worktree/symlink content cannot alter pinned source or widen changed scope; context-only reads stay contextual.",
+      "Validate reference allowlist/ranges and resource caps; partial/unavailable have explicit limitations, source digest and requested range.",
+      "Contract revision/digest/source binding mismatch refuses stale subject without treating unrelated HEAD movement as changed scope.",
+      "No runtime ledger/store/accounting backend, MCP registration or engine activation.",
+      "Targeted tests for this task pass before advancing; final task adds cross-module regression coverage."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Bounded immutable source navigation and reference isolation fixtures"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

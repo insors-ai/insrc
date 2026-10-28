@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a134c3ef-4c87-4bbf-8f6f-0bb0a48ad9d6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.706Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Publication path: await and denial rethrow",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f96b0ab3f560fb2a6f47ce319343491a46bd2eb6a31fe1bd0e34a5425685579c",
+        "at": "2026-10-27T16:08:33.706Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.707Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publication path: await and denial rethrow",
+    "summary": "Make ExtraStep.run, ExtrasDeps.comments, runUnitExtras, guarded, guardedPush, pushEpic, pushStory, pushTasks, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan, ensureUnitIssueDetailed, postMarker and resolveUnitIssueLocal asynchronous and await them in their callers and tests, running steps strictly one after another. A ToolDenied stops the loop, keeps the issue bindings already written, and is not turned into a failed result by guardedPush or guarded.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "extras run in order and comments reconcile as before",
+      "a denial at a milestone extra, a comment extra or the link comment stops publication with later calls forbidden and keeps the created bindings"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "unit-extras.test.ts: runUnitExtras with async steps and async comments runs in order and reconciles comments as before"
+      },
+      {
+        "level": "integration",
+        "name": "tracker-denial.test.ts: a denial at a milestone extra, a comment extra and the link comment stops publication with later calls forbidden and keeps the bindings"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

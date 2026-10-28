@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-61239098-37b8-49a2-ac8b-e4f61c7d6317",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.391Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Guard serial dispatch and record safe per-call outcomes",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b71d9b92c138a3591894693e27125b838ebe2c30006655f15e3e2ef71b790020",
+        "at": "2026-10-27T06:35:54.394Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.395Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Guard serial dispatch and record safe per-call outcomes",
+    "summary": "Add shared execution-time preflight to runReviewJob, typed budget-error bypass and paired content-free lifecycle events. Sanitize existing review-scoped provider/driver failure logs, preserving non-review behavior. Managed tool-loop/final-answer guard propagation is a separate dependent task.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "No provider call occurs after failed dispatch admission; final serialized prompt/schema/profile are revalidated against the frozen inclusive cap.",
+      "ReviewBudgetError is handled before generic classification and never becomes transient retry, record-not-judged, record-observation or successful partial review.",
+      "Every started call has one success/failure/cancel event with safe internal IDs, attempt, numeric budget, qualification and duration; refused admission makes zero provider calls.",
+      "Existing review-scoped provider/driver logs, including stall/transient/correction paths, expose no source/schema/prompt/credential sentinel or raw error detail; non-review logging behavior is unchanged.",
+      "Serial provider calls, read-only execution, cancellation and existing retry ownership remain intact; no provider internal retry bypasses the shared guard."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts: dispatch refusals bypass retry and partial-result policies and emit paired safe lifecycle events"
+      },
+      {
+        "level": "integration",
+        "name": "src/agent/providers/__tests__/cli-review-session.test.ts: review-scoped provider and driver logs redact sentinel content on all failure paths"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

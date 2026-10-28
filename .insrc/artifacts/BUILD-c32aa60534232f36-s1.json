@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "1438ffdcdbfce88d69e4df469cc6c86266e2804c8ad3d108a2a0639a15281c1d",
+        "at": "2026-10-28T13:11:41.572Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:11:43.828Z",
+        "override": {
+          "reason": "User explicitly approved BUILD completion after independent WARN review (0 HIGH,2 MED,3 LOW) and manual verification. The observations rely on missing graph edges: passing tests directly invoke packet extraction; the existing Git runner has settlement guards and passing cancellation tests. Evidence recorded in /tmp/plan-directed-review-s1-review-verification.json. All five task gates,60 focused tests and production build passed. User notes current code review framework is broken and token-heavy and directs care to avoid multiple rounds. Approve this Story without another review; retain the independent WARN findings and their limitations."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-6a40ff30-c569-4fcd-b55b-0b60591695f3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T12:35:44.800Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s1",
+    "revision": 6,
+    "updatedAt": "2026-10-28T12:57:37.753Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-planned-changes-through-agent-investigation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "Completed first Story sc1/sc6 implementation and adversarial fixtures, preserving legacy routing. Sixty focused investigation/corpus/legacy tests passed serially and npm run build passed; logs in /tmp/plan-directed-review-s1-tests-final.tap and /tmp/plan-directed-review-s1-build.log. Independent code review follows.",
+    "testRecord": {
+      "md": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/identity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/identity.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/git-reader.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/git-packets.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/git-packets.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/subject.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/subject.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/work.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/source.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/source.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/adversarial.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-28T13:11:40.411Z"
+      }
+    ],
+    "commit": "28b18ad6c"
+  },
+  "citations": []
+}

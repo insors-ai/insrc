@@ -1,0 +1,695 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793112564729-w4loo2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T14:53:42.980Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 254903,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s10",
+    "lldRunId": "wf-1793107407000-y4ukva",
+    "lldEffectiveHash": "9fcc90f081df65b507e5577cd48e5b35fcc82ed0c2e4dec4fff032589b24aba3",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3356d430fc9ed9d87ff0f80a4c02e408e99e985167cac38c8e9155baf28bf7e7",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.362Z"
+      }
+    },
+    "rangeBase": "fa8e85ac039bfd574fca334a490e46a867f075e3"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s10 is a staged migration: first the shared pieces (the denial error, two small additive tool extensions, the replacement table and the registry commit-and-push), then every consumer is made await-ready while the tracker port is still synchronous so each step stays green, then the port flips to async over the table, and last the daemon gains the whole-operation methods that the terminal client now calls. A final task proves the site list, the awaiting and that the old paths are untouched for the next Story.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "ToolDenied carrier and ToolFailure mapping",
+        "summary": "Add the ToolDenied error class (tool id, denial reason, optional partial progress, and for commit-and-push the phase, committed flag and staged paths), the isToolDenied predicate, and one mapping function from every ToolFailureKind to the old GhCommandError kinds (command timed-out to unreachable, conversion-failed and schema-mismatch to rejected and never best-effort, denied to ToolDenied). No site uses it yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Every ToolFailureKind has a mapping and a test; denied maps to a thrown ToolDenied carrying the reason",
+          "conversion-failed and schema-mismatch can never produce a best-effort false, null, [] or undefined"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "tool-denied.test.ts: every ToolFailureKind maps to the old kind or ToolDenied; conversion-failed and schema-mismatch never become a best-effort value"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "gh_pr_view jsonFields extension",
+        "summary": "Add the optional jsonFields input to gh_pr_view limited to the allowlist state, mergedAt, reviewDecision, reviews, headRefName, url, and admit those fields in its output schema; default fields and every existing result stay unchanged. Flag the s5 owner's objection path.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "gh_pr_view with jsonFields returns mergedAt, reviewDecision and reviews; without it the result is byte-identical to before",
+          "a field outside the allowlist is rejected as an input mismatch"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pr-view-fields.test.ts: gh_pr_view with jsonFields returns mergedAt, reviewDecision and reviews; the default result is unchanged; a field outside the allowlist is rejected"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "git_push configured input",
+        "summary": "Add the additive configured input to git_push (boolean, mutually exclusive with remote, ref and every force input, never destructive, approval class unchanged) that runs a plain git push; every existing call is unchanged. Flag the s4 owner's objection path.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "configured true runs plain git push and honours an alternate push remote, a differently named upstream and reports a missing upstream",
+          "configured combined with remote, ref or force is rejected; calls without configured are unchanged"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "git-push-configured.test.ts: configured true runs plain git push with an alternate push remote, a differently named upstream and a missing upstream; combined inputs are rejected; existing calls are unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Replacement table: issue, comment, label and milestone rows",
+        "summary": "Create the replacement-table module in the daemon-side workflow code (its path is fixed here) with the rows for ghCreateLabel, ghCreateIssue, ghCreateIssueTyped, ghLinkSubIssue, ghGetIssueId, ghGetIssueBody, ghEditIssueBody, ghComment, ghListIssueComments, ghPostCommentReturningId, ghCloseIssue, ghGetIssueState, ghFindIssueByLabels and its Strict form, ghListIssuesByLabelsStrict, ghListIssuesByTitleTokenStrict, ghEnsureMilestone, ghAttachMilestone, queryTasks and listMyOpenTasks, each over callTool with the wrapper's old result, best-effort result and failure mapping from t1.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "one recorded-executor case per row returns the old value and the old failure kind",
+          "best-effort rows return false, undefined or [] only for gh failures and throw for denial, conversion-failed and schema-mismatch"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registry-table.test.ts: one case per issue, comment, label, milestone and task-query row, including best-effort rows and the rule that a denial is thrown, never swallowed"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Replacement table: organisation, project, scope, login and url rows",
+        "summary": "Add the rows for ghTokenScopes, ghListOrgIssueTypes, ghCreateOrgIssueType, ghCreateProject, ghFindProjectByTitle, ghAddProjectSingleSelectField, ghAddProjectItem (gh:project:item-add), ghListRepoIssueUrls and ghCurrentLogin with the same old-result and failure rules.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "one recorded-executor case per row returns the old value and failure kind",
+          "ghCreateProject, ghFindProjectByTitle, ghAddProjectSingleSelectField and ghAddProjectItem return null or false only for gh failures and throw on denial and on schema failures"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registry-table.test.ts: one case per organisation, project, scope, login and url row, with null, false and [] only for gh failures"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Replacement table: auth, origin, adapter assignee and pull request rows",
+        "summary": "Add the ghAuthOk form returning the {ok, reason} result, gitOriginOwnerRepo over git_remote and parseGithubRemoteUrl, the adapter's direct rows (readAssignees, setAssignee and addAssignee with the re-read checks, openPullRequestOf, the pull request create with the PULL_URL_RE parse, readSignoffState and readSignoffRequest over gh_pr_view jsonFields), the openSignoffRequest inner catch that rethrows ToolDenied and logs other failures, and the attach.ts tracked check over git_ls_files, git_status and git_log.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "assignee read, set and add keep their validations, re-read checks and error messages",
+          "a denied signoff link comment fails the stage and a retry reuses the open pull request",
+          "an untracked file (empty git_ls_files list) is refused with the old reason",
+          "ghAuthOk form returns {ok:true} and {ok:false, reason} as tracker-auto reads them"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registry-table.test.ts: ghAuthOk form, gitOriginOwnerRepo form and the attach tracked-check rows"
+          },
+          {
+            "level": "unit",
+            "name": "adapter-registry.test.ts: assignee read, set and add with the re-read checks, signoff pull request list, create and view rows, a denied link comment and a retry that reuses the open pull request"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "commitAndPushArtifactsViaRegistry",
+        "summary": "Add the registry commit-and-push sequence git_rev_parse, existence filter, git_stage, git_diff staged, git_commit, git_push with configured true, with the old result reasons, ToolDenied thrown with phase, committed flag and staged paths on denial, and the 'nothing staged' read from the typed diff.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "same CommitArtifactsResult and reasons as the old function for not a work tree, no files on disk, nothing staged, git add failure, commit failure and rejected push",
+          "a denial at each phase throws ToolDenied with the phase, committed flag and staged paths; denied commit leaves the paths staged (index checked)",
+          "mixed existing and missing paths stage only the existing ones; alternate push remote, differently named upstream and missing upstream behave as the old helper"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "commit-and-push-registry.test.ts: same results and reasons as the old function for each case; denial at each phase throws ToolDenied; denied commit leaves the paths staged; mixed and all-missing paths; three push configurations"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Team gate callers: make them await-ready",
+        "summary": "In the callers of the team gate chain (gates.ts at :641 and :930, review/resolve.ts, review/run-artifact.ts, review-step verdicts, workflow-rpc.ts, the workflow-step and build-step phases, resume.ts, run-meta.ts) make the enclosing functions asynchronous where needed and await each gate call. The gate functions are still synchronous, so awaiting changes no value and every test stays green.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "every caller listed in the LLD awaits its gate call and returns the same outcome as before",
+          "the daemon method key-set cases in handler.test.ts and handler-runtime.test.ts still pass"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "team-gate-callers.test.ts: each listed caller awaits its gate call and returns the same outcome; handler.test.ts and handler-runtime.test.ts still pass"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Team gate functions: async with denial rethrow",
+        "summary": "Make actingUser, teamContext, readHolder, teamGate, claim, release, reviewFixDecision, claimsEnforcedFor, authorizeStageChange, authorizeApproval, authorizeFindingApply, reviewFixModeFor, assertMayAuthor, assertMayBuild, parkPlan and resumeCheck asynchronous and add the ToolDenied rethrow before every catch-all listed in the LLD (gate.ts :183 :282 :308 :338 :348, approval-gate.ts :41 :57 :84 :134).",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "each gate returns the same outcome or raises the same refusal as before",
+          "a ToolDenied thrown from the port stops the stage and never becomes undefined, a generic refusal or report-only"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "team-gates-async.test.ts: the gate functions return the same outcomes and refusals with an async port"
+          },
+          {
+            "level": "unit",
+            "name": "team-gates-denial.test.ts: a denial stops the stage as ToolDenied and is never undefined, a generic refusal or report-only"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Publication path: await and denial rethrow",
+        "summary": "Make ExtraStep.run, ExtrasDeps.comments, runUnitExtras, guarded, guardedPush, pushEpic, pushStory, pushTasks, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan, ensureUnitIssueDetailed, postMarker and resolveUnitIssueLocal asynchronous and await them in their callers and tests, running steps strictly one after another. A ToolDenied stops the loop, keeps the issue bindings already written, and is not turned into a failed result by guardedPush or guarded.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "extras run in order and comments reconcile as before",
+          "a denial at a milestone extra, a comment extra or the link comment stops publication with later calls forbidden and keeps the created bindings"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "unit-extras.test.ts: runUnitExtras with async steps and async comments runs in order and reconciles comments as before"
+          },
+          {
+            "level": "integration",
+            "name": "tracker-denial.test.ts: a denial at a milestone extra, a comment extra and the link comment stops publication with later calls forbidden and keeps the bindings"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Task reconciliation: CloseIssue async and durable pending-close",
+        "summary": "Make CloseIssue and the reconcile code that awaits it asynchronous; closeIssueOf logs pending-close before rethrowing a ToolDenied; reconcile reports progress through an onProgress callback; syncOnPlanApproval and syncPlanTasks rethrow ToolDenied (TaskSyncDenied with the partial arrays) and keep the {error} conversion for ordinary errors.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a denied close of a withdrawn Task escapes syncPlanTasks as ToolDenied with the partial arrays",
+          "after the denial the Task has a pending-close entry and the next reconciliation closes the issue",
+          "ordinary errors still return {error}"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "task-set-denial.test.ts: syncOnPlanApproval rethrows ToolDenied with the partial arrays, ordinary errors keep {error}, and a pending-close entry lets the next reconciliation close the issue"
+          },
+          {
+            "level": "integration",
+            "name": "sync-plan-tasks-denial.test.ts: through the real syncPlanTasks a denied close escapes as ToolDenied"
+          },
+          {
+            "level": "unit",
+            "name": "tasks-sync-async.test.ts: a withdrawn-Task close through an async CloseIssue reports ok and gh failure as before"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Identity and draft-issue loaders: await and denial rethrow",
+        "summary": "Make the LoadTracker forms in draft-issues.ts and identity-service.ts asynchronous with their callers, and add the ToolDenied rethrow in idOf (both catches), resolveLearner and ensureDraftIssues.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a denial inside idOf, resolveLearner or ensureDraftIssues stops the stage with no fallback identity, no unavailable status and no not-ready result",
+          "a non-denial failure keeps the old fallback"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "identity-draft-denial.test.ts: a denial inside idOf, resolveLearner and ensureDraftIssues stops the stage; a non-denial failure keeps the old fallback"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Flip TrackerPort, IssueOps and the adapter to async over the table",
+        "summary": "Make TrackerPort, IssueOps, attempt() and loadTracker asynchronous (attempt awaits inside try, rethrows ToolDenied, keeps the conversion of other exceptions) and move github-adapter.ts, setup.ts, sync.ts, bugfix/tracker.ts and config/github-store.ts onto the replacement-table rows. Every consumer was made await-ready in t8 to t12.",
+        "size": "L",
+        "order": 13,
+        "dependsOn": [
+          "t4",
+          "t5",
+          "t6",
+          "t9",
+          "t10",
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "github-adapter.ts, setup.ts, sync.ts, bugfix/tracker.ts and config/github-store.ts each run through the table with a recorded executor and create and update the same issues, sub-issues, milestones, comments and labels as before",
+          "async attempt keeps the conversion of non-denial exceptions to kind rejected and rethrows ToolDenied",
+          "ensureMilestone, linkSubIssue, close and comment results are not discarded (runtime sequence assertions)"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "tracker-push-registry.test.ts: a push, sync, setup, question and comment resolution create the same objects and records as the recorded legacy sequence; a second run creates nothing"
+          },
+          {
+            "level": "unit",
+            "name": "adapter-attempt.test.ts: async attempt keeps the conversion of non-denial exceptions to rejected and rethrows ToolDenied"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Move the commit-and-push callers and the remaining wrapper callers",
+        "summary": "Move questions.ts commitAndComment, resolve-comment.ts commitRecorded and handleResolveComment, team/signoff.ts:385, config/github.ts gitOriginOwnerRepo uses, tracker-auto.ts ghAuthOk and attach.ts onto the registry forms; ordinary git failures stay logged, a ToolDenied is rethrown and stops the stage, handleResolveComment returns its error result with the recorded count.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t6",
+          "t7",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "a denied commit posts no comment and handleResolveComment returns the error result, never success",
+          "ordinary git failures are still logged and the stage continues",
+          "tracker-auto reads the {ok, reason} result unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "commit-denial-callers.test.ts: a denied commit posts no comment and handleResolveComment returns the error result; ordinary git failures are logged and the stage continues"
+          },
+          {
+            "level": "unit",
+            "name": "attach-tracked-check.test.ts: a tracked file passes and an untracked file is refused with the old reason"
+          },
+          {
+            "level": "integration",
+            "name": "registry-denial.test.ts: no-client, declined, timed-out and cancelled approval deny a moved call and later calls are not made"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Close-aware rpc",
+        "summary": "Add the additive opts.closeAware to rpc in src/shared/ipc-client.ts: end and close listeners that reject on premature close without any timer; rpc without it is unchanged.",
+        "size": "S",
+        "order": 15,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "rpc with closeAware rejects when the socket closes before a reply and sets no timer",
+          "rpc without closeAware behaves as before"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ipc-client-close-aware.test.ts: rpc with closeAware rejects on premature close and sets no timer; rpc without it is unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Daemon: workflow.approvePipeline, tracker.sync, tracker.setup",
+        "summary": "Add the versioned workflow.approvePipeline (workflow.approve delegates to it with withTracker true) with the ordered pipeline approval, Task reconciliation, one publication, check-in commit, attach, attach commit; split followOnTasksSync so publication happens once; add the additive followOn kinds and the taskSync payload; add tracker.sync {repoPath, epicHash} and tracker.setup {repoPath, opts}; register the methods in the handler contract key-set cases. The pipeline catches ToolDenied only at its step boundaries.",
+        "size": "L",
+        "order": 16,
+        "dependsOn": [
+          "t11",
+          "t13",
+          "t14"
+        ],
+        "acceptanceChecks": [
+          "withTracker false stops after approval and Task reconciliation",
+          "a plan approval publishes exactly once",
+          "a denial at any step records that followOn entry ok false and runs no later step",
+          "workflow.approve (MCP) behaves as today through the delegation",
+          "handler.test.ts and handler-runtime.test.ts key-set cases list the new methods"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "workflow-approve-pipeline.test.ts: withTracker false stops after approval and Task reconciliation; a plan approval publishes exactly once; a denial at publication stops the check-in commit and attach"
+          },
+          {
+            "level": "integration",
+            "name": "workflow-approve-followon.test.ts: the additive follow-on kinds carry their payloads"
+          },
+          {
+            "level": "integration",
+            "name": "handler-runtime.test.ts: workflow.approvePipeline, tracker.sync and tracker.setup are registered and return the old results"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Daemon: team and review methods",
+        "summary": "Add team.refresh {repoPath, branch?}, team.claim and team.release {repoPath, unit}, workflow.reviewArtifact {repoPath, artifactPath} and workflow.resolveFinding {artifactPath, findingId, action, note?}, each returning what the client service returns today and letting a ToolDenied reach the client as an error; register them in the handler contract key-set cases.",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t9",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "each method returns the old result and refusals with claims enforced",
+          "handler.test.ts and handler-runtime.test.ts key-set cases list the new methods"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "review-resolve-daemon.test.ts: with claims enforced, reviewArtifact and resolveFinding run through the daemon methods and return the old results and refusals"
+          },
+          {
+            "level": "integration",
+            "name": "handler-runtime.test.ts: team.refresh, team.claim and team.release are registered and return the old results"
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Client services onto daemon methods",
+        "summary": "Change src/cli/services/workflow.ts (approve, sync, trackerSetup, reviewArtifact, resolveFinding) and team.ts (refresh, claim, release) to call the daemon methods with closeAware rpc and no local git, gh or workflow code; the approve adapter rebuilds ApproveOutcome losslessly from the followOn entries; make sync, teamClaim, teamRelease and resolveFinding asynchronous in index.ts and await them in command.ts. A missing method gives a clear error with no local fallback.",
+        "size": "L",
+        "order": 18,
+        "dependsOn": [
+          "t15",
+          "t16",
+          "t17"
+        ],
+        "acceptanceChecks": [
+          "the client passes epicHash, branch, unit, setup options, withTracker and overrideReview to the named methods",
+          "the adapter reproduces approval, tracker, tasks, commit, attach and attachCommit including error and skipped outcomes",
+          "an older daemon gives method-not-found and nothing is published",
+          "command.ts awaits sync, claim, release and resolveFinding"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-services-no-spawn.test.ts: approve, sync, trackerSetup and the team services call only rpc with the named daemon methods and parameters and import no child_process or tracker or git code"
+          },
+          {
+            "level": "unit",
+            "name": "workflow-approve-adapter.test.ts: the client adapter rebuilds ApproveOutcome losslessly from the follow-on entries"
+          },
+          {
+            "level": "unit",
+            "name": "cli-services-daemon-errors.test.ts and workflow-approve-versioning.test.ts: an older or absent daemon gives a clear error, no fallback and no publication"
+          },
+          {
+            "level": "unit",
+            "name": "command.test.ts: sync, claim, release and resolveFinding results are awaited before status and text are read"
+          }
+        ]
+      },
+      {
+        "id": "t19",
+        "title": "Verification: invariants, site list, no floating promises, old paths, migration rows",
+        "summary": "Check the invariants that rest on the epic constraints against the code (a schema failure is never passed on; the client reaches the daemon only through IPC; a destructive call with no client is denied; provider-reaching code awaits serially), then add the site-list test (31 gh wrappers equal the github.ts exports, the client scan finds two sites, one named exemption and five no-site files), the compiler-API no-floating-promises scan, the old-paths-unchanged test (runGit, runGitAsync, runGh, commitAndPushArtifacts, the wrappers, createGitRunner and _setTrackerExecForTests still exported; the scan in report mode), and write the migration record rows.",
+        "size": "M",
+        "order": 19,
+        "dependsOn": [
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "the site list is complete and every site has a table row and a registry test",
+          "no unawaited TrackerPort, IssueOps, CloseIssue or loader call remains",
+          "the old paths are still exported unchanged and the scan is in report mode",
+          "each invariant resting on k2 to k5 has a named check that passes"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "site-list.test.ts: the 31 gh wrapper names in the table equal the github.ts gh exports; every site has a table row and a registry test; the migration record lists the rows"
+          },
+          {
+            "level": "unit",
+            "name": "cli-services-sites.test.ts: the scan of src/cli/services finds two sites, one named exemption and five no-site files"
+          },
+          {
+            "level": "unit",
+            "name": "no-floating-promises.test.ts: the compiler-API scan finds no unawaited TrackerPort, IssueOps, CloseIssue or loader call"
+          },
+          {
+            "level": "unit",
+            "name": "old-paths-unchanged.test.ts: the old paths are still exported unchanged and the scan stays in report mode"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/tracker/registry-table.ts: every gh wrapper row and gitOriginOwnerRepo and ghAuthOk forms",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "commitAndPushArtifactsViaRegistry: not a repo, nothing staged, committed, push rejected, denied at each step",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/tracker/github-adapter.ts, setup.ts, sync.ts with async TrackerPort",
+        "coveredByTaskIds": [
+          "t13",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "questions.ts, resolve-comment.ts, team/signoff.ts commit-and-push sites",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemon methods workflow.approvePipeline, tracker.sync, team.refresh, team.claim, team.release in the handler runtime",
+        "coveredByTaskIds": [
+          "t16",
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/services/workflow.ts and team.ts with a fake rpc: no child_process import, one daemon method per operation",
+        "coveredByTaskIds": [
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "a site-list test that greps src/workflow and src/cli/services for wrapper calls and spawns and checks each has a table row and a test",
+        "coveredByTaskIds": [
+          "t19"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-b7a68147dcf72034-s10 contractDetails (api: commitAndPushArtifactsViaRegistry, workflow.approvePipeline, tracker.sync, team.refresh and the review methods)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD-b7a68147dcf72034-s10 dataModelChanges: Replacement table rows and tool extensions"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD-b7a68147dcf72034-s10 dataModelChanges: TrackerPort async propagation and the client services"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-b7a68147dcf72034-s10 errorPaths: the ToolDenied carrier and catch-all rethrow inventory"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD-b7a68147dcf72034-s10 testStrategy and acceptanceMapping"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD-b7a68147dcf72034-s10 migration steps and the old-paths decision (ac5)"
+    }
+  ]
+}

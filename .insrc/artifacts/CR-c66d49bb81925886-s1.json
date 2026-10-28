@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "cd9f3b08dcfef43fb6b3acf4787b308e4f29b5e9640ddd2bc442639c9a61083e",
+        "at": "2026-10-26T19:15:16.625Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793042002476-472jb4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T19:13:22.477Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 114146,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "epicSlug": "retain-durable-artifact-token-usage",
+    "revision": 6
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/usage/__tests__/fixtures/types-contract.ts",
+        "src/workflow/usage/__tests__/schema-contract.test.ts",
+        "src/workflow/usage/index.ts",
+        "src/workflow/usage/types.ts",
+        "src/workflow/usage/ledger-record.v1.avsc.json",
+        "src/workflow/usage/ledger-record.v1.schema.json",
+        "src/workflow/usage/schemas.ts",
+        "src/workflow/usage/__tests__/identity.test.ts",
+        "src/workflow/usage/canonical.ts",
+        "src/workflow/usage/__tests__/fixtures/domain-fixtures.ts",
+        "src/workflow/usage/__tests__/source-capabilities.test.ts",
+        "src/workflow/usage/__tests__/validation.test.ts",
+        "src/workflow/usage/capabilities.ts",
+        "src/workflow/usage/validation.ts",
+        "src/workflow/usage/__tests__/attribution.test.ts",
+        "src/workflow/usage/attribution.ts",
+        "src/workflow/usage/__tests__/domain-contract.test.ts",
+        "src/workflow/usage/__tests__/reducer.test.ts",
+        "src/workflow/usage/reducer.ts",
+        "src/workflow/usage/__tests__/reconciliation.test.ts",
+        "src/workflow/usage/basis.ts",
+        "src/workflow/usage/cumulative.ts",
+        "src/workflow/usage/__tests__/transfer-state.test.ts",
+        "src/workflow/usage/ownership.ts",
+        "src/workflow/usage/__tests__/fixtures/source-capabilities.v1.json",
+        "src/workflow/usage/README.md"
+      ],
+      "buildFingerprint": "cfc0a5200e6b53e57a9b8358c7a255b40f37038467fee04f32ac79d3b68ea94b",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/HLD-c66d49bb81925886.log.jsonl",
+        ".insrc/artifacts/LLD-b7a68147dcf72034-s7.log.jsonl",
+        "plans/model-token-usage-implementation.md",
+        "src/daemon/tools/builtins/gh/helpers.ts",
+        "src/daemon/tools/builtins/git/helpers.ts",
+        "src/daemon/tools/call-tool.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/workflow/usage/reducer.ts:226",
+            "message": "Model consistency is checked only within each call. Two model-call pairs sharing invocationId/modelSliceId—one with unknown actual model and another with a confirmed actual model—pass these checks and are summed into the same total without requested-only labeling or a conflict. No cross-call model qualification occurs in basis selection either.",
+            "expectationRef": "LLD, Deterministic effective observations and bounded scope: 'Unknown actual model is grouped/labeled as requested-only, never silently merged with confirmed actual-model usage.'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "confidence": "observation",
+            "location": "src/workflow/usage/basis.ts:117",
+            "message": "Complete-leaf reconciliation is unconditionally rejected; reconciliation.test.ts:58–62 explicitly expects this. However, README.md:44–54 claims a subsequent user-approved restriction supersedes the supplied plan. That conflicts with the supplied approved expectations, so adherence cannot be verified without reconciling which approval governs this behavior.",
+            "expectationRef": "PLAN t7 acceptance: qualified complete-leaf decomposition; LLD overlap rules: complete-leaf decomposition selects all validated covered leaf heads and excludes fallback."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 1
+    }
+  },
+  "citations": []
+}

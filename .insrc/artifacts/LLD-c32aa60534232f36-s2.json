@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793193382852-fg6stx",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:21:01.322Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 277296,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "hldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "72e776263c22b05b6a34462185b50d68f3662b35202eaa784b269d62feb10fa4",
+        "at": "2026-10-28T13:26:11.812Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 1,
+          "med": 1,
+          "low": 6
+        },
+        "at": "2026-10-28T13:24:05.128Z",
+        "report": {
+          "entityId": "LLD-c32aa60534232f36-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-c73e9ef661b5b68d726f62bb16a864b0"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:30:09.326Z",
+        "override": {
+          "reason": "User explicitly approved with override after presentation of corrected Story2 LLD revision3. Original revision1 review recorded 1 HIGH and 1 MED about modifying legacy obligation helper signatures and incomplete caller inventory. Corrections remove all proposed legacy signature/type/caller edits, define an sc2-local complete typed compatibility projection invoking the unchanged helper, and verify the actual direct caller in adherence.ts versus callback/type consumption in review-pipeline/code-review.ts. Artifact integrity passed. Revision3 has not had another independent review; user accepts that residual risk and directs avoiding repeated token-heavy review rounds. Preserve original findings; approve corrected revision with this explicit override."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Track every approved obligation and scoped change alongside the evidence inspected for it. Shared evidence can support several requirements, while missing evidence, unplanned changes and unresolved findings remain visible. This Story builds the ledger rules; later Stories execute reviewers and persist checkpoints.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a daemon-owned durable investigation state machine with provider-independent accepted state. Seed each run with sc1's approved tasks/checks, artifact references and explicit commit packets, not embedded source partitions. Source-only and indexed-impact runs use identical packets, obligations, reviewer policy and completion checks; only the indexed capability in sc3 differs. Substantive judgments remain the independent agent's job; deterministic guards validate identity, evidence provenance, coverage and publication, not semantic correctness. Reuse existing LLMProvider/CliProvider read-only execution, budget admission, source freshness, ownership and canonical artifact lifecycle; introduce the investigation protocol and durable accepted-state store behind the existing code-review entrypoints. Checkpoint cadence is per reviewed commit-packet block, independently of continuation boundaries and run time limits; multiple block checkpoints may be accepted within one managed reviewer session.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "EvidenceCoverageV1",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Run-scoped evidence and many-to-many coverage bindings. Each approved obligation, packet block/non-text change and applicable criterion has a required row; findings and unresolved work cannot disappear.",
+          "interfaceSketch": "interface EvidenceV1 {\n readonly evidenceId: string; readonly subjectDigest: string;\n readonly kind: 'changed-block' | 'context-source' | 'artifact' | 'test-result' | 'caller-impact';\n readonly source: { readonly path: string; readonly revision: string; readonly digest: string; readonly lines: readonly [number, number] | null };\n readonly role: 'changed-scope' | 'context-only'; readonly inspectedByAttempt: string;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n readonly contentRef: string;\n}\ninterface CoverageV1 {\n readonly rowId: string; readonly subjectDigest: string; readonly requirementRef: string;\n readonly category: 'task' | 'acceptance' | 'design' | 'change' | 'criterion' | 'impact';\n readonly disposition: 'pending' | 'satisfied' | 'finding' | 'unverified' | 'not-applicable';\n readonly evidenceIds: readonly string[]; readonly findingIds: readonly string[];\n readonly rationale: string; readonly assessedByAttempt: string | null;\n}\ninterface ReviewLedgerV1 {\n readonly runId: string; readonly subjectDigest: string;\n readonly evidence: readonly EvidenceV1[]; readonly coverage: readonly CoverageV1[];\n readonly findings: readonly { readonly findingId: string; readonly criterion: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly confidence: 'breach' | 'observation'; readonly evidenceIds: readonly string[]; readonly expectationRefs: readonly string[]; readonly message: string }[];\n}",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ImmutableReviewSubjectV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "The only authority for changed scope. Exact selected commit packets identify relevant parent-relative blocks; frozen context can include other source only as context. No HEAD/working-tree diff fallback.",
+          "interfaceSketch": "interface ReviewSubjectV1 {\n readonly version: 1; readonly subjectId: string; readonly subjectDigest: string;\n readonly repoId: string; readonly rootArtifactId: string; readonly storyId: string;\n readonly build: { readonly artifactId: string; readonly revision: number; readonly sourceCommit: string };\n readonly contracts: readonly { readonly artifactId: string; readonly path: string; readonly revision: number; readonly contentDigest: string }[];\n readonly taskBasis: 'approved-plan' | 'approved-upstream';\n readonly tasks: readonly { readonly id: string; readonly description: string; readonly acceptanceChecks: readonly { readonly id: string; readonly text: string }[] }[];\n readonly packets: readonly CommitPacketV1[]; readonly contextTree: string;\n readonly ambiguities: readonly string[];\n}\ninterface CommitPacketV1 {\n readonly packetId: string; readonly commitId: string; readonly parentId: string;\n readonly attribution: { readonly basis: string; readonly evidenceRefs: readonly string[] };\n readonly blocks: readonly { readonly blockId: string; readonly oldPath: string | null; readonly newPath: string | null; readonly oldBlob: string | null; readonly newBlob: string | null; readonly oldLines: readonly [number, number] | null; readonly newLines: readonly [number, number] | null; readonly kind: 'text' | 'binary' | 'rename' | 'mode' | 'delete' | 'add'; readonly attributionRefs: readonly string[] }[];\n}",
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "ReviewRuntimePortsV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Foundational type-level ports avoid making the investigation Story depend backwards on recovery. s4 implements durable storage, s3 uses the port, and s6 composes production adapters. Usage observations flow to existing usage contracts with a durable pending outbox when a writer is unavailable.",
+          "interfaceSketch": "interface ReviewRuntimePortsV1 {\n readonly readEvidence: (subjectId: string, reference: string) => Promise<ReviewReadReceiptV1>;\n readonly stageImmutableValue: (runId: string, value: Readonly<Record<string, unknown>> | string) => Promise<{ readonly reference: string; readonly digest: string }>;\n readonly appendTransition: (runId: string, generation: number, expectedSequence: number, transitionRef: string) => Promise<{ readonly sequence: number; readonly checkpointDigest: string }>;\n readonly recordAttemptUsage: (observation: ReviewUsageObservationV1) => Promise<{ readonly state: 'recorded' | 'pending' | 'unavailable'; readonly receiptRef: string | null }>;\n}\ninterface ReviewUsageObservationV1 {\n readonly runId: string; readonly attemptId: string; readonly observationId: string;\n readonly activity: 'code-review'; readonly chargedArtifactId: string; readonly subjectArtifactId: string;\n readonly providerRequestId: string | null; readonly quality: 'reported' | 'estimated' | 'unavailable';\n readonly providerId: string; readonly modelId: string | null;\n readonly granularity: 'model-call' | 'invocation-total' | 'cumulative-snapshot';\n readonly counters: { readonly inputUncachedTokens: number | null; readonly cacheReadTokens: number | null; readonly cacheWriteTokens: number | null; readonly outputTokens: number | null; readonly reasoningTokens: number | null };\n readonly nativeObservationRef: string | null;\n readonly allowanceTokens: number; readonly elapsedActiveMs: number;\n}\ninterface ReviewReadReceiptV1 {\n readonly reference: string; readonly sourceDigest: string; readonly contentRef: string; readonly text: string | null;\n readonly lines: readonly [number, number] | null;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n}",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1",
+          "sc6"
+        ],
+        "internal": "Own required-row enumeration, evidence identity/provenance and coverage relationships/dispositions. Reuse subject inputs and runtime ports. Keep ledger validation helpers private; do not execute reviewer turns or publish CRs."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "Own subject preparation, attribution ambiguity detection, exact Git commit/blob/block navigation and frozen context binding. Define foundational runtime-port types only; do not implement task investigation, a recovery store or new accounting storage. No generic HEAD/working-tree diff may select scope."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc6"
+          ],
+          "internal": "Own independent read-only task-directed continuation behavior, on-demand source navigation, optional indexed caller/impact enrichment, budget admission, bounded retry/pause and attempt usage emission through foundational ports. In-memory ports are test scaffolding while production selection remains disabled until s4/s6; no durable storage implementation or terminal approval logic. Publish and acknowledge incremental block progress within continuations, with partial cross-block assessments recorded rather than lost. Domain progress contracts only; no competing MCP phase/schema ownership. External registration belongs to s6."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Own durable implementation of foundational acceptance/usage-outbox ports, append/replay/checkpoint integrity, lease/generation fencing, uncertain attempts and compatibility/time recovery. Do not alter review criteria or introduce a usage warehouse. Its recovery implementation is composed by downstream s6 rather than consumed backwards by s3. Persist/replay block-level evidence and assessment receipts independently of final provider-call completion."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Own completion coverage/freshness/party validation, canonical CR adaptation and idempotent terminal publication receipts. Reuse existing lifecycle and severity/confidence policy. Do not let a completion request, missing evidence or a failed run masquerade as a completed verdict."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own production composition, equivalent MCP/daemon/controller start/status/resume/cancel adapters, status/usage presentation fields, explicit engine rollout/rollback, legacy compatibility and evaluation fixtures. No client opens stores directly; no client-specific board UI or design-review replacement. Sole new-engine MCP adapter/schema owner; reconcile 8315a11f/S005 legacy sc7 as specified in the architecture and record code-only supersession before opt-in. Verify routing partitions across both installation orders."
+        }
+      ],
+      "rolloutPhase": "B — evidence and accountable coverage",
+      "nonFunctional": {
+        "performance": "No eager whole-source or whole-contract repetition and no mandatory call-per-clause. Bounded read ranges and explicit evidence references prevent unbounded request growth.128K inclusive estimated admission and five-minute continuation cap; default120active-minute/24continuation limits pause with durable progress and explicit extension rather than claim success. Use deterministic/mock providers for routine tests; measure authorized live comparisons against recorded baselines before claiming savings. Block checkpoint acceptance is independent of run duration:120minutes is a pause ceiling, never a save interval. Grouping several block assessments in one session remains allowed.",
+        "security": "Daemon owns runtime state and DB access; cloud access remains LLMProvider/CliProvider only. Independent reviewer identity is checked at start and publication. Source reads are pinned and read-only; untrusted repository text is data, not tool/policy authority. Trusted evidence reads cannot escape the declared snapshot/approved-artifact view, graph queries bind to the registered source repo and declared dependency closure, and native adapters that cannot meet pinning/read-only capability refuse explicitly. Private runtime state uses restrictive access; metadata diagnostics contain no raw prompts/evidence.",
+        "observability": "Expose run/subject/engine/policy IDs, owner generation, attempt lifecycle, required/covered/unverified rows, pause/stale causes and resume compatibility. Show managed attempt count/active time, observed usage quality and unknown/pending observations distinctly from reservations and estimates. Emit status/heartbeats without replaying accepted work; transport disconnect is not a review verdict. Keep human-readable review reports only in /tmp. Surface latest accepted block/progress receipt and outstanding block IDs so clients can distinguish durable block progress from provider-session liveness.",
+        "durability": "Journal-committed acceptance precedes acknowledgment; snapshots/checkpoints are reconstructible and verified against immutable evidence/answer blobs. Detect torn tails and corruption, fence concurrent owners and late replies, preserve uncertain provider outcomes and idempotent completion/usage receipts. Pauses do not erase consumed execution time. Legacy runs are explicitly non-resumable; runtime data remains outside artifact JSON and excluded from changed scope. Every reviewed block is journal-committed before its durable acknowledgment and cursor advancement, even while a native session continues. Accepted block state survives an uncertain or failed enclosing attempt; only unfinished/unacknowledged work is resumed."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ReviewLedgerV1",
+          "signature": "interface EvidenceV1 {\n readonly evidenceId: string; readonly subjectDigest: string;\n readonly kind: 'changed-block' | 'context-source' | 'artifact' | 'test-result' | 'caller-impact';\n readonly source: { readonly path: string; readonly revision: string; readonly digest: string; readonly lines: readonly [number, number] | null };\n readonly role: 'changed-scope' | 'context-only'; readonly inspectedByAttempt: string;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n readonly contentRef: string;\n}\ninterface CoverageV1 {\n readonly rowId: string; readonly subjectDigest: string; readonly requirementRef: string;\n readonly category: 'task' | 'acceptance' | 'design' | 'change' | 'criterion' | 'impact';\n readonly disposition: 'pending' | 'satisfied' | 'finding' | 'unverified' | 'not-applicable';\n readonly evidenceIds: readonly string[]; readonly findingIds: readonly string[];\n readonly rationale: string; readonly assessedByAttempt: string | null;\n}\ninterface ReviewLedgerV1 {\n readonly runId: string; readonly subjectDigest: string;\n readonly evidence: readonly EvidenceV1[]; readonly coverage: readonly CoverageV1[];\n readonly findings: readonly { readonly findingId: string; readonly criterion: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly confidence: 'breach' | 'observation'; readonly evidenceIds: readonly string[]; readonly expectationRefs: readonly string[]; readonly message: string }[];\n}",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewLedgerV1",
+            "meaning": "Frozen run/subject-bound evidence, coverage and findings; sc2 fields match the approved HLD exactly."
+          },
+          "errors": [
+            {
+              "type": "ReviewLedgerError",
+              "condition": "Named invalid-input, subject-mismatch, provenance-mismatch, unknown-reference, conflicting-replay, unsupported-obligation or resource-limit rejection. Invalid deltas leave prior ledger unchanged."
+            }
+          ],
+          "preconditions": [
+            "Use a verified sc1 subject and a complete pinned requirement/criterion catalog, not reviewer-supplied scope or approval flags.",
+            "Trusted receipt/attempt adapters establish which evidence was actually inspected; callers cannot manufacture read, test, index or storage receipts."
+          ],
+          "postconditions": [
+            "Never remove required rows or findings via replacement updates; no storage, dispatch, approval or terminal verdict emitted.",
+            "Canonical identities and immutable snapshots reuse existing s1/corpus helpers, with explicit limits; no duplicate serializer."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Required-row catalog and CoverageV1",
+        "change": "new",
+        "details": "Proposed internal modules: investigation/ledger-types.ts exports exact sc2; ledger.ts owns initializeReviewLedger(subject,basis,runId), applyReviewLedgerDelta(ledger,delta,basis,trustedReceipts), and validateReviewLedger(ledger,basis). These are pure internal sc2 operations, not new MCP protocols. basis is immutable and bound to subjectDigest, pinned artifact digests and versioned criterion policy. Enumerate one row per task, each acceptance check, every applicable design/upstream obligation, each packet block including non-text/unplanned changes, and each criterion; discovered impact rows append without changing packets. Stable row IDs hash subjectDigest/category/namespaced requirementRef. Reject duplicate/conflicting identities; do not deduplicate different revisions or blocks by path/title. Design catalog reuses adherenceObligations and ADHERENCE_LLD_SECTIONS/EXCLUDED in src/workflow/review-pipeline/adapters/code-review-obligations.ts over verified pinned LLD/PLAN projections; call its existing CodeReviewSubject signature unchanged through the new sc2-local read-only projection described below. Map existing clause keys under artifactID@digest namespace; task/check rows remain separately enumerated from sc1. Known excluded LLD sections retain explicit exclusion reasons, and testStrategy/functional requirements/companion obligations get required rows under appropriate criterion/design entries, rather than disappearing through adherence exclusions. Reject unclassified new LLD sections. For supported planless upstream artifacts with no clause adapter, keep the complete pinned contract as a required whole-contract design row; no invented PLAN tasks. Criteria come from trusted versioned review-policy catalog including applicability rationales; no reviewer may omit a dimension. Required rows start pending with empty links/rationale and null attempt. Pending is never complete coverage. Each non-pending assessment requires nonempty rationale and an authenticated current attempt. Satisfied requires inspected complete supporting evidence; finding requires linked validated finding(s) and their evidence. Unverified retains reason and available partial/unavailable evidence. Not-applicable requires explicit criterion/obligation-specific rationale and inspected evidence where the decision depends on source; changed blocks cannot become N/A merely because they are unplanned, deleted or binary. s3 judges substantive adequacy; s2 prevents structurally unsupported assertions. s5 alone decides final completeness/verdict. LEGACY REUSE BOUNDARY [[c6]]: src/workflow/review-pipeline/adapters/code-review-obligations.ts and src/workflow/code-review/types.ts are read-only dependencies, not change sites. Do not narrow, extend or otherwise edit their functions, types, constants, outputs or ownership. The new investigation/ledger-catalog.ts compatibility projection constructs a real typed CodeReviewSubject (no partial cast, fabricated approval or call to legacy subject/diff resolution) from verified pinned LldArtifact/PlanArtifact values, repoPath/root epicHash/storyId from trusted work identity, changedFiles from the exact selected packet old/new paths, and actual pinned BUILD/TESTS records when supplied (otherwise null; this pure helper does not read them). Optional legacy attribution fields are omitted; do not assert story-trailer ownership for block-attested scope. Only call adherenceObligations on this projection, and never feed the projection into a legacy runner, grounding function or dimension judge. It enumerates clauses only; sc1 remains the sole scope authority. Approved contract objects must match sc1 artifact pins before projection. Output keys are namespaced by the pinned artifact digest; no context atoms or whole-source prompts are dispatched. If a legitimate upstream route has no pinned LLD/PLAN, skip this helper and keep the already specified whole-upstream required row. CALL-SITE INVENTORY [[c6]]: legacy src/workflow/code-review/dimensions/adherence.ts calls adherenceObligations(subject) from its obligation callback, and src/workflow/review-pipeline/code-review.ts imports only DimensionObligations and consumes spec.obligations callbacks; it does not directly import/call adherenceObligations. Their existing full CodeReviewSubject objects and field needs, including changedFiles used by adherence prompt construction, are untouched. The helper itself reads approvedLld and approvedPlan; it does not invoke those callers or require changing their other fields. Existing src/workflow/review-pipeline/__tests__/code-review-gather.test.ts fixtures check obligation-section classification and remain regression evidence. Sc2 adds one isolated new caller only. Importing a utility from an older epic does not transfer that epic's controller protocol or execution ownership.",
+        "callSites": []
+      },
+      {
+        "entity": "EvidenceV1 and trusted inspection admission",
+        "change": "new",
+        "details": "Evidence records are admitted from verified sc6 read receipts, trusted test-run records or index-impact receipts and an authenticated attempt identity, never arbitrary reviewer citation objects. Source evidence path/revision/digest/range/contentRef and completeness must match the trusted receipt and subject pins. A claimed complete receipt cannot exceed its inspected bounds; unavailable and partial evidence cannot independently satisfy a requirement. Changed-scope evidence must map to an exact selected packet block with matching parent/commit/blob and allowed range; context/unchanged callers remain context-only even when used by multiple requirements. Artifact evidence pins id/revision/content digest; test results pin actual run/result/command/source revision with unknown/skipped/failed states explicit; index-impact records pin index/source identity and disclosed freshness/coverage limitations, never imply no impact from empty callers. No graph queries or test execution in s2. A trusted adapter supplies verified metadata unavailable in sc6's minimal read receipt (e.g. source path/revision) and maps it to the exact immutable reference. Evidence ID hashes subjectDigest, kind, source, role, inspectedByAttempt, completeness, limitations and contentRef; repeated identical evidence is idempotent, same ID with different material is conflict. Content remains behind immutable contentRef, not embedded in ledger. Preserve originating attempt; replay by another attempt does not relabel old inspection. Reuse snapshotValue/freezeValue/digestValue from investigation/identity.ts; ledger limit defaults 1MiB canonical metadata and 10000 rows/evidence/findings each, explicit limit error not truncation.",
+        "callSites": []
+      },
+      {
+        "entity": "Relationships, findings and update semantics",
+        "change": "new",
+        "details": "One ledger owns 0..N evidence, 1..N required coverage rows and 0..N findings. A row links 0..N evidence and findings; each evidence may support 0..N rows, each finding 1..N expectationRefs and supporting evidence. Every link resolves within the same run/subject; contentRef references externally owned immutable blobs. These prose cardinalities are normative; no ER diagram is needed for the small value model. Findings retain criterion, severity/confidence and evidence-backed expectation links; no invented semantic verdict or severity rule. Atomic delta admits evidence/findings then row assessments, validates whole candidate, freezes a new value and leaves prior unchanged on error. Existing identical records replay harmlessly; IDs with differing content refuse. Existing findings are never deleted or silently overwritten; updates can refine a row's disposition/rationale while preserving evidence/finding history as unions. A previously found problem cannot become satisfied while its finding is hidden: sc2 retains links and s5 later adjudicates lifecycle. Missing row/evidence, wrong subject, unsupported satisfaction, dangling/foreign finding and row removal refuse. Dynamic impact rows may append from trusted impact catalog, and remain mandatory accountable rows once discovered. sc4 owns generation/sequence fencing and durable acceptance; pure sc2 replay rules do not claim storage atomicity or exactly-once execution. No changes to legacy coverage adapters, controller validation or CR schemas.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Use verified immutable subject tasks, checks, packets and contract pins as the unchanged-scope authority. No new diff or artifact approval semantics."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "Own exact evidence/coverage/ledger value schemas, complete required-row enumeration, provenance checks and atomic pure update validation."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Admit trusted read receipt metadata; serialized immutable content may be staged through central object|string port by orchestration. Do not implement staging, journaling or usage stores."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Forged or foreign evidence/assessment",
+          "detection": "Compare subject/run/attempt bindings, immutable reference metadata, inspected ranges and completeness against trusted receipts; resolve every ID in candidate ledger.",
+          "response": "ReviewLedgerError provenance-mismatch/subject-mismatch/unknown-reference; reject entire delta.",
+          "userImpact": "Supply verified inspection evidence; prior progress unchanged.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsupported coverage assertion or missing required catalog entry",
+          "detection": "Compare row universe against deterministic task/check/block/catalog enumeration; verify satisfaction evidence, finding links, N/A rules and rationale/attempt requirements.",
+          "response": "Typed invalid-input/unsupported-obligation; preserve pending/unverified rows rather than assuming success.",
+          "userImpact": "Reviewer must inspect evidence or retain an unresolved reason.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Conflicting replay, dropped history or limit overflow",
+          "detection": "Canonical same-ID value comparison; existing row/finding set inclusion and link checks; metadata byte/count bounds before accepting candidate.",
+          "response": "Typed conflicting-replay/resource-limit; no partial mutation/truncation.",
+          "userImpact": "Retry identical delta or resolve conflict; large runs require explicit future limit decision, not silently lost rows.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Shared source inspection supports several tasks",
+          "expected": "One evidence identity may link many rows; each row has an independent substantive assessment."
+        },
+        {
+          "input": "Deleted/binary/unplanned change or unavailable source",
+          "expected": "Required change row persists with assessed finding or unverified reason; no path-based disappearance."
+        },
+        {
+          "input": "Stale caller index or failed/skipped test",
+          "expected": "Record explicit limitation/result provenance; absence is not proof of no impact and a complete read of a failed test record cannot satisfy a positive test-pass obligation."
+        },
+        {
+          "input": "Same accepted evidence replayed or cross-block partial progress",
+          "expected": "Idempotent identity reuse, original attempt retained; unresolved rows survive until a later supported assessment."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "sc1 source/pin and completeness semantics remain authoritative; s2 cannot widen changed scope. Grounded in s1 reuse analyze bundle.",
+          "source": "c1"
+        },
+        {
+          "text": "Legacy coverage preparation and controller finding validator remain unchanged; ledger is isolated pending s6 integration. Grounded in legacy coverage analyze bundle.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test and node:assert/strict via tsx, matching inspected s1 investigation fixtures. Deterministic fake receipt/catalog adapters; no live LLM calls.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove required-row completeness and validated many-to-many immutable updates.",
+          "subjects": [
+            "review-s2-ac1 exact row universe: tasks/checks/pinned design/upstream clauses/all packet blocks/criteria and append-only discovered impacts",
+            "review-s2-ac2 shared evidence supports several independently assessed rows; note-only/uninspected/partial/unavailable satisfaction rejected",
+            "review-s2-ac3 delete/binary/unplanned/unavailable changes remain explicit rows across updates",
+            "Reject wrong subject/run/attempt, forged receipt metadata, dangling links, dropped rows/findings, conflicting IDs and oversized candidates atomically",
+            "Identical replay preserves original evidence attempt and byte-stable ledger; input mutation cannot change accepted value",
+            "Known LLD sections reuse existing obligation keys/exclusions; test/FR/companion obligations remain covered and unknown sections refuse"
+          ],
+          "fixturesNeeded": [
+            "Pinned sc1 subject and verified artifact bodies, complete criterion catalog, trusted source/test/index receipt fixtures"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise real s1 pinned receipts and existing obligation helpers without changing legacy execution.",
+          "subjects": [
+            "Read pinned source through s1 then admit evidence, bind multiple rows and preserve partial limits; foreign context cannot become changed scope",
+            "Approved-plan and planless bases enumerate complete obligation sets; absent plan never invents tasks",
+            "Existing adherenceObligations signature/callers remain unchanged; sc2 typed projection produces the same clause catalog on pinned inputs; canonical/s1 fixtures stay green"
+          ],
+          "fixturesNeeded": [
+            "Existing s1 temporary-Git fixture, approved LLD/PLAN/upstream snapshots, no DB or provider services"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "review-s2-ac1 exact row universe",
+            "Known LLD section classification and approved-plan/planless integration"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "review-s2-ac2 many-to-many evidence and unsupported satisfaction rejection",
+            "Pinned s1 receipt integration and forged provenance tests"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "review-s2-ac3 deleted/binary/unplanned/unavailable retention",
+            "Atomic rejection and history preservation fixtures"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Fresh s1 analyze bundle locates pinned subject/read receipts and legacy coverage validators. Existing legacy dimension evidence is not a run-scoped sc2 ledger; s1 sc1/sc6 implementation is approved and complete.",
+      "stateAfter": "Add isolated sc2 types, catalog projection and pure immutable delta/provenance checks. Later s3/s4/s5/s6 consume them; legacy dispatch remains unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add exact sc2 types and requirement catalog projections, reusing s1 canonical identity and existing adherenceObligations via an sc2-local complete typed projection. All legacy helper signatures, caller sites and outputs remain unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add trusted receipt admission and pure atomic evidence/coverage/finding validation with deterministic tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Expose internal ledger operations for downstream Stories; verify s1/legacy parity without activating the engine.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No persisted schema rewrite or public MCP/CR change. All existing obligation helpers, types, adapters and call sites are read-only dependencies; no signature narrowing is permitted. Rollback removes only unused new sc2 modules. Durable store migration is s4 responsibility.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Immutable ledger values and validated deltas",
+        "oneLineSummary": "Deterministically enumerate requirements and apply validated evidence/coverage deltas as immutable sc2 values.",
+        "approach": "Use one owned sc2 module for typed requirement catalogs, trusted read-receipt admission, many-to-many bindings and pure ledger transition checks. Reuse s1 canonical snapshot/hash helpers and ports; persistence stays s4. Agent judgments remain s3; no model calls or storage in s2.",
+        "pros": [
+          "Smallest complete sc2 boundary",
+          "Deterministic retry/idempotence fixtures",
+          "Pure transitions fit later per-block checkpoint acceptance"
+        ],
+        "cons": [
+          "Trusted source/test/index adapters must provide verified receipts; references alone do not prove substantive inspection"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Mutable indexed ledger with exported immutable snapshots",
+        "oneLineSummary": "Maintain in-memory row/evidence maps and project sc2 snapshots after validation.",
+        "approach": "A mutable owner keeps keyed maps for rows and evidence while enforcing the same trust validation and relationship rules, exposing only immutable snapshots compatible with HLD sc2. Store lifecycle remains external and no new persistence is introduced.",
+        "pros": [
+          "Efficient repeated updates"
+        ],
+        "cons": [
+          "Extra mutable ownership/rollback surface",
+          "Small run ledgers do not justify a separate object lifecycle"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Additional mutable lifecycle without a demonstrated need."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1/analyzeBundles/0",
+      "quotedText": "Analyzer located prepareReviewSubject/readReviewSource/readApprovedWork, plus legacy prepareCoverageGrounding and validateFinding. Read receipts and canonical identity helpers are existing s1 seams; legacy validators cover different finding shape and must not be mistaken for sc2 provenance validation. Proposed sc2 symbols absent from lookup, graph not exhaustive."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1/analyzeBundles/1",
+      "quotedText": "Analyzer usage.example links prepareCoverageGrounding to existing controller and coverageSpec. Data-model trace empty and test.locate off-topic, so no claim of complete coverage; existing coverage adapters stay unchanged. Use s1 node:test fixture pattern for deterministic scoped-ledger tests."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/HLD-c32aa60534232f36.json",
+      "quotedText": "Approved sc2 and s2 boundary; consume sc1/sc6."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/adapters/code-review-obligations.ts",
+      "quotedText": "Reuse design clause enumeration and explicit exclusions, preserving legacy outputs."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/identity.ts",
+      "quotedText": "Reuse canonical snapshot/hash/freeze helpers; no duplicate serializer."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/code-review/types.ts:176-198",
+      "quotedText": "Use the full existing CodeReviewSubject shape through a new sc2-local projection. Legacy helper and callers remain untouched."
+    }
+  ]
+}

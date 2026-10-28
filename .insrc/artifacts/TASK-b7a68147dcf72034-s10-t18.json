@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d1ac6166-d604-49e6-9e8d-1098dd9fdeb1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.717Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Client services onto daemon methods",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8d1c3867f5f4ae043ce928c544760d9c21026c6535e98dadc34353b8551f022",
+        "at": "2026-10-27T16:08:33.717Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.717Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Client services onto daemon methods",
+    "summary": "Change src/cli/services/workflow.ts (approve, sync, trackerSetup, reviewArtifact, resolveFinding) and team.ts (refresh, claim, release) to call the daemon methods with closeAware rpc and no local git, gh or workflow code; the approve adapter rebuilds ApproveOutcome losslessly from the followOn entries; make sync, teamClaim, teamRelease and resolveFinding asynchronous in index.ts and await them in command.ts. A missing method gives a clear error with no local fallback.",
+    "size": "L",
+    "order": 18,
+    "acceptanceChecks": [
+      "the client passes epicHash, branch, unit, setup options, withTracker and overrideReview to the named methods",
+      "the adapter reproduces approval, tracker, tasks, commit, attach and attachCommit including error and skipped outcomes",
+      "an older daemon gives method-not-found and nothing is published",
+      "command.ts awaits sync, claim, release and resolveFinding"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "cli-services-no-spawn.test.ts: approve, sync, trackerSetup and the team services call only rpc with the named daemon methods and parameters and import no child_process or tracker or git code"
+      },
+      {
+        "level": "unit",
+        "name": "workflow-approve-adapter.test.ts: the client adapter rebuilds ApproveOutcome losslessly from the follow-on entries"
+      },
+      {
+        "level": "unit",
+        "name": "cli-services-daemon-errors.test.ts and workflow-approve-versioning.test.ts: an older or absent daemon gives a clear error, no fallback and no publication"
+      },
+      {
+        "level": "unit",
+        "name": "command.test.ts: sync, claim, release and resolveFinding results are awaited before status and text are read"
+      }
+    ],
+    "planTaskId": "t18"
+  },
+  "citations": []
+}

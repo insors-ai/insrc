@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2bab021-ee13-4573-84f8-152563066424",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.341Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate record, scope and capability boundaries",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ebea310f588e37df6548061745349f7e5a9bfc724dbdb2ca27d97436290cf246",
+        "at": "2026-10-26T12:50:51.341Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.341Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate record, scope and capability boundaries",
+    "summary": "Implement proposed src/workflow/usage/validation.ts and pure capability-declaration validation in src/workflow/usage/capabilities.ts. Combine safe-data guards, closed schemas, digest checks, counter quality and typed closure evidence, with stable notice/error codes.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Malformed/version-unknown inputs yield explicit notices rather than silent zero; no getter/prototype side effects reach schema evaluation.",
+      "Reported, estimated, unavailable and pending constraints, disjoint counters, reasoning subset and safe integer limits match approved rules.",
+      "Closed scope evidence validates expected IDs/count/set digest, reference-only roles, capability evidence and binding versions; a completeness boolean alone is insufficient.",
+      "Capability claims without version/source evidence remain unqualified; structural validation does not claim root ownership, authorization or native physical-call completeness."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/validation.test.ts: closed shape/version/digest/counter/quality rules and scope evidence refusals"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/source-capabilities.test.ts: malformed/unqualified declarations cannot claim native completeness"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

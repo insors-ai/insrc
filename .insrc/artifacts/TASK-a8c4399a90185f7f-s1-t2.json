@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-654af9f9-d7de-4494-ac75-6189ff7dec00",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.376Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define the shared inclusive budget and typed failure contract",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7a23a146e304556204dc7a46cc71ee7af544442591ab3c57b3dcbb4f0cb30e5a",
+        "at": "2026-10-27T06:35:54.380Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.381Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define the shared inclusive budget and typed failure contract",
+    "summary": "Add the approved immutable policy/breakdown and controller declaration types in the shared review contracts plus one pure accounting boundary (proposed src/workflow/review-pipeline/budget.ts). Preserve promptChars/ReviewCall.chars as text diagnostics. Specify estimator, full schema/tool costs, reserves, retry headroom consumption and qualification; budget errors carry safe metadata only.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Default total remains128000; all declared text/schema/tool components plus native16384, transport1024, completion8192 and reviewer-inspection24576 token reserves participate; planning retry headroom8000 chars is counted exactly once.",
+      "Each component uses safe nonnegative values/ceil estimates; exact-cap succeeds, one-token excess refuses, missing/unqualified production profile never becomes zero overhead.",
+      "Expose estimatedTotal/remaining and qualification managed-estimate, reserved-native or explicit controller-reserved; never report estimated/native reserve values as measured usage or a verified hard ceiling.",
+      "ReviewBudgetError provides stable fail-closed codes without raw prompt/schema/tool/error text; optional non-review provider fields retain existing behavior."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/budget.test.ts: complete-component boundaries rounding reserves qualification and retry-headroom ownership"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

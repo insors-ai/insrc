@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-63f6894e-ffb2-4592-98e4-2fa8d3705eca",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.386Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Enforce inclusive admission across the shared planner",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "17940984c98f38e263061017e2d0eb4f049aee539dbf24ff8c487a35e39a8094",
+        "at": "2026-10-27T06:35:54.389Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.390Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Enforce inclusive admission across the shared planner",
+    "summary": "Wire selected profiles before createReviewJob at code-review, grounded-review and template-review entries. Replace independent message-only checks in job, gather and duplicate adapters with the shared inclusive measurement. Correct required-neighbour and correction-dropping fallbacks; keep existing evidence-preserving split/gather protocol and envelope IDs.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Single, chunk, retry, gather/reduce, relation, obligation and comparison/pair candidates all fit the same inclusive cap; no unmeasured schema/shared context is appended after admission.",
+      "All production entry points resolve provider/profile before job construction; test doubles supply explicit synthetic policies instead of production zero-cost defaults.",
+      "Required usage-neighbour evidence is never dropped to fit. Supported lossless partitioning is used or required-context-over-budget is explicit; optional context remains separately optional.",
+      "An oversized required correction is included in supported replanning or causes correction-budget-exceeded; the original uncorrected prompt is never silently reissued.",
+      "Frozen job policy survives continuation/config changes; no source evidence, dimension, relation or obligation is silently omitted under smaller payload allowance."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: inclusive single chunk retry admission and required-neighbour correction overflow retain all mandatory evidence"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: gather reduction relation obligation and duplicate comparison use the shared budget"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/entry-budget-profiles.test.ts: code grounded and template review resolve the selected profile before job construction"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

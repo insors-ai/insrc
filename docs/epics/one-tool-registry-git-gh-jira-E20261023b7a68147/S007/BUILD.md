@@ -1,0 +1,160 @@
+<!-- insrc:artifact BUILD-b7a68147dcf72034-s7 -->
+
+# Build (plan-driven) — Story s7
+
+**Standalone:** no  ·  **Created:** 2026-10-26T18:25:10.543Z  ·  **Updated:** 2026-10-26T19:56:53.629Z
+
+**Commit:** eaeea794c
+
+## Summary
+
+docs/plans/tool-registry.md: new section 's7 built (2026-10-27)' listing git_config, git_ls_remote, git_update_ref, git_rm, gh_tracker (15 ops) and tools.call, the callTool prerequisite marked done (follow-up line and section), the s9/s10 hand-over, the t4 override and known flakes. A new gh-coverage test case checks the note.
+
+## Tasks validated
+
+- ✓ `t1`
+- ✓ `t2`
+- ✓ `t3`
+- ✗ `t4`
+- ✓ `t5`
+- ✓ `t6`
+- ✓ `t7`
+- ✓ `t8`
+- ✓ `t9`
+- ✓ `t10`
+- ✓ `t11`
+- ✓ `t12`
+
+**Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
+
+## Changes
+
+- `src/daemon/tools/__tests__/executor-abort.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/hooks-context.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/tool-signal.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/executor.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/tool-signal.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/_proc.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/shell-helper-abort.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/shell-helper-tree-kill.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/spawn-managed.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-cat-file-tree-kill.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/shell-helper.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/_standin.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-abort.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-cat-file-timeout.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-shared-deadline.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/cat-file.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/fetch-refs.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/fetch.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/helpers.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/ls-tree.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/rev-parse.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/show.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/symbolic-ref.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/shell/__tests__/exec-detached-parity.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/shell/exec-detached.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/_bin.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/k8s/__tests__/k8s-spawn-parity.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/k8s/index.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/ssh/__tests__/ssh-spawn-parity.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/ssh/index.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/cloud/aws/__tests__/logs-parity.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/cloud/aws/logs.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/test/__tests__/test-runner-parity.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/test/index.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/child-process-inventory.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/direct-spawn-tools-cancellation.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-failures.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/call-tool-identity.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/provenance.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/helpers.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/call-tool.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/provenance.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `package.json` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/approval-class-mapping.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/typecheck-config.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/typed-git-tools.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__type-tests__/git-tools.typecheck.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/amend.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/blame.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/branch.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/checkout.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/cherry-pick.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/commit.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/definitions.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/diff.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/for-each-ref.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/hash-object.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/index.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/log.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/ls-files.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/merge-base.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/merge.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/path-history.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/pull.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/push.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/rebase.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/remote.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/reset.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/rev-list.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/revert.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/show-ref.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/stage.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/stash.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/status.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/tag.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/worktree.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `tsconfig.json` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `tsconfig.typecheck.json` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `docs/daemon.md` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-config.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-ls-remote.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-registration.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-rm.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-safe-ref-equivalence.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-unsafe-before-approval.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/__tests__/git-update-ref.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/config.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/coverage.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/ls-remote.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/rm.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/safe-args.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/schemas.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/git/update-ref.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-field-pattern.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-op-table-args.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-op-table-qs.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/op-table.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/jira/exec.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-tracker-diagnostic.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-tracker-family.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-tracker-mapped-ops.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/__tests__/gh-tracker-registration.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/coverage.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/index.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/builtins/gh/tracker.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/handler-runtime.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/threads/__tests__/method-class.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/threads/method-class.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/call-handler.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/call-tool-workflow.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/__tests__/tools-call-cancellation.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/tools/call-handler.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/shared/types.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `src/daemon/__tests__/handler-runtime.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/clean/ok.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/exempt/cli/services/maintenance.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/exempt/daemon/installed-commit.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/exempt/indexer/index.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/forms/builtin-execute.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/forms/direct-spawn.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/forms/injected-seam.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/forms/shell-helper.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/forms/wrapper-call.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/fixtures/unparseable/bad.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/__tests__/forbidden-spawn-scan.test.ts` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `scripts/forbidden-spawn-scan.mjs` — **insrc-build** (2026-10-27T10:41:22.322Z)
+- `docs/plans/tool-registry.md` — **insrc-build** (2026-10-27T10:41:22.322Z)

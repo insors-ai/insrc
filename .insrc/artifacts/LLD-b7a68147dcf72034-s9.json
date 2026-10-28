@@ -1,0 +1,969 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793098266325-9kbh2m",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T10:58:02.504Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 414703,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s9",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "hldEffectiveHash": "9fcc90f081df65b507e5577cd48e5b35fcc82ed0c2e4dec4fff032589b24aba3",
+    "hldAmendmentsApplied": [
+      "AMD-b7a68147dcf72034-3",
+      "AMD-b7a68147dcf72034-4",
+      "AMD-b7a68147dcf72034-5",
+      "AMD-b7a68147dcf72034-6",
+      "AMD-b7a68147dcf72034-7",
+      "AMD-b7a68147dcf72034-8",
+      "AMD-b7a68147dcf72034-9",
+      "AMD-b7a68147dcf72034-10",
+      "AMD-b7a68147dcf72034-11",
+      "AMD-b7a68147dcf72034-12"
+    ],
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "86771640aad8268ce6fd6fc4c7a0a79bf9b17aa812a303348aa187e11ccadd79",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 8,
+          "med": 2,
+          "low": 3
+        },
+        "at": "2026-10-27T11:00:43.494Z",
+        "report": {
+          "entityId": "LLD-b7a68147dcf72034-s9",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-d2e10dc698b5865c044835926c86a022"
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Story s9 adds one small module, a git operations facade, that the workflow library and the daemon use to run git and gh through callTool and the executor instead of spawning them. Each operation returns the same shape the old synchronous helper returned, so stages produce the same artifacts, commits and records, and a denied or failed call is reported by the stage. The synchronous helpers become async and the chains above them follow. The team policy refresh keeps its single 10 second deadline and passes it to the tools as a signal and the remaining time. The two sites with their own needs, the design corpus binary reader and the identity lookup, call callTool directly through their existing seams."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a1: the executor in src/daemon/tools/executor.ts becomes the one pipeline for all external operations, and git, gh and Jira (acli) are registry tool families with an optional declared output schema and an approval class (none, common or destructive). Workflow and daemon code call tools through a typed helper that takes the tool definition; about 32 production files that spawn git or gh, or call a wrapper that does, move onto it in one change.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s9",
+        "owns": [],
+        "depends": [],
+        "internal": "Private implementation of s9: Move the workflow library's and the daemon's direct git and gh calls onto the registry"
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The hook stage inside executeTool: the registry of hooks keyed by tool id, registration order, the rule that a hook runs only after a successful, checked call, and the way a hook failure is carried on the result. It places its stage at step 5 of the pipeline order in the architecture shape and does not own the schema check or the approval step."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "The optional output-schema field and the check at step 4 of the pipeline, the typed call helper that takes a tool definition, the serial conversion queue, the key-value cross-check and the one-time escalation, and the shared failure kinds. It includes the choice of schema language and the way an input-to-tool mismatch is reported. It does not declare or read the approval class."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The approval step at step 2 of the pipeline: the single approval field on a tool definition, the global approval setting for the common class and its default, the IPC request and answer methods, the timeout value, the daemon-side holder of the pending requests, the terminal-client, editor and chat implementations of the answer, and removal of the 'auto-approving' fallback in executor.ts. It maps every existing requiresApproval flag, in every family, to the common class, and lists the tools that change. It does not choose which individual git, gh or Jira operations are destructive; each family Story marks its own."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The list of git operation families, their input and output schemas, which git operations are in the destructive class (for example force push, hard reset, clean, deleting a branch or tag), and the parsing of git porcelain output. Operations that need approval but cannot destroy work stay in the common class. Existing git ids keep their meaning."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The list of gh operation families, their schemas (read from gh --json where it exists, converted from text otherwise, for example gh pr diff and gh run view --log), which of the 27 gh operations that need approval are in the destructive class, and the 120 second time limit and its message. Existing gh ids keep their meaning."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The Jira tool families over acli (work item view, search, create, edit, transition, assign, comment, link, project list and view), their schemas, the --yes flag on every mutating command, the bounded forms of search and project list that acli requires, the 'acli jira auth status' sign-in check, and which operations are in the destructive class. An operation acli does not offer is left out and named as unsupported."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The repository check that fails on a direct git, gh or acli spawn outside src/daemon/tools, built first; the inventory it produces (about 32 production files known today, with the indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup and the daemon self-update included and no allowlist); the rewrite of every listed site and of the tests that import the old wrappers onto the typed helper; and the removal of runGit, commitAndPushArtifacts and the github.ts wrappers. It keeps the artifacts, commits and tracker records the same as before."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s8: Reach the rest of git through named, typed tools"
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s10: Move the tracker and the terminal client onto the registry and remove the old paths"
+        }
+      ],
+      "rolloutPhase": "<not in any phase>",
+      "nonFunctional": {
+        "performance": "Each gh job has its own time limit from a table keyed by tool id and op, never shorter than the tool has today: reads 30 s (gh_pr_diff and gh_run_view 60 s, searches 60 s), changes 30 s by default, gh_issue_create 60 s, gh_pr_create 90 s, gh_pr_merge and gh_release_create 180 s, gh_repo_create and gh_repo_fork 120 s, downloads and uploads 300 s, gh_repo_clone 600 s, codespace create and rebuild 600 s (decided with the user on 2026-10-25; the daemon is expected to become multi-threaded so a slow gh will not block it). A timed-out call names the command and the limit, and a changing call adds that its outcome is unknown. The approval wait has its own timeout, set in s3's LLD. Conversion is serial, so a text-only tool that needs the cheap model costs one model call per attempt plus at most one escalated call; structured-output tools make no model call.",
+        "security": "No argument, setting, environment variable or caller identity can skip the approval for a destructive call; with no client attached the call is denied. Common calls follow one global setting. Approval requests travel only over the daemon's Unix socket. No credentials are read or stored: gh, git and acli use the user's own CLI sessions. A tool that declares an output schema and returns a result that does not match it fails and its result is not passed on. Today the executor runs every tool flagged requiresApproval as approved (11 git tools, 5 more by predicate, 27 gh operations and other families), so nothing asks; this Epic makes destructive calls ask every time and puts the rest under the global setting.",
+        "observability": "The executor logs each stage per call with the tool id, the caller, the approval class and decision and its reason, the schema check result, and each hook outcome. Hook failures, denials and conversion escalations are returned to the caller as part of the result, not only logged.",
+        "durability": "Pending approval requests are held in memory by the daemon and are lost on restart; a request left open at restart is treated as denied. Hooks are registered in code at start-up, not stored. The global approval setting is stored in the daemon's config. The cutover leaves artifacts, commits and tracker records unchanged."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "gitOps (new module src/workflow/git-ops.ts)",
+          "signature": "type GitOpsContext = { readonly repoPath: string; readonly caller: 'workflow' | 'daemon'; readonly signal?: AbortSignal | undefined; readonly approvalMode?: 'manual' | 'edit-auto' | 'auto' | undefined; readonly timeoutMs?: number | undefined }; function toolDepsFor(ctx: GitOpsContext): ToolDeps; function callGit<T extends TypedTool>(ctx: GitOpsContext, tool: T, input: Static<T['inputSchema']>): Promise<TypedToolResult<Static<T['outputSchema']>>>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "GitOpsContext",
+              "purpose": "Where and for whom the call runs: repository, caller (agent is not allowed here), the abort signal the site owns, the approval mode the stage runs under, and an optional lower time limit.",
+              "optional": false
+            },
+            {
+              "name": "tool",
+              "type": "TypedTool",
+              "purpose": "A git or gh tool DEFINITION from gitToolDefinitions or the gh definitions; callTool refuses a definition that is not the registered one.",
+              "optional": false
+            },
+            {
+              "name": "input",
+              "type": "Static<T['inputSchema']>",
+              "purpose": "The tool's typed input, with cwd set to ctx.repoPath unless the operation names another directory.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<TypedToolResult<...>>",
+            "meaning": "callTool's result unchanged: success with typed data and the text output, or a ToolFailure (rejected, schema-mismatch, timed out, denied, cancelled)."
+          },
+          "errors": [
+            {
+              "type": "ToolFailure (returned, not thrown)",
+              "condition": "the tool failed, its result did not match its schema, the approval was denied (no client or expired) or the signal fired"
+            }
+          ],
+          "preconditions": [
+            "The daemon's tool registry is loaded (the facade runs inside the daemon process, or in a stage that the daemon runs).",
+            "ctx.caller is 'workflow' or 'daemon'."
+          ],
+          "postconditions": [
+            "Every call goes through callTool and the executor, so the approval, hook and result-check rules apply.",
+            "toolDepsFor builds a ToolDeps with sessionId 'workflow-git', a no-op send, a fresh requestId, the signal, the caller and the approval mode, and no connectionExecution."
+          ]
+        },
+        {
+          "name": "headFullSha (reshaped)",
+          "signature": "function headFullSha(ctx: GitOpsContext): Promise<string | undefined>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "GitOpsContext",
+              "purpose": "As above.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<string | undefined>",
+            "meaning": "HEAD's full 40-hex sha, or undefined when there is no HEAD, the repository is not a git repository, the call failed or the sha is not 40 hex."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Never rejects; a ToolFailure reads as undefined, as the two private headFullSha functions in src/workflow/runners/build/range-base.ts and src/workflow/gates.ts do today.",
+            "Implemented once with git_rev_parse {rev:'HEAD'} (not short) and replaces both private copies."
+          ]
+        },
+        {
+          "name": "commitExists (reshaped)",
+          "signature": "function commitExists(ctx: GitOpsContext, rev: string): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "GitOpsContext",
+              "purpose": "As above.",
+              "optional": false
+            },
+            {
+              "name": "rev",
+              "type": "string",
+              "purpose": "A sha or ref; checked as `<rev>^{commit}`.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "true only when git_cat_file {rev, exists:true} succeeds with a positive answer."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Never rejects; any failure reads as false (src/workflow/runners/build/range-base.ts:96 and src/workflow/runners/build/standalone-record.ts:297 today)."
+          ]
+        },
+        {
+          "name": "mergeInProgress (reshaped)",
+          "signature": "function mergeInProgress(ctx: GitOpsContext): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "GitOpsContext",
+              "purpose": "As above.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "true when MERGE_HEAD exists or an uncommitted squash left SQUASH_MSG; any other git failure is logged and reads as false."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Keeps the exit-status distinction of src/workflow/runners/build/story-commits.ts:285: a quiet exit 1 means 'no MERGE_HEAD', any other failure is logged by getLogger('story-commits') and does not block a build."
+          ]
+        },
+        {
+          "name": "headShortSha (reshaped)",
+          "signature": "function headShortSha(ctx: GitOpsContext): Promise<string | undefined>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "GitOpsContext",
+              "purpose": "As above.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<string | undefined>",
+            "meaning": "HEAD's abbreviated sha, or undefined; never an empty string."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Uses git_rev_parse {rev:'HEAD', short:true}."
+          ]
+        },
+        {
+          "name": "resolveStoryRangeBase (reshaped)",
+          "signature": "function resolveStoryRangeBase(repoPath: string, epicHash: string, storyId: string, ctx?: Omit<GitOpsContext, 'repoPath'>): Promise<string | undefined>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repository.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "Epic.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "Story.",
+              "optional": false
+            },
+            {
+              "name": "ctx",
+              "type": "Omit<GitOpsContext,'repoPath'>",
+              "purpose": "Caller, signal and approval mode; default caller 'daemon'.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<string | undefined>",
+            "meaning": "As today but async: the Story's range base, or undefined when it cannot be established."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Was synchronous and read-only; now async. Its seven callers (src/daemon/code-review-rpc.ts:159, src/daemon/steps/build-step/phases/validate.ts:366, :423 and :623, src/daemon/steps/code-review-step/controller.ts:146, src/workflow/runners/build/completion-record.ts:86 and src/workflow/runners/build/standalone-record.ts:307) await it; the same applies to storyChangeSet and resolveStoryRangeEnd.",
+            "Still read-only and never rejects."
+          ]
+        },
+        {
+          "name": "runLocalGit / runGitReadOnly (replace runGit and runGitAsync)",
+          "signature": "function gitRun(ctx: GitOpsContext, args: readonly string[]): Promise<GitRun>",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "GitOpsContext",
+              "purpose": "As above; for the team policy code the signal is derived from the refresh's Deadline and timeoutMs is its remaining time.",
+              "optional": false
+            },
+            {
+              "name": "args",
+              "type": "readonly string[]",
+              "purpose": "The git arguments the team code passes today (rev-parse, rev-list, ls-tree, show, status --porcelain, cat-file -e, remote get-url, for-each-ref, symbolic-ref, fetch).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<GitRun>",
+            "meaning": "The existing GitRun shape from src/workflow/team/git.ts: {ok:true, stdout} or {ok:false, stderr, quiet?}, so policy-reader, anchor-finder, handoff, signoff, sighting-store and policy-refresh keep their logic."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "every failure, denial or abort is returned as {ok:false}"
+            }
+          ],
+          "preconditions": [
+            "Each args vector is mapped to exactly one registered git tool call by an explicit table (the replacement table), not by a generic pass-through; an args vector with no mapping is a programming error caught by a test."
+          ],
+          "postconditions": [
+            "No generic `git <args>` tool is added to the registry and no raw shell is introduced; the mapping table is the closed list of the operations the team code performs."
+          ]
+        },
+        {
+          "name": "refreshPolicy / createDeadline (reshaped)",
+          "signature": "function refreshPolicy(repo: string, optsOrBranch?: RefreshOptions | string): Promise<PolicyResult<PolicyRefreshOutcome>>; function createDeadline(totalMs?: number, now?: () => number): Deadline; interface Deadline { remainingMs(): number; readonly signal: AbortSignal }",
+          "parameters": [
+            {
+              "name": "optsOrBranch",
+              "type": "RefreshOptions | string",
+              "purpose": "As today, the test seams git, local, write and anchor keep their meaning but their types become the facade's.",
+              "optional": true
+            },
+            {
+              "name": "totalMs",
+              "type": "number",
+              "purpose": "Total budget; default REFRESH_DEADLINE_MS = 10_000 (src/workflow/team/sighting-store.ts:46).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<PolicyResult<PolicyRefreshOutcome>>",
+            "meaning": "As today."
+          },
+          "errors": [
+            {
+              "type": "PolicyResult ok:false",
+              "condition": "the deadline passed before a call, or any call failed or was aborted; the call after an aborted one is never started"
+            }
+          ],
+          "preconditions": [
+            "The lock is held for at most the deadline plus the facade's kill time (2 s, from s7)."
+          ],
+          "postconditions": [
+            "Deadline gains a `signal` that aborts when remainingMs() reaches 0, created from AbortSignal.timeout(totalMs) so it fires without a poll.",
+            "Every git call of the refresh passes ctx.signal = deadline.signal and timeoutMs = remainingMs(); the lock-lifetime reasoning of src/workflow/team/sighting-store.ts depends on 10_000 ms and is re-stated in the plan with the 2 s kill time added."
+          ]
+        },
+        {
+          "name": "createRepoIgnoreFilter (reshaped)",
+          "signature": "function createRepoIgnoreFilter(repoPath: string): Promise<RepoIgnoreFilter>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repository.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<RepoIgnoreFilter>",
+            "meaning": "As today but async; reads the file list through git_ls_files {cached, others, excludeStandard, nullTerminated}."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "A ToolFailure (including the output limit) degrades to the permissive filter with the same warning as src/analyze/context/repo-ignore-filter.ts:116 today."
+          ]
+        },
+        {
+          "name": "githubIdentities / identity gitEmail seam (reshaped)",
+          "signature": "function githubIdentities(run?: IdentityCommand): Promise<IdentityLookup>",
+          "parameters": [
+            {
+              "name": "run",
+              "type": "IdentityCommand",
+              "purpose": "The existing test seam; its default changes from runShell to a function that calls the gh auth status tool through callTool.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<IdentityLookup>",
+            "meaning": "As today: missing-integration when gh is absent, unavailable on a non-zero exit or truncated output, otherwise the per-host identities."
+          },
+          "errors": [],
+          "preconditions": [
+            "The registry has a tool that runs `gh auth status --json hosts` and returns its raw text and exit status (see openQuestions)."
+          ],
+          "postconditions": [
+            "The 15 s limit and the 256 KB output limit are kept; multi-host and multi-account semantics are unchanged (ac4)."
+          ]
+        },
+        {
+          "name": "createGitRunner / BinaryGitRunner (corpus reader)",
+          "signature": "type BinaryGitRunner = (args: readonly string[], input: Uint8Array, options: BinaryGitOptions) => Promise<Uint8Array>",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "readonly string[]",
+              "purpose": "As today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Uint8Array>",
+            "meaning": "Git's raw stdout up to options.stdoutLimit."
+          },
+          "errors": [
+            {
+              "type": "SourceReaderError",
+              "condition": "limit.exceeded or inventory.invalid, with the same codes and messages as today"
+            }
+          ],
+          "preconditions": [
+            "The corpus reader's git operations need binary stdout, stdin content and the hardened read arguments (GIT_READ_ARGS) and environment (gitEnvironment)."
+          ],
+          "postconditions": [
+            "Moves onto git_cat_file (encoding base64, stdoutLimit, stderrLimit, timeoutMs, isolated true) where the operation is a read of objects; any operation of the reader that this tool cannot express is an open question for s8 (the long tail of git) and is not approximated."
+          ]
+        },
+        {
+          "name": "gitDiffTool.execute call sites (builtin-execute)",
+          "signature": "gitDiffTool.execute({ cwd: repoPath, ...input }, toolDeps)",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "Static<typeof gitDiffTool.inputSchema>",
+              "purpose": "As today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ToolResult>",
+            "meaning": "Replaced by callGit(ctx, gitDiffTool, input) so the executor's approval, hooks and result check apply."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "src/workflow/code-review/grounding.ts:417 and src/workflow/runners/build/changed-files.ts:112 no longer call execute directly."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "GitOpsContext",
+        "change": "new",
+        "details": "The per-call context of the facade: repoPath, caller ('workflow' or 'daemon'), signal, approval mode and an optional lower time limit. It is not persisted. A site that has no signal passes none; a stage that has one (the refresh Deadline, a request signal) passes it.",
+        "callSites": [
+          "src/workflow/runners/build/range-base.ts",
+          "src/workflow/runners/build/story-commits.ts",
+          "src/workflow/team/policy-refresh.ts",
+          "src/workflow/gates.ts"
+        ]
+      },
+      {
+        "entity": "Deadline",
+        "change": "field-add",
+        "details": "Gains a read-only `signal: AbortSignal` that aborts when the total budget is spent; remainingMs() is unchanged.",
+        "schemaDiff": "interface Deadline { remainingMs(): number; readonly signal: AbortSignal }",
+        "callSites": [
+          "src/workflow/team/git-async.ts:20",
+          "src/workflow/team/policy-refresh.ts:60",
+          "src/workflow/team/handoff.ts:471"
+        ]
+      },
+      {
+        "entity": "replacement table and migration record",
+        "change": "new",
+        "details": "A table in the Story's documentation: one row per site (file and line from the scan, the old call, the facade operation or the registry tool replacing it, the caller, the signal, the approval mode and the test that runs it through a recorded executor). The migration record lists the same rows with the commit that moved each. They are documents, not stored data.",
+        "callSites": [
+          "scripts/forbidden-spawn-scan.mjs"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A moved call needs approval and no client is attached, or the approval request expires",
+          "detection": "callTool returns a ToolFailure whose kind is denied (reason no-client or expired) from the executor's approval step; the facade returns it unchanged",
+          "response": "The facade operations that return a value (headFullSha, commitExists and the other 'never throws' helpers) read a denial as their failure value, but they log the denial at warn with the tool id and reason; a stage-level call that changes something (commit, push, update-ref) is reported by the stage as a failure naming the denial and the stage does not continue (ac5). Read-only git tools are class none and never ask, so only the changing calls of s10 and a destructive tool can be denied here.",
+          "userImpact": "A stage that would have run git silently now fails with a message naming the denied operation when its approval is denied; read-only stages are unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The abort signal fires (the team refresh's Deadline, a request signal) while a call is running or before it starts",
+          "detection": "The executor rechecks the effective signal before execute (s7) and kills the process group on abort; callTool returns a ToolFailure of kind cancelled or timed out",
+          "response": "gitRun returns {ok:false, stderr, timedOut:true} in the shape runGitAsync returned; refreshPolicy returns ok:false at the first aborted call and starts none after it (it checks deadline.signal.aborted before each call).",
+          "userImpact": "A refresh that runs past 10 s fails with 'the refresh deadline passed' as today; the lock is released after the kill time (up to 2 s).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A tool result does not match its declared output schema",
+          "detection": "The executor's schema check returns a ToolFailure kind schema-mismatch; callTool passes it on",
+          "response": "The facade never passes the result on: the helper reads it as its failure value and logs the mismatch at warn. No output is parsed by the site any more.",
+          "userImpact": "A git version whose output differs from the schema yields 'undefined' or 'false' results where the old code parsed it leniently; this is the k2 rule (a mismatch is a failure) and is visible in the log.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tool registry is not loaded or the definition passed is not the registered one",
+          "detection": "callTool returns kind rejected with 'No tool registered' or 'is not the definition that was passed'",
+          "response": "Treated as a failure value like any other; a test per facade operation proves each definition it passes is the registered one.",
+          "userImpact": "Would show as a stage that cannot read git; caught by the tests at build time rather than at run time.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A caller in a code path that runs outside the daemon process (the terminal client, a script) reaches a moved helper",
+          "detection": "toolDepsFor needs the daemon's registry; getTool returns undefined and callTool returns rejected",
+          "response": "The helper's failure value; the design records which moved modules are reachable only inside the daemon (the build runners, the gates, the team code are, but src/workflow/team/* is also used by the terminal client's workflow service in s10's scope) and an open question asks how the terminal client reaches them (through tools.call, per s10 ac2).",
+          "userImpact": "A terminal-client path that imports a moved helper directly would get failures instead of git results; s10 owns the terminal client.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The sync-to-async change leaves a caller that still treats the result as a value",
+          "detection": "tsc: a Promise is not assignable to string, boolean or undefined at every caller; an ESLint no-floating-promises style check is not available, so a forgotten await in a condition (if (mergeInProgress(...))) is a Promise and always truthy",
+          "response": "Every moved helper keeps its name, so a missed await would compile in a boolean position; to prevent it the plan changes the helper names that return booleans (commitExists, mergeInProgress) to a form tsc rejects in a condition, or adds a unit test per caller that fails if the awaited value is ignored.",
+          "userImpact": "Without this, a merge in progress would never block a build (the Promise is truthy the other way: it would always block).",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repository with no commits (unborn HEAD)",
+          "expected": "headFullSha and headShortSha return undefined, commitExists returns false, as today; the ToolFailure kind is not shown to the caller."
+        },
+        {
+          "input": "A directory that is not a git repository",
+          "expected": "Each helper returns its failure value; mergeInProgress logs the same warn as today and returns false; createRepoIgnoreFilter returns the permissive filter without calling git when .git is missing (that check stays)."
+        },
+        {
+          "input": "A sha in a stored range base that no longer exists (garbage collected)",
+          "expected": "commitExists returns false and resolveStoryRangeBase returns the 'invalid' result with the same reason text as range-base.ts:128 today."
+        },
+        {
+          "input": "git rev-parse -q --verify MERGE_HEAD exits 1 without a message (no merge)",
+          "expected": "The tool reports a quiet failure; mergeInProgress then checks SQUASH_MSG; exit codes other than 1 are logged and read as false, as at story-commits.ts:285."
+        },
+        {
+          "input": "A listing of 50 MB of file names (createRepoIgnoreFilter on a large repository)",
+          "expected": "git_ls_files has its own output budget; if the budget is below the old 50 MB maxBuffer the filter degrades to permissive with the warning, so the tool's limit must be at least the old one (checked in the plan); this is an open question for the git family Story if the limit is lower."
+        },
+        {
+          "input": "The refresh deadline is 0 or negative at the first call",
+          "expected": "refreshPolicy returns 'the refresh deadline passed before it started' before any call, as today."
+        },
+        {
+          "input": "The gh auth status output is larger than 256 KB or truncated",
+          "expected": "githubIdentities returns unavailable, as today; the limit is passed to the tool as its output budget."
+        },
+        {
+          "input": "Two sites call the same read at the same moment (for example validate and the code review both read HEAD)",
+          "expected": "Each is an independent executor call; there is no cache in the facade, so results are as fresh as today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A moved helper that documents 'never throws' (commitExists, headFullSha, introducingCommit, resolveStoryRangeEnd, mergeInProgress, headShortSha, priorCommit, resolveStoryRangeBase) still never rejects and returns the same failure value for the same git outcome.",
+          "source": "c3"
+        },
+        {
+          "text": "The team policy refresh uses one Deadline for the whole refresh, started before its first git call, and holds its lock for no longer than that deadline plus the kill time; the deadline stays 10_000 ms (REFRESH_DEADLINE_MS).",
+          "source": "c3"
+        },
+        {
+          "text": "The range base stored in a persisted artifact is a full 40-hex sha, never an abbreviation (gates.ts headFullSha comment): headFullSha must call git_rev_parse without short.",
+          "source": "c3"
+        },
+        {
+          "text": "The story commit set is the commits carrying the Insrc-Story trailer, listed in the same order and with the same squash and merge handling as story-commits.ts git() produces today (exit codes in okCodes are not failures).",
+          "source": "c3"
+        },
+        {
+          "text": "The design corpus reader keeps its hardening: no inherited GIT_CONFIG_* or alternate object stores, replacement refs off, protocol.allow never, hooks and fsmonitor off, and its own byte and time limits and process-group kill.",
+          "source": "c3"
+        },
+        {
+          "text": "Every tool id agents use today keeps its meaning (k7); s9 adds no tool and changes no input or output of an existing one.",
+          "source": "c3"
+        },
+        {
+          "text": "The identity lookup keeps its per-host, per-account output and its status vocabulary (available, disconnected, missing-integration, unavailable).",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test), assert/strict; tests co-located in __tests__ folders; real temporary git repositories for integration cases; a recorded executor (a test double registered for executeTool/getTool that records tool id, input and deps and returns canned ToolResults) for the facade; use --test-force-exit for suites that start git processes.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The facade maps every ToolFailure kind to the old helper's failure value and builds ToolDeps correctly.",
+          "subjects": [
+            "src/workflow/__tests__/git-ops.test.ts: toolDepsFor sets the caller, the signal, the approval mode and sessionId workflow-git, and rejects the agent caller",
+            "src/workflow/__tests__/git-ops.test.ts: each facade operation (headFullSha, commitExists, mergeInProgress, headShortSha) returns its old failure value for rejected, schema-mismatch, denied no-client, denied expired, timed-out and cancelled failures, and never rejects",
+            "src/workflow/__tests__/git-ops.test.ts: headFullSha asks git_rev_parse without short and returns undefined for a result that is not 40 hex",
+            "src/workflow/__tests__/git-ops.test.ts: gitRun maps each args vector of the team code to one registered git tool call and an unmapped vector fails the test"
+          ],
+          "fixturesNeeded": [
+            "recorded executor double",
+            "temporary git repository helper (existing in src/workflow/team/__tests__)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The moved sites behave as before against a real repository and the real registry.",
+          "subjects": [
+            "src/workflow/runners/build/__tests__/range-base-registry.test.ts: resolveStoryRangeBase returns the same base as the old synchronous version for a stamped repository, a garbage-collected sha, an unborn HEAD and a non-repository",
+            "src/workflow/runners/build/__tests__/story-commits-registry.test.ts: storyChangeSet and mergeInProgress give the old results for a merge in progress, a squash leftover and a clean tree",
+            "src/workflow/__tests__/gates-stamp-registry.test.ts: the gate stamp stores a full 40-hex range base",
+            "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts: the validation checks list the same files as the old git ls-files and diff calls",
+            "src/analyze/context/__tests__/repo-ignore-filter-registry.test.ts: createRepoIgnoreFilter gives the same filter as before and degrades to permissive when the tool fails",
+            "src/workflow/team/__tests__/policy-refresh-registry.test.ts: refreshPolicy against a local bare remote returns the same outcome as before"
+          ],
+          "fixturesNeeded": [
+            "real temporary git repositories",
+            "a local bare remote"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The identity lookup and the corpus reader keep their public behaviour through the registry, and the scan covers every site.",
+          "subjects": [
+            "src/understanding/__tests__/identity-registry.test.ts: githubIdentities keeps missing-integration, unavailable (non-zero exit, truncated output) and the per-host per-account result when the call goes through the registry",
+            "src/design/corpus/__tests__/git-reader-registry.test.ts: the corpus reader keeps its limit.exceeded and inventory.invalid codes and its byte and time bounds through the registry",
+            "scripts/__tests__/forbidden-spawn-scan-s9.test.ts: the scan reports none of the s9 files, including the githubIdentities site, and its builtin-execute detection covers gitDiffTool.execute"
+          ],
+          "fixturesNeeded": [
+            "identity provider doubles",
+            "corpus fixture repository"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The refresh deadline and the abort behaviour (ac3, ac5).",
+          "subjects": [
+            "src/workflow/team/__tests__/policy-refresh-deadline.test.ts: when the Deadline signal aborts during a call, the refresh stops at that call, starts no call after it and releases its lock within the deadline plus the kill time",
+            "src/workflow/team/__tests__/policy-refresh-deadline.test.ts: a deadline of 0 returns the 'deadline passed before it started' result with no call",
+            "src/workflow/__tests__/git-ops-denial.test.ts: a call denied for no client or an expired approval makes the calling stage report the denial and not continue"
+          ],
+          "fixturesNeeded": [
+            "fake clock",
+            "recorded executor double"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "scripts/__tests__/forbidden-spawn-scan-s9.test.ts: the scan reports none of the s9 files, including the githubIdentities site, and its builtin-execute detection covers gitDiffTool.execute",
+            "src/workflow/__tests__/git-ops.test.ts: toolDepsFor sets the caller, the signal, the approval mode and sessionId workflow-git, and rejects the agent caller"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/runners/build/__tests__/range-base-registry.test.ts: resolveStoryRangeBase returns the same base as the old synchronous version for a stamped repository, a garbage-collected sha, an unborn HEAD and a non-repository",
+            "src/workflow/runners/build/__tests__/story-commits-registry.test.ts: storyChangeSet and mergeInProgress give the old results for a merge in progress, a squash leftover and a clean tree",
+            "src/workflow/__tests__/gates-stamp-registry.test.ts: the gate stamp stores a full 40-hex range base",
+            "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts: the validation checks list the same files as the old git ls-files and diff calls"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/team/__tests__/policy-refresh-deadline.test.ts: when the Deadline signal aborts during a call, the refresh stops at that call, starts no call after it and releases its lock within the deadline plus the kill time",
+            "src/workflow/team/__tests__/policy-refresh-deadline.test.ts: a deadline of 0 returns the 'deadline passed before it started' result with no call",
+            "src/workflow/team/__tests__/policy-refresh-registry.test.ts: refreshPolicy against a local bare remote returns the same outcome as before"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/understanding/__tests__/identity-registry.test.ts: githubIdentities keeps missing-integration, unavailable (non-zero exit, truncated output) and the per-host per-account result when the call goes through the registry",
+            "src/design/corpus/__tests__/git-reader-registry.test.ts: the corpus reader keeps its limit.exceeded and inventory.invalid codes and its byte and time bounds through the registry"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "src/workflow/__tests__/git-ops-denial.test.ts: a call denied for no client or an expired approval makes the calling stage report the denial and not continue",
+            "src/workflow/__tests__/git-ops.test.ts: each facade operation (headFullSha, commitExists, mergeInProgress, headShortSha) returns its old failure value for rejected, schema-mismatch, denied no-client, denied expired, timed-out and cancelled failures, and never rejects"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "scripts/__tests__/forbidden-spawn-scan-s9.test.ts: the scan reports none of the s9 files, including the githubIdentities site, and its builtin-execute detection covers gitDiffTool.execute",
+            "src/workflow/__tests__/git-ops.test.ts: gitRun maps each args vector of the team code to one registered git tool call and an unmapped vector fails the test",
+            "src/workflow/__tests__/git-ops.test.ts: headFullSha asks git_rev_parse without short and returns undefined for a result that is not 40 hex"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "About 20 production sites in the workflow library, the daemon, the analyze path, the understanding identity lookup and the design corpus reader run git directly: execFileSync in src/workflow/runners/build/range-base.ts, story-commits.ts, standalone-record.ts, src/workflow/gates.ts, src/workflow/convert/plan.ts, src/workflow/artifacts/companion/header.ts, src/daemon/steps/build-step/validation-checks.ts and src/analyze/context/repo-ignore-filter.ts; the synchronous runGit and the Deadline-based runGitAsync in src/workflow/team; a hardened spawn runner in src/design/corpus/sources/git-reader.ts; gh auth status through runShell in src/understanding/identity.ts; and two direct gitDiffTool.execute calls in src/workflow/code-review/grounding.ts and src/workflow/runners/build/changed-files.ts. Their helpers are synchronous and documented 'never throws'. The registry (s1 to s7) is ready: callTool, the executor with approval, hooks and result check, tools.call, the abort signal and process-group kill, and the forbidden-spawn scan in report mode listing 55 sites (bundle 1 and bundle 4 of the s1 context).",
+      "stateAfter": "src/workflow/git-ops.ts holds a closed list of async operations over callTool (GitOpsContext, toolDepsFor, callGit, headFullSha, commitExists, mergeInProgress, headShortSha, gitRun and the others the replacement table lists). Every s9 site calls it or callTool directly. The helpers are async and their callers await them. Deadline carries an abort signal and the policy refresh passes it with the remaining time. runGit and runGitAsync in src/workflow/team have no remaining caller in s9's scope (s10 deletes them). The scan reports none of the s9 files, including githubIdentities, and the replacement table and migration record list every site with its test.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Fix the scan first: make forbidden-spawn-scan.mjs detect runShell and other helpers whose argv is a named constant or parameter when the file imports them, so githubIdentities appears, and add the s9 replacement table as a document listing every scan site and the open sites (tracker/attach.ts, the signoff runGit calls). Commit with the report-mode output attached.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add src/workflow/git-ops.ts with GitOpsContext, toolDepsFor, callGit and the failure mapping, plus its unit tests with a recorded executor. No site uses it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add Deadline.signal to createDeadline and test it with a fake clock. Nothing reads it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Move the leaf helpers one file at a time, each with its async ripple and tests in the same commit: range-base.ts (commitExists, headFullSha, introducingCommit, resolveStoryRangeEnd, resolveStoryRangeBase) with its seven callers, then story-commits.ts (git(), mergeInProgress, storyChangeSet) with implement.ts and validate.ts, then standalone-record.ts, gates.ts, validation-checks.ts, convert/plan.ts, companion/header.ts, changed-files.ts and grounding.ts (replacing the direct execute calls).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Move the team code: add gitRun to the facade with the closed args-to-tool table, move policy-reader, anchor-finder, sighting-store, handoff and the three signoff runGit calls (if the user assigns them to s9), then policy-refresh with the Deadline signal.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Move the repo ignore filter, the identity lookup and the corpus reader, each only when the registry has a tool shape that expresses its operation; any operation without one stops the step and is reported as an open question to the family Story, never approximated.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Run the scan and require it to report none of the s9 files; run the full sweep once; write the migration record with the commit of each row.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public interface outside the repository changes. Inside it, the signatures of the moved helpers change from synchronous to async (a source-level break handled in the same commits as their callers; tsc finds every caller, and the boolean-returning helpers are renamed so a missing await cannot compile in a condition). RefreshOptions keeps its seams git, local, write and anchor with the facade's types; tests that pass doubles are updated. Persisted artifacts, commits, tracker records and the IPC methods are unchanged. s10 still finds runGit, runGitAsync and createGitRunner in place until it deletes them, so s9 can land before s10.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Inline callTool at every site",
+        "oneLineSummary": "Each site calls callTool with the git or gh definition itself and maps the typed result to what the old helper returned.",
+        "approach": "Every moved helper keeps its name and its documented result (a boolean, an optional sha, a thrown NoBuildChangesError, a GitRun) but its body becomes `await callTool(gitXxxTool, input, deps)` with deps built at the site: caller 'workflow' or 'daemon', the signal the site already owns or a new one, the approval mode the stage runs under, and repoPath. A synchronous helper becomes async, and every caller up the chain becomes async to the first function that is already async (the stage handlers in src/daemon/steps/build-step/phases and the code review controller are async; resolveStoryRangeBase, storyChangeSet, mergeInProgress, the team policy-reader functions and the gates stamp path are not). The error mapping from ToolFailure back to each helper's old 'never throws' result is written at each site.",
+        "pros": [
+          "No new module and no new vocabulary: each site reads as the tool call it makes.",
+          "Every site chooses its own caller, signal and approval mode, which ac1 asks for.",
+          "Smallest diff per site for the sites that already have an async caller."
+        ],
+        "cons": [
+          "The ToolFailure-to-old-result mapping is repeated at about 20 sites, so the 'never throws' behaviour can drift between them.",
+          "The async ripple through the sync chains (resolveStoryRangeBase, storyChangeSet, runGit callers in the team code) is the same work as in a2 but is spread across many files with no single place to test the mapping.",
+          "Tests of each site must each build deps and a recorded executor."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Partial on ac2, ac5 and ac6 (s3 scores): the failure mapping is repeated at about 20 sites, so the 'never throws' results can drift and no fixture is shared."
+      },
+      {
+        "id": "a2",
+        "name": "One workflow git facade over callTool",
+        "oneLineSummary": "A small module of named async operations (head sha, commit exists, merge in progress, config value, list files, run a read) built once over callTool, imported by every s9 site.",
+        "approach": "Add one module in the workflow library (for example src/workflow/git-ops.ts) that exports the operations the s9 sites actually perform, each an async function taking repoPath and an options object {signal, approvalMode, caller} and returning the old helper's result shape. It owns the deps construction, the caller ('workflow' from the workflow library, 'daemon' from daemon code), the mapping of ToolFailure to the 'never throws' results, and the stderr text the callers display. The tools it calls are the existing git definitions (git_rev_parse, git_cat_file, git_log, git_diff, git_ls_files, git_config, git_status) and gh_auth/gh_api where an operation exists, and nothing new is added to the registry unless a site needs an input a tool lacks, in which case that need is an open question for the family Story and not a silent addition. The async ripple is as in a1. The team policy code passes the shared Deadline as a signal and the remaining time through the facade.",
+        "pros": [
+          "The failure mapping and the 'never throws' contract are written and tested once, so the sites cannot drift.",
+          "The recorded-executor test of ac6 can target the facade for the common operations and each site for its own wiring.",
+          "Sites shrink to one call each and the replacement table has a stable name per operation.",
+          "Reuses callTool and the existing tool definitions; nothing is added to the registry."
+        ],
+        "cons": [
+          "One more module that every later git use in the workflow library will be tempted to grow; it must stay a list of operations, not a framework.",
+          "Some sites (the design corpus binary reader, the 50 MB ls-files in the analyze ignore filter, the identity lookup's multi-host gh output) have needs the facade's common shapes do not cover and need their own tool input or output shape.",
+          "The async ripple still has to be done at every sync chain."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a3",
+        "name": "Gather git facts once per stage, keep leaf helpers pure",
+        "oneLineSummary": "Each stage entry reads the git facts it needs through the registry once, asynchronously, and the old synchronous helpers become pure functions over those facts.",
+        "approach": "Instead of making every helper async, each entry point that is already async (the build-step phases, the code review controller, the gates stamp caller) first gathers a typed GitFacts snapshot through callTool (head sha, whether named commits exist, merge state, the story commit list, the changed paths) and passes it down; resolveStoryRangeBase, storyChangeSet and mergeInProgress take the facts as an argument and stay synchronous. The facts are read at one moment per stage.",
+        "pros": [
+          "Limits the async ripple to the stage entry points.",
+          "Fewer registry calls per stage and so fewer approval and hook events."
+        ],
+        "cons": [
+          "Changes behaviour: a helper that checked git at the moment of use now reads a snapshot, which can differ when a build commits during the stage (the validate phase runs after the implement phase commits), so ac2 'same artifacts, commits and records as before' is at risk.",
+          "The facts needed depend on arguments known only deep in the chain (a stored sha to test with commitExists), so the snapshot has to be demand-driven, which is async calls again.",
+          "Does not cover the team policy, identity, corpus and ignore-filter sites at all, which need their own approach."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates ac2 (a snapshot can differ from the moment-of-use reads) and ac4, and leaves the team, identity and corpus sites unaddressed."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [
+      "Ownership gap (needs the user): src/workflow/tracker/attach.ts:55 runs git directly but is neither a src/workflow/tracker/github.ts caller (s10 ac1) nor named in s9; and the runGit calls at src/workflow/team/signoff.ts:388, :395 and :569 sit beside the s10-owned commitAndPushArtifacts call at :385. s9 plans to take the runGit callers (s10 deletes runGit and runGitAsync, so no caller may remain) and leaves attach.ts to s10 unless told otherwise.",
+      "Correction to the createRepoIgnoreFilter entry: git_ls_files has no excludeStandard or nullTerminated input. It adds --exclude-standard whenever others or ignored is set and always passes -z (src/daemon/tools/builtins/git/ls-files.ts:34-42); the intended call is {cached:true, others:true}. Whether its read budget (readGit, 30 s) is at least the old 50 MB maxBuffer and 'git ls-files' time of src/analyze/context/repo-ignore-filter.ts:111 is not checked; if lower, it is a need for the git family Story, not an approximation here.",
+      "githubIdentities (src/understanding/identity.ts) must run `gh auth status --json hosts` with a 15 s limit and a 256 KB output limit and read the raw text and exit status. The registered tool is gh_auth (src/daemon/tools/builtins/gh/account.ts:171); whether its status op returns that raw text, the exit status and the spawn-error distinction (missing-integration) has not been verified. If it does not, s5's gh account family needs the shape; s9 does not approximate it.",
+      "The design corpus reader (src/design/corpus/sources/git-reader.ts:37) needs stdin input, binary stdout, GIT_READ_ARGS hardening and its own byte, time and process-group limits. git_cat_file expresses a read of objects with base64, stdoutLimit, stderrLimit, timeoutMs and isolated, but the exact set of git commands the reader runs through createGitRunner has not been listed here; any command the tools cannot express is a need for s8 (the long tail of git).",
+      "The scan misses src/understanding/identity.ts githubIdentities (runShell with a non-literal argv). Step 1 of the migration extends the scan; the replacement table lists the site by hand until then.",
+      "Call graph not run: the caller lists of runGit, resolveStoryRangeBase, storyChangeSet, mergeInProgress and headShortSha come from text search and reading the files. The plan must re-verify them with the analyzer before the async ripple is sized, and test.locate was not run, so which existing tests change is open.",
+      "src/workflow/team/* is also used by the terminal client's workflow service (s10 ac2). How a client process reaches the moved team helpers, which need the daemon's registry, is s10's decision through tools.call.",
+      "Alternative scoring (alt2): the constraints k1, k3, k4 and k5 were not scored for any alternative. k1, k3 and k4 are unaffected by the choice and k5 is covered by ac5.",
+      "Invariant sources (ep3): each invariant is shown by an s1 bundle (never-throws helpers and the stamp in bundles 1 and 3, the Deadline in bundle 3, the corpus hardening in bundle 1) but the source field names only the epic capability c3.",
+      "A missed await on a boolean helper (commitExists, mergeInProgress) compiles; the plan must rename them or add a per-caller test, as the error paths state.",
+      "The HLD framework summary says the cutover is one change; the split into s7, s9 and s10 is the user's recorded decision of 2026-10-26 (docs/plans/tool-registry.md). The HLD keeps its text."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "the sites s9 owns, from node scripts/forbidden-spawn-scan.mjs (report mode, 55 sites on 2026-10-27)",
+      "quotedText": "src/workflow/runners/build/range-base.ts (4 execFileSync: commitExists cat-file -e line 97, headFullSha rev-parse HEAD line 235, introducingCommit git log --diff-filter=A line 315, resolveStoryRangeEnd rev-parse --verify line 345)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "which sites belong to s10, not s9 (adjacent boundary)",
+      "quotedText": "Two sites are not clearly in either DEF: src/workflow/tracker/attach.ts:55 and the team signoff runGit calls at src/workflow/team/signoff.ts:388, :395 and :569"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "callers of the team runGit wrapper (sync) and of the build-runner git helpers: the sync-to-async question",
+      "quotedText": "callTool in src/daemon/tools/call-tool.ts is async only (it awaits executeTool), takes the tool DEFINITION, requires a TypedTool"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "what s7 built that s9 consumes (docs/plans/tool-registry.md, section 's7 built (2026-10-27)')",
+      "quotedText": "s7 left the sending side of the shared deadline signal to s9"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/tools/call-tool.ts:28",
+      "quotedText": "export async function callTool<T extends TypedTool>("
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/team/sighting-store.ts:46",
+      "quotedText": "export const REFRESH_DEADLINE_MS = 10_000;"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/ls-files.ts:34",
+      "quotedText": "const argv = ['git', '--literal-pathspecs', 'ls-files', '-z'];"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md#s7-built-2026-10-27-what-s9-and-s10-build-against",
+      "quotedText": "s9 builds the sending side of the shared deadline signal"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md#69-story-b7a68147dcf72034-s9--move-the-workflow-librarys-and-the-daemons-direct-git-and-gh-calls-onto-the-registry"
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "user decision 2026-10-26: split s7 into s7, s9 and s10 (docs/plans/tool-registry.md#s7-split-into-s7-s9-and-s10-decided-2026-10-26)"
+    }
+  ]
+}

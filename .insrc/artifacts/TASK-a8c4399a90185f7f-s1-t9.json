@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-54e706c6-fc3d-4ff4-b65d-67668135f1d5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.409Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bind claims to trusted request and worker lifecycles",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "12ee5211a422648eba53747f4c666ace13dc0f27cc791c82879407a61d2aa2eb",
+        "at": "2026-10-27T06:35:54.412Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.413Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bind claims to trusted request and worker lifecycles",
+    "summary": "Wire authenticated connection/request-owner context through channel/main-services/router/supervisor, worker entry/dispatch, trusted request/step context and single-thread host. Implement explicit invalidation on real owner loss and cancellation; do not trust owner IDs in MCP args or serialize connection capabilities.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "Main-thread connection nonce/generation and active internal request-owner registry validate every review claim operation. Worker-supplied args cannot replace bound channel identity or commit/release another connection's claim.",
+      "RequestEnvelope/wireRequest and worker dispatch carry only the trusted opaque owner nonce; existing session capability/credential wire exclusions remain.",
+      "Worker exit/detach/replacement, disconnect, failed dispatch, explicit cancellation, lifetime completion and local host try/finally clean uncommitted owner claims through actual hooks.",
+      "Normal committed receipts survive cleanup; legitimate uncancelled unary work retains its owner until actual completion. No abandoned pinned claim, timed lease regrant or late-owner advancement is permitted.",
+      "Real two-connection/worker-exit/cancel and single-thread tests verify the hooks, not only direct store stubs; unrelated step kinds and maintenance behavior remain unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-owner-lifecycle.test.ts: real worker connection request and exit cancellation hooks bind and invalidate trusted owners"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/__tests__/step-host.test.ts: single-thread owner registration cleanup and out-of-band trusted context preserve non-review behavior"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

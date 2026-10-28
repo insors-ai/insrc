@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-781f5897-97b1-4682-a1a7-0464599508ce",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T07:57:47.640Z",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make the subscribe function injectable and tolerate its failure",
+      "parent": {
+        "entityId": "STORY-fa396bdf197b8e8b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fa396bdf197b8e8b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fa396bdf197b8e8b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8923cab87eba39b746c4ffb8deebb41947e283c65953726eea4f5f7a2460e17f",
+        "at": "2026-10-27T07:57:47.640Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T07:57:47.640Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the subscribe function injectable and tolerate its failure",
+    "summary": "Give the Watcher an optional subscribe function argument that defaults to the real @parcel/watcher subscribe, so a test can force the per-directory subscribe to fail. When it fails, log a warning with the directory, keep no entry for it, and still scan so the files present are reported once. Tolerate a throwing readdir or lstat during the scan by skipping that entry. Add the failure-injection test and the unreadable-directory test (mode 000, skipped as root) to watcher-new-directories.test.ts.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "With a subscribe function that throws for the per-directory call, addRepo and later events do not throw, a warning is logged, and the files present in the new directory are still reported once",
+      "A new nested directory that cannot be read does not throw and does not stop later events for other directories",
+      "new Watcher() with no argument still uses the real subscribe, as both existing callers do"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/watcher-new-directories.test.ts: a per-directory subscribe that throws is logged, does not throw out of the handler, and the files present in the new directory are still reported once"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/watcher-new-directories.test.ts: a new nested directory that cannot be read (mode 000, skipped when running as root) does not throw or stop later events for other directories"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

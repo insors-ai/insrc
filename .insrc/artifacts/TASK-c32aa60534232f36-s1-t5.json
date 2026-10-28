@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4e2dcb04-6529-4c3a-ac3a-541732611791",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T12:34:32.406Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prove packet isolation, recovery inputs and compatibility with focused fixtures",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bf715e98e93ceffccd0827c44716870bb4051a31315bf56d4b97fb8fad85976b",
+        "at": "2026-10-28T12:34:32.406Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T12:34:32.407Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prove packet isolation, recovery inputs and compatibility with focused fixtures",
+    "summary": "Complete deterministic real-temp-Git integration and adversarial fixtures covering approved LLD test strategy, run focused investigation/corpus/legacy attribution subsets and production build. Record validation evidence without claiming later-story recovery implementation.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "All ac1-ac4 proving tests and LLD unit/integration/contract subjects are mapped and pass without live providers.",
+      "Exercise foreign commits/hunks/HEAD movement, merges, intermediate revert, change kinds, path edge cases, object failures, limits, invalid artifacts and planless provenance.",
+      "Corpus helper tests and existing legacy attribution behavior stay green; no production routing change or data rewrite.",
+      "Build and validation records include exact tests/results and independent code review follows the approved workflow."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Cross-module adversarial scope and legacy/corpus regression fixtures"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

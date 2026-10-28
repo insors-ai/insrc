@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3509a48f-afa5-40a4-906a-04cb1add5b17",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.469Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "callTool provenance",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5514c67be9f68e184f53b83b7fe3d74715a05b8f1fe58c2b97f48e5a2e57100b",
+        "at": "2026-10-26T18:21:16.469Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.470Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "callTool provenance",
+    "summary": "Add provenance.ts (WeakMap, markDefinition, definitionOf, isDefinitionOf with an 8-step bound); mark copies in withFailureNet (keeping its UnsafeArgError-only conversion and rethrow) and withGhFailureNet; add the registered-definition check to callTool with an unchanged signature.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "callTool runs for git definitions, exported gh tools, defineGhFamily results and plain registerTool tools",
+      "A spread replacement, alone or wrapped by a failure net, is rejected and its execute never runs",
+      "withFailureNet still rethrows non-UnsafeArgError exceptions"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/call-tool-identity.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/provenance.test.ts"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

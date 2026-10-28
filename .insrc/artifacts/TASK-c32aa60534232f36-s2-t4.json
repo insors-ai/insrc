@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-82d68492-0c40-49b3-9968-c277695c6ac1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:34:48.707Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Apply atomic immutable coverage and finding deltas",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "456ede46265e9918e8917e0299981cc3afcbe388fe845943ae9d1a08469104eb",
+        "at": "2026-10-28T13:34:48.708Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:34:48.708Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply atomic immutable coverage and finding deltas",
+    "summary": "Implement ledger.ts pure apply/validate operations: admit evidence/findings then row assessments, resolve all references and validate the complete candidate before returning a frozen new value.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "review-s2-ac2: evidence can support many independently assessed rows; note-only/uninspected/partial/unavailable evidence cannot silently satisfy coverage.",
+      "Non-pending assessments require rationale/authenticated attempt; findings have criterion/severity/confidence and evidence/expectation links; pending never implies completion.",
+      "review-s2-ac3: required rows and findings never disappear; row updates preserve linked history; unknown/foreign/dangling references and dropped rows reject atomically.",
+      "Identical replay stable; conflicting IDs reject; discovered impact rows append through trusted catalog; no durable fencing/persistence or terminal approval logic.",
+      "Focused adversarial atomicity, replay, mutation and retention tests pass."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "review-s2-ac2/ac3 atomic many-to-many coverage and history retention"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

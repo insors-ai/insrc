@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-815c86a9-1861-4666-8796-43d4ed86372a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.712Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Move the commit-and-push callers and the remaining wrapper callers",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b8f6c7868ebfd17110b03c6fca4b2716230bedabd8c44cba560fb876e56a4681",
+        "at": "2026-10-27T16:08:33.712Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.712Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the commit-and-push callers and the remaining wrapper callers",
+    "summary": "Move questions.ts commitAndComment, resolve-comment.ts commitRecorded and handleResolveComment, team/signoff.ts:385, config/github.ts gitOriginOwnerRepo uses, tracker-auto.ts ghAuthOk and attach.ts onto the registry forms; ordinary git failures stay logged, a ToolDenied is rethrown and stops the stage, handleResolveComment returns its error result with the recorded count.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "a denied commit posts no comment and handleResolveComment returns the error result, never success",
+      "ordinary git failures are still logged and the stage continues",
+      "tracker-auto reads the {ok, reason} result unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "commit-denial-callers.test.ts: a denied commit posts no comment and handleResolveComment returns the error result; ordinary git failures are logged and the stage continues"
+      },
+      {
+        "level": "unit",
+        "name": "attach-tracked-check.test.ts: a tracked file passes and an untracked file is refused with the old reason"
+      },
+      {
+        "level": "integration",
+        "name": "registry-denial.test.ts: no-client, declined, timed-out and cancelled approval deny a moved call and later calls are not made"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

@@ -1,0 +1,1192 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 20,
+        "contentHash": "692ef4007a84f7a46822c1936036a634ed1eaf8d92a09fa0587c578eba53c7ba",
+        "at": "2026-10-26T18:06:01.423Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "createdAt": "2026-10-26T13:03:05.535Z",
+    "updatedAt": "2026-10-26T18:06:01.332Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "epicSlug": "retain-durable-artifact-token-usage",
+    "revision": 20
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "fddd2fc66",
+        "ranAt": "2026-10-26T13:10:34.571Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/schema-contract.test.ts: compiler-backed valid/invalid v1 discriminator fixtures and HLD sc1/sc2 plus AMD-1 type compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "types preserve HLD contracts and reject invalid v1 payloads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 832,
+            "titles": [
+              {
+                "title": "types preserve HLD contracts and reject invalid v1 payloads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8d729ba23",
+        "ranAt": "2026-10-26T13:31:05.182Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/schema-contract.test.ts: closed logical schema and in-memory typed Avro round-trips, null defaults, exact counters and illegal payload cases",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "logical and typed Avro schemas preserve v1 payloads and reject illegal shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 918,
+            "titles": [
+              {
+                "title": "types preserve HLD contracts and reject invalid v1 payloads",
+                "result": "pass"
+              },
+              {
+                "title": "logical and typed Avro schemas preserve v1 payloads and reject illegal shapes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5805ea1dc",
+        "ranAt": "2026-10-26T16:37:57.126Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/identity.test.ts: source equality versus server metadata, owner/payload conflicts, canonical key order and unsafe getter/prototype/cycle/Unicode/limit inputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/identity.test.ts",
+                "title": "canonical source identity preserves capture data and ignores only service metadata",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/identity.test.ts",
+                "title": "canonical traversal rejects unsafe data without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/identity.test.ts",
+                "title": "canonical identity enforces byte, depth, node and reference limits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 442,
+            "titles": [
+              {
+                "title": "canonical source identity preserves capture data and ignores only service metadata",
+                "result": "pass"
+              },
+              {
+                "title": "canonical traversal rejects unsafe data without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "title": "canonical identity enforces byte, depth, node and reference limits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "f9560ee7a",
+        "ranAt": "2026-10-26T16:46:17.470Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/validation.test.ts: closed shape/version/digest/counter/quality rules and scope evidence refusals",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/validation.test.ts",
+                "title": "record validation rejects unsafe shapes, versions, identities and digests without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/validation.test.ts",
+                "title": "counter and quality validation preserves unknown, pending, reported and estimated distinctions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/validation.test.ts",
+                "title": "closed scope evidence rejects fabricated completeness, bad references and inconsistent bindings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/usage/__tests__/source-capabilities.test.ts: malformed/unqualified declarations cannot claim native completeness",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+                "title": "capability declarations reject malformed or unqualified native completeness",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 540,
+            "titles": [
+              {
+                "title": "capability declarations reject malformed or unqualified native completeness",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 532,
+            "titles": [
+              {
+                "title": "record validation rejects unsafe shapes, versions, identities and digests without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "title": "counter and quality validation preserves unknown, pending, reported and estimated distinctions",
+                "result": "pass"
+              },
+              {
+                "title": "closed scope evidence rejects fabricated completeness, bad references and inconsistent bindings",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "e1cca2897",
+        "ranAt": "2026-10-26T16:50:44.645Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/attribution.test.ts: full positive/negative charged-subject table, context inheritance and non-additive reference cases",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/attribution.test.ts",
+                "title": "mandatory activity table charges each exact authored or reviewed subject",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/attribution.test.ts",
+                "title": "attribution refuses missing or conflicting review, task and BUILD evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/attribution.test.ts",
+                "title": "workflow context inherits explicit parent binding and never falls back to a root or summary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 532,
+            "titles": [
+              {
+                "title": "mandatory activity table charges each exact authored or reviewed subject",
+                "result": "pass"
+              },
+              {
+                "title": "attribution refuses missing or conflicting review, task and BUILD evidence",
+                "result": "pass"
+              },
+              {
+                "title": "workflow context inherits explicit parent binding and never falls back to a root or summary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "b12cf9513",
+        "ranAt": "2026-10-26T17:00:37.153Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/reducer.test.ts: bounded unique/input accounting, exact bigint metrics and known/estimated/pending/unavailable partitions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "known zero, partial counters, estimates, pending, interrupted, unavailable and missing remain distinct",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "event and call identity conflicts cannot produce a trusted contribution or mutate input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/usage/__tests__/domain-contract.test.ts: truncated closure, iterator failure/cancellation, duplicate flood and no successful resource-truncated total",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "truncated closure and malformed evidence never assert a complete measured total",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "iterator failure and cancellation reject without returning a successful partial total",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "duplicate floods count every row and byte and never return truncated success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1842,
+            "titles": [
+              {
+                "title": "truncated closure and malformed evidence never assert a complete measured total",
+                "result": "pass"
+              },
+              {
+                "title": "iterator failure and cancellation reject without returning a successful partial total",
+                "result": "pass"
+              },
+              {
+                "title": "duplicate floods count every row and byte and never return truncated success",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/reducer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 767,
+            "titles": [
+              {
+                "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
+                "result": "pass"
+              },
+              {
+                "title": "known zero, partial counters, estimates, pending, interrupted, unavailable and missing remain distinct",
+                "result": "pass"
+              },
+              {
+                "title": "event and call identity conflicts cannot produce a trusted contribution or mutate input",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "77fbd6b35",
+        "ranAt": "2026-10-26T17:20:41.560Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/reconciliation.test.ts: replacement corrections, forks/cycles/missing refs, aggregate fallback/decomposition and stale/new candidate invalidation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+                "title": "replacement correction heads are deterministic and missing forked cyclic or cross-call references stay unresolved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+                "title": "aggregate fallback and qualified complete-leaf basis never add overlapping observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+                "title": "new candidates and stale corrected heads invalidate reconciliation until an explicit successor names current heads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/usage/__tests__/reducer.test.ts: shuffled complete groups and repeated delivery retain deterministic basis/totals",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 643,
+            "titles": [
+              {
+                "title": "replacement correction heads are deterministic and missing forked cyclic or cross-call references stay unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "aggregate fallback and qualified complete-leaf basis never add overlapping observations",
+                "result": "pass"
+              },
+              {
+                "title": "new candidates and stale corrected heads invalidate reconciliation until an explicit successor names current heads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/reducer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 535,
+            "titles": [
+              {
+                "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
+                "result": "pass"
+              },
+              {
+                "title": "known zero, partial counters, estimates, pending, interrupted, unavailable and missing remain distinct",
+                "result": "pass"
+              },
+              {
+                "title": "event and call identity conflicts cannot produce a trusted contribution or mutate input",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "74c4a0a90",
+        "ranAt": "2026-10-26T17:29:12.589Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/reducer.test.ts: cumulative selected interval, reference-only cross-invocation baseline, common-baseline overlap, resets and model/session mismatches",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "cumulative selected intervals exclude baselines and intermediate frames including prior-invocation references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "cumulative common-baseline endpoints require reconciliation and never add overlapping deltas",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "cumulative resets unknown buckets unqualified sessions and model mismatches never fabricate measured deltas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/reducer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 625,
+            "titles": [
+              {
+                "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
+                "result": "pass"
+              },
+              {
+                "title": "known zero, partial counters, estimates, pending, interrupted, unavailable and missing remain distinct",
+                "result": "pass"
+              },
+              {
+                "title": "event and call identity conflicts cannot produce a trusted contribution or mutate input",
+                "result": "pass"
+              },
+              {
+                "title": "cumulative selected intervals exclude baselines and intermediate frames including prior-invocation references",
+                "result": "pass"
+              },
+              {
+                "title": "cumulative common-baseline endpoints require reconciliation and never add overlapping deltas",
+                "result": "pass"
+              },
+              {
+                "title": "cumulative resets unknown buckets unqualified sessions and model mismatches never fabricate measured deltas",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "d44b38dc9",
+        "ranAt": "2026-10-26T17:57:04.992Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/transfer-state.test.ts: same-root single commitment, cross-root phase closure, pending/conflicting owner versions and typed effectiveOwners provenance/replay",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "same-root single commitment changes effective artifact once and preserves immutable capture provenance",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "cross-root commitment requires matching phases and complete ownership proof; pending retains committed owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "transfer forks cycles wrong versions and conflicting intent IDs produce typed unresolved ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "pending successors retain the latest committed owner and equivalent commit aliases advance once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 591,
+            "titles": [
+              {
+                "title": "same-root single commitment changes effective artifact once and preserves immutable capture provenance",
+                "result": "pass"
+              },
+              {
+                "title": "cross-root commitment requires matching phases and complete ownership proof; pending retains committed owner",
+                "result": "pass"
+              },
+              {
+                "title": "transfer forks cycles wrong versions and conflicting intent IDs produce typed unresolved ownership",
+                "result": "pass"
+              },
+              {
+                "title": "pending successors retain the latest committed owner and equivalent commit aliases advance once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "0b3556bc6",
+        "ranAt": "2026-10-26T17:58:53.436Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/source-capabilities.test.ts: version/source-evidence survey, Ollama absent counters, CLI aggregate/cumulative/unknown leaf and explicitly synthetic external-host cases",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+                "title": "version/source-evidence survey distinguishes inspected wrappers from synthetic external-host cases",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+                "title": "Ollama source final missing-counter warm-up and zero cases preserve absent metrics without estimates",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+                "title": "capability declarations reject malformed or unqualified native completeness",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 760,
+            "titles": [
+              {
+                "title": "capability declarations reject malformed or unqualified native completeness",
+                "result": "pass"
+              },
+              {
+                "title": "version/source-evidence survey distinguishes inspected wrappers from synthetic external-host cases",
+                "result": "pass"
+              },
+              {
+                "title": "Ollama source final missing-counter warm-up and zero cases preserve absent metrics without estimates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "323fb900a",
+        "ranAt": "2026-10-26T18:06:01.332Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/usage/__tests__/domain-contract.test.ts: complete public domain surface, ownership/basis consistency, replay/permutation and no sibling side effects",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "truncated closure and malformed evidence never assert a complete measured total",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "iterator failure and cancellation reject without returning a successful partial total",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "duplicate floods count every row and byte and never return truncated success",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "complete public domain surface preserves ownership basis replay and additive compatibility without sibling services",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "public reducer composes correction reconciliation cumulative and transfer accounting with qualified capability evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/usage/__tests__/schema-contract.test.ts: isolated /tmp compiled-output imports with no source tree and matching schema digests",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "types preserve HLD contracts and reject invalid v1 payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "logical and typed Avro schemas preserve v1 payloads and reject illegal shapes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "isolated compiled-output public imports load matching schemas and round-trip records with no source tree",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/artifact-ids.test.ts: existing canonical identity regression suite",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-ids.test.ts",
+                "title": "make produces the stored text for every existing kind and parse returns the same key",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-ids.test.ts",
+                "title": "parentOf walks task, tasks and diagram to story, story to epic, and stops there",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-ids.test.ts",
+                "title": "the per-kind required and forbidden fields and the uppercase story and task form throw InvalidArtifactKeyError",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-ids.test.ts",
+                "title": "a folder name is not parsed as an artifact id",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-ids.test.ts",
+                "title": "stored requirement ids in the canonical and slug forms parse to date, hash8, story as a number and fr",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-ids.test.ts",
+                "title": "MissingAnchorError is an InvalidArtifactKeyError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "npm run build and the focused src/workflow/usage/__tests__/*.test.ts suite pass or unrelated baseline blockers are explicitly identified",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "known zero, partial counters, estimates, pending, interrupted, unavailable and missing remain distinct",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "event and call identity conflicts cannot produce a trusted contribution or mutate input",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "cumulative selected intervals exclude baselines and intermediate frames including prior-invocation references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "cumulative common-baseline endpoints require reconciliation and never add overlapping deltas",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reducer.test.ts",
+                "title": "cumulative resets unknown buckets unqualified sessions and model mismatches never fabricate measured deltas",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/attribution.test.ts",
+                "title": "mandatory activity table charges each exact authored or reviewed subject",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/attribution.test.ts",
+                "title": "attribution refuses missing or conflicting review, task and BUILD evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/attribution.test.ts",
+                "title": "workflow context inherits explicit parent binding and never falls back to a root or summary",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/identity.test.ts",
+                "title": "canonical source identity preserves capture data and ignores only service metadata",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/identity.test.ts",
+                "title": "canonical traversal rejects unsafe data without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/identity.test.ts",
+                "title": "canonical identity enforces byte, depth, node and reference limits",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "same-root single commitment changes effective artifact once and preserves immutable capture provenance",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "cross-root commitment requires matching phases and complete ownership proof; pending retains committed owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "transfer forks cycles wrong versions and conflicting intent IDs produce typed unresolved ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+                "title": "pending successors retain the latest committed owner and equivalent commit aliases advance once",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/validation.test.ts",
+                "title": "record validation rejects unsafe shapes, versions, identities and digests without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/validation.test.ts",
+                "title": "counter and quality validation preserves unknown, pending, reported and estimated distinctions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/validation.test.ts",
+                "title": "closed scope evidence rejects fabricated completeness, bad references and inconsistent bindings",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "truncated closure and malformed evidence never assert a complete measured total",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "iterator failure and cancellation reject without returning a successful partial total",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "duplicate floods count every row and byte and never return truncated success",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "complete public domain surface preserves ownership basis replay and additive compatibility without sibling services",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+                "title": "capability declarations reject malformed or unqualified native completeness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+                "title": "version/source-evidence survey distinguishes inspected wrappers from synthetic external-host cases",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+                "title": "Ollama source final missing-counter warm-up and zero cases preserve absent metrics without estimates",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "types preserve HLD contracts and reject invalid v1 payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "logical and typed Avro schemas preserve v1 payloads and reject illegal shapes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+                "title": "isolated compiled-output public imports load matching schemas and round-trip records with no source tree",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+                "title": "replacement correction heads are deterministic and missing forked cyclic or cross-call references stay unresolved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+                "title": "aggregate fallback and qualified complete-leaf basis never add overlapping observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+                "title": "new candidates and stale corrected heads invalidate reconciliation until an explicit successor names current heads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+                "title": "public reducer composes correction reconciliation cumulative and transfer accounting with qualified capability evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-ids.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 344,
+            "titles": [
+              {
+                "title": "make produces the stored text for every existing kind and parse returns the same key",
+                "result": "pass"
+              },
+              {
+                "title": "parentOf walks task, tasks and diagram to story, story to epic, and stops there",
+                "result": "pass"
+              },
+              {
+                "title": "the per-kind required and forbidden fields and the uppercase story and task form throw InvalidArtifactKeyError",
+                "result": "pass"
+              },
+              {
+                "title": "a folder name is not parsed as an artifact id",
+                "result": "pass"
+              },
+              {
+                "title": "stored requirement ids in the canonical and slug forms parse to date, hash8, story as a number and fr",
+                "result": "pass"
+              },
+              {
+                "title": "MissingAnchorError is an InvalidArtifactKeyError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 484,
+            "titles": [
+              {
+                "title": "mandatory activity table charges each exact authored or reviewed subject",
+                "result": "pass"
+              },
+              {
+                "title": "attribution refuses missing or conflicting review, task and BUILD evidence",
+                "result": "pass"
+              },
+              {
+                "title": "workflow context inherits explicit parent binding and never falls back to a root or summary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1574,
+            "titles": [
+              {
+                "title": "truncated closure and malformed evidence never assert a complete measured total",
+                "result": "pass"
+              },
+              {
+                "title": "iterator failure and cancellation reject without returning a successful partial total",
+                "result": "pass"
+              },
+              {
+                "title": "duplicate floods count every row and byte and never return truncated success",
+                "result": "pass"
+              },
+              {
+                "title": "complete public domain surface preserves ownership basis replay and additive compatibility without sibling services",
+                "result": "pass"
+              },
+              {
+                "title": "public reducer composes correction reconciliation cumulative and transfer accounting with qualified capability evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 457,
+            "titles": [
+              {
+                "title": "canonical source identity preserves capture data and ignores only service metadata",
+                "result": "pass"
+              },
+              {
+                "title": "canonical traversal rejects unsafe data without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "title": "canonical identity enforces byte, depth, node and reference limits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 559,
+            "titles": [
+              {
+                "title": "replacement correction heads are deterministic and missing forked cyclic or cross-call references stay unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "aggregate fallback and qualified complete-leaf basis never add overlapping observations",
+                "result": "pass"
+              },
+              {
+                "title": "new candidates and stale corrected heads invalidate reconciliation until an explicit successor names current heads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/reducer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 554,
+            "titles": [
+              {
+                "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
+                "result": "pass"
+              },
+              {
+                "title": "known zero, partial counters, estimates, pending, interrupted, unavailable and missing remain distinct",
+                "result": "pass"
+              },
+              {
+                "title": "event and call identity conflicts cannot produce a trusted contribution or mutate input",
+                "result": "pass"
+              },
+              {
+                "title": "cumulative selected intervals exclude baselines and intermediate frames including prior-invocation references",
+                "result": "pass"
+              },
+              {
+                "title": "cumulative common-baseline endpoints require reconciliation and never add overlapping deltas",
+                "result": "pass"
+              },
+              {
+                "title": "cumulative resets unknown buckets unqualified sessions and model mismatches never fabricate measured deltas",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9736,
+            "titles": [
+              {
+                "title": "types preserve HLD contracts and reject invalid v1 payloads",
+                "result": "pass"
+              },
+              {
+                "title": "logical and typed Avro schemas preserve v1 payloads and reject illegal shapes",
+                "result": "pass"
+              },
+              {
+                "title": "isolated compiled-output public imports load matching schemas and round-trip records with no source tree",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 725,
+            "titles": [
+              {
+                "title": "capability declarations reject malformed or unqualified native completeness",
+                "result": "pass"
+              },
+              {
+                "title": "version/source-evidence survey distinguishes inspected wrappers from synthetic external-host cases",
+                "result": "pass"
+              },
+              {
+                "title": "Ollama source final missing-counter warm-up and zero cases preserve absent metrics without estimates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 540,
+            "titles": [
+              {
+                "title": "same-root single commitment changes effective artifact once and preserves immutable capture provenance",
+                "result": "pass"
+              },
+              {
+                "title": "cross-root commitment requires matching phases and complete ownership proof; pending retains committed owner",
+                "result": "pass"
+              },
+              {
+                "title": "transfer forks cycles wrong versions and conflicting intent IDs produce typed unresolved ownership",
+                "result": "pass"
+              },
+              {
+                "title": "pending successors retain the latest committed owner and equivalent commit aliases advance once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/usage/__tests__/validation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 502,
+            "titles": [
+              {
+                "title": "record validation rejects unsafe shapes, versions, identities and digests without invoking hooks",
+                "result": "pass"
+              },
+              {
+                "title": "counter and quality validation preserves unknown, pending, reported and estimated distinctions",
+                "result": "pass"
+              },
+              {
+                "title": "closed scope evidence rejects fabricated completeness, bad references and inconsistent bindings",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

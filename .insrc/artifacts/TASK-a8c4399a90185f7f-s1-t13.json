@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2b9b27d1-4360-4441-81b3-d7b423b7bf02",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.427Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify complete budgeting and prepare the daemon handoff",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b1dec63e1985576f0506f69683d1971581298d9959656d306396473242308757",
+        "at": "2026-10-27T06:35:54.430Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.431Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify complete budgeting and prepare the daemon handoff",
+    "summary": "Run the assembled regression/compatibility matrix and production build with scripted providers; prepare release evidence and the independent Story code review. Document deployment and the live TU1 retry as post-BUILD-approval actions, with no premature smoke claim.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "All focused planner/provider/managed-loop/time/state/owner/controller/real-git suites and production build pass; any unrelated backend baseline failures are identified with evidence, not silently waived or patched off-ledger.",
+      "End-to-end fixtures cover original371253/225429-character inputs with full schemas/reserves, all review roles, final managed answer, whole controller frames, evidence retention and exactly-once terminal behavior.",
+      "Packaged/runtime entry points consume the same profile/policy; no placeholder implementations, zero-cost fallback, missing controller registration, unsafe raw error logs or native hard-bound claims remain.",
+      "Document unchanged user configuration, resolved estimated policy, new deadline semantics and controller compatibility; keep generated histories and approvals intact and review reports only in /tmp.",
+      "Provide a concrete post-approval release checklist: audit scoped commits, push/update/restart the daemon, verify installed commit, then run one fresh TU1 review. Clearly mark deployment and its live smoke pending until code review and explicit BUILD completion approval; do not claim a pre-deployment live pass or make that later action a circular task gate."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/budget-handoff.test.ts: assembled code design provider and controller boundaries enforce the same inclusive budget evidence timing and safe telemetry"
+      },
+      {
+        "level": "smoke",
+        "name": "npm run build: production TypeScript native helpers model checks assets and packaged review-budget entry points"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

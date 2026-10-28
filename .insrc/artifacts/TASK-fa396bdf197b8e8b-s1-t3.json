@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-66b72396-f2a5-41b5-add7-3670d7130304",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T07:57:47.641Z",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Settle missing files and list stale held files in the freshness compute",
+      "parent": {
+        "entityId": "STORY-fa396bdf197b8e8b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fa396bdf197b8e8b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a194022c6ffcf9d999b6fe604be823816f4837f4cf574850be120d5878238599",
+        "at": "2026-10-27T07:57:47.641Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T07:57:47.642Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Settle missing files and list stale held files in the freshness compute",
+    "summary": "In src/workflow/code-review/freshness.ts add the selection and requestedAt seams to FreshnessDeps and unindexedFiles to FreshnessResult. Settle a file whose mtime is 0 first (not stale, not listed, no seam consulted). Keep the watermark comparison for a file with entities and list it as unindexed when stale unless requestedAt is at or after its mtime. Class a file without entities with the selection seam: not-code and excluded-by-ignore are not stale, selected is stale and listed unless requested, a throwing selection keeps it stale and unlisted. Add the real selection seam to realFreshnessGraphDeps, built on selectFile and resolveRepoIgnore with the parsers loaded. Update the whole-result assertions in freshness.test.ts and add the unit cases.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A file whose mtime is 0 is not stale, not in unindexedFiles, and neither the entity nor the selection seam decides it",
+      "A file with no entities and selection not-code or excluded-by-ignore is not stale whatever lastIndexed is; a selected one is in staleFiles and unindexedFiles when never requested",
+      "With an idle queue, a file whose watermark is older than its mtime is in staleFiles and unindexedFiles and the selection seam is not consulted for it",
+      "A stale file requested at or after its mtime stays in staleFiles but leaves unindexedFiles; a file edited after its request is listed again",
+      "A throwing selection seam keeps an entity-less file stale and out of unindexedFiles; the compute calls no write seam",
+      "The existing whole-result assertions in freshness.test.ts are updated for unindexedFiles and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: a changed file whose mtime is 0 (deleted or unstattable) is not stale, not in unindexedFiles, and neither the entity nor the selection seam decides it, even when selection would say selected"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: a file with no entities and selection 'not-code' or 'excluded-by-ignore' is not stale, whatever the repo-level lastIndexed is"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: a file with no entities and selection 'selected' is in staleFiles and unindexedFiles when it was never requested"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: with an idle queue, a file with entities whose watermark is older than its mtime (a missed update) is in staleFiles and unindexedFiles, and the selection seam is not consulted for it"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: a stale file requested at or after its mtime stays in staleFiles but leaves unindexedFiles, with the queue idle or busy, for both an entity-less file and a file with an older watermark"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: a file edited after its request is in unindexedFiles again"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: a selection seam that throws keeps an entity-less file stale and out of unindexedFiles"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: a file with entities whose watermark is at or after its mtime is not stale and not in unindexedFiles; the compute calls no write seam"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/freshness.test.ts: the existing whole-result assertions are updated for the unindexedFiles field and still pass"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

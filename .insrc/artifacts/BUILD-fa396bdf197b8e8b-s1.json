@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 16,
+        "contentHash": "92c473aa7d4a05d20ef7b097bbaa0fb42c92ce5d9e9c00946c49d59f147fc25d",
+        "at": "2026-10-27T10:11:36.713Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 16,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T10:11:37.593Z",
+        "override": {
+          "reason": "Rounds 1-4 each raised only watcher shutdown-ordering findings (late events, pending subscriptions, in-flight releases), all fixed in follow-up commits. Round 4's MED is fixed in 07263f69a and covered by the existing watcher tests, but that fix was not re-reviewed. User approved with this override."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-9648b6ac-9872-496d-8415-60e97a1f4310",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T08:02:57.891Z",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "revision": 16,
+    "updatedAt": "2026-10-27T08:38:17.646Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "fix-code-review-freshness-gate-so"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "CLEANUP-t6.md (commit a2066bf09) now pins the evidence: the logs rotate, so the restarted process's lines are selected by pid 2697727 in daemon.1.log (8 lines) and daemon.2.log (432 lines); grep for level 20 (debug) on that pid gives 0 in both; levels are 439 info, 1 warn. pgrep lists 2697727 alive on my side (the gate's own /proc view may differ, e.g. a sandbox). The old pid 2316252 is the one with the 1782 debug lines, all before the restart.",
+    "testRecord": {
+      "md": "docs/standalone/fix-code-review-freshness-gate-so-E20261027fa396bdf/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/indexer/__tests__/watcher-new-directories.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/watcher.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/freshness.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/freshness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/code-review-freshness-request.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/freshness-request.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/fix-code-review-freshness-gate-so-E20261027fa396bdf/S001/E2E-t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/fix-code-review-freshness-gate-so-E20261027fa396bdf/S001/CLEANUP-t6.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T10:11:31.191Z"
+      }
+    ],
+    "commit": "07263f69a"
+  },
+  "citations": []
+}

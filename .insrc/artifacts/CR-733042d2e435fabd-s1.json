@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "6ce7d97b80bca5f4633bb725a962e24a67ec710f3b2df06d7091cc5edb228451",
+        "at": "2026-10-27T12:56:54.786Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793105758550-5npxi6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T12:55:58.550Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 56228,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "733042d2e435fabd",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-27T11:44:58.541Z",
+    "epicSlug": "add-optional-output-budget-git-ls",
+    "standalone": true,
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "733042d2e435fabd",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+        "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts",
+        "src/daemon/tools/builtins/git/helpers.ts",
+        "src/daemon/tools/builtins/git/ls-files.ts",
+        "src/daemon/tools/builtins/git/__tests__/git-read-cut.test.ts",
+        "src/daemon/tools/builtins/git/hash-object.ts",
+        "src/daemon/tools/builtins/git/rev-parse.ts"
+      ],
+      "buildFingerprint": "cbe49c55f089e5173f9ddba6dedbe54e6dc9eaa2acb4a67d96469766b0a88c29",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "docs/plans/review-budget-handoff.md",
+        "plans/model-token-usage-implementation.md",
+        "src/agent/__tests__/read-only-tool-loop.test.ts",
+        "src/agent/providers/__tests__/cli-review-session.test.ts",
+        "src/agent/providers/__tests__/ollama-review-session.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/agent/providers/ollama-wire.ts",
+        "src/agent/providers/ollama.ts",
+        "src/agent/providers/review-budget.ts",
+        "src/agent/read-only-tool-loop.ts",
+        "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/controller-client.ts",
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+        "src/daemon/steps/code-review-step/controller.ts",
+        "src/daemon/steps/code-review-step/handler.ts",
+        "src/daemon/steps/code-review-step/types.ts",
+        "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+        "src/daemon/steps/review-step/__tests__/terminal-client.ts",
+        "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts",
+        "src/daemon/steps/review-step/controller.ts",
+        "src/daemon/steps/review-step/handler.ts",
+        "src/daemon/steps/review-step/phases/findings.ts",
+        "src/daemon/steps/review-step/phases/start.ts",
+        "src/daemon/steps/review-step/phases/verdicts.ts",
+        "src/daemon/steps/review-step/terminal.ts",
+        "src/daemon/steps/review-step/types.ts",
+        "src/daemon/threads/__tests__/helpers/review-controller-worker.ts",
+        "src/daemon/threads/__tests__/helpers/review-owner-worker.ts",
+        "src/daemon/threads/__tests__/helpers/step-state-worker.ts",
+        "src/daemon/threads/__tests__/review-owner-lifecycle.test.ts",
+        "src/daemon/threads/__tests__/review-state-concurrency.test.ts",
+        "src/daemon/threads/channel.ts",
+        "src/daemon/threads/review-state-contract.ts",
+        "src/daemon/threads/router.ts",
+        "src/daemon/threads/step-state.ts",
+        "src/daemon/workflow-review-rpc.ts",
+        "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+        "src/mcp/review-budget-schema.ts",
+        "src/shared/review-budget.ts",
+        "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+        "src/workflow/code-review/controller-validation.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/code-review/types.ts",
+        "src/workflow/review-pipeline/__tests__/budget.test.ts",
+        "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+        "src/workflow/review-pipeline/budget.ts",
+        "src/workflow/review-pipeline/call-events.ts",
+        "src/workflow/review-pipeline/code-review.ts",
+        "src/workflow/review-pipeline/controller.ts",
+        "src/workflow/review-pipeline/design-review.ts",
+        "src/workflow/review-pipeline/driver.ts",
+        "src/workflow/review-pipeline/job.ts",
+        "src/workflow/review-pipeline/pack-into-batches.ts",
+        "src/workflow/review-pipeline/types.ts",
+        "src/workflow/review/__tests__/source-root-reader.test.ts",
+        "src/workflow/review/__tests__/template-review.test.ts",
+        "src/workflow/review/exact-coverage.ts",
+        "src/workflow/review/probe.ts",
+        "src/workflow/review/source-roots.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/git/helpers.ts:0",
+            "message": "failureKind declares `network?: boolean` without the required explicit `| undefined`. Line information is unavailable in the supplied summaries; 0 denotes an unknown line.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/git/helpers.ts:0",
+            "message": "fail declares `network?: boolean` and `mutating?: boolean` without the required explicit `| undefined`. Line information is unavailable in the supplied summaries; 0 denotes an unknown line.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/builtins/git/helpers.ts:0",
+            "message": "readFailure declares `network?: boolean` and `mutating?: boolean` without the required explicit `| undefined`. Line information is unavailable in the supplied summaries; 0 denotes an unknown line.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 3
+    }
+  },
+  "citations": []
+}

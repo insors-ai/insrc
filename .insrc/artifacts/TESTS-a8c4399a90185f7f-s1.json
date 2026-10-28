@@ -1,0 +1,2133 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 24,
+        "contentHash": "7fc92563759218123989036bda69c78d58d4cf7e0a156cae754e2c5713d7100f",
+        "at": "2026-10-27T17:32:48.898Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "createdAt": "2026-10-27T06:39:27.712Z",
+    "updatedAt": "2026-10-27T17:32:48.822Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "epicSlug": "enforce-all-inclusive-review-budgets-exclude",
+    "revision": 24
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "50ade18c5",
+        "ranAt": "2026-10-27T06:39:27.712Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: generated flat JSONL exclusion preserves nested user files across staged unstaged and range changes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/changed-files.test.ts",
+                "title": "generated flat JSONL exclusion preserves nested user files across staged unstaged and range changes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: Story-attributed graph and diff subjects exclude generated sidecars before freshness",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+                "title": "Story-attributed graph and diff subjects exclude generated sidecars before freshness",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2131,
+            "titles": [
+              {
+                "title": "a diff review of a trailered Story shows only its own hunks in a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject",
+                "result": "pass"
+              },
+              {
+                "title": "the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit",
+                "result": "pass"
+              },
+              {
+                "title": "storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding",
+                "result": "pass"
+              },
+              {
+                "title": "a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there",
+                "result": "pass"
+              },
+              {
+                "title": "a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks",
+                "result": "pass"
+              },
+              {
+                "title": "Story-attributed graph and diff subjects exclude generated sidecars before freshness",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/changed-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3492,
+            "titles": [
+              {
+                "title": "changedFiles: derives the staged changed set from a real git repo (extraction is behaviour-preserving)",
+                "result": "pass"
+              },
+              {
+                "title": "changedFiles: throws NoBuildChangesError on a non-git directory",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: one file-level entry per changed path (segment omitted), stamped author/timestamp",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: version is threaded onto target when supplied",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: an empty changed set → []",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog: a git derivation failure is SWALLOWED → [] (never throws out)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: collectBuildChangeLog with NO base/exclude forwards `undefined` — the seam sees exactly what it sees today",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a base on the ctx REACHES the seam as opts.base",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an exclude list on the ctx REACHES the seam as opts.exclude",
+                "result": "pass"
+              },
+              {
+                "title": "t3: existing TWO-ARGUMENT call sites and ONE-PARAMETER seam stubs still compile and behave identically",
+                "result": "pass"
+              },
+              {
+                "title": "t3: collectBuildChangeLog STILL never throws and STILL logs — a seam that throws yields [] (ac6 regression guard)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: `exclude` is forwarded to the seam, and the COLLECTOR itself still does no filtering (the filter lives in changedFiles)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a CLEAN tree + base derives the COMMITTED range — the base reaches git_diff as `from`",
+                "result": "pass"
+              },
+              {
+                "title": "with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an UNRESOLVABLE base on a clean tree throws out of changedFiles (the caller swallows it — ac6 is enforced one level up)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an empty-string base behaves as ABSENT (contract pinned; the guard itself is defence-in-depth)",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (WORKING-TREE derivation): the record's own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving base..HEAD — asserted separately from the working-tree case",
+                "result": "pass"
+              },
+              {
+                "title": "CR-1: a tree dirty with ONLY the record's own paths still derives the COMMITTED range — the exclusion is applied BEFORE the emptiness gate",
+                "result": "pass"
+              },
+              {
+                "title": "CR-1: a tree dirty with unrelated work plus the record's own paths still derives the Story's committed range; the unrelated file is reported, the record's own paths are not",
+                "result": "pass"
+              },
+              {
+                "title": "t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a Story that changed ONLY artifact files still yields a NON-EMPTY change set (docs-only edge case)",
+                "result": "pass"
+              },
+              {
+                "title": "t4: an exclusion path OUTSIDE the repo is left alone rather than relativised into something that might match",
+                "result": "pass"
+              },
+              {
+                "title": "T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)",
+                "result": "pass"
+              },
+              {
+                "title": "T26: the constant is exactly the five globs, and frozen",
+                "result": "pass"
+              },
+              {
+                "title": "T27: the globs give the SAME result when git_diff runs from a subdirectory of the repo",
+                "result": "pass"
+              },
+              {
+                "title": "T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is clean under excludeGlobs, so the range is derived",
+                "result": "pass"
+              },
+              {
+                "title": "T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs",
+                "result": "pass"
+              },
+              {
+                "title": "T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today's — no `exclude` key at all",
+                "result": "pass"
+              },
+              {
+                "title": "T29: WITH excludeGlobs every one of the three diffs carries them",
+                "result": "pass"
+              },
+              {
+                "title": "T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "a clean tree with a base reports only the Story's own files, not files a merge brought in",
+                "result": "pass"
+              },
+              {
+                "title": "without a base the derivation is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge",
+                "result": "pass"
+              },
+              {
+                "title": "a committed ledger file stays out of the range result after a mid-build merge",
+                "result": "pass"
+              },
+              {
+                "title": "an uncommitted edit to a file the Story's commits changed is part of the Story's set",
+                "result": "pass"
+              },
+              {
+                "title": "a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike",
+                "result": "pass"
+              },
+              {
+                "title": "a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change",
+                "result": "pass"
+              },
+              {
+                "title": "a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set",
+                "result": "pass"
+              },
+              {
+                "title": "a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change",
+                "result": "pass"
+              },
+              {
+                "title": "rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included",
+                "result": "pass"
+              },
+              {
+                "title": "on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits",
+                "result": "pass"
+              },
+              {
+                "title": "generated flat JSONL exclusion preserves nested user files across staged unstaged and range changes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e0f96f6e8",
+        "ranAt": "2026-10-27T06:43:47.552Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/budget.test.ts: complete-component boundaries rounding reserves qualification and retry-headroom ownership",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget.test.ts",
+                "title": "complete-component boundaries rounding reserves qualification and retry-headroom ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget.test.ts",
+                "title": "invalid and unqualified review policies refuse without retaining raw input",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget.test.ts",
+                "title": "controller host estimates are explicit additive reservations and cannot increase the cap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/budget.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 488,
+            "titles": [
+              {
+                "title": "complete-component boundaries rounding reserves qualification and retry-headroom ownership",
+                "result": "pass"
+              },
+              {
+                "title": "invalid and unqualified review policies refuse without retaining raw input",
+                "result": "pass"
+              },
+              {
+                "title": "controller host estimates are explicit additive reservations and cannot increase the cap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "66fe4c13d",
+        "ranAt": "2026-10-27T06:56:33.528Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/cli-review-session.test.ts: provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: explicit managed profile and unsupported native-hard qualification refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "explicit managed profile and unsupported native-hard qualification refusal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 37080,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "title": "provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3441,
+            "titles": [
+              {
+                "title": "an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline",
+                "result": "pass"
+              },
+              {
+                "title": "a tool input is anchored at the session repo: relative paths resolve there and an absent optional root defaults to it",
+                "result": "pass"
+              },
+              {
+                "title": "every read-only tool argument that looks like a path is classified as a filesystem location or not",
+                "result": "pass"
+              },
+              {
+                "title": "a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed",
+                "result": "pass"
+              },
+              {
+                "title": "cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn",
+                "result": "pass"
+              },
+              {
+                "title": "explicit managed profile and unsupported native-hard qualification refusal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "dea72feb1",
+        "ranAt": "2026-10-27T07:19:11.584Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: inclusive single chunk retry admission and required-neighbour correction overflow retain all mandatory evidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "inclusive single chunk retry admission and required-neighbour correction overflow retain all mandatory evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: gather reduction relation obligation and duplicate comparison use the shared budget",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "gather reduction relation obligation and duplicate comparison use the shared budget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/entry-budget-profiles.test.ts: code grounded and template review resolve the selected profile before job construction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/entry-budget-profiles.test.ts",
+                "title": "code grounded and template review resolve the selected profile before job construction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 899,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit",
+                "result": "pass"
+              },
+              {
+                "title": "a pair answer naming a counterpart outside its two symbols is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "compare and pair calls are counted under pipelineCalls.relation, not chunk",
+                "result": "pass"
+              },
+              {
+                "title": "out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today",
+                "result": "pass"
+              },
+              {
+                "title": "a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today",
+                "result": "pass"
+              },
+              {
+                "title": "pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review",
+                "result": "pass"
+              },
+              {
+                "title": "merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once",
+                "result": "pass"
+              },
+              {
+                "title": "a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row",
+                "result": "pass"
+              },
+              {
+                "title": "a mutual call cut between chunks is checked in both directions, each at its own caller",
+                "result": "pass"
+              },
+              {
+                "title": "gather reduction relation obligation and duplicate comparison use the shared budget",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/entry-budget-profiles.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 661,
+            "titles": [
+              {
+                "title": "code grounded and template review resolve the selected profile before job construction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 773,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and required overflow refuses",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "inclusive single chunk retry admission and required-neighbour correction overflow retain all mandatory evidence",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)",
+                "result": "pass"
+              },
+              {
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+                "result": "pass"
+              },
+              {
+                "title": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "482da96b1",
+        "ranAt": "2026-10-27T07:54:32.512Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts: dispatch refusals bypass retry and partial-result policies and emit paired safe lifecycle events",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts",
+                "title": "dispatch refusals bypass retry and partial-result policies and emit paired safe lifecycle events",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts",
+                "title": "successful failed and cancelled calls have exactly one content-free terminal event",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/cli-review-session.test.ts: review-scoped provider and driver logs redact sentinel content on all failure paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "review-scoped provider and driver logs redact sentinel content on all failure paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35293,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "title": "provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+                "result": "pass"
+              },
+              {
+                "title": "review-scoped provider and driver logs redact sentinel content on all failure paths",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 653,
+            "titles": [
+              {
+                "title": "dispatch refusals bypass retry and partial-result policies and emit paired safe lifecycle events",
+                "result": "pass"
+              },
+              {
+                "title": "successful failed and cancelled calls have exactly one content-free terminal event",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "b8cbf8fde",
+        "ranAt": "2026-10-27T08:31:35.338Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/__tests__/read-only-tool-loop.test.ts: review-only admission rechecks accumulated tools and history before every model turn",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/__tests__/read-only-tool-loop.test.ts",
+                "title": "review-only admission rechecks accumulated tools and history before every model turn",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: inspection growth and final structured answer cannot bypass the inclusive budget or truncate evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "inspection growth and final structured answer cannot bypass the inclusive budget or truncate evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/__tests__/read-only-tool-loop.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 734,
+            "titles": [
+              {
+                "title": "read-only-tool-loop.test.ts: the read-only tool loop still returns the tool's output text unchanged when no rule is registered",
+                "result": "pass"
+              },
+              {
+                "title": "review-only admission rechecks accumulated tools and history before every model turn",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3327,
+            "titles": [
+              {
+                "title": "an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline",
+                "result": "pass"
+              },
+              {
+                "title": "a tool input is anchored at the session repo: relative paths resolve there and an absent optional root defaults to it",
+                "result": "pass"
+              },
+              {
+                "title": "every read-only tool argument that looks like a path is classified as a filesystem location or not",
+                "result": "pass"
+              },
+              {
+                "title": "a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed",
+                "result": "pass"
+              },
+              {
+                "title": "cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn",
+                "result": "pass"
+              },
+              {
+                "title": "explicit managed profile and unsupported native-hard qualification refusal",
+                "result": "pass"
+              },
+              {
+                "title": "inspection growth and final structured answer cannot bypass the inclusive budget or truncate evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "b48ec4428",
+        "ranAt": "2026-10-27T08:55:20.149Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: logical chunk counts control total deadlines without retry resets parent double-counting or expired-job revival",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "logical chunk counts control total deadlines without retry resets parent double-counting or expired-job revival",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review/__tests__/template-review.test.ts: role-specific attempt ceilings remain distinct from dynamic chunk-scaled total time",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/template-review.test.ts",
+                "title": "role-specific attempt ceilings remain distinct from dynamic chunk-scaled total time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts: effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts",
+                "title": "effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 619,
+            "titles": [
+              {
+                "title": "dispatch refusals bypass retry and partial-result policies and emit paired safe lifecycle events",
+                "result": "pass"
+              },
+              {
+                "title": "successful failed and cancelled calls have exactly one content-free terminal event",
+                "result": "pass"
+              },
+              {
+                "title": "effective attempt timer remaining-time clamp and transport-ceiling diagnostics are enforced",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 800,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "logical chunk counts control total deadlines without retry resets parent double-counting or expired-job revival",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              },
+              {
+                "title": "usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and required overflow refuses",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named",
+                "result": "pass"
+              },
+              {
+                "title": "the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit",
+                "result": "pass"
+              },
+              {
+                "title": "a divided review whose result is an array keeps it an array, and its calls per role are read from the job",
+                "result": "pass"
+              },
+              {
+                "title": "a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions",
+                "result": "pass"
+              },
+              {
+                "title": "inclusive single chunk retry admission and required-neighbour correction overflow retain all mandatory evidence",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'",
+                "result": "pass"
+              },
+              {
+                "title": "a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size",
+                "result": "pass"
+              },
+              {
+                "title": "a call that did not complete logs a safe failure category (ISSUE-d3a6b651)",
+                "result": "pass"
+              },
+              {
+                "title": "a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once",
+                "result": "pass"
+              },
+              {
+                "title": "a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a structured call's stallMs to completeStructured",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/template-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 693,
+            "titles": [
+              {
+                "title": "T9 a design stage runs ONE reviewer session and no extract, probe or per-premise call",
+                "result": "pass"
+              },
+              {
+                "title": "T9 the prompt carries the template for the intent, the insrc analyze instruction, and the design last",
+                "result": "pass"
+              },
+              {
+                "title": "T9 an HLD is a design stage too",
+                "result": "pass"
+              },
+              {
+                "title": "T10 an invalid first answer causes exactly one repeat carrying the validation errors",
+                "result": "pass"
+              },
+              {
+                "title": "T10 a second invalid answer fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a session failure fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a timeout fails the review with a message naming the limit that applied",
+                "result": "pass"
+              },
+              {
+                "title": "T11 a provider with no session capability fails at once and the old pipeline is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled before or during its session returns no report",
+                "result": "pass"
+              },
+              {
+                "title": "T12 a DEF review and an ISSUE review still run extract, probe and verify with the same extraction prompt, byte for byte",
+                "result": "pass"
+              },
+              {
+                "title": "T16 the first session gets the whole limit, and the limit defaults by intent",
+                "result": "pass"
+              },
+              {
+                "title": "role-specific attempt ceilings remain distinct from dynamic chunk-scaled total time",
+                "result": "pass"
+              },
+              {
+                "title": "T16 the validation repeat is started with only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "T16 a review whose deadline has passed fails before a repeat is started",
+                "result": "pass"
+              },
+              {
+                "title": "a design answering an ISSUE is reviewed once with the ISSUE template and the ISSUE limit, and is not edited",
+                "result": "pass"
+              },
+              {
+                "title": "a design under an Epic gets the SPEC template and the Epic limit; a standalone feature design the feature limit",
+                "result": "pass"
+              },
+              {
+                "title": "a failed design review stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T4 reviewArtifactFile stamps the daemon on its pipeline path too (a DEF)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "8ebbd8c7f",
+        "ranAt": "2026-10-27T08:59:28.693Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/step-state.test.ts: atomic review claim commit generation recovery receipt and pinned-capacity invariants",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/step-state.test.ts",
+                "title": "atomic review claim commit generation recovery receipt and pinned-capacity invariants",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/review-state-concurrency.test.ts: two actual hub connections cannot consume or persist the same pending call twice",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-state-concurrency.test.ts",
+                "title": "two actual hub connections cannot consume or persist the same pending call twice",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-state-concurrency.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 635,
+            "titles": [
+              {
+                "title": "two actual hub connections cannot consume or persist the same pending call twice",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/step-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 856,
+            "titles": [
+              {
+                "title": "each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores",
+                "result": "pass"
+              },
+              {
+                "title": "a real payload of each step kind survives a structured clone through the hub",
+                "result": "pass"
+              },
+              {
+                "title": "step state minted in one worker is read in another after the first exits",
+                "result": "pass"
+              },
+              {
+                "title": "atomic review claim commit generation recovery receipt and pinned-capacity invariants",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "699daea62",
+        "ranAt": "2026-10-27T09:10:14.241Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/review-owner-lifecycle.test.ts: real worker connection request and exit cancellation hooks bind and invalidate trusted owners",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-owner-lifecycle.test.ts",
+                "title": "real worker connection request and exit cancellation hooks bind and invalidate trusted owners",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/__tests__/step-host.test.ts: single-thread owner registration cleanup and out-of-band trusted context preserve non-review behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-host.test.ts",
+                "title": "single-thread owner registration cleanup and out-of-band trusted context preserve non-review behavior",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/step-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1029,
+            "titles": [
+              {
+                "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored",
+                "result": "pass"
+              },
+              {
+                "title": "equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store",
+                "result": "pass"
+              },
+              {
+                "title": "the step host registers the workflow runners: a workflow run continues past its plan phase through step.call",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_code_review_step through step.call: the step's progress is threaded into its deps, so each daemon review frame arrives as a 'progress' frame before 'done'",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'",
+                "result": "pass"
+              },
+              {
+                "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame",
+                "result": "pass"
+              },
+              {
+                "title": "single-thread owner registration cleanup and out-of-band trusted context preserve non-review behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-owner-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2344,
+            "titles": [
+              {
+                "title": "real worker connection request and exit cancellation hooks bind and invalidate trusted owners",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "2eee105bb",
+        "ranAt": "2026-10-27T09:46:50.239Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/code-review-step/__tests__/handler.test.ts: full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/mcp/__tests__/review-budget-schema.test.ts: registered code-review declaration envelope and schema lookup match runtime contracts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-budget-schema.test.ts",
+                "title": "registered code-review declaration envelope and schema lookup match runtime contracts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1579,
+            "titles": [
+              {
+                "title": "start emits one assigned prompt and versioned answer schema without whole grounding (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "a superseded code-review token fails with today's not-found message",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              },
+              {
+                "title": "a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
+                "result": "pass"
+              },
+              {
+                "title": "on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/steps/code-review-step/__tests__/handler.test.ts: with proceed:true and a freshness that keeps reporting one stale file with an idle queue while other changed files have symbols, the wait ends at the freshness time-out in the degraded diff review (fallback reason freshness-timeout naming that file) and no full review runs",
+                "result": "pass"
+              },
+              {
+                "title": "full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/review-budget-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1046,
+            "titles": [
+              {
+                "title": "registered code-review declaration envelope and schema lookup match runtime contracts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "0b4e64a91",
+        "ranAt": "2026-10-27T10:03:58.335Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts: exact expected claim and assigned subset sets reject empty partial duplicate unknown and replayed verdicts before writes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts",
+                "title": "exact expected claim and assigned subset sets reject empty partial duplicate unknown and replayed verdicts before writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts: exact template-item coverage and atomic terminal recovery prevent premature or duplicate completion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+                "title": "exact template-item coverage and atomic terminal recovery prevent premature or duplicate completion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1150,
+            "titles": [
+              {
+                "title": "T13 start on a design returns the review template with next emit_findings",
+                "result": "pass"
+              },
+              {
+                "title": "T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the findings phase records the review and does not edit the design",
+                "result": "pass"
+              },
+              {
+                "title": "T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the two paths do not cross: no claims on a design run, no findings on a non-design run",
+                "result": "pass"
+              },
+              {
+                "title": "T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt",
+                "result": "pass"
+              },
+              {
+                "title": "T4 the findings phase records the controller on an HLD too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the registered tool accepts phase `findings` and its phase list names it",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the ISSUE template is validated against its own items",
+                "result": "pass"
+              },
+              {
+                "title": "review-step-findings.test.ts: the findings phase binds the review to the lifecycle through persistReview",
+                "result": "pass"
+              },
+              {
+                "title": "exact template-item coverage and atomic terminal recovery prevent premature or duplicate completion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1121,
+            "titles": [
+              {
+                "title": "handleVerdicts with a service stores an applied fix through the service and records the review on the lifecycle, and refuses a head that is ahead of its log",
+                "result": "pass"
+              },
+              {
+                "title": "exact expected claim and assigned subset sets reject empty partial duplicate unknown and replayed verdicts before writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "78afe4893",
+        "ranAt": "2026-10-27T10:31:05.958Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts: template extraction evidence verification and finalization preserve every required claim through admitted controller turns",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+                "title": "template extraction evidence verification and finalization preserve every required claim through admitted controller turns",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+                "title": "design continuations refuse expired changed and cancelled sources without a review write",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+                "title": "grounded and degraded design evidence retain all claims and enforce original-epoch deadline boundaries",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+                "title": "actual design and code-review handlers refuse cross-protocol tokens and stale envelopes without consuming valid work",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/budget-workers.test.ts",
+                "title": "two real design-review workers cannot persist the same terminal call twice",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/mcp/__tests__/review-budget-schema.test.ts: registered design-review phases validate declarations envelopes stale states and host-reserve qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-budget-schema.test.ts",
+                "title": "registered design-review phases validate declarations envelopes stale states and host-reserve qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1532,
+            "titles": [
+              {
+                "title": "start emits one assigned prompt and versioned answer schema without whole grounding (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "a superseded code-review token fails with today's not-found message",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              },
+              {
+                "title": "a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
+                "result": "pass"
+              },
+              {
+                "title": "on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/steps/code-review-step/__tests__/handler.test.ts: with proceed:true and a freshness that keeps reporting one stale file with an idle queue while other changed files have symbols, the wait ends at the freshness time-out in the degraded diff review (fallback reason freshness-timeout naming that file) and no full review runs",
+                "result": "pass"
+              },
+              {
+                "title": "full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1116,
+            "titles": [
+              {
+                "title": "template extraction evidence verification and finalization preserve every required claim through admitted controller turns",
+                "result": "pass"
+              },
+              {
+                "title": "design continuations refuse expired changed and cancelled sources without a review write",
+                "result": "pass"
+              },
+              {
+                "title": "grounded and degraded design evidence retain all claims and enforce original-epoch deadline boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "actual design and code-review handlers refuse cross-protocol tokens and stale envelopes without consuming valid work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/budget-workers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2177,
+            "titles": [
+              {
+                "title": "two real design-review workers cannot persist the same terminal call twice",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/review-budget-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1024,
+            "titles": [
+              {
+                "title": "registered code-review declaration envelope and schema lookup match runtime contracts",
+                "result": "pass"
+              },
+              {
+                "title": "registered design-review phases validate declarations envelopes stale states and host-reserve qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "6673f7308",
+        "ranAt": "2026-10-27T17:32:48.822Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/budget-handoff.test.ts: assembled code design provider and controller boundaries enforce the same inclusive budget evidence timing and safe telemetry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget-handoff.test.ts",
+                "title": "assembled code design provider and controller boundaries enforce the same inclusive budget evidence timing and safe telemetry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/budget-handoff.test.ts",
+                "title": "original-size production code and design adapters retain full schemas and enforce inclusive dispatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "npm run build: production TypeScript native helpers model checks assets and packaged review-budget entry points",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/review-budget-cr-fixes-final-build.log; /tmp/review-budget-cr-fixes-packaged-smoke.log. New original-size production schema integration passes in /tmp/review-budget-production-integration.log. Scoped fixes dcf268364, regression 800729996. No deployment."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/budget-handoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1252,
+            "titles": [
+              {
+                "title": "assembled code design provider and controller boundaries enforce the same inclusive budget evidence timing and safe telemetry",
+                "result": "pass"
+              },
+              {
+                "title": "original-size production code and design adapters retain full schemas and enforce inclusive dispatch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

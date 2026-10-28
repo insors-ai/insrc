@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2f79550-a80e-4cdf-9be6-c115f1137b83",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.336Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define immutable usage and attribution types",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d6bdbd7d73322cb6d8523408e786c8b1c499ee7096eaef98e90b1af6967f6a2",
+        "at": "2026-10-26T12:50:51.336Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.337Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define immutable usage and attribution types",
+    "summary": "Add proposed src/workflow/usage/types.ts with HLD-compatible sc1/sc2 interfaces, closed v1 payload variants, normalized counters/quality, closure/capability evidence and AMD-1 effectiveOwners types. Export types only initially; preserve existing provider, identity and content contracts.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "All usage/control discriminators and required/null payload combinations are represented without provider SDK types or mutable history.",
+      "UsageBinding, attribution input and EffectiveAccounting retain approved signatures; effectiveOwners is optional for compatibility but fully typed, including unresolved states and immutable capture provenance.",
+      "Safe-counter/sequence, ID, group and resource-limit constants are explicit. Existing ArtifactIds behavior is consumed unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/usage/__tests__/schema-contract.test.ts: compiler-backed valid/invalid v1 discriminator fixtures and HLD sc1/sc2 plus AMD-1 type compatibility"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

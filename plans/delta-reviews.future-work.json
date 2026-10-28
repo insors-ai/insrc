@@ -1,0 +1,21 @@
+{
+  "id": "FUTURE-delta-reviews",
+  "title": "Delta reviews for changes to previously reviewed artifacts",
+  "status": "backlog",
+  "implementationAuthorized": false,
+  "createdAt": "2026-10-28T11:34:18.250738+00:00",
+  "requestedBy": "user",
+  "scope": [
+    "Support independent delta reviews of revised DEF/HLD/LLD artifacts through MCP and daemon paths.",
+    "Bind the verified prior review, reviewed content digest and revision to the current revision.",
+    "Review changed sections and affected contracts; explicitly carry forward unchanged coverage.",
+    "Reject stale or incompatible baselines and require a full review when safe scope cannot be established.",
+    "Persist review scope, provenance and carried-forward coverage without bypassing independent review or approval gates."
+  ],
+  "openDesignDecisions": [
+    "How affected contracts are discovered and conservatively bounded.",
+    "Baseline compatibility and invalidation rules."
+  ],
+  "currentWork": "Deferred; current per-block checkpoint HLD receives a full review.",
+  "relatedArtifact": "HLD-c32aa60534232f36"
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c16294ce-b79a-4c22-b1e8-82dffb42b256",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.707Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Task reconciliation: CloseIssue async and durable pending-close",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5c9494d6ce2f11151ef966cf2ca10dcfdc1cc660e1f2efce71cac0794ff53287",
+        "at": "2026-10-27T16:08:33.708Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.708Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Task reconciliation: CloseIssue async and durable pending-close",
+    "summary": "Make CloseIssue and the reconcile code that awaits it asynchronous; closeIssueOf logs pending-close before rethrowing a ToolDenied; reconcile reports progress through an onProgress callback; syncOnPlanApproval and syncPlanTasks rethrow ToolDenied (TaskSyncDenied with the partial arrays) and keep the {error} conversion for ordinary errors.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "a denied close of a withdrawn Task escapes syncPlanTasks as ToolDenied with the partial arrays",
+      "after the denial the Task has a pending-close entry and the next reconciliation closes the issue",
+      "ordinary errors still return {error}"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "task-set-denial.test.ts: syncOnPlanApproval rethrows ToolDenied with the partial arrays, ordinary errors keep {error}, and a pending-close entry lets the next reconciliation close the issue"
+      },
+      {
+        "level": "integration",
+        "name": "sync-plan-tasks-denial.test.ts: through the real syncPlanTasks a denied close escapes as ToolDenied"
+      },
+      {
+        "level": "unit",
+        "name": "tasks-sync-async.test.ts: a withdrawn-Task close through an async CloseIssue reports ok and gh failure as before"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

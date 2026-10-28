@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2de1c7ee-1c9b-4188-adb3-dbd8a9b6ee62",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T07:57:47.643Z",
+    "epicCreatedAt": "2026-10-27T05:43:26.134Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fa396bdf197b8e8b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Queue the index request in the codeReview.freshness handler",
+      "parent": {
+        "entityId": "STORY-fa396bdf197b8e8b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fa396bdf197b8e8b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fa396bdf197b8e8b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f392ccfe4cd0497b1c20cc211e540d595a6c06720eb129adb0097235839496a",
+        "at": "2026-10-27T07:57:47.643Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T07:57:47.643Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Queue the index request in the codeReview.freshness handler",
+    "summary": "In src/daemon/handler-runtime.ts keep an in-memory request map for the codeReview.freshness handler, supply requestedAt from it, queue one 'file' job (event update) for each file in unindexedFiles with its request time recorded, and re-read the queue state so the same reply shows the work. If buildHandlerRuntime cannot be driven with fake dependencies, put the request step in a small function that takes the queue, the request map and the compute result and have the handler call it; that extraction is then the only production change beyond the handler. Add src/daemon/__tests__/code-review-freshness-request.test.ts (the handler or that function with a recording queue; the real selection seam with the indexer parsers registered) and a contract case in src/daemon/steps/code-review-step/__tests__/handler.test.ts for a stale file with an idle queue in a mixed set.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The request step queues one file job for each file in unindexedFiles, queues nothing for a second identical poll, and queues again after the file's mtime moves",
+      "After queueing, the same reply carries isProcessing, inFlight and pendingCodeIndexJobs read from the queue after the jobs were queued",
+      "The real selection seam returns not-code for a .png and package-lock.json, excluded-by-ignore for a .ts under node_modules, and selected for a .ts and a small .md; a nonexistent changed .ts path is not stale and queues nothing while an existing entity-less .ts file is stale and queued once",
+      "With proceed true and a freshness that keeps reporting one stale file with an idle queue while other files have symbols, the wait ends at the freshness time-out in the degraded diff review and no full review runs",
+      "src/daemon/__tests__/handler-runtime.test.ts and the routing, long-review, RPC fallback and review-stream-freshness tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/code-review-freshness-request.test.ts: the codeReview.freshness handler built by buildHandlerRuntime with a recording queue queues one 'file' job for each file in unindexedFiles, queues nothing for a second identical poll, and queues again after the file's mtime moves"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/code-review-freshness-request.test.ts: after queueing, the same reply carries isProcessing, inFlight and pendingCodeIndexJobs read from the queue after the jobs were queued"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/code-review-freshness-request.test.ts: realFreshnessGraphDeps().selection, with the indexer's parsers registered, returns 'not-code' for a .png file and package-lock.json, 'excluded-by-ignore' for a .ts file under node_modules, and 'selected' for a .ts file and a small .md file in a real temporary directory"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/code-review-freshness-request.test.ts: through the real seams, a changed .ts path that does not exist is not stale and queues nothing, while an existing entity-less .ts file is stale and queued once"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/handler-runtime.test.ts: the recorded handler key sets are unchanged because no method is added"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/handler.test.ts: with proceed:true and a freshness that keeps reporting one stale file with an idle queue while other changed files have symbols, the wait ends at the freshness time-out in the degraded diff review (fallback reason freshness-timeout naming that file) and no full review runs"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/routing.test.ts and long-review.test.ts, src/daemon/__tests__/code-review-rpc-fallback.test.ts and src/shared/__tests__/review-stream-freshness.test.ts pass unchanged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

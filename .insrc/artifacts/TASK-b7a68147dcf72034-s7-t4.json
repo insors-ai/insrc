@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cc79685f-1bc9-4fe6-8023-c7f58a395711",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.468Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Migrate the eight direct-spawn sites to spawnManaged",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "24d72dc19f2cd27d59a88a940c4cbd50570b558c133c068755c9da471f1ded95",
+        "at": "2026-10-26T18:21:16.468Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.468Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Migrate the eight direct-spawn sites to spawnManaged",
+    "summary": "Migrate shell/exec-detached.ts, k8s/index.ts (three sites), test/index.ts, ssh/index.ts (two sites) and cloud/aws/logs.ts one file at a time, parity tests first so each file is its own rollback point: branch on spawned first and return the usual aborted result, keep output, progress frames and wording, pass own limit as timeoutMs, drop own kill timers and abort listeners. Add the child_process inventory test.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Parity tests show unchanged progress frames, output and results for non-aborted runs at each site",
+      "Abort and time-out kill the whole group at each site and keep today's wording",
+      "An already-aborted signal takes the no-spawn branch at each site",
+      "The inventory test fails when any file other than shell-helper.ts imports node:child_process"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/shell/__tests__/exec-detached-parity.test.ts and the k8s, test-runner, ssh and aws logs parity tests"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/direct-spawn-tools-cancellation.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/child-process-inventory.test.ts"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

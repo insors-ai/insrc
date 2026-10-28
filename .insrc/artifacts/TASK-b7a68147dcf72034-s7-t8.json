@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd8bb22d-1219-4f88-a4bf-bf29aa8c5067",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.473Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "FieldSpec pattern, op-table variants and parseJsonLines",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2091f8425ebd896489cbd0c9122c60f6c9b7154252c7122efa23a9c13e879aae",
+        "at": "2026-10-26T18:21:16.473Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.474Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "FieldSpec pattern, op-table variants and parseJsonLines",
+    "summary": "Add the optional string pattern and field.name, the path, kv and qs argument variants to buildArgv, the parseJsonLines helper beside parseJson, and the OpDef diagnostic field with FAILURE_ORIGINAL_MAX_CHARS (command-exit failures only).",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "A bad owner is rejected before any approval; shared fields with different patterns make defineGhFamily throw",
+      "Exact argv fixtures for path, kv and qs including encoding and no bare question mark",
+      "parseJsonLines skips blank lines, handles empty output and reports the first bad line with its number",
+      "Existing ops build the argv and failures they build today"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-field-pattern.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-op-table-args.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-op-table-qs.test.ts"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

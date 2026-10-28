@@ -1,0 +1,460 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 4,
+        "contentHash": "eefa1461a6d0fd79ccf734f592d0f8a6ec6d92b07b1407d4de3b9b2ac12a9b18",
+        "at": "2026-10-27T17:12:10.770Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793117110682-3b7y3d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:05:27.234Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 4003523,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "epicSlug": "enforce-all-inclusive-review-budgets-exclude",
+    "standalone": true,
+    "revision": 4
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "docs/plans/review-budget-handoff.md",
+        "src/agent/__tests__/read-only-tool-loop.test.ts",
+        "src/agent/providers/__tests__/cli-review-session.test.ts",
+        "src/agent/providers/__tests__/ollama-review-session.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/agent/providers/cli-wire.ts",
+        "src/agent/providers/ollama-wire.ts",
+        "src/agent/providers/ollama.ts",
+        "src/agent/providers/review-budget.ts",
+        "src/agent/providers/structured-output.ts",
+        "src/agent/read-only-tool-loop.ts",
+        "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
+        "src/config/config-catalog.ts",
+        "src/daemon/__tests__/model-literal-scan.test.ts",
+        "src/daemon/__tests__/review-runtime-owner.test.ts",
+        "src/daemon/code-review-rpc.ts",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/request-context.ts",
+        "src/daemon/review-request-owner.ts",
+        "src/daemon/steps/__tests__/step-host.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/controller-client.ts",
+        "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts",
+        "src/daemon/steps/code-review-step/controller.ts",
+        "src/daemon/steps/code-review-step/handler.ts",
+        "src/daemon/steps/code-review-step/types.ts",
+        "src/daemon/steps/daemon-client.ts",
+        "src/daemon/steps/host.ts",
+        "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+        "src/daemon/steps/review-step/__tests__/budget-workers.test.ts",
+        "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+        "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+        "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+        "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+        "src/daemon/steps/review-step/__tests__/terminal-client.ts",
+        "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts",
+        "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+        "src/daemon/steps/review-step/controller.ts",
+        "src/daemon/steps/review-step/handler.ts",
+        "src/daemon/steps/review-step/phases/claims.ts",
+        "src/daemon/steps/review-step/phases/findings.ts",
+        "src/daemon/steps/review-step/phases/start.ts",
+        "src/daemon/steps/review-step/phases/verdicts.ts",
+        "src/daemon/steps/review-step/schema.ts",
+        "src/daemon/steps/review-step/terminal.ts",
+        "src/daemon/steps/review-step/types.ts",
+        "src/daemon/steps/review-transaction.ts",
+        "src/daemon/threads/__tests__/helpers/review-controller-worker.js",
+        "src/daemon/threads/__tests__/helpers/review-controller-worker.ts",
+        "src/daemon/threads/__tests__/helpers/review-owner-worker.js",
+        "src/daemon/threads/__tests__/helpers/review-owner-worker.ts",
+        "src/daemon/threads/__tests__/helpers/step-state-worker-bootstrap.mjs",
+        "src/daemon/threads/__tests__/helpers/step-state-worker.ts",
+        "src/daemon/threads/__tests__/review-owner-lifecycle.test.ts",
+        "src/daemon/threads/__tests__/review-state-concurrency.test.ts",
+        "src/daemon/threads/__tests__/step-state.test.ts",
+        "src/daemon/threads/channel.ts",
+        "src/daemon/threads/main-services.ts",
+        "src/daemon/threads/review-state-contract.ts",
+        "src/daemon/threads/router.ts",
+        "src/daemon/threads/step-state.ts",
+        "src/daemon/workflow-review-rpc.ts",
+        "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+        "src/mcp/__tests__/review-budget-schema.test.ts",
+        "src/mcp/__tests__/review-stream.test.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/mcp/review-budget-schema.ts",
+        "src/mcp/server.ts",
+        "src/prompts/steering-block.md",
+        "src/shared/review-budget.ts",
+        "src/shared/review-execution-time.ts",
+        "src/shared/review-failure.ts",
+        "src/shared/review-owner-context.ts",
+        "src/shared/review-stream.ts",
+        "src/shared/step-context.ts",
+        "src/shared/types.ts",
+        "src/workflow/__tests__/gate-guarded-entry-points.test.ts",
+        "src/workflow/__tests__/meta-only-body-unchanged.test.ts",
+        "src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts",
+        "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+        "src/workflow/code-review/__tests__/call-progress.test.ts",
+        "src/workflow/code-review/__tests__/diagram-conditional.test.ts",
+        "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+        "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+        "src/workflow/code-review/__tests__/ux-conditional.test.ts",
+        "src/workflow/code-review/controller-validation.ts",
+        "src/workflow/code-review/dimensions/__tests__/adherence.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/code-review-cwd.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/conventions.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/diagram-handlers.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/diagram.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/functional-coverage.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/quality.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/ux.test.ts",
+        "src/workflow/code-review/dimensions/adherence.ts",
+        "src/workflow/code-review/dimensions/conventions.ts",
+        "src/workflow/code-review/dimensions/coverage.ts",
+        "src/workflow/code-review/dimensions/functional-coverage.ts",
+        "src/workflow/code-review/dimensions/quality.ts",
+        "src/workflow/code-review/run-events.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/code-review/types.ts",
+        "src/workflow/review-pipeline/__tests__/budget-execution.test.ts",
+        "src/workflow/review-pipeline/__tests__/budget-handoff.test.ts",
+        "src/workflow/review-pipeline/__tests__/budget.test.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-source-inspection.test.ts",
+        "src/workflow/review-pipeline/__tests__/entry-budget-profiles.test.ts",
+        "src/workflow/review-pipeline/__tests__/enveloped.ts",
+        "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts",
+        "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+        "src/workflow/review-pipeline/__tests__/review-cycle2.test.ts",
+        "src/workflow/review-pipeline/__tests__/review-fixes.test.ts",
+        "src/workflow/review-pipeline/__tests__/review-job-core.test.ts",
+        "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+        "src/workflow/review-pipeline/__tests__/source-evidence-regression.test.ts",
+        "src/workflow/review-pipeline/__tests__/test-budget.ts",
+        "src/workflow/review-pipeline/adapters/code-review-duplicates.ts",
+        "src/workflow/review-pipeline/adapters/code-review-gather.ts",
+        "src/workflow/review-pipeline/budget.ts",
+        "src/workflow/review-pipeline/call-events.ts",
+        "src/workflow/review-pipeline/code-review.ts",
+        "src/workflow/review-pipeline/controller.ts",
+        "src/workflow/review-pipeline/design-review.ts",
+        "src/workflow/review-pipeline/driver.ts",
+        "src/workflow/review-pipeline/job.ts",
+        "src/workflow/review-pipeline/limit.ts",
+        "src/workflow/review-pipeline/measurement.ts",
+        "src/workflow/review-pipeline/pack-into-batches.ts",
+        "src/workflow/review-pipeline/prepare.ts",
+        "src/workflow/review-pipeline/types.ts",
+        "src/workflow/review/__tests__/persist-review.test.ts",
+        "src/workflow/review/__tests__/review.test.ts",
+        "src/workflow/review/__tests__/source-root-reader.test.ts",
+        "src/workflow/review/__tests__/template-review.test.ts",
+        "src/workflow/review/exact-coverage.ts",
+        "src/workflow/review/persist-review.ts",
+        "src/workflow/review/probe.ts",
+        "src/workflow/review/review.ts",
+        "src/workflow/review/run-artifact.ts",
+        "src/workflow/review/source-roots.ts",
+        "src/workflow/review/template-review.ts",
+        "src/workflow/review/template.ts",
+        "src/workflow/runners/build/__tests__/changed-files.test.ts",
+        "src/workflow/runners/build/changed-files.ts",
+        "vscode-plugin/assets/steering-block.md"
+      ],
+      "buildFingerprint": "6a5de1b1589553d618f44feaa049921489764744180cbea26dd0e6999f380f54",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "docs/plans/review-budget-handoff.md",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+        "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+        "src/workflow/__tests__/gate-guarded-entry-points.test.ts",
+        "src/workflow/__tests__/meta-only-body-unchanged.test.ts",
+        "src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts",
+        "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+        "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+        "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+        "src/workflow/review-pipeline/__tests__/budget-handoff.test.ts",
+        "src/workflow/review/__tests__/template-review.test.ts"
+      ],
+      "excludedFromScope": [
+        "docs/plans/tool-registry.md",
+        "plans/model-token-usage-implementation.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/shared/review-budget.ts:7",
+            "message": "ReviewBudgetQualification adds 'controller-reserved' beyond the approved 'managed-estimate'|'reserved-native' values. This is an active behavior: budget.ts accepts controller profiles with this qualification and measureReviewBudget copies it into ReviewBudgetBreakdown, so emitted breakdowns can violate the approved qualification contract.",
+            "expectationRef": "LLD data-model change 2: ReviewBudgetBreakdown (proposed)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/daemon/steps/review-step/controller.ts:141",
+            "message": "Legacy design-review resumes validate the new declaration before inspecting saved protocol state. A pre-upgrade claims token submitted with its original request shape therefore returns controller-budget-required, rather than the required review-budget-state-stale. The findings/verdicts fallback has the same ordering in terminal.ts:46. Check saved protocol compatibility before requiring the new envelope, while preserving reusable current-protocol state when only its declaration is missing.",
+            "expectationRef": "LLD data-model change 12: Controller budget resume validation (actual stores, proposed new state)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/daemon/workflow-review-rpc.ts:119",
+            "message": "Daemon artifact reviews forward call lifecycle events only to the response stream without persisting paired outcomes in the canonical run record. Tracing reviewArtifactFile → runReview/runTemplateReview shows these events reach this callback, while those paths never invoke appendReviewRunEvent; persistReview records only a completed report. A failed or disconnected review therefore leaves no canonical start/outcome pair for diagnosing a lost response, contrary to the approved clause.",
+            "expectationRef": "LLD data-model change 17: Deadline reporting and transport qualification"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/workflow/review-pipeline/job.ts:539",
+            "message": "An indivisible oversized gather obligation can fail with a generic Error instead of the required inclusive budget failure. requestNoteCall detects the oversized rendered obligation through candidateChars, but when there are no evidence/context notes, reduceBatches returns [] and both every() checks pass, reaching this throw. The same happens with one already-small note whose obligation framing cannot fit. This loses the inclusive breakdown, numeric shortfall and structured unit identity. Preserve the measured obligation request and emit required-context-over-budget with those diagnostics when reduction cannot help.",
+            "expectationRef": "LLD error case 2: An indivisible atom or gather obligation cannot fit after overhead."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/workflow/review-pipeline/job.ts:389",
+            "message": "When correction growth exceeds the frozen total cap, this branch terminates with `correction-budget-exceeded` instead of the required `dispatch-budget-exceeded`. It correctly prevents sending the oversized request, but exposes a different terminal error contract for this explicitly covered scenario.",
+            "expectationRef": "LLD error case 3: Correction, provider schema normalization or final closing instruction grows beyond the saved allowance."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "confidence": "breach",
+            "location": "src/workflow/review-pipeline/job.ts:472",
+            "message": "runStage silently clips stageAllowance to a positive shorter outer allowance and starts stage.run; incompatibility is reported only if that shortened timer expires. A stage finishing sooner commits successfully without reporting the conflict. This is reachable through runReviewJob for initial or deterministic-only stages whose job.deadlineAt is undefined, bypassing the driver's deadline comparison. Reject the known incompatible allowance before dispatch instead of clipping it.",
+            "expectationRef": "LLD error case 11: Computed chunk-scaled budget expires or conflicts with an outer ceiling"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "confidence": "observation",
+            "location": "docs/plans/review-budget-handoff.md:104",
+            "message": "Migration completion could not be verified: the inspected handoff explicitly states deployment has not occurred and line 136 still marks it pending. The documented release sequence provides no installed commit or execution evidence establishing a scoped push, configuration-preserving update, or completion/cancellation of old reviews before restart. This is pending operational evidence, not a demonstrated code defect.",
+            "expectationRef": "LLD migration step 4: Build and commit the reviewed fix, then push only its authorized changes so the daemon can update. Restart/update the installed daemon without rewriting user config and record its installed commit. In-flight old reviews must finish or be cancelled through existing lifecycle controls before restart; never edit live histories to fake completion."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "confidence": "observation",
+            "location": "docs/plans/review-budget-handoff.md:104",
+            "message": "The handoff explicitly records deployment and the fresh TU1 review as pending. Consequently, the installed-run inclusive budgets, JSONL exclusion, call outcomes and policy qualification cannot yet be verified. The previous failed review is correctly retained as diagnostic evidence; this is an outstanding verification limit, not evidence of incorrect runtime behavior.",
+            "expectationRef": "LLD migration step 5: Start one fresh TU1 review after the fix is installed. Verify inclusive budget breakdowns, excluded JSONL, call-level outcomes and policy qualification; retain any real failure and keep BUILD unapproved until the independent review succeeds or the user explicitly overrides."
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 14,
+          "obligation": 74,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/agent/providers/ollama.ts:1",
+            "message": "New imports precede the copyright header, differing from the header-first layout in cli-wire.ts and ollama-wire.ts. These examples suggest a local idiom, but do not establish a documented requirement.",
+            "expectationRef": "header-first-layout",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/workflow-review-rpc.ts:1",
+            "message": "The new import precedes the copyright header, departing from the header-first layout observed elsewhere in the chunk. The limited examples support an idiom observation only.",
+            "expectationRef": "header-first layout",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/code-review-step/controller.ts:63",
+            "message": "codeSourceDigest and logTransition use compressed, space-indented statements, departing from the surrounding tab-indented, spaced code. Follow the surrounding formatting for consistency.",
+            "expectationRef": "module-idiom: tab indentation and spaced statements",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/review-step/__tests__/terminal-client.ts:20",
+            "message": "The shared fixture client uses non-null assertions for potentially absent array elements, including the final stream frame and content[0]. These suppress the indexed-access undefined checks instead of handling missing values as the documented rule requires. Similar unchecked content access appears in the noted test helpers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/review-step/handler.ts:52",
+            "message": "The trace cast declares phase?, reply?, and callId? without explicit `| undefined`; the retryable? casts at lines 89–90 repeat this departure. Add `| undefined` to these optional property types to follow the documented convention.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/threads/review-state-contract.ts:32",
+            "message": "reviewEvidence's local payload shape declares jsonPath, epicHash, storyId, and runId as optional without the explicitly required `| undefined`. Add it to each declaration to follow the documented convention, even though `unknown` already accepts undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/review-pipeline/__tests__/review-cycle2.test.ts:32",
+            "message": "The added tests use space indentation and compressed declarations and expressions, departing from the tabs and spaced expressions observed in surrounding module tests. This is a local style observation; no listed documented rule is breached.",
+            "expectationRef": "module-idiom: tabs and spaced expressions",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/review-pipeline/adapters/code-review-duplicates.ts:1",
+            "message": "New imports precede the copyright banner in both changed adapters, departing from their original banner/module-documentation/imports layout. Preserve that existing ordering.",
+            "expectationRef": "module-idiom:banner-and-module-documentation-before-imports",
+            "confidence": "observation"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 5,
+          "obligation": 38,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/agent/providers/structured-output.ts:250",
+            "message": "Error handling: the lastCallFailure branch runs before the reviewScoped sanitization and copies lastCallFailure.detail and its cause into the outgoing error. A review call that throws ModelCallFailedError can therefore expose dependency or source-bearing exception text despite the review-specific redaction. Apply review-scoped sanitization before this branch.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/steps/code-review-step/controller.ts:77",
+            "message": "Correctness: source validation replaces the freshly resolved changed-file list with the saved list before hashing. A newly added file in the Story scope can therefore escape detection when existing files and records remain unchanged, allowing completion against an incomplete snapshot. Compare the current scope with the saved scope explicitly.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/steps/review-step/controller.ts:206",
+            "message": "Error handling: failure-event recording runs before held.fail(), and its injected recorder can throw. Such a failure skips claim cleanup and masks the original error. The code-review controller has the same ordering. Make telemetry best-effort or put transaction cleanup in a finally block.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/threads/__tests__/review-owner-lifecycle.test.ts:83",
+            "message": "Correctness: the unary-request wait searches all historical events and excludes only two owners. Earlier completed or abandoned requests already satisfy that predicate, so it can return before the unary request claims its state. Selecting the last historical claim can then assert against a retired owner or send its finish message to the wrong request. Record the event offset before dispatch or correlate the event with this request.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/review-pipeline/__tests__/budget-execution.test.ts:110",
+            "message": "Correctness: the remaining-time test sets a real deadline only 12 ms ahead and then requires another provider dispatch. A scheduler pause before dispatch can legitimately exhaust that deadline, leaving sends at 1 and failing the test. Use controlled time or synchronization to verify the clamp without depending on host scheduling.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/review-pipeline/controller.ts:70",
+            "message": "Correctness: attempt expiry still compares wall-clock timestamps, although a monotonic start is recorded. A backward clock adjustment extends an attempt beyond its allowance, and a forward adjustment rejects it prematurely. Use monotonic elapsed time for the attempt check as well as duration reporting.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 5,
+          "obligation": 0,
+          "relation": 36,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "functional-coverage",
+        "findings": [],
+        "pipelineCalls": {
+          "chunk": 7,
+          "obligation": 0,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 12,
+      "low": 10
+    }
+  },
+  "citations": []
+}

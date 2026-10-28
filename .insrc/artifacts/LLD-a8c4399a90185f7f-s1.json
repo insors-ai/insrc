@@ -34,7 +34,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 7,
         "contentHash": "80acbebb44ac895ae983f9d0c7be50d5702ca20970661de735dcd61d43e165b0",
@@ -54,19 +54,28 @@
           "properties": {}
         },
         "party": "daemon",
-        "verdict": "warn",
+        "verdict": "pass",
         "counts": {
           "high": 0,
           "med": 0,
           "low": 12
         },
-        "at": "2026-10-27T06:02:30.617Z",
+        "at": "2026-10-27T06:06:24.426Z",
         "report": {
           "entityId": "LLD-a8c4399a90185f7f-s1",
           "type": "change-log-entry",
           "relation": "reviews",
           "fragment": "review-98a92f8aba75bb331311f86175a367d1"
         }
+      },
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:06:24.434Z"
       }
     },
     "questionResolutions": {
@@ -77,7 +86,8 @@
         "rationale": "The user explicitly approved the presented LLD and recommended inclusive estimated-budget policy with 'yes, approved'; a verified hard ceiling on hidden native CLI requests is not being claimed. Total execution time is10 minutes times current work chunks, retries do not reset time.",
         "resolvedAt": "2026-10-27T06:06:10.757Z"
       }
-    }
+    },
+    "rangeBase": "4217e6555ba01769bfac29df350e959943cc89a2"
   },
   "body": {
     "hldContextSlice": {

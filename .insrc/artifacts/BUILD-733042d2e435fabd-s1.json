@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "0e0a9836b18ecf7d3bde0642d9f71b83145d1235fbdae808965ac405682c41ca",
+        "at": "2026-10-27T13:08:52.244Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T13:08:53.703Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-d02c2c17-1fe3-4ac4-ab27-3a9f335c6325",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T11:56:36.914Z",
+    "epicCreatedAt": "2026-10-27T11:44:58.541Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "733042d2e435fabd",
+    "storyId": "s1",
+    "revision": 4,
+    "updatedAt": "2026-10-27T12:55:06.126Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicSlug": "add-optional-output-budget-git-ls"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Scope extension (LLD revision 4, approved): git_rev_parse and git_hash_object read their output through parseOutput, so a cut capture is the one failure 'git output was cut at the byte limit' with no data (commit 2c9fd8c38; src/daemon/tools/builtins/git/rev-parse.ts and hash-object.ts, two small edits). New git-read-cut.test.ts (ac6) covers: rev-parse with 11 MiB of lines fails, hash-object with a cut non-name fails, hash-object with a valid object name followed by 11 MiB of newlines (trimmed it is the name, the old code returned success) fails, and uncut results are as before (a sha, two lines with a blank dropped, empty output, and the 'git printed no object name' message for a non-name). I confirmed that test fails (pass 0, fail 1) on the previous source of those two files and passes on the new. All files of the git test folder pass; tsc clean. The first build (budget option, commits e105150fb and 5e2420e41) is unchanged.",
+    "testRecord": {
+      "md": "docs/standalone/add-optional-output-budget-git-ls-E20261027733042d2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T13:08:49.988Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-ls-files-budget.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T13:08:49.988Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/helpers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T13:08:49.988Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/ls-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T13:08:49.988Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-read-cut.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T13:08:49.988Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/hash-object.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T13:08:49.988Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/rev-parse.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-27T13:08:49.988Z"
+      }
+    ],
+    "commit": "2c9fd8c38"
+  },
+  "citations": []
+}

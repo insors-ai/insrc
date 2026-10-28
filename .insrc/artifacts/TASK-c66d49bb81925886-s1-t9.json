@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e1c1a5db-3566-44e1-968d-1b80c868e14a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.347Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Expose effective ownership and transfer state",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dd87d1d8d013a32f0ec8b956f7e9b963fb34db14f88b7b93c9054e810e04032e",
+        "at": "2026-10-26T12:50:51.347Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.348Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose effective ownership and transfer state",
+    "summary": "Implement pure owner-version evaluation and the approved AMD-1 effectiveOwners result in the reducer. Separate same-root single commitments from cross-root prepared/accepted/committed reference chains; perform no transfer IO.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "A valid same-root transfer.committed with null phase refs changes the effective artifact once; a cross-root commit requires its matching phase/closure evidence.",
+      "Pending transfer retains the current committed owner; conflicting versions, cycles/forks or missing ownership proof produce explicit unresolved mappings, not destination charges.",
+      "Every new result contains typed effectiveOwners tying call/basis to effective root/artifact/version, capture owner and provenance. Grouping consumers cannot fall back to capture IDs when mapping is absent.",
+      "Replay is idempotent; no counters or original observations are copied/mutated. No root resolver, writer, lock or coordinator is introduced."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/transfer-state.test.ts: same-root single commitment, cross-root phase closure, pending/conflicting owner versions and typed effectiveOwners provenance/replay"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

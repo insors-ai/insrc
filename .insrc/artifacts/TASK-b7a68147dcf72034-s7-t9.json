@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9adba9ca-9815-4b40-9266-89aa4cb6b315",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.475Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "gh_tracker family",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee4372438cde04c85b34bfcb832f2252d42f5205a3ab9c0380136e9289476506",
+        "at": "2026-10-26T18:21:16.475Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.475Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "gh_tracker family",
+    "summary": "Define the 15 ops in gh/tracker.ts in the LLD's order, running the family test after each group (the three paginated listings with --paginate and a fixed -q filter read through parseJsonLines), register it in registerGhTools, add the closed mapped-ops test last and record the amendment in the gh coverage table.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "Each op has the exact argv, schemas, class and limit of the LLD",
+      "Multi-page, empty and malformed output cases behave as designed and match the wrappers' results",
+      "tasks_query pageInfo and issueCount cases match queryTasks",
+      "project_create returns number and url or a rejected failure",
+      "getTool and callTool find gh_tracker and every mapped op returns the fields its wrapper reads"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-tracker-family.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-tracker-registration.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-tracker-diagnostic.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-tracker-mapped-ops.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "428b991d734f366809e9fd7c3171936ab3d62d05b2fddabb3f421475f3f247b2",
+        "at": "2026-10-27T11:30:14.887Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793100572460-y135n3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T11:29:32.460Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 42417,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b135647ed951c0c1",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-27T11:15:03.755Z",
+    "epicSlug": "add-json-hosts-form-gh-auth",
+    "standalone": true,
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b135647ed951c0c1",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/tools/builtins/gh/__tests__/_family-rows.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-auth-hosts.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-coverage.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-family-tools.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-output-schemas.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-parser.test.ts",
+        "src/daemon/tools/builtins/gh/__tests__/gh-timeouts.test.ts",
+        "src/daemon/tools/builtins/gh/account.ts",
+        "src/daemon/tools/builtins/gh/coverage.ts"
+      ],
+      "buildFingerprint": "2ad3b6d1e9f97409b68fa24020607c3a322721d2b3697631678c8fc048af27ec",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "plans/model-token-usage-implementation.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  },
+  "citations": []
+}

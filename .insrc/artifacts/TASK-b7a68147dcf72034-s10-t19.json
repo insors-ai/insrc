@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-611eb635-70ea-4f38-bf75-c1306db9362f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.718Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Verification: invariants, site list, no floating promises, old paths, migration rows",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t18",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d7681e734d6683ba3155961f097fc2a284765f222d5dcdf352ab2fac4eb11a07",
+        "at": "2026-10-27T16:08:33.718Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.718Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verification: invariants, site list, no floating promises, old paths, migration rows",
+    "summary": "Check the invariants that rest on the epic constraints against the code (a schema failure is never passed on; the client reaches the daemon only through IPC; a destructive call with no client is denied; provider-reaching code awaits serially), then add the site-list test (31 gh wrappers equal the github.ts exports, the client scan finds two sites, one named exemption and five no-site files), the compiler-API no-floating-promises scan, the old-paths-unchanged test (runGit, runGitAsync, runGh, commitAndPushArtifacts, the wrappers, createGitRunner and _setTrackerExecForTests still exported; the scan in report mode), and write the migration record rows.",
+    "size": "M",
+    "order": 19,
+    "acceptanceChecks": [
+      "the site list is complete and every site has a table row and a registry test",
+      "no unawaited TrackerPort, IssueOps, CloseIssue or loader call remains",
+      "the old paths are still exported unchanged and the scan is in report mode",
+      "each invariant resting on k2 to k5 has a named check that passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "site-list.test.ts: the 31 gh wrapper names in the table equal the github.ts gh exports; every site has a table row and a registry test; the migration record lists the rows"
+      },
+      {
+        "level": "unit",
+        "name": "cli-services-sites.test.ts: the scan of src/cli/services finds two sites, one named exemption and five no-site files"
+      },
+      {
+        "level": "unit",
+        "name": "no-floating-promises.test.ts: the compiler-API scan finds no unawaited TrackerPort, IssueOps, CloseIssue or loader call"
+      },
+      {
+        "level": "unit",
+        "name": "old-paths-unchanged.test.ts: the old paths are still exported unchanged and the scan stays in report mode"
+      }
+    ],
+    "planTaskId": "t19"
+  },
+  "citations": []
+}

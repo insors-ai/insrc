@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793076784116-q1sktn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T04:54:41.409Z",
+    "epicCreatedAt": "2026-10-27T04:54:41.409Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 97293,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "ecf8440c29a6aa99",
+    "epicSlug": "enforce-all-inclusive-review-budgets-exclude",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2bca9e829268bbbe6f0c6746dcc94c91c4d0f2df98efab7601c9b91a619f3f28",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T05:08:11.100Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "ecf8440c29a6aa99",
+      "slug": "EPIC-ecf8440c29a6aa99"
+    }
+  },
+  "body": {
+    "title": "Enforce all-inclusive review budgets and exclude generated history",
+    "reproduction": "1. Set review.chunkTokens to 128000 and review a Story whose rendered review material exceeds the limit. 2. Include tracked flat .insrc/artifacts/*.log.jsonl and *.feedback.jsonl files. 3. Observe the failed TU1 adherence run db3c4715-db9e-4d29-a509-ba049ea43f79: the planner split requests at a 384000-character limit into 371253- and 225429-character prompts (596682 rendered characters combined, including repeated context). The four JSONL files contributed 67233 raw bytes. 4. Planning admits these prompts based on serialized message text, without an inclusive allowance for the output schema, native CLI/tool context and completion/source-inspection growth. Expected: each actual review call is admitted only against one inclusive 128K budget, shared and hidden costs explicitly qualified/reserved, with safe subdivision or explicit inability to fit. Observed: the run eventually failed its 1200-second review deadline, but logs retain only the prepared plan and terminal failure, not completed chunk identities. The timeout is evidence of the failed run, not proof that context size alone caused its latency.",
+    "rootCause": "The shared job planner's sentChars and issued-call chars measure promptChars(envelopeMessages(...)): they include serialized message text and call-id instructions, but not the separate enveloped output schema, CLI/native tool framing, reserved completion or source-inspection session growth. Planning and retry/gather admission therefore enforce a prompt-text ceiling rather than an inclusive request budget. modelDimensionAdapter can execute these requests as source-inspecting reviewer sessions, whose additional native context is not exactly observable by this process. Separately, LEDGER_EXCLUDE_GLOBS excludes flat generated artifact .json but not .jsonl sidecars, allowing history into changed-file/freshness review inputs. runDimensionJob logs prepared/finished plans without persistent per-call completion/failure metadata, obscuring which chunk consumed the deadline. The existing splitter is installed and active; absence of splitting is not the defect.",
+    "fixIntent": "Make review.chunkTokens the all-inclusive per-model-call budget across single, chunk, retry, gather/reduce, relation and comparison paths. Account for shared prompts/context, call envelope, separate output schema, provider/native/tool overhead, reserved completion and source-inspection growth using one consistent policy and an execution-time guard. Treat the current 3-characters-per-token method as an estimate, not native measured token usage; distinguish qualified bounded execution from CLI-internal context that cannot be observed or bounded, and fail explicitly rather than assert a false hard guarantee. Reduce chunk payload to fit the remainder, preserve all required evidence across chunks, and fail clearly if mandatory context cannot fit. Exclude generated flat JSONL sidecars while preserving nested user-authored templates/formats. Persist content-free per-call/chunk identifiers, stage/role/attempt, budget breakdown, timing and outcome so stalls can be traced. Keep the 128K limit and existing timeouts; do not change global configuration, add cloud REST, retain prompts/transcripts, or modify TU1 usage-domain behavior. Complete this dependency fix and update/restart the daemon before retrying the pending TU1 review."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/job.ts:174-195",
+      "quotedText": "sentChars measures promptChars(envelopeMessages(...)); issue stores the separate envelope schema."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/driver.ts:78-96",
+      "quotedText": "Reviewer sessions and structured calls receive output schema separately from serialized messages."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/code-review.ts:255-280",
+      "quotedText": "runDimensionJob prepares the shared job and logs plans at prepared and finished."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: UoQNS4qD-rHZ8Db5Q4Pzww",
+      "quotedText": "Indexed createReviewJob, runReviewJob, modelDimensionAdapter and withDeadline; runDimensionJob caller confirmed. Graph coverage has stated limits."
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "/tmp/review-splitting-investigation.json",
+      "quotedText": "Recorded installed splitter match, 384000-character limit, two chunk sizes, JSONL input and 1200-second failure; all 46 targeted pipeline tests passed."
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "user instruction, 2026-10-27",
+      "quotedText": "ok, this needs to be fixed first. the 128K budget should be all inclusive"
+    }
+  ]
+}

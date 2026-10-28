@@ -1,0 +1,704 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1793165690260-izijtk",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T05:39:34.110Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 283848,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "authoredBy": "controller",
+    "revision": 6,
+    "envelope": {
+      "description": "PLAN-directed independent code review using scope-selected commit packets, on-demand evidence, complete coverage and durable recovery.",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "33b0f638e21067b647bcdd1eb1c70efb7b9046189ffd7adb0a7d00df6ea5a1a6",
+        "at": "2026-10-28T07:32:57.938Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 6,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 5,
+          "low": 13
+        },
+        "at": "2026-10-28T07:45:28.427Z",
+        "report": {
+          "entityId": "DEF-c32aa60534232f36",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-ef5dd80652dd782730e14607339bb176"
+        }
+      },
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T07:45:28.431Z"
+      }
+    }
+  },
+  "body": {
+    "title": "Review planned changes through agent investigation",
+    "flavor": "enhancement",
+    "summary": {
+      "prose": "Both indexed and diff-based code reviews investigate the same scope-selected commit packets against the approved work plan. Reviewers inspect source as needed; indexed review additionally finds callers of changed entities and assesses their impact. Evidence and progress survive interruptions, and completion accounts for every task and the scoped change while preserving independent review and human approval.",
+      "audience": "product"
+    },
+    "problem": "A Story's independent code review can spend most of its input repeating the same approved requirements across separately prepared source portions, then incur another model call for each requirement. Successive corrections to the same files enlarge the material again, while interrupted reviews discard accepted answers and restart successful work. Operators cannot reliably distinguish complete inspection from partial progress or understand the remaining work and consumption. Large changes therefore take disproportionate time and tokens to reach a trustworthy verdict, and repeated failures make that cost recur without a usable review record.",
+    "nonGoals": [
+      {
+        "text": "Replace design-document review or redesign the analyzer.",
+        "rationale": "This epic changes post-build code review; shared infrastructure must retain existing design-review behavior."
+      },
+      {
+        "text": "Change severity policy, weaken review criteria or automatically approve work.",
+        "rationale": "Accuracy and independent evidence remain the purpose of review."
+      },
+      {
+        "text": "Guarantee a fixed token saving or exact token counts where the provider supplies none.",
+        "rationale": "Savings require measurement; estimates and observed usage have different meanings."
+      },
+      {
+        "text": "Introduce a new token-usage warehouse, model catalog or client-specific delivery-board UI.",
+        "rationale": "Consume existing accounting contracts; those product capabilities belong to their own epics."
+      },
+      {
+        "text": "Recover model answers that were never persisted by historical runs.",
+        "rationale": "Legacy metadata cannot reconstruct lost answers."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Existing Story-attributed patch assembly is reusable as an input seam, subject to HLD validation; storyRangeDiff in src/workflow/code-review/grounding.ts:446-489 assembles selected units, not the new commit-packet contract.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The existing chunkCall and codeReviewGather adapters identify the static code-review execution being replaced; their requirements and evidence plumbing are reuse candidates, not the proposed agent investigation loop. [[c7]]",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "Existing CLI reviewer sessions have read-only execution support: codexReviewSessionArgs in src/agent/providers/cli-provider.ts:138-140 selects the read-only sandbox. This is a reusable provider seam, not proof that every new review permission boundary is already implemented.",
+        "confidence": "high",
+        "source": "c11"
+      },
+      {
+        "text": "Existing createReviewBudgetPolicy and measureReviewBudget in src/workflow/review-pipeline/budget.ts:86-149 provide estimated inclusive budgeting; the new continuation policy must integrate and validate these rather than assume their suitability.",
+        "confidence": "high",
+        "source": "c12"
+      },
+      {
+        "text": "Related tasks can be investigated together without prescribing one model call per task or requirement; quality and consumption must be established by evaluation.",
+        "confidence": "med",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Both indexed and diff-based reviews use the same detailed approved tasks, Story artifact references and immutable scope-selected commit packets with explicit commit identities, parent/merge provenance, relevant changed blocks and old/new line ranges. Generic base-to-HEAD, HEAD or working-tree diffs must not establish or widen scope; unrelated commits and unrelated hunks in shared commits are excluded or explicitly reported as ambiguous.",
+        "type": "stakeholder",
+        "source": "c10"
+      },
+      {
+        "id": "k2",
+        "text": "Review completion accounts for every task and acceptance check, all attributed changes including unplanned work, applicable approved design requirements and existing cross-cutting criteria. Missing evidence stays explicitly unverified and never becomes a fabricated pass.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k3",
+        "text": "Preserve independent reviewer identity, severity/verdict semantics, source freshness, human approval gates, and serial LLM dispatch through LLMProvider with CLI-only cloud access. Daemon owns persisted review state.",
+        "type": "invariant",
+        "source": "c3"
+      },
+      {
+        "id": "k4",
+        "text": "Accepted evidence and progress survive interruption; resume verifies source, contract and policy compatibility and enforces a single current owner. In-flight outcomes not durably accepted remain uncertain, never assumed successful.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k5",
+        "text": "Each continuation obeys the inclusive estimated request budget and explicit time policy. Repeated provider failures pause useful work promptly; no fixed call-per-clause or eager full-review dispatch is required.",
+        "type": "stakeholder",
+        "source": "c1"
+      },
+      {
+        "id": "k6",
+        "text": "Both daemon and controller code-review entrypoints preserve existing completion and artifact compatibility. Builds legitimately without a PLAN use their approved upstream contract and report the basis; they must not invent tasks.",
+        "type": "contract",
+        "source": "c4"
+      },
+      {
+        "id": "k7",
+        "text": "Measure consumed usage separately from allowances and estimates; retain attempt provenance across resume and represent unavailable provider usage as unknown. Reused persisted work must not be charged as a new call.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k8",
+        "text": "A successor may replace predecessor code-review chunking only after staged accuracy/coverage and recovery validation; design-document review remains compatible. Ambiguous concurrent-change attribution must be surfaced rather than silently including foreign work.",
+        "type": "contract",
+        "source": "c5"
+      },
+      {
+        "id": "k9",
+        "text": "Indexed review differs only by permitting caller queries for methods/entities changed in the selected commit packets and impact analysis from those results. Impact evidence is distinguished from changed implementation scope. Index identity, freshness, missing entities and incomplete caller coverage are disclosed; index results never select additional review commits or silently substitute for authoritative packet/source evidence.",
+        "type": "stakeholder",
+        "source": "c10"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Orient both review modes with approved work and scoped commit packets",
+        "userValue": "The reviewer knows what was promised and exactly which commits and changed blocks belong to the review, without unrelated repository changes creeping into scope.",
+        "dependsOn": [],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c9"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A built Story with an approved PLAN and LLD",
+            "when": "a review subject is prepared",
+            "then": "both review modes receive the same detailed task IDs, descriptions and acceptance checks, Story artifact references and immutable packets identifying only relevant commits, parent/merge provenance, attributed files and changed blocks with old/new line ranges, including added, deleted, renamed and binary files.",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "Successive Story commits and concurrent foreign edits to shared files",
+            "when": "the manifest is prepared",
+            "then": "only the explicitly scoped commit packets and relevant hunks are admitted; unrelated commits and unrelated hunks in shared commits do not enter the review through a generic HEAD or working-tree diff. Intermediate edits retain provenance, and packet grouping/navigation may reduce repetition without replacing that provenance with an unscoped net diff. Ambiguous attribution is reported and prevents a misleading complete subject; exact before/after source remains navigable.",
+            "operationalizes": [
+              "k1",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "A build route legitimately lacks a PLAN, or an index is unavailable",
+            "when": "the subject is prepared",
+            "then": "the approved upstream contract is identified without inventing tasks; the same commit-packet review and source navigation work without the index, and index completeness is never assumed.",
+            "operationalizes": [
+              "k1",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "Approved artifacts or source have changed since a manifest was created",
+            "when": "that subject is opened for investigation",
+            "then": "the mismatch is reported and mixed-revision evidence is not silently accepted.",
+            "operationalizes": [
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Both review modes navigate the same immutable scope-selected commit packets and approved obligations without unrelated commits or hunks entering through generic repository diffs."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Track what the review has established and what remains unverified",
+        "userValue": "Users and reviewers can distinguish inspected evidence, unresolved questions and missing coverage.",
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "An attributed review subject and approved expectations",
+            "when": "coverage is initialized and updated",
+            "then": "every task and acceptance check, applicable approved design obligation, changed block or explicit non-text change, and cross-cutting review criterion remains identifiable with its inspected evidence, findings or reason it is unresolved.",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A reviewer relates several tasks to shared evidence",
+            "when": "coverage is recorded",
+            "then": "that evidence can support multiple expectations with traceable source references; a note or claimed pass without supporting inspection cannot silently satisfy coverage.",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "A file is removed, a change falls outside the plan or evidence is unavailable",
+            "when": "the reviewer records disposition",
+            "then": "the change remains in the ledger with an explicit assessment or unresolved reason rather than disappearing from scope.",
+            "operationalizes": [
+              "k2",
+              "k8"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Review coverage exposes evidence and unresolved work across approved expectations and the entire change."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Investigate related tasks and source on demand within bounded review continuations",
+        "userValue": "The independent reviewer chooses the evidence it needs and handles related work together without repetitive source packets or a mandatory call for each requirement.",
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "sizeEstimate": "XL",
+        "existingCapabilityRefs": [
+          "c9"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A fixed subject with related tasks and an empty coverage ledger",
+            "when": "the reviewer investigates",
+            "then": "both review modes choose necessary packet blocks, surrounding source, helpers and tests and may assess related obligations together, without mandatory eager chunking or one call per clause. Indexed mode additionally queries callers of methods/entities changed in those packets and investigates their impact; affected callers are labeled contextual impact evidence rather than new changed implementation scope.",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A continuation approaches its admitted request or time allowance",
+            "when": "it needs further evidence",
+            "then": "it yields an explicit continuation with coverage and pending work, preserves evidence references and uncertainty, and does not truncate required evidence or claim completion; inaccurate index results do not replace source inspection.",
+            "operationalizes": [
+              "k2",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "Provider failures recur or a user cancels",
+            "when": "the current continuation stops",
+            "then": "remaining work is paused with a typed reason and useful progress, retries are bounded without attempting the full pending backlog first, and no fabricated verdict is produced.",
+            "operationalizes": [
+              "k4",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "A reviewer can inspect repository content",
+            "when": "it conducts a review",
+            "then": "review operations remain read-only, untrusted repository text cannot change review policy or tool permissions, independent-party rules hold and LLM calls remain serial through approved providers.",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "An indexed review has stale, missing or incomplete caller data for a changed method or entity",
+            "when": "impact analysis is requested",
+            "then": "the reviewer discloses index freshness and coverage limits, records unresolved impact questions and can use authoritative source evidence; it neither treats missing callers as proof of no impact nor widens the selected commit set.",
+            "operationalizes": [
+              "k2",
+              "k9"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The reviewer investigates evidence on demand, shares related reasoning and yields bounded continuations when work remains."
+          },
+          {
+            "statement": "Review execution handles provider failure and cancellation without spending through the remaining backlog."
+          },
+          {
+            "statement": "Indexed review can discover callers of changed methods/entities and assess their impact without changing the scoped commit packets used by both review modes."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Resume interrupted reviews from durable accepted progress",
+        "userValue": "An interruption does not force users to pay for repeating evidence and reasoning that were already accepted.",
+        "dependsOn": [
+          "s2",
+          "s3"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "Several continuation results have been durably accepted",
+            "when": "a worker or daemon crashes and the review is resumed",
+            "then": "accepted evidence, coverage and outstanding work are restored and accepted work is not dispatched again; legacy runs without such records are explicitly non-resumable.",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A provider may have responded but the result was not durably accepted",
+            "when": "recovery inspects the interrupted attempt",
+            "then": "its outcome is marked uncertain with its attempt identity; it is not treated as success or guaranteed free of duplicate external execution, and any retry is recorded.",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "Two sessions resume the same review or a prior worker returns late",
+            "when": "results are submitted",
+            "then": "only the current owner can advance accepted progress and terminal publication cannot be duplicated.",
+            "operationalizes": [
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "Source, approved contracts, review policy, evidence format or relevant provider/tool compatibility differs from the checkpoint",
+            "when": "resume is requested",
+            "then": "reuse is explicitly validated and incompatible work is invalidated or refused with a reason; inactive elapsed time and remaining execution allowance follow a declared policy rather than silently resetting budgets.",
+            "operationalizes": [
+              "k3",
+              "k4",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "Work is reused, retried or has unavailable provider usage",
+            "when": "consumption is recovered",
+            "then": "attempt provenance survives, accepted replay is not counted as a new model call and observed usage, estimates and unknown usage remain distinct.",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Compatible accepted review progress survives failures and can be resumed safely by one current owner."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Publish one independent verdict only after accountable review coverage",
+        "userValue": "A completed review means the approved work and the whole change were assessed, rather than just that the agent stopped.",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "The reviewer requests completion",
+            "when": "required coverage and evidence are checked",
+            "then": "all tasks and acceptance checks, applicable LLD requirements, changed scope and cross-cutting criteria have explicit evidence-backed dispositions; unresolved required evidence prevents a successful complete verdict and remains visible.",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A claimed pass lacks source evidence, a change is unplanned, or approved requirements conflict",
+            "when": "completion is assessed",
+            "then": "unsupported coverage is rejected, unplanned work is judged, and requirement conflicts surface for a human decision rather than being silently weakened or reinterpreted.",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "A review reaches a terminal result or repeats a terminal request after recovery",
+            "when": "the result is published",
+            "then": "one compatible code-review record links the subject and coverage evidence, existing severity/verdict and human approval semantics remain intact, and partial or failed execution is not a passing CR.",
+            "operationalizes": [
+              "k3",
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "The reviewed source or approved contract changes before publication",
+            "when": "completion is requested",
+            "then": "stale review evidence is rejected for the new revision and the user sees why further review is required.",
+            "operationalizes": [
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Completion verifies evidence-backed review coverage and publishes a single current independent code-review result."
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Adopt the new review mechanism with visible progress and verified quality",
+        "userValue": "Users can use either supported entrypoint, understand work and consumption, and trust the migration before legacy code-review execution is retired.",
+        "dependsOn": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A supported daemon or controller code-review entrypoint starts or resumes a review",
+            "when": "the new mechanism is selected",
+            "then": "both entrypoints and both grounding modes use the same scoped commit packets, PLAN-directed investigation, evidence, continuation, recovery and completion semantics. Indexed mode differs only in caller lookup and impact analysis; small and planless builds remain supported and no generic HEAD or working-tree diff silently changes scope.",
+            "operationalizes": [
+              "k3",
+              "k6",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A review is prepared, running, paused or complete",
+            "when": "a client requests status",
+            "then": "it sees review identity, pending/covered work, failures and resume availability plus estimated allowances and observed or unknown usage; a preflight estimate explains uncertainty instead of promising an exact autonomous call count.",
+            "operationalizes": [
+              "k5",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "The new engine is considered for default use",
+            "when": "representative defect-detection, cross-file, unplanned-change, planless, concurrency, crash and freshness scenarios are evaluated",
+            "then": "required coverage and independently adjudicated defect detection do not regress; time, calls and repeated input are compared against recorded baselines. Routine tests use deterministic providers, live comparisons are separately authorized and no full legacy review is required for every iteration.",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "Migration is enabled or rolled back",
+            "when": "legacy code-review paths and shared infrastructure are managed",
+            "then": "the successor explicitly supersedes predecessor code-only chunk/gather requirements at adoption, existing review artifacts remain readable, rollback has a declared compatibility boundary and design-document review behavior is preserved.",
+            "operationalizes": [
+              "k6",
+              "k8"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "All supported code-review entrypoints expose compatible execution, progress, recovery and consumption information."
+          },
+          {
+            "statement": "The system can adopt or roll back the new mechanism only with explicit compatibility and quality evidence."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261028c32aa605:FR001",
+          "statement": "A reviewer can investigate approved tasks and changed implementation on demand from a fixed, attributed review subject without repeated full-context source partitions.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261028c32aa605:FR002",
+          "statement": "A review exposes evidence-backed coverage and unresolved work for the entire change and cannot publish a successful completion with missing required coverage.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261028c32aa605:FR003",
+          "statement": "Interrupted work resumes from compatible durable progress without rerunning already accepted work, and concurrent owners cannot corrupt or duplicate finalization.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261028c32aa605:FR004",
+          "statement": "Operators can distinguish progress, failures, uncertainty, estimated allowances and observed usage across all review entrypoints and resumptions.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261028c32aa605:FR005",
+          "statement": "The new code-review mechanism can be introduced and evaluated while preserving independent review, approval policy and existing design-review behavior.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261028c32aa605:S001:FR001",
+          "statement": "Both review modes navigate the same immutable scope-selected commit packets and approved obligations without unrelated commits or hunks entering through generic repository diffs.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261028c32aa605:S002:FR001",
+          "statement": "Review coverage exposes evidence and unresolved work across approved expectations and the entire change.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261028c32aa605:S003:FR001",
+          "statement": "The reviewer investigates evidence on demand, shares related reasoning and yields bounded continuations when work remains.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261028c32aa605:S003:FR002",
+          "statement": "Review execution handles provider failure and cancellation without spending through the remaining backlog.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261028c32aa605:S004:FR001",
+          "statement": "Compatible accepted review progress survives failures and can be resumed safely by one current owner.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261028c32aa605:S005:FR001",
+          "statement": "Completion verifies evidence-backed review coverage and publishes a single current independent code-review result.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261028c32aa605:S006:FR001",
+          "statement": "All supported code-review entrypoints expose compatible execution, progress, recovery and consumption information.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E20261028c32aa605:S006:FR002",
+          "statement": "The system can adopt or roll back the new mechanism only with explicit compatibility and quality evidence.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E20261028c32aa605:S003:FR003",
+          "statement": "Indexed review can discover callers of changed methods/entities and assess their impact without changing the scoped commit packets used by both review modes.",
+          "scope": "item",
+          "itemRef": "s3"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "stakeholder",
+      "ref": "Conversation: PLAN-directed review proposal and instruction to define the epic, 2026-10-28",
+      "quotedText": "send the task list, the reference to the story (path) and the change set (files with changed blocks, line ranges) and then lets the agent figure out what it needs for each"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:446-489"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "Project instructions supplied in this conversation, LLM provider abstraction and architectural rules"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/subject.ts:121-177"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md:27-34"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/adapters/code-review-chunk.ts:141-164"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/adapters/code-review-gather.ts:156-184"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/code-review.ts:159-220",
+      "quotedText": "modelDimensionAdapter prepares material and configures source inspection, chunk calls and gather for a review dimension."
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "Conversation: unified commit-packet review scope clarification, 2026-10-28",
+      "quotedText": "both index based review and diff review should work in the same way. should be given commit packet(s) only commits relevant to this review scope (no generic diff with HEAD, this causes other changes to creep in). the only difference with the indexed review is that the indexer can be queried to find callers of any method/entity that has changed in this scope and do an impact analysis"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:138-140"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/budget.ts:86-149"
+    }
+  ]
+}

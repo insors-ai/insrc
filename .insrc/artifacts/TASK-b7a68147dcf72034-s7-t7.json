@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-02efbc5a-2a9a-4a4d-81b2-6bb62365acdd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.472Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Four new git tools",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c250b01b85a9dc0ec3a047a08b287c547b1d020472d35f2684002e29d9f93411",
+        "at": "2026-10-26T18:21:16.472Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.473Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Four new git tools",
+    "summary": "Add git_config, git_ls_remote, git_update_ref and git_rm with the LLD's argv, outputs, limits and classes, SAFE_REF equal to isSafeRefName as one Unicode pattern, SAFE_PATH forbidding only NUL, every safety condition in the input schema; list them and mark them built by s7 in the coverage table.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "The SAFE_REF pattern and isSafeRefName agree over one corpus",
+      "Unsafe input is rejected by the schema before any approval, with or without a subscriber",
+      "git_config exit 1 with empty stdout is found false; empty ls-remote output is a success with empty lists",
+      "update-ref of an absent ref and rm of an untracked path succeed; both ask for valid input"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-config.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-ls-remote.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-update-ref.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-rm.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-safe-ref-equivalence.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-unsafe-before-approval.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-registration.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

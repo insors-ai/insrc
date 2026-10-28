@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-10ded371-26ee-447a-9b12-f3ff45c1ccde",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T06:35:54.418Z",
+    "epicCreatedAt": "2026-10-27T05:20:21.762Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a8c4399a90185f7f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Enforce exact terminal verdict and template coverage",
+      "parent": {
+        "entityId": "STORY-a8c4399a90185f7f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a8c4399a90185f7f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a8c4399a90185f7f-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "76416750de68856733aaa542585972ee5a1f18f843de78e51ed8664bd9525224",
+        "at": "2026-10-27T06:35:54.421Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T06:35:54.422Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Enforce exact terminal verdict and template coverage",
+    "summary": "Add exact expected-set and assigned-subset validation to design-review final handlers/continuation aggregation before normalization or persistence. Cover empty, partial, duplicate, unknown and wrong-subset IDs explicitly; prepare the versioned terminal envelope/atomic-owner path for complete controller integration.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "Every expected claim appears exactly once; each pending verification call returns exactly its assigned subset and final aggregation equals the immutable full set.",
+      "Empty replies for nonempty expected claims, unknown IDs, duplicate IDs (even identical), missing IDs and wrong subsets produce safe typed errors and zero persistence, rather than silent dropping or partial findings.",
+      "A legitimately empty expected set is accepted only after complete validated extraction; findings/template items retain exact expected coverage before completion.",
+      "Terminal envelope IDs/version/profile/deadline are decoded and validated under the atomic owner before existing semantic/source/lifecycle checks; raw legacy final arrays cannot bypass the new path.",
+      "Concurrent duplicate final replies cause at most one artifact write; validation failures before side effects preserve a correctable continuation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts: exact expected claim and assigned subset sets reject empty partial duplicate unknown and replayed verdicts before writes"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts: exact template-item coverage and atomic terminal recovery prevent premature or duplicate completion"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

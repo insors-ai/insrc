@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8cc2dafd-8db9-4410-a0dd-ca683f18b71b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.699Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Replacement table: organisation, project, scope, login and url rows",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "26bd198bb50b5f2d45d51e8e88b10c989cd42316ce0c335035744ea1c348c14f",
+        "at": "2026-10-27T16:08:33.700Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.700Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replacement table: organisation, project, scope, login and url rows",
+    "summary": "Add the rows for ghTokenScopes, ghListOrgIssueTypes, ghCreateOrgIssueType, ghCreateProject, ghFindProjectByTitle, ghAddProjectSingleSelectField, ghAddProjectItem (gh:project:item-add), ghListRepoIssueUrls and ghCurrentLogin with the same old-result and failure rules.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "one recorded-executor case per row returns the old value and failure kind",
+      "ghCreateProject, ghFindProjectByTitle, ghAddProjectSingleSelectField and ghAddProjectItem return null or false only for gh failures and throw on denial and on schema failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registry-table.test.ts: one case per organisation, project, scope, login and url row, with null, false and [] only for gh failures"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

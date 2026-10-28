@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-74e44d28-987f-439b-afd8-e1c4333d377d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.463Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Effective call signal, cleared hook context and executor checks",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9a28a0a8f23a22535f02b1f4d8f84e684ddcc5f992c954eeb2564dde82a62bf8",
+        "at": "2026-10-26T18:21:16.463Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.464Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Effective call signal, cleared hook context and executor checks",
+    "summary": "Add tool-signal.ts (module-private AsyncLocalStorage, runWithToolSignal, runWithoutToolSignal, currentToolSignal, effectiveToolSignal). In executeTool resolve one effective signal, run buildApprovalRequest and tool.execute inside it, run hooks through runWithoutToolSignal, pass the signal to the broker's ask and to every cancellation check; keep runToolHooks' real signature (input unknown, readonly result).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "An aborted effective signal returns denied with cancelled before the preview, after it, before the ask and before execute",
+      "A nested call's pending approval resolves cancelled when the outer signal aborts",
+      "currentToolSignal() is undefined inside hooks, nested calls included",
+      "A call with no signal behaves as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/executor-abort.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/tool-signal.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/hooks-context.test.ts"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

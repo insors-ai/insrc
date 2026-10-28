@@ -28,7 +28,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
         "contentHash": "16e637e306c1a73a57223f8dbbf5dff1d7ab36d98b5bf0abac5077965f53402c",
@@ -48,19 +48,28 @@
           "properties": {}
         },
         "party": "daemon",
-        "verdict": "warn",
+        "verdict": "pass",
         "counts": {
           "high": 0,
           "med": 0,
           "low": 10
         },
-        "at": "2026-10-26T08:14:05.578Z",
+        "at": "2026-10-26T11:08:46.269Z",
         "report": {
           "entityId": "HLD-c66d49bb81925886",
           "type": "change-log-entry",
           "relation": "reviews",
           "fragment": "review-1b5b550a2da06a465930fe70b0acc7ef"
         }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T11:08:46.278Z"
       }
     }
   },

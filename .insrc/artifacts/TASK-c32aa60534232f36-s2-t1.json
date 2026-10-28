@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5faad7c0-c52d-4f06-b7b1-b6d95eec0c84",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:34:48.703Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Define sc2 ledger contracts and immutable basis",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "576256c02668509ad9553a3a4851b0741d29eae5c9454a050545815f15370fff",
+        "at": "2026-10-28T13:34:48.703Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:34:48.704Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define sc2 ledger contracts and immutable basis",
+    "summary": "Add exact sc2 EvidenceV1/CoverageV1/ReviewLedgerV1 types and typed catalog, trusted-receipt, attempt and delta inputs in ledger-types.ts. Reuse s1 canonical snapshot/hash/freeze helpers and explicit metadata/count limits.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Exact HLD sc2 fields retained; sc1/sc6 imported, never duplicated or redesigned.",
+      "Trusted adapter outputs remain separate from reviewer proposals; named ReviewLedgerError causes and typed limits explicit.",
+      "Canonical IDs bind subject, requirement namespace and provenance; defensive copies/frozen outputs reject invalid or oversized metadata.",
+      "Focused contract/identity tests pass; no store, model, MCP or verdict implementation."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sc2 contracts, canonical identities and bounded immutable values"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

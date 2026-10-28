@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c6cb0df5-191e-4552-a93e-e5cf29dd7f1e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:34:48.706Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Admit evidence only from verified inspection receipts",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "202e5a75e33f338971f527b3d86aa7140022339028d5427d5b736b2be6f958bf",
+        "at": "2026-10-28T13:34:48.706Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-28T13:34:48.706Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Admit evidence only from verified inspection receipts",
+    "summary": "Add evidence validation/admission helpers for source, artifact, test and index-impact evidence. Bind authenticated attempt, subject pins, immutable content and inspected bounds; preserve completeness and originating attempt.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Reject forged/mismatched source metadata, reference/range/subject/attempt and changed-scope claims; context and caller impact cannot create changed scope.",
+      "Reuse sc1/sc6 receipts; verified adapters supply path/revision or test/index metadata absent from minimal read receipt; no execution or graph query in sc2.",
+      "Complete read of failed/skipped test or stale/incomplete index is not proof of a passing test/no impact; limitations and native result provenance remain explicit.",
+      "Identical evidence replay idempotent, conflicting content under same ID rejected, original attempt retained; focused provenance tests pass."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Trusted receipt admission, provenance, completeness and replay"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-07af2537-799c-4b4a-92f5-68f96c7be383",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.340Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement bounded canonical source identity",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "be97996feefce5066cd868c607bbf4e5b2b50e06534b96efece13b7515cc5624",
+        "at": "2026-10-26T14:52:34.563Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.340Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Implement bounded canonical source identity",
+    "summary": "Implement proposed src/workflow/usage/canonical.ts for strict safe-data traversal, canonical source bytes and the usage-specific digest. Ignore only service-assigned sequence/recordedAt/digest; keep capture owner and all typed source payload in identity.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Reordered object keys produce equal identity; changed source payload/owner is different; changing only service metadata does not create another source event.",
+      "Object inputs use one central usage-domain safe snapshot/serialization boundary; getters/toJSON/custom prototypes/cycles/sparse arrays/symbols/undefined/invalid Unicode and unsafe values are rejected without invoking hooks. Traversal, retained bookkeeping and output are bounded; initial JavaScript own-key enumeration allocation is excluded. Oversized arrays are rejected before key enumeration.",
+      "16 KiB/depth/node limits and the exact domain-separated SHA-256 format are enforced; existing lifecycle/design-corpus canonicalizers remain unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/identity.test.ts: source equality versus server metadata, owner/payload conflicts, canonical key order and unsafe getter/prototype/cycle/Unicode/limit inputs"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

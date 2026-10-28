@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2a08d8c4-9891-4949-a28d-297bcb80d0f8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T12:50:51.348Z",
+    "epicCreatedAt": "2026-10-26T04:57:41.638Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c66d49bb81925886",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify source capability evidence and fixtures",
+      "parent": {
+        "entityId": "STORY-c66d49bb81925886-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c66d49bb81925886-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c66d49bb81925886-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "49fecc5d268c519c666cfa7548389d3307b9dfdec871cda7edd14cb249a72393",
+        "at": "2026-10-26T12:50:51.348Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T12:50:51.349Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify source capability evidence and fixtures",
+    "summary": "Complete the source-capability survey and proposed src/workflow/usage/__tests__/fixtures/source-capabilities.v1.json using exact inspected source revisions/tool versions and sanitized contract envelopes. Extend capability validation fixtures without adding native adapters or live capture.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "Survey records evidence/version, granularity, physical-call coverage, input/cache/reasoning conventions and qualification status for every entry.",
+      "Ollama final/missing-counter/warm-up source cases preserve absent metrics; CLI/native leaf visibility is marked unknown unless qualified evidence proves it.",
+      "Invocation aggregates, cumulative snapshots and synthetic external-host declarations cannot be relabeled complete physical calls; estimates cannot replace missing reported counters.",
+      "No transcripts/credentials or historical backfill are retained; no provider, controller-host or daemon telemetry implementation is added."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/usage/__tests__/source-capabilities.test.ts: version/source-evidence survey, Ollama absent counters, CLI aggregate/cumulative/unknown leaf and explicitly synthetic external-host cases"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

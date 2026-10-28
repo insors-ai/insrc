@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2e14363-2dc9-4743-8410-04d9f7ae8531",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-26T18:21:16.476Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s7",
+    "envelope": {
+      "description": "tools.call stream method",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5d1f319d824fca1f53fa2469b63e5b9ae89880a923e77144d23cdfc8a21e6c08",
+        "at": "2026-10-26T18:21:16.476Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-26T18:21:16.476Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "tools.call stream method",
+    "summary": "Add call-handler.ts, ToolsCallParams and ToolsCallDone types, the streamHandlers entry and the method-class entry; validate params, build ToolDeps with the sessionId rule, send one done frame, abort on stream close.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "Invalid params give one invalid-params error frame; an unknown tool gives a done frame with a rejected result",
+      "Closing the stream cancels the preview, nested approvals and running subprocess trees within the bound",
+      "A hook runs for caller workflow and a destructive call with no subscriber is denied no-client"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/call-handler.test.ts"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/call-tool-workflow.test.ts"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/tools-call-cancellation.test.ts"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/method-class.test.ts"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

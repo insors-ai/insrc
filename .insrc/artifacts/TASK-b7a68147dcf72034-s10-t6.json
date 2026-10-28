@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-51ecf92d-beb0-4aaf-86cd-759ac6e9267b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-27T16:08:33.701Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Replacement table: auth, origin, adapter assignee and pull request rows",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s10-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5675725e9fac1498a7d83c820051994ed25b1bd70243ab3fc6066e80b3715a92",
+        "at": "2026-10-27T16:08:33.701Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-27T16:08:33.701Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replacement table: auth, origin, adapter assignee and pull request rows",
+    "summary": "Add the ghAuthOk form returning the {ok, reason} result, gitOriginOwnerRepo over git_remote and parseGithubRemoteUrl, the adapter's direct rows (readAssignees, setAssignee and addAssignee with the re-read checks, openPullRequestOf, the pull request create with the PULL_URL_RE parse, readSignoffState and readSignoffRequest over gh_pr_view jsonFields), the openSignoffRequest inner catch that rethrows ToolDenied and logs other failures, and the attach.ts tracked check over git_ls_files, git_status and git_log.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "assignee read, set and add keep their validations, re-read checks and error messages",
+      "a denied signoff link comment fails the stage and a retry reuses the open pull request",
+      "an untracked file (empty git_ls_files list) is refused with the old reason",
+      "ghAuthOk form returns {ok:true} and {ok:false, reason} as tracker-auto reads them"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registry-table.test.ts: ghAuthOk form, gitOriginOwnerRepo form and the attach tracked-check rows"
+      },
+      {
+        "level": "unit",
+        "name": "adapter-registry.test.ts: assignee read, set and add with the re-read checks, signoff pull request list, create and view rows, a denied link comment and a retry that reuses the open pull request"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

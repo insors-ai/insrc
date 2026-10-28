@@ -304,7 +304,7 @@ test('an under-limit DEF review makes one extract call, a probe and one verify c
 			const v = buildVerifyPrompt(claim, evidence.find(e => e.claimId === claim.id)!);
 			assert.deepEqual(seen[i + 1]!.messages, [{ role: 'system', content: v.system }, { role: 'user', content: v.user }]);
 			assert.ok(asText(seen[i + 1]!.messages).includes('src/a.ts'), 'the probe\'s matches reached the judgement');
-			assert.equal(seen[i + 1]!.opts?.timeoutMs, VERIFY_CALL_TIMEOUT_MS, 'the design-verify cap');
+			assert.equal(seen[i + 1]!.opts?.timeoutMs, Math.min(VERIFY_CALL_TIMEOUT_MS, 300_000), 'the five-minute review cap');
 			assert.equal(seen[i + 1]!.opts?.stallMs, VERIFY_CALL_STALL_MS, 'the design-verify silence limit');
 			assert.equal(seen[i + 1]!.opts?.cwd, repo, 'the repo as cwd, the one addition');
 		});
@@ -364,7 +364,7 @@ test("an under-limit HLD review makes one reviewer-session call and gives today'
 		const { system, user } = buildTemplateReviewPrompt(SPEC_TEMPLATE, HLD, 'design.epic');
 		assert.equal(sessions[0]!.prompt, `${system}\n\n${user}`, "today's session prompt");
 		assert.equal(sessions[0]!.opts.cwd, repo);
-		assert.equal(sessions[0]!.opts.deadlineMs, 600_000, 'the whole limit');
+		assert.equal(sessions[0]!.opts.deadlineMs, 300_000, 'the five-minute review cap');
 		assert.equal(sessions[0]!.opts.internalRetry, false);
 		// Today's report: the checklist's findings, today's verdict rule, the template named.
 		const expected = validateTemplateAnswer(SPEC_TEMPLATE, templateAnswer() as never);

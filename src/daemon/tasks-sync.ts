@@ -58,30 +58,53 @@ export async function syncPlanTasks(planJsonPath: string): Promise<SyncResult> {
 	}
 }
 
-/** The follow-on of a plan approval at the daemon: sync the Task set, then push the Tasks' issues. */
+/**
+ * The Task reconciliation of one approved plan as its follow-on entry, without publishing. `stop` is true when nothing after it should
+ * run (a denied tracker call, or an error that left the Task set unusable); `sync` is the reconciliation when it was made.
+ */
+export async function reconcilePlanFollowOn(path: string): Promise<{ readonly entry: FollowOnOutcome; readonly sync?: SyncResult; readonly stop: boolean }> {
+	let sync: SyncResult;
+	try { sync = await syncPlanTasks(path); }
+	catch (err) {
+		// a denied tracker call stopped the reconciliation: reported on this entry with what was done, and nothing is published after it
+		if (!isToolDenied(err)) throw err;
+		const partial = err instanceof TaskSyncDenied ? err.partial : undefined;
+		return {
+			stop: true,
+			entry: {
+				kind: 'tasks-sync', artifactPath: path, ok: false, note: `the Task reconciliation stopped: ${err.toolId} was denied (${err.reason}); repeat the approval to finish it`,
+				denied: { toolId: err.toolId, reason: err.reason },
+				...(partial !== undefined ? { tasks: { created: [...partial.created], changed: [...partial.changed], withdrawn: [...partial.withdrawn], added: [...partial.added] } } : {}),
+			},
+		};
+	}
+	if ('error' in sync) return { stop: true, entry: { kind: 'tasks-sync', artifactPath: path, ok: false, note: sync.error, taskSync: sync } };
+	return {
+		stop: false, sync,
+		entry: {
+			kind: 'tasks-sync', artifactPath: path, ok: sync.closeFailed.length === 0,
+			note: sync.closeFailed.length > 0 ? `${sync.closeFailed.length} issue(s) of withdrawn Tasks could not be closed` : 'Tasks synced',
+			tasks: { created: sync.created, changed: sync.changed, withdrawn: sync.withdrawn, added: sync.added },
+			taskSync: sync,
+		},
+	};
+}
+
+/** Whether `path` is a plan artifact's json. */
+export const isPlanJson = (path: string): boolean => basename(path).startsWith('PLAN-') && path.endsWith('.json');
+
+/** The follow-on of a plan approval that reconciles the Task set and then pushes the Tasks' issues (the pipeline does the two as separate steps). */
 export async function followOnTasksSync(approved: WorkflowApproveResult['approved'], _repoPath: string): Promise<FollowOnOutcome[]> {
 	const out: FollowOnOutcome[] = [];
 	for (const { path } of approved) {
-		if (!basename(path).startsWith('PLAN-') || !path.endsWith('.json')) continue;
-		let sync: SyncResult;
-		try { sync = await syncPlanTasks(path); }
-		catch (err) {
-			// a denied tracker call stopped the reconciliation: reported on this entry with what was done, and the Tasks' issues are not pushed
-			if (!isToolDenied(err)) throw err;
-			const partial = err instanceof TaskSyncDenied ? err.partial : undefined;
-			out.push({
-				kind: 'tasks-sync', artifactPath: path, ok: false, note: `the Task reconciliation stopped: ${err.toolId} was denied (${err.reason}); repeat the approval to finish it`,
-				...(partial !== undefined ? { tasks: { created: [...partial.created], changed: [...partial.changed], withdrawn: [...partial.withdrawn], added: [...partial.added] } } : {}),
-			});
-			continue;
-		}
-		if ('error' in sync) { out.push({ kind: 'tasks-sync', artifactPath: path, ok: false, note: sync.error }); continue; }
+		if (!isPlanJson(path)) continue;
+		const r = await reconcilePlanFollowOn(path);
+		if (r.stop || r.sync === undefined || 'error' in r.sync) { out.push(r.entry); continue; }
 		const push = await autoPushTasksOnPlan(path);
 		const failed = push.status === 'failed';
 		out.push({
-			kind: 'tasks-sync', artifactPath: path, ok: !failed && sync.closeFailed.length === 0,
-			note: failed ? `the Task issues were not pushed: ${push.reason}` : sync.closeFailed.length > 0 ? `${sync.closeFailed.length} issue(s) of withdrawn Tasks could not be closed` : `Tasks synced; issues ${push.status}`,
-			tasks: { created: sync.created, changed: sync.changed, withdrawn: sync.withdrawn, added: sync.added },
+			...r.entry, ok: !failed && r.sync.closeFailed.length === 0,
+			note: failed ? `the Task issues were not pushed: ${push.reason}` : r.sync.closeFailed.length > 0 ? `${r.sync.closeFailed.length} issue(s) of withdrawn Tasks could not be closed` : `Tasks synced; issues ${push.status}`,
 		});
 	}
 	return out;

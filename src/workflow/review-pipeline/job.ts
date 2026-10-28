@@ -255,7 +255,7 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 
 // -- deadline ----------------------------------------------------------------
 
-/** Ten minutes per admitted logical leaf, measured from one original epoch. */
+/** Five minutes per admitted logical leaf, measured from one original epoch. */
 export { REVIEW_WORK_UNIT_MS } from '../../shared/review-execution-time.js';
 function withDeadline(job: ReviewPipelineJob, now: number | undefined): ReviewPipelineJob {
 	const count = job.workUnits.filter(unit => !unit.replaced).length;
@@ -286,7 +286,7 @@ export function nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown
 	return job.pending.map(c => {
 		const execution = c.execution;
 		const selected = execution.mode === 'reviewer-session' ? execution.deadlineMs : (execution.timeoutMs ?? REVIEW_WORK_UNIT_MS);
-		const cap = Math.min(remaining, selected, HARD_REVIEW_DEADLINE_MS);
+		const cap = Math.min(remaining, selected, REVIEW_WORK_UNIT_MS, HARD_REVIEW_DEADLINE_MS);
 		return { ...c, execution: execution.mode === 'reviewer-session'
 			? { ...execution, deadlineMs: cap } : { ...execution, timeoutMs: cap } };
 	});
@@ -297,7 +297,7 @@ export function deadlineError(job: ReviewPipelineJob, adapter: ReviewAdapter<unk
 	const budget = job.deadlineBudgetMs ?? 0;
 	const timing = reviewTiming(job, now);
 	const error = adapter.deadlineError?.(budget, timing) ?? new ReviewSessionTimeoutError(budget);
-	error.message += ` (${timing.logicalWorkUnits} work chunks × 10 minutes = ${budget}ms total)`;
+	error.message += ` (${timing.logicalWorkUnits} work chunks × ${REVIEW_WORK_UNIT_MS / 60_000} minutes = ${budget}ms total)`;
 	return Object.assign(error, { timeoutKind: 'review-job', limitMs: budget, timing: reviewTiming(job, now) });
 }
 

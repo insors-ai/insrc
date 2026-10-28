@@ -61,3 +61,25 @@ export async function handleWorkflowApprove(
 	const followOn = await deps.followOn(result.approved, repoForStore);
 	return followOn !== undefined && followOn.length > 0 ? { ...result, followOn } : result;
 }
+
+/**
+ * `workflow.approvePipeline` (Story s10): one artifact approved and carried through the approve pipeline. `withTracker` (default true)
+ * false stops after the approval and the Task reconciliation. Answers the approval and every follow-on entry, or `{ error }` when the
+ * approval was refused (a review block, a team refusal, a missing artifact) so the client reports it as it reported the thrown error.
+ */
+export async function handleApprovePipeline(
+	params: unknown,
+	repoEnv: string | undefined,
+	followOnFor: (withTracker: boolean) => NonNullable<WorkflowApproveDeps['followOn']>,
+	deps: Omit<WorkflowApproveDeps, 'followOn'> = {},
+): Promise<{ readonly approval: WorkflowApproveResult['approved'][number]['result']; readonly followOn: NonNullable<WorkflowApproveResult['followOn']>; readonly codeReview: WorkflowApproveResult['codeReview'] } | { error: string }> {
+	const p = (params ?? {}) as { artifactPath?: unknown; withTracker?: unknown };
+	if (typeof p.artifactPath !== 'string' || p.artifactPath.length === 0) return { error: 'workflow.approvePipeline: `artifactPath` is required' };
+	if (p.withTracker !== undefined && typeof p.withTracker !== 'boolean') return { error: 'workflow.approvePipeline: `withTracker` must be a boolean' };
+	const withTracker = p.withTracker !== false;
+	const r = await handleWorkflowApprove({ ...(params as object), epicHash: undefined }, repoEnv, { ...deps, followOn: followOnFor(withTracker) });
+	if ('error' in r) return r;
+	const first = r.approved[0];
+	if (first === undefined) return { error: r.skipped[0]?.reason ?? `workflow.approvePipeline: ${p.artifactPath} was not approved` };
+	return { approval: first.result, followOn: r.followOn ?? [], codeReview: r.codeReview };
+}

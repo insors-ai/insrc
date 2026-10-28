@@ -492,7 +492,8 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 	assert.match(decision, /process\.env\['INSRC_REPO'\]/);
 	assert.match(decision, /feedbackFor: repoPath => \{/, 'the comments are saved through the registry\'s FeedbackService');
 	assert.match(decision, /feedback: entry\.feedback/);
-	assert.match(decision, /advanceApprovedBugfixes/, 'the follow-on of an approval is the one workflow.approve runs');
+	assert.match(decision, /followOn: approveFollowOn\(db, true\)/, 'the follow-on of an approval is the one workflow.approve runs');
+	assert.match(src, /function approveFollowOn\([\s\S]*advanceApprovedBugfixes\(approved, \{/, 'which runs the bugfix advance first');
 
 	// The three existing handlers, as they were: each still delegates to its own
 	// function and none goes through the new call.
@@ -500,7 +501,7 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 	// the same approval and the same bugfix follow-on.
 	const approve = handlerSource(src, 'workflow.approve');
 	assert.match(approve, /return handleWorkflowApprove\(params, process\.env\['INSRC_REPO'\]/);
-	assert.match(approve, /advanceApprovedBugfixes\(approved, \{/);
+	assert.match(approve, /followOn: approveFollowOn\(db, true\)/);
 	const approveSrc = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'workflow-approve.ts'), 'utf8');
 	assert.match(approveSrc, /await \(deps\.approve \?\? approveWorkflowTarget\)\(\{/);
 	assert.match(approveSrc, /const followOn = await deps\.followOn\(result\.approved, repoForStore\);/);

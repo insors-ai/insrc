@@ -11,5 +11,5 @@ export function withReviewExecutionCeiling<T>(params: unknown, run: () => T): T 
 	return executionCeiling.run(deadline, run);
 }
 
-/** One admitted logical review work unit receives ten minutes. */
-export const REVIEW_WORK_UNIT_MS = 600_000;
+/** One admitted logical review work unit receives five minutes. */
+export const REVIEW_WORK_UNIT_MS = 300_000;

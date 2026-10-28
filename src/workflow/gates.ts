@@ -860,14 +860,23 @@ export interface CodeReviewApprovalOutcome {
  *  (src/workflow/bugfix/mount.ts) — the daemon `workflow.approve` handler runs the
  *  seam AFTER this function returns and attaches the outcomes here. */
 export interface FollowOnOutcome {
-	readonly kind:        'bugfix-advance' | 'bugfix-complete' | 'tracker-attach' | 'tasks-sync';
+	/** `tracker-push`, `artifact-commit`, `document-attach` and `attach-commit` are the steps of the approve pipeline after the Task reconciliation (Story s10). */
+	readonly kind:        'bugfix-advance' | 'bugfix-complete' | 'tracker-attach' | 'tasks-sync' | 'tracker-push' | 'artifact-commit' | 'document-attach' | 'attach-commit';
 	readonly artifactPath: string;
 	readonly ok:          boolean;
 	readonly note?:       string;
-	/** For `tracker-attach`: the links posted, the links already recorded, and each file refused with its reason. */
+	/** For `tracker-attach`: the links posted, the links already recorded, and each file refused with its reason. For `document-attach`: that, or the error or reason nothing was attempted. */
 	/** For `tasks-sync`: the Task ids the plan approval created, changed, withdrew and added. */
 	readonly tasks?:      { readonly created: readonly string[]; readonly changed: readonly string[]; readonly withdrawn: readonly string[]; readonly added: readonly string[] };
-	readonly attach?:     { readonly attached: readonly string[]; readonly reconciled: readonly string[]; readonly skipped: readonly string[]; readonly failed: readonly { readonly target: string; readonly reason: string }[] };
+	readonly attach?:     { readonly attached: readonly string[]; readonly reconciled: readonly string[]; readonly skipped: readonly string[]; readonly failed: readonly { readonly target: string; readonly reason: string }[] } | { readonly error: string } | { readonly skipped: string };
+	/** For `tasks-sync`: the whole result of the reconciliation (the close failures and an error included). */
+	readonly taskSync?:   unknown;
+	/** For `tracker-push`: what publishing the approved document to the tracker did. */
+	readonly tracker?:    unknown;
+	/** For `artifact-commit` and `attach-commit`: the result of the commit and push. */
+	readonly commit?:     { readonly committed: boolean; readonly pushed: boolean; readonly reason?: string | undefined };
+	/** For a step stopped by a denied tool call: which tool and why. */
+	readonly denied?:     { readonly toolId: string; readonly reason: string };
 }
 
 /** Non-lossy result: approved artifacts + review-blocked ones (kept distinct

@@ -73,7 +73,7 @@ const RECORDED_STREAM = [
 const ADDED_RPC = [
 	'approval.answer', 'artifact.feedback.add', 'artifact.feedback.list', 'identity.declare', 'identity.show', 'repo.convert',
 	'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.park', 'team.resume', 'team.settle',
-	'tracker.attach', 'tracker.syncComments',
+	'tracker.attach', 'tracker.setup', 'tracker.sync', 'tracker.syncComments', 'workflow.approvePipeline',
 ];
 const ADDED_STREAM = ['approval.subscribe', 'tools.call'];
 
@@ -101,4 +101,26 @@ test('src/daemon/__tests__/handler-runtime.test.ts: the recorded handler key set
 	assert.ok(RECORDED_RPC.includes('codeReview.freshness'));
 	assert.ok(!ADDED_RPC.some(m => m.startsWith('codeReview.')) && !ADDED_STREAM.some(m => m.startsWith('codeReview.')));
 	assert.equal(new Set([...RECORDED_RPC, ...ADDED_RPC]).size, RECORDED_RPC.length + ADDED_RPC.length, 'no duplicate or renamed method');
+});
+
+test('workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests', async () => {
+	try {
+		const runtime = buildHandlerRuntime({
+			db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
+			startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+		});
+		const h = runtime.rpcHandlers;
+		// a bad request is a structured error, never a throw
+		assert.deepEqual(await h['workflow.approvePipeline']!({}), { error: 'workflow.approvePipeline: `artifactPath` is required' });
+		assert.deepEqual(await h['tracker.sync']!({}), { error: 'tracker.sync: `repoPath` is required' });
+		assert.deepEqual(await h['tracker.setup']!({}), { error: 'tracker.setup: `repoPath` is required' });
+		// an Epic that was never pushed is skipped, as the terminal's sync reported it
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-hr-sync-'));
+		try {
+			const r = await h['tracker.sync']!({ repoPath: repo, epicHash: '0123456789abcdef' }) as { status: string };
+			assert.equal(r.status, 'skipped');
+		} finally { rmSync(repo, { recursive: true, force: true }); }
+	} finally {
+		rmSync(HOME, { recursive: true, force: true });
+	}
 });

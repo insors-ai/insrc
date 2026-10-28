@@ -88,7 +88,8 @@ test("a review under the limit is one chunk whose calls carry today's messages a
 	assert.equal(schema.properties.callId.const, call.callId);
 	assert.equal(schema.properties.answer, TOY_SCHEMA);
 	assert.equal(call.execution.mode, 'structured');
-	assert.ok((call.execution as { timeoutMs: number }).timeoutMs > 590_000);
+	assert.ok((call.execution as { timeoutMs: number }).timeoutMs > 290_000);
+	assert.ok((call.execution as { timeoutMs: number }).timeoutMs <= 300_000);
 	assert.equal(call.chars, asSent(call.messages).length, 'chars measures the prompt as sent');
 
 	// Driven to the end: today's one call, today's result, and no pipelineCalls on a single review.
@@ -546,8 +547,8 @@ test('logical chunk counts control total deadlines without retry resets parent d
 			...stage, singleCalls: () => Array.from({ length: count }, () => stage.singleCalls({}, snap)[0]!),
 		})) };
 		const job = createReviewJob(adapter, 'daemon', snap, 384_000, { now: 1000 });
-		assert.equal(job.deadlineBudgetMs, count * 600_000);
-		assert.equal(job.deadlineAt, 1000 + count * 600_000);
+		assert.equal(job.deadlineBudgetMs, count * 300_000);
+		assert.equal(job.deadlineAt, 1000 + count * 300_000);
 	}
 
 	const T = 1_000_000;
@@ -555,36 +556,36 @@ test('logical chunk counts control total deadlines without retry resets parent d
 	const snap = toySnapshot([atom(1)]);
 	const adapter = toyAdapter(snap, session(600_000));
 	let job = createReviewJob(adapter, 'daemon', snap, 384_000, { now: T });
-	assert.equal(job.deadlineAt, T + 600_000, "a single session keeps today's one limit");
+	assert.equal(job.deadlineAt, T + 300_000, "a single session keeps today's one limit");
 	const first = nextCalls(job, adapter, T)[0]!;
-	assert.deepEqual(first.execution, { mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only' });
+	assert.deepEqual(first.execution, { mode: 'reviewer-session', cwd: '/repo', deadlineMs: 300_000, tools: 'read-only' });
 	// A stall at T+200s: the re-issue gets only what remains, the clock is not restarted.
 	job = applyFailure(job, adapter, first.callId, 'stall', undefined, { now: T + 200_000 });
 	const second = nextCalls(job, adapter, T + 200_000)[0]!;
 	assert.equal(second.attempt, 2);
-	assert.equal((second.execution as { deadlineMs: number }).deadlineMs, 400_000);
-	assert.equal(job.deadlineAt, T + 600_000);
+	assert.equal((second.execution as { deadlineMs: number }).deadlineMs, 100_000);
+	assert.equal(job.deadlineAt, T + 300_000);
 	// Past the deadline: no call; today's time-limit message.
-	assert.throws(() => nextCalls(job, adapter, T + 600_000), /passed its time limit of 10 minutes\. No review was recorded/);
+	assert.throws(() => nextCalls(job, adapter, T + 300_000), /passed its time limit of 5 minutes\. No review was recorded/);
 	// Without an adapter message: ReviewSessionTimeoutError.
-	const plain = toyAdapter(snap, { execution: { mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only' } });
+	const plain = toyAdapter(snap, { execution: { mode: 'reviewer-session', cwd: '/repo', deadlineMs: 300_000, tools: 'read-only' } });
 	const pj = createReviewJob(plain, 'daemon', snap, 384_000, { now: T });
-	assert.throws(() => nextCalls(pj, plain, T + 600_001), (e: unknown) => e instanceof ReviewSessionTimeoutError);
+	assert.throws(() => nextCalls(pj, plain, T + 300_001), (e: unknown) => e instanceof ReviewSessionTimeoutError);
 
-	// One session's limit is capped at 30 minutes; a divided review's budget is the cap times its sessions.
+	// Each attempt is capped at five minutes; total time scales with logical work.
 	const many = Array.from({ length: 24 }, (_, i) => atom(i));
 	const bigSnap = toySnapshot(many);
 	const long = toyAdapter(bigSnap, session(45 * 60_000));
 	let divided = createReviewJob(long, 'daemon', bigSnap, LIMIT, { now: T });
 	const sessions = divided.pending.length;
 	assert.ok(sessions > 1);
-	assert.equal(divided.deadlineAt, T + sessions * 10 * 60_000);
-	for (const c of nextCalls(divided, long, T)) assert.equal((c.execution as { deadlineMs: number }).deadlineMs, 30 * 60_000, 'no session runs longer than 30 minutes');
+	assert.equal(divided.deadlineAt, T + sessions * 5 * 60_000);
+	for (const c of nextCalls(divided, long, T)) assert.equal((c.execution as { deadlineMs: number }).deadlineMs, 5 * 60_000, 'no session runs longer than five minutes');
 	// A refusal that re-divides into more sessions does not extend the deadline.
 	const r = nextCalls(divided, long, T)[0]!;
 	divided = applyFailure(divided, long, r.callId, 'size-refusal', 2_000, { now: T + 60_000 });
 	assert.ok(divided.pending.length > sessions);
-	assert.equal(divided.deadlineAt, T + divided.workUnits.filter(w => !w.replaced).length * 600_000);
+	assert.equal(divided.deadlineAt, T + divided.workUnits.filter(w => !w.replaced).length * 300_000);
 	assert.equal(divided.workUnits.filter(w => w.replaced).length, 1);
 	// A later stage's sessions share the deadline set when the first were planned.
 	const twoStage: ReviewAdapter<ToyResult> = { ...adapter, stagesFor: p => [adapter.stagesFor(p)[0]!, { ...adapter.stagesFor(p)[0]!, id: 'second', after: ['judge'] }] };
@@ -592,8 +593,8 @@ test('logical chunk counts control total deadlines without retry resets parent d
 	const tc = nextCalls(ts, twoStage, T)[0]!;
 	ts = applyOutput(ts, twoStage, tc.callId, { callId: tc.callId, answer: { seen: [] } }, T + 100_000);
 	assert.equal(ts.stage, 'second');
-	assert.equal(ts.deadlineAt, T + 1_200_000, 'new stage adds one unit from original epoch');
-	assert.throws(() => applyFailure(ts, twoStage, ts.pending[0]!.callId, 'size-refusal', 1000, { now: T + 1_200_000 }), /passed its time limit/);
+	assert.equal(ts.deadlineAt, T + 600_000, 'new stage adds one unit from original epoch');
+	assert.throws(() => applyFailure(ts, twoStage, ts.pending[0]!.callId, 'size-refusal', 1000, { now: T + 600_000 }), /passed its time limit/);
 	// Near the end, each session gets only what remains.
 	const late = nextCalls(divided, long, divided.deadlineAt! - 5_000);
 	assert.ok(late.every(c => (c.execution as { deadlineMs: number }).deadlineMs === 5_000));
@@ -602,7 +603,7 @@ test('logical chunk counts control total deadlines without retry resets parent d
 test("a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)", async () => {
 	const T = 1_000_000;
 	const snap = toySnapshot([atom(1)]);
-	const sessionOpts: ToyOpts = { execution: { mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only' }, deadlineMessage: true };
+	const sessionOpts: ToyOpts = { execution: { mode: 'reviewer-session', cwd: '/repo', deadlineMs: 300_000, tools: 'read-only' }, deadlineMessage: true };
 	// A session that stalls 200 s in; its re-issue is given what remains and answers.
 	{
 		let clock = T;
@@ -618,7 +619,7 @@ test("a re-issued reviewer-session call gets only the remaining time to the job 
 		const adapter = toyAdapter(snap, sessionOpts);
 		const out = await runReviewJob(createReviewJob(adapter, 'daemon', snap, 384_000, { now: T }), adapter, provider, { now: () => clock });
 		assert.deepEqual((out as ToyResult).seen, ['a1']);
-		assert.deepEqual(seen.map(o => o.deadlineMs), [600_000, 400_000], 'the re-issue never restarts the clock');
+		assert.deepEqual(seen.map(o => o.deadlineMs), [300_000, 100_000], 'the re-issue never restarts the clock');
 		assert.ok(seen.every(o => o.internalRetry === false && o.cwd === '/repo'), 'each session with its mode, the pipeline owning retries');
 	}
 	// Past the deadline: no call at all; today's message.
@@ -626,8 +627,8 @@ test("a re-issued reviewer-session call gets only the remaining time to the job 
 		let calls = 0;
 		const provider = { runReviewSession: async () => { calls++; return {}; } } as unknown as LLMProvider;
 		const adapter = toyAdapter(snap, sessionOpts);
-		await assert.rejects(runReviewJob(createReviewJob(adapter, 'daemon', snap, 384_000, { now: T }), adapter, provider, { now: () => T + 600_000 }),
-			/passed its time limit of 10 minutes\. No review was recorded/);
+		await assert.rejects(runReviewJob(createReviewJob(adapter, 'daemon', snap, 384_000, { now: T }), adapter, provider, { now: () => T + 300_000 }),
+			/passed its time limit of 5 minutes\. No review was recorded/);
 		assert.equal(calls, 0);
 	}
 	// A session that runs out its time: the review fails with today's message, never re-issued.
@@ -1302,7 +1303,7 @@ test("the pipeline driver forwards a structured call's stallMs to completeStruct
 	} as unknown as LLMProvider);
 	assert.equal(seen.length, 1);
 	assert.equal(seen[0]?.stallMs, 60_000);
-	assert.ok(seen[0]?.timeoutMs !== undefined && seen[0].timeoutMs > 590_000 && seen[0].timeoutMs <= 600_000);
+	assert.ok(seen[0]?.timeoutMs !== undefined && seen[0].timeoutMs > 290_000 && seen[0].timeoutMs <= 300_000);
 	assert.equal(seen[0]?.internalRetry, false);
 });
 
@@ -1325,7 +1326,7 @@ test("the pipeline driver forwards a reviewer-session call's stallMs to runRevie
 	const withLimit = await run({ mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only', stallMs: 300_000 });
 	assert.equal(withLimit.length, 1);
 	assert.equal(withLimit[0]?.stallMs, 300_000, 'the silence limit reaches the session');
-	assert.equal(withLimit[0]?.deadlineMs, 600_000);
+	assert.equal(withLimit[0]?.deadlineMs, 300_000);
 	assert.equal(withLimit[0]?.internalRetry, false);
 	const without = await run({ mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only' });
 	assert.equal(without.length, 1);

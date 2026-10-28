@@ -66,6 +66,7 @@ import { openTracker } from '../../workflow/tracker-auto.js';
 import { lifecycleFor, repoOfArtifactPath } from '../../daemon/lifecycle-registry.js';
 import type { LifecycleService } from '../../workflow/artifact-core/lifecycle-service.js';
 import { syncPlanTasks } from '../../daemon/tasks-sync.js';
+import { attachApprovedDocuments, commitApprovedArtifacts } from '../../daemon/approve-pipeline.js';
 import type { SyncResult as TaskSyncResult } from '../../workflow/tasks/task-set.js';
 import { attachApprovedDocument } from '../../workflow/tracker/attach-unit.js';
 import type { AttachUnitResult } from '../../workflow/tracker/attach-unit.js';
@@ -104,78 +105,6 @@ export interface ApproveOutcome {
 	readonly attach?:  AttachUnitResult | { readonly skipped: string };
 	/** The second commit, of the unit head that records the attachments. */
 	readonly attachCommit?: CommitArtifactsResult;
-}
-
-/** Commit + push the artifact files this approval wrote/patched, so the chain
- *  is portable (anyone who pulls has the canonical JSON + MD the next stage
- *  reads). Gated on the github tracker being enabled with `commitArtifacts`
- *  (default true); best-effort — a git failure never breaks the approval. */
-async function commitApprovedArtifacts(approval: ApprovalResult): Promise<CommitArtifactsResult | undefined> {
-	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean };
-	try { meta = ((JSON.parse(readFileSync(approval.path, 'utf8')) as { meta?: typeof meta }).meta) ?? {}; }
-	catch { return undefined; }
-	const { repoPath, epicHash, epicSlug, storyId } = meta;
-	if (typeof repoPath !== 'string' || typeof epicHash !== 'string') return undefined;
-
-	const cfg = await resolveGithubConfig(repoPath);
-	if (cfg.type !== 'github' || cfg.commitArtifacts === false) return undefined;
-
-	// sc2 folder args from the approved artifact's own meta — its epicCreatedAt
-	// anchor is the Epic's define createdAt, so the Define (added alongside on
-	// epic/story approvals) resolves to the same work-item folder.
-	const anchor = workItemAnchorCreatedAt(meta);
-	const kind = workItemKindOf(meta);
-
-	// The files this approval touched: the approved artifact, the Define on epic/story approvals, and the sidecar
-	// log of each head written, plus the head of the unit whose issue the push bound (the EPIC or STORY head).
-	const files = new Set<string>();
-	const add = (p: { md: string; json: string }) => { files.add(p.md); files.add(p.json); };
-	const addHead = (id: string | undefined): void => { if (id !== undefined) for (const f of headFiles(repoPath, id)) files.add(f); };
-	if (approval.workflow === 'design.epic') { add(hldArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
-	else if (approval.workflow === 'design.story' && typeof storyId === 'string') { add(lldArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
-	else if (approval.workflow === 'plan' && typeof storyId === 'string') { add(planArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug)); }
-	else { add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
-
-	addHead(basename(approval.path).replace(/\.json$/, ''));
-	addHead(unitHeadOf(approval.workflow, epicHash, storyId));
-	const result = await commitAndPush(repoPath, [...files], `chore(workflow): ${approval.workflow} approved — check in artifacts + tracker refs`);
-	log.info({ workflow: approval.workflow, committed: result.committed, pushed: result.pushed, reason: result.reason }, 'approve: artifact check-in');
-	return result;
-}
-
-/** The files of the head `id` that exist: its json and its change log and feedback lines. */
-function headFiles(repoPath: string, id: string): string[] {
-	const sidecar = new FileSidecarStore(repoPath);
-	return [`${ARTIFACTS_DIR}/${id}.json`, sidecar.filesOf(id).log, sidecar.filesOf(id).feedback].map(rel => join(repoPath, rel)).filter(f => existsSync(f));
-}
-
-/** The head of the unit an approval belongs to: the EPIC head for a design.epic approval or an Epic-level one, else the STORY head. */
-function unitHeadOf(workflow: string, epicHash: string, storyId: unknown): string | undefined {
-	return unitHeadId({ unit: workflow === 'design.epic' || typeof storyId !== 'string' ? 'epic' : 'story', epicHash, ...(typeof storyId === 'string' ? { storyId } : {}) });
-}
-
-/** After the check-in commit the approved files are clean, so their permalinks name that commit: attach the approved document (and its
- *  companions) to the unit's issue, then commit the unit head that records the attachments, in a second commit. Without a commit
- *  there is nothing to link to, and the reason is stated. */
-async function attachApprovedDocuments(approval: ApprovalResult, commit: CommitArtifactsResult | undefined): Promise<{ attach: AttachUnitResult | { skipped: string }; commit?: CommitArtifactsResult } | undefined> {
-	if (approval.workflow !== 'design.epic' && approval.workflow !== 'design.story' && approval.workflow !== 'plan') return undefined;
-	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string; epicCreatedAt?: string; createdAt?: string; standalone?: boolean };
-	try { meta = ((JSON.parse(readFileSync(approval.path, 'utf8')) as { meta?: typeof meta }).meta) ?? {}; }
-	catch { return undefined; }
-	const { repoPath, epicHash, epicSlug, storyId } = meta;
-	if (typeof repoPath !== 'string' || typeof epicHash !== 'string') return undefined;
-	if (commit === undefined) return { attach: { skipped: 'attachments skipped: the artifacts are not committed' } };
-	const gate = await openTracker(repoPath);
-	if ('skip' in gate) return undefined;
-	const result = await attachApprovedDocument(approval.workflow, { repoPath, epicHash, ...(storyId !== undefined ? { storyId } : {}) }, gate.port);
-	if ('error' in result || result.attached.length + result.reconciled.length === 0) return { attach: result };
-	// the attachments are recorded on the unit's head
-	const headId = unitHeadOf(approval.workflow, epicHash, storyId);
-	if (headId === undefined) return { attach: result };
-	// the head, and the log and feedback lines recording the attachment on it
-	const second = await commitAndPush(repoPath, headFiles(repoPath, headId), `chore(workflow): ${approval.workflow} approved — record the attached documents`);
-	log.info({ workflow: approval.workflow, committed: second.committed, pushed: second.pushed, reason: second.reason }, 'approve: attachment records check-in');
-	return { attach: result, commit: second };
 }
 
 const DEF_RE = /^DEF-([0-9a-f]{16})\.json$/;

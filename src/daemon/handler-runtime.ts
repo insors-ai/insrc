@@ -158,6 +158,26 @@ export interface HandlerRuntime {
 }
 
 /** Build the request handler tables, the understanding routes merged in. */
+/**
+ * The post-approval seam of every approval at the daemon: the bugfix advance, then the approve pipeline (Task reconciliation and,
+ * with `withTracker`, publication, the check-in commit and the attachment), then the attachment of a BUILD's records. The graph handle
+ * stays here, so the workflow layer stays DB-free.
+ */
+function approveFollowOn(db: HandlerRuntimeDeps['db'], withTracker: boolean) {
+	return async (approved: import('../workflow/gates.js').WorkflowApproveResult['approved'], repoPath: string) => {
+		const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
+		const { followOnTrackerAttach } = await import('./tracker-attach.js');
+		const { approvePipelineFollowOn } = await import('./approve-pipeline.js');
+		const bugfix = await advanceApprovedBugfixes(approved, {
+			repoPath,
+			// DB-bound parent inference is bound to this daemon's graph handle (the same wiring the `locate.inferParents` IPC uses).
+			inferCandidates: async (req: InferParentsRequest) =>
+				inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
+		});
+		return [...(bugfix ?? []), ...await approvePipelineFollowOn(approved, { withTracker }), ...await followOnTrackerAttach(approved, repoPath)];
+	};
+}
+
 export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	const { db, configStore, queue, indexer, startedAt } = deps;
 	/** When codeReview.freshness last asked the queue to index each file (absolute path); read back as requestedAt. */
@@ -285,6 +305,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	// The request handler maps, built once: the IpcServer serves them over the
 	// socket, and the step handlers call the same functions in-process through
 	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
+	const repoSettingsHandlers = createRepoSettingsHandlers({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) });
 	const rpcHandlers: RpcHandlers = {
 		...handoffRpcHandlers(),
 		'repo.add': async (params) => {
@@ -424,21 +445,27 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Non-lossy — review-blocked artifacts come back in `skipped[]`.
 		'workflow.approve': async (params) => {
 			const { handleWorkflowApprove } = await import('./workflow-approve.js');
-			return handleWorkflowApprove(params, process.env['INSRC_REPO'], {
-				// DB-bound parent inference is bound to this daemon's graph handle (the same wiring the `locate.inferParents`
-				// IPC uses) and injected: the workflow layer stays DB-free.
-				followOn: async (approved, repoPath) => {
-					const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
-					const { followOnTrackerAttach } = await import('./tracker-attach.js');
-					const { followOnTasksSync } = await import('./tasks-sync.js');
-					const bugfix = await advanceApprovedBugfixes(approved, {
-						repoPath,
-						inferCandidates: async (req: InferParentsRequest) =>
-							inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
-					});
-					return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...await followOnTrackerAttach(approved, repoPath)];
-				},
-			});
+			// delegates to the pipeline's seam with the tracker on: an approval publishes, checks in and attaches, as the terminal's approve does
+			return handleWorkflowApprove(params, process.env['INSRC_REPO'], { followOn: approveFollowOn(db, true) });
+		},
+
+		// The terminal's approve (Story s10): one artifact approved and carried through the pipeline in the daemon. `withTracker` false stops after
+		// the approval and the Task reconciliation. Answers the approval and every follow-on entry, or { error } (a refusal, a review block).
+		'workflow.approvePipeline': async (params) => {
+			const { handleApprovePipeline } = await import('./workflow-approve.js');
+			return handleApprovePipeline(params, process.env['INSRC_REPO'], (withTracker) => approveFollowOn(db, withTracker));
+		},
+
+		// Story s10: pull the tracker state of an Epic and its Stories into the Define; read-only against GitHub.
+		'tracker.sync': async (params) => {
+			const { handleTrackerSync } = await import('./tracker-setup-handlers.js');
+			return handleTrackerSync(params);
+		},
+
+		// Story s10: bootstrap the GitHub tracker for a repo (preflight, config, labels, issue types, optionally a board).
+		'tracker.setup': async (params) => {
+			const { handleTrackerSetup } = await import('./tracker-setup-handlers.js');
+			return handleTrackerSetup(params, repoSettingsHandlers['repo.trackerConfig.ensure']!);
 		},
 
 		// s9: convert the repository's artifacts to the current schema (a preview unless mode is 'apply'). Exempt from the schema gate.
@@ -540,17 +567,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 						const entry = lifecycleFor(repoPath);
 						return { feedback: entry.feedback, currentActor: path => entry.identity.currentActor(path) };
 					},
-					followOn: async (approved, repoPath) => {
-						const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
-						const { followOnTrackerAttach } = await import('./tracker-attach.js');
-						const { followOnTasksSync } = await import('./tasks-sync.js');
-						const bugfix = await advanceApprovedBugfixes(approved, {
-							repoPath,
-							inferCandidates: async (req: InferParentsRequest) =>
-								inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
-						});
-						return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...await followOnTrackerAttach(approved, repoPath)];
-					},
+					followOn: approveFollowOn(db, true),
 				},
 			);
 		},
@@ -1262,7 +1279,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 
 		// Repo-scoped tracker settings (Story s3): the daemon is the only writer of
 		// ~/.insrc/github.json, so every client edits it through these methods.
-		...createRepoSettingsHandlers({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) }),
+		...repoSettingsHandlers,
 
 		// docgen: generate a self-contained HTML document from the code graph
 		// (Epic 870ed3dd, s1 · t7). The IPC method + the docgen_generate tool +

@@ -93,11 +93,11 @@ export async function handleStart(
 }
 
 
-/** Outer transport ceilings, distinct from the pipeline's dynamic ten-minute
+/** Outer transport ceilings, distinct from the pipeline's dynamic five-minute
  * budget per logical model work unit and its bounded per-attempt timers. A
  * known shorter outer ceiling is surfaced explicitly, never silently extended. */
 export const DESIGN_REVIEW_WAIT_MS = 31 * 60_000;
-export const PIPELINE_REVIEW_WAIT_MS = 90 * 60_000;
+export const PIPELINE_REVIEW_WAIT_MS = 120 * 60_000;
 
 /** How long the tool waits with no frame from the daemon before it gives up.
  *  workflow.review sends a heartbeat every minute while a review runs

@@ -18815,7 +18815,7 @@
     },
     "src/daemon/workflow-run-registry.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
+      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads. Detached-run records are published to the status board (serialization sites `publish`, Epic 86197ac6 s3); a detached run is never connection-scoped (connection-session requests stay on the main thread), so no temporary payload is serialized.",
       "sites": [
         [
           "diagnostic",

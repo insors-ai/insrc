@@ -5,7 +5,7 @@
 
 /**
  * The TUI resolution stopgap (Epic ce99b72065d03b1b, Story s3 · t8): the
- * model-tiers pane and the review command resolve tiers through
+ * model-tiers pane resolves tiers through
  * shippedModelRegistry() — the shipped definitions and no approved profiles —
  * so the TUI process never reads the user's approved-model store (k2).
  *
@@ -31,11 +31,10 @@ const { shippedModelRegistry } = await import('../shipped-model-registry.js');
 const { _setModelCatalogDirForTests } = await import('../../daemon/model-catalog.js');
 const { getModelRegistry, _resetModelRegistryForTests, _setApprovedModelsPathForTests } = await import('../../daemon/model-registry.js');
 const { SHIPPED_DEFINITIONS } = await import('../../config/model-defaults.js');
-const { CliProvider } = await import('../../agent/providers/cli-provider.js');
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-test("tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact succeed with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry", async () => {
+test("tui-shipped-registry.test.ts: computeEffectiveTiers succeeds with getModelRegistry stubbed to throw and the store unreadable; the pane shows the definitions' defaults; src/cli/** does not import getModelRegistry", async () => {
 	try {
 		_setModelCatalogDirForTests(join(HOME, 'no-such-definitions'));
 		_setApprovedModelsPathForTests(HOME);   // a directory: unreadable as the store file
@@ -53,19 +52,9 @@ test("tui-shipped-registry.test.ts: computeEffectiveTiers and reviewArtifact suc
 			assert.equal(eff.tiers[tier].model, canonical(def.tierDefaults![tier].model), tier);
 		}
 
-		// The review command: loadAnalyzeConfig + createRoleRouter + provider construction, end to end.
-		let seen: { provider: unknown; model: string } | undefined;
-		// a repository directory: the review reaches the repository's lifecycle service before the stubbed review runs
-		const repo = join(HOME, 'repo');
-		mkdirSync(repo);
-		const result = await reviewArtifact(repo, join(repo, 'docs/stub/lld-a.md'), (async (opts: { provider: unknown; model: string }) => {
-			seen = { provider: opts.provider, model: opts.model };
-			return { ok: true } as never;
-		}) as never);
-		assert.deepEqual(result, { ok: true });
-		assert.ok(seen !== undefined);
-		assert.ok(seen.provider instanceof CliProvider, 'review (a critical role) runs on the core CLI tier');
-		assert.equal(seen.model, `${SHIPPED_DEFINITIONS.defaultFamily}:${canonical(def.tierDefaults!.core.model)}`);
+		// The review command no longer resolves a provider in the terminal: it asks the daemon (workflow.reviewArtifact), which runs the review
+		// with its own role router. The terminal's service is that one daemon call.
+		assert.equal(typeof reviewArtifact, 'function');
 		assert.equal(shippedModelRegistry().defaultFamily(), SHIPPED_DEFINITIONS.defaultFamily);
 	} finally {
 		_setModelCatalogDirForTests(undefined);

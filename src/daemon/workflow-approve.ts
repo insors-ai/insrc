@@ -9,7 +9,7 @@
  * ahead of its log, and records the request's person as the actor (the gate's own `insrc:approval` otherwise).
  */
 
-import { approveWorkflowTarget } from '../workflow/gates.js';
+import { approveWorkflowTarget, jsonPathForMd } from '../workflow/gates.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
 import type { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
 import { approvalActorOf } from '../workflow/artifact-core/approval-actor.js';
@@ -72,14 +72,19 @@ export async function handleApprovePipeline(
 	repoEnv: string | undefined,
 	followOnFor: (withTracker: boolean) => NonNullable<WorkflowApproveDeps['followOn']>,
 	deps: Omit<WorkflowApproveDeps, 'followOn'> = {},
-): Promise<{ readonly approval: WorkflowApproveResult['approved'][number]['result']; readonly followOn: NonNullable<WorkflowApproveResult['followOn']>; readonly codeReview: WorkflowApproveResult['codeReview'] } | { error: string }> {
+): Promise<{ readonly approval: WorkflowApproveResult['approved'][number]['result']; readonly followOn: NonNullable<WorkflowApproveResult['followOn']>; readonly codeReview: WorkflowApproveResult['codeReview'] } | { error: string; refusal?: { kind: 'review-blocked' | 'team-refused'; text: string } }> {
 	const p = (params ?? {}) as { artifactPath?: unknown; withTracker?: unknown };
 	if (typeof p.artifactPath !== 'string' || p.artifactPath.length === 0) return { error: 'workflow.approvePipeline: `artifactPath` is required' };
 	if (p.withTracker !== undefined && typeof p.withTracker !== 'boolean') return { error: 'workflow.approvePipeline: `withTracker` must be a boolean' };
 	const withTracker = p.withTracker !== false;
-	const r = await handleWorkflowApprove({ ...(params as object), epicHash: undefined }, repoEnv, { ...deps, followOn: followOnFor(withTracker) });
+	// the terminal names the artifact by its .md or its .json path; the approval is made on the json
+	const r = await handleWorkflowApprove({ ...(params as object), artifactPath: jsonPathForMd(p.artifactPath), epicHash: undefined }, repoEnv, { ...deps, followOn: followOnFor(withTracker) });
 	if ('error' in r) return r;
 	const first = r.approved[0];
-	if (first === undefined) return { error: r.skipped[0]?.reason ?? `workflow.approvePipeline: ${p.artifactPath} was not approved` };
+	if (first === undefined) {
+		const why = r.skipped[0];
+		// a review block or a team refusal carries its kind, so the terminal prints it in its own words
+		return { error: why?.reason ?? `workflow.approvePipeline: ${p.artifactPath} was not approved`, ...(why?.kind !== undefined ? { refusal: { kind: why.kind, text: why.reason } } : {}) };
+	}
 	return { approval: first.result, followOn: r.followOn ?? [], codeReview: r.codeReview };
 }

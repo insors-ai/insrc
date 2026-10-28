@@ -12,7 +12,7 @@ import { join } from 'node:path';
 
 import { handleResolveFinding, handleReviewArtifact, handleTeamClaim, handleTeamRelease } from '../team-review-handlers.js';
 import { writeReviewedHead } from '../../workflow/__tests__/lifecycle-fixtures.js';
-import { _setGateDepsForTests, TeamGateRefusedError } from '../../workflow/team/gate.js';
+import { _setGateDepsForTests } from '../../workflow/team/gate.js';
 import type { PolicyReader, TeamPolicy } from '../../workflow/team/types.js';
 import type { PortResult, TrackerPort } from '../../workflow/tracker/port.js';
 import type { Finding, ReviewReport } from '../../workflow/review/types.js';
@@ -57,11 +57,13 @@ describe('review-resolve-daemon.test.ts: with claims enforced, reviewArtifact an
 		try {
 			const mdBefore = readFileSync(s.md, 'utf8');
 			hold('bob');
-			await assert.rejects(handleResolveFinding({ artifactPath: s.md, findingId: 'apply1', action: 'apply' }), (e: unknown) => e instanceof TeamGateRefusedError && /held by bob/.test(e.reason));
+			// the refusal is answered as data, with the kind the terminal prints it by
+			const refused = await handleResolveFinding({ artifactPath: s.md, findingId: 'apply1', action: 'apply' });
+			assert.ok('error' in refused && refused.refusal.kind === 'team-refused' && /held by bob/.test(refused.refusal.text), JSON.stringify(refused));
 			assert.equal(readFileSync(s.md, 'utf8'), mdBefore);
-			assert.equal((await handleResolveFinding({ artifactPath: s.md, findingId: 'acc', action: 'accept', note: 'fine' })).status, 'resolved');
+			assert.equal((await handleResolveFinding({ artifactPath: s.md, findingId: 'acc', action: 'accept', note: 'fine' }) as { status: string }).status, 'resolved');
 			hold('alice');
-			assert.equal((await handleResolveFinding({ artifactPath: s.md, findingId: 'apply1', action: 'apply' })).status, 'resolved');
+			assert.equal((await handleResolveFinding({ artifactPath: s.md, findingId: 'apply1', action: 'apply' }) as { status: string }).status, 'resolved');
 			assert.match(readFileSync(s.md, 'utf8'), /three exported constants/);
 			// a bad request is the error of the call
 			await assert.rejects(handleResolveFinding({ artifactPath: s.md, findingId: 'x', action: 'bogus' }), /`action` must be apply, accept, override or defer/);

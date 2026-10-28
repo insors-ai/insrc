@@ -93,7 +93,9 @@ test('team park and team resume parse the unit and --workflow, print the offer, 
 		addAssignee: (): PortResult<string[]> => ({ ok: true, value: [] }),
 	} as unknown as TrackerPort;
 	_setGateDepsForTests({ readPolicy: policy, loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#7', ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'x' }), artifactExists: () => true });
-	const real = { repoPath: '/repo', onLog: () => undefined, services: { team } } as unknown as CommandCtx;
+	// the daemon's own claim handler stands in for the daemon the terminal's service calls
+	const daemon = await import('../../daemon/team-review-handlers.js');
+	const real = { repoPath: '/repo', onLog: () => undefined, services: { team: { ...team, teamClaim: (repoPath: string, unit: never) => daemon.handleTeamClaim({ repoPath, unit }) } } } as unknown as CommandCtx;
 	assert.equal((await runCommand(`team claim ${HASH} s1`, real))[0], '✗ not claimed — held by bob');
 	registerParkOfferProvider(() => true);
 	assert.equal((await runCommand(`team claim ${HASH} s1`, real))[0], `✗ not claimed — held by bob; you have unfinished work here, run 'team park <epicHash> [storyId]' to hand it over`);

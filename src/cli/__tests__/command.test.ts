@@ -367,3 +367,23 @@ test('a thrown error from either team command renders as a cross-prefixed line',
 	assert.deepEqual(await runCommand('team init', ctx), ['✗ .insrc/policy.json already exists; it was left untouched']);
 	assert.deepEqual(await runCommand('team refresh', ctx), ['✗ a refresh is already running for this repository']);
 });
+
+test('command.test.ts: sync, claim, release and resolveFinding results are awaited before status and text are read', async () => {
+	const later = <T>(value: T): Promise<T> => new Promise(r => setTimeout(() => r(value), 15));
+	const { ctx } = ctxWith({
+		workflow: {
+			...ctxWith().ctx.services.workflow,
+			sync: () => later({ status: 'synced' as const, epicStatus: 'in-progress' as const, storyStatus: { s1: 'closed' as const } }),
+			resolveFinding: () => later({ findingId: 'f1', status: 'resolved', effectiveVerdict: 'pass', remainingBlocking: 0 } as never),
+		},
+		team: {
+			...ctxWith().ctx.services.team,
+			teamClaim: () => later('✓ claimed story h/s1'),
+			teamRelease: () => later('✓ released story h/s1'),
+		},
+	});
+	assert.deepEqual(await runCommand('workflow sync 0123456789abcdef', ctx), ['synced · epic=in-progress', '  s1: closed']);
+	assert.match((await runCommand('workflow resolve docs/x.md f1 accept', ctx))[0] ?? '', /^resolved f1 \(resolved\)/);
+	assert.deepEqual(await runCommand('team claim 0123456789abcdef s1', ctx), ['✓ claimed story 0123456789abcdef/s1'.replace('story 0123456789abcdef/s1', 'story h/s1')]);
+	assert.deepEqual(await runCommand('team release 0123456789abcdef s1', ctx), ['✓ released story h/s1']);
+});

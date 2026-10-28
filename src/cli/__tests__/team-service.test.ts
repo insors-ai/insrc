@@ -27,6 +27,13 @@ const { makeServices } = await import('../services/index.js');
 const { readPolicy } = await import('../../workflow/team/policy-reader.js');
 const { PATHS } = await import('../../shared/paths.js');
 const fixture = await import('../../workflow/team/__tests__/git-fixture.js');
+const { handleTeamRefresh } = await import('../../daemon/team-review-handlers.js');
+
+/** The terminal's services, with team refresh run by the daemon's own handler (which the service calls over IPC). */
+function servicesWithDaemon() {
+	const services = makeServices();
+	return { ...services, team: { ...services.team, teamRefresh: (repoPath: string, branch?: string) => handleTeamRefresh({ repoPath, ...(branch !== undefined ? { branch } : {}) }) } };
+}
 
 test.after(() => rmSync(home, { recursive: true, force: true }));
 
@@ -41,7 +48,7 @@ test('team refresh followed by a reader call in a temp clone returns the policy 
 		fixture.git(clone, 'remote', 'set-head', 'origin', '-d');
 		fixture.git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/gone'); // the remote cannot name its default branch
 
-		const ctx = { services: makeServices(), repoPath: clone, setPane: () => {}, onLog: () => {}, exit: () => {} };
+		const ctx = { services: servicesWithDaemon(), repoPath: clone, setPane: () => {}, onLog: () => {}, exit: () => {} };
 
 		// With the default branch unknown and a policy on a fetched ref, the reader asks for the branch...
 		const before = readPolicy(clone);

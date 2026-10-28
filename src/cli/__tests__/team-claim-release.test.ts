@@ -5,7 +5,7 @@
 
 /**
  * `team claim` and `team release` in the terminal: the unit is read from the arguments, the real
- * services call the gate's claim and release, and the outcome (or the refusal naming the holder) is printed.
+ * daemon handlers the services call run the gate's claim and release, and the outcome (or the refusal naming the holder) is printed.
  *
  * Run: npx tsx --test src/cli/__tests__/team-claim-release.test.ts
  */
@@ -14,7 +14,7 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runCommand, type CommandCtx } from '../command.js';
-import * as team from '../services/team.js';
+import { handleTeamClaim, handleTeamRelease } from '../../daemon/team-review-handlers.js';
 import { _setGateDepsForTests, type PolicyReader } from '../../workflow/team/gate.js';
 import type { TeamPolicy } from '../../workflow/team/types.js';
 import type { PortResult, TrackerPort } from '../../workflow/tracker/port.js';
@@ -22,6 +22,12 @@ import type { UnitRef } from '../../workflow/tracker/refs.js';
 
 const HASH = '315d510cb28100e2';
 const policy = (admins: string[] = []): PolicyReader => () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: admins } as unknown as TeamPolicy });
+
+/** The terminal's team services call the daemon; here the daemon's own handlers stand in for it, so the whole path from the command to the gate is run. */
+const team = {
+	teamClaim: (repoPath: string, unit: Omit<UnitRef, 'repoPath'>) => handleTeamClaim({ repoPath, unit }),
+	teamRelease: (repoPath: string, unit: Omit<UnitRef, 'repoPath'>) => handleTeamRelease({ repoPath, unit }),
+};
 
 const ctx = (): CommandCtx => ({ repoPath: '/repo', onLog: () => undefined, services: { team } } as unknown as CommandCtx);
 

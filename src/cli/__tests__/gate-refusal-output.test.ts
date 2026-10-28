@@ -59,8 +59,8 @@ test('the terminal approve and resolve commands print the refusal naming the hol
 	assert.deepEqual(resolve, ['✗ not applied — held by bob']);
 	for (const line of [approve[0], review[0], resolve[0]]) assert.ok((line ?? '').startsWith('✗ '), `${line} uses the cross-prefixed format`);
 
-	// claim and release: the same cross line naming the holder, through the real team services
-	const team = await import('../services/team.js');
+	// claim and release: the same cross line naming the holder, from the daemon handlers the terminal's services call
+	const team = await import('../../daemon/team-review-handlers.js');
 	const gate = await import('../../workflow/team/gate.js');
 	const port = {
 		whoAmI: () => ({ ok: true, value: 'alice' }),
@@ -76,8 +76,8 @@ test('the terminal approve and resolve commands print the refusal naming the hol
 		artifactExists: () => true,
 	});
 	try {
-		const ctx = { repoPath: '/repo', onLog: () => undefined, services: { team } } as unknown as CommandCtx;
-		assert.deepEqual(await runCommand('team claim 315d510cb28100e2 s5', ctx), ['✗ not claimed — held by bob']);
-		assert.match((await runCommand('team release 315d510cb28100e2 s5', ctx))[0] ?? '', /^✗ not released — only the holder \(bob\)/);
+		const unit = { unit: 'story' as const, epicHash: '315d510cb28100e2', storyId: 's5' };
+		assert.equal(await team.handleTeamClaim({ repoPath: '/repo', unit }), '✗ not claimed — held by bob');
+		assert.match(await team.handleTeamRelease({ repoPath: '/repo', unit }), /^✗ not released — only the holder \(bob\)/);
 	} finally { gate._setGateDepsForTests(); }
 });

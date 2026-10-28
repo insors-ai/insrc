@@ -874,7 +874,7 @@ export interface FollowOnOutcome {
 	/** For `tracker-push`: what publishing the approved document to the tracker did. */
 	readonly tracker?:    unknown;
 	/** For `artifact-commit` and `attach-commit`: the result of the commit and push. */
-	readonly commit?:     { readonly committed: boolean; readonly pushed: boolean; readonly reason?: string | undefined };
+	readonly commit?:     { readonly committed: boolean; readonly pushed: boolean; readonly reason?: string };
 	/** For a step stopped by a denied tool call: which tool and why. */
 	readonly denied?:     { readonly toolId: string; readonly reason: string };
 }
@@ -888,7 +888,8 @@ export interface FollowOnOutcome {
  *  fired, so every existing caller is byte-for-byte unchanged. */
 export interface WorkflowApproveResult {
 	readonly approved: readonly { readonly path: string; readonly result: ApprovalResult }[];
-	readonly skipped:  readonly { readonly path: string; readonly reason: string }[];
+	/** `kind` says why an approval was withheld when the cause has a name the terminal prints in its own words (Story s10). */
+	readonly skipped:  readonly { readonly path: string; readonly reason: string; readonly kind?: 'review-blocked' | 'team-refused' }[];
 	readonly codeReview: readonly CodeReviewApprovalOutcome[];
 	readonly followOn?: readonly FollowOnOutcome[];
 }
@@ -931,7 +932,7 @@ export async function approveWorkflowTarget(
 ): Promise<WorkflowApproveResult> {
 	const approveOpts = req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : undefined;
 	const approved:   { path: string; result: ApprovalResult }[] = [];
-	const skipped:    { path: string; reason: string }[] = [];
+	const skipped:    { path: string; reason: string; kind?: 'review-blocked' | 'team-refused' }[] = [];
 	const codeReview: CodeReviewApprovalOutcome[] = [];
 
 	/** A BUILD target the team gate refuses goes to skipped[] before its record is created or merged. */
@@ -1006,9 +1007,9 @@ export async function approveWorkflowTarget(
 			completeAfter = true;
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
-				skipped.push({ path: jsonPath, reason: err.summary });
+				skipped.push({ path: jsonPath, reason: err.summary, kind: 'review-blocked' });
 			} else if (err instanceof TeamGateRefusedError) {
-				skipped.push({ path: jsonPath, reason: err.reason });
+				skipped.push({ path: jsonPath, reason: err.reason, kind: 'team-refused' });
 			} else if (err instanceof LifecycleConflictError || err instanceof ReviewRequiredError || err instanceof IllegalTransitionError) {
 				skipped.push({ path: jsonPath, reason: err.message });
 			} else {

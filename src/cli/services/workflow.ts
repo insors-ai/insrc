@@ -15,28 +15,15 @@
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 
 import {
 	buildChainReport,
 	formatChainReport,
 	type ChainReport,
 } from '../../workflow/chain.js';
-import {
-	jsonPathForMd,
-	approveArtifactByJsonPath,
-	rejectArtifactByJsonPath,
-	ackStaleArtifact,
-	readBaseHld,
-	type ApprovalResult,
-	type RejectionResult,
-} from '../../workflow/gates.js';
-import {
-	autoPushEpicOnHld,
-	autoPushStoryOnLld,
-	autoPushTasksOnPlan,
-	type AutoPushResult,
-} from '../../workflow/tracker-auto.js';
+import { jsonPathForMd, rejectArtifactByJsonPath, ackStaleArtifact, readBaseHld, type ApprovalResult, type RejectionResult } from '../../workflow/gates.js';
+import type { AutoPushResult } from '../../workflow/tracker-auto.js';
 import {
 	listAmendments,
 	readAmendment,
@@ -47,45 +34,22 @@ import { scanLldStaleness, type StaleLldEntry } from '../../workflow/amendments/
 import { listDeferred, type DeferredQuestion } from '../../workflow/questions.js';
 import type { AmendmentRecord } from '../../workflow/amendments/types.js';
 import { deriveSlug } from '../../workflow/slug.js';
-import {
-	ARTIFACTS_DIR,
-	defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactPaths,
-	workItemAnchorCreatedAt, workItemKindOf,
-} from '../../workflow/storage.js';
-import { FileSidecarStore } from '../../workflow/artifact-core/sidecar-store.js';
-import { unitHeadId } from '../../workflow/tracker/unit-head.js';
+import { ARTIFACTS_DIR } from '../../workflow/storage.js';
 import type { CommitArtifactsResult } from '../../workflow/tracker/github.js';
-import { commitAndPush } from '../../workflow/tracker/commit-and-push-registry.js';
-import {
-	configAlreadyDetail, configWrittenDetail, planTrackerConfig, runTrackerSetup,
-	type ConfigOutcome, type TrackerConfigPlan, type TrackerSetupOptions, type TrackerSetupReport,
-} from '../../workflow/tracker/setup.js';
-import { githubConfigPath, resolveGithubConfig } from '../../workflow/config/github.js';
-import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
-import { openTracker } from '../../workflow/tracker-auto.js';
+import type { TrackerSetupOptions, TrackerSetupReport } from '../../workflow/tracker/setup.js';
+import type { SyncResult } from '../../workflow/tracker/sync.js';
 import { lifecycleFor, repoOfArtifactPath } from '../../daemon/lifecycle-registry.js';
 import type { LifecycleService } from '../../workflow/artifact-core/lifecycle-service.js';
-import { syncPlanTasks } from '../../daemon/tasks-sync.js';
-import { attachApprovedDocuments, commitApprovedArtifacts } from '../../daemon/approve-pipeline.js';
 import type { SyncResult as TaskSyncResult } from '../../workflow/tasks/task-set.js';
-import { attachApprovedDocument } from '../../workflow/tracker/attach-unit.js';
 import type { AttachUnitResult } from '../../workflow/tracker/attach-unit.js';
 import { getLogger } from '../../shared/logger.js';
-import { createRoleRouter } from '../../analyze/context/role-router.js';
-import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
-import { loadAnalyzeConfig } from '../../config/analyze.js';
-import { shippedModelRegistry } from '../shipped-model-registry.js';
-import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
+import type { ReviewArtifactResult } from '../../workflow/review/index.js';
 import { readReviewRecordOf } from '../../workflow/review/report-file.js';
 import { rpc } from '../client.js';
 import type { Socket } from 'node:net';
-import type { Entity } from '../../shared/types.js';
 import { runWorkflowStream, type RunWorkflowStreamDeps } from '../../mcp/daemon-stream.js';
 import type { ProgressEvent } from '../../shared/types.js';
-import {
-	effectiveReviewVerdict, listPendingReviewFindings, resolveReviewFinding,
-	type ReviewAction, type ResolveReviewResult,
-} from '../../workflow/review/index.js';
+import { effectiveReviewVerdict, listPendingReviewFindings, type ReviewAction, type ResolveReviewResult } from '../../workflow/review/index.js';
 import type { Finding, ReviewVerdict } from '../../workflow/review/types.js';
 
 const log = getLogger('cli:workflow');
@@ -140,31 +104,63 @@ export function chainText(repoPath: string, epicHash: string): string {
 	return formatChainReport(buildChainReport(repoPath, epicHash));
 }
 
-/** Approve an artifact by its `.md`/`.json` path. When `withTracker`
- *  is true (default), an approved HLD/LLD auto-pushes to the GitHub
- *  tracker — mirroring the old `insrc workflow approve` flow. */
-export async function approve(artifactPath: string, withTracker = true, overrideReview?: string): Promise<ApproveOutcome> {
-	const jsonPath = jsonPathForMd(artifactPath);
-	// the approval is made in the lifecycle of the repository that holds the artifact
-	const approval = await approveArtifactByJsonPath(jsonPath, { lifecycle: lifecycleOfArtifact(jsonPath), ...(overrideReview !== undefined ? { overrideReview } : {}) });
-	// An approved plan makes the Story's Tasks artifacts, before their issues are pushed; never fails the approval
-	const tasks = approval.workflow === 'plan' ? await syncPlanTasks(approval.path) : undefined;
-	if (!withTracker) return { approval, ...(tasks !== undefined ? { tasks } : {}) };
-	let tracker: AutoPushResult | undefined;
-	if (approval.workflow === 'design.epic')       tracker = await autoPushEpicOnHld(approval.path);
-	else if (approval.workflow === 'design.story') tracker = await autoPushStoryOnLld(approval.path);
-	else if (approval.workflow === 'plan')         tracker = await autoPushTasksOnPlan(approval.path);
-	// Commit + push AFTER the tracker push, so the checked-in MD carries the
-	// re-rendered `**Tracker:**` link and the issue bodies link the committed blob.
-	const commit = await commitApprovedArtifacts(approval);
-	let attached: Awaited<ReturnType<typeof attachApprovedDocuments>>;
-	try { attached = await attachApprovedDocuments(approval, commit); }
-	catch (err) { log.warn({ workflow: approval.workflow, err: (err as Error).message }, 'approve: attaching the approved document failed'); attached = { attach: { error: (err as Error).message } }; }
-	const out: ApproveOutcome = { approval };
+/**
+ * The call of a daemon method (Story s10): `rpc` that rejects on a premature close and sets no timer. An older daemon that does not know the
+ * method is a clear error and nothing runs locally in its place. A `{ error }` answer is thrown as the error it names.
+ */
+export async function callDaemon<T>(method: string, params: unknown, connect?: () => Socket): Promise<T> {
+	let reply: T | { readonly error: string };
+	try {
+		reply = connect === undefined
+			? await rpc<T | { error: string }>(method, params, undefined, { closeAware: true })
+			: await rpc<T | { error: string }>(method, params, connect, { closeAware: true });
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		if (/^unknown method: /.test(message)) {
+			throw new Error(`the daemon does not support ${method} (it is older than this client): restart it from this checkout and repeat the command; nothing was run or changed`);
+		}
+		if (/closed the connection before replying/.test(message)) {
+			throw new Error(`${message}; the daemon carries on with ${method} by itself, so check the result before repeating it`);
+		}
+		throw err;
+	}
+	if (reply !== null && typeof reply === 'object' && 'error' in reply && typeof (reply as { error: unknown }).error === 'string') {
+		const failed = reply as { error: string; refusal?: { kind: string; text: string } };
+		const error = new Error(failed.error);
+		// a refusal keeps the name the terminal's commands print it by (the error crossed the socket as text)
+		if (failed.refusal?.kind === 'review-blocked') Object.assign(error, { name: 'ReviewBlockedError', summary: failed.refusal.text });
+		if (failed.refusal?.kind === 'team-refused') Object.assign(error, { name: 'TeamGateRefusedError', reason: failed.refusal.text });
+		throw error;
+	}
+	return reply as T;
+}
+
+/** What `workflow.approvePipeline` answers: the approval and every follow-on entry. */
+interface PipelineReply {
+	readonly approval: ApprovalResult;
+	readonly followOn: readonly import('../../workflow/gates.js').FollowOnOutcome[];
+}
+
+/** Rebuild the terminal's ApproveOutcome from the pipeline's follow-on entries; an entry stopped by a denial becomes the failed outcome of its step. */
+export function approveOutcomeOf(reply: PipelineReply): ApproveOutcome {
+	const entry = (kind: import('../../workflow/gates.js').FollowOnOutcome['kind']) => reply.followOn.find(e => e.kind === kind);
+	const sync = entry('tasks-sync'), push = entry('tracker-push'), commit = entry('artifact-commit'), attach = entry('document-attach'), second = entry('attach-commit');
+	const failedPush = (note: string | undefined): AutoPushResult => ({ status: 'failed', reason: note ?? 'the publication stopped' });
 	return {
-		...out, ...(tasks !== undefined ? { tasks } : {}), ...(tracker !== undefined ? { tracker } : {}), ...(commit !== undefined ? { commit } : {}),
-		...(attached !== undefined ? { attach: attached.attach, ...(attached.commit !== undefined ? { attachCommit: attached.commit } : {}) } : {}),
+		approval: reply.approval,
+		...(sync !== undefined ? { tasks: (sync.taskSync ?? { error: sync.note ?? 'the Task reconciliation stopped' }) as TaskSyncResult } : {}),
+		...(push !== undefined ? { tracker: (push.tracker ?? failedPush(push.note)) as AutoPushResult } : {}),
+		...(commit !== undefined ? { commit: commit.commit ?? { committed: false, pushed: false, reason: commit.note ?? 'the check-in commit stopped' } } : {}),
+		...(attach !== undefined ? { attach: (attach.attach ?? { error: attach.note ?? 'the attachment stopped' }) as AttachUnitResult | { readonly skipped: string } } : {}),
+		...(second !== undefined ? { attachCommit: second.commit ?? { committed: false, pushed: false, reason: second.note ?? 'the commit of the attachment records stopped' } } : {}),
 	};
+}
+
+/** Approve an artifact by its `.md`/`.json` path through the daemon's approve pipeline. When `withTracker` is true (default) an approved
+ *  HLD/LLD/plan is published to the GitHub tracker, checked in and attached; false stops after the approval and the Task reconciliation. */
+export async function approve(artifactPath: string, withTracker = true, overrideReview?: string, connect?: () => Socket): Promise<ApproveOutcome> {
+	const reply = await callDaemon<PipelineReply>('workflow.approvePipeline', { artifactPath, withTracker, ...(overrideReview !== undefined ? { overrideReview } : {}) }, connect);
+	return approveOutcomeOf(reply);
 }
 
 /** The service of the repository that holds the artifact at `jsonPath`. */
@@ -193,8 +189,8 @@ export function reviewFindings(artifactPath: string): ReviewFindingsResult {
 }
 
 /** Resolve one review finding (apply | accept | override | defer). */
-export function resolveFinding(artifactPath: string, findingId: string, action: ReviewAction, note?: string): Promise<ResolveReviewResult> {
-	return resolveReviewFinding(artifactPath, jsonPathForMd(artifactPath), findingId, action, note);
+export async function resolveFinding(artifactPath: string, findingId: string, action: ReviewAction, note?: string, connect?: () => Socket): Promise<ResolveReviewResult> {
+	return await callDaemon<ResolveReviewResult>('workflow.resolveFinding', { artifactPath, findingId, action, ...(note !== undefined ? { note } : {}) }, connect);
 }
 
 export interface StreamRunResult {
@@ -252,43 +248,8 @@ export async function runWorkflowStreaming(
  *  (core) tier via the RoleRouter (default: claude opus; whatever the operator
  *  pinned core to otherwise). The resulting `block` verdict is what `approve`
  *  then enforces. */
-export async function reviewArtifact(
-	repoPath: string,
-	artifactPath: string,
-	reviewFile: typeof reviewArtifactFile = reviewArtifactFile,
-): Promise<ReviewArtifactResult> {
-	// The TUI resolves from the shipped definitions only (never the user's store) until s5.
-	const registry = shippedModelRegistry();
-	const router = createRoleRouter({ registry });
-	// Establish the sc6 routing seam so the review resolves through the same
-	// choke point as the workflow runner, and any deep reasoning it triggers is
-	// tiered per-role rather than falling through to the legacy provider.
-	return runWithRoutingContext({ router, repoPath }, async () => {
-		const { provider, resolution } = router.resolveProviderForRole('review', loadAnalyzeConfig(registry), repoPath);
-		return reviewFile({
-			mdPath:     artifactPath,
-			jsonPath:   jsonPathForMd(artifactPath),
-			repo:       repoPath,
-			lifecycle:  lifecycleFor(repoPath).service,
-			provider,
-			model:      `${resolution.runner}:${resolution.model}`,
-			reviewedAt: new Date().toISOString(),
-			// This review runs in the CLI's process, which may not open the
-			// store: the source roots come from the daemon.
-			readEntitiesForRepo: readEntitiesForRepoFromDaemon,
-		});
-	});
-}
-
-/**
- * The repository's indexed file entities, asked of the daemon. Only the daemon
- * opens the store; a failure here (no daemon, an unknown request on an older
- * daemon) makes the review fall back to the repository root and say so.
- */
-export async function readEntitiesForRepoFromDaemon(repoPath: string): Promise<Entity[]> {
-	const reply = await rpc<Entity[] | { error: string }>('repo.entitiesForSourceRoots', { repoPath });
-	if (!Array.isArray(reply)) throw new Error(reply.error);
-	return reply;
+export async function reviewArtifact(repoPath: string, artifactPath: string, connect?: () => Socket): Promise<ReviewArtifactResult> {
+	return await callDaemon<ReviewArtifactResult>('workflow.reviewArtifact', { repoPath, artifactPath }, connect);
 }
 
 export async function ackStale(artifactPath: string, reason: string): Promise<{ readonly path: string; readonly ackedAt: string; readonly reason: string }> {
@@ -340,56 +301,17 @@ export function resolveEpicHashArg(repoPath: string, hashOrSlug: string): string
 
 /** Pull GitHub issue state for an Epic + its Stories into meta.tracker
  *  (read by the chain report). Deterministic; read-only against GitHub. */
-export async function sync(repoPath: string, epicHash: string): Promise<SyncResult> {
-	return await syncTracker(repoPath, epicHash);
+export async function sync(repoPath: string, epicHash: string, connect?: () => Socket): Promise<SyncResult> {
+	return await callDaemon<SyncResult>('tracker.sync', { repoPath, epicHash }, connect);
 }
-
-/** The deadline on the daemon call that writes the tracker config. It bounds only that call. */
-export const TRACKER_CONFIG_TIMEOUT_MS = 15000;
 
 /** Seams for the tracker setup wrapper; tests replace them, production uses the defaults. */
 export interface TrackerSetupDeps {
 	readonly connect?: (() => Socket) | undefined;
-	readonly timeoutMs?: number | undefined;
-	readonly plan?: ((repoPath: string) => TrackerConfigPlan | Promise<TrackerConfigPlan>) | undefined;
-	readonly run?: ((repoPath: string, opts: TrackerSetupOptions) => TrackerSetupReport | Promise<TrackerSetupReport>) | undefined;
 }
 
-type EnsureReply = { readonly ok: true; readonly changed: boolean } | { readonly ok: false; readonly error: { readonly code: string; readonly message: string } };
-
-/** Asks the daemon, the only writer of github.json, to apply the plan; every failure becomes a failed outcome. */
-async function ensureThroughDaemon(repoPath: string, plan: Extract<TrackerConfigPlan, { status: 'needs-write' }>, deps: TrackerSetupDeps): Promise<ConfigOutcome> {
-	const path = githubConfigPath();
-	try {
-		const connect = deps.connect;
-		const params = { repo: repoPath, owner: plan.owner, name: plan.name };
-		const opts = { timeoutMs: deps.timeoutMs ?? TRACKER_CONFIG_TIMEOUT_MS };
-		const reply = connect === undefined
-			? await rpc<EnsureReply>('repo.trackerConfig.ensure', params, undefined, opts)
-			: await rpc<EnsureReply>('repo.trackerConfig.ensure', params, connect, opts);
-		if (!reply.ok) return { status: 'failed', detail: reply.error.message };
-		return reply.changed
-			? { status: 'done', detail: configWrittenDetail(path, plan.owner, plan.name) }
-			: { status: 'already', detail: configAlreadyDetail(path, plan.owner, plan.name) };
-	} catch (err) {
-		const reason = err instanceof Error ? err.message : String(err);
-		return { status: 'failed', detail: `could not write ${path}: the daemon owns that file and must be running to change it (${reason})` };
-	}
-}
-
-/** Bootstrap the GitHub tracker for a repo — auth/scope preflight, config,
- *  labels, issue types, and (optionally) a Projects board. Returns a
- *  structured checklist; the command layer renders it.
- *
- *  The config step never writes github.json from this process: it is planned here
- *  and, when a write is needed, requested from the daemon with a bounded call. The
- *  deadline covers only that call; the remaining steps run afterwards whatever its
- *  outcome, and are not bounded by it. */
+/** Bootstrap the GitHub tracker for a repo — auth/scope preflight, config, labels, issue types, and (optionally) a Projects board — in the
+ *  daemon, which owns github.json and reaches gh and git through the registry. Returns the structured checklist; the command layer renders it. */
 export async function trackerSetup(repoPath: string, opts: TrackerSetupOptions = {}, deps: TrackerSetupDeps = {}): Promise<TrackerSetupReport> {
-	const plan = await (deps.plan ?? planTrackerConfig)(repoPath);
-	const configOutcome: ConfigOutcome = plan.status === 'needs-write'
-		? await ensureThroughDaemon(repoPath, plan, deps)
-		: { status: plan.status, detail: plan.detail };
-	const run = deps.run ?? runTrackerSetup;
-	return await run(repoPath, { ...opts, configOutcome });
+	return await callDaemon<TrackerSetupReport>('tracker.setup', { repoPath, opts }, deps.connect);
 }

@@ -13,7 +13,7 @@ import { loadAnalyzeConfig } from '../config/analyze.js';
 import { jsonPathForMd } from '../workflow/gates.js';
 import { reviewArtifactFile, resolveReviewFinding } from '../workflow/review/index.js';
 import type { ReviewAction, ReviewArtifactResult, ResolveReviewResult } from '../workflow/review/index.js';
-import { claim, describeOutcome, release } from '../workflow/team/gate.js';
+import { claim, describeOutcome, release, TeamGateRefusedError } from '../workflow/team/gate.js';
 import type { GateOutcome } from '../workflow/team/gate.js';
 import { refreshPolicy } from '../workflow/team/policy-refresh.js';
 import type { UnitRef } from '../workflow/tracker/refs.js';
@@ -101,10 +101,16 @@ export async function handleReviewArtifact(params: unknown, deps: ReviewArtifact
 }
 
 /** `workflow.resolveFinding` {artifactPath, findingId, action, note?}: resolve one review finding (apply | accept | override | defer). */
-export async function handleResolveFinding(params: unknown): Promise<ResolveReviewResult> {
+export async function handleResolveFinding(params: unknown): Promise<ResolveReviewResult | { error: string; refusal: { kind: 'team-refused'; text: string } }> {
 	const p = (params ?? {}) as { artifactPath?: unknown; findingId?: unknown; action?: unknown; note?: unknown };
 	if (typeof p.artifactPath !== 'string' || p.artifactPath.length === 0) throw new Error('workflow.resolveFinding: `artifactPath` is required');
 	if (typeof p.findingId !== 'string' || p.findingId.length === 0) throw new Error('workflow.resolveFinding: `findingId` is required');
 	if (p.action !== 'apply' && p.action !== 'accept' && p.action !== 'override' && p.action !== 'defer') throw new Error('workflow.resolveFinding: `action` must be apply, accept, override or defer');
-	return await resolveReviewFinding(p.artifactPath, jsonPathForMd(p.artifactPath), p.findingId, p.action as ReviewAction, typeof p.note === 'string' ? p.note : undefined);
+	try {
+		return await resolveReviewFinding(p.artifactPath, jsonPathForMd(p.artifactPath), p.findingId, p.action as ReviewAction, typeof p.note === 'string' ? p.note : undefined);
+	} catch (err) {
+		// applying a finding changes the stage: a team repo refuses it for anyone but the holder, and the terminal prints that in its own words
+		if (err instanceof TeamGateRefusedError) return { error: err.message, refusal: { kind: 'team-refused', text: err.reason } };
+		throw err;
+	}
 }

@@ -57,7 +57,9 @@ import {
 	writeArtifact,
 	writeAtomic,
 } from './storage.js';
-import { GhCommandError, commitAndPushArtifacts } from './tracker/github.js';
+import { GhCommandError } from './tracker/github.js';
+import { commitAndPush } from './tracker/commit-and-push-registry.js';
+import { isToolDenied } from './tracker/tool-denied.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
 import { unitIssueOf } from './tracker/unit-head.js';
 
@@ -457,8 +459,8 @@ function resolutionSummary(
 }
 
 /** Best-effort commit+push of the artifact files + a tracker-issue comment.
- *  Never throws — a missing git tree, an unconfigured tracker, or a `gh`
- *  failure just leaves the resolution recorded locally. */
+ *  An ordinary failure — a missing git tree, an unconfigured tracker, or a `gh`
+ *  failure — just leaves the resolution recorded locally; a denied tool call is thrown. */
 async function commitAndComment(
 	repoPath:   string,
 	jsonPath:   string,
@@ -467,17 +469,20 @@ async function commitAndComment(
 	summary:    string,
 ): Promise<void> {
 	try {
-		commitAndPushArtifacts(repoPath, [jsonPath, mdPath], summary);
+		const r = await commitAndPush(repoPath, [jsonPath, mdPath], summary);
+		if (!r.committed || !r.pushed) log.info({ reason: r.reason }, 'resolution: commit/push did not complete (best-effort)');
 	} catch (err) {
+		if (isToolDenied(err)) throw err;   // a denied commit stops the stage: no comment is posted
 		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'resolution: commit/push failed (best-effort)');
 	}
 	if (trackerRef === undefined || !trackerRef.includes('#')) return;
 	try {
-		const cfg = resolveGithubConfig(repoPath);
+		const cfg = await resolveGithubConfig(repoPath);
 		if (cfg.type !== 'github') return;
 		const posted = await createGithubTracker(cfg.owner, cfg.repo, { repoPath }).issueOps.comment(trackerRef, summary);
 		if (!posted.ok) throw new GhCommandError(posted.kind, posted.reason);   // the catch below logs it, as for a throwing gh
 	} catch (err) {
+		if (isToolDenied(err)) throw err;
 		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'resolution: tracker comment failed (best-effort)');
 	}
 }

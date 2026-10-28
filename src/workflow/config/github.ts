@@ -40,12 +40,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { PATHS } from '../../shared/paths.js';
-import { gitOriginOwnerRepo, parseGithubRemoteUrl } from '../tracker/github.js';
+import { parseGithubRemoteUrl } from '../tracker/github.js';
+import { createRegistryTable, workflowToolDeps } from '../tracker/registry-table.js';
 import type { PortResult } from '../tracker/port.js';
 
 // Re-exported for back-compat (tests + callers import these here).
 export { parseGithubRemoteUrl };
-export { gitOriginOwnerRepo as parseGitRemoteOwnerRepo };
+/** The owner and repo of a work tree's origin remote, read through the registry's git_remote tool. */
+export const parseGitRemoteOwnerRepo = (repoPath: string): Promise<{ readonly owner: string; readonly repo: string } | null> =>
+	createRegistryTable(workflowToolDeps(repoPath)).gitOriginOwnerRepo(repoPath);
+const gitOriginOwnerRepo = parseGitRemoteOwnerRepo;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -200,8 +204,8 @@ export class GithubConfigError extends Error {
  *  Throws `GithubConfigError` only when github is enabled for the repo
  *  but no owner/repo could be resolved (per-repo entry named none, or
  *  the git remote could not be parsed). Callers gate on this. */
-export function resolveGithubConfig(repoPath: string, configPath: string = githubConfigPath()): ResolvedGithubConfig {
-	return resolveGithubConfigFromFile(loadGithubConfigFile(configPath), repoPath);
+export async function resolveGithubConfig(repoPath: string, configPath: string = githubConfigPath()): Promise<ResolvedGithubConfig> {
+	return await resolveGithubConfigFromFile(loadGithubConfigFile(configPath), repoPath);
 }
 
 /**
@@ -222,11 +226,11 @@ export function resolveBranchPattern(repoPath: string, configPath: string = gith
  *  of reading it again. The selection and resolution logic is the same code, only
  *  moved: it gives the same result for every file, including the structurally
  *  malformed ones the lenient loader does not reject. */
-export function resolveGithubConfigFromFile(file: GithubConfigFile, repoPath: string): ResolvedGithubConfig {
+export async function resolveGithubConfigFromFile(file: GithubConfigFile, repoPath: string): Promise<ResolvedGithubConfig> {
 	const perRepo = file.repos?.[repoPath];
 	if (perRepo !== undefined) {
 		// The repo's OWN entry — an explicit owner/repo here is intentional.
-		const resolved = resolveEntry(perRepo, file.default, repoPath, 'per-repo-config', true);
+		const resolved = await resolveEntry(perRepo, file.default, repoPath, 'per-repo-config', true);
 		if (resolved !== null) return resolved;
 	}
 	if (file.default !== undefined) {
@@ -234,7 +238,7 @@ export function resolveGithubConfigFromFile(file: GithubConfigFile, repoPath: st
 		// but NEVER its owner/repo — the target is the repo's git remote. The
 		// tier source stays 'default-config'; resolveEntry's git-remote branch
 		// self-labels 'git-remote' when it resolves an actual target.
-		const resolved = resolveEntry(file.default, undefined, repoPath, 'default-config', false);
+		const resolved = await resolveEntry(file.default, undefined, repoPath, 'default-config', false);
 		if (resolved !== null) return resolved;
 	}
 	// Implicit default: none. The user hasn't opted in.
@@ -252,13 +256,13 @@ export function resolveGithubConfigFromFile(file: GithubConfigFile, repoPath: st
  *  as the target. It is `true` for a repo's own per-repo entry and `false`
  *  for the global default — a global default must never target a repo, so
  *  its owner/repo is skipped and the target resolves to the git remote. */
-function resolveEntry(
+async function resolveEntry(
 	entry: GithubEntry,
 	fallbackDefaults: GithubEntry | undefined,
 	repoPath: string,
 	source: ResolvedGithubConfigSource,
 	allowEntryTarget: boolean,
-): ResolvedGithubConfig | null {
+): Promise<ResolvedGithubConfig | null> {
 	if (entry.type === 'none') {
 		return { type: 'none', source };
 	}
@@ -285,7 +289,7 @@ function resolveEntry(
 		// User explicitly asked for github but did not name a target.
 		// Fall back to the git origin remote, or throw with a
 		// specific reason so the misconfiguration surfaces.
-		const remote = gitOriginOwnerRepo(repoPath);
+		const remote = await gitOriginOwnerRepo(repoPath);
 		if (remote === null) {
 			throw new GithubConfigError(
 				`GitHub tracker requested (type: 'github') for repo '${repoPath}' but no ` +
@@ -335,8 +339,8 @@ function strictTarget(owner: unknown, repo: unknown, where: string): PortResult<
 	return { ok: true, value: { owner, repo } };
 }
 
-function strictOrigin(repoPath: string, where: string): PortResult<StrictTrackerTarget> {
-	const remote = gitOriginOwnerRepo(repoPath);
+async function strictOrigin(repoPath: string, where: string): Promise<PortResult<StrictTrackerTarget>> {
+	const remote = await gitOriginOwnerRepo(repoPath);
 	if (remote === null) return strictRefuse(`${where}: type 'github' names no owner/repo and the origin remote of '${repoPath}' could not be parsed`);
 	return strictTarget(remote.owner, remote.repo, `${where} (origin remote)`);
 }
@@ -346,7 +350,7 @@ function strictOrigin(repoPath: string, where: string): PortResult<StrictTracker
  *  supplies a target), but every malformed or unsupported configuration is a
  *  refusal instead of a silent fallback to "no tracker". `resolveGithubConfig`
  *  stays lenient and untouched; only `loadTracker` calls this. */
-export function resolveStrictTrackerTarget(repoPath: string, configPath: string = githubConfigPath()): PortResult<StrictTrackerTarget> {
+export async function resolveStrictTrackerTarget(repoPath: string, configPath: string = githubConfigPath()): Promise<PortResult<StrictTrackerTarget>> {
 	if (!existsSync(configPath)) return strictRefuse(`no tracker is configured: ${configPath} does not exist`);
 	let parsed: unknown;
 	try {
@@ -361,19 +365,19 @@ export function resolveStrictTrackerTarget(repoPath: string, configPath: string 
 	if (repos !== undefined && (typeof repos !== 'object' || repos === null || Array.isArray(repos))) return strictRefuse(`${configPath}: 'repos' must be an object`);
 	const own = (repos as Record<string, unknown> | undefined)?.[repoPath];
 	if (own !== undefined) {
-		const r = strictEntry(own, repoPath, 'the repo entry', true);
+		const r = await strictEntry(own, repoPath, 'the repo entry', true);
 		if (r !== null) return r;
 	}
 	const def = file['default'];
 	if (def !== undefined) {
-		const r = strictEntry(def, repoPath, "the 'default' entry", false);
+		const r = await strictEntry(def, repoPath, "the 'default' entry", false);
 		if (r !== null) return r;
 	}
 	return strictRefuse(`no tracker is configured for '${repoPath}' (type none)`);
 }
 
 /** null = the entry says nothing (fall through to the next tier). */
-function strictEntry(raw: unknown, repoPath: string, where: string, allowEntryTarget: boolean): PortResult<StrictTrackerTarget> | null {
+async function strictEntry(raw: unknown, repoPath: string, where: string, allowEntryTarget: boolean): Promise<PortResult<StrictTrackerTarget> | null> {
 	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return strictRefuse(`${where} must be a JSON object`);
 	const e = raw as Record<string, unknown>;
 	const type = e['type'];

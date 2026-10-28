@@ -37,7 +37,7 @@ import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
 import { MissingAnchorError } from './artifact-ids.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, requireEpicAnchor, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
-import { ghAuthOk } from './tracker/github.js';
+import { createRegistryTable, workflowToolDeps } from './tracker/registry-table.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
 import type { IssueOps, PortResult, TrackerComment, TrackerPort } from './tracker/port.js';
 import { renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList } from './tracker/conventions.js';
@@ -83,16 +83,16 @@ function readMeta(path: string): MetaShape {
 
 /** Resolve config + gh-auth gates shared by both entry points. Returns
  *  a github config or a skip result. */
-function gate(repoPath: string): { cfg: Extract<ResolvedGithubConfig, { type: 'github' }> } | { skip: AutoPushResult } {
+async function gate(repoPath: string): Promise<{ cfg: Extract<ResolvedGithubConfig, { type: 'github' }> } | { skip: AutoPushResult }> {
 	let cfg: ResolvedGithubConfig;
 	try {
-		cfg = resolveGithubConfig(repoPath);
+		cfg = await resolveGithubConfig(repoPath);
 	} catch (err) {
 		if (err instanceof GithubConfigError) return { skip: { status: 'skipped', reason: err.message } };
 		throw err;
 	}
 	if (cfg.type === 'none') return { skip: { status: 'skipped', reason: `tracker disabled via config (source: ${cfg.source})` } };
-	const auth = ghAuthOk();
+	const auth = await createRegistryTable(workflowToolDeps(repoPath)).ghAuthOk();
 	if (!auth.ok) return { skip: { status: 'skipped', reason: auth.reason } };
 	return { cfg };
 }
@@ -173,17 +173,17 @@ export async function autoPushTasksOnPlan(planJsonPath: string): Promise<AutoPus
 type GithubCfg = Extract<ResolvedGithubConfig, { type: 'github' }>;
 
 /** The repository's GitHub tracker, or why there is none (config disabled, gh not signed in): the one way a push or an attach gets its port. */
-export function openTracker(repoPath: string): { readonly cfg: GithubCfg; readonly port: TrackerPort } | { readonly skip: AutoPushResult } { return trackerGate(repoPath, testDeps); }
+export async function openTracker(repoPath: string): Promise<{ readonly cfg: GithubCfg; readonly port: TrackerPort } | { readonly skip: AutoPushResult }> { return await trackerGate(repoPath, testDeps); }
 
-function trackerGate(repoPath: string, deps: AutoPushDeps): { cfg: GithubCfg; port: TrackerPort } | { skip: AutoPushResult } {
-	const g = deps.port !== undefined ? gateNoAuth(repoPath) : gate(repoPath);
+async function trackerGate(repoPath: string, deps: AutoPushDeps): Promise<{ cfg: GithubCfg; port: TrackerPort } | { skip: AutoPushResult }> {
+	const g = deps.port !== undefined ? await gateNoAuth(repoPath) : await gate(repoPath);
 	if ('skip' in g) return g;
 	return { cfg: g.cfg, port: deps.port ?? createGithubTracker(g.cfg.owner, g.cfg.repo) };
 }
 
-function gateNoAuth(repoPath: string): { cfg: GithubCfg } | { skip: AutoPushResult } {
+async function gateNoAuth(repoPath: string): Promise<{ cfg: GithubCfg } | { skip: AutoPushResult }> {
 	try {
-		const cfg = resolveGithubConfig(repoPath);
+		const cfg = await resolveGithubConfig(repoPath);
 		return cfg.type === 'none' ? { skip: { status: 'skipped', reason: `tracker disabled via config (source: ${cfg.source})` } } : { cfg };
 	} catch (err) {
 		if (err instanceof GithubConfigError) return { skip: { status: 'skipped', reason: err.message } };
@@ -239,7 +239,7 @@ async function pushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps
 		return { status: 'skipped', reason: 'HLD meta is missing epicHash / epicSlug / repoPath' };
 	}
 	const { epicHash, epicSlug, repoPath } = { epicHash: meta.epicHash, epicSlug: meta.epicSlug, repoPath: meta.repoPath };
-	const g = trackerGate(repoPath, deps);
+	const g = await trackerGate(repoPath, deps);
 	if ('skip' in g) return g.skip;
 	const { cfg, port } = g;
 	const unit: UnitRef = { unit: 'epic', repoPath, epicHash };
@@ -272,7 +272,7 @@ async function pushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDep
 		return { status: 'skipped', reason: 'LLD meta is missing epicHash / epicSlug / storyId / repoPath' };
 	}
 	const { epicHash, epicSlug, storyId, repoPath } = { epicHash: meta.epicHash, epicSlug: meta.epicSlug, storyId: meta.storyId, repoPath: meta.repoPath };
-	const g = trackerGate(repoPath, deps);
+	const g = await trackerGate(repoPath, deps);
 	if ('skip' in g) return g.skip;
 	const { cfg, port } = g;
 
@@ -318,7 +318,7 @@ async function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDe
 		return { status: 'skipped', reason: 'Plan meta is missing epicHash / epicSlug / storyId / repoPath' };
 	}
 	const { epicHash, storyId, repoPath } = { epicHash: meta.epicHash, storyId: meta.storyId, repoPath: meta.repoPath };
-	const g = trackerGate(repoPath, deps);
+	const g = await trackerGate(repoPath, deps);
 	if ('skip' in g) return g.skip;
 	const { port, cfg } = g;
 	// Team mode makes a Task issue for every Task whatever pushTasks says (forceTaskIssues); individual mode keeps the setting.

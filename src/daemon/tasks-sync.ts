@@ -46,7 +46,7 @@ export async function syncPlanTasks(planJsonPath: string): Promise<SyncResult> {
 	try {
 		const entry = lifecycleFor(repoPath);
 		const sets = new TaskSets({ repoPath, store: entry.store, service: entry.service, history: new History(createFileSidecarStore(repoPath)) });
-		const gate = openTracker(repoPath);
+		const gate = await openTracker(repoPath);
 		const closeIssue: CloseIssue | undefined = 'port' in gate
 			? async issue => { const r = await gate.port.issueOps.close(issue); return r.ok ? { ok: true } : { ok: false, reason: r.reason }; }
 			: undefined;

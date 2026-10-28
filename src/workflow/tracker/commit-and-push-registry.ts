@@ -19,7 +19,7 @@ import { gitRevParseTool } from '../../daemon/tools/builtins/git/rev-parse.js';
 import { gitStageTool } from '../../daemon/tools/builtins/git/stage.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import type { CommitArtifactsResult } from './github.js';
-import { run } from './registry-table.js';
+import { run, workflowToolDeps } from './registry-table.js';
 import type { Call } from './registry-table.js';
 import { ToolDenied } from './tool-denied.js';
 import type { CommitPhase } from './tool-denied.js';
@@ -57,4 +57,9 @@ export async function commitAndPushArtifactsViaRegistry(repoPath: string, paths:
 	const push = denyOr(await run(gitPushTool, { cwd: repoPath, configured: true }, deps), 'push');
 	if (!push.ok) return { committed: true, pushed: false, reason: `committed locally; push failed: ${push.failure.message}` };
 	return { committed: true, pushed: true };
+}
+
+/** commitAndPushArtifactsViaRegistry with the workflow's tool deps for `repoPath`: what the callers that replace commitAndPushArtifacts use. */
+export async function commitAndPush(repoPath: string, paths: readonly string[], message: string): Promise<CommitArtifactsResult> {
+	return await commitAndPushArtifactsViaRegistry(repoPath, paths, message, workflowToolDeps(repoPath));
 }

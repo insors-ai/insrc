@@ -235,7 +235,7 @@ export async function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, 
 	catch (err) { return before((err as Error).message); }
 
 	let cfg: ResolvedGithubConfig;
-	try { cfg = (deps.readConfig ?? resolveGithubConfig)(unit.repoPath); }
+	try { cfg = await (deps.readConfig ?? resolveGithubConfig)(unit.repoPath); }
 	catch (err) {
 		return before(err instanceof GithubConfigError ? err.message : `cannot read the tracker configuration: ${(err as Error).message}`);
 	}

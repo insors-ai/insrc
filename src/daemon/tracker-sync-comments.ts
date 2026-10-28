@@ -40,7 +40,7 @@ export async function handleTrackerSyncComments(params: unknown, repoEnv: string
 	const unit = p.unit ?? (p.taskId !== undefined ? 'task' : p.storyId !== undefined ? 'story' : 'epic');
 	if (unit !== 'epic' && (typeof p.storyId !== 'string' || p.storyId.length === 0)) return { error: `storyId is required for a ${unit} unit` };
 	if (unit === 'task' && (typeof p.taskId !== 'string' || p.taskId.length === 0)) return { error: 'taskId is required for a task unit' };
-	const gate = openTracker(repoPath);
+	const gate = await openTracker(repoPath);
 	if ('skip' in gate) return { error: `no GitHub tracker to sync with: ${gate.skip.status === 'skipped' || gate.skip.status === 'failed' ? gate.skip.reason : gate.skip.status}` };
 	const ref: UnitRef = {
 		unit, repoPath, epicHash: p.epicHash,

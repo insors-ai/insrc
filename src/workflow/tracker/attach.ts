@@ -15,7 +15,6 @@
  * (the EPIC head for an Epic, the STORY head for a Story), the one that holds the binding, through `recordAttachment` below, a meta-only patch like the binding module's (it moves no revision and is refused while the store has a write staged).
  */
 
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
@@ -23,7 +22,8 @@ import { ArtifactIds } from '../artifact-ids.js';
 import type { Attachment, Reference } from '../artifact-core/types.js';
 import { artifactJsonPath, defineArtifactId, lldArtifactId, writeArtifact } from '../storage.js';
 import { hasStagedWrite, isObject, readAttachments, readBinding, readHead } from './binding.js';
-import { gitOriginOwnerRepo } from './github.js';
+import { createRegistryTable, workflowToolDeps } from './registry-table.js';
+import { isToolDenied } from './tool-denied.js';
 import type { TrackerComment, TrackerPort } from './port.js';
 import type { UnitRef } from './refs.js';
 import { unitHeadId } from './unit-head.js';
@@ -39,7 +39,7 @@ export interface AttachTarget {
 export interface AttachDeps {
 	readonly now?: (() => string) | undefined;
 	/** The repository's GitHub owner and name; read from the origin remote by default. */
-	readonly repoSlug?: ((repoPath: string) => { readonly owner: string; readonly repo: string } | null) | undefined;
+	readonly repoSlug?: ((repoPath: string) => { readonly owner: string; readonly repo: string } | null | Promise<{ readonly owner: string; readonly repo: string } | null>) | undefined;
 }
 
 export interface AttachOutcome {
@@ -52,7 +52,6 @@ export interface AttachOutcome {
 	readonly failed:     { readonly target: string; readonly reason: string }[];
 }
 
-const git = (repoPath: string, args: readonly string[]): string => execFileSync('git', ['-C', repoPath, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
 /** The artifact that holds the unit's binding: the EPIC head of an Epic, the STORY head of a Story; a Task's is its own artifact, found elsewhere. */
 export function unitArtifactId(unit: UnitRef): string | undefined {
@@ -116,7 +115,8 @@ export async function attachDocuments(unit: UnitRef, port: TrackerPort, targets:
 		issue = binding.reference.entityId;
 		recorded = readAttachments(repoPath, ownerId);
 	} catch (err) { return failAll((err as Error).message); }
-	const slug = (deps.repoSlug ?? gitOriginOwnerRepo)(repoPath);
+	const table = createRegistryTable(workflowToolDeps(repoPath));
+	const slug = await (deps.repoSlug ?? ((p: string) => table.gitOriginOwnerRepo(p)))(repoPath);
 	if (slug === null) return failAll('the repository has no GitHub origin remote to link to');
 
 	let comments: TrackerComment[] | { readonly failed: string } | undefined;
@@ -137,12 +137,11 @@ export async function attachDocuments(unit: UnitRef, port: TrackerPort, targets:
 
 		let sha: string;
 		try {
-			try { git(repoPath, ['ls-files', '--error-unmatch', '--', t.relPath]); }
-			catch { fail(`${t.relPath} is not tracked by git: commit the file first`); continue; }
-			if (git(repoPath, ['status', '--porcelain', '--', t.relPath]).length > 0) { fail(`${t.relPath} has uncommitted changes: commit the file first`); continue; }
-			sha = git(repoPath, ['log', '-1', '--format=%H', '--', t.relPath]);
+			if (!(await table.gitIsTracked(repoPath, t.relPath))) { fail(`${t.relPath} is not tracked by git: commit the file first`); continue; }
+			if (await table.gitHasChanges(repoPath, t.relPath)) { fail(`${t.relPath} has uncommitted changes: commit the file first`); continue; }
+			sha = await table.gitLastCommitOf(repoPath, t.relPath);
 			if (sha.length === 0) { fail(`${t.relPath} has no commit: commit the file first`); continue; }
-		} catch (err) { fail(`git could not be asked about ${t.relPath}: ${(err as Error).message}`); continue; }
+		} catch (err) { if (isToolDenied(err)) throw err; fail(`git could not be asked about ${t.relPath}: ${(err as Error).message}`); continue; }
 		const link = permalinkOf(slug, sha, t.relPath);
 
 		const known = await commentsOnce();

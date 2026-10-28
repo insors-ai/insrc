@@ -38,11 +38,11 @@ import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './sche
 // tracker.push
 // ---------------------------------------------------------------------------
 
-export function assemblePushContext(ctx: StepRunnerContext): PushContext {
+export async function assemblePushContext(ctx: StepRunnerContext): Promise<PushContext> {
 	const epicHash = requireEpicHash(ctx);
 	const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);
 	const epicSlug = epic.meta.epicSlug ?? epicHash;
-	const gh   = requireGithubAdapter(resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
+	const gh   = requireGithubAdapter(await resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
 	const force = ctx.intent.params['force'] === true;
 
 	// Compose the Epic issue body via the SHARED renderer so a
@@ -111,11 +111,11 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 // tracker.sync
 // ---------------------------------------------------------------------------
 
-export function assembleSyncContext(ctx: StepRunnerContext): SyncContext {
+export async function assembleSyncContext(ctx: StepRunnerContext): Promise<SyncContext> {
 	const epicHash = requireEpicHash(ctx);
 	const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);
 	const epicSlug = epic.meta.epicSlug ?? epicHash;
-	const gh   = requireGithubAdapter(resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
+	const gh   = requireGithubAdapter(await resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
 	const milestoneRef = (epic.meta as { tracker?: { milestoneRef?: string } }).tracker?.milestoneRef;
 	const epicRef = unitIssueOf(ctx.intent.repoPath, epicHash);
 	if (epicRef === undefined) {
@@ -142,11 +142,11 @@ export function assembleSyncContext(ctx: StepRunnerContext): SyncContext {
 // tracker.post
 // ---------------------------------------------------------------------------
 
-export function assemblePostContext(ctx: StepRunnerContext): PostContext {
+export async function assemblePostContext(ctx: StepRunnerContext): Promise<PostContext> {
 	const epicHash = requireEpicHash(ctx);
 	const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);
 	const epicSlug = epic.meta.epicSlug ?? epicHash;
-	const gh   = requireGithubAdapter(resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
+	const gh   = requireGithubAdapter(await resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
 	const targetKind = (ctx.intent.params['target'] as { kind?: unknown } | undefined)?.kind;
 	if (targetKind !== 'hld' && targetKind !== 'lld' && targetKind !== 'amendment') {
 		throw new Error(`tracker.post: params.target.kind must be 'hld' | 'lld' | 'amendment'`);

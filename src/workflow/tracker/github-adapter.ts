@@ -137,7 +137,7 @@ export function createGithubTracker(owner: string, repo: string, opts: GithubTra
  *  check and a gh sign-in check. No reduced mode: either every needed capability
  *  is available or the load fails. Lenient callers use {@link createGithubTracker}. */
 export async function loadTracker(repo: string, needed: ReadonlySet<Capability>, opts: Omit<GithubTrackerOptions, 'repoPath'> = {}): Promise<PortResult<TrackerPort>> {
-	const target = resolveStrictTrackerTarget(repo);
+	const target = await resolveStrictTrackerTarget(repo);
 	if (!target.ok) return target;
 	const tracker = createGithubTracker(target.value.owner, target.value.repo, { repoPath: repo, ...opts });
 	const missing = missingCapabilities(tracker.capabilities, needed);

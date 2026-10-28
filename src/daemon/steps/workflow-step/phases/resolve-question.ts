@@ -17,6 +17,7 @@
  * this handler just records the answer.
  */
 
+import { isToolDenied } from '../../../../workflow/tracker/tool-denied.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { resolveRepoPath } from '../../resolve-repo.js';
 import { assertEpicHash } from '../../../../workflow/hash.js';
@@ -81,6 +82,7 @@ export async function handleResolveQuestion(
 		);
 		remainingOpen = res.remainingOpen;
 	} catch (e) {
+		if (isToolDenied(e)) throw e;   // a denied commit stops the stage; it is not an unknown question
 		return err('unknown-question', e instanceof Error ? e.message : String(e));
 	}
 

@@ -23,7 +23,7 @@ function writeHead(repo: string, id: string, rowId: string, status?: string): vo
 	}, null, 2) + '\n');
 }
 
-test("an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head is not resolved through the Plan", () => {
+test("an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head is not resolved through the Plan", async () => {
 	const fx = seed({ pushTasks: true, taskHeads: false });
 	try {
 		// plan row t2 became Task t4 (bound to #7); row t1 has no Task artifact, and a record the plan holds for it (#9) is not read
@@ -53,7 +53,7 @@ test("an issue number resolves to a Task through its head's binding, the tracker
 		Object.assign(plan.meta, approvedMeta({ at: '2026-07-18T00:00:00.000Z' }));
 		writeFileSync(fx.plan, JSON.stringify(plan));
 		const ctx = { intent: { repoPath: fx.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as unknown as StepRunnerContext;
-		assert.deepEqual(assemblePushContext(ctx).existingRefs?.taskRefs, { s1: { t2: 'acme/demo#7' } });
+		assert.deepEqual((await assemblePushContext(ctx)).existingRefs?.taskRefs, { s1: { t2: 'acme/demo#7' } });
 
 		// the push result: a Task with an artifact is bound on it, one without is not recorded anywhere
 		const other = writeAndBind(fx.repo);

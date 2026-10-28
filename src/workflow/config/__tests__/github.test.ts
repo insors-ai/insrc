@@ -34,18 +34,18 @@ import {
 // parseGithubRemoteUrl
 // ---------------------------------------------------------------------------
 
-test('parseGithubRemoteUrl handles SSH remotes', () => {
+test('parseGithubRemoteUrl handles SSH remotes', async () => {
 	assert.deepEqual(parseGithubRemoteUrl('git@github.com:foo/bar.git'), { owner: 'foo', repo: 'bar' });
 	assert.deepEqual(parseGithubRemoteUrl('git@github.com:foo/bar'),     { owner: 'foo', repo: 'bar' });
 });
 
-test('parseGithubRemoteUrl handles HTTPS remotes', () => {
+test('parseGithubRemoteUrl handles HTTPS remotes', async () => {
 	assert.deepEqual(parseGithubRemoteUrl('https://github.com/foo/bar.git'), { owner: 'foo', repo: 'bar' });
 	assert.deepEqual(parseGithubRemoteUrl('https://github.com/foo/bar'),     { owner: 'foo', repo: 'bar' });
 	assert.deepEqual(parseGithubRemoteUrl('http://github.com/foo/bar'),      { owner: 'foo', repo: 'bar' });
 });
 
-test('parseGithubRemoteUrl rejects other hosts', () => {
+test('parseGithubRemoteUrl rejects other hosts', async () => {
 	assert.equal(parseGithubRemoteUrl('git@gitlab.com:foo/bar.git'), null);
 	assert.equal(parseGithubRemoteUrl('https://bitbucket.org/foo/bar'), null);
 	assert.equal(parseGithubRemoteUrl(''), null);
@@ -55,31 +55,31 @@ test('parseGithubRemoteUrl rejects other hosts', () => {
 // parseGitRemoteOwnerRepo (integration — real git repo)
 // ---------------------------------------------------------------------------
 
-test('parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin', () => {
+test('parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gh-'));
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:myorg/myrepo.git'], { cwd: repo, stdio: 'ignore' });
-		assert.deepEqual(parseGitRemoteOwnerRepo(repo), { owner: 'myorg', repo: 'myrepo' });
+		assert.deepEqual(await parseGitRemoteOwnerRepo(repo), { owner: 'myorg', repo: 'myrepo' });
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
-test('parseGitRemoteOwnerRepo returns null on a repo with no origin', () => {
+test('parseGitRemoteOwnerRepo returns null on a repo with no origin', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gh-'));
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
-		assert.equal(parseGitRemoteOwnerRepo(repo), null);
+		assert.equal(await parseGitRemoteOwnerRepo(repo), null);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
-test('parseGitRemoteOwnerRepo returns null on a non-git dir', () => {
+test('parseGitRemoteOwnerRepo returns null on a non-git dir', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gh-'));
 	try {
-		assert.equal(parseGitRemoteOwnerRepo(dir), null);
+		assert.equal(await parseGitRemoteOwnerRepo(dir), null);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
@@ -89,54 +89,54 @@ test('parseGitRemoteOwnerRepo returns null on a non-git dir', () => {
 // resolveGithubConfig — type discriminant (github vs none)
 // ---------------------------------------------------------------------------
 
-function withTempConfig<T>(config: unknown, fn: (configPath: string) => T): T {
+async function withTempConfig<T>(config: unknown, fn: (configPath: string) => T | Promise<T>): Promise<T> {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-cfg-'));
 	const path = join(dir, 'github.json');
 	writeFileSync(path, JSON.stringify(config, null, 2));
-	try { return fn(path); }
+	try { return await fn(path); }
 	finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-test('resolveGithubConfig honors per-repo "type": "none"', () => {
-	withTempConfig(
+test('resolveGithubConfig honors per-repo "type": "none"', async () => {
+	await withTempConfig(
 		{ repos: { '/repo/A': { type: 'none' } } },
-		configPath => {
-			const cfg = resolveGithubConfig('/repo/A', configPath);
+		async configPath => {
+			const cfg = await resolveGithubConfig('/repo/A', configPath);
 			assert.equal(cfg.type, 'none');
 			assert.equal(cfg.source, 'per-repo-config');
 		},
 	);
 });
 
-test('resolveGithubConfig honors default "type": "none" when no per-repo entry', () => {
-	withTempConfig(
+test('resolveGithubConfig honors default "type": "none" when no per-repo entry', async () => {
+	await withTempConfig(
 		{ default: { type: 'none' } },
-		configPath => {
-			const cfg = resolveGithubConfig('/repo/unlisted', configPath);
+		async configPath => {
+			const cfg = await resolveGithubConfig('/repo/unlisted', configPath);
 			assert.equal(cfg.type, 'none');
 			assert.equal(cfg.source, 'default-config');
 		},
 	);
 });
 
-test('resolveGithubConfig prefers per-repo "none" over default owner/repo', () => {
-	withTempConfig(
+test('resolveGithubConfig prefers per-repo "none" over default owner/repo', async () => {
+	await withTempConfig(
 		{
 			default: { owner: 'org', repo: 'default' },
 			repos:   { '/repo/A': { type: 'none' } },
 		},
-		configPath => {
-			const cfg = resolveGithubConfig('/repo/A', configPath);
+		async configPath => {
+			const cfg = await resolveGithubConfig('/repo/A', configPath);
 			assert.equal(cfg.type, 'none');
 		},
 	);
 });
 
-test('resolveGithubConfig returns type=github with owner/repo when configured', () => {
-	withTempConfig(
+test('resolveGithubConfig returns type=github with owner/repo when configured', async () => {
+	await withTempConfig(
 		{ repos: { '/repo/A': { owner: 'acme', repo: 'foo' } } },
-		configPath => {
-			const cfg = resolveGithubConfig('/repo/A', configPath);
+		async configPath => {
+			const cfg = await resolveGithubConfig('/repo/A', configPath);
 			assert.equal(cfg.type, 'github');
 			if (cfg.type === 'github') {
 				assert.equal(cfg.owner, 'acme');
@@ -149,7 +149,7 @@ test('resolveGithubConfig returns type=github with owner/repo when configured', 
 	);
 });
 
-test('a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo', () => {
+test('a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo', async () => {
 	// Regression: the AFM-epics-into-insrc bug. A `default` with an explicit
 	// owner/repo must NOT capture every unlisted repo. The default supplies
 	// enablement + settings; the TARGET is always the repo's own git remote.
@@ -157,10 +157,10 @@ test('a global default NEVER targets a repo — an unlisted repo resolves to its
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:real-owner/real-repo.git'], { cwd: repo, stdio: 'ignore' });
-		withTempConfig(
+		await withTempConfig(
 			{ default: { type: 'github', owner: 'WRONG', repo: 'WRONG', useMilestones: true } },
-			configPath => {
-				const cfg = resolveGithubConfig(repo, configPath);
+			async configPath => {
+				const cfg = await resolveGithubConfig(repo, configPath);
 				assert.equal(cfg.type, 'github');
 				if (cfg.type === 'github') {
 					assert.equal(cfg.owner, 'real-owner', 'owner must come from the git remote, not the default');
@@ -175,15 +175,15 @@ test('a global default NEVER targets a repo — an unlisted repo resolves to its
 	}
 });
 
-test('a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence', () => {
+test('a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence', async () => {
 	// A default with only an explicit `type: github` (no owner/repo) + a repo
 	// with a remote → the repo's remote. (No per-repo entry needed.)
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-default-remote-'));
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:acme/afm.git'], { cwd: repo, stdio: 'ignore' });
-		withTempConfig({ default: { type: 'github' } }, configPath => {
-			const cfg = resolveGithubConfig(repo, configPath);
+		await withTempConfig({ default: { type: 'github' } }, async configPath => {
+			const cfg = await resolveGithubConfig(repo, configPath);
 			assert.equal(cfg.type, 'github');
 			if (cfg.type === 'github') {
 				assert.equal(cfg.owner, 'acme');
@@ -196,34 +196,34 @@ test('a default enabling github targets the repo remote even when the repo has a
 	}
 });
 
-test('resolveGithubConfig defaults to type=none when no matching entry AND no config file', () => {
+test('resolveGithubConfig defaults to type=none when no matching entry AND no config file', async () => {
 	// Pass a config path that does not exist — loader falls back to empty {}
 	// and the resolver's implicit default is 'none'.
-	const cfg = resolveGithubConfig('/repo/unlisted', '/does/not/exist.json');
+	const cfg = await resolveGithubConfig('/repo/unlisted', '/does/not/exist.json');
 	assert.equal(cfg.type, 'none');
 	assert.equal(cfg.source, 'default-config');
 });
 
-test('resolveGithubConfig defaults to type=none when file exists but has no matching entry', () => {
-	withTempConfig({}, configPath => {
-		const cfg = resolveGithubConfig('/repo/unlisted', configPath);
+test('resolveGithubConfig defaults to type=none when file exists but has no matching entry', async () => {
+	await withTempConfig({}, async configPath => {
+		const cfg = await resolveGithubConfig('/repo/unlisted', configPath);
 		assert.equal(cfg.type, 'none');
 		assert.equal(cfg.source, 'default-config');
 	});
 });
 
-test('resolveGithubConfig defaults to type=none when default entry is empty {}', () => {
-	withTempConfig({ default: {} }, configPath => {
-		const cfg = resolveGithubConfig('/repo/unlisted', configPath);
+test('resolveGithubConfig defaults to type=none when default entry is empty {}', async () => {
+	await withTempConfig({ default: {} }, async configPath => {
+		const cfg = await resolveGithubConfig('/repo/unlisted', configPath);
 		assert.equal(cfg.type, 'none');
 	});
 });
 
-test('resolveGithubConfig with explicit "type": "github" but no owner/repo throws when git remote is absent', () => {
-	withTempConfig({ default: { type: 'github' } }, configPath => {
+test('resolveGithubConfig with explicit "type": "github" but no owner/repo throws when git remote is absent', async () => {
+	await withTempConfig({ default: { type: 'github' } }, async configPath => {
 		const dir = mkdtempSync(join(tmpdir(), 'insrc-nogit-'));
 		try {
-			assert.throws(
+			await assert.rejects(
 				() => resolveGithubConfig(dir, configPath),
 				(err: unknown) => err instanceof GithubConfigError,
 			);
@@ -233,13 +233,13 @@ test('resolveGithubConfig with explicit "type": "github" but no owner/repo throw
 	});
 });
 
-test('resolveGithubConfig with explicit "type": "github" resolves via git remote when owner/repo omitted', () => {
+test('resolveGithubConfig with explicit "type": "github" resolves via git remote when owner/repo omitted', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-remote-'));
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:acme/from-remote.git'], { cwd: repo, stdio: 'ignore' });
-		withTempConfig({ default: { type: 'github' } }, configPath => {
-			const cfg = resolveGithubConfig(repo, configPath);
+		await withTempConfig({ default: { type: 'github' } }, async configPath => {
+			const cfg = await resolveGithubConfig(repo, configPath);
 			assert.equal(cfg.type, 'github');
 			if (cfg.type === 'github') {
 				assert.equal(cfg.owner, 'acme');
@@ -252,34 +252,34 @@ test('resolveGithubConfig with explicit "type": "github" resolves via git remote
 	}
 });
 
-test('resolveGithubConfig without a config file does NOT auto-detect from git remote', () => {
+test('resolveGithubConfig without a config file does NOT auto-detect from git remote', async () => {
 	// This is the important regression: previously, a git-remote fallback fired
 	// whenever nothing else matched. With default=none the tracker is opt-in.
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-noconfig-'));
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:silent/never.git'], { cwd: repo, stdio: 'ignore' });
-		const cfg = resolveGithubConfig(repo, '/does/not/exist.json');
+		const cfg = await resolveGithubConfig(repo, '/does/not/exist.json');
 		assert.equal(cfg.type, 'none');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
-test('lenient resolver behaviour is unchanged', () => {
+test('lenient resolver behaviour is unchanged', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-lenient-'));
 	try {
 		// A malformed file, a non-object file and an unsupported type all stay silent (no throw).
 		const bad = join(dir, 'bad.json');
 		writeFileSync(bad, '{ not json');
 		assert.deepEqual(loadGithubConfigFile(bad), {});
-		assert.equal(resolveGithubConfig('/r', bad).type, 'none');
+		assert.equal((await resolveGithubConfig('/r', bad)).type, 'none');
 		const arr = join(dir, 'arr.json');
 		writeFileSync(arr, '"text"');
 		assert.deepEqual(loadGithubConfigFile(arr), {});
 		const own = join(dir, 'own.json');
 		writeFileSync(own, JSON.stringify({ repos: { '/r': { owner: 'acme', repo: 'demo' } }, default: { owner: 'x', repo: 'y' } }));
-		const cfg = resolveGithubConfig('/r', own);
+		const cfg = await resolveGithubConfig('/r', own);
 		assert.equal(cfg.type, 'github');
 		if (cfg.type === 'github') { assert.equal(cfg.owner, 'acme'); assert.equal(cfg.source, 'per-repo-config'); }
 		// No lenient caller imports the strict resolver.

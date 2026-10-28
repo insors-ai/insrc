@@ -54,7 +54,8 @@ import {
 } from '../../workflow/storage.js';
 import { FileSidecarStore } from '../../workflow/artifact-core/sidecar-store.js';
 import { unitHeadId } from '../../workflow/tracker/unit-head.js';
-import { commitAndPushArtifacts, type CommitArtifactsResult } from '../../workflow/tracker/github.js';
+import type { CommitArtifactsResult } from '../../workflow/tracker/github.js';
+import { commitAndPush } from '../../workflow/tracker/commit-and-push-registry.js';
 import {
 	configAlreadyDetail, configWrittenDetail, planTrackerConfig, runTrackerSetup,
 	type ConfigOutcome, type TrackerConfigPlan, type TrackerSetupOptions, type TrackerSetupReport,
@@ -109,14 +110,14 @@ export interface ApproveOutcome {
  *  is portable (anyone who pulls has the canonical JSON + MD the next stage
  *  reads). Gated on the github tracker being enabled with `commitArtifacts`
  *  (default true); best-effort — a git failure never breaks the approval. */
-function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResult | undefined {
+async function commitApprovedArtifacts(approval: ApprovalResult): Promise<CommitArtifactsResult | undefined> {
 	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean };
 	try { meta = ((JSON.parse(readFileSync(approval.path, 'utf8')) as { meta?: typeof meta }).meta) ?? {}; }
 	catch { return undefined; }
 	const { repoPath, epicHash, epicSlug, storyId } = meta;
 	if (typeof repoPath !== 'string' || typeof epicHash !== 'string') return undefined;
 
-	const cfg = resolveGithubConfig(repoPath);
+	const cfg = await resolveGithubConfig(repoPath);
 	if (cfg.type !== 'github' || cfg.commitArtifacts === false) return undefined;
 
 	// sc2 folder args from the approved artifact's own meta — its epicCreatedAt
@@ -137,7 +138,7 @@ function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResul
 
 	addHead(basename(approval.path).replace(/\.json$/, ''));
 	addHead(unitHeadOf(approval.workflow, epicHash, storyId));
-	const result = commitAndPushArtifacts(repoPath, [...files], `chore(workflow): ${approval.workflow} approved — check in artifacts + tracker refs`);
+	const result = await commitAndPush(repoPath, [...files], `chore(workflow): ${approval.workflow} approved — check in artifacts + tracker refs`);
 	log.info({ workflow: approval.workflow, committed: result.committed, pushed: result.pushed, reason: result.reason }, 'approve: artifact check-in');
 	return result;
 }
@@ -164,7 +165,7 @@ async function attachApprovedDocuments(approval: ApprovalResult, commit: CommitA
 	const { repoPath, epicHash, epicSlug, storyId } = meta;
 	if (typeof repoPath !== 'string' || typeof epicHash !== 'string') return undefined;
 	if (commit === undefined) return { attach: { skipped: 'attachments skipped: the artifacts are not committed' } };
-	const gate = openTracker(repoPath);
+	const gate = await openTracker(repoPath);
 	if ('skip' in gate) return undefined;
 	const result = await attachApprovedDocument(approval.workflow, { repoPath, epicHash, ...(storyId !== undefined ? { storyId } : {}) }, gate.port);
 	if ('error' in result || result.attached.length + result.reconciled.length === 0) return { attach: result };
@@ -172,7 +173,7 @@ async function attachApprovedDocuments(approval: ApprovalResult, commit: CommitA
 	const headId = unitHeadOf(approval.workflow, epicHash, storyId);
 	if (headId === undefined) return { attach: result };
 	// the head, and the log and feedback lines recording the attachment on it
-	const second = commitAndPushArtifacts(repoPath, headFiles(repoPath, headId), `chore(workflow): ${approval.workflow} approved — record the attached documents`);
+	const second = await commitAndPush(repoPath, headFiles(repoPath, headId), `chore(workflow): ${approval.workflow} approved — record the attached documents`);
 	log.info({ workflow: approval.workflow, committed: second.committed, pushed: second.pushed, reason: second.reason }, 'approve: attachment records check-in');
 	return { attach: result, commit: second };
 }
@@ -226,7 +227,7 @@ export async function approve(artifactPath: string, withTracker = true, override
 	else if (approval.workflow === 'plan')         tracker = await autoPushTasksOnPlan(approval.path);
 	// Commit + push AFTER the tracker push, so the checked-in MD carries the
 	// re-rendered `**Tracker:**` link and the issue bodies link the committed blob.
-	const commit = commitApprovedArtifacts(approval);
+	const commit = await commitApprovedArtifacts(approval);
 	let attached: Awaited<ReturnType<typeof attachApprovedDocuments>>;
 	try { attached = await attachApprovedDocuments(approval, commit); }
 	catch (err) { log.warn({ workflow: approval.workflow, err: (err as Error).message }, 'approve: attaching the approved document failed'); attached = { attach: { error: (err as Error).message } }; }

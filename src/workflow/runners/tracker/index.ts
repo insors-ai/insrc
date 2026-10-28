@@ -48,7 +48,7 @@ const pushContextRunner: StepRunner = {
 	id:       'context.assemble',
 	workflow: 'tracker.push',
 	async run(ctx) {
-		const bundle = assemblePushContext(ctx);
+		const bundle = await assemblePushContext(ctx);
 		return { type: 'output', output: bundle, summary: `push context assembled for ${bundle.epicSlug}` };
 	},
 };
@@ -57,7 +57,7 @@ const pushExecuteRunner: StepRunner = {
 	id:       'execute',
 	workflow: 'tracker.push',
 	async run(ctx) {
-		const c = ctx.stepOutputs['s1'] as ReturnType<typeof assemblePushContext>;
+		const c = ctx.stepOutputs['s1'] as Awaited<ReturnType<typeof assemblePushContext>>;
 		return {
 			type: 'llm-pause',
 			prompt: pushPrompt(c),
@@ -78,7 +78,7 @@ const pushVerifyRunner: StepRunner = {
 	id:       'checklist.verify',
 	workflow: 'tracker.push',
 	async run(ctx) {
-		const c = ctx.stepOutputs['s1'] as ReturnType<typeof assemblePushContext>;
+		const c = ctx.stepOutputs['s1'] as Awaited<ReturnType<typeof assemblePushContext>>;
 		const refs = ctx.stepOutputs['s2'] as Record<string, unknown>;
 		return {
 			type: 'llm-pause',
@@ -109,7 +109,7 @@ const syncContextRunner: StepRunner = {
 	id:       'context.assemble',
 	workflow: 'tracker.sync',
 	async run(ctx) {
-		const bundle = assembleSyncContext(ctx);
+		const bundle = await assembleSyncContext(ctx);
 		return { type: 'output', output: bundle, summary: `sync context assembled for ${bundle.epicSlug}` };
 	},
 };
@@ -118,7 +118,7 @@ const syncExecuteRunner: StepRunner = {
 	id:       'execute',
 	workflow: 'tracker.sync',
 	async run(ctx) {
-		const c = ctx.stepOutputs['s1'] as ReturnType<typeof assembleSyncContext>;
+		const c = ctx.stepOutputs['s1'] as Awaited<ReturnType<typeof assembleSyncContext>>;
 		return {
 			type: 'llm-pause',
 			prompt: syncPrompt(c),
@@ -139,7 +139,7 @@ const syncVerifyRunner: StepRunner = {
 	id:       'checklist.verify',
 	workflow: 'tracker.sync',
 	async run(ctx) {
-		const c = ctx.stepOutputs['s1'] as ReturnType<typeof assembleSyncContext>;
+		const c = ctx.stepOutputs['s1'] as Awaited<ReturnType<typeof assembleSyncContext>>;
 		const refs = ctx.stepOutputs['s2'] as Record<string, unknown>;
 		return {
 			type: 'llm-pause',
@@ -169,7 +169,7 @@ const postContextRunner: StepRunner = {
 	id:       'context.assemble',
 	workflow: 'tracker.post',
 	async run(ctx) {
-		const bundle = assemblePostContext(ctx);
+		const bundle = await assemblePostContext(ctx);
 		return { type: 'output', output: bundle, summary: `post context assembled (${bundle.target.kind})` };
 	},
 };
@@ -178,7 +178,7 @@ const postExecuteRunner: StepRunner = {
 	id:       'execute',
 	workflow: 'tracker.post',
 	async run(ctx) {
-		const c = ctx.stepOutputs['s1'] as ReturnType<typeof assemblePostContext>;
+		const c = ctx.stepOutputs['s1'] as Awaited<ReturnType<typeof assemblePostContext>>;
 		return {
 			type: 'llm-pause',
 			prompt: postPrompt(c),
@@ -264,7 +264,7 @@ const CONVENTIONS_BLOCK = [
 	'  - The framework writes the doc→issue links locally after you return the refs — you don\'t.',
 ].join('\n');
 
-function pushPrompt(c: ReturnType<typeof assemblePushContext>): string {
+function pushPrompt(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
 	const tasksOn = c.gh.pushTasks && c.plans !== undefined && c.plans.length > 0;
 	const notUsed = [
 		'DELIBERATELY NOT USED (per plan):',
@@ -301,7 +301,7 @@ function pushPrompt(c: ReturnType<typeof assemblePushContext>): string {
 /** The Task-tier instructions for the push execute step — only emitted
  *  when `pushTasks` is on and at least one Story has an approved plan.
  *  Spells out the exact `gh api` calls for a typed Task sub-issue. */
-function taskPushBlock(c: ReturnType<typeof assemblePushContext>): string {
+function taskPushBlock(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
 	const plans = c.plans ?? [];
 	const lines: string[] = [
 		'TASK TIER — for each Story that has an entry in `plans` below, after its Story issue exists,',
@@ -325,7 +325,7 @@ function taskPushBlock(c: ReturnType<typeof assemblePushContext>): string {
 	return lines.join('\n');
 }
 
-function pushVerifyPrompt(c: ReturnType<typeof assemblePushContext>): string {
+function pushVerifyPrompt(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
 	const tasksOn = c.gh.pushTasks && c.plans !== undefined && c.plans.length > 0;
 	return [
 		'You are running the `checklist.verify` step of `tracker.push`.',
@@ -349,7 +349,7 @@ function pushVerifyPrompt(c: ReturnType<typeof assemblePushContext>): string {
 	].join('\n');
 }
 
-function syncPrompt(c: ReturnType<typeof assembleSyncContext>): string {
+function syncPrompt(c: Awaited<ReturnType<typeof assembleSyncContext>>): string {
 	return [
 		'You are running the `execute` step of `tracker.sync`.',
 		'',
@@ -366,7 +366,7 @@ function syncPrompt(c: ReturnType<typeof assembleSyncContext>): string {
 	].join('\n');
 }
 
-function syncVerifyPrompt(c: ReturnType<typeof assembleSyncContext>): string {
+function syncVerifyPrompt(c: Awaited<ReturnType<typeof assembleSyncContext>>): string {
 	return [
 		'You are running the `checklist.verify` step of `tracker.sync`.',
 		'',
@@ -382,7 +382,7 @@ function syncVerifyPrompt(c: ReturnType<typeof assembleSyncContext>): string {
 	void c;
 }
 
-function postPrompt(c: ReturnType<typeof assemblePostContext>): string {
+function postPrompt(c: Awaited<ReturnType<typeof assemblePostContext>>): string {
 	return [
 		'You are running the `execute` step of `tracker.post`.',
 		'',

@@ -11,6 +11,7 @@ import * as gh from '../github.js';
 import { GhCommandError, ghPostCommentReturningId, runGh } from '../github.js';
 import { parseIssueRef } from '../refs.js';
 import type { IssueRef, PortResult, SignoffRequestRef, SignoffRequestSpec } from '../port.js';
+import { execFileSync } from 'node:child_process';
 import { getLogger } from '../../../shared/logger.js';
 
 const log = getLogger('legacy-table');
@@ -216,6 +217,10 @@ function legacyTable(): RegistryTable {
 	rows['openSignoffRequest'] = async (owner: string, repo: string, spec: SignoffRequestSpec) => unwrap(openSignoffRequest(owner, repo, spec));
 	rows['readSignoffState'] = async (request: SignoffRequestRef, since?: string) => unwrap(readSignoffState(request, since));
 	rows['readSignoffRequest'] = async (request: SignoffRequestRef) => unwrap(readSignoffRequest(request));
+	const git = (repoPath: string, args: readonly string[]): string => execFileSync('git', ['-C', repoPath, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+	rows['gitIsTracked'] = async (repoPath: string, relPath: string) => { try { git(repoPath, ['ls-files', '--error-unmatch', '--', relPath]); return true; } catch { return false; } };
+	rows['gitHasChanges'] = async (repoPath: string, relPath: string) => git(repoPath, ['status', '--porcelain', '--', relPath]).length > 0;
+	rows['gitLastCommitOf'] = async (repoPath: string, relPath: string) => git(repoPath, ['log', '-1', '--format=%H', '--', relPath]);
 	return rows as unknown as RegistryTable;
 }
 

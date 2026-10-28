@@ -16,6 +16,7 @@
 import type { Static } from '@sinclair/typebox';
 
 import { callTool } from '../../daemon/tools/call-tool.js';
+import { getTool, registerTool } from '../../daemon/tools/registry.js';
 import type { TypedTool, TypedToolResult } from '../../daemon/tools/call-tool.js';
 import { ghPrCreateTool, ghPrListTool, ghPrViewTool } from '../../daemon/tools/builtins/gh/pr.js';
 import { gitLogTool } from '../../daemon/tools/builtins/git/log.js';
@@ -41,12 +42,21 @@ const log = getLogger('tracker-registry-table');
 
 /** The tool deps of a workflow call: the caller is 'workflow', so hooks and logs see who asked. */
 export function workflowToolDeps(repoPath: string, overrides: Partial<ToolDeps> = {}): ToolDeps {
-	return { sessionId: 'workflow', repoPath, send: () => {}, requestId: 0, caller: 'workflow', ...overrides };
+	return { sessionId: 'workflow', repoPath, send: () => {}, requestId: 0, caller: 'workflow', ...depsOverridesForTests, ...overrides };
+}
+
+let depsOverridesForTests: Partial<ToolDeps> = {};
+
+/** Test seam: fields merged into every workflowToolDeps (for instance approvalMode 'manual'); no argument clears them. */
+export function _setWorkflowToolDepsForTests(overrides: Partial<ToolDeps> = {}): void {
+	depsOverridesForTests = overrides;
 }
 
 export type Call<D> = { readonly ok: true; readonly data: D } | { readonly ok: false; readonly toolId: string; readonly failure: ToolFailure };
 
 export async function run<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<Call<Static<T['outputSchema']>>> {
+	// the daemon registers every builtin at start; a process that did not (a test, the CLI before it calls the daemon) gets the one it uses
+	if (getTool(tool.id) === undefined) registerTool(tool);
 	const r: TypedToolResult<Static<T['outputSchema']>> = await callTool(tool, input, deps);
 	return r.success ? { ok: true, data: r.data } : { ok: false, toolId: tool.id, failure: r.error };
 }

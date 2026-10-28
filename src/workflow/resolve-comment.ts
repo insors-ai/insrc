@@ -36,7 +36,8 @@ import { readFileSync } from 'node:fs';
 
 import { questionId, recordResolution, type QuestionArtifactKind } from './questions.js';
 import { artifactJsonPath, writeArtifact } from './storage.js';
-import { commitAndPushArtifacts } from './tracker/github.js';
+import { commitAndPush } from './tracker/commit-and-push-registry.js';
+import { isToolDenied } from './tracker/tool-denied.js';
 
 /** The recordResolution seam — injectable so the a1 mapping logic is testable
  *  headlessly without recordResolution's full artifact re-render (production
@@ -190,33 +191,40 @@ export async function handleResolveComment(
 			// IDEMPOTENT (an identical comment already appended is reused, not
 			// duplicated — see resolveTargetQuestion), so a retry after a partial
 			// failure does not duplicate the comments already recorded.
-			commitRecorded(repoPath, lastJsonPath, lastMdPath, recorded, comments.length, p.artifactId);
+			let denial = '';
+			try { await commitRecorded(repoPath, lastJsonPath, lastMdPath, recorded, comments.length, p.artifactId); }
+			catch (denied) { denial = `; the commit was denied: ${(denied as Error).message}`; }
 			return {
-				error: `workflow.resolveComment: recorded ${recorded} of ${comments.length} before failing on comment '${c.id}': ${(err as Error).message}`,
+				error: `workflow.resolveComment: recorded ${recorded} of ${comments.length} before failing on comment '${c.id}': ${(err as Error).message}${denial}`,
 			};
 		}
 	}
 
-	// One commit for the whole submit (best-effort — a commit/push failure never
-	// turns a successful recording into a failure; the resolutions are already on
-	// disk, the single source of truth).
-	commitRecorded(repoPath, lastJsonPath, lastMdPath, recorded, comments.length, p.artifactId);
+	// One commit for the whole submit. An ordinary commit/push failure never turns a
+	// successful recording into a failure (the resolutions are already on disk, the single
+	// source of truth); a DENIED commit does: it is the error result, with the recorded count,
+	// never a success.
+	try { await commitRecorded(repoPath, lastJsonPath, lastMdPath, recorded, comments.length, p.artifactId); }
+	catch (denied) {
+		return { error: `workflow.resolveComment: recorded ${recorded} of ${comments.length}; the commit was denied: ${(denied as Error).message}` };
+	}
 	return { recorded, resolutions };
 }
 
 /** Best-effort single commit of the artifact after a (partial or full) batch. */
-function commitRecorded(
+async function commitRecorded(
 	repoPath: string,
 	jsonPath: string | undefined,
 	mdPath: string | undefined,
 	recorded: number,
 	total: number,
 	artifactId: string,
-): void {
+): Promise<void> {
 	if (recorded === 0 || jsonPath === undefined || mdPath === undefined) return;
 	try {
-		commitAndPushArtifacts(repoPath, [jsonPath, mdPath], `review: recorded ${recorded} of ${total} comment(s) on ${artifactId}`);
-	} catch {
+		await commitAndPush(repoPath, [jsonPath, mdPath], `review: recorded ${recorded} of ${total} comment(s) on ${artifactId}`);
+	} catch (err) {
+		if (isToolDenied(err)) throw err;   // a denied commit is not a best-effort miss: the caller reports it
 		/* best-effort: the resolutions are already written; git is not on the success path */
 	}
 }

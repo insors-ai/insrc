@@ -40,7 +40,7 @@ export async function handleRepoConvert(params: unknown, repoEnv: string | undef
 	if (!existsSync(repoPath) || !statSync(repoPath).isDirectory()) return { error: `${repoPath} is not a repository directory` };
 	try {
 		// the tracker, when the repository has one, is read by both modes: the plan lists the pre-s8 attach comments on its issues
-		const gate = openTracker(repoPath);
+		const gate = await openTracker(repoPath);
 		// a preview opens no store and no sidecar: opening them creates files, and a preview writes nothing
 		if (mode === 'preview') return { mode, plan: await planConversion(repoPath, { rules: CONVERSION_RULES, ...('port' in gate ? { tracker: gate.port } : {}) }) };
 		const entry = lifecycleFor(repoPath);

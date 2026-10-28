@@ -105,7 +105,7 @@ export const defaultPromptOnLostRef: PromptOnLostRef = () => ({ action: 'skip' }
 type AuthResult = { readonly ok: true } | { readonly ok: false; readonly reason: string };
 
 export interface TrackerCreateDeps {
-	readonly resolveConfig:         (repoPath: string) => ResolvedGithubConfig;
+	readonly resolveConfig:         (repoPath: string) => ResolvedGithubConfig | Promise<ResolvedGithubConfig>;
 	readonly authOk:                () => AuthResult | Promise<AuthResult>;
 	readonly readIssue:             (repoPath: string, issueHash: string) => IssueArtifact | null;
 	readonly readRecordedRef:       (repoPath: string, issueHash: string) => string | null;
@@ -119,7 +119,7 @@ export interface TrackerCreateDeps {
 }
 
 export interface TrackerCloseDeps {
-	readonly resolveConfig:   (repoPath: string) => ResolvedGithubConfig;
+	readonly resolveConfig:   (repoPath: string) => ResolvedGithubConfig | Promise<ResolvedGithubConfig>;
 	readonly authOk:          () => AuthResult | Promise<AuthResult>;
 	readonly readRecordedRef: (repoPath: string, issueHash: string) => string | null;
 	readonly closeIssue:      (owner: string, repo: string, ref: string) => void | Promise<void>;
@@ -144,7 +144,7 @@ export async function createBugfixTrackerIssue(
 	input: { repoPath: string; issueHash: string },
 	deps: TrackerCreateDeps,
 ): Promise<TrackerIssueResult> {
-	const cfg = resolveConfigOrNone(deps.resolveConfig, input.repoPath);
+	const cfg = await resolveConfigOrNone(deps.resolveConfig, input.repoPath);
 	if (cfg.type === 'none') {
 		return { status: 'skipped', reason: `no tracker configured (${cfg.reason})` };
 	}
@@ -269,7 +269,7 @@ export async function closeBugfixTrackerIssue(
 	input: { repoPath: string; issueHash: string },
 	deps: TrackerCloseDeps,
 ): Promise<TrackerCloseResult> {
-	const cfg = resolveConfigOrNone(deps.resolveConfig, input.repoPath);
+	const cfg = await resolveConfigOrNone(deps.resolveConfig, input.repoPath);
 	if (cfg.type === 'none') {
 		return { status: 'skipped', reason: `no tracker configured (${cfg.reason})` };
 	}
@@ -340,13 +340,13 @@ type NoneTarget = { readonly type: 'none'; readonly reason: string };
 /** Normalise the config resolution to a target OR a `none` carrying the skip
  *  reason. A `GithubConfigError` (github requested but no target) is NOT an
  *  error here — it degrades to `none` (ac2), mirroring the sync.ts skip. */
-function resolveConfigOrNone(
-	resolveConfig: (repoPath: string) => ResolvedGithubConfig,
+async function resolveConfigOrNone(
+	resolveConfig: (repoPath: string) => ResolvedGithubConfig | Promise<ResolvedGithubConfig>,
 	repoPath: string,
-): GithubTarget | NoneTarget {
+): Promise<GithubTarget | NoneTarget> {
 	let cfg: ResolvedGithubConfig;
 	try {
-		cfg = resolveConfig(repoPath);
+		cfg = await resolveConfig(repoPath);
 	} catch (err) {
 		if (err instanceof GithubConfigError) {
 			return { type: 'none', reason: err.message };

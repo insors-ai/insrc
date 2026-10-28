@@ -24,7 +24,7 @@ import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import type { Actor, Reference } from '../artifact-core/types.js';
 import { authorPartyOf, reviewerPartyOf } from '../review/party.js';
 import { loadTracker } from '../tracker/github-adapter.js';
-import { commitAndPushArtifacts } from '../tracker/github.js';
+import { commitAndPush } from '../tracker/commit-and-push-registry.js';
 import type { Capability, IssueRef, PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
 import { resolveUnitIssueLocal } from '../tracker/unit-issue.js';
 import { registerCompletionHook, TeamGateRefusedError, type GateOutcome, type GuardedAction } from './gate.js';
@@ -214,7 +214,7 @@ export interface SignoffDeps {
 	readonly resolveIssue?:  ((unit: UnitRef) => IssueRef | null) | undefined;
 	readonly lifecycleFor?:  ((repo: string) => LifecycleService) | undefined;
 	/** Commit and push the artifact files and answer the branch that holds them. */
-	readonly publishBranch?: ((repo: string, paths: readonly string[], message: string) => PortResult<string>) | undefined;
+	readonly publishBranch?: ((repo: string, paths: readonly string[], message: string) => PortResult<string> | Promise<PortResult<string>>) | undefined;
 	/** The branch the checkout is on, undefined when it cannot be read; a resubmission checks it before anything is committed. */
 	readonly currentBranch?: ((repo: string) => string | undefined) | undefined;
 	/** A Story's code-review record: its verdict and the party that ran it; undefined when there is none. */
@@ -381,8 +381,8 @@ export function readCodeReviewRecord(repo: string, epicHash: string, storyId: st
  * The branch that holds the committed artifacts: stage, commit and push the artifact files, then check the current branch is not
  * the default branch, is pushed and has no unpushed commits. A request is a pull request from that branch.
  */
-export function publishArtifactsBranch(repo: string, paths: readonly string[], message: string): PortResult<string> {
-	const pushed = commitAndPushArtifacts(repo, paths, message);
+export async function publishArtifactsBranch(repo: string, paths: readonly string[], message: string): Promise<PortResult<string>> {
+	const pushed = await commitAndPush(repo, paths, message);   // a denied call is thrown, not a rejected result
 	if (pushed.committed && !pushed.pushed) return rejected(pushed.reason ?? 'the artifacts were committed but not pushed');
 	if (!pushed.committed && !/nothing to commit/.test(pushed.reason ?? '')) return rejected(`the artifacts could not be committed: ${pushed.reason ?? 'unknown reason'}`);
 	const head = runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']);
@@ -548,11 +548,11 @@ function submissionArtifacts(repo: string, unit: UnitRef, artifactIds: readonly 
 }
 
 /** Publish the artifact files to a branch and open the one request for them through the tracker. */
-function openRequest(repo: string, unit: UnitRef, artifacts: readonly Submission[], port: TrackerPort, issue: IssueRef, d: SignoffDeps): Promise<PortResult<SignoffRequestRef>> | PortResult<SignoffRequestRef> {
+async function openRequest(repo: string, unit: UnitRef, artifacts: readonly Submission[], port: TrackerPort, issue: IssueRef, d: SignoffDeps): Promise<PortResult<SignoffRequestRef>> {
 	const files = artifacts.map(a => ({ artifactId: a.artifactId, absolute: artifactJsonPath(repo, a.artifactId), path: relative(repo, artifactJsonPath(repo, a.artifactId)) }));
 	const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');
 	const message = `docs: submit the ${stages} of ${unit.unit} ${unit.storyId ?? unit.epicHash} for signoff`;
-	const published = (d.publishBranch ?? publishArtifactsBranch)(repo, files.map(f => f.absolute), message);
+	const published = await (d.publishBranch ?? publishArtifactsBranch)(repo, files.map(f => f.absolute), message);
 	if (!published.ok) return published;
 	return port.openSignoffRequest({
 		title: `Signoff: ${stages} of ${unit.storyId ?? unit.epicHash}`,
@@ -572,7 +572,7 @@ function currentBranchOf(repo: string): string | undefined {
 }
 
 /** Publish the revised artifact files to the branch of the request they were sent to before, which is the pull request itself: no second request is opened. */
-function resubmit(repo: string, unit: UnitRef, artifacts: readonly Submission[], earlier: EarlierRequest, d: SignoffDeps): PortResult<SignoffRequestRef> {
+async function resubmit(repo: string, unit: UnitRef, artifacts: readonly Submission[], earlier: EarlierRequest, d: SignoffDeps): Promise<PortResult<SignoffRequestRef>> {
 	const mismatch = (branch: string): PortResult<SignoffRequestRef> => rejected(`the request ${earlier.request.ref} is open from the branch '${earlier.branch}' but this checkout is on '${branch}': switch to '${earlier.branch}' to resubmit`);
 	// checked before the files are committed, so a wrong branch is left as it was
 	const on = (d.currentBranch ?? currentBranchOf)(repo);
@@ -580,7 +580,7 @@ function resubmit(repo: string, unit: UnitRef, artifacts: readonly Submission[],
 	if (on !== earlier.branch) return mismatch(on);
 	const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');
 	const message = `docs: resubmit the ${stages} of ${unit.unit} ${unit.storyId ?? unit.epicHash} for signoff`;
-	const published = (d.publishBranch ?? publishArtifactsBranch)(repo, artifacts.map(a => artifactJsonPath(repo, a.artifactId)), message);
+	const published = await (d.publishBranch ?? publishArtifactsBranch)(repo, artifacts.map(a => artifactJsonPath(repo, a.artifactId)), message);
 	if (!published.ok) return published;
 	if (published.value !== earlier.branch) return mismatch(published.value);
 	return { ok: true, value: earlier.request };

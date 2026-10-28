@@ -39,7 +39,7 @@ export async function handleTrackerAttach(params: unknown, repoEnv: string | und
 	if (unit === 'story' && (typeof p.storyId !== 'string' || p.storyId.length === 0)) return { error: 'storyId is required for a story unit' };
 	const scope: AttachScope = p.scope ?? 'all';
 	if (scope !== 'documents' && scope !== 'records' && scope !== 'all') return { error: `unknown scope ${String(scope)}` };
-	const gate = openTracker(repoPath);
+	const gate = await openTracker(repoPath);
 	if ('skip' in gate) return { error: `no GitHub tracker to attach to: ${gate.skip.status === 'skipped' || gate.skip.status === 'failed' ? gate.skip.reason : gate.skip.status}` };
 	const ref: UnitRef = { unit, repoPath, epicHash: p.epicHash, ...(p.storyId !== undefined ? { storyId: p.storyId } : {}) };
 	return await attachUnit(ref, scope, gate.port);

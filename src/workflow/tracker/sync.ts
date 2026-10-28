@@ -37,7 +37,7 @@ export async function syncTracker(repoPath: string, epicHash: string, table: Reg
 	let owner: string;
 	let repo: string;
 	try {
-		const cfg = resolveGithubConfig(repoPath);
+		const cfg = await resolveGithubConfig(repoPath);
 		if (cfg.type === 'none') return { status: 'skipped', reason: `tracker disabled via config (source: ${cfg.source})` };
 		cfgType = cfg.type; owner = cfg.owner; repo = cfg.repo;
 	} catch (err) {

@@ -138,9 +138,9 @@ function ownValues(entry: GithubEntry | undefined): Record<string, string | bool
 	return values;
 }
 
-function resolveTarget(file: GithubConfigFile, entry: GithubEntry | undefined, repo: string): ResolvedTarget {
+async function resolveTarget(file: GithubConfigFile, entry: GithubEntry | undefined, repo: string): Promise<ResolvedTarget> {
 	try {
-		const r = resolveGithubConfigFromFile(file, repo);
+		const r = await resolveGithubConfigFromFile(file, repo);
 		return r.type === 'github'
 			? { type: 'github', owner: r.owner, repo: r.repo, source: r.source }
 			: { type: 'none', source: r.source };
@@ -174,7 +174,7 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 	async function payloadFor(repo: string): Promise<SettingsResult> {
 		const read = readRepoEntry(repo, configPath());
 		if (!read.ok) return { ok: false, error: read.error };
-		const resolved = resolveTarget(read.file, read.entry, repo);
+		const resolved = await resolveTarget(read.file, read.entry, repo);
 
 		// Sign-in is the signed-in user (`gh api user`), which does not depend on the
 		// target, so it is read whenever the tracker is github, even if the target is unresolved.

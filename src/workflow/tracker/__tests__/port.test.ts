@@ -66,50 +66,50 @@ test('missingCapabilities names every capability the tracker does not declare', 
 
 test('strict resolver refuses malformed or unsupported configuration', async () => {
 	const repo = '/r';
-	assert.match(refusal(resolveStrictTrackerTarget(repo, '/does/not/exist.json')), /does not exist/);
-	assert.match(refusal(withConfig('{ not json', p => resolveStrictTrackerTarget(repo, p))), /not valid JSON/);
-	assert.match(refusal(withConfig('[]', p => resolveStrictTrackerTarget(repo, p))), /JSON object/);
-	assert.match(refusal(withConfig('"x"', p => resolveStrictTrackerTarget(repo, p))), /JSON object/);
-	assert.match(refusal(withConfig({ repos: { [repo]: 'github' } }, p => resolveStrictTrackerTarget(repo, p))), /must be a JSON object/);
-	assert.match(refusal(withConfig({ repos: { [repo]: { type: 'gitlab', owner: 'a', repo: 'b' } } }, p => resolveStrictTrackerTarget(repo, p))), /unsupported tracker type 'gitlab'/);
-	assert.match(refusal(withConfig({ repos: { [repo]: { type: 'none' } } }, p => resolveStrictTrackerTarget(repo, p))), /type none/);
-	assert.match(refusal(withConfig({ repos: { [repo]: { owner: 'bad owner', repo: 'b' } } }, p => resolveStrictTrackerTarget(repo, p))), /invalid GitHub owner/);
-	assert.match(refusal(withConfig({ repos: { [repo]: { owner: 'a', repo: 'b/c' } } }, p => resolveStrictTrackerTarget(repo, p))), /invalid GitHub repo/);
-	assert.match(refusal(withConfig({ repos: { [repo]: { owner: 5, repo: 'b' } } }, p => resolveStrictTrackerTarget(repo, p))), /invalid GitHub owner/);
+	assert.match(refusal(await resolveStrictTrackerTarget(repo, '/does/not/exist.json')), /does not exist/);
+	assert.match(refusal(await withConfigAsync('{ not json', async p => await resolveStrictTrackerTarget(repo, p))), /not valid JSON/);
+	assert.match(refusal(await withConfigAsync('[]', async p => await resolveStrictTrackerTarget(repo, p))), /JSON object/);
+	assert.match(refusal(await withConfigAsync('"x"', async p => await resolveStrictTrackerTarget(repo, p))), /JSON object/);
+	assert.match(refusal(await withConfigAsync({ repos: { [repo]: 'github' } }, async p => await resolveStrictTrackerTarget(repo, p))), /must be a JSON object/);
+	assert.match(refusal(await withConfigAsync({ repos: { [repo]: { type: 'gitlab', owner: 'a', repo: 'b' } } }, async p => await resolveStrictTrackerTarget(repo, p))), /unsupported tracker type 'gitlab'/);
+	assert.match(refusal(await withConfigAsync({ repos: { [repo]: { type: 'none' } } }, async p => await resolveStrictTrackerTarget(repo, p))), /type none/);
+	assert.match(refusal(await withConfigAsync({ repos: { [repo]: { owner: 'bad owner', repo: 'b' } } }, async p => await resolveStrictTrackerTarget(repo, p))), /invalid GitHub owner/);
+	assert.match(refusal(await withConfigAsync({ repos: { [repo]: { owner: 'a', repo: 'b/c' } } }, async p => await resolveStrictTrackerTarget(repo, p))), /invalid GitHub repo/);
+	assert.match(refusal(await withConfigAsync({ repos: { [repo]: { owner: 5, repo: 'b' } } }, async p => await resolveStrictTrackerTarget(repo, p))), /invalid GitHub owner/);
 	// A malformed own target is refused even where the origin remote would resolve.
 	const withOrigin = mkdtempSync(join(tmpdir(), 'insrc-badown-'));
 	try {
 		execFileSync('git', ['init'], { cwd: withOrigin, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:acme/fine.git'], { cwd: withOrigin, stdio: 'ignore' });
 		for (const entry of [{ type: 'github', owner: 'bad owner' }, { type: 'github', owner: '', repo: 'b/c' }, { type: 'github', repo: 'only-repo' }, { type: 'github', owner: 'only-owner' }]) {
-			assert.match(refusal(withConfig({ repos: { [withOrigin]: entry } }, p => resolveStrictTrackerTarget(withOrigin, p))), /invalid GitHub (owner|repo)/, JSON.stringify(entry));
+			assert.match(refusal(await withConfigAsync({ repos: { [withOrigin]: entry } }, async p => await resolveStrictTrackerTarget(withOrigin, p))), /invalid GitHub (owner|repo)/, JSON.stringify(entry));
 		}
 	} finally {
 		rmSync(withOrigin, { recursive: true, force: true });
 	}
-	assert.match(refusal(withConfig({ default: { type: 'none' } }, p => resolveStrictTrackerTarget(repo, p))), /type none/);
-	assert.match(refusal(withConfig({}, p => resolveStrictTrackerTarget(repo, p))), /no tracker is configured/);
+	assert.match(refusal(await withConfigAsync({ default: { type: 'none' } }, async p => await resolveStrictTrackerTarget(repo, p))), /type none/);
+	assert.match(refusal(await withConfigAsync({}, async p => await resolveStrictTrackerTarget(repo, p))), /no tracker is configured/);
 	// type github with no target and no origin remote
 	const noRemote = mkdtempSync(join(tmpdir(), 'insrc-noremote-'));
 	try {
 		execFileSync('git', ['init'], { cwd: noRemote, stdio: 'ignore' });
-		assert.match(refusal(withConfig({ repos: { [noRemote]: { type: 'github' } } }, p => resolveStrictTrackerTarget(noRemote, p))), /origin remote/);
+		assert.match(refusal(await withConfigAsync({ repos: { [noRemote]: { type: 'github' } } }, async p => await resolveStrictTrackerTarget(noRemote, p))), /origin remote/);
 	} finally {
 		rmSync(noRemote, { recursive: true, force: true });
 	}
 });
 
 test('strict resolver accepts an own entry without a type and falls back to the origin remote for type github', async () => {
-	const own = withConfig({ repos: { '/r': { owner: 'acme', repo: 'demo.app' } } }, p => resolveStrictTrackerTarget('/r', p));
+	const own = await withConfigAsync({ repos: { '/r': { owner: 'acme', repo: 'demo.app' } } }, async p => await resolveStrictTrackerTarget('/r', p));
 	assert.deepEqual(own, { ok: true, value: { owner: 'acme', repo: 'demo.app' } });
 
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-origin-'));
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:acme/from-remote.git'], { cwd: repo, stdio: 'ignore' });
-		const viaOwn = withConfig({ repos: { [repo]: { type: 'github' } } }, p => resolveStrictTrackerTarget(repo, p));
+		const viaOwn = await withConfigAsync({ repos: { [repo]: { type: 'github' } } }, async p => await resolveStrictTrackerTarget(repo, p));
 		assert.deepEqual(viaOwn, { ok: true, value: { owner: 'acme', repo: 'from-remote' } });
-		const viaDefault = withConfig({ default: { type: 'github' } }, p => resolveStrictTrackerTarget(repo, p));
+		const viaDefault = await withConfigAsync({ default: { type: 'github' } }, async p => await resolveStrictTrackerTarget(repo, p));
 		assert.deepEqual(viaDefault, { ok: true, value: { owner: 'acme', repo: 'from-remote' } });
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
@@ -118,13 +118,13 @@ test('strict resolver accepts an own entry without a type and falls back to the 
 
 test("strict resolver never takes a target from the default entry's owner and repo", async () => {
 	// A default with owner/repo but no type enables nothing.
-	assert.match(refusal(withConfig({ default: { owner: 'global', repo: 'dump' } }, p => resolveStrictTrackerTarget('/r', p))), /no tracker is configured/);
+	assert.match(refusal(await withConfigAsync({ default: { owner: 'global', repo: 'dump' } }, async p => await resolveStrictTrackerTarget('/r', p))), /no tracker is configured/);
 	// A github default supplies enablement only: the target is the origin remote, never its owner/repo.
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-default-'));
 	try {
 		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
 		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:real/own.git'], { cwd: repo, stdio: 'ignore' });
-		const r = withConfig({ default: { type: 'github', owner: 'global', repo: 'dump' } }, p => resolveStrictTrackerTarget(repo, p));
+		const r = await withConfigAsync({ default: { type: 'github', owner: 'global', repo: 'dump' } }, async p => await resolveStrictTrackerTarget(repo, p));
 		assert.deepEqual(r, { ok: true, value: { owner: 'real', repo: 'own' } });
 	} finally {
 		rmSync(repo, { recursive: true, force: true });

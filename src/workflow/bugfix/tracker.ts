@@ -41,9 +41,11 @@ import { GithubConfigError } from '../config/github.js';
 import { ArtifactIds } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { artifactJsonPath, issueArtifactId } from '../storage.js';
-import { GhCommandError, ghAuthOk, type CreatedIssue } from '../tracker/github.js';
+import { GhCommandError, type CreatedIssue } from '../tracker/github.js';
 import { createGithubTracker } from '../tracker/github-adapter.js';
 import type { PortResult } from '../tracker/port.js';
+import { isToolDenied } from '../tracker/tool-denied.js';
+import { createRegistryTable, workflowToolDeps } from '../tracker/registry-table.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
 import { issueForWorkflowId } from '../tracker/resolve.js';
 import type { WorkItemRef } from '../types.js';
@@ -104,13 +106,13 @@ type AuthResult = { readonly ok: true } | { readonly ok: false; readonly reason:
 
 export interface TrackerCreateDeps {
 	readonly resolveConfig:         (repoPath: string) => ResolvedGithubConfig;
-	readonly authOk:                () => AuthResult;
+	readonly authOk:                () => AuthResult | Promise<AuthResult>;
 	readonly readIssue:             (repoPath: string, issueHash: string) => IssueArtifact | null;
 	readonly readRecordedRef:       (repoPath: string, issueHash: string) => string | null;
 	readonly renderBody:            (issue: IssueArtifact) => string;
-	readonly createIssue:           (owner: string, repo: string, title: string, body: string, labels: readonly string[], issueType?: string) => CreatedIssue;
+	readonly createIssue:           (owner: string, repo: string, title: string, body: string, labels: readonly string[], issueType?: string) => CreatedIssue | Promise<CreatedIssue>;
 	readonly resolveParentIssueRef: (repoPath: string, parentRef: WorkItemRef) => string | null;
-	readonly linkSubIssue:          (owner: string, repo: string, parentRef: string, childId: number) => void;
+	readonly linkSubIssue:          (owner: string, repo: string, parentRef: string, childId: number) => void | Promise<void>;
 	readonly recordRef:             (repoPath: string, issueHash: string, ref: string) => void;
 	readonly labels:                readonly string[];
 	readonly promptOnLostRef:       PromptOnLostRef;
@@ -118,11 +120,11 @@ export interface TrackerCreateDeps {
 
 export interface TrackerCloseDeps {
 	readonly resolveConfig:   (repoPath: string) => ResolvedGithubConfig;
-	readonly authOk:          () => AuthResult;
+	readonly authOk:          () => AuthResult | Promise<AuthResult>;
 	readonly readRecordedRef: (repoPath: string, issueHash: string) => string | null;
-	readonly closeIssue:      (owner: string, repo: string, ref: string) => void;
+	readonly closeIssue:      (owner: string, repo: string, ref: string) => void | Promise<void>;
 	readonly recordRef:       (repoPath: string, issueHash: string, ref: string) => void;
-	readonly findByLabels:    (owner: string, repo: string, labels: readonly string[]) => string | undefined;
+	readonly findByLabels:    (owner: string, repo: string, labels: readonly string[]) => string | undefined | Promise<string | undefined>;
 	readonly labels:          readonly string[];
 	readonly promptOnLostRef: PromptOnLostRef;
 }
@@ -147,7 +149,7 @@ export async function createBugfixTrackerIssue(
 		return { status: 'skipped', reason: `no tracker configured (${cfg.reason})` };
 	}
 
-	const auth = deps.authOk();
+	const auth = await deps.authOk();
 	if (!auth.ok) {
 		return { status: 'skipped', reason: auth.reason };
 	}
@@ -167,12 +169,12 @@ export async function createBugfixTrackerIssue(
 	// bytes as the internal chain record. Title is the issue's own title.
 	const body    = deps.renderBody(issue);
 	const title   = issue.body.title;
-	const created = deps.createIssue(cfg.owner, cfg.repo, title, body, deps.labels);
+	const created = await deps.createIssue(cfg.owner, cfg.repo, title, body, deps.labels);
 
 	// Best-effort link to the located parent's GH issue (sc3). A standalone
 	// bugfix (parentRef null/absent), an unpushed parent, or a disabled
 	// sub-issue feature all leave the created issue UNLINKED — never an error.
-	const linked = linkToParent(deps, input.repoPath, cfg, issue, created.id);
+	const linked = await linkToParent(deps, input.repoPath, cfg, issue, created.id);
 
 	// Record the created ref for close + idempotency.
 	try {
@@ -187,21 +189,22 @@ export async function createBugfixTrackerIssue(
 }
 
 /** Resolve + link a parent GH issue best-effort. Returns whether a link landed. */
-function linkToParent(
+async function linkToParent(
 	deps: TrackerCreateDeps,
 	repoPath: string,
 	cfg: GithubTarget,
 	issue: IssueArtifact,
 	childId: number,
-): boolean {
+): Promise<boolean> {
 	const parentRef = issue.meta.parentRef;
 	if (parentRef === null || parentRef === undefined) return false;   // standalone
 	const parentIssueRef = deps.resolveParentIssueRef(repoPath, parentRef);
 	if (parentIssueRef === null || parentIssueRef.length === 0) return false;   // unpushed parent
 	try {
-		deps.linkSubIssue(cfg.owner, cfg.repo, parentIssueRef, childId);
+		await deps.linkSubIssue(cfg.owner, cfg.repo, parentIssueRef, childId);
 		return true;
-	} catch {
+	} catch (err) {
+		if (isToolDenied(err)) throw err;   // a denied call stops the stage
 		return false;   // sub-issues disabled / parent inaccessible — degrade, don't fail
 	}
 }
@@ -271,7 +274,7 @@ export async function closeBugfixTrackerIssue(
 		return { status: 'skipped', reason: `no tracker configured (${cfg.reason})` };
 	}
 
-	const auth = deps.authOk();
+	const auth = await deps.authOk();
 	if (!auth.ok) {
 		return { status: 'skipped', reason: auth.reason };
 	}
@@ -281,7 +284,7 @@ export async function closeBugfixTrackerIssue(
 		return await onLostRefOnClose(deps, input, cfg);
 	}
 
-	deps.closeIssue(cfg.owner, cfg.repo, ref);   // throws on a deleted issue → propagate
+	await deps.closeIssue(cfg.owner, cfg.repo, ref);   // throws on a deleted issue → propagate
 	return { status: 'closed', ref };
 }
 
@@ -303,19 +306,19 @@ async function onLostRefOnClose(
 			if (deps.labels.length === 0) {
 				return { status: 'skipped', reason: 'relink-by-label unavailable (no labels)' };
 			}
-			const found = deps.findByLabels(cfg.owner, cfg.repo, deps.labels);
+			const found = await deps.findByLabels(cfg.owner, cfg.repo, deps.labels);
 			if (found === undefined || found.length === 0) {
 				return { status: 'skipped', reason: 'relink-by-label found no matching issue' };
 			}
 			deps.recordRef(input.repoPath, input.issueHash, found);
-			deps.closeIssue(cfg.owner, cfg.repo, found);
+			await deps.closeIssue(cfg.owner, cfg.repo, found);
 			return { status: 'closed', ref: found };
 		}
 		case 'record-manual': {
 			const manual = resolution.manualRef;
 			if (typeof manual === 'string' && manual.length > 0) {
 				deps.recordRef(input.repoPath, input.issueHash, manual);
-				deps.closeIssue(cfg.owner, cfg.repo, manual);
+				await deps.closeIssue(cfg.owner, cfg.repo, manual);
 				return { status: 'closed', ref: manual };
 			}
 			return { status: 'skipped', reason: 'record-manual: no ref supplied' };
@@ -427,6 +430,9 @@ function defaultResolveParentIssueRef(repoPath: string, parentRef: WorkItemRef):
 	return null;
 }
 
+/** The registry table the default deps use; the process directory is where the old gh wrappers ran. */
+const bugfixTable = () => createRegistryTable(workflowToolDeps(process.cwd()));
+
 /** Adapter results are thrown again so the deps keep the throwing contract of the gh wrappers they replaced. */
 function unwrap<T>(r: PortResult<T>): T {
 	if (!r.ok) throw new GhCommandError(r.kind, r.reason);
@@ -441,15 +447,15 @@ export function defaultTrackerCreateDeps(
 ): TrackerCreateDeps {
 	return {
 		resolveConfig:         (repoPath) => resolveGithubConfig(repoPath),
-		authOk:                ghAuthOk,
+		authOk:                () => bugfixTable().ghAuthOk(),
 		readIssue:             readIssueFromDisk,
 		readRecordedRef:       readRecordedRefFromDisk,
 		renderBody:            renderIssueMarkdown,
 		// Adapter bound to the owner/repo of each call; a failed result is thrown again (the wrappers threw).
 		createIssue:           (owner, repo, title, body, labels, issueType) =>
-			unwrap(createGithubTracker(owner, repo).issueOps.create({ title, body, labels, issueType })),
+			createGithubTracker(owner, repo).issueOps.create({ title, body, labels, issueType }).then(unwrap),
 		resolveParentIssueRef: defaultResolveParentIssueRef,
-		linkSubIssue:          (owner, repo, parentRef, childId) => unwrap(createGithubTracker(owner, repo).issueOps.linkSubIssue(parentRef, childId)),
+		linkSubIssue:          (owner, repo, parentRef, childId) => createGithubTracker(owner, repo).issueOps.linkSubIssue(parentRef, childId).then(unwrap),
 		recordRef:             recordRefToDisk,
 		labels:                opts?.labels ?? [],
 		promptOnLostRef:       opts?.promptOnLostRef ?? defaultPromptOnLostRef,
@@ -467,13 +473,13 @@ export function defaultTrackerCloseDeps(
 ): TrackerCloseDeps {
 	return {
 		resolveConfig:   (repoPath) => resolveGithubConfig(repoPath),
-		authOk:          ghAuthOk,
+		authOk:          () => bugfixTable().ghAuthOk(),
 		readRecordedRef: readRecordedRefFromDisk,
-		closeIssue:      (owner, repo, ref) => unwrap(createGithubTracker(owner, repo).issueOps.close(ref)),
+		closeIssue:      (owner, repo, ref) => createGithubTracker(owner, repo).issueOps.close(ref).then(unwrap),
 		recordRef:       recordRefToDisk,
 		// A failed lookup reads as "not found", exactly as ghFindIssueByLabels did.
-		findByLabels:    (owner, repo, labels) => {
-			const found = createGithubTracker(owner, repo).findIssue([...labels]);
+		findByLabels:    async (owner, repo, labels) => {
+			const found = await createGithubTracker(owner, repo).findIssue([...labels]);
 			return found.ok ? found.value ?? undefined : undefined;
 		},
 		labels:          opts?.labels ?? [],

@@ -63,7 +63,7 @@ function listing(repo: string): string[] {
 	return out.sort();
 }
 
-test('subject-paths, questions and the helper callers each fail before any file is created when no anchor exists', () => {
+test('subject-paths, questions and the helper callers each fail before any file is created when no anchor exists', async () => {
 	// subject-paths has its own case below (a Define head would anchor it); questions, gates and chain fail on a stamp-less Define
 	const r = tempRepo();
 	try {
@@ -72,7 +72,7 @@ test('subject-paths, questions and the helper callers each fail before any file 
 		const defBefore = readFileSync(defPath, 'utf8');
 
 		// questions: recording a resolution locates the artifact's folder before it writes anything
-		assert.throws(
+		await assert.rejects(
 			() => recordResolution(r.repo, 'define', HASH, undefined, questionId(QUESTION), 'resolved', 'a choice', 'because', { commit: false }),
 			MissingAnchorError,
 		);
@@ -101,7 +101,7 @@ test('subject-paths, questions and the helper callers each fail before any file 
 	} finally { r.done(); }
 });
 
-test('the code-review subject paths fail when no record and no head anchors the Story, and make no folder', () => {
+test('the code-review subject paths fail when no record and no head anchors the Story, and make no folder', async () => {
 	const r = tempRepo();
 	try {
 		const before = listing(r.repo);
@@ -139,7 +139,7 @@ test('implement and validate on a standalone story whose LLD no anchor can place
 	}
 });
 
-test('pending and delivery do not date a record by its own day: an unstamped record gets no path and no dated id, and nothing is created', () => {
+test('pending and delivery do not date a record by its own day: an unstamped record gets no path and no dated id, and nothing is created', async () => {
 	const r = tempRepo();
 	try {
 		const before = listing(r.repo);

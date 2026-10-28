@@ -22,11 +22,22 @@ import ts from 'typescript';
 import { missingCapabilities, type Capability, type CreatedIssue, type IssueOps, type IssueRef, type PortResult, type TrackerPort } from '../port.js';
 import { resolveStrictTrackerTarget } from '../../config/github.js';
 import { loadTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from '../github.js';
+import { _setTrackerExecForTests } from './_legacy-table.js';
 
 afterEach(() => { _setTrackerExecForTests(); delete process.env['INSRC_GITHUB_CONFIG']; });
 
 const set = (...c: Capability[]): ReadonlySet<Capability> => new Set(c);
+
+async function withConfigAsync<T>(content: string | object, fn: (configPath: string, dir: string) => T | Promise<T>): Promise<T> {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-strict-'));
+	try {
+		const p = join(dir, 'github.json');
+		writeFileSync(p, typeof content === 'string' ? content : JSON.stringify(content));
+		return await fn(p, dir);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+}
 
 function withConfig<T>(content: string | object, fn: (configPath: string, dir: string) => T): T {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-strict-'));
@@ -46,14 +57,14 @@ function refusal(r: PortResult<unknown>): string {
 	return r.reason;
 }
 
-test('missingCapabilities names every capability the tracker does not declare', () => {
+test('missingCapabilities names every capability the tracker does not declare', async () => {
 	assert.deepEqual(missingCapabilities(set('claim', 'issue-create'), set('claim', 'issue-create')), []);
 	assert.deepEqual(missingCapabilities(set('claim', 'issue-create'), set('claim', 'signoff-request', 'completion')), ['signoff-request', 'completion']);
 	assert.deepEqual(missingCapabilities(set(), set('claim', 'issue-create', 'signoff-request', 'completion')), ['claim', 'issue-create', 'signoff-request', 'completion']);
 	assert.deepEqual(missingCapabilities(set('claim'), set()), []);
 });
 
-test('strict resolver refuses malformed or unsupported configuration', () => {
+test('strict resolver refuses malformed or unsupported configuration', async () => {
 	const repo = '/r';
 	assert.match(refusal(resolveStrictTrackerTarget(repo, '/does/not/exist.json')), /does not exist/);
 	assert.match(refusal(withConfig('{ not json', p => resolveStrictTrackerTarget(repo, p))), /not valid JSON/);
@@ -88,7 +99,7 @@ test('strict resolver refuses malformed or unsupported configuration', () => {
 	}
 });
 
-test('strict resolver accepts an own entry without a type and falls back to the origin remote for type github', () => {
+test('strict resolver accepts an own entry without a type and falls back to the origin remote for type github', async () => {
 	const own = withConfig({ repos: { '/r': { owner: 'acme', repo: 'demo.app' } } }, p => resolveStrictTrackerTarget('/r', p));
 	assert.deepEqual(own, { ok: true, value: { owner: 'acme', repo: 'demo.app' } });
 
@@ -105,7 +116,7 @@ test('strict resolver accepts an own entry without a type and falls back to the 
 	}
 });
 
-test("strict resolver never takes a target from the default entry's owner and repo", () => {
+test("strict resolver never takes a target from the default entry's owner and repo", async () => {
 	// A default with owner/repo but no type enables nothing.
 	assert.match(refusal(withConfig({ default: { owner: 'global', repo: 'dump' } }, p => resolveStrictTrackerTarget('/r', p))), /no tracker is configured/);
 	// A github default supplies enablement only: the target is the origin remote, never its owner/repo.
@@ -131,7 +142,7 @@ function typeErrors(file: string): string[] {
 		.map(d => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
 }
 
-test('TrackerPort type exposes issueOps with the AMD-8 signatures', () => {
+test('TrackerPort type exposes issueOps with the AMD-8 signatures', async () => {
 	const fixture = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'issue-ops-signatures.ts');
 	assert.deepEqual(typeErrors(fixture), []);
 	// A fixture that breaks a signature (string child id) must be reported, so the check bites.
@@ -139,7 +150,7 @@ test('TrackerPort type exposes issueOps with the AMD-8 signatures', () => {
 	assert.ok(typeErrors(broken).length > 0, 'the broken fixture should fail to typecheck');
 });
 
-test('the signature fixture compiles with resolveIssueId and its broken twin does not', () => {
+test('the signature fixture compiles with resolveIssueId and its broken twin does not', async () => {
 	const dir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 	assert.match(readFileSync(join(dir, 'issue-ops-signatures.ts'), 'utf8'), /resolveIssueId:/, 'the fixture declares resolveIssueId');
 	assert.deepEqual(typeErrors(join(dir, 'issue-ops-signatures.ts')), []);
@@ -151,8 +162,8 @@ test('the signature fixture compiles with resolveIssueId and its broken twin doe
 // ---------------------------------------------------------------------------
 
 /** Run `fn` with a github.json that targets acme/demo for repo '/r' and a fake gh. */
-function withLoader<T>(exec: (args: readonly string[]) => string, fn: (calls: string[][]) => T): T {
-	return withConfig({ repos: { '/r': { owner: 'acme', repo: 'demo' } } }, configPath => {
+async function withLoader<T>(exec: (args: readonly string[]) => string, fn: (calls: string[][]) => T | Promise<T>): Promise<T> {
+	return await withConfigAsync({ repos: { '/r': { owner: 'acme', repo: 'demo' } } }, async configPath => {
 		process.env['INSRC_GITHUB_CONFIG'] = configPath;
 		const calls: string[][] = [];
 		_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return exec(args); });
@@ -164,9 +175,9 @@ function execError(props: Record<string, unknown>): Error {
 	return Object.assign(new Error('Command failed'), props);
 }
 
-test('loadTracker succeeds when every needed capability is declared', () => {
-	withLoader(() => 'subhagho\n', calls => {
-		const r = loadTracker('/r', set('claim', 'issue-create'));
+test('loadTracker succeeds when every needed capability is declared', async () => {
+	await withLoader(() => 'subhagho\n', async calls => {
+		const r = await loadTracker('/r', set('claim', 'issue-create'));
 		assert.equal(r.ok, true);
 		if (r.ok) {
 			assert.equal(r.value.kind, 'github');
@@ -176,29 +187,29 @@ test('loadTracker succeeds when every needed capability is declared', () => {
 	});
 });
 
-test('loadTracker with an empty needed set validates configuration and sign-in', () => {
+test('loadTracker with an empty needed set validates configuration and sign-in', async () => {
 	process.env['INSRC_GITHUB_CONFIG'] = '/does/not/exist.json';   // never read the real ~/.insrc/github.json
-	assert.match(refusal(loadTracker('/r', set())), /does not exist/);
-	withLoader(() => { throw execError({ stderr: 'To get started with GitHub CLI, please run:  gh auth login' }); }, () => {
-		const r = loadTracker('/r', set());
+	assert.match(refusal(await loadTracker('/r', set())), /does not exist/);
+	await withLoader(() => { throw execError({ stderr: 'To get started with GitHub CLI, please run:  gh auth login' }); }, async () => {
+		const r = await loadTracker('/r', set());
 		assert.equal(r.ok, false);
 		if (!r.ok) assert.equal(r.kind, 'missing-signin');
 	});
-	withLoader(() => 'subhagho', () => assert.equal(loadTracker('/r', set()).ok, true));
+	await withLoader(() => 'subhagho', async () => assert.equal((await loadTracker('/r', set())).ok, true));
 });
 
-test('loadTracker refuses a needed completion capability naming it, and accepts signoff-request', () => {
-	withLoader(() => 'subhagho', calls => {
-		const reason = refusal(loadTracker('/r', set('claim', 'signoff-request', 'completion')));
+test('loadTracker refuses a needed completion capability naming it, and accepts signoff-request', async () => {
+	await withLoader(() => 'subhagho', async calls => {
+		const reason = refusal(await loadTracker('/r', set('claim', 'signoff-request', 'completion')));
 		assert.match(reason, /capability: completion/);
 		assert.doesNotMatch(reason, /signoff-request/);
 		assert.equal(calls.length, 0, 'no gh command runs for a capability refusal');
 	});
 });
 
-test('loadTracker names gh as the missing tool', () => {
-	withLoader(() => { throw execError({ code: 'ENOENT' }); }, () => {
-		const r = loadTracker('/r', set('claim'));
+test('loadTracker names gh as the missing tool', async () => {
+	await withLoader(() => { throw execError({ code: 'ENOENT' }); }, async () => {
+		const r = await loadTracker('/r', set('claim'));
 		assert.equal(r.ok, false);
 		if (!r.ok) {
 			assert.equal(r.kind, 'missing-tool');
@@ -207,9 +218,9 @@ test('loadTracker names gh as the missing tool', () => {
 	});
 });
 
-test('loadTracker names the missing sign-in', () => {
-	withLoader(() => { throw execError({ stderr: 'You are not logged in to any GitHub hosts. Run gh auth login' }); }, () => {
-		const r = loadTracker('/r', set('claim'));
+test('loadTracker names the missing sign-in', async () => {
+	await withLoader(() => { throw execError({ stderr: 'You are not logged in to any GitHub hosts. Run gh auth login' }); }, async () => {
+		const r = await loadTracker('/r', set('claim'));
 		assert.equal(r.ok, false);
 		if (!r.ok) {
 			assert.equal(r.kind, 'missing-signin');

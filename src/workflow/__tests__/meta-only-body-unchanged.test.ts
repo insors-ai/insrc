@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { recordResolution, questionId } from '../questions.js';
 import { patchTrackerMeta } from '../tracker/refs.js';
-import { _setTrackerExecForTests } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { defaultStampDeps } from '../bugfix/stamp.js';
 import { _mutateEpicTrackerMeta } from '../orchestrator.js';
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, artifactJsonPath, issueArtifactId } from '../storage.js';

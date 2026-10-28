@@ -13,7 +13,9 @@
 
 import { GithubConfigError, resolveGithubConfig } from '../config/github.js';
 import { artifactJsonPath, defineArtifactId } from '../storage.js';
-import { ghAuthOk, ghGetIssueState } from './github.js';
+import { createRegistryTable, workflowToolDeps } from './registry-table.js';
+import type { RegistryTable } from './registry-table.js';
+import { isToolDenied } from './tool-denied.js';
 import { mapIssueStatus, type TrackerStatus } from './conventions.js';
 import { patchTrackerMeta } from './refs.js';
 import { unitIssueOf } from './unit-head.js';
@@ -24,7 +26,7 @@ export type SyncResult =
 	| { readonly status: 'skipped'; readonly reason: string }
 	| { readonly status: 'failed';  readonly reason: string };
 
-export function syncTracker(repoPath: string, epicHash: string): SyncResult {
+export async function syncTracker(repoPath: string, epicHash: string, table: RegistryTable = createRegistryTable(workflowToolDeps(repoPath))): Promise<SyncResult> {
 	const defineJson = artifactJsonPath(repoPath, defineArtifactId(epicHash));
 	const epicRef = unitIssueOf(repoPath, epicHash);
 	if (typeof epicRef !== 'string' || epicRef.length === 0) {
@@ -44,22 +46,23 @@ export function syncTracker(repoPath: string, epicHash: string): SyncResult {
 	}
 	void cfgType;
 
-	const auth = ghAuthOk();
+	const auth = await table.ghAuthOk();
 	if (!auth.ok) return { status: 'skipped', reason: auth.reason };
 
 	try {
-		const es = ghGetIssueState(owner, repo, epicRef);
+		const es = await table.ghGetIssueState(owner, repo, epicRef);
 		const epicStatus = mapIssueStatus(es.state, es.labels);
 		const storyStatus: Record<string, TrackerStatus> = {};
 		for (const story of storiesOf(repoPath, epicHash)) {
 			const ref = unitIssueOf(repoPath, epicHash, story);
 			if (ref === undefined) continue;
-			const s = ghGetIssueState(owner, repo, ref);
+			const s = await table.ghGetIssueState(owner, repo, ref);
 			storyStatus[story] = mapIssueStatus(s.state, s.labels);
 		}
 		patchTrackerMeta(defineJson, { epicStatus, storyStatus, lastSyncedAt: new Date().toISOString() });
 		return { status: 'synced', epicStatus, storyStatus };
 	} catch (err) {
+		if (isToolDenied(err)) throw err;   // a denied call stops the sync; it is not a failed one
 		return { status: 'failed', reason: err instanceof Error ? err.message : String(err) };
 	}
 }

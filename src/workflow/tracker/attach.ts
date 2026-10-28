@@ -100,7 +100,7 @@ export function recordAttachment(repoPath: string, artifactId: string, attachmen
 	} catch (err) { return fail('write', (err as Error).message); }
 }
 
-export function attachDocuments(unit: UnitRef, port: TrackerPort, targets: readonly AttachTarget[], deps: AttachDeps = {}): AttachOutcome {
+export async function attachDocuments(unit: UnitRef, port: TrackerPort, targets: readonly AttachTarget[], deps: AttachDeps = {}): Promise<AttachOutcome> {
 	const out: AttachOutcome = { attached: [], reconciled: [], skipped: [], failed: [] };
 	const failAll = (reason: string): AttachOutcome => { for (const t of targets) out.failed.push({ target: t.relPath, reason }); return out; };
 	const now = deps.now ?? (() => new Date().toISOString());
@@ -120,9 +120,9 @@ export function attachDocuments(unit: UnitRef, port: TrackerPort, targets: reado
 	if (slug === null) return failAll('the repository has no GitHub origin remote to link to');
 
 	let comments: TrackerComment[] | { readonly failed: string } | undefined;
-	const commentsOnce = (): TrackerComment[] | { readonly failed: string } => {
+	const commentsOnce = async (): Promise<TrackerComment[] | { readonly failed: string }> => {
 		if (comments === undefined) {
-			const listed = port.listComments(issue);
+			const listed = await port.listComments(issue);
 			comments = listed.ok ? listed.value : { failed: `the comments of ${issue} could not be read (${listed.kind}): ${listed.reason}` };
 		}
 		return comments;
@@ -145,7 +145,7 @@ export function attachDocuments(unit: UnitRef, port: TrackerPort, targets: reado
 		} catch (err) { fail(`git could not be asked about ${t.relPath}: ${(err as Error).message}`); continue; }
 		const link = permalinkOf(slug, sha, t.relPath);
 
-		const known = commentsOnce();
+		const known = await commentsOnce();
 		if ('failed' in known) { fail(known.failed); continue; }
 		const posted = known.find(c => c.text.includes(link));
 		if (posted !== undefined) {
@@ -153,7 +153,7 @@ export function attachDocuments(unit: UnitRef, port: TrackerPort, targets: reado
 			else fail(`the link was found on ${issue} but its record was not written; the next call records it`);
 			continue;
 		}
-		const made = port.attach(issue, target, link);
+		const made = await port.attach(issue, target, link);
 		if (!made.ok) { fail(`the tracker could not attach ${t.relPath} (${made.kind}): ${made.reason}`); continue; }
 		if (!recordAttachment(repoPath, ownerId, { target, revision, at: now(), ...(made.value.externalId !== undefined ? { externalId: made.value.externalId } : {}) })) {
 			fail(`${t.relPath} was attached but its record was not written; the next call finds the link and records it`);

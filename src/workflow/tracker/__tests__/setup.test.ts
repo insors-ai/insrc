@@ -18,7 +18,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { _setTrackerExecForTests } from '../github.js';
+import { _setTrackerExecForTests } from './_legacy-table.js';
 import { runTrackerSetup } from '../setup.js';
 
 const REPO = '/fake/repo/path';
@@ -89,11 +89,11 @@ const stepFor = (report: { steps: readonly { key: string }[] }, key: string) =>
 // (a) all-green path — no manual steps
 // ---------------------------------------------------------------------------
 
-test('all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0', () => {
+test('all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0', async () => {
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
 	_setTrackerExecForTests(fakeGh().fn);
 	try {
-		const report = runTrackerSetup(REPO);   // includeProject defaults false
+		const report = await runTrackerSetup(REPO);   // includeProject defaults false
 		for (const s of report.steps) {
 			assert.ok(s.status === 'done' || s.status === 'already' || s.status === 'skipped',
 				`step ${s.key} should be done/already/skipped, got ${s.status}`);
@@ -114,11 +114,11 @@ test('all-green: auth ok, scopes present, config exists, labels/types already, p
 // (b) missing-scope path — issue-types + project become manual
 // ---------------------------------------------------------------------------
 
-test('missing scopes: issue-types + project are manual carrying the refresh command', () => {
+test('missing scopes: issue-types + project are manual carrying the refresh command', async () => {
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
 	_setTrackerExecForTests(fakeGh({ scopes: ['repo'] }).fn);   // no admin:org, no project
 	try {
-		const report = runTrackerSetup(REPO, { includeProject: true });
+		const report = await runTrackerSetup(REPO, { includeProject: true });
 
 		const types = stepFor(report, 'issue-types');
 		assert.equal(types?.status, 'manual');
@@ -141,12 +141,12 @@ test('missing scopes: issue-types + project are manual carrying the refresh comm
 // (c) missing config — the step writes it
 // ---------------------------------------------------------------------------
 
-test('missing config: the config step writes github.json and reports done', () => {
+test('missing config: the config step writes github.json and reports done', async () => {
 	const { cfgPath, dir } = withCfg();   // no seed → file absent
 	_setTrackerExecForTests(fakeGh().fn);
 	try {
 		assert.equal(existsSync(cfgPath), false);
-		const report = runTrackerSetup(REPO);
+		const report = await runTrackerSetup(REPO);
 		const cfg = stepFor(report, 'config');
 		assert.equal(cfg?.status, 'done');
 		assert.equal(existsSync(cfgPath), true);
@@ -160,11 +160,11 @@ test('missing config: the config step writes github.json and reports done', () =
 // (d) views step is always manual (when a project is in scope)
 // ---------------------------------------------------------------------------
 
-test('project views step is always manual with the UI click-list', () => {
+test('project views step is always manual with the UI click-list', async () => {
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
 	_setTrackerExecForTests(fakeGh().fn);   // all scopes present
 	try {
-		const report = runTrackerSetup(REPO, { includeProject: true });
+		const report = await runTrackerSetup(REPO, { includeProject: true });
 		const views = stepFor(report, 'project-views');
 		assert.equal(views?.status, 'manual');
 		assert.match(views?.detail ?? '', /type:Epic/);
@@ -178,7 +178,7 @@ test('project views step is always manual with the UI click-list', () => {
 // ensureLabels with a label create that times out (s1/t9)
 // ---------------------------------------------------------------------------
 
-test('ensureLabels with a timing-out label create records the label as failed and continues', () => {
+test('ensureLabels with a timing-out label create records the label as failed and continues', async () => {
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
 	const base = fakeGh();
 	const labelCalls: string[] = [];
@@ -192,7 +192,7 @@ test('ensureLabels with a timing-out label create records the label as failed an
 		return (base.fn as unknown as (c: string, a: readonly string[]) => string)(cmd, args);
 	}) as unknown as Parameters<typeof _setTrackerExecForTests>[0]);
 	try {
-		const report = runTrackerSetup(REPO);
+		const report = await runTrackerSetup(REPO);
 		const labels = stepFor(report, 'labels') as { status: string; detail: string } | undefined;
 		assert.equal(labels?.status, 'failed');
 		assert.match(labels?.detail ?? '', /failed to create: insrc:story$/);

@@ -42,7 +42,7 @@ for (const e of ARTIFACT_WRITE_INVENTORY) {
 }
 const read = (file: string): string => readFileSync(join(ROOT, file), 'utf8');
 
-test('every writer file is inventoried, annotated and classified as the design says', () => {
+test('every writer file is inventoried, annotated and classified as the design says', async () => {
 	const files = productionFiles(join(ROOT, 'src'));
 	const problems: string[] = [];
 	for (const file of files) {
@@ -76,7 +76,7 @@ test('every writer file is inventoried, annotated and classified as the design s
 	assert.match(read('src/workflow/code-review/runner.ts'), /write:\s+writeRecordFile/);
 });
 
-test('the detector flags raw, aliased and injected writers and accepts the positive controls', () => {
+test('the detector flags raw, aliased and injected writers and accepts the positive controls', async () => {
 	const entry = (cls: InventoryEntry['class'], extra: Partial<InventoryEntry> = {}): InventoryEntry => ({ file: 'x.ts', class: cls, via: 'both', note: 'control', ...extra });
 
 	// negative controls: no entry
@@ -128,7 +128,7 @@ test('the detector flags raw, aliased and injected writers and accepts the posit
 	assert.match(checkInventoryEntry(mixedSrc, entry('mixed', { via: 'writeArtifact' })).join(), /must name its write sites/);
 });
 
-test('the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry', () => {
+test('the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry', async () => {
 	const none = undefined;
 	// appendFileSync: raw, aliased, renamed, namespace, injected
 	const raw = "import { appendFileSync } from 'node:fs';\nexport function f(p: string) { appendFileSync(p, 'x'); }\n";
@@ -182,7 +182,7 @@ test('the detector reports appendFileSync in every form, an unlisted appendSidec
 	}
 });
 
-test('the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised', () => {
+test('the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised', async () => {
 	const none = undefined;
 	// the store's update is a store write too, and inside artifact-core the store is './store.js'
 	const update = "import type { ArtifactStore } from './store.js';\nexport async function f(s: ArtifactStore, by: object) { await s.update('x', by, () => undefined); }\n";
@@ -195,7 +195,7 @@ test('the lifecycle service file has an entry and a caller of ArtifactStore.upda
 	assert.ok(scanWriters(read('src/workflow/artifact-core/lifecycle-service.ts'), 'src/workflow/artifact-core/lifecycle-service.ts').storeWrites.length > 0, 'the service calls update');
 });
 
-test('the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history', () => {
+test('the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history', async () => {
 	const classOf = (f: string): string | undefined => byFile.get(f)?.class;
 	// the durable history and journal writers are not artifact heads
 	for (const f of ['src/workflow/artifact-core/sidecar.ts', 'src/workflow/artifact-core/sidecar-store.ts', 'src/workflow/artifact-core/journal.ts']) assert.equal(classOf(f), 'non-artifact', f);
@@ -212,7 +212,7 @@ test('the sidecar files, the journal folder and the changed round writers are cl
 	assert.deepEqual(others, ['src/workflow/artifact-core/sidecar-store.ts']);
 });
 
-test('the identity file writer is classified and appendSidecarLine remains the one raw append for history', () => {
+test('the identity file writer is classified and appendSidecarLine remains the one raw append for history', async () => {
 	// the identity file is a per-user declaration, not an artifact head: its one writer is listed as non-artifact
 	const entry = byFile.get('src/workflow/identity/identity-service.ts');
 	assert.equal(entry?.class, 'non-artifact');
@@ -233,7 +233,7 @@ test('the identity file writer is classified and appendSidecarLine remains the o
 	assert.equal(scanWriters(read('src/workflow/artifact-core/sidecar.ts'), 'src/workflow/artifact-core/sidecar.ts').rawCalls.filter(c => c.name === 'appendFileSync').length, 1);
 });
 
-test('the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry', () => {
+test('the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry', async () => {
 	const entry = byFile.get('src/workflow/tracker/binding.ts');
 	assert.equal(entry?.class, 'meta-only');
 	assert.match(entry?.note ?? '', /meta\.envelope\.binding/);
@@ -244,7 +244,7 @@ test('the binding writer is listed as a meta-only writer of meta.envelope and ev
 	assert.deepEqual(others, []);
 });
 
-test('the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry', () => {
+test('the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry', async () => {
 	// the binding module writes meta.envelope.binding, the attach module meta.envelope.attachments; both are meta-only patches
 	for (const [file, field] of [['src/workflow/tracker/binding.ts', /meta\.envelope\.binding/], ['src/workflow/tracker/attach.ts', /meta\.envelope\.attachments/]] as const) {
 		const entry = byFile.get(file);

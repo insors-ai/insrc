@@ -75,7 +75,7 @@ export async function handleResolveQuestion(
 
 	let remainingOpen;
 	try {
-		const res = recordResolution(
+		const res = await recordResolution(
 			repoPath, kind, epicHash, storyId, input.questionId, status,
 			input.choice, input.rationale,
 		);

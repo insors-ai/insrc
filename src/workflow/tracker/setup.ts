@@ -32,19 +32,8 @@ import { getLogger } from '../../shared/logger.js';
 import { githubConfigPath, loadGithubConfigFile, type GithubConfigFile } from '../config/github.js';
 import { readRepoEntry } from '../config/github-store.js';
 import { STATUS_LABELS } from './conventions.js';
-import {
-	ghAddProjectItem,
-	ghAddProjectSingleSelectField,
-	ghAuthOk,
-	ghCreateLabel,
-	ghCreateOrgIssueType,
-	ghCreateProject,
-	ghFindProjectByTitle,
-	ghListOrgIssueTypes,
-	ghListRepoIssueUrls,
-	ghTokenScopes,
-	gitOriginOwnerRepo,
-} from './github.js';
+import { createRegistryTable, workflowToolDeps } from './registry-table.js';
+import type { RegistryTable } from './registry-table.js';
 
 const log = getLogger('tracker-setup');
 
@@ -121,12 +110,12 @@ type OwnerRepo = { readonly owner: string; readonly repo: string };
 /** Run the tracker-setup checklist for a repo. Non-fatal + idempotent;
  *  see the module header. `manualRemaining` counts the steps the user
  *  still has to complete by hand. */
-export function runTrackerSetup(repoPath: string, opts: TrackerSetupOptions = {}): TrackerSetupReport {
+export async function runTrackerSetup(repoPath: string, opts: TrackerSetupOptions = {}, table: RegistryTable = createRegistryTable(workflowToolDeps(repoPath))): Promise<TrackerSetupReport> {
 	const includeProject = opts.includeProject === true;
 	const steps: TrackerSetupStep[] = [];
 
 	// 1. gh CLI present + authenticated.
-	const auth = ghAuthOk();
+	const auth = await table.ghAuthOk();
 	steps.push(auth.ok
 		? { key: 'gh-auth', title: 'gh CLI authenticated', status: 'already', detail: 'gh is installed and authenticated' }
 		: { key: 'gh-auth', title: 'gh CLI authenticated', status: 'manual', detail: auth.reason, action: 'gh auth login' });
@@ -137,7 +126,7 @@ export function runTrackerSetup(repoPath: string, opts: TrackerSetupOptions = {}
 	if (!auth.ok) {
 		steps.push({ key: 'oauth-scopes', title: 'OAuth scopes (admin:org, project)', status: 'skipped', detail: 'requires gh auth (see above)' });
 	} else {
-		const sc = ghTokenScopes();
+		const sc = await table.ghTokenScopes();
 		if (!sc.ok) {
 			steps.push({ key: 'oauth-scopes', title: 'OAuth scopes (admin:org, project)', status: 'manual', detail: sc.reason, action: SCOPE_REFRESH });
 		} else {
@@ -151,7 +140,7 @@ export function runTrackerSetup(repoPath: string, opts: TrackerSetupOptions = {}
 	}
 
 	// owner/repo, needed by config + every gh target step.
-	const remote = gitOriginOwnerRepo(repoPath);
+	const remote = await table.gitOriginOwnerRepo(repoPath);
 
 	// 3. ~/.insrc/github.json config (no gh needed — always runs). A caller-supplied
 	// outcome is reported as is and the file is not touched.
@@ -160,13 +149,13 @@ export function runTrackerSetup(repoPath: string, opts: TrackerSetupOptions = {}
 		: ensureConfig(repoPath, remote));
 
 	// 4. Labels.
-	steps.push(ensureLabels(auth.ok, remote));
+	steps.push(await ensureLabels(auth.ok, remote, table));
 
 	// 5. Org issue types (Epic + Story).
-	steps.push(ensureIssueTypes(auth.ok, hasAdminOrg, remote));
+	steps.push(await ensureIssueTypes(auth.ok, hasAdminOrg, remote, table));
 
 	// 6. Project (optional, behind --project).
-	steps.push(ensureProject(includeProject, auth.ok, hasProject, remote));
+	steps.push(await ensureProject(includeProject, auth.ok, hasProject, remote, table));
 
 	// 7. Project views — UI-only, ALWAYS manual; only when a Project is in scope.
 	if (includeProject) steps.push(projectViews(remote));
@@ -202,10 +191,10 @@ export function configAlreadyDetail(path: string, owner: string, name: string): 
  * dereferenced while null. Only a structurally valid file reaches the completeness
  * test the setup has always used. Never throws.
  */
-export function planTrackerConfig(repoPath: string, path: string = githubConfigPath()): TrackerConfigPlan {
+export async function planTrackerConfig(repoPath: string, path: string = githubConfigPath(), table: RegistryTable = createRegistryTable(workflowToolDeps(repoPath))): Promise<TrackerConfigPlan> {
 	const read = readRepoEntry(repoPath, path);
 	if (!read.ok) return { status: 'failed', detail: read.error.message };
-	const remote = gitOriginOwnerRepo(repoPath);
+	const remote = await table.gitOriginOwnerRepo(repoPath);
 	if (remote === null) return { status: 'failed', detail: NO_ORIGIN_DETAIL };
 	const entry = read.entry ?? read.file.default;
 	const complete = entry !== undefined
@@ -259,12 +248,12 @@ const LABELS_TITLE = 'Tracker labels';
 
 /** Idempotently upsert the fixed tracker labels (`ghCreateLabel` uses
  *  `--force`). Needs gh auth. */
-function ensureLabels(authOk: boolean, remote: OwnerRepo | null): TrackerSetupStep {
+async function ensureLabels(authOk: boolean, remote: OwnerRepo | null, table: RegistryTable): Promise<TrackerSetupStep> {
 	if (!authOk) return { key: LABELS_KEY, title: LABELS_TITLE, status: 'skipped', detail: 'requires gh auth (see above)' };
 	if (remote === null) return { key: LABELS_KEY, title: LABELS_TITLE, status: 'failed', detail: 'no owner/repo (git remote origin missing)' };
 	const failed: string[] = [];
 	for (const label of SETUP_LABELS) {
-		if (!ghCreateLabel(remote.owner, remote.repo, label)) failed.push(label);
+		if (!(await table.ghCreateLabel(remote.owner, remote.repo, label))) failed.push(label);
 	}
 	if (failed.length > 0) {
 		return { key: LABELS_KEY, title: LABELS_TITLE, status: 'failed', detail: `failed to create: ${failed.join(', ')}` };
@@ -278,20 +267,20 @@ const TYPES_TITLE = 'Org issue types (Epic, Story)';
 /** Ensure the Epic + Story org issue types exist. Gated on `admin:org`
  *  → manual (with the refresh command) when the scope is missing.
  *  Existing types are read via GraphQL, so re-runs are `already`. */
-function ensureIssueTypes(authOk: boolean, hasAdminOrg: boolean, remote: OwnerRepo | null): TrackerSetupStep {
+async function ensureIssueTypes(authOk: boolean, hasAdminOrg: boolean, remote: OwnerRepo | null, table: RegistryTable): Promise<TrackerSetupStep> {
 	if (!authOk) return { key: TYPES_KEY, title: TYPES_TITLE, status: 'skipped', detail: 'requires gh auth (see above)' };
 	if (remote === null) return { key: TYPES_KEY, title: TYPES_TITLE, status: 'failed', detail: 'no owner/repo (git remote origin missing)' };
 	if (!hasAdminOrg) {
 		return { key: TYPES_KEY, title: TYPES_TITLE, status: 'manual', detail: 'creating org issue types needs the `admin:org` scope', action: SCOPE_REFRESH };
 	}
 	const org = remote.owner;
-	const existing = ghListOrgIssueTypes(org);
+	const existing = await table.ghListOrgIssueTypes(org);
 	const created: string[] = [];
 	const already: string[] = [];
 	const failed: string[] = [];
 	for (const t of SETUP_ISSUE_TYPES) {
 		if (existing.includes(t.name)) { already.push(t.name); continue; }
-		if (ghCreateOrgIssueType(org, t.name, t.color, t.description)) created.push(t.name);
+		if (await table.ghCreateOrgIssueType(org, t.name, t.color, t.description)) created.push(t.name);
 		else failed.push(t.name);
 	}
 	if (failed.length > 0) {
@@ -309,7 +298,7 @@ const PROJECT_TITLE = 'GitHub Project board';
 /** Create the Projects v2 board, add its `Size` field, and seed it with
  *  the existing issues. Optional (behind --project) and gated on the
  *  `project` scope → manual when missing. */
-function ensureProject(includeProject: boolean, authOk: boolean, hasProject: boolean, remote: OwnerRepo | null): TrackerSetupStep {
+async function ensureProject(includeProject: boolean, authOk: boolean, hasProject: boolean, remote: OwnerRepo | null, table: RegistryTable): Promise<TrackerSetupStep> {
 	if (!includeProject) return { key: PROJECT_KEY, title: PROJECT_TITLE, status: 'skipped', detail: 'pass --project to create a Projects v2 board' };
 	if (!authOk) return { key: PROJECT_KEY, title: PROJECT_TITLE, status: 'skipped', detail: 'requires gh auth (see above)' };
 	if (remote === null) return { key: PROJECT_KEY, title: PROJECT_TITLE, status: 'failed', detail: 'no owner/repo (git remote origin missing)' };
@@ -320,17 +309,17 @@ function ensureProject(includeProject: boolean, authOk: boolean, hasProject: boo
 	const title = `insrc — ${remote.repo}`;
 	// Idempotent: reuse an open board with this title rather than spawning a
 	// duplicate on every run. Only create when none exists.
-	const existing = ghFindProjectByTitle(org, title);
-	const proj = existing ?? ghCreateProject(org, title);
+	const existing = await table.ghFindProjectByTitle(org, title);
+	const proj = existing ?? await table.ghCreateProject(org, title);
 	if (proj === null) {
 		return { key: PROJECT_KEY, title: PROJECT_TITLE, status: 'failed', detail: `\`gh project create\` failed for owner '${org}'` };
 	}
-	const fieldOk = ghAddProjectSingleSelectField(org, proj.number, 'Size', ['XS', 'S', 'M', 'L', 'XL']);
-	const urls = ghListRepoIssueUrls(remote.owner, remote.repo, PROJECT_ITEM_CAP);
+	const fieldOk = await table.ghAddProjectSingleSelectField(org, proj.number, 'Size', ['XS', 'S', 'M', 'L', 'XL']);
+	const urls = await table.ghListRepoIssueUrls(remote.owner, remote.repo, PROJECT_ITEM_CAP);
 	const capped = urls.length >= PROJECT_ITEM_CAP;
 	let added = 0;
 	for (const url of urls) {
-		if (ghAddProjectItem(org, proj.number, url)) added += 1;
+		if (await table.ghAddProjectItem(org, proj.number, url)) added += 1;
 	}
 	const notes = [
 		`${existing !== null ? 'reused' : 'created'} board #${proj.number}${proj.url.length > 0 ? ` (${proj.url})` : ''}`,

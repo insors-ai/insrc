@@ -64,17 +64,17 @@ export interface SignoffRequestRef {
 
 /** Grouped issue operations over the existing gh wrappers, bound to one owner and repo (AMD-8). */
 export interface IssueOps {
-	create(spec: IssueSpec): PortResult<CreatedIssue>;
-	linkSubIssue(parent: IssueRef, childId: number): PortResult<void>;
+	create(spec: IssueSpec): Promise<PortResult<CreatedIssue>>;
+	linkSubIssue(parent: IssueRef, childId: number): Promise<PortResult<void>>;
 	/** The tracker's numeric id of an issue, the `childId` linkSubIssue needs (AMD-315d510cb28100e2-11). Reads only. */
-	resolveIssueId(ref: IssueRef): PortResult<number>;
-	close(issue: IssueRef): PortResult<void>;
-	comment(issue: IssueRef, body: string): PortResult<void>;
-	readBody(issue: IssueRef): PortResult<string>;
-	writeBody(issue: IssueRef, body: string): PortResult<void>;
-	ensureLabel(name: string): boolean;
-	ensureMilestone(title: string): void;
-	attachMilestone(issue: IssueRef, title: string): PortResult<void>;
+	resolveIssueId(ref: IssueRef): Promise<PortResult<number>>;
+	close(issue: IssueRef): Promise<PortResult<void>>;
+	comment(issue: IssueRef, body: string): Promise<PortResult<void>>;
+	readBody(issue: IssueRef): Promise<PortResult<string>>;
+	writeBody(issue: IssueRef, body: string): Promise<PortResult<void>>;
+	ensureLabel(name: string): Promise<boolean>;
+	ensureMilestone(title: string): Promise<void>;
+	attachMilestone(issue: IssueRef, title: string): Promise<PortResult<void>>;
 }
 
 /** One comment of an issue, as `listComments` reads it. */
@@ -92,28 +92,28 @@ export interface TrackerPort {
 	readonly capabilities: ReadonlySet<Capability>;
 	readonly issueOps: IssueOps;
 	/** The signed-in user's login. */
-	whoAmI(): PortResult<string>;
-	readAssignee(issue: IssueRef): PortResult<string | null>;
-	setAssignee(issue: IssueRef, who: string | null): PortResult<void>;
+	whoAmI(): Promise<PortResult<string>>;
+	readAssignee(issue: IssueRef): Promise<PortResult<string | null>>;
+	setAssignee(issue: IssueRef, who: string | null): Promise<PortResult<void>>;
 	/** Adds `who` to the assignees without removing anyone, then returns the assignees read back (AMD-315d510cb28100e2-12). A claim uses it so it never removes another claimant. */
-	addAssignee(issue: IssueRef, who: string): PortResult<string[]>;
-	createIssue(spec: IssueSpec): PortResult<IssueRef>;
-	findIssue(labels: string[]): PortResult<IssueRef | null>;
+	addAssignee(issue: IssueRef, who: string): Promise<PortResult<string[]>>;
+	createIssue(spec: IssueSpec): Promise<PortResult<IssueRef>>;
+	findIssue(labels: string[]): Promise<PortResult<IssueRef | null>>;
 	/** Every issue, open or closed, carrying all the labels, complete across pages, in ascending issue-number order (AMD-315d510cb28100e2-10). */
-	findIssues(labels: string[]): PortResult<IssueRef[]>;
+	findIssues(labels: string[]): Promise<PortResult<IssueRef[]>>;
 	/** Every issue, open or closed, whose title is exactly the artifact-id `token` or starts with it followed by an em dash and a space ({@link titleMatchesToken}), complete across pages, in ascending issue-number order. A failed lookup is a failed result, never an empty list (AMD-2f27754d4ad00b8e-6). */
-	findIssuesByTitleToken(token: string): PortResult<IssueRef[]>;
+	findIssuesByTitleToken(token: string): Promise<PortResult<IssueRef[]>>;
 	/** Every comment of the issue, in ascending time order and complete across pages; with `since` (ISO time), only those created or updated at or after it. A failed read is a failure, never an empty list (s6). */
-	listComments(issue: IssueRef, since?: string): PortResult<TrackerComment[]>;
+	listComments(issue: IssueRef, since?: string): Promise<PortResult<TrackerComment[]>>;
 	/** Post one comment on the issue and answer its id, so a caller can record the post (s8). {@link IssueOps.comment} answers nothing and is unchanged. */
-	postComment(issue: IssueRef, body: string): PortResult<{ externalId: string }>;
+	postComment(issue: IssueRef, body: string): Promise<PortResult<{ externalId: string }>>;
 	/** Make `artifact`'s file reachable from the issue through `link`. A tracker without an attachment API (GitHub) posts one comment holding the link; `externalId` is that comment's id (s6). */
-	attach(issue: IssueRef, artifact: Reference, link: string): PortResult<{ externalId?: string }>;
-	openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;
+	attach(issue: IssueRef, artifact: Reference, link: string): Promise<PortResult<{ externalId?: string }>>;
+	openSignoffRequest(spec: SignoffRequestSpec): Promise<PortResult<SignoffRequestRef>>;
 	/** With `since` (ISO time), only a request for changes made after it counts, so one made on an earlier push does not hold a resubmission (s8). */
-	readSignoffState(ref: SignoffRequestRef, since?: string): PortResult<'open' | 'changes-requested' | 'completed'>;
+	readSignoffState(ref: SignoffRequestRef, since?: string): Promise<PortResult<'open' | 'changes-requested' | 'completed'>>;
 	/** The branch a signoff request was opened from and whether it can still take a push. A tracker without it cannot resubmit to a request (s8). */
-	readSignoffRequest?(ref: SignoffRequestRef): PortResult<{ branch: string; open: boolean }>;
+	readSignoffRequest?(ref: SignoffRequestRef): Promise<PortResult<{ branch: string; open: boolean }>>;
 }
 
 /** Whether an issue title names the artifact id `token`: the title is the token, or the token then ` — ` and a
@@ -122,7 +122,7 @@ export function titleMatchesToken(title: string, token: string): boolean {
 	return token.length > 0 && (title === token || title.startsWith(`${token} \u2014 `));
 }
 
-export type LoadTracker = (repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort> | Promise<PortResult<TrackerPort>>;
+export type LoadTracker = (repo: string, needed: ReadonlySet<Capability>) => Promise<PortResult<TrackerPort>>;
 
 const ALL_CAPABILITIES: readonly Capability[] = ['claim', 'issue-create', 'signoff-request', 'completion'];
 

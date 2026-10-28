@@ -20,7 +20,7 @@ import { join } from 'node:path';
 
 import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../../storage.js';
-import { _setTrackerExecForTests } from '../github.js';
+import { _setTrackerExecForTests } from './_legacy-table.js';
 import { parseIdMarker } from '../conventions.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../port.js';
 import { unitLabel } from '../unit-issue.js';

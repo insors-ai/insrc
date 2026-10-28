@@ -61,7 +61,7 @@ test('the BUILD approval\'s follow-on attaches the build, review and test record
 		git(fx.repo, 'add', '--', rel(mds.build), rel(mds.review), rel(mds.tests)); git(fx.repo, 'commit', '-q', '-m', 'records');
 		writeFileSync(mds.tests, '# tests, changed after the commit\n');   // dirty
 		const head = git(fx.repo, 'rev-parse', 'HEAD');
-		const out = followOnTrackerAttach(approvedOf(buildJson), fx.repo);
+		const out = await followOnTrackerAttach(approvedOf(buildJson), fx.repo);
 		assert.equal(out.length, 1);
 		assert.equal(out[0]?.kind, 'tracker-attach');
 		assert.equal(out[0]?.ok, false, 'a dirty record is reported, so the follow-on is not ok');
@@ -71,7 +71,7 @@ test('the BUILD approval\'s follow-on attaches the build, review and test record
 		assert.equal(git(fx.repo, 'rev-parse', 'HEAD'), head, 'nothing was committed');
 		assert.equal(git(fx.repo, 'status', '--porcelain', '--', rel(mds.tests)).startsWith('M'), true, 'the dirty file is left as it was');
 		// an approval that is not a BUILD fires nothing
-		assert.deepEqual(followOnTrackerAttach(approvedOf(fx.lld), fx.repo), []);
+		assert.deepEqual(await followOnTrackerAttach(approvedOf(fx.lld), fx.repo), []);
 	} finally { fx.cleanup(); }
 });
 
@@ -83,21 +83,21 @@ test('the design document, plan and build, review and test records are attached 
 		const docs = [lldArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md, planArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md];
 		for (const p of docs) { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, `# ${p}\n`); }
 		git(fx.repo, 'add', '--', ...docs.map(rel)); git(fx.repo, 'commit', '-q', '-m', 'design');
-		const d = handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's1', scope: 'documents' }, undefined);
+		const d = await handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's1', scope: 'documents' }, undefined);
 		assert.ok('attached' in d && d.attached.length === 2, JSON.stringify(d));
 		links.length = 0;
 
-		followOnTrackerAttach(approvedOf(buildJson), fx.repo);
+		await followOnTrackerAttach(approvedOf(buildJson), fx.repo);
 		assert.equal(links.length, 3);
 		const first = readAttachments(fx.repo, `STORY-${HASH}-s1`);
 		assert.deepEqual(first.map(a => a.target.fragment).sort(), [...docs.map(rel), rel(mds.build), rel(mds.review), rel(mds.tests)].sort());
 
 		// a second approval of unchanged records posts nothing; a new revision of the build record gets its own link and keeps the first
-		followOnTrackerAttach(approvedOf(buildJson), fx.repo);
+		await followOnTrackerAttach(approvedOf(buildJson), fx.repo);
 		assert.equal(links.length, 3);
 		const doc = JSON.parse(readFileSync(buildJson, 'utf8')); doc.meta.revision = 2; writeFileSync(buildJson, JSON.stringify(doc) + '\n');
 		writeFileSync(mds.build, '# build, revision 2\n'); git(fx.repo, 'add', '--', rel(mds.build)); git(fx.repo, 'commit', '-q', '-m', 'build r2');
-		followOnTrackerAttach(approvedOf(buildJson), fx.repo);
+		await followOnTrackerAttach(approvedOf(buildJson), fx.repo);
 		assert.equal(links.length, 4);
 		assert.equal(readAttachments(fx.repo, `STORY-${HASH}-s1`).filter(a => a.target.fragment === rel(mds.build)).length, 2, 'one link per revision');
 	} finally { fx.cleanup(); }

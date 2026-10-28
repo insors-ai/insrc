@@ -263,7 +263,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 		}
 		case 'sync': {
 			if (rest[0] === undefined) return ['usage: workflow sync <epic-hash>'];
-			const r = svc.workflow.sync(ctx.repoPath, rest[0]);
+			const r = await svc.workflow.sync(ctx.repoPath, rest[0]);
 			if (r.status === 'synced') return [`synced · epic=${r.epicStatus}`, ...Object.entries(r.storyStatus).map(([s, st]) => `  ${s}: ${st}`)];
 			return [`${r.status}: ${r.reason}`];
 		}

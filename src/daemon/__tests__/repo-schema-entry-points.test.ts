@@ -54,7 +54,7 @@ test('repo-schema-entry-points.test.ts: each daemon entry point refuses an uncon
 			['review-step', text(await handleReviewStep({ phase: 'start', repo, artifactPath: 'x.md' }))],
 			['triage-step', text(await handleTriageStep(step))],
 			['workflow-step', text(await handleWorkflowStep({ ...step, workflow: 'define' }))],
-			['tracker.attach', JSON.stringify(handleTrackerAttach({ repo, epicHash: 'a3f4b8c9d1e2f3a4' }, undefined))],
+			['tracker.attach', JSON.stringify(await handleTrackerAttach({ repo, epicHash: 'a3f4b8c9d1e2f3a4' }, undefined))],
 			['tracker.syncComments', JSON.stringify(await handleTrackerSyncComments({ repo, epicHash: 'a3f4b8c9d1e2f3a4' }, undefined))],
 			['codeReview.run', await frames(send => codeReviewRunStart({ repo, epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' }, send, signal))],
 			['workflow.review', await frames(send => workflowReviewStart({ repo, artifactPath: join(repo, 'x.md') }, send, signal))],
@@ -72,6 +72,6 @@ test('repo-schema-entry-points.test.ts: each daemon entry point refuses an uncon
 		mkdirSync(join(repo, '.insrc'), { recursive: true });
 		writeFileSync(join(repo, '.insrc', 'schema.json'), JSON.stringify({ version: 2 }));
 		assert.doesNotMatch(text(await handleTriageStep(step)), NAMING);
-		assert.doesNotMatch(JSON.stringify(handleTrackerAttach({ repo, epicHash: 'a3f4b8c9d1e2f3a4' }, undefined)), NAMING);
+		assert.doesNotMatch(JSON.stringify(await handleTrackerAttach({ repo, epicHash: 'a3f4b8c9d1e2f3a4' }, undefined)), NAMING);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

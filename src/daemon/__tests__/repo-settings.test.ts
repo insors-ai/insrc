@@ -16,7 +16,7 @@ import { createRepoSettingsHandlers, mapSignin } from '../repo-settings.js';
 import type { RepoSettingsDeps, RepoSettingsPayload, SettingsResult } from '../repo-settings.js';
 import { IpcServer, directDispatch } from '../server.js';
 import { rpc } from '../../shared/ipc-client.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/github.js';
+import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
 import type { PortResult } from '../../workflow/tracker/port.js';
 import type { PolicyResult, TeamPolicy } from '../../workflow/team/types.js';
 
@@ -106,13 +106,13 @@ test('buildRepoSettings values, resolved target and policy rows', async () => {
 	} finally { off.cleanup(); }
 });
 
-test('sign-in mapping for every whoAmI outcome', () => {
-	assert.deepEqual(mapSignin(() => ({ ok: true, value: 'octocat' })), { state: 'signed-in', login: 'octocat' });
-	assert.equal(mapSignin(() => ({ ok: true, value: '' })).state, 'missing-signin');
+test('sign-in mapping for every whoAmI outcome', async () => {
+	assert.deepEqual(await mapSignin(() => ({ ok: true, value: 'octocat' })), { state: 'signed-in', login: 'octocat' });
+	assert.equal((await mapSignin(() => ({ ok: true, value: '' }))).state, 'missing-signin');
 	for (const kind of ['missing-tool', 'missing-signin', 'unreachable', 'rejected'] as const) {
-		assert.deepEqual(mapSignin(() => ({ ok: false, kind, reason: `r-${kind}` })), { state: kind, reason: `r-${kind}` });
+		assert.deepEqual(await mapSignin(() => ({ ok: false, kind, reason: `r-${kind}` })), { state: kind, reason: `r-${kind}` });
 	}
-	assert.deepEqual(mapSignin(() => { throw new Error('spawn failed'); }), { state: 'rejected', reason: 'spawn failed' });
+	assert.deepEqual(await mapSignin(() => { throw new Error('spawn failed'); }), { state: 'rejected', reason: 'spawn failed' });
 });
 
 test('repo identity uses the exact registered path', async () => {

@@ -9,6 +9,6 @@
 import type { IssueOps, PortResult } from '../../port.js';
 
 export const ops: Pick<IssueOps, 'linkSubIssue' | 'resolveIssueId'> = {
-	resolveIssueId: (ref: string): PortResult<string> => ({ ok: true, value: ref }),
-	linkSubIssue: (_parent: string, childId: string): PortResult<void> => { void childId; return { ok: true, value: undefined }; },
+	resolveIssueId: async (ref: string): Promise<PortResult<string>> => ({ ok: true, value: ref }),
+	linkSubIssue: async (_parent: string, childId: string): Promise<PortResult<void>> => { void childId; return { ok: true, value: undefined }; },
 };

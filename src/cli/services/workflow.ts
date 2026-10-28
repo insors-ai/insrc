@@ -156,7 +156,7 @@ function unitHeadOf(workflow: string, epicHash: string, storyId: unknown): strin
 /** After the check-in commit the approved files are clean, so their permalinks name that commit: attach the approved document (and its
  *  companions) to the unit's issue, then commit the unit head that records the attachments, in a second commit. Without a commit
  *  there is nothing to link to, and the reason is stated. */
-function attachApprovedDocuments(approval: ApprovalResult, commit: CommitArtifactsResult | undefined): { attach: AttachUnitResult | { skipped: string }; commit?: CommitArtifactsResult } | undefined {
+async function attachApprovedDocuments(approval: ApprovalResult, commit: CommitArtifactsResult | undefined): Promise<{ attach: AttachUnitResult | { skipped: string }; commit?: CommitArtifactsResult } | undefined> {
 	if (approval.workflow !== 'design.epic' && approval.workflow !== 'design.story' && approval.workflow !== 'plan') return undefined;
 	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string; epicCreatedAt?: string; createdAt?: string; standalone?: boolean };
 	try { meta = ((JSON.parse(readFileSync(approval.path, 'utf8')) as { meta?: typeof meta }).meta) ?? {}; }
@@ -166,7 +166,7 @@ function attachApprovedDocuments(approval: ApprovalResult, commit: CommitArtifac
 	if (commit === undefined) return { attach: { skipped: 'attachments skipped: the artifacts are not committed' } };
 	const gate = openTracker(repoPath);
 	if ('skip' in gate) return undefined;
-	const result = attachApprovedDocument(approval.workflow, { repoPath, epicHash, ...(storyId !== undefined ? { storyId } : {}) }, gate.port);
+	const result = await attachApprovedDocument(approval.workflow, { repoPath, epicHash, ...(storyId !== undefined ? { storyId } : {}) }, gate.port);
 	if ('error' in result || result.attached.length + result.reconciled.length === 0) return { attach: result };
 	// the attachments are recorded on the unit's head
 	const headId = unitHeadOf(approval.workflow, epicHash, storyId);
@@ -227,8 +227,8 @@ export async function approve(artifactPath: string, withTracker = true, override
 	// Commit + push AFTER the tracker push, so the checked-in MD carries the
 	// re-rendered `**Tracker:**` link and the issue bodies link the committed blob.
 	const commit = commitApprovedArtifacts(approval);
-	let attached: ReturnType<typeof attachApprovedDocuments>;
-	try { attached = attachApprovedDocuments(approval, commit); }
+	let attached: Awaited<ReturnType<typeof attachApprovedDocuments>>;
+	try { attached = await attachApprovedDocuments(approval, commit); }
 	catch (err) { log.warn({ workflow: approval.workflow, err: (err as Error).message }, 'approve: attaching the approved document failed'); attached = { attach: { error: (err as Error).message } }; }
 	const out: ApproveOutcome = { approval };
 	return {
@@ -410,8 +410,8 @@ export function resolveEpicHashArg(repoPath: string, hashOrSlug: string): string
 
 /** Pull GitHub issue state for an Epic + its Stories into meta.tracker
  *  (read by the chain report). Deterministic; read-only against GitHub. */
-export function sync(repoPath: string, epicHash: string): SyncResult {
-	return syncTracker(repoPath, epicHash);
+export async function sync(repoPath: string, epicHash: string): Promise<SyncResult> {
+	return await syncTracker(repoPath, epicHash);
 }
 
 /** The deadline on the daemon call that writes the tracker config. It bounds only that call. */
@@ -421,8 +421,8 @@ export const TRACKER_CONFIG_TIMEOUT_MS = 15000;
 export interface TrackerSetupDeps {
 	readonly connect?: (() => Socket) | undefined;
 	readonly timeoutMs?: number | undefined;
-	readonly plan?: ((repoPath: string) => TrackerConfigPlan) | undefined;
-	readonly run?: ((repoPath: string, opts: TrackerSetupOptions) => TrackerSetupReport) | undefined;
+	readonly plan?: ((repoPath: string) => TrackerConfigPlan | Promise<TrackerConfigPlan>) | undefined;
+	readonly run?: ((repoPath: string, opts: TrackerSetupOptions) => TrackerSetupReport | Promise<TrackerSetupReport>) | undefined;
 }
 
 type EnsureReply = { readonly ok: true; readonly changed: boolean } | { readonly ok: false; readonly error: { readonly code: string; readonly message: string } };
@@ -456,10 +456,10 @@ async function ensureThroughDaemon(repoPath: string, plan: Extract<TrackerConfig
  *  deadline covers only that call; the remaining steps run afterwards whatever its
  *  outcome, and are not bounded by it. */
 export async function trackerSetup(repoPath: string, opts: TrackerSetupOptions = {}, deps: TrackerSetupDeps = {}): Promise<TrackerSetupReport> {
-	const plan = (deps.plan ?? planTrackerConfig)(repoPath);
+	const plan = await (deps.plan ?? planTrackerConfig)(repoPath);
 	const configOutcome: ConfigOutcome = plan.status === 'needs-write'
 		? await ensureThroughDaemon(repoPath, plan, deps)
 		: { status: plan.status, detail: plan.detail };
 	const run = deps.run ?? runTrackerSetup;
-	return run(repoPath, { ...opts, configOutcome });
+	return await run(repoPath, { ...opts, configOutcome });
 }

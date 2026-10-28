@@ -18,6 +18,7 @@
  * revision-less receipt entry on the artifact's log (outcome `posted`, data kind `feedback-post`), which moves no revision.
  */
 
+import { isToolDenied } from './tool-denied.js';
 import { orderedEntryId } from '../tasks/task-set.js';
 import { taskHeadIdOf } from '../tasks/lookup.js';
 import type { FeedbackService } from '../feedback/feedback-service.js';
@@ -114,13 +115,14 @@ export async function syncUnitComments(unit: UnitRef, port: TrackerPort, deps: C
 		try { return await turn; }
 		finally { if (running.get(where.artifactId) === settled) running.delete(where.artifactId); }
 	} catch (err) {
+		if (isToolDenied(err)) throw err;   // a denied call stops the sync; it is not a failed step
 		log.warn({ err: (err as Error).message }, 'comment-sync: the sync failed');
 		return { ...out, failed: [{ step: 'sync', reason: (err as Error).message }] };
 	}
 }
 
 async function readInbound(artifactId: string, issue: string, port: TrackerPort, deps: CommentSyncDeps, out: CommentSyncResult): Promise<void> {
-	const listed = port.listComments(issue);
+	const listed = await port.listComments(issue);
 	if (!listed.ok) { out.failed.push({ step: 'read', reason: listed.reason }); return; }
 	const known = new Set((await deps.history.feedback(artifactId)).map(f => f.id));
 	for (const c of listed.value) {
@@ -161,7 +163,7 @@ async function postOutbound(artifactId: string, issue: string, port: TrackerPort
 	// entries that came from the tracker are never posted back
 	const pending = (await deps.history.feedback(artifactId)).filter(f => f.source === undefined && !receipts.has(f.id));
 	if (pending.length === 0) return;
-	const listed = port.listComments(issue);
+	const listed = await port.listComments(issue);
 	if (!listed.ok) { out.failed.push({ step: 'reconcile', reason: listed.reason }); return; }
 	for (const f of pending) {
 		try {
@@ -172,12 +174,13 @@ async function postOutbound(artifactId: string, issue: string, port: TrackerPort
 				out.reconciled.push(f.id);
 				continue;
 			}
-			const posted = port.postComment(issue, feedbackBody(artifactId, f));
+			const posted = await port.postComment(issue, feedbackBody(artifactId, f));
 			if (!posted.ok) { out.failed.push({ step: 'post', id: f.id, reason: posted.reason }); continue; }
 			try { await writeReceipt(artifactId, issue, f.id, posted.value.externalId, deps); }
 			catch (err) { out.failed.push({ step: 'receipt', id: f.id, reason: `posted as ${posted.value.externalId} but the receipt was not written: ${err instanceof Error ? err.message : String(err)}` }); continue; }
 			out.posted.push(f.id);
 		} catch (err) {
+			if (isToolDenied(err)) throw err;
 			out.failed.push({ step: 'post', id: f.id, reason: err instanceof Error ? err.message : String(err) });
 		}
 	}

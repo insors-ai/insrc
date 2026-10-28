@@ -13,12 +13,8 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-	_setTrackerExecForTests,
-	ghCurrentLogin,
-	listMyOpenTasks,
-	queryTasks,
-} from '../github.js';
+import { ghCurrentLogin, listMyOpenTasks, queryTasks } from '../github.js';
+import { _setTrackerExecForTests } from './_legacy-table.js';
 
 afterEach(() => _setTrackerExecForTests());
 

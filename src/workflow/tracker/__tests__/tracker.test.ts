@@ -16,7 +16,8 @@ import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseGithubRemoteUrl, commitAndPushArtifacts, ghAuthOk, ghGetIssueState, ghCloseIssue, ghComment, ghCreateLabel, ghEnsureMilestone, _setTrackerExecForTests } from '../github.js';
+import { parseGithubRemoteUrl, commitAndPushArtifacts, ghAuthOk, ghGetIssueState, ghCloseIssue, ghComment, ghCreateLabel, ghEnsureMilestone } from '../github.js';
+import { _setTrackerExecForTests } from './_legacy-table.js';
 import { parseIssueRef, buildRef, issueUrl, trackerRefLine } from '../refs.js';
 import { renderEpicBody, renderStoryBody, updateEpicTaskList, mapIssueStatus } from '../conventions.js';
 import { resolveWorkflowRef } from '../resolve.js';

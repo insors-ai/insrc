@@ -457,14 +457,14 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 	if (!artifacts.ok) return artifacts;
 
 	// the tracker, the actor and the holder of the unit's issue
-	const loaded = (d.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim', 'signoff-request']));
+	const loaded = await (d.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim', 'signoff-request']));
 	if (!loaded.ok) return loaded;
 	const port = loaded.value;
-	const who = port.whoAmI();
+	const who = await port.whoAmI();
 	if (!who.ok) return who;
 	const issue = await (d.resolveIssue ?? (async (u: UnitRef) => await resolveUnitIssueLocal(u)))(unit);
 	if (issue === null) return rejected(`${unit.storyId ?? unit.epicHash} has no tracker issue to hold the signoff: create its issue first`);
-	const holder = port.readAssignee(issue);
+	const holder = await port.readAssignee(issue);
 	if (!holder.ok) return holder;
 	if (holder.value === null) return rejected(`nobody holds ${issue}: claim it before submitting for signoff`);
 	if (holder.value.toLowerCase() !== who.value.toLowerCase()) return rejected(`${issue} is held by ${holder.value}: only the holder can submit for signoff`);
@@ -492,11 +492,11 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 		if (unrecorded.length === 0) return { ok: true, value: request };
 	} else {
 		// artifacts sent to a request before are sent back to it while it is open; a failure to read it never opens a second one
-		const earlier = earlierRequestOf(unrecorded, port);
+		const earlier = await earlierRequestOf(unrecorded, port);
 		if (!earlier.ok) return earlier;
 		const sent = earlier.value === undefined
-			? openRequest(repo, unit, artifacts.value, port, issue, d)
-			: resubmit(repo, unit, artifacts.value, earlier.value, d);
+			? await openRequest(repo, unit, artifacts.value, port, issue, d)
+			: await resubmit(repo, unit, artifacts.value, earlier.value, d);
 		if (!sent.ok) return sent;
 		request = sent.value;
 	}
@@ -513,7 +513,7 @@ interface EarlierRequest { readonly request: SignoffRequestRef; readonly branch:
  * closed, or the tracker cannot read a request. Artifacts that name different requests are refused as a whole, and a failed read is
  * returned: a new request is never opened because the earlier one could not be read.
  */
-function earlierRequestOf(artifacts: readonly Submission[], port: TrackerPort): PortResult<EarlierRequest | undefined> {
+async function earlierRequestOf(artifacts: readonly Submission[], port: TrackerPort): Promise<PortResult<EarlierRequest | undefined>> {
 	const refs = new Set<string>();
 	for (const a of artifacts) {
 		const last = signoffsOfMeta(a.meta).at(-1);
@@ -523,7 +523,7 @@ function earlierRequestOf(artifacts: readonly Submission[], port: TrackerPort): 
 	if (refs.size > 1) return rejected(`these artifacts were sent to different earlier requests (${[...refs].join(', ')}): submit them separately`);
 	const [ref] = refs;
 	if (ref === undefined || port.readSignoffRequest === undefined) return { ok: true, value: undefined };
-	const read = port.readSignoffRequest({ ref });
+	const read = await port.readSignoffRequest({ ref });
 	if (!read.ok) return read;
 	return { ok: true, value: read.value.open ? { request: { ref }, branch: read.value.branch } : undefined };
 }
@@ -548,7 +548,7 @@ function submissionArtifacts(repo: string, unit: UnitRef, artifactIds: readonly 
 }
 
 /** Publish the artifact files to a branch and open the one request for them through the tracker. */
-function openRequest(repo: string, unit: UnitRef, artifacts: readonly Submission[], port: TrackerPort, issue: IssueRef, d: SignoffDeps): PortResult<SignoffRequestRef> {
+function openRequest(repo: string, unit: UnitRef, artifacts: readonly Submission[], port: TrackerPort, issue: IssueRef, d: SignoffDeps): Promise<PortResult<SignoffRequestRef>> | PortResult<SignoffRequestRef> {
 	const files = artifacts.map(a => ({ artifactId: a.artifactId, absolute: artifactJsonPath(repo, a.artifactId), path: relative(repo, artifactJsonPath(repo, a.artifactId)) }));
 	const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');
 	const message = `docs: submit the ${stages} of ${unit.unit} ${unit.storyId ?? unit.epicHash} for signoff`;
@@ -647,20 +647,20 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 
 	const waiting = waitingHeads(repo, unit, policy, d);
 	if (waiting.length > 0) {
-		const loaded = (d.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim', 'signoff-request']));
+		const loaded = await (d.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim', 'signoff-request']));
 		if (!loaded.ok) {
 			log.warn({ kind: loaded.kind, reason: loaded.reason }, 'signoff requests cannot be read: the tracker is not available');
 			problems.push(`the tracker is not available, so the signoff requests could not be read (${loaded.reason})`);
 		} else {
 			const port = loaded.value;
-			const who = port.whoAmI();
+			const who = await port.whoAmI();
 			if (who.ok) by = personOf(who.value);
 			const refs = [...new Set(waiting.map(w => w.ref))];
 			for (const ref of refs) {
 				const group = waiting.filter(w => w.ref === ref);
 				// only a request for changes made after the latest submission counts: the tracker keeps the decision made on an earlier push
 				const since = group.map(w => w.at).reduce((latest, at) => (at > latest ? at : latest), '');
-				const state = port.readSignoffState({ ref }, since.length > 0 ? since : undefined);
+				const state = await port.readSignoffState({ ref }, since.length > 0 ? since : undefined);
 				if (!state.ok) {
 					log.warn({ ref, kind: state.kind, reason: state.reason }, 'a signoff request could not be read; the stage stays blocked');
 					problems.push(`request ${ref} could not be read (${state.reason})`);
@@ -704,7 +704,7 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 async function releaseClaim(unit: UnitRef, port: TrackerPort, d: SignoffDeps): Promise<void> {
 	const issue = await (d.resolveIssue ?? (async (u: UnitRef) => await resolveUnitIssueLocal(u)))(unit);
 	if (issue === null) return;
-	const released = port.setAssignee(issue, null);
+	const released = await port.setAssignee(issue, null);
 	if (!released.ok) log.warn({ issue, kind: released.kind, reason: released.reason }, 'the claim could not be released after signoff; the holder or an administrator can release it');
 }
 

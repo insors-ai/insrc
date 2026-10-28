@@ -25,6 +25,7 @@ import { readRepoEntry, writeRepoEntryKeys } from '../workflow/config/github-sto
 import type { WriteError, WriteResult } from '../workflow/config/github-store.js';
 import { policyReader } from '../workflow/team/policy-reader.js';
 import type { PolicyReader } from '../workflow/team/types.js';
+import { isToolDenied } from '../workflow/tracker/tool-denied.js';
 import type { RpcHandlers } from './server.js';
 
 const log = getLogger('repo-settings');
@@ -89,11 +90,12 @@ export interface RepoSettingsDeps {
 // ---------------------------------------------------------------------------
 
 /** Maps every `whoAmI` outcome to a sign-in state. A thrown exception becomes `rejected`. */
-export function mapSignin(read: () => PortResult<string>): SigninStatus {
+export async function mapSignin(read: () => PortResult<string> | Promise<PortResult<string>>): Promise<SigninStatus> {
 	let result: PortResult<string>;
 	try {
-		result = read();
+		result = await read();
 	} catch (e) {
+		if (isToolDenied(e)) throw e;   // a denied call stops the read; it is not a rejected sign-in
 		return { state: 'rejected', reason: (e as Error).message };
 	}
 	if (result.ok) {
@@ -177,7 +179,7 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 		// Sign-in is the signed-in user (`gh api user`), which does not depend on the
 		// target, so it is read whenever the tracker is github, even if the target is unresolved.
 		const signin: SigninStatus = resolved.type === 'github'
-			? mapSignin(() => makeTracker(resolved.owner ?? '', resolved.repo ?? '').whoAmI())
+			? await mapSignin(() => makeTracker(resolved.owner ?? '', resolved.repo ?? '').whoAmI())
 			: { state: 'disabled', reason: 'the tracker is off for this repo' };
 		return { ok: true, payload: { repo, values: ownValues(read.entry), resolved, signin, policy: mapPolicy(readPolicy, repo) } };
 	}

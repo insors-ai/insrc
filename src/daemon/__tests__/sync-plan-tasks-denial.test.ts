@@ -15,7 +15,7 @@ import { createRepoLifecycle } from '../../workflow/artifact-core/repo-lifecycle
 import { _setAutoPushDepsForTests } from '../../workflow/tracker-auto.js';
 import { ARTIFACTS_DIR, planArtifactId } from '../../workflow/storage.js';
 import { readBinding } from '../../workflow/tracker/binding.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/github.js';
+import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
 import { TaskSyncDenied, ToolDenied } from '../../workflow/tracker/tool-denied.js';
 import type { TrackerPort } from '../../workflow/tracker/port.js';
 import { CREATED, HASH, fakeTracker, seed, teamPolicy } from '../../workflow/__tests__/approve-fallback-kit.js';

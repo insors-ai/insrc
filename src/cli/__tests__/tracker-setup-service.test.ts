@@ -22,7 +22,7 @@ import type { TrackerSetupDeps } from '../services/workflow.js';
 import { makeServices } from '../services/index.js';
 import { IpcServer, directDispatch } from '../../daemon/server.js';
 import { createRepoSettingsHandlers } from '../../daemon/repo-settings.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/github.js';
+import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
 import { githubConfigPath } from '../../workflow/config/github.js';
 import { runTrackerSetup } from '../../workflow/tracker/setup.js';
 import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
@@ -106,7 +106,7 @@ async function timedConfig(repo: string, deps: TrackerSetupDeps): Promise<{ repo
 	let configMs = -1;
 	const report = await trackerSetup(repo, {}, {
 		...deps,
-		run: (r, o) => { configMs = Date.now() - started; return runTrackerSetup(r, o); },
+		run: async (r, o) => { configMs = Date.now() - started; return await runTrackerSetup(r, o); },
 	});
 	return { report, configMs };
 }
@@ -307,8 +307,8 @@ test('makeServices always injects the config seam', async () => {
 	const service = stripImports(readFileSync(join(root, 'cli', 'services', 'workflow.ts'), 'utf8'));
 	assert.equal(service.match(/\brunTrackerSetup\b/g)?.length, 1, 'the service references runTrackerSetup once (as the default run seam)');
 	assert.equal(service.match(/\brun\(/g)?.length, 1, 'the service has one call of the run seam');
-	assert.match(service, /return run\(repoPath, \{ \.\.\.opts, configOutcome \}\);/);
+	assert.match(service, /return await run\(repoPath, \{ \.\.\.opts, configOutcome \}\);/);
 
 	// The guard itself fails on a bare call.
-	assert.ok(/\brunTrackerSetup\b/.test(stripImports("import { runTrackerSetup } from './x.js';\nexport const y = () => runTrackerSetup('/r');")));
+	assert.ok(/\brunTrackerSetup\b/.test(stripImports("import { runTrackerSetup } from './x.js';\nexport const y = () => await runTrackerSetup('/r');")));
 });

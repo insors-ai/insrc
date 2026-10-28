@@ -10,7 +10,7 @@ import { approvalStateOf } from '../../artifact-core/approval-view.js';
 import { _setAutoPushDepsForTests } from '../../tracker-auto.js';
 import { ARTIFACTS_DIR } from '../../storage.js';
 import { readBinding } from '../../tracker/binding.js';
-import { _setTrackerExecForTests } from '../../tracker/github.js';
+import { _setTrackerExecForTests } from '../../tracker/__tests__/_legacy-table.js';
 import type { TrackerPort } from '../../tracker/port.js';
 import { HASH, CREATED, fakeTracker, seed, teamPolicy } from '../../__tests__/approve-fallback-kit.js';
 

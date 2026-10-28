@@ -129,11 +129,11 @@ interface ArtifactShape {
  * the append to the artifact's own body.openQuestions + recordResolution's
  * write (both on the ONE target artifact).
  */
-export function handleResolveComment(
+export async function handleResolveComment(
 	params: { repo?: string; artifactId?: string; comments?: readonly ReviewComment[] } | undefined,
 	repoEnv: string | undefined,
 	deps?: ResolveCommentDeps,
-): ResolveCommentResult | ResolveCommentError {
+): Promise<ResolveCommentResult | ResolveCommentError> {
 	const record = deps?.record ?? recordResolution;
 	const p = params ?? {};
 	const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv) ?? '';
@@ -179,7 +179,7 @@ export function handleResolveComment(
 			// commit:false — every comment writes the artifact but we commit ONCE
 			// after the batch (below), so a submit of N comments is ONE git
 			// commit, not N synchronous commit+push cycles that block the daemon.
-			const res = record(repoPath, identity.kind, identity.epicHash, identity.storyId, qId, 'resolved', anchorSummary(c.anchor), c.body.trim(), { commit: false });
+			const res = await record(repoPath, identity.kind, identity.epicHash, identity.storyId, qId, 'resolved', anchorSummary(c.anchor), c.body.trim(), { commit: false });
 			lastJsonPath = res.jsonPath;
 			lastMdPath = res.mdPath;
 			resolutions.push({ openQuestionId: qId, status: 'resolved' });

@@ -436,7 +436,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 						inferCandidates: async (req: InferParentsRequest) =>
 							inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
 					});
-					return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...followOnTrackerAttach(approved, repoPath)];
+					return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...await followOnTrackerAttach(approved, repoPath)];
 				},
 			});
 		},
@@ -549,7 +549,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 							inferCandidates: async (req: InferParentsRequest) =>
 								inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
 						});
-						return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...followOnTrackerAttach(approved, repoPath)];
+						return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...await followOnTrackerAttach(approved, repoPath)];
 					},
 				},
 			);

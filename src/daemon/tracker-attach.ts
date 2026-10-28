@@ -28,7 +28,7 @@ export interface TrackerAttachParams {
 }
 
 /** `tracker.attach`: attach the unit's committed files to its issue; `{ error }` when nothing could be attempted. */
-export function handleTrackerAttach(params: unknown, repoEnv: string | undefined): AttachUnitResult {
+export async function handleTrackerAttach(params: unknown, repoEnv: string | undefined): Promise<AttachUnitResult> {
 	const p = (params ?? {}) as TrackerAttachParams;
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv;
 	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required (or set INSRC_REPO)' };
@@ -42,18 +42,18 @@ export function handleTrackerAttach(params: unknown, repoEnv: string | undefined
 	const gate = openTracker(repoPath);
 	if ('skip' in gate) return { error: `no GitHub tracker to attach to: ${gate.skip.status === 'skipped' || gate.skip.status === 'failed' ? gate.skip.reason : gate.skip.status}` };
 	const ref: UnitRef = { unit, repoPath, epicHash: p.epicHash, ...(p.storyId !== undefined ? { storyId: p.storyId } : {}) };
-	return attachUnit(ref, scope, gate.port);
+	return await attachUnit(ref, scope, gate.port);
 }
 
 /** The follow-on of a BUILD approval: attach the Story's build, review and test records that git reports clean. */
-export function followOnTrackerAttach(approved: WorkflowApproveResult['approved'], repoPath: string): FollowOnOutcome[] {
+export async function followOnTrackerAttach(approved: WorkflowApproveResult['approved'], repoPath: string): Promise<FollowOnOutcome[]> {
 	const out: FollowOnOutcome[] = [];
 	for (const { path } of approved) {
 		if (!basename(path).startsWith('BUILD-') || !path.endsWith('.json')) continue;
 		let meta: { epicHash?: unknown; storyId?: unknown };
 		try { meta = (JSON.parse(readFileSync(path, 'utf8')) as { meta?: typeof meta }).meta ?? {}; } catch { continue; }
 		if (typeof meta.epicHash !== 'string' || typeof meta.storyId !== 'string') continue;
-		const r = handleTrackerAttach({ repo: repoPath, epicHash: meta.epicHash, unit: 'story', storyId: meta.storyId, scope: 'records' }, undefined);
+		const r = await handleTrackerAttach({ repo: repoPath, epicHash: meta.epicHash, unit: 'story', storyId: meta.storyId, scope: 'records' }, undefined);
 		if ('error' in r) { out.push({ kind: 'tracker-attach', artifactPath: path, ok: false, note: r.error }); continue; }
 		out.push({
 			kind: 'tracker-attach', artifactPath: path, ok: r.failed.length === 0,

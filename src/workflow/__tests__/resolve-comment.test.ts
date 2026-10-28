@@ -80,13 +80,13 @@ function comment(id: string, body: string, anchor: ReviewComment['anchor'] = {})
 
 // ---- parseArtifactId -------------------------------------------------------
 
-test('parseArtifactId: DEF/HLD/LLD decode to the (kind, epicHash, storyId) locator', () => {
+test('parseArtifactId: DEF/HLD/LLD decode to the (kind, epicHash, storyId) locator', async () => {
 	assert.deepEqual(parseArtifactId(`LLD-${HASH}-s4`), { kind: 'lld', epicHash: HASH, storyId: 's4' });
 	assert.deepEqual(parseArtifactId(`DEF-${HASH}`), { kind: 'define', epicHash: HASH, storyId: undefined });
 	assert.deepEqual(parseArtifactId(`HLD-${HASH}`), { kind: 'hld', epicHash: HASH, storyId: undefined });
 });
 
-test('parseArtifactId: malformed or unsupported ids return null', () => {
+test('parseArtifactId: malformed or unsupported ids return null', async () => {
 	for (const bad of ['', 'nonsense', `PLAN-${HASH}-s4`, `SPEC-${HASH}`, `CR-${HASH}-s4`, `LLD-${HASH}`, `DEF-${HASH}-s4`, `LLD--s4`]) {
 		assert.equal(parseArtifactId(bad), null, `expected null for ${bad}`);
 	}
@@ -94,12 +94,12 @@ test('parseArtifactId: malformed or unsupported ids return null', () => {
 
 // ---- happy paths -----------------------------------------------------------
 
-test('an openQuestionId-anchored comment resolves that existing question (no append)', () => {
+test('an openQuestionId-anchored comment resolves that existing question (no append)', async () => {
 	const repo = makeFixture({ openQuestions: [EXISTING_Q] });
 	const rec = fakeRecorder();
 	try {
 		const qid = questionId(EXISTING_Q);
-		const r = asResult(handleResolveComment(
+		const r = asResult(await handleResolveComment(
 			{ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'use LRU', { openQuestionId: qid })] },
 			undefined, { record: rec.fn },
 		));
@@ -116,11 +116,11 @@ test('an openQuestionId-anchored comment resolves that existing question (no app
 	}
 });
 
-test('a section/quote/general comment appends a new open question then resolves it (a1)', () => {
+test('a section/quote/general comment appends a new open question then resolves it (a1)', async () => {
 	const repo = makeFixture({ openQuestions: [] });
 	const rec = fakeRecorder();
 	try {
-		const r = asResult(handleResolveComment(
+		const r = asResult(await handleResolveComment(
 			{ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'this section is unclear', { sectionPath: 'Contract > api' })] },
 			undefined, { record: rec.fn },
 		));
@@ -137,11 +137,11 @@ test('a section/quote/general comment appends a new open question then resolves 
 	}
 });
 
-test('a stale openQuestionId (not a current question) falls back to the append path', () => {
+test('a stale openQuestionId (not a current question) falls back to the append path', async () => {
 	const repo = makeFixture({ openQuestions: [] });
 	const rec = fakeRecorder();
 	try {
-		const r = asResult(handleResolveComment(
+		const r = asResult(await handleResolveComment(
 			{ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'stale anchor body', { openQuestionId: 'q-gone' })] },
 			undefined, { record: rec.fn },
 		));
@@ -154,12 +154,12 @@ test('a stale openQuestionId (not a current question) falls back to the append p
 	}
 });
 
-test('recorded === comments written; resolutions[] reports one entry per comment', () => {
+test('recorded === comments written; resolutions[] reports one entry per comment', async () => {
 	const repo = makeFixture({ openQuestions: [EXISTING_Q] });
 	const rec = fakeRecorder();
 	try {
 		const qid = questionId(EXISTING_Q);
-		const r = asResult(handleResolveComment(
+		const r = asResult(await handleResolveComment(
 			{ repo, artifactId: ARTIFACT_ID, comments: [
 				comment('c1', 'answer', { openQuestionId: qid }),
 				comment('c2', 'general one', { sectionPath: 'A' }),
@@ -179,11 +179,11 @@ test('recorded === comments written; resolutions[] reports one entry per comment
 
 // ---- failure paths (every one a RETURNED { error }) ------------------------
 
-test('malformed/unsupported artifactId -> { error }, no write', () => {
+test('malformed/unsupported artifactId -> { error }, no write', async () => {
 	const repo = makeFixture();
 	try {
 		for (const bad of [`PLAN-${HASH}-s4`, 'garbage', '']) {
-			const r = handleResolveComment({ repo, artifactId: bad, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn });
+			const r = await handleResolveComment({ repo, artifactId: bad, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn });
 			assert.ok('error' in r, `expected error for '${bad}'`);
 		}
 	} finally {
@@ -191,32 +191,32 @@ test('malformed/unsupported artifactId -> { error }, no write', () => {
 	}
 });
 
-test('empty comments or a blank body -> { error }', () => {
+test('empty comments or a blank body -> { error }', async () => {
 	const repo = makeFixture();
 	try {
-		assert.ok('error' in handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [] }, undefined, { record: fakeRecorder().fn }));
-		assert.ok('error' in handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', '   ', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn }));
+		assert.ok('error' in await handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [] }, undefined, { record: fakeRecorder().fn }));
+		assert.ok('error' in await handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', '   ', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn }));
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('repo unresolved -> { error }', () => {
-	const r = handleResolveComment({ artifactId: ARTIFACT_ID, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn });
+test('repo unresolved -> { error }', async () => {
+	const r = await handleResolveComment({ artifactId: ARTIFACT_ID, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn });
 	assert.ok('error' in r);
 });
 
-test('absent artifact json -> { error } (recorded 0, before any write)', () => {
+test('absent artifact json -> { error } (recorded 0, before any write)', async () => {
 	const repo = makeFixture({ omitArtifact: true });
 	try {
-		const r = handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn });
+		const r = await handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: fakeRecorder().fn });
 		assert.ok('error' in r);
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('a mid-batch record failure -> { error } naming recorded-so-far, no silent drop', () => {
+test('a mid-batch record failure -> { error } naming recorded-so-far, no silent drop', async () => {
 	const repo = makeFixture({ openQuestions: [] });
 	let n = 0;
 	const throwingRecord = ((..._args: unknown[]) => {
@@ -225,7 +225,7 @@ test('a mid-batch record failure -> { error } naming recorded-so-far, no silent 
 		return { jsonPath: '', mdPath: '', resolution: { question: '', status: 'resolved', resolvedAt: '' }, remainingOpen: [] };
 	}) as RecordResolutionFn;
 	try {
-		const r = handleResolveComment(
+		const r = await handleResolveComment(
 			{ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'one', { sectionPath: 'A' }), comment('c2', 'two', { sectionPath: 'B' })] },
 			undefined, { record: throwingRecord },
 		);
@@ -236,12 +236,12 @@ test('a mid-batch record failure -> { error } naming recorded-so-far, no silent 
 	}
 });
 
-test('re-submitting the SAME general comment is idempotent (no duplicate open question)', () => {
+test('re-submitting the SAME general comment is idempotent (no duplicate open question)', async () => {
 	const repo = makeFixture({ openQuestions: [] });
 	try {
 		const c = comment('c1', 'this section is unclear', { sectionPath: 'Contract > api' });
-		asResult(handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [c] }, undefined, { record: fakeRecorder().fn }));
-		asResult(handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [c] }, undefined, { record: fakeRecorder().fn }));
+		asResult(await handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [c] }, undefined, { record: fakeRecorder().fn }));
+		asResult(await handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [c] }, undefined, { record: fakeRecorder().fn }));
 		// the identical comment is reused, not appended twice
 		assert.equal(readOpenQuestions(repo).length, 1);
 	} finally {
@@ -249,12 +249,12 @@ test('re-submitting the SAME general comment is idempotent (no duplicate open qu
 	}
 });
 
-test('read-only-except-target: only the target artifact json is written', () => {
+test('read-only-except-target: only the target artifact json is written', async () => {
 	const repo = makeFixture({ openQuestions: [] });
 	const rec = fakeRecorder();
 	try {
 		const before = readdirSync(join(repo, ARTIFACTS_DIR)).sort();
-		handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: rec.fn });
+		await handleResolveComment({ repo, artifactId: ARTIFACT_ID, comments: [comment('c1', 'x', { sectionPath: 'A' })] }, undefined, { record: rec.fn });
 		const after = readdirSync(join(repo, ARTIFACTS_DIR)).sort();
 		assert.deepEqual(after, before);   // no new files created in the artifacts dir
 	} finally {

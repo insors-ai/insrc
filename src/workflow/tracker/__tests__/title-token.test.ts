@@ -14,7 +14,7 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from '../github.js';
+import { _setTrackerExecForTests } from './_legacy-table.js';
 import { titleMatchesToken, type IssueRef, type PortResult } from '../port.js';
 
 afterEach(() => _setTrackerExecForTests());
@@ -36,7 +36,7 @@ function fakeFind(token: string): PortResult<IssueRef[]> {
 	return { ok: true, value: ISSUES.filter(i => titleMatchesToken(i.title, token)).map(i => i.number).sort((a, b) => a - b).map(n => `acme/demo#${n}`) };
 }
 
-test('the exact-token matcher accepts the token and the token followed by an em dash and not a longer id', () => {
+test('the exact-token matcher accepts the token and the token followed by an em dash and not a longer id', async () => {
 	const story = `STORY-${H}-s1`;
 	assert.equal(titleMatchesToken(story, story), true);
 	assert.equal(titleMatchesToken(`${story} — a title`, story), true);
@@ -52,7 +52,7 @@ test('the exact-token matcher accepts the token and the token followed by an em 
 	assert.equal(titleMatchesToken('anything', ''), false, 'an empty token matches nothing');
 });
 
-test('findIssuesByTitleToken in the GitHub adapter over a stubbed gh boundary and in the fake agree and a failed call is a failed result', () => {
+test('findIssuesByTitleToken in the GitHub adapter over a stubbed gh boundary and in the fake agree and a failed call is a failed result', async () => {
 	// gh api returns every issue, newest first, one JSON object per line (what the -q filter prints)
 	_setTrackerExecForTests((_cmd, args) => {
 		assert.ok(args.includes('--paginate'), 'the listing covers every page');
@@ -60,20 +60,20 @@ test('findIssuesByTitleToken in the GitHub adapter over a stubbed gh boundary an
 	});
 	const tracker = createGithubTracker('acme', 'demo');
 	for (const token of [`STORY-${H}-s1`, `STORY-${H}-s10`, `TASK-${H}-s1-t1`, `TASK-${H}-s1-t10`, `STORY-${H}-s2`]) {
-		const viaGh = tracker.findIssuesByTitleToken(token);
+		const viaGh = (await tracker.findIssuesByTitleToken(token));
 		assert.deepEqual(viaGh, fakeFind(token), token);
 	}
-	assert.deepEqual(tracker.findIssuesByTitleToken(`STORY-${H}-s1`), { ok: true, value: ['acme/demo#3', 'acme/demo#6'] });
-	assert.deepEqual(tracker.findIssuesByTitleToken(`TASK-${H}-s1-t1`), { ok: true, value: ['acme/demo#5'] });
-	assert.deepEqual(tracker.findIssuesByTitleToken(`STORY-${H}-s2`), { ok: true, value: [] });
+	assert.deepEqual((await tracker.findIssuesByTitleToken(`STORY-${H}-s1`)), { ok: true, value: ['acme/demo#3', 'acme/demo#6'] });
+	assert.deepEqual((await tracker.findIssuesByTitleToken(`TASK-${H}-s1-t1`)), { ok: true, value: ['acme/demo#5'] });
+	assert.deepEqual((await tracker.findIssuesByTitleToken(`STORY-${H}-s2`)), { ok: true, value: [] });
 
 	// a failed call is a failed result, never an empty list
 	_setTrackerExecForTests(() => { throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502: Bad Gateway' }); });
-	const failed = tracker.findIssuesByTitleToken(`STORY-${H}-s1`);
+	const failed = (await tracker.findIssuesByTitleToken(`STORY-${H}-s1`));
 	assert.equal(failed.ok, false);
 	if (!failed.ok) assert.match(failed.reason, /502/);
 
 	// an answer the adapter cannot read is a failure too
 	_setTrackerExecForTests(() => 'not json\n');
-	assert.equal(tracker.findIssuesByTitleToken(`STORY-${H}-s1`).ok, false);
+	assert.equal((await tracker.findIssuesByTitleToken(`STORY-${H}-s1`)).ok, false);
 });

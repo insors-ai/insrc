@@ -24,7 +24,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
-import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
+import { type TrackerExec } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { planArtifactPaths } from '../storage.js';
 import { readBinding } from '../tracker/binding.js';
 import { seedTaskHeads } from './helpers/task-heads.js';

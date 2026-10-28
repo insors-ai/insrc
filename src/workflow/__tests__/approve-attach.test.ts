@@ -14,7 +14,8 @@ import { dirname, join } from 'node:path';
 import { approve } from '../../cli/services/workflow.js';
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
 import { hldArtifactPaths, lldArtifactPaths, planArtifactPaths } from '../storage.js';
-import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
+import { type TrackerExec } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { handleTrackerAttach } from '../../daemon/tracker-attach.js';
 import { readAttachments } from '../tracker/binding.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
@@ -103,14 +104,14 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 		writeFileSync(fx.lld, JSON.stringify(lldJson, null, 2) + '\n');
 		mkdirSync(join(fx.repo, dirname(lldRel)), { recursive: true });
 		writeFileSync(join(fx.repo, diagramRel), '<html></html>');
-		const refused = handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's1', scope: 'documents' }, undefined);
+		const refused = await handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's1', scope: 'documents' }, undefined);
 		assert.ok('failed' in refused && refused.failed.some(f => f.target === diagramRel), JSON.stringify(refused));
 		git(fx.repo, 'add', '--', diagramRel); git(fx.repo, 'commit', '-q', '-m', 'diagram');
-		const done = handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's1', scope: 'documents' }, undefined);
+		const done = await handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's1', scope: 'documents' }, undefined);
 		assert.ok('attached' in done && done.attached.some(l => l.endsWith(`/${diagramRel}`)), JSON.stringify(done));
 
 		// no tracker or no binding: an error, nothing attempted
-		assert.ok('error' in handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's9' }, undefined));
+		assert.ok('error' in await handleTrackerAttach({ repo: fx.repo, epicHash: HASH, unit: 'story', storyId: 's9' }, undefined));
 	} finally { fx.cleanup(); }
 
 	// commitArtifacts false: nothing is committed, so nothing is linked, and the reason is stated

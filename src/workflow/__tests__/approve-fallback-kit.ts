@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
-import { _setTrackerExecForTests } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerComment, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
 import { recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';

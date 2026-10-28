@@ -21,7 +21,8 @@ import { join } from 'node:path';
 import { buildChainReport } from '../chain.js';
 import { artifactJsonPath, defineArtifactId, lldArtifactId, planArtifactId, writeArtifact } from '../storage.js';
 import { _setAutoPushDepsForTests, autoPushTasksOnPlan } from '../tracker-auto.js';
-import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
+import { type TrackerExec } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { syncTracker } from '../tracker/sync.js';
 import { readBinding } from '../tracker/binding.js';
 import { seedBoundUnits, seedTaskHeads } from './helpers/task-heads.js';
@@ -84,7 +85,7 @@ test('a re-draft keeps the bound Epic and Story issues and the tracker block for
 		_setTrackerExecForTests(exec);
 
 		// tracker sync does not skip: it finds the Epic and the Story refs
-		const sync = syncTracker(repo, HASH);
+		const sync = await syncTracker(repo, HASH);
 		assert.equal(sync.status, 'synced');
 		assert.deepEqual(sync.status === 'synced' ? Object.keys(sync.storyStatus) : null, ['s1']);
 

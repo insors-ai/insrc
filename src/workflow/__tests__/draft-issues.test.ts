@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { ensureDraftIssues, readinessFields, type DraftHookDeps } from '../draft-issues.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, writeArtifact } from '../storage.js';
-import { _setTrackerExecForTests } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import type { ResolvedGithubConfig } from '../config/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortFailureKind, type PortResult, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';

@@ -381,7 +381,7 @@ export interface RecordResolutionResult {
  *  Reads the RAW artifact JSON (no approval gate) so the resolution is
  *  additive to whatever is on disk. Throws when the questionId names no open
  *  question on the artifact. */
-export function recordResolution(
+export async function recordResolution(
 	repoPath:   string,
 	kind:       QuestionArtifactKind,
 	epicHash:   string,
@@ -391,7 +391,7 @@ export function recordResolution(
 	choice?:    string,
 	rationale?: string,
 	opts?:      { readonly commit?: boolean },
-): RecordResolutionResult {
+): Promise<RecordResolutionResult> {
 	const loc = locateArtifact(repoPath, kind, epicHash, storyId);
 	const texts = loc.artifact.body.openQuestions ?? [];
 	const questionText = texts.find(t => questionId(t) === qId);
@@ -425,7 +425,7 @@ export function recordResolution(
 	// the end — the default stays commit-per-resolution for existing callers.
 	if (opts?.commit !== false) {
 		const summary = resolutionSummary(kind, epicHash, storyId, qId, resolution);
-		commitAndComment(repoPath, loc.jsonPath, loc.mdPath, loc.trackerRef, summary);
+		await commitAndComment(repoPath, loc.jsonPath, loc.mdPath, loc.trackerRef, summary);
 	}
 
 	log.info({ kind, epicHash, storyId, questionId: qId, status }, 'workflow:questions: resolution recorded');
@@ -459,13 +459,13 @@ function resolutionSummary(
 /** Best-effort commit+push of the artifact files + a tracker-issue comment.
  *  Never throws — a missing git tree, an unconfigured tracker, or a `gh`
  *  failure just leaves the resolution recorded locally. */
-function commitAndComment(
+async function commitAndComment(
 	repoPath:   string,
 	jsonPath:   string,
 	mdPath:     string,
 	trackerRef: string | undefined,
 	summary:    string,
-): void {
+): Promise<void> {
 	try {
 		commitAndPushArtifacts(repoPath, [jsonPath, mdPath], summary);
 	} catch (err) {
@@ -475,7 +475,7 @@ function commitAndComment(
 	try {
 		const cfg = resolveGithubConfig(repoPath);
 		if (cfg.type !== 'github') return;
-		const posted = createGithubTracker(cfg.owner, cfg.repo).issueOps.comment(trackerRef, summary);
+		const posted = await createGithubTracker(cfg.owner, cfg.repo, { repoPath }).issueOps.comment(trackerRef, summary);
 		if (!posted.ok) throw new GhCommandError(posted.kind, posted.reason);   // the catch below logs it, as for a throwing gh
 	} catch (err) {
 		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'resolution: tracker comment failed (best-effort)');

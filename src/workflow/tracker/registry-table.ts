@@ -176,7 +176,18 @@ function parseRequestRef(request: SignoffRequestRef): { owner: string; repo: str
 // The table
 // ---------------------------------------------------------------------------
 
-export function createRegistryTable(deps: ToolDeps) {
+let tableFactoryForTests: ((deps: ToolDeps) => RegistryTable) | undefined;
+
+/** Test seam: make createRegistryTable answer with `factory(deps)`; no argument restores the registry-backed table. */
+export function _setRegistryTableFactoryForTests(factory?: (deps: ToolDeps) => RegistryTable): void {
+	tableFactoryForTests = factory;
+}
+
+export function createRegistryTable(deps: ToolDeps): RegistryTable {
+	return tableFactoryForTests?.(deps) ?? buildRegistryTable(deps);
+}
+
+function buildRegistryTable(deps: ToolDeps) {
 	/** Login of the currently-authenticated gh user: the authoritative current-user source (not any config value). */
 	async function ghCurrentLogin(): Promise<string> {
 		const d = opData(must(await run(ghTrackerTool, { op: 'current_login' }, deps)), 'current_login');
@@ -511,4 +522,4 @@ export function createRegistryTable(deps: ToolDeps) {
 	return table;
 }
 
-export type RegistryTable = ReturnType<typeof createRegistryTable>;
+export type RegistryTable = ReturnType<typeof buildRegistryTable>;

@@ -59,19 +59,19 @@ export const storyHistoryRule: PlanRule = async (ctx): Promise<RulePlan> => {
 	const changes: ConversionChange[] = [];
 	const legacy: LegacyAttachComment[] = [];
 	const seen = new Set<string>();
-	const listLegacy = (issue: string | undefined): void => {
+	const listLegacy = async (issue: string | undefined): Promise<void> => {
 		if (ctx.tracker === undefined || issue === undefined || seen.has(issue)) return;
 		seen.add(issue);
-		const listed = ctx.tracker.listComments(issue);
+		const listed = await ctx.tracker.listComments(issue);
 		if (!listed.ok) return; // never blocks the conversion
 		for (const c of listed.value) if (isLegacyAttach(c.text)) legacy.push({ issue, commentId: c.externalId });
 	};
 	for (const epic of epicsOf(ctx.heads)) {
-		listLegacy(bindingIssue(ctx.heads.find(h => h.artifactId === `DEF-${epic.hash}`)));
+		await listLegacy(bindingIssue(ctx.heads.find(h => h.artifactId === `DEF-${epic.hash}`)));
 		for (const story of epic.stories) {
 			const lld = lldOf(ctx.heads, epic.hash, story.id);
 			if (lld === undefined) continue;
-			listLegacy(bindingIssue(lld));
+			await listLegacy(bindingIssue(lld));
 			const sid = storyId(epic.hash, story.id);
 			const { lines, receipts } = await pending(history, lld.artifactId, sid);
 			if (lines.length + receipts.length > 0) changes.push({ rule: 'move-story-history', artifactId: lld.artifactId, detail: `${lines.length} tracker lines and ${receipts.length} receipts to ${sid}` });

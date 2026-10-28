@@ -24,7 +24,8 @@ import { basename, dirname, join } from 'node:path';
 import { blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { artifactJsonPath, planArtifactPaths } from '../storage.js';
-import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
+import { type TrackerExec } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { seedTaskHeads } from './helpers/task-heads.js';
 import { readBinding } from '../tracker/binding.js';
 

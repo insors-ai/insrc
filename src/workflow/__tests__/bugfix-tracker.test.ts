@@ -35,7 +35,8 @@ import {
 	type PromptOnLostRef,
 } from '../bugfix/tracker.js';
 import { renderIssueMarkdown, type IssueArtifact } from '../artifacts/issue.js';
-import { _setTrackerExecForTests, ghCloseIssue, type CreatedIssue } from '../tracker/github.js';
+import { ghCloseIssue, type CreatedIssue } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { GithubConfigError, type ResolvedGithubConfig } from '../config/github.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { artifactJsonPath, issueArtifactId } from '../storage.js';
@@ -236,7 +237,7 @@ test('closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates',
 
 // --- ghCloseIssue argv (the ONE new gh-verb) -------------------------------
 
-test('ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec', () => {
+test('ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec', async () => {
 	const seen: Array<{ cmd: string; args: readonly string[] }> = [];
 	_setTrackerExecForTests((cmd, args) => { seen.push({ cmd, args }); return ''; });
 	try {
@@ -331,7 +332,7 @@ test('normal create path: promptOnLostRef is never consulted (a1 no-per-create-r
 	assert.equal(promptCalled, false, 'a successful create never prompts');
 });
 
-test('parentRefIdentifiers: an artifact-id slug first, a stored old slug converted from epicHash, then storyId', () => {
+test('parentRefIdentifiers: an artifact-id slug first, a stored old slug converted from epicHash, then storyId', async () => {
 	const h = '1703991c69967193';
 	assert.deepEqual(parentRefIdentifiers({ slug: `STORY-${h}-s5`, storyId: 's5' }), [`STORY-${h}-s5`, 's5'], 'no epicHash: the label stays a fallback');
 	assert.deepEqual(parentRefIdentifiers({ slug: `STORY-${h}-s5`, epicHash: h, storyId: 's5' }), [`STORY-${h}-s5`], 'with an epicHash the bare label is not offered');
@@ -438,7 +439,7 @@ test('bugfix create keeps CreatedIssue, readonly labels and the parent link thro
 	try {
 		const deps = defaultTrackerCreateDeps({ labels: READONLY_LABELS });
 		// A readonly string[] type-checks against the dependency's createIssue.
-		const created: CreatedIssue = deps.createIssue('acme', 'widget', 'Fix the boom', 'body', READONLY_LABELS, 'Bug');
+		const created: CreatedIssue = await deps.createIssue('acme', 'widget', 'Fix the boom', 'body', READONLY_LABELS, 'Bug');
 		assert.deepEqual(created, { ref: 'acme/widget#42', id: 9001, typed: true });
 		const post = calls[0]!;
 		assert.ok(post.includes('labels[]=issue:abcd1234abcd1234') && post.includes('labels[]=bug') && post.includes('type=Bug'));
@@ -521,7 +522,7 @@ test('relink-by-label with no labels, no match and a failed lookup returns skipp
 	} finally { _setTrackerExecForTests(); }
 });
 
-test('both default deps factories keep their optional opts', () => {
+test('both default deps factories keep their optional opts', async () => {
 	const prompt: PromptOnLostRef = () => ({ action: 'skip' });
 	const withOpts = { labels: READONLY_LABELS, promptOnLostRef: prompt };
 	const c = defaultTrackerCreateDeps(withOpts);

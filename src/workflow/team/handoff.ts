@@ -549,7 +549,7 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 		}
 
 		// the note: one comment; its failure is reported, the push stands
-		const note = plan.port.issueOps.comment(plan.issue, handoffNote(plan, commit));
+		const note = await plan.port.issueOps.comment(plan.issue, handoffNote(plan, commit));
 		return {
 			ok: true, branch, commit, noted: note.ok, variant: plan.variant,
 			...(note.ok ? {} : { noteFailure: `${note.kind}: ${note.reason}` }),

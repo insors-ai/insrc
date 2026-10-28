@@ -86,14 +86,14 @@ export type AttachUnitResult = AttachOutcome | { readonly error: string };
  * Attach the unit's files (`scope`) to its issue. An error (nothing attempted) for a unit with no binding, or when the tracker
  * cannot be used; otherwise the outcome, which names every file refused (uncommitted, untracked) with its reason.
  */
-export function attachUnit(unit: UnitRef, scope: AttachScope, port: TrackerPort): AttachUnitResult {
+export async function attachUnit(unit: UnitRef, scope: AttachScope, port: TrackerPort): Promise<AttachUnitResult> {
 	const own = unitArtifactId(unit);
 	if (own === undefined) return { error: `a ${unit.unit} unit has no artifact of its own to hold attachments yet` };
 	try { if (readBinding(unit.repoPath, own) === undefined) return { error: `the ${unit.unit} is not bound to an issue yet (approve its document first)` }; }
 	catch (err) { return { error: (err as Error).message }; }
 	const found = attachTargetsOf(unit, scope);
 	if ('error' in found) return found;
-	return attachDocuments(unit, port, found.targets);
+	return await attachDocuments(unit, port, found.targets);
 }
 
 /** The unit and the artifact ids an approved document of `workflow` puts on its issue: the HLD to the Epic, the LLD and the plan to the Story. */
@@ -107,7 +107,7 @@ export function approvedDocumentUnit(workflow: string, meta: { repoPath: string;
 }
 
 /** Attach just the document an approval approved (and its companions) to its unit's issue. */
-export function attachApprovedDocument(workflow: string, meta: { repoPath: string; epicHash: string; storyId?: string }, port: TrackerPort): AttachUnitResult {
+export async function attachApprovedDocument(workflow: string, meta: { repoPath: string; epicHash: string; storyId?: string }, port: TrackerPort): Promise<AttachUnitResult> {
 	const a = approvedDocumentUnit(workflow, meta);
 	if (a === undefined) return { error: `a ${workflow} approval has no document to attach` };
 	const own = unitArtifactId(a.unit);
@@ -116,5 +116,5 @@ export function attachApprovedDocument(workflow: string, meta: { repoPath: strin
 	catch (err) { return { error: (err as Error).message }; }
 	const found = attachTargetsOf(a.unit, 'documents');
 	if ('error' in found) return found;
-	return attachDocuments(a.unit, port, found.targets.filter(t => t.artifactId === a.artifactId));
+	return await attachDocuments(a.unit, port, found.targets.filter(t => t.artifactId === a.artifactId));
 }

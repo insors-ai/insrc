@@ -32,7 +32,7 @@ import {
 } from '../questions.js';
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, lldArtifactId } from '../storage.js';
 import type { QuestionResolution } from '../types.js';
-import { _setTrackerExecForTests } from '../tracker/github.js';
+import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { getLogger } from '../../shared/logger.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { seedBoundUnits } from './helpers/task-heads.js';
@@ -92,7 +92,7 @@ function mkRepo(): string {
 // questionId derivation
 // ---------------------------------------------------------------------------
 
-test('questionId: parses a leading [id / verdict] tag; falls back to a stable sha', () => {
+test('questionId: parses a leading [id / verdict] tag; falls back to a stable sha', async () => {
 	assert.equal(questionId('[sc2 / missed] should we cache?'), 'sc2');
 	const shaId = questionId('a plain question');
 	assert.match(shaId, /^q[0-9a-f]{8}$/);
@@ -103,7 +103,7 @@ test('questionId: parses a leading [id / verdict] tag; falls back to a stable sh
 // status computation
 // ---------------------------------------------------------------------------
 
-test('openQuestions / unresolvedOpen reflect recorded resolutions', () => {
+test('openQuestions / unresolvedOpen reflect recorded resolutions', async () => {
 	const texts = ['[q1 / a] First?', '[q2 / b] Second?', '[q3 / c] Third?'];
 	const resolutions: Record<string, QuestionResolution> = {
 		q1: { question: texts[0]!, status: 'resolved', choice: 'yes', resolvedAt: CREATED_AT },
@@ -119,11 +119,11 @@ test('openQuestions / unresolvedOpen reflect recorded resolutions', () => {
 // recordResolution — persistence per kind
 // ---------------------------------------------------------------------------
 
-test('recordResolution persists a resolved choice to HLD meta + renders section', () => {
+test('recordResolution persists a resolved choice to HLD meta + renders section', async () => {
 	const repo = mkRepo();
 	try {
 		seedHld(repo, ['[sc1 / missed] Case-insensitive tags?']);
-		const res = recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-insensitive', 'matches expectation');
+		const res = await recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-insensitive', 'matches expectation');
 		assert.equal(res.resolution.status, 'resolved');
 		assert.equal(res.remainingOpen.length, 0);
 		const hld = JSON.parse(readFileSync(join(artifactsDir(repo), `${hldArtifactId(HASH)}.json`), 'utf8')) as { meta: { questionResolutions?: Record<string, QuestionResolution> } };
@@ -135,12 +135,12 @@ test('recordResolution persists a resolved choice to HLD meta + renders section'
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('recordResolution ignore + defer persist the right status to DEF meta', () => {
+test('recordResolution ignore + defer persist the right status to DEF meta', async () => {
 	const repo = mkRepo();
 	try {
 		seedDef(repo, ['[q1 / a] Add a metric?', '[q2 / b] Rename the field?']);
-		recordResolution(repo, 'define', HASH, undefined, 'q1', 'ignored', undefined, 'not needed');
-		const after = recordResolution(repo, 'define', HASH, undefined, 'q2', 'deferred');
+		await recordResolution(repo, 'define', HASH, undefined, 'q1', 'ignored', undefined, 'not needed');
+		const after = await recordResolution(repo, 'define', HASH, undefined, 'q2', 'deferred');
 		assert.equal(after.remainingOpen.length, 0);
 		const def = JSON.parse(readFileSync(join(artifactsDir(repo), `${defineArtifactId(HASH)}.json`), 'utf8')) as { meta: { questionResolutions?: Record<string, QuestionResolution> } };
 		assert.equal(def.meta.questionResolutions!['q1']!.status, 'ignored');
@@ -151,7 +151,7 @@ test('recordResolution ignore + defer persist the right status to DEF meta', () 
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('questions.test.ts: the question tests run on lifecycle fixtures', () => {
+test('questions.test.ts: the question tests run on lifecycle fixtures', async () => {
 	const repo = mkRepo();
 	try {
 		// an approved Define: a resolution is a meta-only write, so the approval and the revision are as they were
@@ -159,7 +159,7 @@ test('questions.test.ts: the question tests run on lifecycle fixtures', () => {
 		const path = join(artifactsDir(repo), `${defineArtifactId(HASH)}.json`);
 		const before = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
 		assert.equal(approvalStateOf(before.meta), 'approved');
-		recordResolution(repo, 'define', HASH, undefined, 'q1', 'ignored', undefined, 'not needed');
+		await recordResolution(repo, 'define', HASH, undefined, 'q1', 'ignored', undefined, 'not needed');
 		const after = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
 		assert.equal(approvalStateOf(after.meta), 'approved', 'recording a resolution leaves the approval alone');
 		assert.deepEqual(after.meta['lifecycle'], before.meta['lifecycle'], 'and the lifecycle as it was');
@@ -168,11 +168,11 @@ test('questions.test.ts: the question tests run on lifecycle fixtures', () => {
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('recordResolution throws on an unknown questionId', () => {
+test('recordResolution throws on an unknown questionId', async () => {
 	const repo = mkRepo();
 	try {
 		seedLld(repo, 's1', ['[q1 / a] Only?']);
-		assert.throws(() => recordResolution(repo, 'lld', HASH, 's1', 'nope', 'resolved', 'x'), /no open question with id/);
+		await assert.rejects(() => recordResolution(repo, 'lld', HASH, 's1', 'nope', 'resolved', 'x'), /no open question with id/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -180,17 +180,17 @@ test('recordResolution throws on an unknown questionId', () => {
 // listDeferred — across DEF + HLD + all LLDs
 // ---------------------------------------------------------------------------
 
-test('listDeferred enumerates deferred questions across DEF + HLD + LLDs', () => {
+test('listDeferred enumerates deferred questions across DEF + HLD + LLDs', async () => {
 	const repo = mkRepo();
 	try {
 		seedDef(repo, ['[d1 / a] Def q?']);
 		seedHld(repo, ['[h1 / a] Hld q?']);
 		seedLld(repo, 's1', ['[l1 / a] Lld s1 q?']);
 		seedLld(repo, 's2', ['[l2 / a] Lld s2 q?']);
-		recordResolution(repo, 'define', HASH, undefined, 'd1', 'deferred');
-		recordResolution(repo, 'hld', HASH, undefined, 'h1', 'resolved', 'yes');    // NOT deferred
-		recordResolution(repo, 'lld', HASH, 's1', 'l1', 'deferred');
-		recordResolution(repo, 'lld', HASH, 's2', 'l2', 'ignored');                 // NOT deferred
+		await recordResolution(repo, 'define', HASH, undefined, 'd1', 'deferred');
+		await recordResolution(repo, 'hld', HASH, undefined, 'h1', 'resolved', 'yes');    // NOT deferred
+		await recordResolution(repo, 'lld', HASH, 's1', 'l1', 'deferred');
+		await recordResolution(repo, 'lld', HASH, 's2', 'l2', 'ignored');                 // NOT deferred
 
 		const deferred = listDeferred(repo, HASH);
 		const keys = deferred.map(d => `${d.kind}:${d.storyId ?? '-'}:${d.questionId}`).sort();
@@ -213,13 +213,13 @@ function seedTrackedHld(repo: string): void {
 	process.env['INSRC_GITHUB_CONFIG'] = cfg;
 }
 
-test('the comment goes through the adapter with the same argv and a failure is logged in the existing catch', () => {
+test('the comment goes through the adapter with the same argv and a failure is logged in the existing catch', async () => {
 	const repo = mkRepo();
 	try {
 		seedTrackedHld(repo);
 		const calls: string[][] = [];
 		_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return ''; });
-		const res = recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-insensitive', 'matches expectation');
+		const res = await recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-insensitive', 'matches expectation');
 		const comments = calls.filter(c => c[0] === 'issue' && c[1] === 'comment');
 		assert.equal(comments.length, 1);
 		assert.deepEqual(comments[0]!.slice(0, 5), ['issue', 'comment', '5', '--repo', 'acme/demo']);
@@ -236,7 +236,7 @@ test('the comment goes through the adapter with the same argv and a failure is l
 		_setTrackerExecForTests((_cmd, args) => { failing.push([...args]); if (args[0] === 'issue' && args[1] === 'comment') throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502' }); return ''; });
 		let again: ReturnType<typeof recordResolution>;
 		try {
-			again = recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-sensitive', 'changed my mind');
+			again = await recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-sensitive', 'changed my mind');
 		} finally { (log as { warn: unknown }).warn = realWarn; }
 		const trackerWarn = warned.filter(w => w.msg === 'resolution: tracker comment failed (best-effort)');
 		assert.equal(trackerWarn.length, 1, 'the existing catch logs the failed comment');

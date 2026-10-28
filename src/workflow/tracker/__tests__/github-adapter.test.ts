@@ -14,10 +14,8 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import {
-	GH_TIMEOUT_MS, GhCommandError, ghAttachMilestone, ghCloseIssue, ghComment, ghCreateIssueTyped, ghCreateLabel, ghEditIssueBody,
-	ghEnsureMilestone, ghGetIssueBody, ghGetIssueId, ghLinkSubIssue, runGh, _setTrackerExecForTests,
-} from '../github.js';
+import { GH_TIMEOUT_MS, GhCommandError, ghAttachMilestone, ghCloseIssue, ghComment, ghCreateIssueTyped, ghCreateLabel, ghEditIssueBody, ghEnsureMilestone, ghGetIssueBody, ghGetIssueId, ghLinkSubIssue, runGh } from '../github.js';
+import { _setTrackerExecForTests } from './_legacy-table.js';
 import type { IssueSpec } from '../port.js';
 
 afterEach(() => _setTrackerExecForTests());
@@ -42,7 +40,7 @@ function kindOf(fn: () => unknown): GhCommandError {
 // runGh
 // ---------------------------------------------------------------------------
 
-test('runGh classifies ENOENT, authentication failure, timeout and other failures', () => {
+test('runGh classifies ENOENT, authentication failure, timeout and other failures', async () => {
 	failWith(execError({ code: 'ENOENT' }, 'spawnSync gh ENOENT'));
 	const missingTool = kindOf(() => runGh(['api', 'user']));
 	assert.equal(missingTool.kind, 'missing-tool');
@@ -75,7 +73,7 @@ test('runGh classifies ENOENT, authentication failure, timeout and other failure
 	assert.equal(other.message, other.reason);
 });
 
-test('runGh passes the 10 s timeout option to the exec seam', () => {
+test('runGh passes the 10 s timeout option to the exec seam', async () => {
 	const seen: Array<{ cmd: string; args: readonly string[]; opts: Record<string, unknown> | undefined }> = [];
 	_setTrackerExecForTests((cmd, args, opts) => {
 		seen.push({ cmd, args, opts: opts as Record<string, unknown> | undefined });
@@ -101,7 +99,7 @@ test('runGh passes the 10 s timeout option to the exec seam', () => {
 
 const hasType = (args: readonly string[]): boolean => args.some(a => a.startsWith('type='));
 
-test('compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected', () => {
+test('compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected', async () => {
 	const failures: Array<[string, Error]> = [
 		['timeout', execError({ code: 'ETIMEDOUT' })],
 		['missing tool', execError({ code: 'ENOENT' })],
@@ -118,7 +116,7 @@ test('compatibility exception 1, a failed typed create is not retried untyped un
 	}
 });
 
-test('a typed create rejected as an unknown issue type is retried once untyped and reports typed false', () => {
+test('a typed create rejected as an unknown issue type is retried once untyped and reports typed false', async () => {
 	for (const stderr of ['HTTP 422: Validation Failed: issue type not enabled', 'HTTP 422: Unprocessable Entity: unknown issue type "Task"']) {
 		const seen: boolean[] = [];
 		_setTrackerExecForTests((_cmd, args) => {
@@ -133,7 +131,7 @@ test('a typed create rejected as an unknown issue type is retried once untyped a
 	}
 });
 
-test('compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable', () => {
+test('compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable', async () => {
 	let opts: Record<string, unknown> | undefined;
 	_setTrackerExecForTests((_cmd, _args, o) => { opts = o as Record<string, unknown> | undefined; throw execError({ code: 'ETIMEDOUT' }); });
 	assert.equal(kindOf(() => ghGetIssueBody('o', 'r', 'o/r#1')).kind, 'unreachable');
@@ -144,13 +142,13 @@ test('compatibility exception 2, a migrated operation passes the 10 s timeout an
 // Adapter core
 // ---------------------------------------------------------------------------
 
-test('whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable', () => {
+test('whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable', async () => {
 	const port = createGithubTracker('o', 'r');
 	_setTrackerExecForTests(() => 'subhagho\n');
-	assert.deepEqual(port.whoAmI(), { ok: true, value: 'subhagho' });
+	assert.deepEqual((await port.whoAmI()), { ok: true, value: 'subhagho' });
 
 	_setTrackerExecForTests(() => '');
-	const empty = port.whoAmI();
+	const empty = (await port.whoAmI());
 	assert.equal(empty.ok, false);
 	if (!empty.ok) assert.equal(empty.kind, 'missing-signin');
 
@@ -161,13 +159,13 @@ test('whoAmI success, empty login converted to missing-signin, missing tool, mis
 	];
 	for (const [kind, err] of cases) {
 		failWith(err);
-		const r = port.whoAmI();
+		const r = (await port.whoAmI());
 		assert.equal(r.ok, false);
 		if (!r.ok) assert.equal(r.kind, kind);
 	}
 });
 
-test('findIssue returns the first of several matches and separates failure from not found', () => {
+test('findIssue returns the first of several matches and separates failure from not found', async () => {
 	const port = createGithubTracker('o', 'r');
 	const argv: string[][] = [];
 	// Several matches, in the order gh lists them. The fake applies the -q filter from
@@ -180,46 +178,46 @@ test('findIssue returns the first of several matches and separates failure from 
 		if (filter === 'min_by(.number).number') return `${Math.min(...matches.map(m => m.number))}\n`;
 		throw new Error(`unexpected filter ${String(filter)}`);
 	});
-	assert.deepEqual(port.findIssue(['epic:x', 'insrc:story']), { ok: true, value: 'o/r#31' });
+	assert.deepEqual((await port.findIssue(['epic:x', 'insrc:story'])), { ok: true, value: 'o/r#31' });
 	assert.deepEqual(argv[0], ['issue', 'list', '--repo', 'o/r', '--state', 'all', '--json', 'number', '-q', '.[0].number', '--label', 'epic:x', '--label', 'insrc:story']);
 
 	_setTrackerExecForTests(() => '');
-	assert.deepEqual(port.findIssue(['a']), { ok: true, value: null });
+	assert.deepEqual((await port.findIssue(['a'])), { ok: true, value: null });
 
 	failWith(execError({ code: 'ETIMEDOUT' }));
-	const failed = port.findIssue(['a']);
+	const failed = (await port.findIssue(['a']));
 	assert.equal(failed.ok, false);
 	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
 });
 
-test('findIssues lists every open or closed match across all pages in ascending order, and a failure is not an answer', () => {
+test('findIssues lists every open or closed match across all pages in ascending order, and a failure is not an answer', async () => {
 	const port = createGithubTracker('o', 'r');
 	const argv: string[][] = [];
 	// two pages, as `gh api --paginate` prints them, out of order
 	_setTrackerExecForTests((_c, args) => { argv.push([...args]); return '31\n5\n\n17\n'; });
-	assert.deepEqual(port.findIssues(['insrc:unit:x', 'epic:a b']), { ok: true, value: ['o/r#5', 'o/r#17', 'o/r#31'] });
+	assert.deepEqual((await port.findIssues(['insrc:unit:x', 'epic:a b'])), { ok: true, value: ['o/r#5', 'o/r#17', 'o/r#31'] });
 	assert.deepEqual(argv[0], ['api', '--paginate', 'repos/o/r/issues?state=all&per_page=100&labels=insrc%3Aunit%3Ax,epic%3Aa%20b', '-q', '.[] | select(.pull_request | not) | .number'], 'closed issues included, pull requests left out');
 
 	_setTrackerExecForTests(() => '');
-	assert.deepEqual(port.findIssues(['a']), { ok: true, value: [] });
+	assert.deepEqual((await port.findIssues(['a'])), { ok: true, value: [] });
 
 	_setTrackerExecForTests(() => 'not a number\n');
-	assert.equal(port.findIssues(['a']).ok, false);
+	assert.equal((await port.findIssues(['a'])).ok, false);
 
 	failWith(execError({ code: 'ETIMEDOUT' }));
-	const failed = port.findIssues(['a']);
+	const failed = (await port.findIssues(['a']));
 	assert.equal(failed.ok, false);
 	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
 });
 
-test('the adapter declares signoff-request but not completion, and a malformed signoff request or ref is rejected without running gh', () => {
+test('the adapter declares signoff-request but not completion, and a malformed signoff request or ref is rejected without running gh', async () => {
 	const port = createGithubTracker('o', 'r');
 	let ran = 0;
 	_setTrackerExecForTests(() => { ran += 1; return ''; });
 	assert.equal(port.capabilities.has('signoff-request'), true);
 	assert.equal(port.capabilities.has('completion'), false);
 	const spec = { title: 't', body: 'b', unit: { unit: 'story' as const, repoPath: '/r', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' }, artifacts: [], branch: '', issue: 'o/r#1' };
-	for (const r of [port.openSignoffRequest(spec), port.readSignoffState({ ref: 'x' })]) {
+	for (const r of [await port.openSignoffRequest(spec), await port.readSignoffState({ ref: 'x' })]) {
 		assert.equal(r.ok, false);
 		if (!r.ok) assert.equal(r.kind, 'rejected');
 	}
@@ -253,67 +251,67 @@ function fakeAssigneeGh(initial: string[], opts: { stickyAdd?: boolean; failOn?:
 
 const isEdit = (c: string[]): boolean => c[0] === 'issue' && c[1] === 'edit';
 
-test('readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference', () => {
+test('readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference', async () => {
 	const port = createGithubTracker('o', 'r');
 	fakeAssigneeGh(['alice']);
-	assert.deepEqual(port.readAssignee('o/r#5'), { ok: true, value: 'alice' });
+	assert.deepEqual((await port.readAssignee('o/r#5')), { ok: true, value: 'alice' });
 	fakeAssigneeGh([]);
-	assert.deepEqual(port.readAssignee('o/r#5'), { ok: true, value: null });
+	assert.deepEqual((await port.readAssignee('o/r#5')), { ok: true, value: null });
 
 	fakeAssigneeGh(['alice', 'bob']);
-	const several = port.readAssignee('o/r#5');
+	const several = (await port.readAssignee('o/r#5'));
 	assert.equal(several.ok, false);
 	if (!several.ok) { assert.equal(several.kind, 'rejected'); assert.match(several.reason, /alice, bob/); }
 
 	const { calls } = fakeAssigneeGh(['alice']);
 	for (const bad of ['not-a-ref', 'o/r', '#5', 'o/r#', '/r#5', 'o/#5', 'o/r#abc', 'o/r#5 ', 'o/r#5\n', '\no/r#5']) {
-		const r = port.readAssignee(bad);
+		const r = (await port.readAssignee(bad));
 		assert.equal(r.ok, false, bad);
 		if (!r.ok) assert.equal(r.kind, 'rejected');
 	}
 	assert.equal(calls.length, 0, 'a malformed reference never reaches gh');
 });
 
-test('setAssignee from zero, one and several assignees ends with exactly the requested user', () => {
+test('setAssignee from zero, one and several assignees ends with exactly the requested user', async () => {
 	const port = createGithubTracker('o', 'r');
 	for (const initial of [[], ['bob'], ['alice'], ['bob', 'carol'], ['alice', 'bob']]) {
 		const gh = fakeAssigneeGh(initial);
-		assert.deepEqual(port.setAssignee('o/r#5', 'alice'), { ok: true, value: undefined }, JSON.stringify(initial));
+		assert.deepEqual((await port.setAssignee('o/r#5', 'alice')), { ok: true, value: undefined }, JSON.stringify(initial));
 		assert.deepEqual(gh.now(), ['alice'], JSON.stringify(initial));
 		assert.equal(gh.calls.filter(c => c[1] === 'view').length, 2, `read, then a re-read: ${JSON.stringify(initial)}`);
 	}
 });
 
-test('setAssignee makes no change call when already right and clears for null', () => {
+test('setAssignee makes no change call when already right and clears for null', async () => {
 	const port = createGithubTracker('o', 'r');
 	const same = fakeAssigneeGh(['Alice']);
-	assert.equal(port.setAssignee('o/r#5', 'alice').ok, true);   // logins compare case-insensitively
+	assert.equal((await port.setAssignee('o/r#5', 'alice')).ok, true);   // logins compare case-insensitively
 	assert.equal(same.calls.filter(isEdit).length, 0);
 	assert.equal(same.calls.filter(c => c[1] === 'view').length, 2, 'the outcome is re-read even when no change was needed');
 
 	const none = fakeAssigneeGh([]);
-	assert.equal(port.setAssignee('o/r#5', null).ok, true);
+	assert.equal((await port.setAssignee('o/r#5', null)).ok, true);
 	assert.equal(none.calls.filter(isEdit).length, 0);
 	assert.equal(none.calls.filter(c => c[1] === 'view').length, 2);
 
 	const clear = fakeAssigneeGh(['alice', 'bob']);
-	assert.equal(port.setAssignee('o/r#5', null).ok, true);
+	assert.equal((await port.setAssignee('o/r#5', null)).ok, true);
 	assert.deepEqual(clear.now(), []);
 	assert.equal(clear.calls.filter(isEdit).length, 1);
 });
 
-test('setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out', () => {
+test('setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out', async () => {
 	const port = createGithubTracker('o', 'r');
 	// The add did not take: the re-read differs, reported as rejected naming the state.
 	const partial = fakeAssigneeGh(['bob'], { stickyAdd: true });
-	const differs = port.setAssignee('o/r#5', 'alice');
+	const differs = (await port.setAssignee('o/r#5', 'alice'));
 	assert.equal(differs.ok, false);
 	if (!differs.ok) { assert.equal(differs.kind, 'rejected'); assert.match(differs.reason, /expected alice/); }
 	assert.equal(partial.calls.filter(c => c.includes('--add-assignee')).length, 1, 'the add is not retried');
 
 	// A step that times out: unreachable, the state is unknown, nothing after it runs.
 	const timeout = fakeAssigneeGh(['bob'], { failOn: a => (a.includes('--add-assignee') ? execError({ code: 'ETIMEDOUT' }) : undefined) });
-	const timedOut = port.setAssignee('o/r#5', 'alice');
+	const timedOut = (await port.setAssignee('o/r#5', 'alice'));
 	assert.equal(timedOut.ok, false);
 	if (!timedOut.ok) assert.equal(timedOut.kind, 'unreachable');
 	assert.equal(timeout.calls.filter(c => c.includes('--add-assignee')).length, 1);
@@ -321,34 +319,34 @@ test('setAssignee reports rejected or unreachable without a retry when the re-re
 
 	// The first read timing out stops everything.
 	const readFails = fakeAssigneeGh([], { failOn: () => execError({ code: 'ETIMEDOUT' }) });
-	assert.equal(port.setAssignee('o/r#5', 'alice').ok, false);
+	assert.equal((await port.setAssignee('o/r#5', 'alice')).ok, false);
 	assert.equal(readFails.calls.length, 1);
 });
 
-test('addAssignee adds without removing, returns the assignees read back and reports a failed step without a retry', () => {
+test('addAssignee adds without removing, returns the assignees read back and reports a failed step without a retry', async () => {
 	const port = createGithubTracker('o', 'r');
 
 	// from none and beside another assignee: nobody is removed, the add is made once
 	const none = fakeAssigneeGh([]);
-	assert.deepEqual(port.addAssignee('o/r#5', 'alice'), { ok: true, value: ['alice'] });
+	assert.deepEqual((await port.addAssignee('o/r#5', 'alice')), { ok: true, value: ['alice'] });
 	assert.equal(none.calls.filter(isEdit).length, 1);
 	const beside = fakeAssigneeGh(['bob']);
-	assert.deepEqual(port.addAssignee('o/r#5', 'alice'), { ok: true, value: ['bob', 'alice'] });
+	assert.deepEqual((await port.addAssignee('o/r#5', 'alice')), { ok: true, value: ['bob', 'alice'] });
 	assert.equal(beside.calls.some(c => c.includes('--remove-assignee')), false, 'no assignee is removed');
 
 	// already there (case-insensitive): no change call, still re-read
 	const same = fakeAssigneeGh(['Alice']);
-	assert.deepEqual(port.addAssignee('o/r#5', 'alice'), { ok: true, value: ['Alice'] });
+	assert.deepEqual((await port.addAssignee('o/r#5', 'alice')), { ok: true, value: ['Alice'] });
 	assert.equal(same.calls.filter(isEdit).length, 0);
 
 	// the add did not take: rejected, naming the state; a timed-out add: unreachable; neither is retried
 	const sticky = fakeAssigneeGh(['bob'], { stickyAdd: true });
-	const differs = port.addAssignee('o/r#5', 'alice');
+	const differs = (await port.addAssignee('o/r#5', 'alice'));
 	assert.equal(differs.ok, false);
 	if (!differs.ok) { assert.equal(differs.kind, 'rejected'); assert.match(differs.reason, /expected alice/); }
 	assert.equal(sticky.calls.filter(isEdit).length, 1, 'the add is not retried');
 	const timeout = fakeAssigneeGh(['bob'], { failOn: a => (a.includes('--add-assignee') ? execError({ code: 'ETIMEDOUT' }) : undefined) });
-	const timedOut = port.addAssignee('o/r#5', 'alice');
+	const timedOut = (await port.addAssignee('o/r#5', 'alice'));
 	assert.equal(timedOut.ok, false);
 	if (!timedOut.ok) assert.equal(timedOut.kind, 'unreachable');
 	assert.equal(timeout.calls.filter(isEdit).length, 1);
@@ -356,7 +354,7 @@ test('addAssignee adds without removing, returns the assignees read back and rep
 
 	// a malformed reference never reaches gh
 	const bad = fakeAssigneeGh([]);
-	assert.equal(port.addAssignee('not-a-ref', 'alice').ok, false);
+	assert.equal((await port.addAssignee('not-a-ref', 'alice')).ok, false);
 	assert.equal(bad.calls.length, 0);
 });
 
@@ -387,11 +385,11 @@ function legacyCreate(spec: IssueSpec): void {
 	if (spec.parent !== undefined) ghLinkSubIssue('o', 'r', spec.parent, created.id);
 }
 
-function assertCreateParity(spec: IssueSpec): void {
+async function assertCreateParity(spec: IssueSpec): Promise<void> {
 	const legacy = recordingGh();
 	legacyCreate(spec);
 	const viaPort = recordingGh();
-	const r = createGithubTracker('o', 'r').createIssue(spec);
+	const r = (await createGithubTracker('o', 'r').createIssue(spec));
 	assert.equal(r.ok, true);
 	assert.deepEqual(viaPort, legacy, 'the port runs the same gh argv in the same order');
 	assert.equal(viaPort[0]!.some(a => a.startsWith('type=')), (spec.issueType ?? '').length > 0, 'a type is sent only when one is given');
@@ -400,28 +398,28 @@ function assertCreateParity(spec: IssueSpec): void {
 	if (r.ok) assert.equal(r.value, 'o/r#41');
 }
 
-test('Epic create parity with ghCreateIssueTyped', () => {
-	assertCreateParity({ title: 'E1 — problem', body: 'epic body', labels: ['insrc:epic', 'epic:slug'], issueType: 'Epic' });
+test('Epic create parity with ghCreateIssueTyped', async () => {
+	await assertCreateParity({ title: 'E1 — problem', body: 'epic body', labels: ['insrc:epic', 'epic:slug'], issueType: 'Epic' });
 });
 
-test('Story create and Epic parent link parity', () => {
-	assertCreateParity({ title: 'S1 — story', body: 'story body', labels: ['insrc:story', 'epic:slug'], issueType: 'Story', parent: 'o/r#10' });
+test('Story create and Epic parent link parity', async () => {
+	await assertCreateParity({ title: 'S1 — story', body: 'story body', labels: ['insrc:story', 'epic:slug'], issueType: 'Story', parent: 'o/r#10' });
 	// A failed parent link never fails the create: the ref comes back ok.
 	recordingGh({ failOn: a => (a.some(x => x.includes('sub_issues')) ? execError({ stderr: 'HTTP 403' }) : undefined) });
-	const r = createGithubTracker('o', 'r').createIssue({ title: 't', body: 'b', labels: ['x'], parent: 'o/r#10' });
+	const r = (await createGithubTracker('o', 'r').createIssue({ title: 't', body: 'b', labels: ['x'], parent: 'o/r#10' }));
 	assert.deepEqual(r, { ok: true, value: 'o/r#41' });
 });
 
-test('Task create and Story parent link parity', () => {
-	assertCreateParity({ title: 'T1 — task', body: 'task body', labels: ['insrc:task', 'epic:slug'], issueType: 'Task', parent: 'o/r#20' });
-	assertCreateParity({ title: 'T2 — untyped task', body: 'b', labels: ['insrc:task'], issueType: '', parent: 'o/r#20' });
+test('Task create and Story parent link parity', async () => {
+	await assertCreateParity({ title: 'T1 — task', body: 'task body', labels: ['insrc:task', 'epic:slug'], issueType: 'Task', parent: 'o/r#20' });
+	await assertCreateParity({ title: 'T2 — untyped task', body: 'b', labels: ['insrc:task'], issueType: '', parent: 'o/r#20' });
 });
 
-test('each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper', () => {
+test('each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper', async () => {
 	const ops = createGithubTracker('o', 'r').issueOps;
-	const run = (fn: () => unknown): string[][] => {
+	const run = async (fn: () => unknown): Promise<string[][]> => {
 		const calls = recordingGh();
-		fn();
+		await fn();
 		return calls;
 	};
 	const pairs: Array<[string, () => unknown, () => unknown]> = [
@@ -436,7 +434,7 @@ test('each issueOps operation runs the same gh argv and keeps the same failure r
 		['create', () => ops.create({ title: 't', body: 'b', labels: ['a'], issueType: 'Task' }), () => ghCreateIssueTyped('o', 'r', 't', 'b', ['a'], 'Task')],
 	];
 	for (const [name, viaOps, viaWrapper] of pairs) {
-		assert.deepEqual(run(viaOps), run(viaWrapper), `${name}: same argv`);
+		assert.deepEqual(await run(viaOps), await run(viaWrapper), `${name}: same argv`);
 	}
 
 	// Failure results: the wrappers that throw come back as ok:false with the same kind and message; the
@@ -448,38 +446,38 @@ test('each issueOps operation runs the same gh argv and keeps the same failure r
 		let thrown: unknown;
 		try { viaWrapper(); } catch (e) { thrown = e; }
 		assert.ok(thrown instanceof GhCommandError, `${name}: wrapper throws`);
-		const r = viaOps() as { ok: boolean; kind?: string; reason?: string };
+		const r = await viaOps() as { ok: boolean; kind?: string; reason?: string };
 		assert.equal(r.ok, false, name);
 		assert.equal(r.kind, (thrown as GhCommandError).kind, name);
 		assert.equal(r.reason, (thrown as GhCommandError).reason, name);
 	}
 });
 
-test('ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds', () => {
+test('ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds', async () => {
 	const ops = createGithubTracker('o', 'r').issueOps;
 	recordingGh({ failOn: () => execError({ code: 'ETIMEDOUT' }) });
-	assert.equal(ops.ensureLabel('x'), false);
-	assert.doesNotThrow(() => ops.ensureMilestone('m'));
+	assert.equal(await ops.ensureLabel('x'), false);
+	await assert.doesNotReject(async () => ops.ensureMilestone('m'));
 	// gh exits 0 with a note when the issue is already closed.
 	recordingGh();
-	assert.deepEqual(ops.close('o/r#4'), { ok: true, value: undefined });
-	assert.deepEqual(ops.close('o/r#4'), { ok: true, value: undefined });
+	assert.deepEqual(await ops.close('o/r#4'), { ok: true, value: undefined });
+	assert.deepEqual(await ops.close('o/r#4'), { ok: true, value: undefined });
 });
 
-test("ghGetIssueId and the adapter's resolveIssueId run gh api for the issue number, return the numeric id, and fail on a non-integer or a gh error", () => {
+test("ghGetIssueId and the adapter's resolveIssueId run gh api for the issue number, return the numeric id, and fail on a non-integer or a gh error", async () => {
 	const ops = createGithubTracker('o', 'r').issueOps;
 	const seen: string[][] = [];
 	let answer = '9001\n';
 	_setTrackerExecForTests((_cmd, args) => { seen.push([...args]); return answer; });
 	assert.equal(ghGetIssueId('o', 'r', 'o/r#10'), 9001);
 	assert.deepEqual(seen[0], ['api', 'repos/o/r/issues/10', '--jq', '.id']);
-	assert.deepEqual(ops.resolveIssueId('o/r#10'), { ok: true, value: 9001 });
+	assert.deepEqual(await ops.resolveIssueId('o/r#10'), { ok: true, value: 9001 });
 	assert.deepEqual(seen[1], seen[0], 'the port runs the same argv as the wrapper');
 
 	// output that is not a positive integer is a rejected lookup, never a number
 	for (const bad of ['', 'null', 'abc', '12.5', '-3', '0', '1e3', '9001 9002']) {
 		answer = bad;
-		const r = ops.resolveIssueId('o/r#10');
+		const r = await ops.resolveIssueId('o/r#10');
 		assert.deepEqual([r.ok, r.ok ? '' : r.kind], [false, 'rejected'], `output '${bad}'`);
 	}
 
@@ -487,7 +485,7 @@ test("ghGetIssueId and the adapter's resolveIssueId run gh api for the issue num
 	answer = '1';
 	const before = seen.length;
 	for (const ref of ['o/r#abc', '/#', 'o/#5', '/r#5', 'o/r#', 'o/r#0', 'o/r#05', 'o/r#5\n', 'or#5', 'o/r', 'o/r/x#5']) {
-		const r = ops.resolveIssueId(ref);
+		const r = await ops.resolveIssueId(ref);
 		assert.deepEqual([r.ok, r.ok ? '' : r.kind], [false, 'rejected'], `ref '${ref}'`);
 		assert.throws(() => ghGetIssueId('o', 'r', ref), GhCommandError, `ref '${ref}'`);
 	}
@@ -495,11 +493,11 @@ test("ghGetIssueId and the adapter's resolveIssueId run gh api for the issue num
 
 	// a gh failure keeps its kind
 	failWith(execError({ code: 'ENOENT' }, 'spawnSync gh ENOENT'));
-	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'missing-tool');
+	assert.equal(((await ops.resolveIssueId('o/r#10')) as { kind: string }).kind, 'missing-tool');
 	failWith(execError({ stderr: 'You are not logged in to any GitHub hosts. Run gh auth login to authenticate.' }));
-	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'missing-signin');
+	assert.equal(((await ops.resolveIssueId('o/r#10')) as { kind: string }).kind, 'missing-signin');
 	failWith(execError({ code: 'ETIMEDOUT' }));
-	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'unreachable');
+	assert.equal(((await ops.resolveIssueId('o/r#10')) as { kind: string }).kind, 'unreachable');
 	failWith(execError({ stderr: 'HTTP 404 Not Found' }));
-	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'rejected');
+	assert.equal(((await ops.resolveIssueId('o/r#10')) as { kind: string }).kind, 'rejected');
 });

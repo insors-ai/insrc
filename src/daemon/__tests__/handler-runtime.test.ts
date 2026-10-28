@@ -125,3 +125,25 @@ test('workflow.approvePipeline, tracker.sync and tracker.setup are registered an
 		rmSync(HOME, { recursive: true, force: true });
 	}
 });
+
+test('team.refresh, team.claim and team.release are registered and return the old results', async () => {
+	try {
+		const runtime = buildHandlerRuntime({
+			db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
+			startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+		});
+		const h = runtime.rpcHandlers;
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-hr-team-'));
+		try {
+			// a repository that does not enforce claims: a claim and a release answer the terminal's refusal line
+			const unit = { unit: 'story', epicHash: '0123456789abcdef', storyId: 's1' };
+			assert.equal(await h['team.claim']!({ repoPath: repo, unit }), '✗ not claimed — this repository does not enforce claims (no team policy with claimsEnforced)');
+			assert.match(String(await h['team.release']!({ repoPath: repo, unit })), /^✗ not released — /);
+			// a refresh of a directory that is no git work tree is the refusal the terminal printed: an error of the call
+			await assert.rejects(Promise.resolve(h['team.refresh']!({ repoPath: repo })), /./);
+			await assert.rejects(Promise.resolve(h['team.claim']!({})), /`repoPath` is required/);
+		} finally { rmSync(repo, { recursive: true, force: true }); }
+	} finally {
+		rmSync(HOME, { recursive: true, force: true });
+	}
+});

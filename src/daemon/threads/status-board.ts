@@ -77,6 +77,7 @@ export class StatusBoard {
 	private clients: readonly AttachedClientSnapshot[] = [];
 	private store: StoreStatusSnapshot = { publishedAt: 0 };
 	private indexRunList: readonly IndexRunView[] = [];
+	private indexRunsListener: ((runs: readonly IndexRunView[]) => void) | undefined;
 	private laneBusyAt: number | undefined;
 
 	constructor(private readonly now: () => number = Date.now) {}
@@ -107,7 +108,11 @@ export class StatusBoard {
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.clients = clients; }
 	publishStore(store: StoreStatusSnapshot): void { this.store = store; }
 	/** The running full indexes, as the code-indexing worker last published them (an additive s2 slot). */
-	publishIndexRuns(runs: readonly IndexRunView[]): void { this.indexRunList = runs; }
+	publishIndexRuns(runs: readonly IndexRunView[]): void { this.indexRunList = runs; this.indexRunsListener?.(runs); }
+	/** The running full indexes as last published. */
+	indexRuns(): readonly IndexRunView[] { return this.indexRunList; }
+	/** Told of every publish of the running full indexes (the main thread forwards them to the session workers, s3). */
+	onIndexRuns(fn: ((runs: readonly IndexRunView[]) => void) | undefined): void { this.indexRunsListener = fn; }
 	indexRun(repoPath: string): IndexRunView | undefined { return this.indexRunList.find(r => r.repoPath === repoPath); }
 
 	/** Inserts or replaces the record with that runId; a record whose frames would shrink is refused. */

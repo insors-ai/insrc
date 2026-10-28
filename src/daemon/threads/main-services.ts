@@ -107,6 +107,12 @@ export const MAINTENANCE_RUN_OP = 'maintenance.run';
  */
 export const ROUTE_OP = 'router.request';
 
+/**
+ * The running full indexes, pushed to every worker as the code-indexing worker publishes them
+ * (s3): a session worker's search guard reads them synchronously, as the main thread reads the board.
+ */
+export const INDEX_RUNS_OP = 'board.indexRuns';
+
 /** What ROUTE_OP carries: the call, whether it goes to the shared-state worker, and the caller's maintenance hold. */
 export interface RouteRequest {
 	readonly cls: MethodClass;
@@ -150,6 +156,7 @@ export class ThreadServices {
 		installLockManager(this.lockBlock);
 		enableMaintenanceLock();
 		installStepStateStore(steps);
+		this.board.onIndexRuns(runs => { for (const port of this.ports) pushToWorker(port, INDEX_RUNS_OP, runs); });
 		this.handlers = {
 			...statusBoardHubHandlers(this.board),
 			...stepStateHubHandlers(steps),
@@ -189,6 +196,8 @@ export class ThreadServices {
 		this.ports.add(port1);
 		// A worker started after the backend was decided gets it at once.
 		if (this.embedderBackend !== undefined) pushToWorker(port1, EMBEDDER_BACKEND_OP, this.embedderBackend);
+		// And the running full indexes as they stand now.
+		if (this.board.indexRuns().length > 0) pushToWorker(port1, INDEX_RUNS_OP, this.board.indexRuns());
 		return {
 			workerData: { guardBlock: this.guardBlock, lockBlock: this.lockBlock, indexingBlock: this.indexingBlock, hubPort: port2 },
 			transferList: [port2],

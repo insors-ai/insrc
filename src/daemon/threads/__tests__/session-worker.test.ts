@@ -105,3 +105,20 @@ test('session worker: a nested session-class call runs inline on the worker thre
 	assert.deepEqual(answer.nested, await todaySessionList(), 'the nested session.list answered as today');
 	assert.deepEqual(routed, [], 'no nested call left the worker: it ran inline on its thread');
 });
+
+test("session worker: the running full indexes published on the board reach the worker's search guard", async () => {
+	const ask = async (): Promise<unknown> => ((await router.request('session', 'test.indexRun', { repoPath: '/repos/big' })) as { run: unknown }).run;
+	assert.equal(await ask(), null, 'no index running');
+	const run = { repoPath: '/repos/big', startedAt: 1, filesSelected: 3000, filesDone: 12 };
+	services.board.publishIndexRuns([run]);
+	for (const deadline = Date.now() + 5_000; await ask() === null;) {
+		assert.ok(Date.now() < deadline, 'the running index reached the worker');
+		await new Promise(r => setTimeout(r, 20));
+	}
+	assert.deepEqual(await ask(), run, 'read on the worker exactly as published');
+	services.board.publishIndexRuns([]);
+	for (const deadline = Date.now() + 5_000; await ask() !== null;) {
+		assert.ok(Date.now() < deadline, 'the ended index left the worker');
+		await new Promise(r => setTimeout(r, 20));
+	}
+});

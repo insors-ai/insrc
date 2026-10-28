@@ -29,6 +29,8 @@ import { initChatHandlers } from '../chat-handler.js';
 import { scheduleTodosRetention } from '../todos-rpc.js';
 import { getDb } from '../../db/client.js';
 import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
+import { readIndexRun, setIndexRunSource } from '../../indexer/run-record.js';
+import type { IndexRunView } from '../../indexer/run-record.js';
 import { buildHandlerRuntime, inDaemonOnlyHandlers } from '../handler-runtime.js';
 import { directDispatch } from '../server.js';
 import type { RpcHandlers } from '../server.js';
@@ -41,7 +43,7 @@ import type { InDaemonClient } from '../steps/daemon-client.js';
 import { setRunBoard } from '../workflow-run-registry.js';
 import type { MethodClass } from './channel.js';
 import { IndexingPortClient } from './indexing-port.js';
-import { ROUTE_OP, SHUTDOWN_OP } from './main-services.js';
+import { INDEX_RUNS_OP, ROUTE_OP, SHUTDOWN_OP } from './main-services.js';
 import type { RouteRequest, WorkerConnection } from './main-services.js';
 import { inDaemonTarget } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
@@ -56,6 +58,10 @@ const hub = startDaemonWorker(init);
 const board = new StatusBoardClient(hub);
 // Detached runs started here are mirrored to the board, so any thread answers their polls.
 setRunBoard(board);
+// The running full indexes, pushed from the board: the search guard refuses or filters a repository under index, as on the main thread.
+let indexRuns: readonly IndexRunView[] = [];
+hub.onPush(INDEX_RUNS_OP, runs => { indexRuns = runs as readonly IndexRunView[]; });
+setIndexRunSource(repoPath => indexRuns.find(r => r.repoPath === repoPath));
 
 const db = await getDb();
 const configStore = new ConfigStore(db);
@@ -104,6 +110,7 @@ function testHandlers(): RpcHandlers {
 		},
 		'test.nested': async () => ({ threadId, nested: await inDaemon!.request('session.list', {}) }),
 		'test.throw': async () => { throw new Error('the test handler threw'); },
+		'test.indexRun': async (params) => ({ threadId, run: readIndexRun((params as { repoPath: string }).repoPath) ?? null }),
 		// A detached stub workflow run on this worker with a provider that records its calls: none may overlap (k6).
 		'test.recordedRun': async (params) => {
 			const { repo, runId } = params as { repo: string; runId: string };

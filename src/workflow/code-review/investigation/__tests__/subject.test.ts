@@ -1,27 +1,12 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fixture } from './git-packets.test.js';
+import { subjectFixture } from './fixtures.js';
 import { ReviewGitReader, readCommitPacket } from '../git-packets.js';
 import { prepareReviewSubject, assertReviewSubjectFresh } from '../subject.js';
 import { readApprovedWork } from '../work.js';
 import type { VerifiedWorkInputs, VerifiedWorkArtifact } from '../work.js';
 import type { PrepareReviewRequest, ScopeAttestation } from '../types.js';
-
-export async function subjectFixture() {
- const f = fixture(); f.write('a.txt', 'one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\nnine\nten\n'); const parent = f.commit();
- f.write('a.txt','ONE\ntwo\nthree\nfour\nfive\nsix\nseven\neight\nnine\nTEN\n'); const commit = f.commit();
- const request: PrepareReviewRequest = { repoId: 'repo', rootArtifactId: 'DEF-root', storyId: 's1', buildArtifactId: 'BUILD-root-s1',
-  selections: [{commitId:commit,parentId:parent,attestationRef:'scope-1'}] };
- const artifact = (id: string): VerifiedWorkArtifact => ({ artifactId:id,path:`docs/${id}.md`,revision:1,contentDigest:'a'.repeat(64),repoId:'repo',rootArtifactId:'DEF-root',storyId:'s1',status:'approved',approvedRevision:1,body:{},text:'approved text' });
- const plan = {...artifact('PLAN-root-s1'),body:{tasks:[{id:'t1',title:'Title',summary:'Detailed summary',order:1,dependsOn:[],acceptanceChecks:['check one','check two']} ]}};
- const inputs: VerifiedWorkInputs = {build:{artifactId:request.buildArtifactId,revision:1,sourceCommit:commit,repoId:'repo',rootArtifactId:'DEF-root',storyId:'s1'},route:'planned',plan,upstream:[artifact('LLD-root-s1')]};
- const packet = await readCommitPacket(new ReviewGitReader(f.dir),commit,parent);
- const proof: ScopeAttestation={ref:'scope-1',commitId:commit,parentId:parent,rootArtifactId:'DEF-root',storyId:'s1',buildArtifactId:request.buildArtifactId,sourceCommit:commit,exclusive:false,blockIds:[packet.blocks[0]!.blockId]};
- let current=inputs, attestation=proof;
- const deps={repoPath:f.dir, readWork:(r:PrepareReviewRequest)=>readApprovedWork(r,{readVerifiedInputs:async()=>current}),readAttestation:async()=>attestation,assertFresh:async()=>{}};
- return {...f, request, inputs, packet, deps, proof, commitId:commit,parentId:parent,setInputs:(v:VerifiedWorkInputs)=>{current=v;},setProof:(v:ScopeAttestation)=>{attestation=v;}};
-}
 
 test('Approved task projection, trusted attribution and freshness fixtures',async()=>{
  const f=await subjectFixture();try{

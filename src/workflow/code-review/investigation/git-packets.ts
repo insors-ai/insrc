@@ -91,7 +91,7 @@ export async function readCommitPacket(reader: ReviewGitReader, commitId: string
  if (!commit.parents.length) throw new SubjectPreparationError('unsupported-change', 'Root commits have no v1 parent provenance.');
  if (!commit.parents.includes(parentId)) throw new SubjectPreparationError('invalid-object', 'Selected parent is not a direct commit parent.');
  await reader.commit(parentId);
- const files = rawChanges(await reader.command(['diff-tree', '--no-commit-id', '--raw', '-z', '-r', '--no-abbrev', '-M', parentId, commitId, '--']), commitId.length);
+ const files = rawChanges(await reader.command(['diff-tree', '--no-commit-id', '--raw', '-z', '-r', '--no-abbrev', '--ignore-submodules=none', '-M', parentId, commitId, '--']), commitId.length);
  const blocks: ReviewBlock[] = [];
  for (const file of files) {
   for (const oid of new Set([file.oldBlob, file.newBlob])) if (oid) await reader.object(oid, 'blob');
@@ -104,7 +104,7 @@ export async function readCommitPacket(reader: ReviewGitReader, commitId: string
   if (file.status === 'R') add('rename', null, null, `${file.oldMode}:${file.newMode}`);
   if (file.oldMode !== '000000' && file.newMode !== '000000' && file.oldMode !== file.newMode) add('mode', null, null, `${file.oldMode}:${file.newMode}`);
   const paths = [...new Set([file.oldPath, file.newPath].filter((p): p is string => p !== null))];
-  const patchBytes = await reader.command(['-c', 'diff.algorithm=myers', 'diff', '--no-ext-diff', '--no-textconv', '--no-color', '--no-renames', '--unified=0', '--no-indent-heuristic', '--src-prefix=a/', '--dst-prefix=b/', ...(file.oldBlob && file.newBlob ? [file.oldBlob, file.newBlob] : [parentId, commitId, '--', ...paths])]);
+  const patchBytes = await reader.command(['-c', 'diff.algorithm=myers', 'diff', '--no-ext-diff', '--no-textconv', '--no-color', '--no-renames', '--unified=0', '--inter-hunk-context=0', '--no-indent-heuristic', '--src-prefix=a/', '--dst-prefix=b/', ...(file.oldBlob && file.newBlob ? [file.oldBlob, file.newBlob] : [parentId, commitId, '--', ...paths])]);
   const patch = decodeUtf8(patchBytes);
   if (/^Binary files .* differ$/m.test(patch)) { add('binary', null, null, `${file.oldMode}:${file.newMode}`); continue; }
   const hunks = [...patch.matchAll(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^\n]*(?:\n|$)/gm)];

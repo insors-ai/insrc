@@ -1,20 +1,11 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, renameSync, chmodSync, rmSync } from 'node:fs';
+import { renameSync, chmodSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { gitEnvironment } from '../../../../design/corpus/sources/git-reader.js';
 import { ReviewGitReader, readCommitPacket } from '../git-packets.js';
-export function fixture() {
- const dir = mkdtempSync(join(tmpdir(), 'review-packets-'));
- const git = (...args: string[]) => execFileSync('git', args, { cwd: dir, env: { ...gitEnvironment(), GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@example.invalid', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@example.invalid' }, encoding: 'utf8' }).trim();
- git('init', '-q'); git('config', 'user.email', 'test@example.invalid'); git('config', 'user.name', 'Test');
- const write = (path: string, value: string | Uint8Array) => writeFileSync(join(dir, path), value);
- const commit = () => { git('add', '--all'); git('commit', '-qm', 'fixture'); return git('rev-parse', 'HEAD'); };
- return { dir, git, write, commit, close: () => rmSync(dir, { recursive: true, force: true }) };
-}
+import { fixture } from './fixtures.js';
 test('Exact parent/blob/change-kind packet and hardened reader reuse fixtures', async () => {
  const f = fixture();
  try {

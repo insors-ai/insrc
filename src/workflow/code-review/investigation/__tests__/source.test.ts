@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { symlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { subjectFixture } from './subject.test.js';
+import { subjectFixture } from './fixtures.js';
 import { prepareReviewSubject } from '../subject.js';
 import { readReviewSource, sourceReference } from '../source.js';
 

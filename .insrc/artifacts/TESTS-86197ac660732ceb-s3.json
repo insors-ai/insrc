@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s3",
     "createdAt": "2026-10-28T06:11:04.160Z",
-    "updatedAt": "2026-10-28T06:30:30.547Z",
+    "updatedAt": "2026-10-28T11:10:37.130Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -481,6 +481,163 @@
             "titles": [
               {
                 "title": "shared-state worker: chat.list, todos.listForSession and understanding.* run on its thread; the main thread starts no chat pool, understanding service or retention timer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "39dbb0d76",
+        "ranAt": "2026-10-28T06:37:17.423Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "session pool: concurrent workerFor calls for one session start one worker",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: concurrent workerFor calls for one session start one worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 540,
+            "titles": [
+              {
+                "title": "session pool: concurrent workerFor calls for one session start one worker",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "364788cb5",
+        "ranAt": "2026-10-28T11:10:37.130Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 630,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
                 "result": "pass"
               }
             ],

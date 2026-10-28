@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -146,3 +146,65 @@ Run at 2026-10-28T06:30:30.547Z on commit `1504ebb63`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/shared-state-worker.test.ts` | 0 | 1 | 1.2 s |  |
+
+## t7
+
+Run at 2026-10-28T06:37:17.423Z on commit `39dbb0d76`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: session pool: concurrent workerFor calls for one session start one worker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session pool: concurrent workerFor calls for one session start one worker | `src/daemon/threads/__tests__/session-pool.test.ts` |
+
+**unit: session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight | `src/daemon/threads/__tests__/session-pool.test.ts` |
+
+**unit: session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries | `src/daemon/threads/__tests__/session-pool.test.ts` |
+
+**unit: session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config | `src/daemon/threads/__tests__/session-pool.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/session-pool.test.ts` | 0 | 4 | 0.5 s |  |
+
+## t8
+
+Run at 2026-10-28T11:10:37.130Z on commit `364788cb5`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame | `src/daemon/threads/__tests__/router-session.test.ts` |
+
+**unit: router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed | `src/daemon/threads/__tests__/router-session.test.ts` |
+
+**unit: router: connection-scoped requests stay local; unattributed requests interleave without a FIFO**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | router: connection-scoped requests stay local; unattributed requests interleave without a FIFO | `src/daemon/threads/__tests__/router-session.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/router-session.test.ts` | 0 | 3 | 0.6 s |  |

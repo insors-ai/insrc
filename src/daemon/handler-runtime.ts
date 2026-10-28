@@ -456,6 +456,13 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return handleApprovePipeline(params, process.env['INSRC_REPO'], (withTracker) => approveFollowOn(db, withTracker));
 		},
 
+		// Story s10: the terminal's team and review operations, run here so the tracker and git are reached through the registry only.
+		'team.refresh': async (params) => (await import('./team-review-handlers.js')).handleTeamRefresh(params),
+		'team.claim': async (params) => (await import('./team-review-handlers.js')).handleTeamClaim(params),
+		'team.release': async (params) => (await import('./team-review-handlers.js')).handleTeamRelease(params),
+		'workflow.reviewArtifact': async (params) => (await import('./team-review-handlers.js')).handleReviewArtifact(params),
+		'workflow.resolveFinding': async (params) => (await import('./team-review-handlers.js')).handleResolveFinding(params),
+
 		// Story s10: pull the tracker state of an Epic and its Stories into the Define; read-only against GitHub.
 		'tracker.sync': async (params) => {
 			const { handleTrackerSync } = await import('./tracker-setup-handlers.js');

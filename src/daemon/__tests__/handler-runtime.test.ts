@@ -72,8 +72,9 @@ const RECORDED_STREAM = [
 /** Methods the tables gained after the move: approval, team hand-over, feedback and identity, repo settings and conversion, tracker attach and sync. */
 const ADDED_RPC = [
 	'approval.answer', 'artifact.feedback.add', 'artifact.feedback.list', 'identity.declare', 'identity.show', 'repo.convert',
-	'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.park', 'team.resume', 'team.settle',
+	'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
 	'tracker.attach', 'tracker.setup', 'tracker.sync', 'tracker.syncComments', 'workflow.approvePipeline',
+	'workflow.reviewArtifact', 'workflow.resolveFinding',
 ];
 const ADDED_STREAM = ['approval.subscribe', 'tools.call'];
 

@@ -97,7 +97,8 @@ function harness(): Harness {
 			if (id === undefined) { id = startWorker(key); workers.set(key, id); }
 			return { threadId: id };
 		},
-		started: s => pool.started.push(keyOf(s)),
+		// The pool only counts a request whose worker it already has.
+		started: s => { assert.ok(workers.has(keyOf(s)), `started reported for ${keyOf(s)} before its worker exists`); pool.started.push(keyOf(s)); },
 		ended: s => pool.ended.push(keyOf(s)),
 		setQueued: (_s, n) => pool.queued.push(n),
 	};

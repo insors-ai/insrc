@@ -234,8 +234,11 @@ export class Router {
 	/** To the session's worker (the unattributed worker for no session), started by the pool if it has none. */
 	private toSessionWorker(session: SessionId | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
 		const sessions = this.sessions!;
-		sessions.started(session);
-		return this.toPoolWorker(() => sessions.workerFor(session), request, deliver, dropped, () => sessions.ended(session));
+		// Reported started once the pool has the worker (a start before it would be lost, and the idle sweep could
+		// release the worker mid-request); reported ended only if it was reported started.
+		let begun = false;
+		const worker = (): Promise<{ readonly threadId: number }> => sessions.workerFor(session).then(w => { sessions.started(session); begun = true; return w; });
+		return this.toPoolWorker(worker, request, deliver, dropped, () => { if (begun) sessions.ended(session); });
 	}
 
 	/** To a pool worker once `worker` resolves; `done` runs once when the request ends, fails or is cancelled first. */

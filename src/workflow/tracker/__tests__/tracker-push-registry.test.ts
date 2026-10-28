@@ -7,11 +7,15 @@
 
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool } from '../../../daemon/tools/builtins/gh/issue.js';
 import { ghLabelTool } from '../../../daemon/tools/builtins/gh/resources.js';
+import { gitRemoteTool } from '../../../daemon/tools/builtins/git/remote.js';
+import { ghProjectManageTool } from '../../../daemon/tools/builtins/gh/manage.js';
 import { ghTrackerTool } from '../../../daemon/tools/builtins/gh/tracker.js';
 import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
 import { _resetRegistryForTests, registerTool } from '../../../daemon/tools/registry.js';
@@ -22,6 +26,10 @@ import type { StandInBin } from '../../../daemon/tools/__tests__/_bin.js';
 import { createGithubTracker } from '../github-adapter.js';
 import { createRegistryTable, workflowToolDeps } from '../registry-table.js';
 import { ToolDenied } from '../tool-denied.js';
+import { runTrackerSetup } from '../setup.js';
+import { syncTracker } from '../sync.js';
+import { artifactJsonPath, defineArtifactId } from '../../storage.js';
+import { seedBoundUnits } from '../../__tests__/helpers/task-heads.js';
 
 const approve: ApprovalGate = { async ask(r) { return { requestId: r.requestId, decision: 'approve' }; } };
 const decline: ApprovalGate = { async ask(r) { return { requestId: r.requestId, decision: 'decline' }; } };
@@ -29,7 +37,7 @@ const decline: ApprovalGate = { async ask(r) { return { requestId: r.requestId, 
 let bin: StandInBin | undefined;
 beforeEach(() => {
 	_resetRegistryForTests();
-	for (const t of [ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool, ghLabelTool, ghTrackerTool]) registerTool(t);
+	for (const t of [ghIssueCloseTool, ghIssueCommentTool, ghIssueCreateTool, ghIssueEditTool, ghIssueListTool, ghIssueViewTool, ghLabelTool, ghTrackerTool, gitRemoteTool, ghProjectManageTool]) registerTool(t);
 	_setApprovalGateForTests(() => approve);
 });
 afterEach(() => { _setApprovalGateForTests(undefined); bin?.restore(); if (bin) cleanup(bin.dir); bin = undefined; });
@@ -95,5 +103,54 @@ describe('tracker-push-registry.test.ts: a push, sync, setup, question and comme
 		const r = await tracker().issueOps.close('acme/demo#41');
 		assert.equal(r.ok, false);
 		assert.equal(!r.ok && r.kind, 'rejected');
+	});
+
+	it('setup ensures the fixed labels through the registry and skips the steps that need scopes it was not given; the same run again ensures the same labels', async () => {
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-push-setup-'));
+		const prior = process.env['INSRC_GITHUB_CONFIG'];
+		try {
+			execFileSync('git', ['init', '-q'], { cwd: repo });
+			execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/acme/demo.git'], { cwd: repo });
+			process.env['INSRC_GITHUB_CONFIG'] = join(repo, 'github.json');
+			const g = gh([['*label*', ''], ['*api*user*', '{"login":"me"}'], ['*', '', 1, 'HTTP 403: scopes']]);
+			const first = await runTrackerSetup(repo);
+			const labels = first.steps.find(s => s.key === 'labels');
+			assert.equal(labels?.status, 'done', JSON.stringify(first.steps));
+			const created = g.calls().filter(c => /^label create/.test(c));
+			assert.deepEqual(created.map(c => c.split(' ')[2]), ['insrc:epic', 'insrc:story', 'insrc:task', ...created.slice(3).map(c => c.split(' ')[2]!)]);
+			const second = await runTrackerSetup(repo);
+			assert.equal(second.steps.find(s => s.key === 'labels')?.status, 'done');
+			assert.equal(g.calls().filter(c => /^label create/.test(c)).length, created.length * 2);
+		} finally { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); }
+	});
+
+	it('sync reads the Epic issue state through the registry and records its status on the Define; it writes nothing to GitHub', async () => {
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-push-sync-'));
+		const prior = process.env['INSRC_GITHUB_CONFIG'];
+		const HASH = 'a3f4b8c9d1e2f3a4';
+		const CREATED = '2026-07-17T07:42:28.275Z';
+		try {
+			mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+			writeFileSync(join(repo, 'github.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+			process.env['INSRC_GITHUB_CONFIG'] = join(repo, 'github.json');
+			writeFileSync(artifactJsonPath(repo, defineArtifactId(HASH)), JSON.stringify({
+				meta: { workflow: 'define', runId: 'd1', repoPath: repo, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1 },
+				body: { flavor: 'enhancement', problem: 'Users cannot filter todos by tag today. Only status filtering exists.', nonGoals: [], assumptions: [], constraints: [], stories: [{ id: 's1', title: 'Filter by tag', userValue: 'x', acceptanceCriteria: [] }], openQuestions: [] },
+				citations: [],
+			}, null, 2));
+			seedBoundUnits(repo, HASH, 'acme/demo#1', { s1: 'acme/demo#2' }, CREATED);
+			const g = gh([['*api*user*', '{"login":"me"}'], ['*issue*view*', '{"number":1,"title":"t","state":"CLOSED","labels":[{"name":"insrc:epic"}]}']]);
+			const r = await syncTracker(repo, HASH);
+			assert.equal(r.status, 'synced', JSON.stringify(r));
+			assert.ok(g.calls().every(c => /^(api|issue view)/.test(c)), g.calls().join(' | '));
+		} finally { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); }
+	});
+
+	it('a question resolution and a comment resolution post their tracker comment through the registry as one issue comment each', async () => {
+		const g = gh([['api*comments*', '{"id":5}'], ['*issue*comment*', 'https://github.com/acme/demo/issues/9#issuecomment-5']]);
+		const t = tracker();
+		assert.deepEqual(await t.issueOps.comment('acme/demo#9', 'q1 resolved: a (because)'), { ok: true, value: undefined });
+		assert.deepEqual(await t.postComment('acme/demo#9', 'comment body'), { ok: true, value: { externalId: '5' } });
+		assert.equal(g.calls().filter(c => /^issue comment 9/.test(c) || /comments/.test(c)).length, 2);
 	});
 });

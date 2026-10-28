@@ -457,6 +457,8 @@ As a1 for the pool, unattributed worker and detached runs, with no exception lis
 
 - `q08085234` — The sc3 amendment adding ThreadTarget.shared must be approved for the shared-state worker to hold.
   - **resolved**: Approve sc3 now — AMD-86197ac660732ceb-1 (sc3 ThreadTarget.shared, additive) was dry-run against the effective HLD and approved by the user on 2026-10-28. _(2026-10-28T05:26:51.837Z)_
+- `q4995755b` — ts2 (partial): s6 names node:test via tsx under src/daemon/threads/__tests__, matching the s1 bundles' thread-test paths, but s1 did not run a test.locate pass to report the framework explicitly. The framework is the repo's only test runner (CLAUDE.md build section).
+  - **resolved**: Trust CLAUDE.md as sole source — node:test via tsx is the repo's only test runner (CLAUDE.md build section), and every existing thread test (src/daemon/threads/__tests__) uses it. _(2026-10-28T05:28:29.500Z)_
 
 ## Citations
 

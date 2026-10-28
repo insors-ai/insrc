@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s3",
     "createdAt": "2026-10-28T06:11:04.160Z",
-    "updatedAt": "2026-10-28T06:22:10.306Z",
+    "updatedAt": "2026-10-28T06:30:30.547Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -392,6 +392,95 @@
               },
               {
                 "title": "purge: chat.dropSession over the socket answers unknown method; threads off purges as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "1f514e892",
+        "ranAt": "2026-10-28T06:27:16.702Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "session worker: starts, reports ready and serves a session method with today's response under the maintenance request hold",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-worker.test.ts",
+                "title": "session worker: starts, reports ready and serves a session method with today's response under the maintenance request hold",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session worker: a nested session-class call runs inline on the worker thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-worker.test.ts",
+                "title": "session worker: a nested session-class call runs inline on the worker thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/session-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1370,
+            "titles": [
+              {
+                "title": "session worker: starts, reports ready and serves a session method with today's response under the maintenance request hold",
+                "result": "pass"
+              },
+              {
+                "title": "session worker: a nested session-class call runs inline on the worker thread",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "1504ebb63",
+        "ranAt": "2026-10-28T06:30:30.547Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "shared-state worker: chat.list, todos.listForSession and understanding.* run on its thread; the main thread starts no chat pool, understanding service or retention timer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/shared-state-worker.test.ts",
+                "title": "shared-state worker: chat.list, todos.listForSession and understanding.* run on its thread; the main thread starts no chat pool, understanding service or retention timer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/shared-state-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1194,
+            "titles": [
+              {
+                "title": "shared-state worker: chat.list, todos.listForSession and understanding.* run on its thread; the main thread starts no chat pool, understanding service or retention timer",
                 "result": "pass"
               }
             ],

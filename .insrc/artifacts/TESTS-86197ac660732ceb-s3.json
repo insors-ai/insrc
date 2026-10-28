@@ -1,0 +1,404 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s3",
+    "createdAt": "2026-10-28T06:11:04.160Z",
+    "updatedAt": "2026-10-28T06:22:10.306Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0d9ad0284",
+        "ranAt": "2026-10-28T06:11:04.160Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router: Router.request with shared reaches the shared-state target and is held while none is registered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router.test.ts",
+                "title": "router: Router.request with shared reaches the shared-state target and is held while none is registered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 453,
+            "titles": [
+              {
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              },
+              {
+                "title": "registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker",
+                "result": "pass"
+              },
+              {
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              },
+              {
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/router.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1676,
+            "titles": [
+              {
+                "title": "maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request",
+                "result": "pass"
+              },
+              {
+                "title": "an admin or indexing request reaches its registered target and a session request runs on the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+                "result": "pass"
+              },
+              {
+                "title": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+                "result": "pass"
+              },
+              {
+                "title": "requests held for a class that stops being routed are served in this thread",
+                "result": "pass"
+              },
+              {
+                "title": "a unary request cancelled while held for a worker ends its activity: the request-ended callback runs, so idle maintenance is not blocked for good",
+                "result": "pass"
+              },
+              {
+                "title": "router: Router.request with shared reaches the shared-state target and is held while none is registered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "74622c083",
+        "ranAt": "2026-10-28T06:12:47.117Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "method sets: every served chat.*, todos.* and understanding.* method is in the shared-state set",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "method sets: every served chat.*, todos.* and understanding.* method is in the shared-state set",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1008,
+            "titles": [
+              {
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every served chat.*, todos.* and understanding.* method is in the shared-state set",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "09c477ff3",
+        "ranAt": "2026-10-28T06:16:49.401Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "workflow run registry: poll from the board returns frames since cursor, model, result and error; unknown after forgetRun",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/workflow-run-registry.test.ts",
+                "title": "workflow run registry: poll from the board returns frames since cursor, model, result and error; unknown after forgetRun",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "workflow run registry: with threads disabled start/poll/abort answer as today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/workflow-run-registry.test.ts",
+                "title": "workflow run registry: with threads disabled start/poll/abort answer as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/workflow-run-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1074,
+            "titles": [
+              {
+                "title": "startWorkflowRun returns a runId synchronously and poll transitions running → done",
+                "result": "pass"
+              },
+              {
+                "title": "poll with the returned cursor yields only NEW frames (append-only)",
+                "result": "pass"
+              },
+              {
+                "title": "unknown runId polls as status:unknown with an error",
+                "result": "pass"
+              },
+              {
+                "title": "abortWorkflowRun flips a running run to aborted; unknown runId → ok:false",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run registry: poll from the board returns frames since cursor, model, result and error; unknown after forgetRun",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run registry: with threads disabled start/poll/abort answer as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 772,
+            "titles": [
+              {
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              },
+              {
+                "title": "registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker",
+                "result": "pass"
+              },
+              {
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              },
+              {
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2ba5a8688",
+        "ranAt": "2026-10-28T06:22:10.306Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "purge: session.delete on a session worker drops the chat from the shared-state pool and its todos cleanup events reach an open todos.subscribe",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/purge-shared.test.ts",
+                "title": "purge: session.delete on a session worker drops the chat from the shared-state pool and its todos cleanup events reach an open todos.subscribe",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "purge: chat.dropSession over the socket answers unknown method; threads off purges as today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/purge-shared.test.ts",
+                "title": "purge: chat.dropSession over the socket answers unknown method; threads off purges as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 837,
+            "titles": [
+              {
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every served chat.*, todos.* and understanding.* method is in the shared-state set",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/purge-shared.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1086,
+            "titles": [
+              {
+                "title": "purge: session.delete on a session worker drops the chat from the shared-state pool and its todos cleanup events reach an open todos.subscribe",
+                "result": "pass"
+              },
+              {
+                "title": "purge: chat.dropSession over the socket answers unknown method; threads off purges as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

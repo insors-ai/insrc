@@ -1,0 +1,1302 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793162175819-ezajul",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-28T04:43:34.848Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 439022,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicHash": "86197ac660732ceb",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1792588079400-heeqp4",
+    "hldEffectiveHash": "b93e76739a2568e89e10c3b7c0838bb594c961729bbda83caa38633c196f8c4f",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD's s3-owned acceptance criteria (ac1-ac7, sc6) are each mapped to a design decision and a test in §5 and §7, and connection-scoped work explicitly excluded from s3's scope (FR4/s4 ac1 for connection-session requests) is recorded as an open question rather than silently built.",
+          "evidence": "§2.4 Router.dispatch postconditions and §6 error-case 'A request for a session-class method arrives with a connection session or session-memory execution' both state the request runs on the main thread unchanged; §11 open questions explicitly flags that FR4/s4's ac1 cannot be met for connection-scoped requests until Epic 484fcef7 lets them cross, rather than building around it. channel.ts:59-62 confirms wireRequest currently throws for connectionSession/connectionExecution, matching the design's constraint. [files: src/daemon/threads/channel.ts]",
+          "action": "Read src/daemon/threads/channel.ts:40-74 and confirmed wireRequest throws exactly as cited (line 61), matching the design's stated boundary and its open question about who owns lifting it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Migration §8 'State before' claim: with s2, only admin/indexing classes are routed; all 193 session-class methods run on the main thread via directDispatch over buildHandlerRuntime's tables; detached runs live in workflow-run-registry.ts's module-scope `runs` map; nothing currently publishes run records to the status board.",
+          "evidence": "method-class.ts has exactly 193 'session' entries (grep count). workflow-run-registry.ts:72 has `const runs = new Map<string, RunState>();` exactly as cited, and grep for publishRun/StatusBoard anywhere in that file found zero references -- confirming no run records are mirrored to the board today. Router's current `dispatch` (router.ts:120-126) only ever consults `this.opts.routed` which per s2 holds admin/indexing, not session. [files: src/daemon/threads/method-class.ts, src/daemon/workflow-run-registry.ts]",
+          "action": "Grepped method-class.ts for session-entry count (193, exact match), read workflow-run-registry.ts for the module-scope map and its poll/start/abort functions, and grepped the file for any StatusBoard/publishRun usage.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's §2.9/§3.6 claim that InDaemonRoute today is a class-granular `classOf` + `routed` pair (src/daemon/steps/daemon-client.ts:79-83, 103-112) that cannot distinguish shared-state methods from other session-class methods.",
+          "evidence": "daemon-client.ts:79-83 defines exactly `classOf: (method) => MethodClass | undefined; routed: ReadonlySet<MethodClass>; request: (cls, method, params) => Promise<unknown>`, and createInDaemonClient's `call` (lines 103-121) only branches on `cls !== undefined && deps.route.routed.has(cls)` -- a per-class decision with no per-method distinction within the 'session' class, exactly as the design states. [files: src/daemon/steps/daemon-client.ts]",
+          "action": "Read src/daemon/steps/daemon-client.ts:1-140 and verified the cited interface and branch logic.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "`StatusBoard.publishRun` is reused as an existing method (owned by s1/sc4, consumed here), not reintroduced as new; `StatusBoard.forgetRun` is correctly new.",
+          "evidence": "status-board.ts:114-121 already implements `publishRun(run: RunRecord): void` with the exact shrink-refusal rule the design describes ('a record whose frames would shrink is refused'), plus its hub binding (OPS.publishRun) and client wrapper -- all pre-existing. A repo-wide grep for `forgetRun` found zero matches, confirming it does not yet exist and is correctly flagged as new/additive in §2.8 and migration step 1. [files: src/daemon/threads/status-board.ts]",
+          "action": "Read status-board.ts:95-174 for publishRun/hub bindings; grepped the whole src tree for forgetRun.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "`SessionWorkerInfo`, `SessionPool`, and `SessionPool.workerFor` are genuinely new (sc6) and do not collide with or duplicate an existing same-named construct.",
+          "evidence": "Grep for SessionWorkerInfo/SessionPool/workerFor across src/ returned only src/daemon/chat-handler.ts and src/daemon/chat-sessions.ts -- a different, unrelated 'session pool' (the chat session pool, already distinctly referenced elsewhere in the design as `ChatSessionPool`). No thread-level session pool exists yet. [files: src/daemon/chat-handler.ts, src/daemon/chat-sessions.ts]",
+          "action": "Grepped src/ for the three new-type names and read the two hits to confirm they are the (correctly distinguished) chat session pool, not a thread-worker pool.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§2.6/§3.3's claim that `TargetRegistry.slotOf` today keys a session target with no session (or `unattributed: true`) as `'session:unattributed'`, and that `targetFor`/`register`/`unregister` all route through that one slot function, so adding the `shared` check first is a minimal, localized change.",
+          "evidence": "registry.ts:17-23 defines `ThreadTarget` with `unattributed?: true`; `slotOf` (lines 32-36) returns `'session:unattributed'` when `t.unattributed === true || t.session === undefined`, else `` `session:${label}:${pid}` ``; `register`, `unregister` and `targetFor` (lines 41-56) all call `slotOf` -- exactly as described, and the current `targetFor(cls, session?)` signature has no `opts` param, consistent with the design presenting `opts.shared` as new. [files: src/daemon/threads/registry.ts]",
+          "action": "Read registry.ts in full (62 lines) and compared every cited line/behaviour against the design's §2.6/§3.3 text.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§2.11/§3.4's dependency-injection claim: `buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime` already takes its collaborators (including `understandingService: () => UnderstandingService | undefined`) via an injected `deps` object rather than importing module-scope singletons directly, so supplying different deps per worker is a drop-in change with unchanged handler bodies.",
+          "evidence": "handler-runtime.ts:137 declares `HandlerRuntimeDeps` and line 149 includes `readonly understandingService: () => UnderstandingService | undefined;`; line 159 `export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime` matches the cited signature exactly, and line 1720 reads the service only via `deps.understandingService()`. [files: src/daemon/handler-runtime.ts]",
+          "action": "Grepped handler-runtime.ts for buildHandlerRuntime/HandlerRuntimeDeps and read the surrounding declaration and one call site.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§2.7/§3.5's RunRecord shape (runId, status, ownerThreadId, startedAt, model, frames, result, error) matches the type actually defined on StatusBoard, so publishing today's in-memory RunState to the board is a lossless field mapping with no migration needed.",
+          "evidence": "status-board.ts:52-62 defines `RunRecord` with exactly those eight fields and types (`status: 'running'|'done'|'error'|'aborted'`, `frames: readonly unknown[]`, optional `result`/`error`), matching workflow-run-registry.ts's `RunState` (runId, status, frames, result?, error?, model, startedAt) plus the new `ownerThreadId` the design adds for the owner-exit error path. [files: src/daemon/threads/status-board.ts, src/daemon/workflow-run-registry.ts]",
+          "action": "Read status-board.ts:40-62 (RunRecord) and workflow-run-registry.ts:36-66 (RunState/PollResult) and compared field-for-field.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design does not implement anything inside s1's or s2's owned contracts (sc1-sc5 store guard, shared step-state, status-board index/admin slots, thread channel, method-class registry infra) beyond the two additive, explicitly-flagged amendments to sc3 (ThreadTarget.shared) and sc4 (forgetRun), both called out as needing separate approval rather than silently redesigned.",
+          "evidence": "§11 Open questions states outright: 'The sc3 amendment adding ThreadTarget.shared must be approved for the shared-state worker to hold' -- the design surfaces the boundary crossing as a gated amendment, not a unilateral change. §2.9 and §3.6 explicitly preserve s2's existing admin/indexing routing invariant ('s2's admin and indexing routing is unchanged: targetOf returns {cls} for those classes whenever the old routed set held them') rather than touching it.",
+          "action": "Cross-checked the 'Adjacent scope' ownership table against §2 Contract details and §3 Data model changes for any unflagged edit to an s1/s2/s4-owned file or contract; found only the two flagged, amendment-gated additions.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The error case 'A session request's handler throws' claims 'directDispatch on the worker catches the rejection, as today', i.e. this is existing, proven behaviour being reused unchanged, not new logic.",
+          "evidence": "`directDispatch` is referenced across 44 files in src/daemon including server.ts, router.ts, daemon-client.ts and numerous existing test files (indexing-worker.test.ts, admin-worker.test.ts, store-failure-dispatch.test.ts, etc.), confirming it is an established, already-tested dispatch path the design is extending to a new worker class rather than inventing. [files: src/daemon/server.ts]",
+          "action": "Grepped src/daemon for `directDispatch` and confirmed it is a widely-used, already-tested existing mechanism (44 files, including dedicated dispatch/failure tests).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's FIFO-exempt set used in ac2's test plan (chat.cancel, chat.inject, chat.redirect, chat.status, plus subscriptions and workflow.run.poll/abort) is drawn from methods that are actually classified 'session' and non-stream in the real method-class table, so the planned unit test ('three requests reach the fake worker one at a time... while chat.cancel reaches the worker during the first') is testing a real, existing classification rather than a hypothetical one.",
+          "evidence": "method-class.ts confirms `['chat.cancel','session',false]`, `['chat.inject','session',false]`, `['chat.redirect','session',false]`, `['chat.status','session',false]` at lines 77-85, matching the FIFO-exempt set §3.2 declares. [files: src/daemon/threads/method-class.ts]",
+          "action": "Grepped method-class.ts for the four chat.* FIFO-exempt methods and confirmed their class/stream flags.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-28T04:52:29.596Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-28T05:23:34.154Z",
+    "questionResolutions": {
+      "q08085234": {
+        "question": "The sc3 amendment adding ThreadTarget.shared must be approved for the shared-state worker to hold.",
+        "status": "resolved",
+        "choice": "Approve sc3 now",
+        "rationale": "AMD-86197ac660732ceb-1 (sc3 ThreadTarget.shared, additive) was dry-run against the effective HLD and approved by the user on 2026-10-28.",
+        "resolvedAt": "2026-10-28T05:26:51.837Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "s3 moves session work off the thread that reads the socket. Each client process (its validated client label and process id) gets its own worker thread, created on its first request and released when it has been idle for the idle timeout or its process has gone; a session's requests run one at a time in arrival order. The process-wide families whose state must stay single (chat, todos, understanding) run on one shared-state worker, detached workflow runs stay with the worker that started them and publish their poll state on the status board, and requests that carry no client identity go to one unattributed worker. Requests bound to a connection session stay on the main thread, because another epic forbids them crossing a worker channel."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a1: a routing main thread plus worker threads by class of work. The main thread owns the Unix socket, framing and the attached-client registry, and does no handler work. Each request is classified (admin, session or indexing) and forwarded over a thread channel to its target: the admin worker, the code-indexing worker, or the session's pooled worker (session id = the request's client label and process id). Workers each load the handler runtime and open their own store handles under a verified per-store threading policy: direct use where a store is proven safe, a shared semaphore with guaranteed release where it is not. MCP step state (the four step state stores) moves into a store shared by all threads, so it outlives any worker; a detached workflow run stays owned by the worker that started it, which is not released while the run is active, and the run's record is published where every thread can read it. A request that carries no valid client identity is served on one shared unattributed worker, as today's daemon serves it, kept apart from every session. A shared status board lets every thread publish what it is doing, which the admin worker reads for daemon status and liveness.",
+      "ownedContracts": [
+        {
+          "id": "sc6",
+          "name": "Session pool",
+          "purpose": "Maps each session id to its worker, creating one on first need, queuing a session's requests to it in arrival order, running a request's nested calls inline, and releasing a worker after its idle timeout unless it owns an active detached run.",
+          "interfaceSketch": "interface SessionPoolOptions {\n  /** Release a session's worker after this long with no request. */\n  readonly idleTimeoutMs: number;\n}\ninterface SessionWorkerInfo {\n  readonly session: SessionId;\n  readonly threadId: number;\n  readonly createdAt: number;\n  readonly lastRequestAt: number;\n  readonly queued: number;\n  /** Detached workflow runs this worker owns; a worker with any is never idle-released. */\n  readonly activeRuns: number;\n}\ninterface SessionPool {\n  readonly workerFor: (session: SessionId) => Promise<SessionWorkerInfo>;\n  readonly sessions: () => readonly SessionWorkerInfo[];\n  readonly options: SessionPoolOptions;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Store guard and per-store threading policy",
+          "purpose": "Lets any thread use a store safely: records, per store, whether it is used directly or through a semaphore, and gives one helper that acquires and always releases the store's semaphore. Waiting for a lock is always asynchronous, so a waiting thread keeps serving its other work.",
+          "interfaceSketch": "type StoreId = 'graph' | 'lance' | 'duckdb';\ninterface StoreThreadingPolicy {\n  readonly store: StoreId;\n  readonly mode: 'direct' | 'guarded';\n  /** Counting-semaphore size for a guarded store (duckdb: 1); absent for a direct store. */\n  readonly permits?: number | undefined;\n  /** Why: the verification evidence (test or library contract) behind the mode. */\n  readonly basis: string;\n}\ninterface StoreQuiescence {\n  readonly store: StoreId;\n  /** How long reclaim waits for a dead worker's native calls before marking the store unhealthy. */\n  readonly limitMs: number;\n}\ninterface StoreGuardOptions {\n  /** Fail with StoreLockTimeoutError instead of waiting past this limit. */\n  readonly acquireTimeoutMs: number;\n  readonly signal?: AbortSignal | undefined;\n}\ninterface StoreLockHolder {\n  readonly store: StoreId;\n  readonly threadId: number;\n  readonly acquiredAt: number;\n}\ntype WithStore = <T>(store: StoreId, op: () => Promise<T>, opts: StoreGuardOptions) => Promise<T>;\ninterface StoreGuard {\n  readonly withStore: WithStore;\n  readonly policy: (store: StoreId) => StoreThreadingPolicy;\n  readonly holders: () => readonly StoreLockHolder[];\n  /** Router only: release every lock a dead worker held. */\n  /** Waits for quiescence per store; a store that does not quiesce in time is reported unhealthy. */\n  readonly reclaim: (threadId: number) => Promise<{ readonly released: readonly StoreId[]; readonly unhealthy: readonly StoreId[] }>;\n  readonly quiescence: (store: StoreId) => StoreQuiescence;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Shared step-state store",
+          "purpose": "Keeps MCP step tokens where every thread can read them, so a session served by a new worker after an idle release, or after its worker failed, resumes its step exactly as today. Each of the four step kinds keeps its own lifecycle through an adapter: a 100-entry least-recently-used cap, a read that refreshes the token's expiry, a 1-hour idle TTL, analyze and workflow updates that mint a new token and release the old one, review updates that keep the same token, and code-review transitions that consume the current token and mint a new one at each stage (wait → judgement, fallback), so a superseded token fails exactly as today.",
+          "interfaceSketch": "type StepKind = 'analyze' | 'workflow' | 'review' | 'code-review';\ninterface StepStateEntry<P> {\n  readonly token: string;\n  readonly kind: StepKind;\n  readonly payload: P;\n  readonly touchedAt: number;\n}\ninterface StepLifecycle {\n  /** analyze and workflow rotate; review keeps its token; code-review consumes and mints per stage. */\n  readonly update: 'rotate-token' | 'stable-token' | 'consume-per-stage';\n  readonly maxEntries: number;\n  readonly ttlMs: number;\n  /** A read refreshes touchedAt, as today. */\n  readonly readRefreshes: true;\n}\ninterface SharedStepStateStore {\n  readonly lifecycle: (kind: StepKind) => StepLifecycle;\n  readonly mint: <P>(kind: StepKind, payload: P) => Promise<string>;\n  readonly read: <P>(kind: StepKind, token: string) => Promise<StepStateEntry<P> | undefined>;\n  /** Returns the token to use next: the same one for stable-token kinds (whose token must exist), a new one otherwise (the old one, if given, is released and then fails); an undefined token on a rotating kind behaves as mint. */\n  readonly update: <P>(kind: StepKind, token: string | undefined, payload: P) => Promise<string>;\n  readonly release: (kind: StepKind, token: string) => Promise<void>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Thread channel and target registry",
+          "purpose": "The one message contract between the router and every worker: request, reply, stream frame, cancel and error envelopes, plus the registry where a worker registers as the target for a class of work. A session-class request with no valid session id resolves to the unattributed target.",
+          "interfaceSketch": "type MethodClass = 'admin' | 'session' | 'indexing';\ninterface SessionId { readonly label: string; readonly pid: number; }\ninterface RequestEnvelope {\n  readonly kind: 'request';\n  readonly requestId: string;\n  readonly method: string;\n  readonly params: unknown;\n  readonly stream: boolean;\n  readonly session?: SessionId | undefined;\n}\ninterface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }\ninterface FrameEnvelope { readonly kind: 'frame'; readonly requestId: string; readonly frame: unknown; }\ninterface CancelEnvelope { readonly kind: 'cancel'; readonly requestId: string; }\ntype ChannelEnvelope = RequestEnvelope | ReplyEnvelope | FrameEnvelope | CancelEnvelope;\ninterface ThreadTarget {\n  readonly threadId: number;\n  readonly cls: MethodClass;\n  readonly session?: SessionId | undefined;\n  /** The one shared worker for session-class requests that carry no valid identity. */\n  readonly unattributed?: true | undefined;\n}\ninterface TargetRegistry {\n  readonly register: (target: ThreadTarget) => void;\n  readonly unregister: (threadId: number) => void;\n  readonly targetFor: (cls: MethodClass, session?: SessionId) => ThreadTarget | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Thread status board",
+          "purpose": "Shared record each thread updates as it starts and finishes work: the router publishes its attached-client snapshot, the indexing workers publish lane state, summary-sweep progress, each repository's completeness and the unattributed-entity count, and detached workflow runs publish their full poll state, so the admin thread can answer status, debug-status, liveness and run polls without calling into a busy thread or touching a store.",
+          "interfaceSketch": "interface ThreadStatus {\n  readonly threadId: number;\n  readonly cls: MethodClass | 'router';\n  readonly session?: SessionId | undefined;\n  readonly busy: boolean;\n  readonly method?: string | undefined;\n  readonly since?: number | undefined;\n  readonly queued: number;\n}\ninterface LaneStatus {\n  readonly depth: number;\n  readonly processing: boolean;\n}\ninterface SummarySweepProgress {\n  readonly repoPath: string;\n  readonly done: number;\n  readonly total: number;\n}\ninterface IndexingStatus {\n  readonly index: LaneStatus;\n  readonly summary: LaneStatus;\n  readonly sweep?: SummarySweepProgress | undefined;\n  readonly idle: boolean;\n}\n/** The existing AttachedClient shape from the server, lastMethod included. */\ninterface AttachedClientSnapshot {\n  readonly id: number;\n  readonly label: string;\n  readonly connectedAt: number;\n  readonly pid?: number | undefined;\n  readonly lastMethod?: string | undefined;\n}\n/** Today's shapes from src/shared/types.ts, published unchanged. */\ntype RepoStatusSnapshot = RegisteredRepo & { readonly completeness?: RepoCompleteness | undefined };  // optional as today's withCompleteness leaves it out on a failed read (amendment, delivered by s2)\ninterface StoreStatusSnapshot {\n  /** undefined until first published; responses then mark the value unavailable. */\n  readonly repos?: readonly RepoStatusSnapshot[] | undefined;\n  readonly unattributedUnwritable?: UnattributedUnwritableCount | undefined;\n  readonly publishedAt: number;\n}\ninterface RunRecord {\n  readonly runId: string;\n  readonly status: 'running' | 'done' | 'error' | 'aborted';\n  readonly ownerThreadId: number;\n  readonly startedAt: number;\n  readonly model: string;\n  /** The append-only progress sequence a poll slices from its cursor. */\n  readonly frames: readonly unknown[];\n  readonly result?: unknown;\n  readonly error?: string | undefined;\n}\ninterface StatusSnapshot {\n  readonly threads: readonly ThreadStatus[];\n  readonly indexing: IndexingStatus;\n  readonly clients: readonly AttachedClientSnapshot[];\n  readonly runs: readonly RunRecord[];\n  readonly store: StoreStatusSnapshot;\n}\ninterface StatusBoard {\n  readonly publish: (status: ThreadStatus) => void;\n  readonly publishIndexing: (status: IndexingStatus) => void;\n  /** Amendment (additive, delivered by s2): one indexing worker publishes only its own lane; the board keeps both and derives IndexingStatus.idle as both lanes empty and not processing. */\n  readonly publishLane: (lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress) => void;\n  readonly publishClients: (clients: readonly AttachedClientSnapshot[]) => void;\n  readonly publishRun: (run: RunRecord) => void;\n  /** Amendment (additive, delivered by s3 with the detached-run move): removes a run the owner's retention evicted; a later poll for it answers 'unknown', as today. */\n  readonly forgetRun: (runId: string) => void;\n  readonly publishStore: (store: StoreStatusSnapshot) => void;\n  readonly snapshot: () => StatusSnapshot;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Method-class registry",
+          "purpose": "Declares the class of every RPC and stream method the daemon serves, so the router sends each request to the right kind of thread and no method is left unclassified.",
+          "interfaceSketch": "interface MethodClassEntry {\n  readonly method: string;\n  readonly cls: MethodClass;\n  readonly stream: boolean;\n}\ninterface MethodClassRegistry {\n  readonly classOf: (method: string) => MethodClass | undefined;\n  readonly entries: () => readonly MethodClassEntry[];\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc6"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The session pool, moving every session-class method off the main thread: session-id mapping, per-session FIFO, worker creation and idle release, containment of a failing worker (its in-flight requests fail with an error, the next request gets a new worker), routing each step handler's state through the shared step-state store, the unattributed worker, inline nested calls, and ownership of detached workflow runs (records on the status board, abort routed to the owner, failure on owner exit, never idle-released while a run is active). Validation: ac1 — session B is answered while session A's worker spins; ac2 — A's second request starts only after its first completes; ac3 — requests from one client process over separate connections run on one worker, released after the idle timeout; ac4 — a worker failure fails only its session's requests; ac5 — provider calls stay serial (no Promise.all reaching a provider); ac6 — a step token minted before an idle release resumes on the new worker; ac7 — the liveness check (daemon.status) answer within 100 ms while a session worker spins the CPU for minutes. Also: unattributed requests are served apart from sessions; a nested in-daemon call completes without deadlock; a detached run survives idle time, accepts an abort from another thread, and is marked failed when its owner exits; a poll from another thread, and after the owner has gone, returns the same frames-since-cursor, model, result and error as today. The board's forgetRun operation (an additive sc4 method) is added with the detached-run move, called by the run owner's retention. Session workers take the maintenance lock shared per request like every other request, and are registered with watchWorker when started."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "Verifying each store from several threads of one process (the LMDB graph environment, every Lance table, the in-memory DuckDB pool), including that a worker opening and later releasing its handles does not close a descriptor the process's locks depend on; the semaphore implementation over process-wide shared memory and its holder record; moving the four in-memory step state stores onto the shared step-state store with today's TTL; the status board's attached-client, sweep-progress and run-record slots; the thread channel's serialisation and the target registry's bookkeeping; the status board's hub-served layout on the main thread. As the root Story it owns every cross-cutting contract the other Stories consume. Validation: ac1 — one thread writes a repo's entities while another reads the same graph, the reader sees only whole transactions, and an entity's vectors are written only after its graph commit; ac2 — two threads write different artifacts or config entries and a third thread reads both back; ac3 — no code path outside the daemon opens a store; ac4 — a throwing LMDB transaction on one thread leaves nothing visible to another. Also: a worker opening and releasing its handles keeps the process's LMDB locks; the guard releases on success, throw, cancel and worker kill; an acquisition past its limit fails; nested acquisition is refused. Step-state compatibility: for each of the four kinds, token rotation (analyze, workflow), stable-token update (review) or consume-and-mint per stage (code-review, where a superseded token fails), read refresh of expiry, the 100-entry eviction and a missing-token error behave as today. LMDB's native environment is opened by the main thread at start and closed by it at shutdown; a worker may open and close its own handle on it (s1 verified this keeps the process's locks); lock reclaim waits for a dead worker's in-flight native calls. Per store, a quiescence observation with a time limit and an unhealthy-store outcome when it is exceeded; a guard wait never blocks its thread."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The main-thread router (connection handling, classification through the method-class registry, envelope forwarding to registered targets, writing replies and frames back, observing worker exits and reclaiming a dead worker's store locks), the admin worker, and indexing on two workers: the code-indexing worker hosting the whole index queue (both lanes, unchanged) and the file-watcher feed and serving every indexing-class method, and the document-summary worker running the summary jobs the summary lane hands it, so a summary starts only while code indexing is idle, as today. Both indexing workers publish lane state, idleness, summary-sweep progress, the full registered-repository records with each repository's completeness, and the unattributed-entity count with its reasons on the status board after every change. Session-class methods keep running on the main thread exactly as today until s3 moves them; there is no fallback worker. Shutdown and the locks-lost path keep today's behaviour with the workers included (each stops its work, the queue drains, the main thread closes the stores after the workers exit). Validation: ac1 — daemon.status and the TUI's admin reads answer within 100 ms while an indexing pass runs and another worker keeps an LMDB write transaction open; ac2 — each admin method's response matches today's recorded response; ac3 — a test enumerates every served RPC and stream method and fails on any without a class, and dispatch tests assert admin methods ran on the admin thread and indexing methods on the code-indexing thread; ac4/ac5 — a session request is answered during an indexing pass, and a file change is indexed while a session request runs; ac6 — summaries start only while code indexing is idle, and lane order and indexed results equal the single-thread baseline; ac7 — queue status and idle waiting read from another thread reflect the indexing workers' real state. Also: debug-status keeps every field including lastMethod; daemon.status and repo.list read only the status board and keep today's full response shapes. Also maintenance compaction: idle detection (30 min, configurable), the reclaimable-space threshold (25% and 256 MB), the daemon maintenance lock from the lock framework (afcfa027): every request but daemon.status takes it shared with no wait and is refused with the maintenance activity and reason while maintenance holds it exclusively; workers close and reopen their graph handles around the main thread's compaction; every started worker is registered with watchWorker, and the manual daemon.compact keeping today's responses. s2 adds the additive sc4 method publishLane and its hub binding. s2 supervises the workers it introduces (admin, code-indexing, document-summary): exit handling, lock reclaim, replacement and restart limits. ac8 — with the maintenance lock held exclusively, a request other than daemon.status and daemon.compact is refused at once with the activity and reason; daemon.status answers and reports the maintenance; a request already running finishes before compaction starts; an exclusive request that times out leaves the store open and untouched; every row written before compaction is present after it; daemon.compact returns today's CompactResult when idle and today's 'indexer is busy' refusal while the queue has work."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The main thread becomes the controller: it loads no handler runtime and runs no request handler, only the socket, classification, forwarding, worker supervision extended to every class and unified (s2 already supervises admin and both indexing workers; s4 adds the session pool's workers and the unattributed worker: in-flight requests failed, store locks reclaimed, the worker replaced) and shutdown coordination, including the locks-lost path. It also adds a `threads` section to daemon.status and daemon.debug-status from the status board and session pool (additive fields only) and makes the liveness answer report a busy session as busy rather than as a failure. Validation: ac1 — no request handler runs on the main thread; ac2 — a failing worker of any class fails only its own in-flight requests and is replaced; ac3 — shutdown and the locks-lost path behave as today; ac4 — daemon.status lists each thread with class, session, busy state, method and elapsed time; ac5 — with a session worker busy for minutes the liveness answer reports the daemon alive and the session busy; ac6 — every field of today's daemon.status and daemon.debug-status, including clients and sweep progress, is present with the same meaning."
+        }
+      ],
+      "rolloutPhase": "Phase C — session pool",
+      "nonFunctional": {
+        "performance": "The liveness check (daemon.status) answer within 100 ms at the 99th percentile while a session worker is CPU-bound and while an indexing pass runs; routing adds no more than 5 ms per request and per stream frame. A session worker's idle timeout defaults to 15 minutes and is configurable; step state keeps its own 1-hour TTL independent of worker release.",
+        "security": "No new listener or socket: the main thread keeps the existing Unix socket and its permissions; shared memory and thread channels are internal to the daemon process; clients still reach the stores only through IPC.",
+        "observability": "Every log line carries its thread id and class, and the session id for session work; daemon.status lists every thread with class, session, busy state, current method and elapsed time; a store-lock wait beyond its acquisition limit and a reclaimed lock after a worker exit are logged as warnings.",
+        "durability": "Step state survives a worker's release or failure because it lives in the shared step-state store; a detached workflow run lives in its owning worker, which is not released while the run is active, and is marked failed if that worker exits; its poll state lives in shared run storage, so polls still answer after the owner has gone. A worker that exits while holding a store lock has the lock reclaimed by the router. Atomicity is unchanged from today: each LMDB write transaction commits all or nothing, and an operation that writes LMDB then Lance keeps today's order and re-embed recovery. The process's one native LMDB environment is opened by the main thread at start and closed by it at shutdown; each worker opens and may close its own handle on it, which s1 verified keeps the process's locks; a lock held by a dead worker is reclaimed only after its in-flight native calls have finished."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "SessionPool.workerFor",
+          "signature": "(session: SessionId) => Promise<SessionWorkerInfo>",
+          "parameters": [
+            {
+              "name": "session",
+              "type": "SessionId",
+              "purpose": "The validated client identity {label, pid} the request carries (src/daemon/server.ts:32-38).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<SessionWorkerInfo>",
+            "meaning": "The session's live worker, started (and registered in the target registry under the session's slot, attached to the router, registered with watchWorker) if it had none."
+          },
+          "errors": [
+            {
+              "type": "SessionWorkerStartError",
+              "condition": "The worker could not be started or did not report ready within the start limit; the waiting requests of that session are answered with this error and the next request tries again."
+            }
+          ],
+          "preconditions": [
+            "session.label is non-empty and session.pid is a positive integer (validClient)."
+          ],
+          "postconditions": [
+            "At most one live worker per session id: concurrent calls for the same session resolve to the same worker.",
+            "The worker's ThreadTarget is registered as {cls:'session', session} before the promise resolves."
+          ]
+        },
+        {
+          "name": "SessionPool.sessions",
+          "signature": "() => readonly SessionWorkerInfo[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly SessionWorkerInfo[]",
+            "meaning": "One entry per live session worker (and the unattributed and shared-state workers, identified by their slot), for s4's status and the idle sweep."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "queued counts requests waiting in the session's FIFO, not the one running."
+          ]
+        },
+        {
+          "name": "SessionPool.options",
+          "signature": "SessionPoolOptions",
+          "parameters": [],
+          "returns": {
+            "type": "SessionPoolOptions",
+            "meaning": "idleTimeoutMs: release a session's worker after this long with nothing running or queued and no active detached run; default 15 minutes, read from config at start."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "Router.dispatch",
+          "signature": "(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped?: () => void) => () => void",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "MethodClass | undefined",
+              "purpose": "The method's class from the method-class registry.",
+              "optional": false
+            },
+            {
+              "name": "request",
+              "type": "LocalRequestEnvelope",
+              "purpose": "The request with its session identity and trusted context.",
+              "optional": false
+            },
+            {
+              "name": "deliver",
+              "type": "DeliverEnvelope",
+              "purpose": "Where replies and frames go.",
+              "optional": false
+            },
+            {
+              "name": "dropped",
+              "type": "() => void",
+              "purpose": "Called when a request held for a worker is cancelled before it is sent.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "() => void",
+            "meaning": "Cancel for the request (dequeues it if still queued in its session's FIFO)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A request with a connectionSession or session-memory execution, or a MAIN_DAEMON_CONNECTION_METHODS method, still runs on the main thread (it cannot cross a channel).",
+            "A session-class method in the shared-state set goes to the shared-state worker; any other session-class method goes to the session's worker, or to the unattributed worker when the request has no valid identity.",
+            "A session-class request (other than a FIFO-exempt method) is sent only after the session's previous non-exempt request has ended (its reply, its stream's done or error frame, or its cancel).",
+            "workflow.run.abort for a run on the board is sent to the run's owner thread."
+          ]
+        },
+        {
+          "name": "Router.request",
+          "signature": "(cls: MethodClass, method: string, params: unknown, opts?: { readonly underHold?: boolean | undefined; readonly shared?: true | undefined }) => Promise<unknown>",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "MethodClass",
+              "purpose": "The target class.",
+              "optional": false
+            },
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "The method to call.",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Its params, as the method's handler takes them.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ underHold?: boolean; shared?: true }",
+              "purpose": "underHold as today (src/daemon/threads/router.ts:133-152); shared: true sends a session-class call to the shared-state worker instead of a class target.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<unknown>",
+            "meaning": "The reply's result; rejects with its error, as today."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "The target's reply carries an error (the message is carried unchanged), as today."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "A shared call is held, like any routed request, while the shared-state worker is unavailable, and never enters a session FIFO."
+          ]
+        },
+        {
+          "name": "TargetRegistry.targetFor",
+          "signature": "(cls: MethodClass, session?: SessionId, opts?: { readonly shared?: true | undefined }) => ThreadTarget | undefined",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "MethodClass",
+              "purpose": "The request's class.",
+              "optional": false
+            },
+            {
+              "name": "session",
+              "type": "SessionId",
+              "purpose": "The session identity; absent resolves to the unattributed target.",
+              "optional": true
+            },
+            {
+              "name": "opts",
+              "type": "{ readonly shared?: true | undefined }",
+              "purpose": "shared: true looks up the one shared-state worker's slot ('session:shared'); without it a session-class lookup with no session still resolves to the unattributed slot.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ThreadTarget | undefined",
+            "meaning": "The registered target for the slot. s3 adds the shared-state slot: the registry's slot function maps a target with shared: true to 'session:shared' before its unattributed and per-session cases, and the same mapping is used by register, unregister and targetFor."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The registry's slot function reads ThreadTarget.shared first: a target with shared: true is keyed 'session:shared', so registering the shared-state worker never collides with the unattributed worker ('session:unattributed') and an unattributed request never resolves to the shared-state worker.",
+            "targetFor('session', undefined) still resolves to the unattributed target; only targetFor('session', undefined, { shared: true }) resolves to the shared-state target."
+          ]
+        },
+        {
+          "name": "StatusBoard.publishRun",
+          "signature": "(run: RunRecord) => void",
+          "parameters": [
+            {
+              "name": "run",
+              "type": "RunRecord",
+              "purpose": "The detached run's full poll state (status, model, frames, result, error, ownerThreadId, startedAt).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Replaces the run's record on the main-thread board (s1's rule: a record whose frames would shrink is refused)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called by the run's owner worker after each progress frame and at its end."
+          ],
+          "postconditions": [
+            "workflow.run.poll on any thread returns the frames since the cursor, the model, the result and the error from this record, as today."
+          ]
+        },
+        {
+          "name": "StatusBoard.forgetRun",
+          "signature": "(runId: string) => void",
+          "parameters": [
+            {
+              "name": "runId",
+              "type": "string",
+              "purpose": "A run the owner's retention evicted.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Removes the run's record; a later poll answers status 'unknown', as today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Additive sc4 method with a hub binding, delivered with the detached-run move."
+          ]
+        },
+        {
+          "name": "InDaemonRoute.targetOf",
+          "signature": "(method: string) => { readonly cls: MethodClass; readonly shared?: true | undefined } | undefined",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "The nested call's method.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ cls: MethodClass; shared?: true } | undefined",
+            "meaning": "Where the nested call runs: undefined inline, otherwise the target to send it to. Replaces the class-granular pair classOf + routed (src/daemon/steps/daemon-client.ts:79-83, 103-112), which cannot tell shared-state methods from other session-class methods because both classify as 'session'."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "s2's admin and indexing routing is unchanged: targetOf returns { cls } for those classes whenever the old routed set held them.",
+            "On every thread but the shared-state worker, targetOf returns { cls: 'session', shared: true } for each method in the shared-state set."
+          ]
+        },
+        {
+          "name": "createInDaemonClient",
+          "signature": "(unary: RpcHandlers, stream: StreamHandlers, deps?: InDaemonClientDeps) => InDaemonClient",
+          "parameters": [
+            {
+              "name": "unary",
+              "type": "RpcHandlers",
+              "purpose": "The worker's own handler table.",
+              "optional": false
+            },
+            {
+              "name": "stream",
+              "type": "StreamHandlers",
+              "purpose": "The worker's own stream table.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "InDaemonClientDeps",
+              "purpose": "The route to other threads. s3 changes its decision from class-granular to per method (InDaemonRoute.targetOf): on a session or unattributed worker an admin or indexing method goes to its class's worker, a shared-state method goes to the shared-state worker, and every other session-class method runs inline; on the shared-state worker its own families run inline.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "InDaemonClient",
+            "meaning": "The nested-call client a step handler uses."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A nested call is routed by InDaemonRoute.targetOf(method): undefined means inline on the calling worker's own table; { cls } means that class's worker; { cls: 'session', shared: true } means the shared-state worker.",
+            "A nested session-class call that is not shared-state runs inline on the calling worker, outside the session FIFO, so it cannot deadlock on the request that made it; a nested shared-state call is sent to the shared-state worker, also outside any FIFO."
+          ]
+        },
+        {
+          "name": "buildHandlerRuntime",
+          "signature": "(deps: HandlerRuntimeDeps) => HandlerRuntime",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "HandlerRuntimeDeps",
+              "purpose": "On a session or shared-state worker: its own db/config handles, the indexing port for queue and indexer, shutdown and attachedClients through the hub, and the understanding service only on the shared-state worker.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HandlerRuntime",
+            "meaning": "The same handler tables the main thread builds today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Handler bodies are unchanged; only their dependencies are supplied differently per thread."
+          ]
+        },
+        {
+          "name": "purgeSession",
+          "signature": "(sessionId: string, opts: { compact: boolean }) => Promise<PurgeCounts>",
+          "parameters": [
+            {
+              "name": "sessionId",
+              "type": "string",
+              "purpose": "The session whose data is purged (session.delete, session.deleteBulk, agent.discard, and the expiry loop).",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ compact: boolean }",
+              "purpose": "Whether to compact Lance afterwards, as today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<PurgeCounts>",
+            "meaning": "Today's counts."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Its chat-pool drop (src/daemon/handler-runtime.ts:174-181, today dropSessionFromPool called in-process) is made as a nested in-daemon call to an in-daemon-only method chat.dropSession on the shared-state worker, which calls dropSessionFromPool there; the socket does not serve chat.dropSession (it answers 'unknown method').",
+            "Its todos cleanup (src/daemon/handler-runtime.ts:207, today todosRpc.cleanup in-process) is made as a nested call to todos.cleanup, which the route sends to the shared-state worker, so its todos events reach that worker's bus and its todos.subscribe streams.",
+            "With daemon threads disabled both calls run in-process as today.",
+            "These two calls are the only change to a handler body in s3; every other handler body is unchanged."
+          ]
+        }
+      ],
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.fieldAdd",
+            "contractId": "sc3",
+            "field": {
+              "name": "shared",
+              "type": "true | undefined",
+              "optional": true,
+              "purpose": "Marks the one shared-state session worker, which serves the session-class families whose state is one process-wide copy (chat, todos, understanding); the registry keys it 'session:shared', checked before the unattributed case."
+            },
+            "breaking": false
+          },
+          "rationale": "The HLD keeps every session-class method on a per-session or unattributed worker, but the chat session pool, the todos event bus and the understanding service are single process-wide copies (src/daemon/chat-handler.ts:39-67, src/daemon/todos-rpc.ts:122-138); splitting them per session would break cross-session reads such as chat.list. One shared-state target keeps each whole while moving them off the main thread.",
+          "citations": [
+            {
+              "id": "c1",
+              "kind": "code",
+              "ref": "src/daemon/chat-handler.ts:39"
+            },
+            {
+              "id": "c2",
+              "kind": "code",
+              "ref": "src/daemon/todos-rpc.ts:122"
+            },
+            {
+              "id": "c3",
+              "kind": "code",
+              "ref": "src/daemon/threads/registry.ts:32"
+            }
+          ]
+        }
+      }
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SessionWorkerInfo",
+        "change": "new",
+        "details": "sc6's per-worker record: session (SessionId), threadId, createdAt, lastRequestAt, queued (requests waiting in the session's FIFO), activeRuns (detached runs the worker owns; a worker with any is never idle-released). Held by the pool on the main thread.",
+        "callSites": [
+          "src/daemon/threads/registry.ts:11-55",
+          "src/daemon/threads/workers.ts:59-70"
+        ]
+      },
+      {
+        "entity": "Session FIFO",
+        "change": "new",
+        "details": "Per session id, on the main thread: the request in flight and the queue of later non-exempt requests in arrival order. A request leaves it on its reply, its stream's done/error frame, or its cancel. FIFO-exempt (forwarded at once): subscription streams (understanding.watch, todos.subscribe), and methods that observe or control an in-flight request of the same session (chat.cancel, chat.inject, chat.redirect, chat.status, workflow.run.poll, workflow.run.abort). Nested in-daemon calls never enter it.",
+        "callSites": [
+          "src/daemon/threads/router.ts:120-152"
+        ]
+      },
+      {
+        "entity": "ThreadTarget",
+        "change": "field-add",
+        "details": "Additive optional field shared?: true marking the one shared-state session worker. The registry's slot function (slotOf, src/daemon/threads/registry.ts:32-35), which today keys a session-class target with no session as 'session:unattributed', is extended to check shared first and key such a target 'session:shared'; register, unregister and targetFor use that slot function, and targetFor gains the opts.shared lookup. Without the slotOf change the shared-state target would take the unattributed slot (a TargetConflictError at registration, or unattributed requests reaching the shared-state worker).",
+        "schemaDiff": "+ readonly shared?: true | undefined;   // ThreadTarget\n  slotOf: cls !== 'session' -> cls; shared === true -> 'session:shared' (new, checked first); unattributed or no session -> 'session:unattributed'; else 'session:<label>:<pid>'\n+ targetFor(cls, session?, opts?: { shared?: true })",
+        "callSites": [
+          "src/daemon/threads/registry.ts:11-55"
+        ]
+      },
+      {
+        "entity": "Shared-state method set",
+        "change": "new",
+        "details": "The session-class methods whose state is one process-wide copy and that run on the shared-state worker: chat.* (chat session pool), todos.* including todos.subscribe (todos event bus and retention timer), understanding.* including understanding.watch (understanding service). A test fails if a handler in these families is reachable from another worker's dispatch.",
+        "callSites": [
+          "src/daemon/chat-handler.ts:39-67",
+          "src/daemon/todos-rpc.ts:122-138",
+          "src/daemon/handler-runtime.ts:1444-1453"
+        ]
+      },
+      {
+        "entity": "RunRecord publication",
+        "change": "invariant-change",
+        "details": "Detached runs keep their RunState in the owner worker's registry (src/daemon/workflow-run-registry.ts:72) and now mirror it to the board after every frame and at the end; poll reads the board, abort is routed to the owner, and an owner's exit marks a running run 'error' with a named reason.",
+        "callSites": [
+          "src/daemon/workflow-run-registry.ts:30-72",
+          "src/daemon/handler-runtime.ts:1579-1598",
+          "src/daemon/threads/status-board.ts:114-170"
+        ]
+      },
+      {
+        "entity": "In-daemon route decision",
+        "change": "field-modify",
+        "details": "InDaemonRoute's class-granular classOf + routed pair (src/daemon/steps/daemon-client.ts:79-83) is replaced by a per-method targetOf. It keeps s2's invariant that admin and indexing nested calls go to their class's worker (bundle c7), and adds the shared-state target; any other session-class nested call still runs inline.",
+        "callSites": [
+          "src/daemon/steps/daemon-client.ts:98-121"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc6",
+        "role": "implements",
+        "howDetails": "The pool maps session ids to workers, creates one on first need, holds each session's FIFO at the router, runs nested calls inline (in-daemon client), and releases a worker after idleTimeoutMs idle or when its client pid is gone, never while it owns an active detached run."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Session workers register under 'session:<label>:<pid>', the unattributed worker under 'session:unattributed', and the shared-state worker under a new 'session:shared' slot: the additive ThreadTarget field 'shared', read first by the registry's slot function, and the matching targetFor lookup. wireRequest is unchanged: a request with connection-session context is never sent to a worker."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Owner workers publish RunRecords with publishRun and remove evicted ones with the additive forgetRun; poll answers from the board snapshot."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Step handlers keep using getStepStateStore(); on a worker it is the hub store, so a token minted before an idle release resumes on the next worker."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Session workers open their own store handles under the per-store policy; a dead worker's locks are reclaimed by the router's existing exit handling."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "classOf decides session class; the shared-state set and the FIFO-exempt set are declared beside the method-class table, and a test checks each member is a session-class method."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A session worker exits (crash, uncaught error, process.exit) while it runs one of its session's requests and others wait in the session's FIFO.",
+          "detection": "The router's existing worker-exit observation (s2) reports the threadId; the pool maps it to its session.",
+          "response": "The running request is answered with 'session worker failed: <exit reason>' (an error frame for a stream), every queued request of that session with the same error, the session's slot is unregistered and the dead worker's store locks are reclaimed by the existing path; the session's next request starts a new worker.",
+          "userImpact": "Only that session's in-flight and queued requests fail; other sessions, the admin worker and indexing keep working.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A session request's handler throws.",
+          "detection": "directDispatch on the worker catches the rejection, as today.",
+          "response": "The request is answered with today's error text; the worker stays alive and the session's next queued request is sent.",
+          "userImpact": "The session sees the same error it sees today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A session worker cannot be started (worker script fails to load, or does not report ready within the start limit).",
+          "detection": "SessionPool.workerFor rejects (worker 'error'/'exit' before ready, or the start deadline passes).",
+          "response": "Every request waiting for that session is answered 'session worker could not start: <reason>' (SessionWorkerStartError); nothing is retried automatically; the next request tries once more.",
+          "userImpact": "The session gets an error instead of hanging; other sessions are unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A detached workflow run's owner worker exits while the run is running.",
+          "detection": "Worker-exit observation finds RunRecords on the board with ownerThreadId equal to the dead thread and status 'running'.",
+          "response": "Each such record is republished with status 'error' and error 'the session worker running this workflow exited', keeping its frames; later polls return that terminal state.",
+          "userImpact": "A controller polling the run sees it end with a named error instead of polling forever.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The shared-state worker (chat, todos, understanding) exits.",
+          "detection": "Worker-exit observation for the 'session:shared' slot.",
+          "response": "Its in-flight requests and open subscription streams are answered with an error frame; the worker is started again on the next request to its families (its state, like today's after a restart, is rebuilt from the stores; chat processes it owned are gone).",
+          "userImpact": "Open chats and todo/understanding subscriptions end with an error and must be reopened; sessions' other work continues.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A request for a session-class method arrives with a connection session or session-memory execution.",
+          "detection": "Router.dispatch checks trustedContext as today (src/daemon/threads/router.ts:120-125).",
+          "response": "It runs on the main thread exactly as today; it is not queued in the session's FIFO (its lifetime is owned by the connection session).",
+          "userImpact": "None versus today.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two connections from the same client process ({label, pid}) send requests at the same time.",
+          "expected": "Both go to the one worker for that session and run in arrival order at the router."
+        },
+        {
+          "input": "A client reuses a label but runs as a new process (new pid) after the old one exited.",
+          "expected": "A new session and worker; the old session's worker is released at the next idle sweep because its pid is gone, or at its idle timeout."
+        },
+        {
+          "input": "A request with no client identity (or an invalid label/pid).",
+          "expected": "Served by the one unattributed worker, apart from every session, in arrival order across unattributed requests."
+        },
+        {
+          "input": "A session sends chat.cancel or workflow.run.abort while its own long request is running.",
+          "expected": "Forwarded at once (FIFO-exempt), so the cancel reaches the running work instead of waiting behind it."
+        },
+        {
+          "input": "A session opens understanding.watch or todos.subscribe and keeps it open for hours.",
+          "expected": "The subscription is FIFO-exempt and runs on the shared-state worker; the session's later requests are not blocked by it."
+        },
+        {
+          "input": "A session's worker is idle for the idle timeout while it owns a running detached workflow run.",
+          "expected": "Not released; it is released only after the run ends and the idle timeout passes again."
+        },
+        {
+          "input": "A step token minted on a worker that was later released is presented by the same session.",
+          "expected": "The new worker reads it from the shared step-state store and the step resumes as today."
+        },
+        {
+          "input": "A step handler makes a nested in-daemon call to another session-class method.",
+          "expected": "Runs inline on the same worker, outside the FIFO, so it completes without waiting for the request that made it."
+        },
+        {
+          "input": "workflow.run.poll from a different client process than the one that started the run.",
+          "expected": "Answered from the board with the same frames-since-cursor, model, result and error as today."
+        },
+        {
+          "input": "session.delete on a session worker for a session that has an open chat and todo lists, while a client has todos.subscribe open.",
+          "expected": "The chat is dropped from the shared-state worker's pool and the cleanup's todos events reach the open subscription, as on today's single thread."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A request carrying a connection session or session-memory execution, or a MAIN_DAEMON_CONNECTION_METHODS method, never crosses a worker channel (wireRequest throws for it).",
+          "source": "c2"
+        },
+        {
+          "text": "Step tokens of the four kinds keep today's lifecycle (rotation, stable token, consume-per-stage, 100-entry LRU, 1-hour TTL) because every step store goes through getStepStateStore().",
+          "source": "c3"
+        },
+        {
+          "text": "workflow.run.poll keeps today's PollResult: frames since the cursor, model, result, error, and 'unknown' for an unregistered or evicted run.",
+          "source": "c4"
+        },
+        {
+          "text": "The chat session pool, the todos event bus and the understanding service each have exactly one process-wide copy.",
+          "source": "c5"
+        },
+        {
+          "text": "Each request on a worker is served under the maintenance lock's request hold (serveRequests), and a worker's store locks are reclaimed when it exits.",
+          "source": "c6"
+        },
+        {
+          "text": "A nested in-daemon call to a method whose class the worker does not route runs inline on that worker.",
+          "source": "c7"
+        },
+        {
+          "text": "Request handler bodies are unchanged except purgeSession's chat-pool drop and todos cleanup, which become nested calls to the shared-state worker; elsewhere only where handlers run and how their dependencies are supplied changes.",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (npx tsx --test); daemon-thread tests under src/daemon/threads/__tests__ with worker helper scripts in src/daemon/threads/__tests__/helpers, as s2's tests do",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pool and FIFO logic without real workers: session-id slotting, per-session FIFO order, FIFO-exempt methods, idle and pid-gone release, never releasing a worker with active runs, failure fan-out to queued requests, the shared-state and FIFO-exempt method sets. The registry keys a shared target 'session:shared' and an unattributed target 'session:unattributed', both registered at once without a conflict, and each lookup resolves to its own worker. InDaemonRoute.targetOf sends admin/indexing to their workers, shared-state methods to the shared-state worker (inline on that worker itself), and other session methods inline.",
+          "subjects": [
+            "SessionPool.workerFor",
+            "SessionPool.sessions",
+            "Router.dispatch (session routing and FIFO)",
+            "TargetRegistry.targetFor (shared-state slot)",
+            "shared-state and FIFO-exempt method sets"
+          ],
+          "fixturesNeeded": [
+            "A fake worker starter (MessageChannel ports) that records which session each request reached and lets the test hold or finish a request",
+            "A fake clock and a pid-alive probe"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Real worker threads started through the pool with the real handler runtime: cross-session independence, per-session order, one worker per client over several connections, failure containment, step-token resume after an idle release, detached runs owned by a worker and polled from another, the shared-state worker for chat/todos/understanding, nested in-daemon calls inline. session.delete on a session worker drops the session's chat from the shared-state worker's pool and its cleanup events reach an open todos.subscribe.",
+          "subjects": [
+            "session worker entry",
+            "shared-state worker entry",
+            "workflow run registry with publishRun/forgetRun",
+            "StatusBoard.forgetRun hub binding",
+            "createInDaemonClient on a session worker"
+          ],
+          "fixturesNeeded": [
+            "A test-only session method that spins the CPU for a set time and one that records its start/end order (INSRC_TEST_HOOKS=1)",
+            "A test-only method that exits the worker",
+            "A temporary HOME with an initialised store and a registered fixture repository, as the s2 thread tests use"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "The daemon started as a process with threads enabled: two socket clients with different {label,pid} run concurrently, daemon.status answers within 100 ms while one session spins, and SIGTERM still drains and exits 0.",
+          "subjects": [
+            "daemon boot with the session pool",
+            "router forwarding over the real socket"
+          ],
+          "fixturesNeeded": [
+            "The threads-boot test harness (src/daemon/threads/__tests__/threads-boot.test.ts)"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Every session-class method resolves to exactly one target kind (session, shared-state, unattributed) or is a main-thread connection method; every response a moved method gives over the socket equals today's recorded response for the same input.",
+          "subjects": [
+            "method-class table with the shared-state and FIFO-exempt sets",
+            "recorded responses of moved session methods"
+          ],
+          "fixturesNeeded": [
+            "The recorded single-thread responses used by s2's admin/indexing parity tests"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: session A's worker spins the CPU for 5 s; session B's request on its own worker is answered before A's ends, and B's handler ran on a thread id different from A's and from the main thread"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: three requests from one session reach the fake worker one at a time in arrival order, the second only after the first's reply, a stream only after its done frame",
+            "integration: A's second request starts after its first ends (recorded start/end order), while A's chat.cancel (FIFO-exempt) reaches the worker during the first"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: one {label,pid} over two socket connections runs every request on the same worker thread id, in arrival order",
+            "unit: the worker is released after idleTimeoutMs with nothing running or queued, and at the next sweep after the client pid is gone; never while it owns a running detached run",
+            "integration: the shared-state families (chat.list, todos.listForSession, understanding.*) run on the shared-state worker, and a test fails if one is dispatched to a session worker",
+            "integration: session.delete run on a session worker drops the session's chat from the shared-state worker's pool, and the todos cleanup's events reach an open todos.subscribe on the shared-state worker"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: a session worker exits mid-request; its running and queued requests get 'session worker failed: ...', another session's request and daemon.status are answered, an indexing pass continues, and the session's next request runs on a new worker",
+            "integration: a session handler that throws returns today's error and the same worker serves the next request",
+            "integration: a detached run's owner exits; a poll from another session returns status 'error' with the named reason and the frames so far"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: a source scan of the session worker entry and the pool finds no Promise.all/allSettled over calls reaching a provider",
+            "integration: a session method that makes two provider calls through a recording fake provider shows them strictly sequential (second starts after first resolves)"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "integration: for each of analyze, workflow, review and code-review, a token minted on a session worker resumes on that session's next worker after an idle release, with today's rotate/stable/consume-per-stage result"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "smoke: with one session worker spinning the CPU for minutes (test hook), daemon.status over the socket answers within 100 ms at the 99th percentile of 200 calls and reports the daemon's current state"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "With daemon threads enabled (s2), the router routes only the admin and indexing classes; every session-class method (193 entries, including workflow.run/start/poll/abort, chat.*, todos.*, understanding.*) runs on the main thread through directDispatch over buildHandlerRuntime's tables (src/daemon/threads/router.ts:120-125, src/daemon/threads/method-class.ts:226-264). Step tokens already live in the shared step-state store (src/daemon/threads/step-state.ts). Detached workflow runs live in the main thread's module-scope run map (src/daemon/workflow-run-registry.ts:72) and nothing publishes run records on the board (src/daemon/threads/status-board.ts:114-170). Requests with a connection session stay on the main thread (src/daemon/threads/channel.ts:59-62). With threads disabled, the single-thread daemon serves everything on the main thread.",
+      "stateAfter": "With threads enabled, the router also routes the session class: per-session workers (one per validated {label,pid}, FIFO per session at the router, idle-released after 15 minutes or when the client process has gone), one unattributed worker, and one shared-state worker for chat, todos and understanding. Detached runs are owned by the starting worker and mirrored to the board (publishRun, new forgetRun); polls answer from the board, aborts go to the owner. Connection-scoped requests still run on the main thread. With threads disabled, behaviour is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the additive sc3 ThreadTarget field 'shared', extend the registry's slot function to key a shared target 'session:shared' (checked before the unattributed case) with the matching targetFor lookup, and add the additive sc4 forgetRun with its hub binding; nothing uses them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Declare the shared-state method set and the FIFO-exempt method set beside the method-class table, with a test that every member is a session-class method.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the session worker entry and the shared-state worker entry (handler runtime with hub/port dependencies), started only by the pool; change the in-daemon route to the per-method targetOf (admin and indexing routing unchanged) with Router.request's shared option, add the in-daemon-only chat.dropSession on the shared-state worker, and make purgeSession's chat drop and todos cleanup nested calls; nothing routes sessions to workers yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Make the workflow run registry mirror each run to the board and answer poll from the board snapshot; with threads disabled the board is local, so single-thread polls answer the same.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the session pool and the per-session FIFO to the router, and add 'session' to the routed classes when daemon threads are enabled (behind the existing daemon.threads.enabled flag); add the config key for the session idle timeout (default 15 minutes).",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Move the todos retention timer and the understanding service open onto the shared-state worker when threads are enabled.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        }
+      ],
+      "backwardCompat": "The IPC contract is unchanged: same socket, method names, request shapes and response fields for every moved method (checked against recorded responses). Ordering changes in one place: a session's non-exempt requests now run one at a time in arrival order, where today they interleave on the main thread; this is the Story's ac2 and k1. Turning daemon.threads.enabled off restores today's single-thread daemon. Step tokens and run polls keep today's behaviour; open chats, todo subscriptions and understanding watches are not carried across a daemon restart, as today.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Session pool with a main-thread exception list",
+        "oneLineSummary": "Per-session workers serve every session-class method except a named set of process-wide families (chat, todos, understanding) and connection-scoped requests, which keep running on the main thread.",
+        "approach": "The router routes the session class: a session-class request is forwarded to the session pool's worker for its {label,pid} (created on first need, FIFO per session, idle-released after 15 minutes unless it owns an active detached run), or to the unattributed worker when it carries no valid identity. A declared set SHARED_STATE_METHODS (chat.*, todos.* including todos.subscribe, understanding.*) joins MAIN_DAEMON_CONNECTION_METHODS and the connection-session/session-memory requests as methods the router keeps on the main thread's local dispatch, because their state (chat session pool, todos event bus, understanding service) is one process-wide copy. Detached workflow runs move with workflow.run.start onto the starting session worker, publish RunRecords on the board (publishRun, new forgetRun), and poll is answered from the board on any thread; abort is routed to the owner worker. Nested calls run inline on the worker (createInDaemonClient's existing behaviour).",
+        "pros": [
+          "Smallest change that moves the bulk of session work (steps, analyze, workflows, reviews, sessions, agents) off the main thread",
+          "No process-wide state is split: chat, todos and understanding keep their single copy where it lives today",
+          "Reuses the registry's session slots, startClassWorker, serveRequests and the in-daemon client unchanged"
+        ],
+        "cons": [
+          "FR4 ('session work never runs on the main thread') is not met for the excepted families; a CPU-heavy chat or todos call still blocks the socket thread",
+          "Leaves s4's ac1 (main thread runs no request handler) with a list to remove later",
+          "A second exception list beside MAIN_DAEMON_CONNECTION_METHODS must be kept complete by a test"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Cheapest, and it keeps process-wide state whole, but it leaves session work on the socket thread (ac1/ac4/ac7 partial) and contradicts FR4 and s4's ac1."
+      },
+      {
+        "id": "a2",
+        "name": "Session pool plus one shared-state session worker",
+        "oneLineSummary": "Per-session workers for per-session-safe methods; the process-wide families (chat, todos, understanding) run on one dedicated shared-state worker, so the main thread serves only connection-scoped requests.",
+        "approach": "As a1 for the session pool, the unattributed worker and detached runs. The families whose state is process-wide (chat.*, todos.* with todos.subscribe and the retention timer's emits, understanding.* with the understanding service) are classified to one dedicated 'shared-state' session worker registered in its own registry slot, so their one copy of state lives on that worker and every session reaches it through the router. A nested call from a session worker into one of these families (for example the session purge dropping a chat from the pool) goes through Router.request to the shared-state worker. Connection-scoped requests (connectionSession / session-memory, MAIN_DAEMON_CONNECTION_METHODS) stay on the main thread because they cannot cross a worker channel (Epic 484fcef7); that is recorded as an open question, not built around.",
+        "pros": [
+          "Meets FR4 for every session-class method that can cross a channel; the main thread keeps only the connection-scoped requests another epic pins there",
+          "No state is split: each process-wide family has exactly one owner thread",
+          "A long or CPU-heavy session request never blocks chat, todos or understanding for other sessions beyond that one worker"
+        ],
+        "cons": [
+          "Adds a registry slot kind beyond the HLD's sketch (a shared-state target), an additive sc3 amendment",
+          "Cross-family nested calls (session purge to chat pool, todos emits) become channel round-trips that need explicit methods",
+          "The understanding service, which today opens a client connection back to the daemon socket from the main thread, must open from the shared-state worker instead"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a3",
+        "name": "Session pool with process-wide state as main-thread hub services",
+        "oneLineSummary": "Every crossable session-class method runs on its session's worker; the chat pool, todos bus and understanding service stay on the main thread as hub services that workers call, like the shared step-state store.",
+        "approach": "As a1 for the pool, unattributed worker and detached runs, with no exception list for chat, todos or understanding: their handlers run on the caller's session worker, and the state they touch is reached through new hub operations served by the main thread (chat pool operations and its stream relay, a todos emit op feeding the main-thread bus, understanding service calls). The main thread keeps the state but runs no request handler for these families.",
+        "pros": [
+          "Session handlers run on their own session's thread with per-session ordering, including chat and todos",
+          "Follows the existing step-state pattern (state on main, reached through the hub)"
+        ],
+        "cons": [
+          "The chat pool owns child CLI processes and streams their output; relaying every chat frame through hub operations adds a second streaming path and new failure modes",
+          "The main thread still does the state work (chat process management), so it is not lighter than a1 for those families",
+          "Largest change: three new hub service surfaces, each needing its own cross-thread error and lifetime handling"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Best on ac3, but it keeps the heaviest process-wide work (chat processes and their streams) on the main thread through three new hub surfaces, so ac4 and ac7 are only partial and the change is largest."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [
+      "ts2 (partial): s6 names node:test via tsx under src/daemon/threads/__tests__, matching the s1 bundles' thread-test paths, but s1 did not run a test.locate pass to report the framework explicitly. The framework is the repo's only test runner (CLAUDE.md build section).",
+      "alt2 (partial): s3 scores every alternative against ac1-ac7 and sc1-sc6, but not against the Epic constraints k1-k7 as separate entries. k1, k2, k6 and k7 are covered through the acceptance criteria that operationalize them; k3, k4 and k5 are not scored separately.",
+      "Connection-scoped requests (a trusted connectionSession, session-memory execution, or a MAIN_DAEMON_CONNECTION_METHODS method) cannot cross a worker channel (src/daemon/threads/channel.ts:59-62, owned by Epic 484fcef7), so they keep running on the main thread; FR4 and s4's ac1 cannot be met for them until that epic lets them cross. Who owns that change?",
+      "The HLD risk table (docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/HLD.md:408) assigned the module-scope state inventory to s1, but none exists; this LLD classifies the process-wide families it found (chat pool, todos bus, understanding service, run registry). Should the full inventory be delivered here, as a test over every module-scope mutable value reachable from a session handler, or tracked separately?",
+      "The FIFO-exempt set (subscriptions plus chat.cancel/inject/redirect/status and workflow.run.poll/abort) is chosen from the methods that observe or control an in-flight request; confirm no other client relies on concurrent requests within one session (for example the VS Code dev chat or the MCP forwarder).",
+      "The sc3 amendment adding ThreadTarget.shared must be approved for the shared-state worker to hold."
+    ],
+    "sequenceDefinition": {
+      "id": "s3-session-routing",
+      "narrative": "How a session-class request reaches a thread after s3: the router keeps each session's requests in arrival order and sends them to that session's worker, or to the shared-state worker for chat, todos and understanding, while a detached run's poll is answered from the status board.",
+      "participants": [
+        {
+          "id": "client",
+          "label": "Client (label, pid)",
+          "description": "A Claude/Codex MCP client or IDE plugin process; its validated label and pid are its session id."
+        },
+        {
+          "id": "router",
+          "label": "Main thread router",
+          "description": "Reads the socket, classifies each request and holds each session's FIFO (src/daemon/threads/router.ts)."
+        },
+        {
+          "id": "pool",
+          "label": "Session pool",
+          "description": "sc6: maps a session id to its worker, starting one on first need and releasing it when idle or when the client process has gone."
+        },
+        {
+          "id": "sworker",
+          "label": "Session worker",
+          "description": "The session's own worker thread running the handler runtime; nested in-daemon calls run inline here."
+        },
+        {
+          "id": "shared",
+          "label": "Shared-state worker",
+          "description": "The one worker for chat, todos and understanding, whose state is a single process-wide copy."
+        },
+        {
+          "id": "board",
+          "label": "Status board",
+          "description": "sc4 on the main thread: run records published by the owning worker, read by polls."
+        }
+      ],
+      "messages": [
+        {
+          "from": "client",
+          "to": "router",
+          "label": "session-class request",
+          "kind": "call",
+          "description": "Any method classified 'session' that carries no connection-session context."
+        },
+        {
+          "from": "router",
+          "to": "pool",
+          "label": "workerFor(session)",
+          "kind": "call",
+          "description": "Only once the session's previous non-exempt request has ended (per-session FIFO)."
+        },
+        {
+          "from": "pool",
+          "to": "router",
+          "label": "SessionWorkerInfo",
+          "kind": "return",
+          "description": "The live worker, started and registered under 'session:<label>:<pid>' if it had none."
+        },
+        {
+          "from": "router",
+          "to": "sworker",
+          "label": "request envelope",
+          "kind": "call",
+          "description": "Served under the maintenance request hold; step state through the shared store."
+        },
+        {
+          "from": "sworker",
+          "to": "board",
+          "label": "publishRun(run)",
+          "kind": "call",
+          "description": "For a detached workflow run: after each frame and at its end."
+        },
+        {
+          "from": "sworker",
+          "to": "router",
+          "label": "reply / frames",
+          "kind": "return",
+          "description": "The reply or the stream's terminal frame ends the request in the session's FIFO; the next one is sent."
+        },
+        {
+          "from": "client",
+          "to": "router",
+          "label": "chat.* / todos.* / understanding.*",
+          "kind": "call",
+          "description": "Shared-state families, still ordered by the session's FIFO (subscriptions and control methods are exempt)."
+        },
+        {
+          "from": "router",
+          "to": "shared",
+          "label": "request envelope",
+          "kind": "call",
+          "description": "Sent to the 'session:shared' target."
+        },
+        {
+          "from": "client",
+          "to": "router",
+          "label": "workflow.run.poll",
+          "kind": "call",
+          "description": "FIFO-exempt; answered from the board's run record by whichever worker serves it, as today's PollResult."
+        },
+        {
+          "from": "router",
+          "to": "client",
+          "label": "reply",
+          "kind": "return",
+          "description": "Written back on the connection the request arrived on."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S003/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/threads/router.ts:120-152",
+      "quotedText": "if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/threads/channel.ts:59-62",
+      "quotedText": "throw new Error('Session execution cannot cross a worker channel.');"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/threads/step-state.ts",
+      "quotedText": "Shared step-state store (Epic 86197ac6, Story s1, contract sc2)"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/workflow-run-registry.ts:72",
+      "quotedText": "const runs = new Map<string, RunState>();"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/chat-handler.ts:39",
+      "quotedText": "let sessionPool: ChatSessionPool | null = null;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/todos-rpc.ts:122",
+      "quotedText": "const bus = new EventEmitter();"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/threads/registry.ts:32-35",
+      "quotedText": "return `session:${t.session.label}:${t.session.pid}`;"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/steps/daemon-client.ts:103-117",
+      "quotedText": "if (deps.route !== undefined && cls !== undefined && deps.route.routed.has(cls)) {"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/threads/status-board.ts:114",
+      "quotedText": "publishRun(run: RunRecord): void {"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/HLD.md:408",
+      "quotedText": "Module-scope state that silently splits per worker"
+    }
+  ]
+}

@@ -13505,6 +13505,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -13549,9 +13553,9 @@
           "writePid"
         ]
       ],
-      "siteCount": 66,
-      "sitesDigest": "01c65e021f0cc5b336b0f1b25d1b013da57dead37e47bd005a9fc7ba26ca72ca",
-      "sourceDigest": "3633992ce79febc8e87f6951f68c62c99e99324c226b28bf7f9ef401eaaf8dae",
+      "siteCount": 67,
+      "sitesDigest": "af62d2d3d29a1f676cb8b51f3500640dfd1588bbcdbcf5db0d844af159746f5c",
+      "sourceDigest": "6fa770c3b568095ebca1902fb5dbb52ebf5fbae24d4b495fa6a9da8d31397f37",
       "boundaries": [
         "diagnostic",
         "filesystem-write",

@@ -59,7 +59,10 @@ import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-cl
 
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { readInstalledCommit } from './installed-commit.js';
-import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, threadsEnabled } from './threads/main-services.js';
+import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
+import type { SessionPool } from './threads/session-pool.js';
+import { startSessionRouting } from './threads/session-routing.js';
+import { setRunBoard } from './workflow-run-registry.js';
 import { MaintenanceController } from './threads/maintenance.js';
 import { inDaemonTarget, methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
@@ -276,7 +279,9 @@ async function main(): Promise<void> {
 	let localForward: ForwardRequest | undefined;
 	const router = threadServices !== undefined
 		? new Router({
-			classOf: methodClasses.classOf, registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver),
+			// Test hooks (INSRC_TEST_HOOKS=1) are session work, served on a session worker.
+			classOf: method => process.env['INSRC_TEST_HOOKS'] === '1' && method.startsWith('test.') ? 'session' : methodClasses.classOf(method),
+			registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver),
 			// Every request is activity for idle maintenance (admin polls and subscriptions excepted).
 			onRequest: (method, cls) => maintenance?.requestArrived(method, cls) ?? (() => {}),
 		})
@@ -288,6 +293,7 @@ async function main(): Promise<void> {
 	// The daemon's shutdown, once it is made below; a worker supervisor's fatal before then ends the process.
 	let shutdownDaemon: (reason: string) => void = reason => { exitRespectingStoreHealth(1, reason); };
 	let supervisor: Supervisor | undefined;
+	let sessionPool: SessionPool | undefined;
 	if (threadServices !== undefined && router !== undefined) {
 		const port = new IndexingPortClient((method, params) => router.request('indexing', method, params), threadServices.board);
 		queue = port;
@@ -479,6 +485,13 @@ async function main(): Promise<void> {
 			name: 'admin', cls: 'admin', script: 'admin-worker',
 			started: w => log.info({ threadId: w.threadId }, 'admin worker ready'),
 		});
+		// Session work (s3): each client session on a worker of its own, requests with no client
+		// identity on the unattributed worker, chat/todos/understanding on the shared-state worker.
+		routed.add('session');
+		sessionPool = startSessionRouting(threadServices, router, sessionIdleMs());
+		sessionPool.startSweeping();
+		// A detached run started here (a connection-scoped request) is polled from the board like any other.
+		setRunBoard(threadServices.board);
 	}
 
 	// The chat session pool, the understanding service and the todos retention sweep are one
@@ -488,6 +501,11 @@ async function main(): Promise<void> {
 	if (hostsSharedState) initChatHandlers();
 
 	await server.listen();
+	// The shared-state worker starts now, after the socket listens (its understanding service is a client
+	// of it), so the todos retention sweep runs at boot as it does here without daemon threads.
+	if (sessionPool !== undefined) {
+		void sessionPool.sharedWorker().catch((err: unknown) => log.warn({ err: err instanceof Error ? err.message : String(err) }, 'the shared-state worker did not start; the next chat, todos or understanding request starts it'));
+	}
 	if (hostsSharedState) {
 		try {
 			understandingService = await UnderstandingService.open(PATHS.sockFile);
@@ -547,6 +565,7 @@ async function main(): Promise<void> {
 			clearInterval(pruneTimer);
 			clearInterval(readerCheckTimer);
 			stopTodosRetention();
+			sessionPool?.stopSweeping();
 			// No new maintenance; one still waiting for its lock gives up (one compacting is waited for below).
 			void maintenance?.stop();
 			stopIndexing();
@@ -572,6 +591,7 @@ async function main(): Promise<void> {
 			if (supervisor !== undefined) {
 				// A compaction under way finishes first (or the hard-exit backstop ends the process; the next open recovers).
 				await maintenance?.stop();
+				await sessionPool?.close();
 				await supervisor.terminateAll();
 				log.info('shutdown: the daemon\'s workers exited');
 			}

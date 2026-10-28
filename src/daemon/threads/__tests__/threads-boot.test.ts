@@ -153,3 +153,70 @@ test('daemon.shutdown during maintenance is refused with the activity and reason
 		rmSync(home, { recursive: true, force: true });
 	}
 });
+
+/** One request as a client with an identity sends it; resolves with its reply line. */
+async function rpcAs(sock: string, method: string, params: unknown, client: { label: string; pid: number }): Promise<{ result?: unknown; error?: string }> {
+	const { connect } = await import('node:net');
+	return new Promise((resolve, reject) => {
+		const socket = connect(sock);
+		let buf = '';
+		socket.on('connect', () => socket.write(JSON.stringify({ id: 1, method, params, client }) + '\n'));
+		socket.on('data', d => {
+			buf += d.toString();
+			const end = buf.indexOf('\n');
+			if (end >= 0) { socket.destroy(); resolve(JSON.parse(buf.slice(0, end)) as { result?: unknown; error?: string }); }
+		});
+		socket.on('error', reject);
+	});
+}
+
+test('boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0', { timeout: 120_000 }, async () => {
+	const home = mkdtempSync(join(tmpdir(), 'insrc-threads-session-boot-'));
+	try {
+		mkdirSync(join(home, '.insrc'), { recursive: true });
+		writeFileSync(join(home, '.insrc', 'config.json'), JSON.stringify({ daemon: { threads: { enabled: true } } }));
+		const daemon = await startLoggingDaemon(home, { INSRC_TEST_HOOKS: '1' });
+		try {
+			const client = { label: 'mcp', pid: process.pid };
+			const where = await rpcAs(daemon.sock, 'test.servingThread', null, client);
+			assert.equal(where.error, undefined, JSON.stringify(where));
+			const workerThread = (where.result as { threadId: number }).threadId;
+			assert.ok(workerThread > 0, `served on a worker thread, not the main thread (got ${workerThread})`);
+			assert.deepEqual(await rpcAs(daemon.sock, 'test.servingThread', null, client), where, "the session's next request runs on the same worker");
+			const other = await rpcAs(daemon.sock, 'test.servingThread', null, { label: 'mcp', pid: process.pid + 1 });
+			assert.notEqual((other.result as { threadId: number }).threadId, workerThread, 'another session gets its own worker');
+			const listed = await rpcAs(daemon.sock, 'session.list', {}, client);
+			assert.equal(listed.error, undefined, 'a session method answered by the session worker');
+			assert.deepEqual((await rpcAs(daemon.sock, 'chat.list', {}, client)).result, { sessions: [] }, 'chat.list answered by the shared-state worker');
+			process.kill(daemon.pid, 'SIGTERM');
+			assert.equal(await daemon.exited, 0, `the daemon exited cleanly after SIGTERM:\n${daemon.stderr().slice(-2000)}`);
+		} finally {
+			if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL');
+		}
+	} finally {
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+test('boot: threads disabled runs every session method on the main thread as today', { timeout: 120_000 }, async () => {
+	const home = mkdtempSync(join(tmpdir(), 'insrc-threads-off-boot-'));
+	try {
+		mkdirSync(join(home, '.insrc'), { recursive: true });
+		writeFileSync(join(home, '.insrc', 'config.json'), JSON.stringify({ daemon: { threads: { enabled: false } } }));
+		const daemon = await startLoggingDaemon(home, { INSRC_TEST_HOOKS: '1' });
+		try {
+			const client = { label: 'mcp', pid: process.pid };
+			// The worker-only test hook is unknown: nothing was sent to a worker.
+			assert.equal((await rpcAs(daemon.sock, 'test.servingThread', null, client)).error, 'unknown method: test.servingThread');
+			assert.equal((await rpcAs(daemon.sock, 'session.list', {}, client)).error, undefined, 'session methods answered on the main thread');
+			assert.deepEqual((await rpcAs(daemon.sock, 'chat.list', {}, client)).result, { sessions: [] }, 'the chat pool lives on the main thread');
+			assert.doesNotMatch(daemon.stderr(), /daemon threads enabled|session pool/, 'no threads and no session pool were started');
+			process.kill(daemon.pid, 'SIGTERM');
+			assert.equal(await daemon.exited, 0, `the daemon exited cleanly after SIGTERM:\n${daemon.stderr().slice(-2000)}`);
+		} finally {
+			if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL');
+		}
+	} finally {
+		rmSync(home, { recursive: true, force: true });
+	}
+});

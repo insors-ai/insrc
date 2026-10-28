@@ -25,7 +25,7 @@ import { enableMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { PATHS } from '../../shared/paths.js';
 import type { DaemonStatus } from '../../shared/types.js';
 import { pushToWorker, serveHub } from './channel.js';
-import type { HubHandlers } from './channel.js';
+import type { HubHandlers, MethodClass } from './channel.js';
 import { createIndexingBlock } from './indexing-block.js';
 import { TargetRegistry } from './registry.js';
 import { StatusBoard, statusBoardHubHandlers } from './status-board.js';
@@ -86,6 +86,20 @@ export const EMBEDDER_BACKEND_OP = 'embedder.backend';
 export const SHUTDOWN_OP = 'daemon.shutdown';
 /** The code-indexing worker's daemon.compact asks the main thread to run maintenance now; answers its CompactResult. */
 export const MAINTENANCE_RUN_OP = 'maintenance.run';
+/**
+ * A worker's nested in-daemon call to another thread (s3): the main thread's router sends it
+ * to that class's worker, or to the shared-state worker; answers the reply's result.
+ */
+export const ROUTE_OP = 'router.request';
+
+/** What ROUTE_OP carries: the call, whether it goes to the shared-state worker, and the caller's maintenance hold. */
+export interface RouteRequest {
+	readonly cls: MethodClass;
+	readonly method: string;
+	readonly params: unknown;
+	readonly shared?: true | undefined;
+	readonly underHold?: boolean | undefined;
+}
 
 /** A worker's connection: what its workerData carries, the port to transfer, and the main thread's end. */
 export interface WorkerConnection {
@@ -113,6 +127,7 @@ export class ThreadServices {
 	private embedderBackend: EmbedderBackend | undefined;
 	private shutdown: ((reason: string) => void) | undefined;
 	private maintenance: (() => Promise<unknown>) | undefined;
+	private route: ((request: RouteRequest) => Promise<unknown>) | undefined;
 
 	constructor(private readonly info: () => DaemonInfo, steps: SharedStepStateStore = new LocalStepStateStore()) {
 		// The main thread joins the same blocks it hands to every worker.
@@ -126,6 +141,10 @@ export class ThreadServices {
 			...wireMainStoreHealth(() => this.ports),
 			[DAEMON_INFO_OP]: () => this.info(),
 			[SHUTDOWN_OP]: reason => { this.shutdown?.(String(reason)); },
+			[ROUTE_OP]: a => {
+				if (this.route === undefined) throw new Error('the daemon cannot route a nested call yet');
+				return this.route(a as RouteRequest);
+			},
 			[MAINTENANCE_RUN_OP]: () => {
 				if (this.maintenance === undefined) throw new Error('daemon.compact: maintenance is not available yet');
 				return this.maintenance();
@@ -136,6 +155,11 @@ export class ThreadServices {
 	/** The daemon's shutdown, which a worker's SHUTDOWN_OP starts with its reason. */
 	onShutdown(shutdown: (reason: string) => void): void {
 		this.shutdown = shutdown;
+	}
+
+	/** What ROUTE_OP runs: the router's request to another thread (s3). */
+	onRoute(route: (request: RouteRequest) => Promise<unknown>): void {
+		this.route = route;
 	}
 
 	/** What MAINTENANCE_RUN_OP runs: maintenance now. */

@@ -1,0 +1,91 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * A session worker (Epic 86197ac6, Story s3): serves one client session's session-class
+ * requests (or, as the unattributed worker, those with no client identity) with the
+ * daemon's own handler runtime, each under the maintenance lock's request hold.
+ *
+ * Its queue and indexer are the indexing port, reached through the main thread's router;
+ * a step handler's nested call runs here unless inDaemonTarget names another thread (an
+ * admin or indexing method, or a chat, todos or understanding method, which the
+ * shared-state worker serves).
+ */
+
+import { parentPort, threadId, workerData } from 'node:worker_threads';
+
+import { ConfigStore } from '../../config/store.js';
+import { getDb } from '../../db/client.js';
+import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
+import { buildHandlerRuntime, inDaemonOnlyHandlers } from '../handler-runtime.js';
+import { directDispatch } from '../server.js';
+import type { RpcHandlers } from '../server.js';
+import { createInDaemonClient, installStepDaemonClient } from '../steps/daemon-client.js';
+import type { InDaemonClient } from '../steps/daemon-client.js';
+import { setRunBoard } from '../workflow-run-registry.js';
+import type { MethodClass } from './channel.js';
+import { IndexingPortClient } from './indexing-port.js';
+import { ROUTE_OP, SHUTDOWN_OP } from './main-services.js';
+import type { RouteRequest, WorkerConnection } from './main-services.js';
+import { inDaemonTarget } from './method-class.js';
+import { StatusBoardClient } from './status-board.js';
+import type { StatusSnapshot } from './status-board.js';
+import { startDaemonWorker } from './worker-entry.js';
+import { serveRequests } from './worker-requests.js';
+
+const init = workerData as WorkerConnection['workerData'];
+const hub = startDaemonWorker(init);
+const board = new StatusBoardClient(hub);
+// Detached runs started here are mirrored to the board, so any thread answers their polls.
+setRunBoard(board);
+
+const db = await getDb();
+const configStore = new ConfigStore(db);
+
+/** A nested call to another thread, through the main thread's router, carrying this context's maintenance hold. */
+const route = (cls: MethodClass, method: string, params: unknown, opts: { readonly shared?: true | undefined } = {}): Promise<unknown> =>
+	hub.request<unknown>(ROUTE_OP, { cls, method, params, ...(opts.shared ? { shared: true } : {}), underHold: holdsMaintenanceLock() } satisfies RouteRequest);
+
+/** The queue's live state is read on the admin worker; no session handler reads it, so it is refused here, not faked. */
+const noQueueState = {
+	snapshot: (): StatusSnapshot => { throw new Error('the indexing queue\'s state is read on the admin worker, not on a session worker'); },
+};
+const port = new IndexingPortClient((method, params) => route('indexing', method, params), noQueueState);
+
+let inDaemon: InDaemonClient | undefined;
+const runtime = buildHandlerRuntime({
+	db, configStore, queue: port, indexer: port, startedAt: Date.now(),
+	shutdown: reason => hub.send(SHUTDOWN_OP, reason),
+	attachedClients: () => [],
+	understandingService: () => undefined,
+	nestedCall: (method, params) => inDaemon!.request(method, params),
+});
+const routed: ReadonlySet<MethodClass> = new Set<MethodClass>(['admin', 'indexing', 'session']);
+inDaemon = createInDaemonClient(runtime.rpcHandlers, runtime.streamHandlers, {
+	inDaemonOnly: inDaemonOnlyHandlers(),
+	route: { targetOf: method => inDaemonTarget(method, { routed, onSharedWorker: false }), request: route },
+});
+installStepDaemonClient(inDaemon);
+
+/** Test-only methods (INSRC_TEST_HOOKS=1): CPU-bound work, ordered work, and a nested session-class call. */
+function testHandlers(): RpcHandlers {
+	return {
+		'test.spin': async (params) => {
+			const until = Date.now() + Number((params as { ms?: number } | null)?.ms ?? 0);
+			while (Date.now() < until) { /* spins this thread's CPU */ }
+			return { threadId };
+		},
+		'test.order': async (params) => {
+			const startedAt = Date.now();
+			await new Promise(r => setTimeout(r, Number((params as { ms?: number } | null)?.ms ?? 0)));
+			return { threadId, tag: (params as { tag?: unknown } | null)?.tag, startedAt, endedAt: Date.now() };
+		},
+		'test.nested': async () => ({ threadId, nested: await inDaemon!.request('session.list', {}) }),
+	};
+}
+
+const rpc: RpcHandlers = process.env['INSRC_TEST_HOOKS'] === '1' ? { ...runtime.rpcHandlers, ...testHandlers() } : runtime.rpcHandlers;
+serveRequests(init.hubPort, directDispatch(rpc, runtime.streamHandlers));
+parentPort!.postMessage('worker-ready');

@@ -41,7 +41,7 @@ export const INDEXING_DRAINED = 'indexing-drained';
 export class IndexingPortClient implements RuntimeQueue, RuntimeIndexer {
 	constructor(
 		private readonly request: (method: string, params: unknown) => Promise<unknown>,
-		private readonly board: StatusBoard,
+		private readonly board: Pick<StatusBoard, 'snapshot'>,
 	) {}
 
 	private get indexing(): IndexingStatus { return this.board.snapshot().indexing; }

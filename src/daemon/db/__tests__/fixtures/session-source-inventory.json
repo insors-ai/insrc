@@ -5,6 +5,39 @@
     "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/consumer-diagnostic-sites-before.json": "bebdbc94a552d331ebcc6bdd8550cb0ba642eba7e043bc282ca409fda677d0de"
   },
   "files": {
+    "src/agent/providers/bounded-input.ts": {
+      "classification": "provider-admission",
+      "rationale": "Bounded CLI normalization and isolation flags are provider admission, not temporary privacy proof. Temporary consumers still require the existing identity-bound local service policy; this capability cannot enable a temporary route.",
+      "sites": [
+        [
+          "provider-adapter",
+          "boundedClaudeEnv"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "57ae9faf71200d1ea24048fdff39e6702c6aa17ac536d70de02c0ad830c87ff1",
+      "sourceDigest": "f6b9bca76ea0ddf8f52f6bb3be466277a01b6ae796926b5f7fb9d13d44bead0e",
+      "boundaries": [
+        "provider-adapter",
+        "serialization"
+      ]
+    },
     "src/agent/providers/cli-provider.ts": {
       "classification": "provider-admission",
       "rationale": "Shared provider/tool-loop path: temporary callers need identity-bound local privacy proof, per-attempt authority and quiet diagnostics; CLI and unsupported modes refuse before input use.",
@@ -1127,6 +1160,143 @@
       "boundaries": [
         "diagnostic",
         "provider-adapter"
+      ]
+    },
+    "src/agent/providers/structured-schema.ts": {
+      "classification": "provider-admission",
+      "rationale": "Pure schema normalization and full-schema reply validation extracted unchanged from structured-output. This module constructs no provider or Session authority; CLI denial and the local adapter byte attestation remain mandatory.",
+      "sites": [
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "provider-adapter",
+          "danglingRef"
+        ],
+        [
+          "serialization",
+          "decodeURIComponent"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "provider-adapter",
+          "isObject"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "keepCodexKeywords"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processInPlace"
+        ],
+        [
+          "provider-adapter",
+          "processSchemaForOpenAIStrict"
+        ],
+        [
+          "provider-adapter",
+          "resolvesIn"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ],
+        [
+          "provider-adapter",
+          "uncheckedFormat"
+        ]
+      ],
+      "siteCount": 31,
+      "sitesDigest": "7c5a13549a1f03f521b01d4eb0254f5c47ee242d8d3edee8dfe80dbfc22d7de7",
+      "sourceDigest": "ab56afa44d5e7de36881740e0f578f18a14c0937bee909b0e241da1ed70ce578",
+      "boundaries": [
+        "provider-adapter",
+        "serialization"
       ]
     },
     "src/agent/read-only-tool-loop.ts": {
@@ -7634,6 +7804,47 @@
       "boundaries": [
         "diagnostic",
         "storage-call"
+      ]
+    },
+    "src/daemon/code-review-operations.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "BigInt(ordinal).toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "cec93d03b90f27715967b787fb84cda8557bccdd97c56b3554a1eae3554f5b83",
+      "sourceDigest": "7b95692e103fc674d9da96137b0912f1a7da127ff20e77223b8849125c29f71b",
+      "boundaries": [
+        "filesystem-read",
+        "serialization"
       ]
     },
     "src/daemon/code-review-rpc.ts": {
@@ -14645,6 +14856,22 @@
         "serialization"
       ]
     },
+    "src/daemon/steps/code-review-step/controller-pipeline.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "c1e5b2b07a437320253c91bd120194e6e168d3bf6d9f580123117c7c5a9c51b4",
+      "sourceDigest": "f4b8bef8936e3a07a9679e7715c86517e7f7b5523e790cea0961076d797c7566",
+      "boundaries": [
+        "serialization"
+      ]
+    },
     "src/daemon/steps/code-review-step/handler.ts": {
       "classification": "forbidden-session-workflow",
       "rationale": "Build/design/review/triage/tracker workflow methods are unsupported for session-memory execution and must be refused before these stateful handlers run. Existing saved workflow remains unchanged.",
@@ -15436,7 +15663,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "52a18589fd8b753ed54b3bf6842565fb2c0b1e7f6dab43464e0106a7ecce1eb7",
-      "sourceDigest": "e6a91550dd0873ad44e84073549682aaa0db976ee845da0590d255973286c2e3",
+      "sourceDigest": "aac6fd79015923c026a0296f62171d66e42df589574c236dfacd4e7940ef79ec",
       "boundaries": [
         "diagnostic"
       ]
@@ -15559,10 +15786,6 @@
         ],
         [
           "unresolved-call",
-          "StatusBoard"
-        ],
-        [
-          "unresolved-call",
           "TargetRegistry"
         ],
         [
@@ -15570,9 +15793,9 @@
           "this.info"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "040dbb179427e0463fa5e78301d06604d9f0f19d0ef49e40c8921c42e4fb3990",
-      "sourceDigest": "cbf5cf8b27f771c94d08de9130070cc98c6a1a41c0cf8ab147caf921d843ff03",
+      "siteCount": 10,
+      "sitesDigest": "2f8ae331dca9705bd902e5ea000c587f988a1f11e5ba546c54c5515e4d160c30",
+      "sourceDigest": "6baf691be42d6fcfc09eab77d84a55b654c83da9ff8c7857d975f5ae53906c05",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -15690,6 +15913,31 @@
       "boundaries": [
         "diagnostic",
         "serialization"
+      ]
+    },
+    "src/daemon/threads/session-worker.ts": {
+      "classification": "routing-background-boundary",
+      "rationale": "Thread infrastructure (Epic 86197ac6 s3): a session worker serves session-class requests that carry no connection session; wireRequest refuses any request with a connectionSession or connectionExecution, so connection-session and session-memory work stays on the main daemon and no temporary payload or capability reaches this worker. Its nested calls to other threads go through the main thread's router.",
+      "sites": [
+        [
+          "storage-call",
+          "getDb"
+        ],
+        [
+          "serialization",
+          "hub.send"
+        ],
+        [
+          "serialization",
+          "parentPort!.postMessage"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "b6d71ee181f211d7e05342f399d162ed4eb73374d7a0bf636b503258ab17463d",
+      "sourceDigest": "2e03547db2bdb48b502a2e0bb03f0243168e2f8872d20fffcac065789e47fd48",
+      "boundaries": [
+        "serialization",
+        "storage-call"
       ]
     },
     "src/daemon/threads/status-board.ts": {
@@ -30885,6 +31133,180 @@
         "unresolved-call"
       ]
     },
+    "src/mcp/controller-review.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "The helper submits persistent workflow review evidence to an isolated CLI and serializes task/results. Temporary session routes cannot dispatch this workflow; isolated CLI context is not local privacy proof and grants no temporary authorization.",
+      "sites": [
+        [
+          "provider-adapter",
+          "admitted.execution.provider.completeStructured"
+        ],
+        [
+          "provider-use",
+          "admitted.execution.provider.completeStructured"
+        ],
+        [
+          "provider-adapter",
+          "CliProvider"
+        ],
+        [
+          "provider-factory",
+          "CliProvider"
+        ],
+        [
+          "provider-use",
+          "CliProvider"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "diagnostic",
+          "error"
+        ],
+        [
+          "provider-adapter",
+          "InputTooLargeError"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-open",
+          "mkdtempSync"
+        ],
+        [
+          "filesystem-write",
+          "rmSync"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "verifyBoundedCli"
+        ]
+      ],
+      "siteCount": 39,
+      "sitesDigest": "711052aab8e5968e1896be4f12b6257aee15db72a75a0731bb317bd7341033e4",
+      "sourceDigest": "5cd65fbad9fd9bad12a4e4ebb3ec1355d781c2346f41be73ae76d1ef09803013",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-open",
+        "filesystem-write",
+        "provider-adapter",
+        "provider-factory",
+        "provider-use",
+        "serialization"
+      ]
+    },
     "src/mcp/daemon-stream.ts": {
       "classification": "mcp-client-boundary",
       "rationale": "Unattached saved MCP remains compatible. Session bootstrap uses private root/audience data delegation and every socket attaches; unverified reasoning must receive fixed refusal before any data-bearing prompt/result/error.",
@@ -31492,6 +31914,42 @@
         "serialization"
       ]
     },
+    "src/shared/review-input-identity.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Serializes persistent review input identity for validation only. It does not authorize temporary content persistence, provider use or any session route.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "35aeab25e24e8fe514c5e29dd34a82ea83989eb404a1567ef8f60422e1a6a504",
+      "sourceDigest": "88f67b21cd5d57e20b960aba840f8d4e8b7628a435a1a8c7c0e6ecd925cb381f",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/shared/review-stream.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Validates persistent review IPC target and input identity with canonical repository reads. Temporary session methods cannot dispatch workflow review and gain no authority from this codec.",
+      "sourceDigest": "916e39560a39c530b6520b20ce20f48fbcaf928869389a3282b4206fde6c5d28",
+      "sites": [
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "f9695560ea558fe3fdc9c3de77cb9d6cace76c2d049fac6765a5284e48a5b837",
+      "boundaries": [
+        "filesystem-read"
+      ]
+    },
     "src/shared/step-context.ts": {
       "classification": "shared-transport-foundation",
       "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
@@ -31506,6 +31964,22 @@
       "sourceDigest": "09bd2ffa77bb5979ff9eb53c69667e7fc3c3967434ccf2810b4b422cc4565053",
       "boundaries": [
         "unresolved-call"
+      ]
+    },
+    "src/shared/structured-input.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Serializes complete persistent review messages and schema for bounded provider calls. Temporary callers remain subject to provider admission; a measured prompt is not a temporary privacy proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "ccf5ec5e390b25924727081427d3d92247f12b648c3eb61e0d4786b3b219bd53",
+      "sourceDigest": "3840bd12f581ab53350e17c1598b0f70f4efa8078b6e74db66a25a75af2d8834",
+      "boundaries": [
+        "serialization"
       ]
     },
     "src/shared/system-info.ts": {
@@ -31974,6 +32448,48 @@
       "sourceDigest": "ca2d1d661a86516e402d6047ca39761c64c3c98a39d10bf5241d3e8d64ef8c04",
       "boundaries": [
         "filesystem-read",
+        "serialization"
+      ]
+    },
+    "src/workflow/approval-owner.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "filesystem-write",
+          "mkdirSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ]
+      ],
+      "siteCount": 7,
+      "sitesDigest": "ef1d0420c66a68c107291bdb7574188a78c239681fc3a63d0d417f361a32ca2f",
+      "sourceDigest": "95e555c3eb3e9634126ea626340fe34ebc57061b0a03e93aed7e418215bffd0d",
+      "boundaries": [
+        "filesystem-read",
+        "filesystem-write",
         "serialization"
       ]
     },
@@ -32957,6 +33473,99 @@
         "serialization",
         "storage-call",
         "unresolved-call"
+      ]
+    },
+    "src/workflow/code-review/input-fingerprint.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "before.toString"
+        ],
+        [
+          "serialization",
+          "buffer.toString"
+        ],
+        [
+          "serialization",
+          "buildBytes.toString"
+        ],
+        [
+          "serialization",
+          "git(repo, ['rev-parse', '--show-toplevel']).toString"
+        ],
+        [
+          "serialization",
+          "git(repo, ['rev-parse', '--verify', 'HEAD']).toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ],
+        [
+          "filesystem-read",
+          "realpathSync"
+        ]
+      ],
+      "siteCount": 15,
+      "sitesDigest": "57be849bcf593c5c394e010622b2a4883d0a042e11b243edcb37b92d3c32d7ac",
+      "sourceDigest": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
+      "boundaries": [
+        "filesystem-read",
+        "serialization"
+      ]
+    },
+    "src/workflow/code-review/publication.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "BigInt(fingerprint.storyId.slice(1)).toString"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "5eaeb226f1fe16e8c89d45c713322036af7eb91bae4b19d63f0cab858e4a02d5",
+      "sourceDigest": "e0fa14157025a6db4a8ed465704c5939f880fc38cb2d6eda7972b360650385d2",
+      "boundaries": [
+        "serialization"
       ]
     },
     "src/workflow/code-review/runner.ts": {
@@ -34304,6 +34913,58 @@
       "boundaries": [
         "serialization",
         "unresolved-call"
+      ]
+    },
+    "src/workflow/review-pipeline/adapters/diff-fragments.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "0bbaad36ccc3dd4b2014cab7d86e7cac648c8771e5b91b85c87d0ac492a7b8be",
+      "sourceDigest": "0d7b27c2ce0c61ead9d4a3a038c7a1fda2c384acb40d7a5cddc8f182c52444af",
+      "boundaries": [
+        "serialization"
+      ]
+    },
+    "src/workflow/review-pipeline/adapters/diff-parent-evidence.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ]
+      ],
+      "siteCount": 4,
+      "sitesDigest": "966b2f1ddd34bb57e8a04cacd434b85ccadbb860a48df55e20f6ad14d1c79cbf",
+      "sourceDigest": "c659127bae0d3023eaabbe5f86671f497acd69e403602a1aff6308be063512e6",
+      "boundaries": [
+        "serialization"
       ]
     },
     "src/workflow/review-pipeline/code-review.ts": {
@@ -36176,646 +36837,6 @@
       "boundaries": [
         "diagnostic",
         "filesystem-write",
-        "serialization"
-      ]
-    },
-    "src/agent/providers/bounded-input.ts": {
-      "classification": "provider-admission",
-      "rationale": "Bounded CLI normalization and isolation flags are provider admission, not temporary privacy proof. Temporary consumers still require the existing identity-bound local service policy; this capability cannot enable a temporary route.",
-      "sites": [
-        [
-          "provider-adapter",
-          "boundedClaudeEnv"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ]
-      ],
-      "siteCount": 5,
-      "sitesDigest": "57ae9faf71200d1ea24048fdff39e6702c6aa17ac536d70de02c0ad830c87ff1",
-      "sourceDigest": "f6b9bca76ea0ddf8f52f6bb3be466277a01b6ae796926b5f7fb9d13d44bead0e",
-      "boundaries": [
-        "provider-adapter",
-        "serialization"
-      ]
-    },
-    "src/daemon/code-review-operations.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
-      "sites": [
-        [
-          "serialization",
-          "BigInt(ordinal).toString"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "realpathSync"
-        ]
-      ],
-      "siteCount": 7,
-      "sitesDigest": "cec93d03b90f27715967b787fb84cda8557bccdd97c56b3554a1eae3554f5b83",
-      "sourceDigest": "7b95692e103fc674d9da96137b0912f1a7da127ff20e77223b8849125c29f71b",
-      "boundaries": [
-        "filesystem-read",
-        "serialization"
-      ]
-    },
-    "src/daemon/steps/code-review-step/controller-pipeline.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 1,
-      "sitesDigest": "c1e5b2b07a437320253c91bd120194e6e168d3bf6d9f580123117c7c5a9c51b4",
-      "sourceDigest": "f4b8bef8936e3a07a9679e7715c86517e7f7b5523e790cea0961076d797c7566",
-      "boundaries": [
-        "serialization"
-      ]
-    },
-    "src/mcp/controller-review.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "The helper submits persistent workflow review evidence to an isolated CLI and serializes task/results. Temporary session routes cannot dispatch this workflow; isolated CLI context is not local privacy proof and grants no temporary authorization.",
-      "sites": [
-        [
-          "provider-adapter",
-          "admitted.execution.provider.completeStructured"
-        ],
-        [
-          "provider-use",
-          "admitted.execution.provider.completeStructured"
-        ],
-        [
-          "provider-adapter",
-          "CliProvider"
-        ],
-        [
-          "provider-factory",
-          "CliProvider"
-        ],
-        [
-          "provider-use",
-          "CliProvider"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "diagnostic",
-          "error"
-        ],
-        [
-          "provider-adapter",
-          "InputTooLargeError"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-open",
-          "mkdtempSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "UnsupportedBoundedInputError"
-        ],
-        [
-          "provider-adapter",
-          "verifyBoundedCli"
-        ]
-      ],
-      "siteCount": 39,
-      "sitesDigest": "711052aab8e5968e1896be4f12b6257aee15db72a75a0731bb317bd7341033e4",
-      "sourceDigest": "5cd65fbad9fd9bad12a4e4ebb3ec1355d781c2346f41be73ae76d1ef09803013",
-      "boundaries": [
-        "diagnostic",
-        "filesystem-open",
-        "filesystem-write",
-        "provider-adapter",
-        "provider-factory",
-        "provider-use",
-        "serialization"
-      ]
-    },
-    "src/shared/review-input-identity.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Serializes persistent review input identity for validation only. It does not authorize temporary content persistence, provider use or any session route.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 1,
-      "sitesDigest": "35aeab25e24e8fe514c5e29dd34a82ea83989eb404a1567ef8f60422e1a6a504",
-      "sourceDigest": "88f67b21cd5d57e20b960aba840f8d4e8b7628a435a1a8c7c0e6ecd925cb381f",
-      "boundaries": [
-        "serialization"
-      ]
-    },
-    "src/shared/review-stream.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Validates persistent review IPC target and input identity with canonical repository reads. Temporary session methods cannot dispatch workflow review and gain no authority from this codec.",
-      "sourceDigest": "916e39560a39c530b6520b20ce20f48fbcaf928869389a3282b4206fde6c5d28",
-      "sites": [
-        [
-          "filesystem-read",
-          "realpathSync"
-        ],
-        [
-          "filesystem-read",
-          "realpathSync"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "f9695560ea558fe3fdc9c3de77cb9d6cace76c2d049fac6765a5284e48a5b837",
-      "boundaries": [
-        "filesystem-read"
-      ]
-    },
-    "src/shared/structured-input.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Serializes complete persistent review messages and schema for bounded provider calls. Temporary callers remain subject to provider admission; a measured prompt is not a temporary privacy proof.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 1,
-      "sitesDigest": "ccf5ec5e390b25924727081427d3d92247f12b648c3eb61e0d4786b3b219bd53",
-      "sourceDigest": "3840bd12f581ab53350e17c1598b0f70f4efa8078b6e74db66a25a75af2d8834",
-      "boundaries": [
-        "serialization"
-      ]
-    },
-    "src/workflow/approval-owner.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "realpathSync"
-        ],
-        [
-          "filesystem-write",
-          "unlinkSync"
-        ],
-        [
-          "filesystem-write",
-          "unlinkSync"
-        ]
-      ],
-      "siteCount": 7,
-      "sitesDigest": "ef1d0420c66a68c107291bdb7574188a78c239681fc3a63d0d417f361a32ca2f",
-      "sourceDigest": "95e555c3eb3e9634126ea626340fe34ebc57061b0a03e93aed7e418215bffd0d",
-      "boundaries": [
-        "filesystem-read",
-        "filesystem-write",
-        "serialization"
-      ]
-    },
-    "src/workflow/code-review/input-fingerprint.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
-      "sites": [
-        [
-          "serialization",
-          "before.toString"
-        ],
-        [
-          "serialization",
-          "buffer.toString"
-        ],
-        [
-          "serialization",
-          "buildBytes.toString"
-        ],
-        [
-          "serialization",
-          "git(repo, ['rev-parse', '--show-toplevel']).toString"
-        ],
-        [
-          "serialization",
-          "git(repo, ['rev-parse', '--verify', 'HEAD']).toString"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "filesystem-read",
-          "lstatSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "realpathSync"
-        ],
-        [
-          "filesystem-read",
-          "realpathSync"
-        ],
-        [
-          "filesystem-read",
-          "realpathSync"
-        ]
-      ],
-      "siteCount": 15,
-      "sitesDigest": "57be849bcf593c5c394e010622b2a4883d0a042e11b243edcb37b92d3c32d7ac",
-      "sourceDigest": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
-      "boundaries": [
-        "filesystem-read",
-        "serialization"
-      ]
-    },
-    "src/workflow/code-review/publication.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
-      "sites": [
-        [
-          "serialization",
-          "BigInt(fingerprint.storyId.slice(1)).toString"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "5eaeb226f1fe16e8c89d45c713322036af7eb91bae4b19d63f0cab858e4a02d5",
-      "sourceDigest": "e0fa14157025a6db4a8ed465704c5939f880fc38cb2d6eda7972b360650385d2",
-      "boundaries": [
-        "serialization"
-      ]
-    },
-    "src/workflow/review-pipeline/adapters/diff-fragments.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 3,
-      "sitesDigest": "0bbaad36ccc3dd4b2014cab7d86e7cac648c8771e5b91b85c87d0ac492a7b8be",
-      "sourceDigest": "0d7b27c2ce0c61ead9d4a3a038c7a1fda2c384acb40d7a5cddc8f182c52444af",
-      "boundaries": [
-        "serialization"
-      ]
-    },
-    "src/workflow/review-pipeline/adapters/diff-parent-evidence.ts": {
-      "classification": "forbidden-session-service",
-      "rationale": "Persistent workflow review preparation, identity, publication or approval is outside supported temporary session methods. Reject before dispatch; these boundaries grant no temporary route or runtime safety proof.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 4,
-      "sitesDigest": "966b2f1ddd34bb57e8a04cacd434b85ccadbb860a48df55e20f6ad14d1c79cbf",
-      "sourceDigest": "c659127bae0d3023eaabbe5f86671f497acd69e403602a1aff6308be063512e6",
-      "boundaries": [
-        "serialization"
-      ]
-    },
-    "src/agent/providers/structured-schema.ts": {
-      "classification": "provider-admission",
-      "rationale": "Pure schema normalization and full-schema reply validation extracted unchanged from structured-output. This module constructs no provider or Session authority; CLI denial and the local adapter byte attestation remain mandatory.",
-      "sites": [
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "provider-adapter",
-          "danglingRef"
-        ],
-        [
-          "serialization",
-          "decodeURIComponent"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "provider-adapter",
-          "isObject"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
-        ],
-        [
-          "provider-adapter",
-          "keepCodexKeywords"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processInPlace"
-        ],
-        [
-          "provider-adapter",
-          "processSchemaForOpenAIStrict"
-        ],
-        [
-          "provider-adapter",
-          "resolvesIn"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ],
-        [
-          "provider-adapter",
-          "uncheckedFormat"
-        ]
-      ],
-      "siteCount": 31,
-      "sitesDigest": "7c5a13549a1f03f521b01d4eb0254f5c47ee242d8d3edee8dfe80dbfc22d7de7",
-      "sourceDigest": "ab56afa44d5e7de36881740e0f578f18a14c0937bee909b0e241da1ed70ce578",
-      "boundaries": [
-        "provider-adapter",
         "serialization"
       ]
     }

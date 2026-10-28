@@ -196,6 +196,13 @@
         "choice": "Document-as-is",
         "rationale": "k3 (two indexing threads), k4 (daemon-only store access) and k5 (unchanged IPC contract) hold identically under a1, a2 and a3: none of them moves indexing, opens a store outside the daemon or changes a method or response shape, so they do not discriminate between the alternatives.",
         "resolvedAt": "2026-10-28T05:29:40.599Z"
+      },
+      "qf09c336d": {
+        "question": "The FIFO-exempt set (subscriptions plus chat.cancel/inject/redirect/status and workflow.run.poll/abort) is chosen from the methods that observe or control an in-flight request; confirm no other client relies on concurrent requests within one session (for example the VS Code dev chat or the MCP forwarder).",
+        "status": "resolved",
+        "choice": "Graph audit of client call sites",
+        "rationale": "Audit done: only the MCP server sends a client identity (label 'mcp', pid: src/mcp/forward-step.ts:134, src/mcp/daemon-stream.ts:137/226/424); its tool calls are mostly sequential, so the session FIFO plus the exempt set (subscriptions, chat.cancel/inject/redirect/status, workflow.run.poll/abort) is safe there. The VS Code plugin, the JetBrains plugin and the TUI send no identity, so their requests go to the unattributed worker. Decision: the unattributed worker has NO FIFO; its requests interleave on that one worker exactly as they do on today's single thread (HLD: 'served ... as today's daemon serves it'). This corrects the LLD edge case that said unattributed requests run in arrival order, which would have serialized every plugin and TUI request.",
+        "resolvedAt": "2026-10-28T05:30:42.580Z"
       }
     }
   },

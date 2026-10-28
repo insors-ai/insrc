@@ -15769,8 +15769,16 @@
           "JSON.parse"
         ],
         [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
           "unresolved-call",
           "MessageChannel"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ],
         [
           "filesystem-read",
@@ -15793,9 +15801,9 @@
           "this.info"
         ]
       ],
-      "siteCount": 10,
-      "sitesDigest": "2f8ae331dca9705bd902e5ea000c587f988a1f11e5ba546c54c5515e4d160c30",
-      "sourceDigest": "6baf691be42d6fcfc09eab77d84a55b654c83da9ff8c7857d975f5ae53906c05",
+      "siteCount": 12,
+      "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
+      "sourceDigest": "782f031ec7f06393f79292d2c95d53cf4f87328ac0c3c757043108495e79bf88",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -15913,6 +15921,38 @@
       "boundaries": [
         "diagnostic",
         "serialization"
+      ]
+    },
+    "src/daemon/threads/session-pool.ts": {
+      "classification": "routing-background-boundary",
+      "rationale": "Thread infrastructure (Epic 86197ac6 s3): the session pool starts, registers, sweeps and releases session worker threads; it handles no request payload, and connection-session or session-memory requests never reach a session worker (wireRequest refuses them). Its only boundary sites are diagnostic logs of worker lifecycle.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "this.info"
+        ],
+        [
+          "diagnostic",
+          "this.info"
+        ],
+        [
+          "diagnostic",
+          "this.info"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "90ec354e8198a0a6b3f011a636e6fe5b074f6ebf000599413ca1108238e4f9c3",
+      "sourceDigest": "0f67715d8c4e31c98cca7da2de4619beb97bc4c25205a4fb156653ac52e3157e",
+      "boundaries": [
+        "diagnostic"
       ]
     },
     "src/daemon/threads/session-worker.ts": {

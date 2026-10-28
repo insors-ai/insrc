@@ -46,6 +46,21 @@ export function threadsEnabled(): boolean {
 	}
 }
 
+/** The default daemon.threads.sessionIdleMs: a session's worker is released after 15 minutes idle (s3). */
+export const DEFAULT_SESSION_IDLE_MS = 900_000;
+
+/** daemon.threads.sessionIdleMs from ~/.insrc/config.json, read at start; the default when absent or not a non-negative number. */
+export function sessionIdleMs(): number {
+	try {
+		if (!existsSync(PATHS.config)) return DEFAULT_SESSION_IDLE_MS;
+		const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { daemon?: { threads?: { sessionIdleMs?: unknown } } };
+		const v = raw.daemon?.threads?.sessionIdleMs;
+		return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : DEFAULT_SESSION_IDLE_MS;
+	} catch {
+		return DEFAULT_SESSION_IDLE_MS;
+	}
+}
+
 /** daemon.maintenance.* from ~/.insrc/config.json, each falling back to its default when absent or not a non-negative number. */
 export function maintenanceConfig(): MaintenanceConfig {
 	let raw: Record<string, unknown> = {};

@@ -59,22 +59,23 @@ class Conn {
 	}
 	close(): void { this.socket.destroy(); }
 }
-const once = async (method: string, params: unknown, client?: { label: string; pid: number }): Promise<{ result?: unknown; error?: string }> => {
-	const c = await Conn.open(daemon!.sock);
+const once = async (method: string, params: unknown, client?: { label: string; pid: number }, sock = daemon!.sock): Promise<{ result?: unknown; error?: string }> => {
+	const c = await Conn.open(sock);
 	try { return await c.ask(method, params, client); } finally { c.close(); }
 };
 const threadOf = (r: { result?: unknown }): number => (r.result as { threadId: number }).threadId;
 
-before(async () => {
-	mkdirSync(join(HOME, '.insrc'), { recursive: true });
-	writeFileSync(join(HOME, '.insrc', 'config.json'), JSON.stringify({ daemon: { threads: { enabled: true, sessionIdleMs: IDLE_MS } } }));
+/** Spawn the daemon entry under `home` with `config`; resolves once it answers daemon.status. */
+async function spawnDaemon(home: string, config: unknown): Promise<{ pid: number; sock: string; stderr: () => string; exited: Promise<number | null> }> {
+	mkdirSync(join(home, '.insrc'), { recursive: true });
+	writeFileSync(join(home, '.insrc', 'config.json'), JSON.stringify(config));
 	const child = spawn(process.execPath, ['--import', fileURLToPath(import.meta.resolve('tsx/esm')), join(REPO_ROOT, 'src', 'daemon', 'index.ts')], {
-		cwd: REPO_ROOT, env: { ...childEnv(HOME), INSRC_MODE: 'mcp', INSRC_TEST_HOOKS: '1' }, stdio: ['ignore', 'ignore', 'pipe'],
+		cwd: REPO_ROOT, env: { ...childEnv(home), INSRC_MODE: 'mcp', INSRC_TEST_HOOKS: '1' }, stdio: ['ignore', 'ignore', 'pipe'],
 	});
 	let stderr = '';
 	child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
 	const exited = new Promise<number | null>(r => child.once('exit', code => r(code)));
-	const sock = sockOf(HOME);
+	const sock = sockOf(home);
 	for (const deadline = Date.now() + 60_000; ;) {
 		if (existsSync(sock)) {
 			try { const c = await Conn.open(sock); const r = await c.ask('daemon.status', {}); c.close(); if (r.error === undefined) break; } catch { /* not ready yet */ }
@@ -83,15 +84,23 @@ before(async () => {
 		if (Date.now() > deadline) { child.kill('SIGKILL'); throw new Error(`the daemon did not start: ${stderr.slice(-2000)}`); }
 		await new Promise(r => setTimeout(r, 200));
 	}
-	daemon = { pid: child.pid!, sock, stderr: () => stderr, exited };
+	return { pid: child.pid!, sock, stderr: () => stderr, exited };
+}
+
+/** SIGTERM, then SIGKILL after 30 s; resolves once it exited. */
+async function stopDaemon(d: { pid: number; exited: Promise<number | null> }): Promise<void> {
+	if (!alive(d.pid)) return;
+	process.kill(d.pid, 'SIGTERM');
+	const killer = setTimeout(() => { if (alive(d.pid)) process.kill(d.pid, 'SIGKILL'); }, 30_000);
+	await d.exited;
+	clearTimeout(killer);
+}
+
+before(async () => {
+	daemon = await spawnDaemon(HOME, { daemon: { threads: { enabled: true, sessionIdleMs: IDLE_MS } } });
 });
 after(async () => {
-	if (daemon !== undefined && alive(daemon.pid)) {
-		process.kill(daemon.pid, 'SIGTERM');
-		const killer = setTimeout(() => { if (alive(daemon!.pid)) process.kill(daemon!.pid, 'SIGKILL'); }, 30_000);
-		await daemon.exited;
-		clearTimeout(killer);
-	}
+	if (daemon !== undefined) await stopDaemon(daemon);
 	for (const d of [HOME, REPO]) rmSync(d, { recursive: true, force: true });
 });
 
@@ -189,5 +198,59 @@ test('ac6: a token of each step kind resumes on a new worker after an idle relea
 			assert.equal(old, null, `${kind}: the old token no longer resolves`);
 			assert.deepEqual(((await once('test.stepState', { op: 'read', kind, token: next }, A)).result as { payload: unknown }).payload, { kind, step: 2 });
 		}
+	}
+});
+
+test('ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins', { timeout: 120_000 }, async () => {
+	const A = { label: 'mcp', pid: 7501 };
+	const spinning = once('test.spin', { ms: 15_000 }, A);
+	await new Promise(r => setTimeout(r, 500));   // A's worker is spinning its CPU
+	const c = await Conn.open(daemon!.sock);
+	const latencies: number[] = [];
+	try {
+		for (let i = 0; i < 200; i++) {
+			const t0 = performance.now();
+			const r = await c.ask('daemon.status', {});
+			latencies.push(performance.now() - t0);
+			assert.equal(r.error, undefined);
+			const status = r.result as { repos?: unknown; queueDepth?: unknown; uptime?: unknown };
+			assert.ok(Array.isArray(status.repos) && typeof status.queueDepth === 'number' && typeof status.uptime === 'number', "each answer reports the daemon's current state");
+		}
+	} finally { c.close(); }
+	const sorted = [...latencies].sort((a, b) => a - b);
+	const p99 = sorted[Math.ceil(sorted.length * 0.99) - 1]!;
+	const done = await spinning;
+	assert.ok(threadOf(done) > 0, 'the spin ran on a session worker');
+	assert.ok(sorted.at(-1)! < 15_000, 'every status call returned while the worker was still spinning');
+	assert.ok(p99 < 100, `p99 ${p99.toFixed(1)} ms over 200 calls (max ${sorted.at(-1)!.toFixed(1)} ms) while a session worker spun`);
+});
+
+test('parity: moved session methods answer over the socket as the single-thread daemon does', { timeout: 120_000 }, async () => {
+	const home = mkdtempSync(join(tmpdir(), 'insrc-s3-single-'));
+	const single = await spawnDaemon(home, { daemon: { threads: { enabled: false } } });
+	try {
+		const client = { label: 'mcp', pid: 7601 };
+		// Session methods served by a session worker, the shared-state worker or the unattributed worker, each with a fixed input
+		// whose answer depends only on an empty store (both daemons start fresh).
+		const recorded: [string, unknown][] = [
+			['session.list', {}],
+			['agent.list', {}],
+			['chat.list', {}],
+			['todos.listForSession', { sessionId: 'sess-parity' }],
+			['workflow.run.poll', { runId: 'no-such-run', cursor: 0 }],
+			['workflow.run.abort', { runId: 'no-such-run' }],
+			['session.delete', { sessionId: '' }],
+			['understanding.history', {}],
+		];
+		for (const [method, params] of recorded) {
+			for (const who of [client, undefined]) {
+				const threaded = await once(method, params, who);
+				const today = await once(method, params, who, single.sock);
+				assert.deepEqual(threaded, today, `${method} ${who === undefined ? '(no identity)' : '(session)'}: the threaded daemon answers as the single-thread one`);
+			}
+		}
+	} finally {
+		await stopDaemon(single);
+		rmSync(home, { recursive: true, force: true });
 	}
 });

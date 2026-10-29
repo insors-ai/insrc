@@ -84,7 +84,7 @@ Run at 2026-10-29T10:21:30.021Z on commit `5d42177e7`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-10-29T10:27:33.965Z on commit `52a8dff9a`. Tests check: **failed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T10:33:28.336Z on commit `dac5143e6`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S4-RETIRE/TEMP: extend src/daemon/db/__tests__/session-resources.test.ts and src/daemon/db/__tests__/session-cleanup.test.ts for retained resource slots, cross-root pressure and expiry drains.**
 
@@ -99,10 +99,5 @@ Run at 2026-10-29T10:27:33.965Z on commit `52a8dff9a`. Tests check: **failed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/session-cleanup.test.ts` | 1 | 4 | 3.5 s |  |
-| `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 9 | 1.6 s |  |
-
-**Failures outside the named cases**
-
-- `src/daemon/db/__tests__/session-cleanup.test.ts`: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
-- `src/daemon/db/__tests__/session-cleanup.test.ts`: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 4 | 15.1 s |  |
+| `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 9 | 1.8 s |  |

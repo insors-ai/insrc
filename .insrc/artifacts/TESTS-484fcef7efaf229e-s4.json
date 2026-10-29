@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:27:33.965Z",
+    "updatedAt": "2026-10-29T10:33:28.336Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -324,9 +324,9 @@
       },
       {
         "taskId": "t5",
-        "commit": "52a8dff9a",
-        "ranAt": "2026-10-29T10:27:33.965Z",
-        "testsPassed": false,
+        "commit": "dac5143e6",
+        "ranAt": "2026-10-29T10:33:28.336Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "CM-S4-RETIRE/TEMP: extend src/daemon/db/__tests__/session-resources.test.ts and src/daemon/db/__tests__/session-cleanup.test.ts for retained resource slots, cross-root pressure and expiry drains.",
@@ -360,17 +360,17 @@
         "files": [
           {
             "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3489,
+            "durationMs": 15050,
             "titles": [
               {
                 "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "title": "CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission",
@@ -381,16 +381,13 @@
                 "result": "pass"
               }
             ],
-            "otherFailures": [
-              "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
-              "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work"
-            ]
+            "otherFailures": []
           },
           {
             "file": "src/daemon/db/__tests__/session-resources.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1559,
+            "durationMs": 1780,
             "titles": [
               {
                 "title": "CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners",

@@ -172,6 +172,10 @@ export interface CredentialRecovery {
 	readonly committed: boolean;
 	readonly cleanup: 'complete' | 'pending';
 }
+export interface PreparedCredentialRemoval {
+	readonly preparation: PreparationRecord;
+	readonly cleanupRefs: readonly string[];
+}
 const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 /** Root-service-owned; generations are immutable and never replace a legacy fixed key. */
 export class CredentialGenerations {
@@ -192,10 +196,14 @@ export class CredentialGenerations {
 			throw new ManagedStoreError('recovery-required');
 		await this.current();
 	}
-	private async current(): Promise<RegistrySnapshot> {
+	private async registry(): Promise<RegistrySnapshot> {
 		const current = await this.ports.current();
 		if (current.missing || current.mode !== 0o400 || current.file._management?.registryId !== this.journal.registryId)
 			throw new ManagedStoreError('recovery-required');
+		return current;
+	}
+	private async current(): Promise<RegistrySnapshot> {
+		const current = await this.registry();
 		for (const ref of referencedSecrets(current.file.connections)) {
 			let value: string | null;
 			try {
@@ -208,6 +216,24 @@ export class CredentialGenerations {
 				throw new ManagedStoreError('recovery-required');
 		}
 		return current;
+	}
+	/** No materialization, secret read or new generation: only existing metadata and an empty staging journal. */
+	async prepareRemoval(input: { readonly operationId: string; readonly connectionId: string; readonly expectedRevision: string }): Promise<PreparedCredentialRemoval> {
+		const {operationId,connectionId,expectedRevision}=input;
+		try {
+			if (!UUID4.test(operationId) || !connectionId || !expectedRevision || (await this.journal.pending()).length) throw new ManagedStoreError('recovery-required');
+			const current=await this.registry();
+			const previous=current.file.connections.find(config=>config.id===connectionId);
+			if (!previous || current.file._management!.revisions[connectionId]!==expectedRevision) throw new ManagedStoreError('recovery-required');
+			const live=referencedSecrets(current.file.connections.filter(config=>config.id!==connectionId));
+			const cleanupRefs=[...referencedSecrets(previous)].filter(ref=>this.owns(ref)&&!live.has(ref));
+			const preparation:PreparationRecord={operationId,registryId:this.journal.registryId,expectedGeneration:current.file._management!.generation,ownedStagedRefs:[],phase:'prepared'};
+			await this.journal.prepare(preparation);
+			await this.ports.boundary?.('prepared');
+			const fresh=await this.registry();
+			if (fresh.digest!==current.digest || fresh.inode!==current.inode) throw new ManagedStoreError('recovery-required');
+			return {preparation,cleanupRefs};
+		} catch { throw new ManagedStoreError('recovery-required'); }
 	}
 	async stage(input: CredentialStageInput): Promise<StagedCredentials> {
 		try {
@@ -309,7 +335,12 @@ export class CredentialGenerations {
 	/** Canonical receipt is the sole commit marker. Referenced generations are never deleted. */
 	async recover(): Promise<readonly CredentialRecovery[]> {
 		const records = await this.journal.pending();
-		const current = await this.current();
+		const metadata = await this.registry();
+		// Empty uncommitted records have nothing staged to read/delete. Committed removals
+		// likewise need only the unchanged receipt and live-reference graph, never plaintext.
+		const metadataOnly = records.length > 0 && records.every(record => record.ownedStagedRefs.length === 0 &&
+			(!metadata.file._management!.receipts[record.operationId] || metadata.file._management!.receipts[record.operationId]!.outcome.registration === 'removed'));
+		const current = metadataOnly ? metadata : await this.current();
 		const envelope = current.file._management!;
 		const live = referencedSecrets(current.file.connections);
 		const allStaged = new Set(records.flatMap(record => record.ownedStagedRefs));
@@ -333,7 +364,7 @@ export class CredentialGenerations {
 			for (const ref of candidates) {
 				try {
 					// Recheck immediately before a destructive port; service root lease prevents other writers.
-					const fresh = await this.current();
+					const fresh = metadataOnly ? await this.registry() : await this.current();
 					if (fresh.digest !== current.digest || fresh.inode !== current.inode || referencedSecrets(fresh.file.connections).has(ref))
 						throw new ManagedStoreError('recovery-required');
 					await this.ports.boundary?.('before-obsolete-cleanup');

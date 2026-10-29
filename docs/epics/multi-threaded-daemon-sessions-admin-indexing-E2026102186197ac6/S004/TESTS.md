@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t5
 
@@ -135,3 +135,34 @@ Run at 2026-10-29T08:57:00.353Z on commit `0dc785949`. Tests check: **passed**. 
 | `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 5 | 5.4 s |  |
 | `src/daemon/threads/__tests__/session-pool.test.ts` | 0 | 8 | 0.4 s |  |
 | `src/daemon/threads/__tests__/supervisor-track.test.ts` | 0 | 2 | 0.4 s |  |
+
+## t6
+
+Run at 2026-10-29T09:03:25.232Z on commit `1ef5e8603`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it | `src/daemon/threads/__tests__/s4-acceptance.test.ts` |
+
+**integration: s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving | `src/daemon/threads/__tests__/supervisor.test.ts` |
+| pass | s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state) | `src/daemon/threads/__tests__/session-failure.test.ts` |
+
+**integration: s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated | `src/daemon/threads/__tests__/s4-acceptance.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/s4-acceptance.test.ts` | 0 | 2 | 7.2 s |  |
+| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 6 | 6.7 s |  |
+| `src/daemon/threads/__tests__/supervisor.test.ts` | 0 | 4 | 10.3 s |  |

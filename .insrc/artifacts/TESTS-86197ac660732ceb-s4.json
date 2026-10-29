@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T08:57:00.353Z",
+    "updatedAt": "2026-10-29T09:03:25.232Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -417,6 +417,135 @@
               },
               {
                 "title": "supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "1ef5e8603",
+        "ranAt": "2026-10-29T09:03:25.232Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+                "title": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+                "title": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7220,
+            "titles": [
+              {
+                "title": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6720,
+            "titles": [
+              {
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              },
+              {
+                "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              },
+              {
+                "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+                "result": "pass"
+              },
+              {
+                "title": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)",
+                "result": "pass"
+              },
+              {
+                "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10342,
+            "titles": [
+              {
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              },
+              {
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              },
+              {
+                "title": "a worker whose first start fails is replaced like one that exited (startOrReplace), not given up on",
                 "result": "pass"
               }
             ],

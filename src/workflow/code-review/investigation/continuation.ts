@@ -1,4 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { recordInvestigationUsage } from './continuation-usage.js';
 import { randomUUID } from 'node:crypto';
 import { admitInvestigationRequest, assertInvestigationBindings, investigationRequestDigest, buildInvestigationSeed, INVESTIGATION_LIMITS } from './continuation-policy.js';
 import { InvestigationNavigation, untilInvestigationAborted } from './navigation.js';
@@ -42,7 +43,7 @@ export async function runInvestigationContinuation(input:InvestigationTurnV1,ini
    check();await owner.accept({runId:turn.runId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,progressId:`impact-${turn.attemptId}-${refs[0]}`,expectedSequence:owner.state.sequence,blockId,disposition:'unverified',evidenceIds:[],notes:'Caller impact remains an explicit obligation; empty/stale results cannot prove no impact.',coverageUpdates:[],findings:[],outstandingWork:refs});
   });
   owner=new BlockProgressCoordinator(turn,guarded,navigation.validation,()=>navigation.basis);
-  let failure:unknown=null,reply:InvestigationReplyV1|null=null;
+  let failure:unknown=null,reply:InvestigationReplyV1|null=null,dispatched=false;
   const currentContext=():InvestigationContext=>({...context,basis:navigation.basis,state:owner.state,validation:navigation.validation()});
   try{
    check();await untilInvestigationAborted(context.assertFresh(),signal);check();
@@ -54,7 +55,7 @@ export async function runInvestigationContinuation(input:InvestigationTurnV1,ini
     if(context.backend.qualification.progressMode==='block-yield'&&otherBlock&&!replay)throw new InvestigationError('unsupported-backend','Block-yield backend must return before another block assessment.');
     const receipt=await owner.accept(p);check();return receipt;
    },seed:ledgerSnapshot(context.seed),execution:{budget:{policy:context.policy.budget,admitted:budget,outputAllowanceTokens:context.policy.budget.profile.completionReserveTokens,reviewId:turn.runId,callId:randomUUID(),stage:'judge',role:'investigation',attempt:owner.state.attempts},timeoutMs:cap,stallMs:Math.min(300000,cap),internalRetry:false}};
-   reply=await untilInvestigationAborted(context.backend.execute(turn,tools,signal),signal);check();
+   dispatched=true;reply=await untilInvestigationAborted(context.backend.execute(turn,tools,signal),signal);check();
    reply=checkReply(reply,turn,owner,currentContext());
   }catch(cause){failure=signal.aborted&&controller.signal.reason instanceof InvestigationError?controller.signal.reason:cause;}
   finally{
@@ -62,6 +63,7 @@ export async function runInvestigationContinuation(input:InvestigationTurnV1,ini
    const elapsed=Math.max(0,Math.ceil(context.now()-started));
    context.assertOwner(turn.generation);
    owner.account({attempts:owner.state.attempts,consumedActiveMs:owner.state.consumedActiveMs+elapsed,usage:owner.state.usage});state=owner.state;
+   if(dispatched){const accounted=await recordInvestigationUsage(turn,currentContext(),state,elapsed);owner.account({attempts:accounted.attempts,consumedActiveMs:accounted.consumedActiveMs,usage:accounted.usage});state=owner.state;}
   }
   if(reply&&failure===null)return reply;
   const active=context.policy.activeLimitMs-state.consumedActiveMs,remaining=context.policy.attemptLimit-state.attempts;

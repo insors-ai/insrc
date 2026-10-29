@@ -1,0 +1,11 @@
+file:///Users/subhagho/work/projects/insors/insrc/docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t23/verify-handoff.mjs:30
+assert.ok(lld.meta.approvedAt);assert.ok(lld.body.contractDetails.some(c=>JSON.stringify(c).includes('prepareRemoval')));
+                                                                  ^
+
+TypeError: lld.body.contractDetails.some is not a function
+    at file:///Users/subhagho/work/projects/insors/insrc/docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t23/verify-handoff.mjs:30:67
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.2

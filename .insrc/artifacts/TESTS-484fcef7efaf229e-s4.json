@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T12:36:33.595Z",
+    "updatedAt": "2026-10-29T12:44:58.155Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2452,6 +2452,86 @@
               },
               {
                 "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t22",
+        "commit": "63b37ad78",
+        "ranAt": "2026-10-29T12:44:58.155Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-GATE: extend src/daemon/db/__tests__/session-release-gate.test.ts and src/daemon/db/__tests__/session-source-inventory.test.ts for private matching-build positives and stale/mixed/missing negatives; shipped prerequisites stay disabled.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+                "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+                "title": "CM-S4-GATE: required removal helpers and sc6 session prerequisites remain unadvertised in shipped bundles",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5021,
+            "titles": [
+              {
+                "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-GATE: required removal helpers and sc6 session prerequisites remain unadvertised in shipped bundles",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9938,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
                 "result": "pass"
               }
             ],

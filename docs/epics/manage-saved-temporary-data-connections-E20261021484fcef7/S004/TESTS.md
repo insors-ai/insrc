@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 76 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -405,3 +405,23 @@ Run at 2026-10-29T12:36:33.595Z on commit `9c1565e33`. Tests check: **passed**. 
 | `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 13 | 0.9 s |  |
 | `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 10 | 1.5 s |  |
 | `src/shared/__tests__/connection-management.test.ts` | 0 | 6 | 3.4 s |  |
+
+## t22
+
+Run at 2026-10-29T12:44:58.155Z on commit `63b37ad78`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-GATE: extend src/daemon/db/__tests__/session-release-gate.test.ts and src/daemon/db/__tests__/session-source-inventory.test.ts for private matching-build positives and stale/mixed/missing negatives; shipped prerequisites stay disabled.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled | `src/daemon/db/__tests__/session-release-gate.test.ts` |
+| pass | CM-S4-GATE: required removal helpers and sc6 session prerequisites remain unadvertised in shipped bundles | `src/daemon/db/__tests__/session-release-gate.test.ts` |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 3 | 5 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 3 | 9.9 s |  |

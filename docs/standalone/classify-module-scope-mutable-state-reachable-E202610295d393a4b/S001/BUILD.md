@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-29T12:03:40.473Z  ·  **Updated:** 2026-10-29T13:02:53.983Z
+**Standalone:** yes  ·  **Created:** 2026-10-29T12:03:40.473Z  ·  **Updated:** 2026-10-29T13:27:34.249Z
 
-**Commit:** 7a68f9c3d
+**Commit:** 44cac4275
 
 ## Summary
 
@@ -42,3 +42,5 @@ Module-state inventory for the threaded daemon: a test-side compiler scanner lis
 - `src/daemon/threads/session-worker.ts` — **insrc-build** (2026-10-29T13:02:53.983Z)
 - `src/daemon/threads/status-board.ts` — **insrc-build** (2026-10-29T13:02:53.983Z)
 - `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-29T13:02:53.983Z)
+- `.insrc/artifacts/PLAN-5d393a4b122cf64a-S001.json` — **insrc-build** (2026-10-29T13:27:34.249Z)
+- `docs/standalone/classify-module-scope-mutable-state-reachable-E202610295d393a4b/S001/PLAN.md` — **insrc-build** (2026-10-29T13:27:34.249Z)

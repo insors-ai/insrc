@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -287,3 +287,31 @@ Run at 2026-10-29T11:45:03.414Z on commit `aa9bebe00`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/draft-preparation.test.ts` | 0 | 1 | 1.7 s |  |
 | `src/daemon/db/__tests__/probe-disposal.test.ts` | 0 | 2 | 11.8 s |  |
+
+## t16
+
+Run at 2026-10-29T11:51:40.651Z on commit `bf60275a8`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-BUSY/INVALIDATE/RETIRE/RACES: controlled callback/iterator/constructor and both-owner interleavings; use explicit fixture barriers and TAP child reporting.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-RACES: saved remove update remove and acquire interleave at the existing writer barrier | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-REPLAY: ambiguous rename and fsync failures retain the barrier until same-ticket classification | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-RACES: temporary remove replay and cleanup create races invalidate access before paused close | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed | `src/daemon/db/__tests__/connection-leases.test.ts` |
+| pass | CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S4-BUSY: actual temporary edit probe holds its revision through cancel timeout late result and child failure drain | `src/daemon/db/__tests__/probe-disposal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 17 | 1.6 s |  |
+| `src/daemon/db/__tests__/probe-disposal.test.ts` | 0 | 2 | 11.9 s |  |
+| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 16 | 6.2 s |  |
+| `src/daemon/db/__tests__/session-entries.test.ts` | 0 | 9 | 5.2 s |  |
+| `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 10 | 1.8 s |  |

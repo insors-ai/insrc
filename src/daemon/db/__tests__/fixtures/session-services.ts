@@ -33,9 +33,14 @@ export async function sessionServices(directory: string) {
 		for (let owner = 0;owner < 2;owner++) {
 			const service = databaseFixture('redis:7.4-alpine', 6379, ['redis-server', '--save', '', '--appendonly', 'no', '--loglevel', 'warning', '--logfile', '/dev/null'], {}, '128m'); redis.push(service);
 			const kvPassword = 'CM_ROUTE_PRIVATE_KV_PASSWORD_' + owner;
-			const seed = new Redis({ host: '127.0.0.1', port: service.port, lazyConnect: true, retryStrategy: () => null }); seed.on('error', () => { });
+   let seed: Redis | undefined;
+   for(let attempt=0;attempt<100;attempt++){
+    const candidate=new Redis({host:'127.0.0.1',port:service.port,lazyConnect:true,retryStrategy:()=>null});candidate.on('error',()=>{});
+    try{await candidate.connect();seed=candidate;break;}catch{candidate.disconnect();await delay(25);}
+   }
+   assert.ok(seed,'private Redis did not become ready');
 			try {
-				await seed.connect(); await seed.config('SET', 'requirepass', kvPassword); await seed.auth(kvPassword);
+				await seed.config('SET', 'requirepass', kvPassword); await seed.auth(kvPassword);
 				const badRedis = new Redis({ host: '127.0.0.1', port: service.port, password: 'wrong', lazyConnect: true, retryStrategy: () => null }); badRedis.on('error', () => { });
 				try { await assert.rejects(badRedis.connect()); } finally { badRedis.disconnect(); }
 				for (let root = 0;root < 2;root++) {
@@ -59,6 +64,16 @@ export async function sessionServices(directory: string) {
 				try { await observer.connect(); assert.equal(String(await observer.client('LIST')).trim().split('\n').length, 1, 'only the observer may remain connected to the Redis service'); } finally { observer.disconnect(); }
 			}
 		}
-		return { endpoints, close, assertDrained, diagnostics: () => diagnostics };
+  async function assertPreserved() {
+   for(const endpoint of endpoints){
+    const url=new URL(endpoint.sql);url.username=endpoint.username;url.password=endpoint.password;
+    const sql=new pg.Client({connectionString:url.href});await sql.connect();
+    try{assert.deepEqual((await sql.query('SELECT marker FROM data')).rows,[{marker:endpoint.marker}]);}finally{await sql.end();}
+    const kvUrl=new URL(endpoint.kv);kvUrl.password=endpoint.kvPassword;
+    const kv=new Redis(kvUrl.href,{lazyConnect:true,retryStrategy:()=>null});kv.on('error',()=>{});await kv.connect();
+    try{assert.equal(await kv.get('data:marker'),endpoint.marker);}finally{await kv.quit();}
+   }
+  }
+  return { endpoints, close, assertDrained, assertPreserved, diagnostics: () => diagnostics };
 	} catch (error) { await close(); throw error; }
 }

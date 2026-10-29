@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:45:03.414Z",
+    "updatedAt": "2026-10-29T11:51:40.651Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1325,6 +1325,330 @@
               },
               {
                 "title": "CM-S4-BUSY: actual temporary edit probe holds its revision through cancel timeout late result and child failure drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "bf60275a8",
+        "ranAt": "2026-10-29T11:51:40.651Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-BUSY/INVALIDATE/RETIRE/RACES: controlled callback/iterator/constructor and both-owner interleavings; use explicit fixture barriers and TAP child reporting.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S4-RACES: saved remove update remove and acquire interleave at the existing writer barrier",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S4-REPLAY: ambiguous rename and fsync failures retain the barrier until same-ticket classification",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S4-RACES: temporary remove replay and cleanup create races invalidate access before paused close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-disposal.test.ts",
+                "title": "CM-S4-BUSY: actual temporary edit probe holds its revision through cancel timeout late result and child failure drain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1631,
+            "titles": [
+              {
+                "title": "CM-S4-INVALIDATE: removal detaches an unused revision synchronously without constructing it",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: failed and paused removal cleanup retains the old handle across same-ID recreation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: cancellation preserves generation and unresolved preparation blocks reload and shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: failed idle close retains its exact driver for later strict removal retry",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/probe-disposal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11865,
+            "titles": [
+              {
+                "title": "CM-S2-A8: admitted KV drivers propagate SDK disposal failures instead of reporting successful cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-BUSY: actual temporary edit probe holds its revision through cancel timeout late result and child failure drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6224,
+            "titles": [
+              {
+                "title": "CM-S4-SAVED: removal atomically drops selected row and revision while preserving source and unrelated document",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-REPLAY: concurrent identical removal and recreated-ID replay preserve exact original operation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-SAVED: busy stale and missing removals preserve registration credentials and receipts",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-REPLAY: ambiguous rename and fsync failures retain the barrier until same-ticket classification",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-REPLAY: expired and pruned removal receipts cannot delete a recreated generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-REPLAY: real process crash before or after rename recovers removal truth on restart",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-STATE: Saved removal state authenticates before registry lookup and never infers absent success",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-CREDENTIALS: Saved removal state survives credential cleanup failure and restart independently of runtime cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: Saved cleanup retries leave new generations usable and retain expired pending receipts",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-STATE: committed truth stays observable while original credential cleanup is still in flight",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RACES: saved remove update remove and acquire interleave at the existing writer barrier",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-entries.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5159,
+            "titles": [
+              {
+                "title": "CM-S4-TEMP: exact overlay removal publishes revision-only receipt and invalidates private staged edits",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: removed config bytes are released immediately while runtime slot cleanup stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: stale canceled forged and expired removal tokens have no publication effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: cumulative config quota refuses create and update without partial state",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1790,
+            "titles": [
+              {
+                "title": "CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RACES: temporary remove replay and cleanup create races invalidate access before paused close",
                 "result": "pass"
               }
             ],

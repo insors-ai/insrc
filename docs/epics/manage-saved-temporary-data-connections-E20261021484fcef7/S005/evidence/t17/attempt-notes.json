@@ -1,0 +1,16 @@
+{
+  "attempt1": {
+    "junitTests": 4,
+    "junitFailures": 1,
+    "cause": "Test expected Temporary create with an already-existing Saved ID to succeed; the existing daemon correctly returns duplicate-id.",
+    "correction": "Explicitly assert duplicate-id refusal and Saved preservation, then create a distinct Temporary ID for actual Discard. No producer contract changes.",
+    "functionalResults": "All twenty snapshots, dirty Cancel/busy/conflict/unknown and both-phase cleanup across same-ID recreation passed."
+  },
+  "attempt2": {
+    "nodeTests": 2,
+    "pass": 2,
+    "junitTests": 10,
+    "junitFailures": 0
+  },
+  "interventions": []
+}

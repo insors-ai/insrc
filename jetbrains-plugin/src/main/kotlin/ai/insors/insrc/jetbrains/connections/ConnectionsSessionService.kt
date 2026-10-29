@@ -18,10 +18,24 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ConnectionsSessionService(private val project: Project) : Disposable {
     private var owner = ConnectionsSessionOwner(alive = { !project.isDisposed && !serviceDisposed })
     private var mutationOwner: ProjectMutationOwner? = null
+    private var removalOwner: ConnectionRemovals? = null
     private var draftTests: ConnectionDraftTests? = null
     private var testRevocation: AutoCloseable? = null
     private var mutationTiming = MutationTiming()
     @Volatile private var serviceDisposed = false
+    @Synchronized fun removals():ConnectionRemovals {
+        if(serviceDisposed||project.isDisposed)throw MutationStateException("disposed")
+        return removalOwner?:ConnectionRemovals(mutations()).also{removalOwner=it}
+    }
+    fun onRemovalChange(listener:()->Unit):AutoCloseable {
+        val active=AtomicBoolean(true);val controller=removals()
+        val subscription=controller.onChange{
+            val generation=controller.generation;val app=ApplicationManager.getApplication()
+            val deliver=Runnable{if(active.get()&&!project.isDisposed&&!serviceDisposed&&generation==controller.generation)listener()}
+            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver)
+        }
+        return AutoCloseable{active.set(false);subscription.close()}
+    }
     @Synchronized fun tests():ConnectionDraftTests {
         if(serviceDisposed||project.isDisposed)throw DraftTestStateException("disposed")
         return draftTests?:ConnectionDraftTests(DraftTestPorts(owner::draftTestSource)).also{controller->
@@ -68,7 +82,7 @@ class ConnectionsSessionService(private val project: Project) : Disposable {
     /** Private controller erasure is synchronous; it must not wait for EDT delivery. */
     fun onTemporaryInvalidated(listener: () -> Unit): AutoCloseable = owner.onTemporaryInvalidated(listener)
     override fun dispose() {
-        synchronized(this){if(serviceDisposed)return;serviceDisposed=true;testRevocation?.close();draftTests?.close();mutationOwner?.revocation?.close();mutationOwner?.controller?.close()}
+        synchronized(this){if(serviceDisposed)return;serviceDisposed=true;testRevocation?.close();draftTests?.close();removalOwner?.close();mutationOwner?.revocation?.close();mutationOwner?.controller?.close()}
         owner.close()
     }
     fun whenDisposed(): CompletionStage<Void> = CompletableFuture.allOf(owner.whenDisposed().toCompletableFuture(),mutationOwner?.controller?.whenDisposed()?.toCompletableFuture()?:CompletableFuture.completedFuture(null))

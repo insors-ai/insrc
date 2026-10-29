@@ -1,0 +1,39 @@
+{
+  "task": "t17",
+  "node": "22.23.2",
+  "jdk": "21",
+  "focusedNode": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "focusedJUnit": {
+    "ConnectionRemovalsTest": 4,
+    "ConnectionMutationControllerTest": 6,
+    "failures": 0
+  },
+  "backendTypecheck": "pass",
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovals.kt": "7cf147af83968485627e8e0d7e1f8c22a45baa90c55f9a92df48d01230d99182",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt": "72b0017979141b9e4f98eba4dd2e98b439829bee48e44dca350d42732a318fe9",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt": "417cd35ede87eff0de05f77b13425623f105a98dc65a018406d55a9899a2cbdc",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt": "b4d76b775881c7f03fb9890b4a76a8c56e1a5413b215683a30d22dc2a86be1a5",
+    "src/shared/__tests__/fixtures/connection-mutation-server.ts": "5a513ad14e085854af5f65e817bbd4e03e7bdb8dba14bb1cef1754283b7bc9c2",
+    "src/shared/__tests__/connection-manager-kotlin-removal.test.ts": "29bc178cde297cd7c6eaa43d318e2a9c97da249151ff2187d0e7e0e50406b470"
+  },
+  "reuse": "Fresh t16 analyzer identified native mutation/controller/Project owner as partial reuse candidates. Extend them with native sc6 confirmation and fixed-copy projection; same immutable shared JSON corpus, no JavaScript client execution.",
+  "coverage": [
+    "Twenty unchanged common S004 snapshots.",
+    "No ticket on dirty or removal Cancel; exact captured generation; busy/conflict retains row and draft.",
+    "Unknown stays unknown after row absence until original-ticket status.",
+    "Only {ticket} on independent cleanup; original signature/operation comparison done privately in the fixture, no ticket output.",
+    "Same-ID Saved recreation retains current generation and new driver; source bytes unchanged.",
+    "Temporary duplicate-ID refusal remains unchanged and actual Discard preserves Saved rows."
+  ],
+  "limits": [
+    "Native Swing presentation/keyboard/theme acceptance remains task 27; actual both-client source acceptance remains task 29.",
+    "Full sweeps deferred until all implementation tasks, per user instruction."
+  ]
+}

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 38 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -265,3 +265,21 @@ Run at 2026-10-29T17:49:55.782Z on commit `be1ff5aed`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-test.test.ts` | 0 | 1 | 4.4 s |  |
+
+## t16
+
+Run at 2026-10-29T17:59:31.949Z on commit `6f78b8de2`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup | `vscode-plugin/src/connections/__tests__/removal.test.ts` |
+| pass | CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source | `vscode-plugin/src/connections/__tests__/removal.test.ts` |
+| pass | CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy | `vscode-plugin/src/connections/__tests__/removal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/connections/__tests__/removal.test.ts` | 0 | 3 | 1.7 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T17:49:55.782Z",
+    "updatedAt": "2026-10-29T17:59:31.949Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -727,6 +727,60 @@
             "titles": [
               {
                 "title": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "6f78b8de2",
+        "ranAt": "2026-10-29T17:59:31.949Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1706,
+            "titles": [
+              {
+                "title": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy",
                 "result": "pass"
               }
             ],

@@ -6,7 +6,7 @@ import java.util.Collections
 import java.util.concurrent.*
 
 class MutationStateException(val code:String):IllegalStateException("The connection operation cannot proceed in its current state.")
-data class MutationRecordView(val recordId:String,val key:ConnectionKey,val mode:String,val phase:String,val operationId:String?,val outcome:CommittedOutcome?,val busy:Boolean,val refresh:String,val errorCode:String?,val canReplay:Boolean,val canDismiss:Boolean)
+data class MutationRecordView(val recordId:String,val key:ConnectionKey,val mode:String,val phase:String,val operationId:String?,val outcome:CommittedOutcome?,val busy:Boolean,val refresh:String,val errorCode:String?,val canReplay:Boolean,val canDismiss:Boolean,val removal:RemovalCard?=null)
 interface MutationRefreshDelivery {fun success(rows:List<SafeConnection>)
     fun failed()}
 internal data class MutationPorts(
@@ -34,6 +34,7 @@ class ConnectionMutationController internal constructor(@Transient private val p
         var ticket:OperationTicket?=null
         var request:String?=null
         var outcome:CommittedOutcome?=null
+        var removal:RemovalCard?=null
         var refresh="not-started"
         var errorCode:String?=null
         var polls=0
@@ -55,8 +56,8 @@ class ConnectionMutationController internal constructor(@Transient private val p
     private fun active(r:Attempt)=synchronized(lock){!closed&&attempts[r.id]===r&&r.phase!="session-ended"}
     private fun unexpired(r:Attempt)=r.ticket?.let{ports.now()<Instant.parse(it.expiresAt).toEpochMilli()}==true
     private fun view(r:Attempt):MutationRecordView=synchronized(lock){
-        val dismiss=!r.busy&&(r.phase in setOf("ticket-error","rejected","session-ended")||r.phase=="committed"&&r.outcome?.credentialCleanup=="complete"&&r.outcome?.activation in setOf("active","not-applicable")&&r.refresh=="complete")
-        MutationRecordView(r.id,r.key.copy(),r.mode,r.phase,r.operationId,r.outcome?.copy(),r.busy,r.refresh,r.errorCode,!r.busy&&r.phase=="not-seen"&&r.request!=null&&unexpired(r),dismiss)
+        val dismiss=!r.busy&&(r.phase in setOf("ticket-error","rejected","session-ended")||r.phase=="committed"&&r.outcome?.credentialCleanup=="complete"&&r.outcome?.activation in setOf("active","not-applicable")&&r.refresh=="complete"&&(r.mode!="remove"||r.removal?.state=="removed"))
+        MutationRecordView(r.id,r.key.copy(),r.mode,r.phase,r.operationId,r.outcome?.copy(),r.busy,r.refresh,r.errorCode,!r.busy&&r.phase=="not-seen"&&r.request!=null&&unexpired(r),dismiss,r.removal?.copy(key=r.key.copy()))
     }
     val records:List<MutationRecordView> get()=synchronized(lock){Collections.unmodifiableList(attempts.values.map{view(it)})}
     fun record(id:String):MutationRecordView=synchronized(lock){admit()
@@ -111,8 +112,13 @@ class ConnectionMutationController internal constructor(@Transient private val p
         }
         return result.minimalCompletionStage()
     }
-    fun submit(draft:ConnectionDraft):CompletionStage<MutationRecordView> = try {
-        val input=ConnectionProtocol.requestData(draft.serialize()).asJsonObject
+    fun submit(draft:ConnectionDraft):CompletionStage<MutationRecordView> = try{submitInput(draft.serialize()){draft.clear()}}catch(e:Exception){CompletableFuture.failedFuture(e)}
+    fun remove(selection:RemovalSelection):CompletionStage<MutationRecordView> = try {
+        val captured=removalConfirmation(selection.key,selection.expectedRevision)
+        submitInput(JsonObject().apply{add("key",keyJson(captured.key));addProperty("mode","remove");addProperty("expectedRevision",captured.expectedRevision)},null)
+    }catch(e:Exception){CompletableFuture.failedFuture(e)}
+    private fun submitInput(value:JsonObject,clearDraft:(()->Unit)?):CompletionStage<MutationRecordView> = try {
+        val input=ConnectionProtocol.requestData(value).asJsonObject
         val key=input.getAsJsonObject("key").let{ConnectionKey(it["repoRoot"].asString,it["scope"].asString,it["id"].asString)}
         val text=input.toString()
         val size=text.toByteArray(Charsets.UTF_8).size
@@ -120,7 +126,7 @@ class ConnectionMutationController internal constructor(@Transient private val p
             admit()
             if(isBlocked(key))throw MutationStateException("busy")
             if(attempts.size>=MAX_RECORDS||bytes+size>MAX_ATTEMPT_BYTES||next>=9007199254740991L)throw MutationStateException("resource-limit")
-            Attempt("operation-${++next}",key,input["mode"].asString,ports.sessionStamp(key),text,{draft.clear()},size).also{attempts[it.id]=it
+            Attempt("operation-${++next}",key,input["mode"].asString,ports.sessionStamp(key),text,clearDraft,size).also{attempts[it.id]=it
                 bytes+=size}
         }
         emit()
@@ -157,6 +163,7 @@ class ConnectionMutationController internal constructor(@Transient private val p
     }catch(e:Exception){CompletableFuture.failedFuture<MutationRecordView>(e).minimalCompletionStage()}
     private fun mutate(r:Attempt){
         val request=synchronized(lock){if(!active(r)||r.request==null)return
+            if(r.mode=="remove")r.removal=removalInProgress(r.ticket!!)
             r.phase="submitting"
             r.errorCode=null
             r.request!!}
@@ -172,12 +179,14 @@ class ConnectionMutationController internal constructor(@Transient private val p
                         return}
                     synchronized(lock){if(!active(r))return
                         r.errorCode=result.code
+                        if(r.mode=="remove"&&r.ticket!=null)r.removal=projectRemovalRejection(r.ticket!!,result.code)
                         r.phase=if(result.code in setOf("reconciliation-required","recovery-required","operation-mismatch"))"reconciliation-required"else"rejected"
                         if(r.phase=="rejected"){r.ticket=null
                             release(r)}}
                 }
             }
         }catch(_:Exception){synchronized(lock){if(active(r)){r.phase="unknown"
+                    if(r.mode=="remove"&&r.ticket!=null)r.removal=projectRemovalState(r.ticket!!,OperationStatus.Uncommitted("pending"))
                     r.errorCode="transport-error"}}}
     }
     private fun commit(r:Attempt,value:CommittedOutcome){
@@ -186,6 +195,7 @@ class ConnectionMutationController internal constructor(@Transient private val p
             r.outcome?.let{if(value.revision!=it.revision||value.registration!=it.registration)throw MutationStateException("invalid-state")}
             r.outcome=value.copy()
             r.phase="committed"
+            if(r.mode=="remove")r.removal=projectRemovalState(r.ticket!!,OperationStatus.Committed(value))
             r.errorCode=null
             release(r)
             clear(r)
@@ -193,7 +203,18 @@ class ConnectionMutationController internal constructor(@Transient private val p
             r.timer=null
         }
         emit()
+        if(r.mode=="remove")removalState(r,false)
         refresh(r)
+    }
+    private fun removalState(r:Attempt,retry:Boolean) {
+        val ticket=synchronized(lock){if(!active(r)||r.mode!="remove"||r.outcome==null||r.ticket==null)throw MutationStateException("invalid-state");r.ticket!!}
+        try {
+            val value=ConnectionProtocol.removal(await(ports.call(r.key,PREFIX+if(retry)"retryRemovalCleanup"else"removalState",JsonObject().apply{add("ticket",ticketJson(ticket))},r.stamp)),expectation(r))
+            synchronized(lock){if(!active(r))return
+                if(value.state !in setOf("removed","removed-cleanup-pending"))throw MutationStateException("invalid-state")
+                r.outcome=r.outcome!!.copy(credentialCleanup=value.credentialCleanup!!)
+                r.removal=projectRemovalState(ticket,OperationStatus.Committed(r.outcome!!),value.resourceCleanup!!);r.errorCode=null}
+        }catch(_:Exception){synchronized(lock){if(active(r))r.errorCode="transport-error"}}
     }
     private fun refresh(r:Attempt){
         val revision=synchronized(lock){if(!active(r)||r.outcome==null)return
@@ -230,12 +251,13 @@ class ConnectionMutationController internal constructor(@Transient private val p
             val result=ConnectionProtocol.status(await(ports.call(r.key,PREFIX+"status",JsonObject().apply{add("ticket",ticketJson(ticket))},r.stamp)),expectation(r))
             if(!active(r))return
             when(result){
-                is OperationStatus.Committed -> if(known==null)commit(r,result.value)else synchronized(lock){if(!active(r))return
+                is OperationStatus.Committed -> if(known==null)commit(r,result.value)else {synchronized(lock){if(!active(r))return
                     if(result.value.revision!=known.revision||result.value.registration!=known.registration)throw MutationStateException("invalid-state")
                     r.outcome=result.value.copy()
-                    r.errorCode=null}
+                    r.errorCode=null};if(r.mode=="remove")removalState(r,false)}
                 is OperationStatus.Uncommitted -> synchronized(lock){if(!active(r))return
                     if(known!=null)r.errorCode="reconciliation-required"else{r.phase=if(result.status=="not-seen"&&!unexpired(r))"reconciliation-required"else result.status
+                        if(r.mode=="remove")r.removal=projectRemovalState(ticket,result)
                         r.errorCode=if(r.phase=="reconciliation-required")"reconciliation-required"else null
                         if(r.phase=="pending")schedule(r)}}
             }
@@ -270,14 +292,15 @@ class ConnectionMutationController internal constructor(@Transient private val p
                 r.errorCode=null}
         }catch(_:Exception){synchronized(lock){if(active(r))r.errorCode="transport-error"}}
     }
-    fun retryCleanup(id:String):CompletionStage<MutationRecordView> = action(id){r->synchronized(lock){if(r.phase!="committed"||r.outcome?.credentialCleanup!="pending")throw MutationStateException("invalid-state")}
-        status(r)}
+    fun retryCleanup(id:String):CompletionStage<MutationRecordView> = action(id){r->synchronized(lock){if(r.phase!="committed"||r.outcome==null||if(r.mode=="remove")r.removal?.state!="removed-cleanup-pending"else r.outcome?.credentialCleanup!="pending")throw MutationStateException("invalid-state")}
+        if(r.mode=="remove")removalState(r,true)else status(r)}
     fun endTemporary(){
         synchronized(lock){attempts.values.filter{it.key.scope=="temporary"&&it.phase!="session-ended"}.forEach{r->r.timer?.close()
                 r.timer=null
                 r.phase="session-ended"
                 r.ticket=null
                 r.outcome=null
+                r.removal=null
                 r.errorCode="session-expired"
                 release(r)
                 clear(r)}}

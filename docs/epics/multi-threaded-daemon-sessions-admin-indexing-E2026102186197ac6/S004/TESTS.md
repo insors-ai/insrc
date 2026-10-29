@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t5
 
@@ -43,3 +43,31 @@ Run at 2026-10-29T08:41:05.655Z on commit `b9e5a54bd`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/registry-board.test.ts` | 0 | 9 | 1 s |  |
+
+## t2
+
+Run at 2026-10-29T08:46:15.357Z on commit `35b52305d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle | `src/daemon/threads/__tests__/router-thread-view.test.ts` |
+
+**unit: router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes | `src/daemon/threads/__tests__/router-thread-view.test.ts` |
+
+**unit: router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it | `src/daemon/threads/__tests__/router-thread-view.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/router-thread-view.test.ts` | 0 | 3 | 0.7 s |  |

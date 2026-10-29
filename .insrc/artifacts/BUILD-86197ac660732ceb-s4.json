@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T08:41:05.655Z",
+    "updatedAt": "2026-10-29T08:46:15.357Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -18,9 +18,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Added the optional ThreadStatus.role (AMD-86197ac660732ceb-2) and the ThreadRole union, and the optional DaemonStatus.threads with ThreadView in src/shared/types.ts (wire shape with literal class and session types, since shared types do not import daemon code). Types only; the board test checks a role survives publish/snapshot and a status without one is unchanged.",
+    "summary": "The router keeps a per-thread in-flight map and publishes ThreadStatus (role, cls, session, busy, oldest method/since, FIFO queued) on attach, send, end (reply, terminal frame, lifetime completion, cancel of a stream without a lifetime) and FIFO changes; detach forgets the thread and publishes nothing for an unattached thread. Deviation from the LLD's roleOf option: role, class and session are read from the target registry the router already holds (registry.targets()), so no roleOf option is needed. Wired in index.ts with threadServices.board.",
     "testRecord": {
       "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S004/TESTS.md"
     },
@@ -30,58 +34,72 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/lazy-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/AMD-86197ac660732ceb-2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/registry-board.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:41:05.655Z"
+        "timestamp": "2026-10-29T08:46:15.357Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router-thread-view.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:46:15.357Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:46:15.357Z"
       }
     ],
-    "commit": "b9e5a54bd"
+    "commit": "35b52305d"
   }
 }

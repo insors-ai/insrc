@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T08:41:05.655Z",
+    "updatedAt": "2026-10-29T08:46:15.357Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -124,6 +124,76 @@
               },
               {
                 "title": "board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "35b52305d",
+        "ranAt": "2026-10-29T08:46:15.357Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
                 "result": "pass"
               }
             ],

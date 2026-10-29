@@ -13,7 +13,7 @@ import { ManagementServiceError } from './management.js';
 
 export const MAX_SESSION_CONNECTIONS = 64;
 export const MAX_SESSION_CONFIG_BYTES = 8 * 1024 * 1024;
-interface Budget { entries: number; bytes: number }
+interface Budget { entries: number; bytes: number; retired: number }
 interface Entry { readonly config: ConnectionConfig; readonly revision: string; readonly bytes: number; readonly safe: SafeConnection }
 export interface TemporaryEntryDraft {
  readonly key: ConnectionKey; readonly mode: 'create' | 'update';
@@ -37,7 +37,7 @@ export interface TemporaryUseAuthority {
 export class TemporaryConnectionOverlay {
  readonly #entries = new Map<string, Entry>();
  #prepared = new WeakMap<PreparedTemporaryEntry, Prepared>();
- #budget: Budget = { entries: 0, bytes: 0 };
+ #budget: Budget = { entries: 0, bytes: 0, retired: 0 };
  readonly #root: string;
  readonly #ownerId: string;
  readonly #gate: RevisionLeaseGate;
@@ -53,7 +53,11 @@ export class TemporaryConnectionOverlay {
  constructor(root: string, assertActive: () => void, ownerId: string, factoryAuthority: object, resourcePorts: TemporaryResourcePorts = {}) {
   this.#root = root; this.#assertActive = assertActive; this.#ownerId = ownerId;
   this.#gate = new RevisionLeaseGate(root); this.#resourcePorts = Object.freeze({ ...resourcePorts });
-  this.#resources = new TemporaryDriverResources(root, ownerId, () => this.#active(), factoryAuthority, this.#resourcePorts);
+  this.#resources = new TemporaryDriverResources(root, ownerId, () => this.#active(), factoryAuthority, this.#resourcePorts,()=>{
+   // Transfer an already-admitted live entry slot; no new quota admission at removal or shutdown.
+   this.#budget.retired++;let released=false;
+   return ()=>{if(!released){released=true;this.#budget.retired--;}};
+  });
  }
  /** Siblings share only counters, never entry maps or credentials. Owned by one session. */
  sibling(root: string, assertActive: () => void, factoryAuthority: object): TemporaryConnectionOverlay {
@@ -61,7 +65,7 @@ export class TemporaryConnectionOverlay {
  }
  #active(signal?: AbortSignal): void { if (this.#closed || signal?.aborted) throw reject('session-expired'); this.#assertActive(); }
  #quota(previous: Entry | undefined, next: Entry): void {
-  if (this.#budget.entries + (previous ? 0 : 1) > MAX_SESSION_CONNECTIONS || this.#budget.bytes - (previous?.bytes ?? 0) + next.bytes > MAX_SESSION_CONFIG_BYTES) throw reject('busy');
+  if (this.#budget.entries + this.#budget.retired + (previous ? 0 : 1) > MAX_SESSION_CONNECTIONS || this.#budget.bytes - (previous?.bytes ?? 0) + next.bytes > MAX_SESSION_CONFIG_BYTES) throw reject('busy');
  }
 	/** Boolean-only root coordinator metadata; never grants access to closed entries. */
 	reserves(id: string): boolean { return this.#entries.has(id) || this.#cleanupReservations.has(id); }

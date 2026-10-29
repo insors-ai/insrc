@@ -8,7 +8,8 @@ import { connectionManagementHandlers } from '../../connection-management-rpc.js
 import { IpcServer, directDispatch } from '../../server.js';
 import { TemporaryConnectionOverlay, createTemporaryOverlay } from '../session-entries.js';
 import { createConnectionResolver } from '../pool-cache.js';
-import { contextualDriverFactory } from '../driver-log-policy.js';
+import { contextualDriverFactory, temporaryDriverOwner, temporaryFileExecutionOwner } from '../driver-log-policy.js';
+import { TemporaryDriverResources } from '../session-resources.js';
 import { DriverPool } from '../pool.js';
 import { connectionsPath } from '../config.js';
 import { environment } from './fixtures/saved-management-fixture.js';
@@ -45,6 +46,44 @@ async function request(client: Awaited<ReturnType<typeof sessionRpcClient>>, roo
 function raw(config: ConnectionConfig, closed: () => void, marker = config.label): Driver {
  return { id: config.id, kind: config.kind, family: 'rdbms', privateConfig: config, describe: async () => ({ columns: [{ name: 'marker', type: 'text', nullable: false }] }), sample: async () => ({ rows: [{ marker }] }), close: async () => { closed(); } } as unknown as Driver;
 }
+
+test('CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners',async()=>{
+ const shared={slots:0};const retain=()=>{shared.slots++;let released=false;return()=>{if(!released){released=true;shared.slots--;}};};
+ let calls=0,otherCloses=0;
+ const rootA='/s4-resource-root-a',rootB='/s4-resource-root-b';
+ const a=new TemporaryDriverResources(rootA,'owner',()=>{},temporaryDriverOwner('owner',rootA,()=>{}),
+  {factory:()=>contextualDriverFactory(async config=>raw(config,()=>{calls++;if(calls===1)throw new Error('private-close-canary');}))},retain);
+ const b=new TemporaryDriverResources(rootB,'owner',()=>{},temporaryDriverOwner('owner',rootB,()=>{}),
+  {factory:()=>contextualDriverFactory(async config=>raw(config,()=>{otherCloses++;}))},retain);
+ try {
+  await a.acquire({id:'old',kind:'postgres',url:'postgres://host/db'},'old-revision');
+  const cleanup=a.commitRemoval(a.prepareRemoval('old-revision','old-operation'));
+  assert.equal(shared.slots,1);
+  await assert.rejects(cleanup.close(),{code:'recovery-required'});assert.equal(shared.slots,1);
+  assert.ok(a.removalCleanupPending('old-operation','old-revision'));
+  await b.acquire({id:'other',kind:'postgres',url:'postgres://host/db'},'other-revision');
+  await a.acquire({id:'new',kind:'postgres',url:'postgres://host/db'},'new-revision');
+  await a.retryRemovalCleanup('old-operation','old-revision');assert.equal(shared.slots,0);assert.equal(calls,2);
+  await cleanup.close();assert.equal(calls,2);assert.equal(otherCloses,0);
+ } finally {await a.close();await b.close();}
+ assert.equal(shared.slots,0);assert.equal(otherCloses,1);
+});
+
+test('CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete',async()=>{
+ let files=0,drivers=0,slots=0;
+ const root='/s4-resource-file';
+ const resources=new TemporaryDriverResources(root,'owner',()=>{},temporaryDriverOwner('owner',root,()=>{}),
+  {factory:()=>contextualDriverFactory(async(config,context)=>{
+   temporaryFileExecutionOwner(context)!({close:async()=>{files++;if(files===1)throw new Error('private-file-canary');}});
+   return raw(config,()=>{drivers++;});
+  })},()=>{slots++;return()=>{slots--;};});
+ try {
+  await resources.acquire({id:'private-file',kind:'postgres',url:'postgres://host/db'},'file-revision');
+  const cleanup=resources.commitRemoval(resources.prepareRemoval('file-revision','file-operation'));
+  await assert.rejects(cleanup.close(),{code:'recovery-required'});assert.equal(slots,1);assert.equal(drivers,1);
+  await cleanup.close();assert.equal(slots,0);assert.equal(files,2);assert.equal(drivers,1);
+ } finally {await resources.close();}
+});
 
 test('CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation', async () => {
  let builds = 0, closes = 0; const f = await fixture({ factory: () => async config => { builds++; return raw(config, () => { closes++; }); } });

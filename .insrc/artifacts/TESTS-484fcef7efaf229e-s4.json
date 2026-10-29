@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:16:22.549Z",
+    "updatedAt": "2026-10-29T10:21:30.021Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -195,6 +195,126 @@
               },
               {
                 "title": "CM-S4-RETIRE: shutdown drains already-owned resources at capacity and keeps failures for retry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "5d42177e7",
+        "ranAt": "2026-10-29T10:21:30.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-RETIRE/INVALIDATE: extend src/daemon/db/__tests__/connection-leases.test.ts with paused/failed SDK close, late construction, exact revision detachment and retained retry handles.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S4-INVALIDATE: removal detaches an unused revision synchronously without constructing it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S4-RETIRE: failed and paused removal cleanup retains the old handle across same-ID recreation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S4-RETIRE: cancellation preserves generation and unresolved preparation blocks reload and shutdown",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S4-RETIRE: failed idle close retains its exact driver for later strict removal retry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1691,
+            "titles": [
+              {
+                "title": "CM-S4-INVALIDATE: removal detaches an unused revision synchronously without constructing it",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: failed and paused removal cleanup retains the old handle across same-ID recreation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: cancellation preserves generation and unresolved preparation blocks reload and shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: failed idle close retains its exact driver for later strict removal retry",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out",
                 "result": "pass"
               }
             ],

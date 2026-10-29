@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -61,3 +61,23 @@ Run at 2026-10-29T10:16:22.549Z on commit `0ce46e23e`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/removal-retirement.test.ts` | 0 | 4 | 0.5 s |  |
+
+## t4
+
+Run at 2026-10-29T10:21:30.021Z on commit `5d42177e7`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-RETIRE/INVALIDATE: extend src/daemon/db/__tests__/connection-leases.test.ts with paused/failed SDK close, late construction, exact revision detachment and retained retry handles.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-INVALIDATE: removal detaches an unused revision synchronously without constructing it | `src/daemon/db/__tests__/connection-leases.test.ts` |
+| pass | CM-S4-RETIRE: failed and paused removal cleanup retains the old handle across same-ID recreation | `src/daemon/db/__tests__/connection-leases.test.ts` |
+| pass | CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed | `src/daemon/db/__tests__/connection-leases.test.ts` |
+| pass | CM-S4-RETIRE: cancellation preserves generation and unresolved preparation blocks reload and shutdown | `src/daemon/db/__tests__/connection-leases.test.ts` |
+| pass | CM-S4-RETIRE: failed idle close retains its exact driver for later strict removal retry | `src/daemon/db/__tests__/connection-leases.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 17 | 1.7 s |  |

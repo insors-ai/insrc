@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -137,3 +137,21 @@ Run at 2026-10-29T10:44:21.065Z on commit `7afe40883`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 8 | 2.8 s |  |
+
+## t8
+
+Run at 2026-10-29T10:52:17.847Z on commit `fde043bdb`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-REPLAY/RACES: saved-management and credential crash/restart fixtures for rename/fsync ambiguity, response loss, held barriers, receipt expiry/pruning and same-ID recreation.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-REPLAY: ambiguous rename and fsync failures retain the barrier until same-ticket classification | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-REPLAY: expired and pruned removal receipts cannot delete a recreated generation | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-REPLAY: real process crash before or after rename recovers removal truth on restart | `src/daemon/db/__tests__/saved-management.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 11 | 6 s |  |

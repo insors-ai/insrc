@@ -4,8 +4,9 @@ import { assertSavedIdAvailable } from './connection-reservations.js';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { realpath } from 'node:fs/promises';
 import type { ConnectionConfig } from '../../shared/db-driver.js';
-import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection, CommittedOutcome, OperationStatus, ActivationRetry, CommittedReceipt, DraftTestRequest, EffectiveDraft } from '../../shared/connection-management.js';
-import { parseMutationRequest, parseOperationTicket, parseConnectionKey, ManagementInputError } from '../../shared/connection-management-wire.js';
+import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection, CommittedOutcome, OperationStatus, ActivationRetry, CommittedReceipt, DraftTestRequest, EffectiveDraft, RemovalState } from '../../shared/connection-management.js';
+import { parseMutationRequest, parseOperationTicket, parseConnectionKey, parseRemovalStateRequest, ManagementInputError } from '../../shared/connection-management-wire.js';
+import { projectRemovalState } from '../../shared/connection-removal.js';
 import { canonicalRequestJson, SavedTicketAuthority, TicketError } from './management-tickets.js';
 import { connectionsPath, loadConnections } from './config.js';
 import { credentialValues, materializeDraft, ProfileError, safeConnection } from './driver-profiles.js';
@@ -385,6 +386,8 @@ export class SavedConnectionManagement {
 			if (inFlight) {
 				if (canonicalRequestJson(inFlight.ticket) !== canonicalRequestJson(ticket))
 					throw new ManagementServiceError('operation-mismatch');
+				const phase = this.#phase.get(ticket.operationId);
+				if (ticket.mode === 'remove' && phase?.registration === 'removed') return {status:'committed',value:structuredClone(phase)};
 				return { status: 'pending' };
 			}
 			return await withSavedRootGate(this.root, async () => {
@@ -393,7 +396,8 @@ export class SavedConnectionManagement {
 				const receipt = current.file._management!.receipts[ticket.operationId];
 				if (receipt && canonicalRequestJson(receipt.ticket) !== canonicalRequestJson(ticket))
 					throw new ManagementServiceError('operation-mismatch');
-				const recovered = await this.ports.generations.recover();
+				const ownPreparation = (await this.ports.generations.journal.pending()).some(record => record.operationId === ticket.operationId);
+				const recovered = ticket.mode !== 'remove' || ownPreparation ? await this.ports.generations.recover() : [];
 				current = await this.current();
 				const canonical = current.file._management!.receipts[ticket.operationId];
 				if (canonical) {
@@ -413,6 +417,36 @@ export class SavedConnectionManagement {
 		catch {
 			return { status: 'reconciliation-required' };
 		}
+	}
+	private async removalTicket(context: ManagementRequestContext, value: OperationTicket): Promise<OperationTicket> {
+		this.context(context);
+		const parsed = parseRemovalStateRequest({ticket:value});
+		return (await this.ports.tickets.inspect(structuredClone(parsed.ticket))).ticket;
+	}
+	private removalResourceState(operationId: string): 'complete'|'pending' {
+		const revision = this.#removalRevisions.get(operationId);
+		if (revision === undefined) return 'complete'; // Old-process SDK handles do not survive restart.
+		if (this.ports.pool.removalCleanupPending(operationId,revision)) return 'pending';
+		this.#removalRevisions.delete(operationId);
+		return 'complete';
+	}
+	async removalState(context: ManagementRequestContext, value: OperationTicket): Promise<RemovalState> {
+		const ticket = await this.removalTicket(context,value);
+		const status = await this.status(context,ticket);
+		return projectRemovalState(ticket,status,this.removalResourceState(ticket.operationId));
+	}
+	async retryRemovalCleanup(context: ManagementRequestContext, value: OperationTicket): Promise<RemovalState> {
+		const ticket = await this.removalTicket(context,value);
+		const status = await this.status(context,ticket);
+		if (status.status !== 'committed') return projectRemovalState(ticket,status);
+		if (status.value.registration !== 'removed' || status.value.operationId !== ticket.operationId) throw new ManagementServiceError('operation-mismatch');
+		const revision = this.#removalRevisions.get(ticket.operationId);
+		// SDK close runs outside the root gate. A paused close must not block a new
+		// generation or a status query; the pool joins concurrent retries exactly.
+		if (revision !== undefined) {
+			try { await this.ports.pool.retryRemovalCleanup(ticket.operationId,revision); } catch { /* The projection retains pending cleanup. */ }
+		}
+		return this.removalState(context,ticket);
 	}
 	async retryActivation(context: ManagementRequestContext, value: ActivationRetry): Promise<MutationOutcome> {
 		try {
@@ -456,6 +490,7 @@ export class SavedConnectionManagement {
 	async pruneReceipts(context: ManagementRequestContext): Promise<void> {
 		this.context(context);
 		await withSavedRootGate(this.root, async () => {
+			if (this.#pendingRemovals.size) throw new ManagementServiceError('recovery-required');
 			const current = await this.current();
 			const envelope = current.file._management!;
 			const pending = new Set((await this.ports.generations.journal.pending()).map(r => r.operationId));
@@ -463,7 +498,7 @@ export class SavedConnectionManagement {
 			const removed: string[] = [];
 			for (const [id, receipt] of Object.entries(receipts)) {
 				const inspected = await this.ports.tickets.inspect(receipt.ticket);
-				if (inspected.expired && !pending.has(id) && await this.cleanupState(receipt, current) === 'complete') {
+				if (inspected.expired && !pending.has(id) && !(receipt.ticket.mode === 'remove' && this.removalResourceState(id) === 'pending') && await this.cleanupState(receipt, current) === 'complete') {
 					delete receipts[id];
 					removed.push(id);
 				}

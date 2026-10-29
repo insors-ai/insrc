@@ -137,6 +137,64 @@ test('CM-S4-REPLAY: real process crash before or after rename recovers removal t
 		}finally{await rm(directory,{recursive:true,force:true});}
 	}
 });
+test('CM-S4-STATE: Saved removal state authenticates before registry lookup and never infers absent success',async()=>{
+	const env=await environment(),f=await env.rootFixture('state-auth');
+	try{
+		const missing=await removalRequest(f,'missing','missing-revision');let reads=0;const inspect=f.store.inspect.bind(f.store);
+		const probe=mock.method(f.store,'inspect',async()=>{reads++;return inspect();});
+		try{
+			await assert.rejects(f.service.removalState({...f.context,access:{...f.context.access,lookupRoot:'/other'}},missing.ticket),{code:'invalid-input'});
+			await assert.rejects(f.service.removalState(f.context,{...missing.ticket,signature:'x'.repeat(43)}),{code:'invalid-input'});
+			await assert.rejects(f.service.retryRemovalCleanup(f.context,{...missing.ticket,mode:'update'}),{code:'operation-mismatch'});
+			assert.equal(reads,0);f.reset();
+			const state=await f.service.removalState(f.context,missing.ticket);assert.equal(state.state,'unknown');assert.equal(f.counts.credentialGets,0);assert.equal(f.counts.writes,0);
+		}finally{probe.mock.restore();}
+	}finally{await env.cleanup();}
+});
+test('CM-S4-CREDENTIALS: Saved removal state survives credential cleanup failure and restart independently of runtime cleanup',async()=>{
+	const env=await environment(),f=await env.rootFixture('state-credentials');let fail=true;
+	const original=f.keystore.deleteKey;f.keystore.deleteKey=async ref=>{if(fail)throw new Error('private-credential-canary');await original(ref);};
+	try{
+		const initial=committed(await f.service.mutate(f.context,await f.request('selected')));const request=await removalRequest(f,'selected',initial.revision);f.reset();
+		committed(await f.service.mutate(f.context,request));let state=await f.service.removalState(f.context,request.ticket);
+		assert.equal(state.state,'removed-cleanup-pending');assert.equal(state.credentialCleanup,'pending');assert.equal(state.resourceCleanup,'complete');assert.equal(f.counts.credentialGets,0);
+		await f.restart();state=await f.service.removalState(f.context,request.ticket);
+		assert.equal(state.credentialCleanup,'pending');assert.equal(state.resourceCleanup,'complete');assert.equal(f.counts.credentialGets,0);
+		const bytes=await readFile(f.path,'utf8');fail=false;state=await f.service.retryRemovalCleanup(f.context,request.ticket);
+		assert.equal(state.state,'removed');assert.equal(state.credentialCleanup,'complete');assert.equal(state.resourceCleanup,'complete');assert.equal(f.counts.credentialGets,0);
+		assert.ok(!JSON.stringify(state).includes('canary'));assert.equal(await readFile(f.path,'utf8'),bytes);
+		const deletes=f.counts.deletes;await f.service.retryRemovalCleanup(f.context,request.ticket);assert.equal(f.counts.deletes,deletes);
+	}finally{fail=false;await env.cleanup();}
+});
+test('CM-S4-RETIRE: Saved cleanup retries leave new generations usable and retain expired pending receipts', {timeout:15000},async()=>{
+	const env=await environment(),f=await env.rootFixture('state-runtime');const entered=deferred(),finish=deferred();let builds=0,oldCloses=0,newCloses=0,fail=true;
+	f.hooks.factory=async config=>{const index=++builds;return{id:config.id,kind:config.kind,family:'rdbms',close:async()=>{if(index===1){oldCloses++;if(fail)throw new Error('private-sdk-canary');entered.resolve();await finish.promise;}else{newCloses++;}}} as Driver;};
+	try{
+		const initial=committed(await f.service.mutate(f.context,{...await f.request('selected'),credentials:{}}));await f.pool.withConnection('selected',async()=>{});
+		const request=await removalRequest(f,'selected',initial.revision);committed(await f.service.mutate(f.context,request));
+		let state=await f.service.removalState(f.context,request.ticket);assert.equal(state.state,'removed-cleanup-pending');assert.equal(state.resourceCleanup,'pending');assert.equal(state.credentialCleanup,'complete');
+		const recreated=committed(await f.service.mutate(f.context,{...await f.request('selected'),credentials:{}}));await f.pool.withConnection('selected',async()=>{});
+		fail=false;const retry=f.service.retryRemovalCleanup(f.context,request.ticket);await entered.promise;
+		const independent=await Promise.race([f.service.mutate(f.context,{...await f.request('other'),credentials:{}}),delay(1000,undefined)]);assert.ok(independent,'SDK cleanup must not hold the root gate');committed(independent);
+		f.clock.value=Date.parse(request.ticket.expiresAt)+1;await f.service.pruneReceipts(f.context);assert.ok(f.store.snapshot.file._management!.receipts[request.operationId]);
+		state=await f.service.removalState(f.context,request.ticket);assert.equal(state.resourceCleanup,'pending');assert.ok(!JSON.stringify(state).includes('private-sdk-canary'));
+		finish.resolve();state=await retry;assert.equal(state.state,'removed');assert.equal(oldCloses,2);assert.equal(newCloses,0);
+		assert.equal(f.store.snapshot.file._management!.revisions['selected'],recreated.revision);await f.pool.withConnection('selected',async()=>{});assert.equal(builds,2);
+	}finally{fail=false;finish.resolve();await env.cleanup();}
+	assert.equal(newCloses,1);
+});
+test('CM-S4-STATE: committed truth stays observable while original credential cleanup is still in flight', {timeout:15000},async()=>{
+	const env=await environment(),f=await env.rootFixture('state-inflight'),entered=deferred(),finish=deferred();
+	const original=f.keystore.deleteKey;f.keystore.deleteKey=async ref=>{entered.resolve();await finish.promise;await original(ref);};let mutation:Promise<MutationOutcome>|undefined;
+	try{
+		const initial=committed(await f.service.mutate(f.context,await f.request('selected')));const request=await removalRequest(f,'selected',initial.revision);
+		mutation=f.service.mutate(f.context,request);await entered.promise;
+		const state=await Promise.race([f.service.removalState(f.context,request.ticket),delay(1000,undefined)]);assert.ok(state,'status must not wait for credential cleanup');
+		assert.equal(state.state,'removed-cleanup-pending');assert.equal(state.credentialCleanup,'pending');assert.equal(state.resourceCleanup,'complete');
+		const status=await f.service.status(f.context,request.ticket);assert.equal(status.status,'committed');
+		finish.resolve();committed(await mutation);assert.equal((await f.service.removalState(f.context,request.ticket)).state,'removed');
+	}finally{finish.resolve();if(mutation)await mutation;await env.cleanup();}
+});
 test('CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports', async () => {
 	const env = await environment();
 	const f = await env.rootFixture('root');

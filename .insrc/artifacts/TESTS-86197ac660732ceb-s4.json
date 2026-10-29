@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T08:13:45.184Z",
+    "updatedAt": "2026-10-29T08:41:05.655Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -56,6 +56,74 @@
               },
               {
                 "title": "lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t1",
+        "commit": "b9e5a54bd",
+        "ranAt": "2026-10-29T08:41:05.655Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1037,
+            "titles": [
+              {
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              },
+              {
+                "title": "registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker",
+                "result": "pass"
+              },
+              {
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              },
+              {
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread",
+                "result": "pass"
+              },
+              {
+                "title": "board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is",
+                "result": "pass"
+              },
+              {
+                "title": "board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged",
                 "result": "pass"
               }
             ],

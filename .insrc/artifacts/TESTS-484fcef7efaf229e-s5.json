@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T14:54:33.596Z",
+    "updatedAt": "2026-10-29T15:05:48.808Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -111,6 +111,42 @@
               },
               {
                 "title": "CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "acea568cf",
+        "ranAt": "2026-10-29T15:05:48.808Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
+                "title": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4503,
+            "titles": [
+              {
+                "title": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
                 "result": "pass"
               }
             ],

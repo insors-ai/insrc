@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T14:54:33.596Z",
+    "updatedAt": "2026-10-29T15:05:48.808Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "S005 t1 passed; t2 adds bounded data-only TypeScript v2 reply decoders reusing shared handshake/key/ticket/test validators. Focused4/4 tests and Node22 typecheck pass, all29current descriptors supported, unsupported schemas disabled, correlation/privacy negatives verified; no UI/session implementation or release activation yet.",
+    "summary": "S005 t1–t2 passed; t3 adds strict Kotlin v2 DTOs/streaming JSON boundary without changing the stateless legacy gateway. Shared actual29descriptor/5safe-message corpus,7focused Node tests and8actual JUnit tests plus typecheck pass; isolated JVM reports prevent parallel evidence clobbering. No manager/session UI or release activation yet.",
     "testRecord": {
       "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/TESTS.md"
     },
@@ -30,121 +34,177 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/focused.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/junit.xml"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "jetbrains-plugin/build.gradle.kts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCorpusTest.kt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-manager-corpus.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/fixtures/connection-corpus.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "test-fixtures/connection-management/.gitattributes"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "test-fixtures/connection-management/v1/corpus.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "test-fixtures/connection-management/v1/manifest.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/task-validation.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/focused.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/typecheck.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-manager-wire.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
       },
       {
         "target": {
           "file": "src/shared/connection-manager/wire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T14:54:33.596Z"
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/task-validation.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/focused.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/typecheck.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/fixtures/connection-junit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T15:05:48.808Z"
       }
     ],
-    "commit": "3af052d7d"
+    "commit": "acea568cf"
   }
 }

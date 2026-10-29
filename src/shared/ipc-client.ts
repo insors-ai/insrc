@@ -160,3 +160,168 @@ export function createIpcClient(connect?: () => Socket): IpcClient {
     updateOutcome: () => call<DaemonUpdateOutcome | null>('daemon.updateOutcome'),
   };
 }
+
+/** Persistent manager lanes share this thin socket boundary with the legacy one-shot client. */
+export const IPC_LANE_LIMITS = Object.freeze({ frameBytes:16*1024*1024, inFlightBytes:16*1024*1024, pending:64, abandoned:256, timeoutMs:15000, depth:32, nodes:131072 });
+export type IpcLaneFailure = 'invalid-request'|'capacity'|'closed'|'disconnected'|'timeout'|'canceled'|'invalid-response'|'remote-error';
+export class IpcLaneError extends Error {
+ constructor(readonly code:IpcLaneFailure, readonly written:boolean) { super('The daemon connection request could not be completed.');this.name='IpcLaneError'; }
+}
+export interface PersistentIpcLane {
+ readonly isClosed:boolean;
+ rpc<T=unknown>(method:string,params?:unknown,options?:{readonly signal?:AbortSignal|undefined}):Promise<T>;
+ onClose(listener:(reason:IpcLaneFailure)=>void):()=>void;
+ dispose():void;
+}
+export interface IpcLaneOptions {
+ readonly connect?:(()=>Socket)|undefined;
+ /** Injectable counter boundary for overflow tests; never accepted from an IPC/webview payload. */
+ readonly firstRequestId?:number|undefined;
+}
+const ignoreLaneSocketError=():void=>{};
+/** A synchronous data check before stringify; accessors/toJSON/functions never execute. */
+function laneRequestJson(value:unknown):string {
+ const active=new Set<object>();let nodes=0,estimated=0;
+ const visit=(v:unknown,depth:number):void=>{
+  if(++nodes>IPC_LANE_LIMITS.nodes||depth>IPC_LANE_LIMITS.depth)throw new IpcLaneError('invalid-request',false);
+  if(typeof v==='string'){estimated+=Buffer.byteLength(JSON.stringify(v));}
+  else if(v===null||typeof v==='boolean'||typeof v==='number'&&Number.isFinite(v)){estimated+=String(v).length;}
+  else {
+   if(typeof v!=='object'||active.has(v))throw new IpcLaneError('invalid-request',false);
+   const array=Array.isArray(v);if(Object.getPrototypeOf(v)!==(array?Array.prototype:Object.prototype))throw new IpcLaneError('invalid-request',false);
+   active.add(v);estimated+=2;
+   const d=Object.getOwnPropertyDescriptors(v),keys=Reflect.ownKeys(d);
+   if(array&&keys.length!==(v as unknown[]).length+1)throw new IpcLaneError('invalid-request',false);
+   for(const k of keys){
+    if(typeof k!=='string')throw new IpcLaneError('invalid-request',false);
+    if(array&&k==='length')continue;
+    const item=d[k]!;
+    if(!item.enumerable||!Object.hasOwn(item,'value')||['__proto__','constructor','prototype'].includes(k)||array&&!/^(0|[1-9]\d*)$/.test(k))throw new IpcLaneError('invalid-request',false);
+    estimated+=Buffer.byteLength(JSON.stringify(k))+2;visit(item.value,depth+1);
+   }
+   active.delete(v);
+  }
+  if(estimated>IPC_LANE_LIMITS.frameBytes)throw new IpcLaneError('invalid-request',false);
+ };
+ visit(value,0);return JSON.stringify(value);
+}
+/** JSON.parse alone silently accepts duplicate object fields. Reject them at every nesting level. */
+function laneReplyJson(text:string):IpcResponse {
+ const stack:{object:boolean;key:boolean;keys:Set<string>}[]=[];let nodes=0;
+ for(let i=0;i<text.length;i++){
+  const c=text[i];
+  if(c==='"'){
+   const start=i;let closed=false;
+   while(++i<text.length){if(text[i]==='\\'){i++;continue;}if(text[i]==='"'){closed=true;break;}}
+   if(!closed||++nodes>IPC_LANE_LIMITS.nodes)throw new Error();
+   const top=stack.at(-1);
+   if(top?.object&&top.key){const k=JSON.parse(text.slice(start,i+1)) as string;if(top.keys.has(k))throw new Error();top.keys.add(k);top.key=false;}
+  }else if(c==='{'||c==='['){if(++nodes>IPC_LANE_LIMITS.nodes||stack.length>=IPC_LANE_LIMITS.depth+1)throw new Error();stack.push({object:c==='{',key:c==='{',keys:new Set()});}
+  else if(c==='}'||c===']'){const top=stack.pop();if(!top||top.object!==(c==='}'))throw new Error();}
+  else if(c===','&&stack.at(-1)?.object){stack.at(-1)!.key=true;}
+ }
+ if(stack.length)throw new Error();
+ const v=JSON.parse(text) as IpcResponse;
+ if(!v||typeof v!=='object'||Array.isArray(v)||!Number.isSafeInteger(v.id)||v.id<1
+  ||Object.keys(v).some(k=>!['id','result','error'].includes(k))||Object.hasOwn(v,'result')===Object.hasOwn(v,'error')
+  ||Object.hasOwn(v,'error')&&typeof v.error!=='string')throw new Error();
+ return v;
+}
+interface LanePending {
+ readonly id:number;frame:string;readonly bytes:number;written:boolean;
+ readonly resolve:(value:unknown)=>void;readonly reject:(error:IpcLaneError)=>void;
+ timer:ReturnType<typeof setTimeout>|undefined;
+ readonly signal:AbortSignal|undefined;abort:(()=>void)|undefined;
+}
+/** One lane is one actual socket identity. Control, per-root data and Saved owners choose separate lanes. */
+export function openIpcLane(options:IpcLaneOptions={}):PersistentIpcLane {
+ let nextId=options.firstRequestId??1;
+ if(!Number.isSafeInteger(nextId)||nextId<1)throw new IpcLaneError('invalid-request',false);
+ let socket:Socket;
+ try{socket=(options.connect??(()=>createConnection(PATHS.sockFile)))();}catch{throw new IpcLaneError('disconnected',false);}
+ const pending=new Map<number,LanePending>(),abandoned=new Set<number>(),listeners=new Set<(reason:IpcLaneFailure)=>void>();
+ let closed=false,connected=false,backpressure=false,inFlightBytes=0,partial=Buffer.alloc(0),closeReason:IpcLaneFailure='closed';
+ const finish=(p:LanePending,error?:IpcLaneError,value?:unknown):void=>{
+  if(pending.get(p.id)!==p)return;
+  pending.delete(p.id);inFlightBytes-=p.bytes;p.frame='';if(p.timer)clearTimeout(p.timer);if(p.abort)p.signal?.removeEventListener('abort',p.abort);
+  if(error)p.reject(error);else p.resolve(value);
+ };
+ const close=(reason:IpcLaneFailure):void=>{
+  if(closed)return;closed=true;closeReason=reason;
+  for(const p of pending.values())finish(p,new IpcLaneError(reason,p.written));
+  abandoned.clear();partial=Buffer.alloc(0);
+  socket.off('connect',onConnect);socket.off('data',onData);socket.off('error',onError);socket.off('end',onEnd);socket.off('close',onSocketClose);socket.off('drain',onDrain);
+  // Destroy without forwarding a raw error; absorb any already queued socket error until close.
+  socket.on('error',ignoreLaneSocketError);socket.once('close',()=>socket.off('error',ignoreLaneSocketError));socket.destroy();
+  for(const listener of listeners){try{listener(reason);}catch{/* A subscriber cannot prevent owned teardown. */}}
+  listeners.clear();
+ };
+ const flush=():void=>{
+  if(closed||!connected||backpressure)return;
+  for(const p of pending.values()){
+   if(p.written)continue;
+   // Mark before write: a throw can follow a partial write; never falsely claim non-delivery.
+   p.written=true;
+   try{const frame=p.frame;p.frame='';if(!socket.write(frame)){backpressure=true;break;}}
+   catch{close('disconnected');break;}
+  }
+ };
+ const onConnect=():void=>{connected=true;flush();};
+ const onDrain=():void=>{backpressure=false;flush();};
+ const onError=():void=>close('disconnected');
+ const onEnd=():void=>close(partial.length?'invalid-response':'disconnected');
+ const onSocketClose=():void=>close('disconnected');
+ const onData=(chunk:Buffer):void=>{
+  if(closed)return;
+  try{
+   let offset=0;
+   while(offset<chunk.length){
+    const end=chunk.indexOf(10,offset),stop=end<0?chunk.length:end;
+    if(partial.length+stop-offset>IPC_LANE_LIMITS.frameBytes)throw new Error();
+    partial=Buffer.concat([partial,chunk.subarray(offset,stop)]);offset=stop+(end<0?0:1);
+    if(end<0)break;
+    const reply=laneReplyJson(new TextDecoder('utf-8',{fatal:true}).decode(partial));partial=Buffer.alloc(0);
+    const p=pending.get(reply.id);
+    if(!p){if(abandoned.delete(reply.id))continue;throw new Error();}
+    if(!p.written)throw new Error();
+    if(Object.hasOwn(reply,'error'))finish(p,new IpcLaneError('remote-error',true));else finish(p,undefined,reply.result);
+   }
+  }catch{close('invalid-response');}
+ };
+ socket.on('connect',onConnect);socket.on('data',onData);socket.on('error',onError);socket.on('end',onEnd);socket.on('close',onSocketClose);socket.on('drain',onDrain);
+ const abandon=(p:LanePending,reason:'timeout'|'canceled'):void=>{
+  if(pending.get(p.id)!==p)return;
+  if(p.written)abandoned.add(p.id);
+  finish(p,new IpcLaneError(reason,p.written));
+  if(abandoned.size>=IPC_LANE_LIMITS.abandoned)close('capacity');
+ };
+ return {
+  get isClosed(){return closed;},
+  rpc<T=unknown>(method:string,params:unknown={},requestOptions:{readonly signal?:AbortSignal|undefined}={}):Promise<T>{
+   if(closed)return Promise.reject(new IpcLaneError('closed',false));
+   if(requestOptions.signal?.aborted)return Promise.reject(new IpcLaneError('canceled',false));
+   if(pending.size>=IPC_LANE_LIMITS.pending)return Promise.reject(new IpcLaneError('capacity',false));
+   if(nextId>Number.MAX_SAFE_INTEGER){close('closed');return Promise.reject(new IpcLaneError('closed',false));}
+   if(!/^[a-zA-Z][a-zA-Z0-9._-]{0,127}$/.test(method))return Promise.reject(new IpcLaneError('invalid-request',false));
+   let frame:string;const id=nextId;
+   try{frame=laneRequestJson({id,method,params,client:{label:'cli',pid:process.pid}})+'\n';}
+   catch{return Promise.reject(new IpcLaneError('invalid-request',false));}
+   const bytes=Buffer.byteLength(frame);
+   if(bytes>IPC_LANE_LIMITS.frameBytes)return Promise.reject(new IpcLaneError('invalid-request',false));
+   if(inFlightBytes+bytes>IPC_LANE_LIMITS.inFlightBytes)return Promise.reject(new IpcLaneError('capacity',false));
+   nextId++;
+   return new Promise<T>((resolve,reject)=>{
+    const p:LanePending={id,frame,bytes,written:false,resolve:value=>resolve(value as T),reject,timer:undefined,signal:requestOptions.signal,abort:undefined};
+    pending.set(id,p);inFlightBytes+=bytes;
+    p.timer=setTimeout(()=>abandon(p,'timeout'),IPC_LANE_LIMITS.timeoutMs);
+    if(p.signal){p.abort=()=>abandon(p,'canceled');p.signal.addEventListener('abort',p.abort,{once:true});}
+    flush();
+   });
+  },
+  onClose(listener){
+   if(closed){queueMicrotask(()=>{try{listener(closeReason);}catch{}});return ()=>{};}
+   listeners.add(listener);return ()=>{listeners.delete(listener);};
+  },
+  dispose:()=>close('closed'),
+ };
+}

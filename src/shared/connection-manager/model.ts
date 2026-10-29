@@ -24,6 +24,7 @@ export type ManagerEvent =
  | { readonly type: 'select'; readonly selection: ConnectionSelection }
  | { readonly type: 'committed-reveal'; readonly selection: ConnectionSelection }
  | { readonly type: 'epoch'; readonly value: string }
+ | { readonly type: 'temporary-ended' }
  | { readonly type: 'unavailable'; readonly code: 'offline' | 'upgrade-required' }
  | { readonly type: 'close' };
 export type ManagerEffect = { readonly type: 'list' } & ReadIdentity;
@@ -107,6 +108,8 @@ export function reduceConnectionManager(s: ConnectionManagerState, event: Manage
   case 'epoch':
    if (event.value===s.daemonEpoch) return unchanged();
    return changed({...s,daemonEpoch:event.value,viewGeneration:Math.min(Number.MAX_SAFE_INTEGER,s.viewGeneration+1),awaitingRead:false,listState:s.repoRoot?'offline':'no-repository',rows:s.rows.filter(r=>r.key.scope==='saved'),selected:null,pendingReveal:null});
+  case 'temporary-ended':
+   return changed({...s,viewGeneration:Math.min(Number.MAX_SAFE_INTEGER,s.viewGeneration+1),awaitingRead:false,listState:s.repoRoot?'offline':'no-repository',rows:s.rows.filter(r=>r.key.scope==='saved'),selected:s.selected?.key.scope==='saved'?s.selected:null,pendingReveal:null});
   case 'unavailable': return changed({...s,awaitingRead:false,viewGeneration:Math.min(Number.MAX_SAFE_INTEGER,s.viewGeneration+1),listState:s.repoRoot?event.code:'no-repository'});
   case 'close': return changed({...s,closed:true,awaitingRead:false,viewGeneration:Math.min(Number.MAX_SAFE_INTEGER,s.viewGeneration+1)});
  }

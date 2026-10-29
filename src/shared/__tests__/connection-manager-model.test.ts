@@ -4,6 +4,18 @@ import { createConnectionManager, projectConnectionManager, reduceConnectionMana
 import type { ManagerEvent } from '../connection-manager/model.js';
 import { loadConnectionCorpus } from './fixtures/connection-corpus.js';
 
+test('CM-S5-STATE-TS: authenticated temporary revocation erases rows and refuses a pending old read',()=>{
+ const root='/fixture/repo-a',epoch='fixture-epoch',revision='33333333-3333-4333-8333-333333333333';
+ let state=reduceConnectionManager(createConnectionManager([root],epoch),{type:'select-root',repoRoot:root}).state;
+ const rows=['saved','temporary'].map(scope=>({key:{repoRoot:root,scope,id:'fixture'},revision,kind:'postgres',family:'rdbms',effectiveFamily:'rdbms',publicConfig:{kind:'postgres',endpoint:'postgresql://fixture.invalid/database'},credentialPresence:{},...(scope==='temporary'?{ephemeral:true}:{})}));
+ state=reduceConnectionManager(state,{type:'list-result',repoRoot:root,daemonEpoch:epoch,viewGeneration:1,rows}).state;
+ state=reduceConnectionManager(state,{type:'select',selection:{key:state.rows[1]!.key,revision}}).state;
+ const pending=reduceConnectionManager(state,{type:'refresh'}).state;
+ const revoked=reduceConnectionManager(pending,{type:'temporary-ended'}).state;
+ assert.equal(revoked.rows.length,1);assert.equal(revoked.rows[0]?.key.scope,'saved');assert.equal(revoked.selected,null);assert.equal(revoked.listState,'offline');assert.equal(revoked.awaitingRead,false);
+ assert.equal(reduceConnectionManager(revoked,{type:'list-result',repoRoot:root,daemonEpoch:epoch,viewGeneration:pending.viewGeneration,rows}).state,revoked);
+});
+
 test('CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal',()=>{
  const corpus=loadConnectionCorpus();
  const scenarios=corpus.managerScenarios;

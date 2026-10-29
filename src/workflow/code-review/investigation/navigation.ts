@@ -33,7 +33,15 @@ export class InvestigationNavigation {
   try{
    const result=await untilInvestigationAborted(this.context.inspect(reference,this.turn.attemptId,this.signal),this.signal);
    this.signal.throwIfAborted();this.context.assertOwner(this.turn.generation);
-   if(result.read.reference!==reference||!ledgerEqual(result.read,result.inspection.readReceipt))throw new InvestigationError('invalid-progress','Read is not the authenticated inspected receipt.');
+   const {read,inspection}=result;
+   // Native test receipts intentionally have no source readReceipt (sc2). Their
+   // display is still bound to the verified digest, result reference and limits.
+   const matches=inspection.kind==='test-result'
+    ?inspection.readReceipt===null&&read.sourceDigest===inspection.source.digest&&read.contentRef===inspection.contentRef
+     &&ledgerEqual(read.lines,inspection.source.lines)&&read.completeness===inspection.completeness
+     &&ledgerEqual(read.limitations,inspection.limitations)&&(read.completeness!=='complete'||(typeof read.text==='string'&&read.text.trim().length>0))
+    :ledgerEqual(read,inspection.readReceipt);
+   if(read.reference!==reference||!matches)throw new InvestigationError('invalid-progress','Read is not the authenticated inspected receipt.');
    const evidence=this.admit(result.inspection);return ledgerSnapshot({...result.read,evidenceId:evidence.evidenceId});
   }finally{this.busy=false;}
  };

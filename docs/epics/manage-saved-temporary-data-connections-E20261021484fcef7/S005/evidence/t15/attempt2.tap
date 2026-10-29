@@ -1,0 +1,80 @@
+TAP version 13
+# Subtest: CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+not ok 1 - CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+  ---
+  duration_ms: 26329.898375
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-test.test.ts:1:92'
+  failureType: 'testCodeFailure'
+  error: |-
+    Focused JUnit validation failed: Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed: the value of 'insrcFixtureReports' was changed.
+    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+    > Task :bundleBackendAssets UP-TO-DATE
+    > Task :initializeIntellijPlatformPlugin
+    > Task :patchPluginXml UP-TO-DATE
+    > Task :generateManifest UP-TO-DATE
+    > Task :verifyPluginProjectConfiguration UP-TO-DATE
+    > Task :processResources UP-TO-DATE
+    > Task :processTestResources UP-TO-DATE
+    > Task :compileKotlin UP-TO-DATE
+    > Task :compileJava NO-SOURCE
+    > Task :classes UP-TO-DATE
+    > Task :instrumentCode UP-TO-DATE
+    > Task :jar UP-TO-DATE
+    > Task :instrumentedJar UP-TO-DATE
+    > Task :composedJar UP-TO-DATE
+    > Task :prepareTestSandbox UP-TO-DATE
+    > Task :prepareTest
+    > Task :compileTestKotlin
+    > Task :compileTestJava NO-SOURCE
+    > Task :testClasses UP-TO-DATE
+    > Task :instrumentTestCode
+    
+    > Task :test
+    
+    ConnectionDraftTestsTest > testExactTupleLateAbaAndNativeEdtViewDelivery FAILED
+        java.lang.AssertionError at ConnectionDraftTestsTest.kt:36
+    
+    > Task :test FAILED
+    16 actionable tasks: 4 executed, 12 up-to-date
+    Configuration cache entry stored.
+    
+    
+    4 tests completed, 1 failed
+    
+    FAILURE: Build failed with an exception.
+    
+    * What went wrong:
+    Execution failed for task ':test'.
+    > There were failing tests. See the report at: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/build/reports/tests/test/index.html
+    
+    * Try:
+    > Run with --scan to get full insights.
+    
+    BUILD FAILED in 26s
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    runConnectionJUnit (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/fixtures/connection-junit.ts:16:10)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-test.test.ts:5:2)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 26504.241708

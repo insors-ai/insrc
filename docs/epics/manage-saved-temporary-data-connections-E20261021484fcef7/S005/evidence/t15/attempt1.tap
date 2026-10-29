@@ -1,0 +1,81 @@
+TAP version 13
+# Subtest: CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+not ok 1 - CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+  ---
+  duration_ms: 13324.592916
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-test.test.ts:1:92'
+  failureType: 'testCodeFailure'
+  error: |-
+    Focused JUnit validation failed: Calculating task graph as no cached configuration is available for tasks: test --tests ai.insors.insrc.jetbrains.connections.ConnectionDraftTestsTest
+    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+    > Task :initializeIntellijPlatformPlugin
+    > Task :bundleBackendAssets UP-TO-DATE
+    > Task :patchPluginXml UP-TO-DATE
+    > Task :verifyPluginProjectConfiguration UP-TO-DATE
+    > Task :processResources UP-TO-DATE
+    > Task :processTestResources UP-TO-DATE
+    > Task :generateManifest UP-TO-DATE
+    > Task :compileKotlin UP-TO-DATE
+    > Task :compileJava NO-SOURCE
+    > Task :classes UP-TO-DATE
+    > Task :instrumentCode
+    > Task :jar
+    > Task :instrumentedJar
+    > Task :composedJar
+    > Task :prepareTestSandbox
+    > Task :prepareTest
+    
+    > Task :compileTestKotlin FAILED
+    14 actionable tasks: 7 executed, 7 up-to-date
+    Configuration cache entry stored.
+    
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:52:54 Syntax error: Unexpected tokens (use ';' to separate expressions on the same line).
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:52:97 Unresolved reference 'kind'.
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:52:114 Syntax error: Unexpected tokens (use ';' to separate expressions on the same line).
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:53:9 Unresolved reference 'form'.
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:53:98 Unresolved reference 'form'.
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:54:86 Unresolved reference 'form'.
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:55:35 Unresolved reference 'form'.
+    e: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:56:152 Unresolved reference 'form'.
+    
+    FAILURE: Build failed with an exception.
+    
+    * What went wrong:
+    Execution failed for task ':compileTestKotlin'.
+    > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+       > Compilation error. See log for more details
+    
+    * Try:
+    > Run with --stacktrace option to get the stack trace.
+    > Run with --info or --debug option to get more log output.
+    > Run with --scan to get full insights.
+    > Get more help at https://help.gradle.org.
+    
+    BUILD FAILED in 12s
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    runConnectionJUnit (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/fixtures/connection-junit.ts:16:10)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-test.test.ts:5:2)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13607.575625

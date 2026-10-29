@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -233,3 +233,19 @@ Run at 2026-10-29T17:28:25.111Z on commit `b91a36215`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-mutation.test.ts` | 0 | 1 | 17.2 s |  |
+
+## t14
+
+Run at 2026-10-29T17:40:57.921Z on commit `fac5f6b05`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior | `vscode-plugin/src/connections/__tests__/draft-test.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/connections/__tests__/draft-test.test.ts` | 0 | 2 | 13.9 s |  |

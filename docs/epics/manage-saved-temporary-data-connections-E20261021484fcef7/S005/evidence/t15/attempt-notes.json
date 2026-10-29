@@ -1,0 +1,20 @@
+{
+  "attempt1": {
+    "result": "failed",
+    "cause": "Test-only Kotlin multiple declaration syntax; corrected to separate val declarations."
+  },
+  "attempt2": {
+    "result": "failed",
+    "junitTests": 4,
+    "junitFailures": 1,
+    "cause": "Nested HeavyIdeaTestFixture EditorListenerTracker saw an outer light-project EditorTracker FocusChangeListener initialized during EDT event dispatch. All functional assertions reached teardown.",
+    "failure": "java.lang.AssertionError: Listeners leaked for interface com.intellij.openapi.editor.ex.FocusChangeListener: [com.intellij.codeInsight.daemon.impl.EditorTrackerImpl$1]",
+    "correction": "Create independent actual Projects with ProjectManager.createProject and closeAndDispose; no nested heavy-fixture listener baseline."
+  },
+  "attempt3": {
+    "result": "pass",
+    "junitTests": 4,
+    "junitFailures": 0
+  },
+  "interventions": []
+}

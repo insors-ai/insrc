@@ -3,6 +3,7 @@ package ai.insors.insrc.jetbrains.connections
 import com.google.gson.*
 import java.util.Collections
 import java.util.regex.Pattern
+import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.math.floor
 
 class ConnectionDraftException(val code:String):IllegalArgumentException(if(code=="read-only")"This connection requires a newer editor or has compatibility restrictions."else"Review the connection fields before continuing.")
@@ -61,6 +62,9 @@ fun connectionDriverChoices(descriptors:List<ConnectionDriverDescriptor>):List<C
 
 /** Privileged memory-only form. Every backing field is excluded from accidental Gson persistence. */
 class ConnectionDraft(descriptor:ConnectionDriverDescriptor,key:ConnectionKey,current:SafeConnection?=null) {
+    @Transient private val listeners=CopyOnWriteArraySet<()->Unit>()
+    fun onChange(listener:()->Unit):AutoCloseable {listeners.add(listener);return AutoCloseable{listeners.remove(listener)}}
+    private fun changed(){draftRevision++;listeners.forEach{runCatching{it()}}}
     @Transient private val descriptor=descriptor.copy(publicInputSchema=descriptor.publicInputSchema.deepCopy(),secretSlots=descriptor.secretSlots.toList())
     @Transient private var key=key.copy()
     @Transient private val mode=if(current==null)"create"else"update"
@@ -85,7 +89,7 @@ class ConnectionDraft(descriptor:ConnectionDriverDescriptor,key:ConnectionKey,cu
         if(mode=="update")throw ConnectionDraftException("fixed-identity")
         if(id.length>16384||id.any{it.code<32})invalid()
         key=key.copy(id=id)
-        draftRevision++}
+        changed()}
     private fun schemaAt(path:List<String>):JsonObject {
         var s=descriptor.publicInputSchema
         for(p in path){if(p in setOf("__proto__","prototype","constructor"))invalid()
@@ -140,7 +144,7 @@ class ConnectionDraft(descriptor:ConnectionDriverDescriptor,key:ConnectionKey,cu
         if(!DraftSchema.valid(descriptor.publicInputSchema,checked,true))invalid()
         safeEditingFields(checked)
         values=checked
-        draftRevision++
+        changed()
     }
     @Synchronized fun resetField(path:List<String>){
         editable()
@@ -150,7 +154,7 @@ class ConnectionDraft(descriptor:ConnectionDriverDescriptor,key:ConnectionKey,cu
         var target=next
         var original:JsonElement?=baseline
         for(p in path.dropLast(1)){val child=target[p]
-            if(child==null||!child.isJsonObject){draftRevision++
+            if(child==null||!child.isJsonObject){changed()
                 return}
             target=child.asJsonObject
             original=original?.takeIf{it.isJsonObject}?.asJsonObject?.get(p)}
@@ -158,7 +162,7 @@ class ConnectionDraft(descriptor:ConnectionDriverDescriptor,key:ConnectionKey,cu
         val prior=original?.takeIf{it.isJsonObject}?.asJsonObject?.get(leaf)
         if(prior!=null)target.add(leaf,prior.deepCopy())else target.remove(leaf)
         values=next
-        draftRevision++
+        changed()
     }
     @Synchronized fun setCredential(slot:String,action:String,replacement:String?=null){editable()
         if(slot !in descriptor.secretSlots||action !in setOf("keep","replace","clear"))invalid()
@@ -167,7 +171,7 @@ class ConnectionDraft(descriptor:ConnectionDriverDescriptor,key:ConnectionKey,cu
             if(v.length>16384||v.contains("\${secret:"))invalid()
             patch.addProperty("value",v)}
         credentials[slot]=patch
-        draftRevision++}
+        changed()}
     @Synchronized fun setCredentialAddresses(slot:String,addresses:List<String>){if(slot !in setOf("options.servers","options.hosts")||addresses.isEmpty()||addresses.size>1024||addresses.any{it.isEmpty()||it.length>16384})invalid()
         setCredential(slot,"replace",JsonArray().apply{addresses.forEach{add(it)}}.toString())}
     /** Private copy is used by both Save and Test; it is never a view or Settings state. */
@@ -205,6 +209,6 @@ class ConnectionDraft(descriptor:ConnectionDriverDescriptor,key:ConnectionKey,cu
         presence=emptyMap()
         pending=null
         discarded=true
-        draftRevision++}
+        changed()}
     override fun toString()="ConnectionDraft(private)"
 }

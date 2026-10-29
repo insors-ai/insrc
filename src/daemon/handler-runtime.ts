@@ -136,6 +136,8 @@ export interface RuntimeIndexer {
 }
 
 export interface HandlerRuntimeDeps {
+  /** Trusted in-process composition seam; never supplied in an RPC payload. */
+  readonly probeHandler?: RpcHandler | undefined;
  readonly stepCallHandler?: StreamHandler | undefined;
 	readonly db: Awaited<ReturnType<typeof getDb>>;
 	readonly configStore: ConfigStore;
@@ -606,6 +608,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
 		'codeReview.investigation.capabilities': async()=>{const {investigationCapabilities}=await import('./review-investigation-gateway.js');return investigationCapabilities();},
+    'codeReview.investigation.probe': async params => {if(deps.probeHandler)return deps.probeHandler(params);const {probeTransport}=await import('./review-investigation-gateway.js');return probeTransport(params);},
 		'codeReview.diagnostics': async params => {
  const {legacyInvestigationDiagnostics}=await import('./review-investigation-gateway.js');return legacyInvestigationDiagnostics(params);
  },

@@ -8,6 +8,7 @@ import { ReviewIntegrationError } from '../shared/review-investigation.js';
 import { parseInvestigationEnvelope } from '../shared/review-investigation-wire.js';
 import { InvestigationRepository } from './review-investigation-repository.js';
 import { lifecycleFor } from './lifecycle-registry.js';
+import type { InvestigationProbeService } from './review-investigation-probe.js';
 import { daemonRunFiles } from './run-file-ownership.js';
 
 export interface InvestigationGatewayDeps {
@@ -78,3 +79,28 @@ export async function legacyInvestigationDiagnostics(raw:unknown,deps:Investigat
 }
 
 export function investigationCapabilities(){return {version:1,engines:['legacy','plan-investigation-v1'],investigationWireVersions:[1],canonicalInvestigationVersions:[1],operations:['start','status','resume','cancel','read','impact','progress','reply'],activation:'requires-verified-readiness',defaultEngine:'legacy'};}
+
+let probeService: Promise<InvestigationProbeService> | undefined;
+async function productionProbeService(): Promise<InvestigationProbeService> {
+ if(!isMainThread)throw Error('Probe operations require the owning main daemon');
+ daemonRunFiles.assertSocketOwned();
+ if(!probeService)probeService=(async()=>{
+  const {InvestigationProbeService,executeInstalledProbe}=await import('./review-investigation-probe.js');
+  const {getDb}=await import('../db/client.js'),{listRepos}=await import('../db/repos.js');
+  const {PATHS}=await import('../shared/paths.js'),{join}=await import('node:path');
+  const registeredRepos=async()=>(await listRepos(await getDb())).map(r=>r.path);
+  const assertOwner=()=>{if(!isMainThread)throw Error('Main daemon required');daemonRunFiles.assertSocketOwned();};
+  return new InvestigationProbeService({directory:join(PATHS.insrc,'review-probes'),assertOwner,registeredRepos,
+   execute:async(request,status,signal,observe)=>executeInstalledProbe(request,status,signal,observe,await registeredRepos(),assertOwner)});
+ })();
+ const pending=probeService;
+ try{return await pending;}catch(cause){if(probeService===pending)probeService=undefined;throw cause;}
+}
+/** Separate parser/dispatcher: probe packets never enter review or legacy routes. */
+export async function probeTransport(raw:unknown,service:()=>Promise<InvestigationProbeService>=productionProbeService):Promise<Record<string,unknown>>{
+ try{
+  const {parseInvestigationProbeCommand}=await import('../shared/review-investigation-probe.js');
+  const command=parseInvestigationProbeCommand(raw);
+  return await (await service()).dispatch(command);
+ }catch{return {version:1,kind:'investigation-probe',next:'error',error:{code:'probe-refused'},legacyFallback:false};}
+}

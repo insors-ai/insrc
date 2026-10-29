@@ -368,6 +368,11 @@
             id="ai.insors.insrc.debug"
             displayName="Debug"
             instance="ai.insors.insrc.jetbrains.ops.DebugConfigurable"/>
+        <applicationConfigurable
+            parentId="ai.insors.insrc.settings"
+            id="ai.insors.insrc.connections"
+            displayName="Connections"
+            instance="ai.insors.insrc.jetbrains.settings.ConnectionsConfigurable"/>
     </extensions>
 
     <!--
@@ -378,6 +383,12 @@
       so the single artifact contributes it in all four IDEs (no IDE-specific dep).
     -->
     <actions>
+        <action id="ai.insors.insrc.ManageConnections"
+            class="ai.insors.insrc.jetbrains.actions.ManageConnectionsAction"
+            text="insrc: Manage Connections"
+            description="Manage saved and temporary insrc connections for an explicitly selected project and registered repository.">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
         <action
             id="ai.insors.insrc.ShowOrRegisterRepo"
             class="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoAction"

@@ -1,0 +1,10 @@
+{
+  "task": "t21",
+  "reuse": "Analyzer profiles identified existing RepoStatusDialog, ShowOrRegisterRepoAction, InsrcSettingsConfigurable and ModelCheckDialog platform patterns; new thin wrappers reuse existing native ConnectionsManagerPanel and Project service.",
+  "focused": { "nodeCases": 2, "nativeJUnitCases": 9, "passed": true, "evidence": "focused.tap" },
+  "typecheck": "backend pass; native compile pass; focused platform tests compile production and test sources",
+  "initialAttempt": "Three native cases executed, two passed and one failed because test typed into the previous render generation immediately after Add without dispatching the queued EDT render. Fixed test to dispatch real queued events before typing; no admission guard weakened. attempt1.tap retained.",
+  "authority": "Application Settings requires explicit actual Project selection, even for one open project. Action forwards trusted context Project object. basePath is display-only for disambiguating project names; never used to find a Project/service/root.",
+  "settings": "Navigation Configurable Apply/reset are no-ops. Existing global Settings and legacy action source unchanged. Manager effects remain explicit immediate actions; physical Settings/dialog closure detaches only view.",
+  "notClaimed": "Actual live IDE search/category rendering, themes and keyboard acceptance remain t27; no full sweep before t32; no production admission gates enabled."
+}

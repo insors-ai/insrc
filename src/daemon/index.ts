@@ -313,7 +313,9 @@ async function main(): Promise<void> {
 			laneActivityAt: () => threadServices.board.lastLaneActivityAt(),
 			healthy: () => getStoreHealth().state === 'ok',
 			reclaimable: graphStoreReclaimable,
-			workers: { live: () => workers.liveWorkers(), created: () => workers.createdCount() },
+			// The session pool's workers too (s4): each holds its own graph handle, and the supervisor's created
+			// count includes them, so compaction renames only once every one of them has closed it.
+			workers: { live: () => [...workers.liveWorkers(), ...(sessionPool?.liveWorkers() ?? [])], created: () => workers.createdCount() },
 			compact: opts => compactGraphStore(opts),
 			// Test-only (INSRC_TEST_HOOKS=1): hold the lock a while before compacting.
 			...(testHoldMs > 0 ? { onGranted: () => new Promise<void>(r => setTimeout(r, testHoldMs)) } : {}),
@@ -322,7 +324,7 @@ async function main(): Promise<void> {
 		threadServices.onMaintenance(() => controller.runNow());
 		controller.start();
 		// Code indexing and document summaries, each on a worker of its own.
-		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock);
+		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock, threadServices.board);
 		// The queue lives on the code-indexing worker: "done" is the current one's
 		// report that it drained after the stop (or its exit).
 		let drained: () => void = () => {};
@@ -498,7 +500,7 @@ async function main(): Promise<void> {
 		// Session work (s3): each client session on a worker of its own, requests with no client
 		// identity on the unattributed worker, chat/todos/understanding on the shared-state worker.
 		routed.add('session');
-		sessionPool = startSessionRouting(threadServices, router, sessionIdleMs());
+		sessionPool = startSessionRouting(threadServices, router, sessionIdleMs(), supervisor);
 		sessionPool.startSweeping();
 		// A detached run started here (a connection-scoped request) is polled from the board like any other.
 		setRunBoard(threadServices.board);

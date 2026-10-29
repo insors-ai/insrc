@@ -50,7 +50,11 @@ export interface SessionPoolDeps {
 	readonly options: SessionPoolOptions;
 	readonly registry: TargetRegistry;
 	/** Start a session worker (startWorker in the daemon); `name` identifies it in logs; `shared` starts the shared-state worker. */
-	readonly start: (name: string, opts?: { readonly shared?: true | undefined }) => Promise<StartedWorker>;
+	readonly start: (name: string, opts?: { readonly shared?: true | undefined }, onCreated?: (worker: StartedWorker['worker']) => void) => Promise<StartedWorker>;
+	/** Each worker as it is created, ready or not (s4: the supervisor tracks it for errors and shutdown). */
+	readonly onCreated?: ((worker: StartedWorker['worker'], name: string) => void) | undefined;
+	/** Asked before the shared-state worker starts again after an exit; false (past the restart limit) refuses the start (s4). */
+	readonly restarted?: ((name: string) => boolean) | undefined;
 	/** The router's attach and detach of a worker's channel. */
 	readonly attach: (threadId: number, port: StartedWorker['port']) => void;
 	readonly detach: (threadId: number) => void;
@@ -89,6 +93,8 @@ export class SessionPool {
 	private readonly starting = new Map<string, Promise<Entry>>();
 	private timer: NodeJS.Timeout | undefined;
 	private closed = false;
+	/** The shared-state worker exited on its own: its next start is a restart, counted against the limit (s4). */
+	private sharedExited = false;
 	private readonly now: () => number;
 	private readonly pidAlive: (pid: number) => boolean;
 
@@ -110,6 +116,11 @@ export class SessionPool {
 	 */
 	async sharedWorker(): Promise<SessionWorkerInfo> {
 		return this.info(await this.entryFor(undefined, true));
+	}
+
+	/** Every ready pool worker now (s4: maintenance asks each to close its graph handle before compacting). */
+	liveWorkers(): StartedWorker[] {
+		return [...this.entries.values()].map(e => e.started);
 	}
 
 	/** One entry per live worker, for status and the idle sweep. */
@@ -216,11 +227,17 @@ export class SessionPool {
 	}
 
 	private async startEntry(key: string, session: SessionId | undefined, shared: boolean): Promise<Entry> {
+		if (shared && this.sharedExited) {
+			if (this.deps.restarted?.('shared-state') === false) throw new SessionWorkerStartError('the shared-state worker exceeded the restart limit');
+			this.sharedExited = false;
+		}
+		const name = shared ? 'shared-state' : session === undefined ? 'unattributed' : `session ${session.label}:${session.pid}`;
+		const onCreated = (worker: StartedWorker['worker']): void => { this.deps.onCreated?.(worker, name); };
 		let started: StartedWorker;
 		try {
 			started = shared
-				? await this.deps.start('shared-state', { shared: true })
-				: await this.deps.start(session === undefined ? 'unattributed' : `session ${session.label}:${session.pid}`);
+				? await this.deps.start(name, { shared: true }, onCreated)
+				: await this.deps.start(name, undefined, onCreated);
 		} catch (err) {
 			throw new SessionWorkerStartError(err instanceof Error ? err.message : String(err));
 		}
@@ -236,6 +253,7 @@ export class SessionPool {
 		started.worker.once('exit', code => {
 			if (entry.released) return;
 			log.warn({ session, shared, threadId: started.threadId, code }, 'session pool: a session worker exited');
+			if (shared) this.sharedExited = true;
 			// Told first, while the worker's channel is still known, so what it was serving can be failed.
 			try { this.deps.exited?.(this.info(entry), code); }
 			finally {

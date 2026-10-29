@@ -30,7 +30,7 @@ const { PATHS } = await import('../../../shared/paths.js');
 import type { StartedWorker } from '../workers.js';
 
 /** A fake started worker: terminate() records itself and emits no exit (a release, not a crash). */
-function fakeWorkers(): { start: (name: string) => Promise<StartedWorker>; starts: string[]; terminated: number[]; disconnected: number[]; fail: (reason: string | undefined) => void; gate: (p: Promise<void> | undefined) => void } {
+function fakeWorkers(): { start: (name: string, opts?: unknown, onCreated?: (w: StartedWorker['worker']) => void) => Promise<StartedWorker>; starts: string[]; terminated: number[]; disconnected: number[]; fail: (reason: string | undefined) => void; gate: (p: Promise<void> | undefined) => void } {
 	let next = 100;
 	const starts: string[] = [];
 	const terminated: number[] = [];
@@ -41,18 +41,20 @@ function fakeWorkers(): { start: (name: string) => Promise<StartedWorker>; start
 		starts, terminated, disconnected,
 		fail: reason => { failWith = reason; },
 		gate: p => { wait = p; },
-		start: async name => {
+		start: async (name, _opts, onCreated) => {
 			starts.push(name);
-			if (wait !== undefined) await wait;
-			if (failWith !== undefined) throw new Error(failWith);
 			const threadId = next++;
 			const worker = Object.assign(new EventEmitter(), { threadId, terminate: async () => { terminated.push(threadId); return 0; } });
+			// Created before it is ready, as startWorker hands it over.
+			onCreated?.(worker as unknown as StartedWorker['worker']);
+			if (wait !== undefined) await wait;
+			if (failWith !== undefined) throw new Error(failWith);
 			return { worker: worker as unknown as StartedWorker['worker'], threadId, port: new MessageChannel().port1, reclaimed: Promise.resolve({ locks: [], stores: { released: [], unhealthy: [] } }), disconnect: () => { disconnected.push(threadId); } };
 		},
 	};
 }
 
-function pool(opts: { idleTimeoutMs?: number; runs?: Map<number, number>; alive?: Set<number>; now?: () => number } = {}) {
+function pool(opts: { idleTimeoutMs?: number; runs?: Map<number, number>; alive?: Set<number>; now?: () => number; onCreated?: (w: StartedWorker['worker'], name: string) => void; restarted?: (name: string) => boolean } = {}) {
 	const workers = fakeWorkers();
 	const registry = new TargetRegistry();
 	const attached: number[] = [];
@@ -64,6 +66,8 @@ function pool(opts: { idleTimeoutMs?: number; runs?: Map<number, number>; alive?
 		activeRuns: id => opts.runs?.get(id) ?? 0,
 		...(opts.now !== undefined ? { now: opts.now } : {}),
 		pidAlive: pid => opts.alive === undefined || opts.alive.has(pid),
+		...(opts.onCreated !== undefined ? { onCreated: opts.onCreated } : {}),
+		...(opts.restarted !== undefined ? { restarted: opts.restarted } : {}),
 	});
 	return { p, workers, registry, attached, detached };
 }
@@ -210,4 +214,33 @@ test('session pool: close waits for a start under way, releases that worker too,
 	await assert.rejects(p.workerFor({ label: 'mcp', pid: 4253 }), SessionWorkerStartError);
 	assert.equal(workers.starts.length, 1, 'no start after close began');
 	assert.equal(p.sessions().length, 0);
+});
+
+test('session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError', async () => {
+	const created: string[] = [];
+	const asked: string[] = [];
+	let allow = true;
+	const { p } = pool({ onCreated: (w, name) => created.push(`${name}#${(w as unknown as { threadId: number }).threadId}`), restarted: name => { asked.push(name); return allow; } });
+	const a = await p.workerFor({ label: 'mcp', pid: 4300 });
+	const u = await p.workerFor();
+	const s1 = await p.sharedWorker();
+	assert.deepEqual(created, [`session mcp:4300#${a.threadId}`, `unattributed#${u.threadId}`, `shared-state#${s1.threadId}`], 'each worker, as it is created');
+	assert.deepEqual(asked, [], "a first start is not a restart");
+
+	// The shared-state worker exits on its own: its next start is a restart, asked first.
+	const sharedWorker = (p as unknown as { entries: Map<string, { started: { worker: EventEmitter } }> }).entries.get('session:shared')!.started.worker;
+	sharedWorker.emit('exit', 1);
+	const s2 = await p.sharedWorker();
+	assert.notEqual(s2.threadId, s1.threadId);
+	assert.deepEqual(asked, ['shared-state'], 'the restart was counted');
+	const again = (p as unknown as { entries: Map<string, { started: { worker: EventEmitter } }> }).entries.get('session:shared')!.started.worker;
+	allow = false;
+	again.emit('exit', 1);
+	await assert.rejects(p.sharedWorker(), (err: unknown) => err instanceof SessionWorkerStartError && /the shared-state worker exceeded the restart limit/.test(err.message));
+	// A session worker's exit is not counted: the next request just starts a new one, as in s3.
+	const sessionWorker = (p as unknown as { entries: Map<string, { started: { worker: EventEmitter } }> }).entries.get('session:mcp:4300')!.started.worker;
+	sessionWorker.emit('exit', 1);
+	const a2 = await p.workerFor({ label: 'mcp', pid: 4300 });
+	assert.notEqual(a2.threadId, a.threadId);
+	assert.deepEqual(asked, ['shared-state', 'shared-state']);
 });

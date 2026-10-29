@@ -21,6 +21,7 @@ import { pushToWorker } from './channel.js';
 import { IndexingBlock } from './indexing-block.js';
 import { INDEXING_DRAINED, INDEXING_STOP_OP } from './indexing-port.js';
 import { SUMMARY_PORT_OP } from './summary-link.js';
+import type { StatusBoard } from './status-board.js';
 import type { Supervisor } from './supervisor.js';
 import type { StartedWorker } from './workers.js';
 
@@ -36,7 +37,7 @@ export interface IndexingWorkers {
 	stop(): Promise<void>;
 }
 
-export function startIndexingWorkers(workers: Supervisor, indexingBlock: SharedArrayBuffer): IndexingWorkers {
+export function startIndexingWorkers(workers: Supervisor, indexingBlock: SharedArrayBuffer, board?: Pick<StatusBoard, 'publish' | 'forget'>): IndexingWorkers {
 	const waitingEnd = new Map<string, MessagePort>();
 	const endFor = (self: string, peer: string): MessagePort => {
 		const mine = waitingEnd.get(self);
@@ -73,7 +74,12 @@ export function startIndexingWorkers(workers: Supervisor, indexingBlock: SharedA
 			const end = endFor(SUMMARY_WORKER, CODE_INDEXING_WORKER);
 			return { workerData: { summaryPort: end }, transferList: [end] };
 		},
-		started: ready(SUMMARY_WORKER, 'document-summary'),
+		// The router sends it no request, so it is listed here; its busy state is the summary lane's (s4).
+		started: w => {
+			ready(SUMMARY_WORKER, 'document-summary')(w);
+			board?.publish({ threadId: w.threadId, cls: 'indexing', role: 'document-summary', busy: false, queued: 0 });
+		},
+		exited: threadId => board?.forget(threadId),
 	});
 
 	return {

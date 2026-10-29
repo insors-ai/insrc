@@ -13555,7 +13555,7 @@
       ],
       "siteCount": 67,
       "sitesDigest": "af62d2d3d29a1f676cb8b51f3500640dfd1588bbcdbcf5db0d844af159746f5c",
-      "sourceDigest": "e40453ef1b0296389d1448d2ec603905294614afacbea3d7855b9af510c04dfd",
+      "sourceDigest": "83fb2c417b9c3f931d03afb13ec67387c9cb014f9e0ca890a0c19b172efcb678",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -15728,6 +15728,10 @@
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "sites": [
         [
+          "serialization",
+          "board?.publish"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -15744,11 +15748,12 @@
           "MessageChannel"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "afc450d4b5c44c553465ed8155e73ad0b68a683308f554b599a0253f5c2e53c8",
-      "sourceDigest": "c899608e2c122a6c61ecabaa1989be5c814f1ad88462d14c5aa030d6079a2e73",
+      "siteCount": 5,
+      "sitesDigest": "3d47baf90f039afe8815bee1c7f880710fef0ecd219b74c4083410c7e1273150",
+      "sourceDigest": "00d4ab48bcf7e2328c385dbbd9ee060baeb4a4e966d673ba6254894bb5f30b6f",
       "boundaries": [
         "diagnostic",
+        "serialization",
         "unresolved-call"
       ]
     },
@@ -16010,7 +16015,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "e58ee2316448633eedac37497c8bfc876b4ee2798d03e0ec8b9d04b61a6464e7",
-      "sourceDigest": "6a24d00b2d9bc793969102da937fe8b0569e2543c944ceb774b0240f5a5e3678",
+      "sourceDigest": "7f370dd09457ccb06f5a35ed524d01d343d85789f07ec5db5218a02d5738c2bb",
       "boundaries": [
         "diagnostic"
       ]
@@ -16373,6 +16378,10 @@
         ],
         [
           "diagnostic",
+          "log.error"
+        ],
+        [
+          "diagnostic",
           "log.fatal"
         ],
         [
@@ -16380,9 +16389,9 @@
           "log.info"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "45045ace5111bbb10be495d0e0ed950d66d4763a4f5eed7e68704f8469ddde2d",
-      "sourceDigest": "22c1a2136e33cae86993013f2599cb52f8afecdcbaa2a36291042271080ac766",
+      "siteCount": 8,
+      "sitesDigest": "2c12bdb43949852a088947d22aa9505d1ed114184651c5f4127e2466e650d1a2",
+      "sourceDigest": "9eee34039e35a2e960c920f7832006542b84528352b13817d05ceb23647313af",
       "boundaries": [
         "diagnostic"
       ]

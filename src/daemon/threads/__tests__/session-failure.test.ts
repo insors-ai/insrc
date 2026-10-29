@@ -30,6 +30,7 @@ const { ThreadServices } = await import('../main-services.js');
 const { methodClasses } = await import('../method-class.js');
 const { Router } = await import('../router.js');
 const { OWNER_EXITED, startSessionRouting } = await import('../session-routing.js');
+const { Supervisor } = await import('../supervisor.js');
 import type { DeliverEnvelope } from '../../server.js';
 import type { MethodClass, SessionId } from '../channel.js';
 import type { SessionPool } from '../session-pool.js';
@@ -38,11 +39,13 @@ const classOf = (m: string): MethodClass | undefined => m.startsWith('test.') ? 
 const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
 const router = new Router({ classOf, registry: services.registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}) });
 let pool: SessionPool | undefined;
+// The session pool's workers are supervised for errors and shutdown (s4).
+const supervisor = new Supervisor({ services, router, shutdown: () => {} });
 
 before(async () => {
 	declareLiveStoreOwner();
 	await initDb(await getDb());
-	pool = startSessionRouting(services, router, 600_000);
+	pool = startSessionRouting(services, router, 600_000, supervisor);
 });
 after(async () => {
 	await pool?.close();
@@ -67,6 +70,7 @@ function ask(method: string, params: unknown, session?: SessionId, stream = fals
 	});
 	return { done, frames };
 }
+const threadOf = (r: { result?: unknown }): number => (r.result as { threadId: number }).threadId;
 const A: SessionId = { label: 'mcp', pid: 9001 };
 const B: SessionId = { label: 'mcp', pid: 9002 };
 const until = async (cond: () => boolean, what: string, ms = 10_000): Promise<void> => {
@@ -132,6 +136,18 @@ test('shared-state worker exit ends an open todos.subscribe with an error frame 
 	assert.deepEqual((await ask('chat.list', {}, A).done).result, { sessions: [] }, 'the next chat.list is answered');
 	const second = services.registry.targetFor('session', undefined, { shared: true })!.threadId;
 	assert.notEqual(second, first, 'by a new shared-state worker');
+});
+
+test("session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking", { timeout: 60_000 }, async () => {
+	const F: SessionId = { label: 'mcp', pid: 9301 };
+	const tracked = supervisor.createdCount();
+	const first = threadOf(await ask('test.servingThread', null, F).done);
+	assert.equal(supervisor.createdCount(), tracked + 1, "the session's worker is in the supervisor's created set");
+	assert.match((await ask('test.order', { tag: 'crash', ms: 60_000, exitAfterMs: 100 }, F).done).error ?? '', /^session worker failed: it exited with code 1$/, "s3's failure message");
+	await until(() => supervisor.createdCount() === tracked, 'the exited worker left the created set');
+	const second = threadOf(await ask('test.servingThread', null, F).done);
+	assert.notEqual(second, first, "the session's next request runs on a new worker");
+	assert.equal(supervisor.createdCount(), tracked + 1, 'and the new worker is tracked too');
 });
 
 // Last: it closes the pool.

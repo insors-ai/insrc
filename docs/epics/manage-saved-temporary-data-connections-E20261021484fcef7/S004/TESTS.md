@@ -348,7 +348,7 @@ Reported by the builder, not run by the gate: **pass**. Evidence: Commit 99b3e40
 
 ## t20
 
-Run at 2026-10-29T12:26:21.038Z on commit `3a72a8808`. Tests check: **failed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T12:30:29.035Z on commit `9e6c3cc25`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S4-PRIVACY/NO-PERSIST: extend src/daemon/db/__tests__/session-driver-logs.test.ts and src/daemon/db/__tests__/composed-probe-logs.test.ts with fixed SDK/journal canaries and poisoned persistence ports.**
 
@@ -361,9 +361,5 @@ Run at 2026-10-29T12:26:21.038Z on commit `3a72a8808`. Tests check: **failed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/composed-probe-logs.test.ts` | 1 | 2 | 2.9 s |  |
-| `src/daemon/db/__tests__/session-driver-logs.test.ts` | 0 | 4 | 8.7 s |  |
-
-**Failures outside the named cases**
-
-- `src/daemon/db/__tests__/composed-probe-logs.test.ts`: CM-S2-A9: composed daemon and child logs contain no source credential or data canaries
+| `src/daemon/db/__tests__/composed-probe-logs.test.ts` | 0 | 2 | 4.4 s |  |
+| `src/daemon/db/__tests__/session-driver-logs.test.ts` | 0 | 4 | 8.5 s |  |

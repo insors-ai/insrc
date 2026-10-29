@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T12:26:21.038Z",
+    "updatedAt": "2026-10-29T12:30:29.035Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1721,9 +1721,9 @@
       },
       {
         "taskId": "t20",
-        "commit": "3a72a8808",
-        "ranAt": "2026-10-29T12:26:21.038Z",
-        "testsPassed": false,
+        "commit": "9e6c3cc25",
+        "ranAt": "2026-10-29T12:30:29.035Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "CM-S4-PRIVACY/NO-PERSIST: extend src/daemon/db/__tests__/session-driver-logs.test.ts and src/daemon/db/__tests__/composed-probe-logs.test.ts with fixed SDK/journal canaries and poisoned persistence ports.",
@@ -1747,28 +1747,26 @@
         "files": [
           {
             "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2907,
+            "durationMs": 4411,
             "titles": [
               {
                 "title": "CM-S2-A9: composed daemon and child logs contain no source credential or data canaries",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "title": "CM-S4-PRIVACY/NO-PERSIST: composed removal keeps temporary persistence poisoned and owner loss unrecoverable",
                 "result": "pass"
               }
             ],
-            "otherFailures": [
-              "CM-S2-A9: composed daemon and child logs contain no source credential or data canaries"
-            ]
+            "otherFailures": []
           },
           {
             "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8722,
+            "durationMs": 8493,
             "titles": [
               {
                 "title": "CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain",

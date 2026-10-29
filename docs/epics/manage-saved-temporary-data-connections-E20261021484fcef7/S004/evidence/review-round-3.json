@@ -1,0 +1,16 @@
+{
+  "next": "done",
+  "verdict": "block",
+  "counts": {
+    "high": 0,
+    "med": 1,
+    "low": 15,
+    "unverified": 0
+  },
+  "report": "### ⛔ Review `BLOCK` — design.story (design.story)\n\n**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T08:28:07.596Z\n\nOnly a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.\n\n#### Does not hold (blocks approval)\n\n| Check item | Severity | Premise | Evidence | Action |\n| --- | --- | --- | --- | --- |\n| new-versus-reuse | MED | The design frames mode:'remove' as something that 'gains' existence 'only in the existing wire adapter' and treats the remove-ticket plumbing as newly introduced by S004 — but the wire decoder, the OperationTicket/CommittedOutcome/LeaseState shared types, and SavedTicketAuthority.issue() already fully support 'remove' today. | src/shared/connection-management.ts:46 already types `mode: 'create' \\| 'update' \\| 'remove'` on OperationTicket, line 59 already types `registration: 'persisted' \\| 'session-added' \\| 'removed'`, line 91 already types `barrier: 'none' \\| 'update' \\| 'remove'`. src/shared/connection-management-wire.ts:51 `mode()` already accepts 'remove', and line 156 already enforces the exact rule the LLD describes as new ('mode === remove && (publicPatch !== undefined \\|\\| credentials !== undefined) → throw'). src/daemon/db/management-tickets.ts:142 `issue(key, mode: OperationTicket['mode'], ...)` already accepts 'remove' unconditionally. None of this needs to be added — the actual gap is narrower (SavedConnectionManagement.mutate's explicit remove-mode guard and SessionOperationLedger's narrower create\\|update-only signature). [files: src/shared/connection-management.ts, src/shared/connection-management-wire.ts, src/daemon/db/management-tickets.ts] | Correct the LLD precondition text so it scopes the real change sites (SessionOperationLedger's narrower mode type, and the two services' explicit remove-mode rejection branches) instead of implying the wire adapter/ticket machinery is new. |\n\n#### Could not verify (does not block)\n\n_None._",
+  "applied": 0,
+  "pending": 1,
+  "path": "/Users/subhagho/work/projects/insors/insrc/docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/LLD.md",
+  "jsonPath": "/Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/LLD-484fcef7efaf229e-s4.json",
+  "reviewedBy": "daemon"
+}

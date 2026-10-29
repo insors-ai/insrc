@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1793261706186-c38fgj",
+    "runId": "wf-1793262797285-5ymi1h",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-29T08:18:08.260Z",
+    "createdAt": "2026-10-29T08:33:17.472Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 182060,
+    "elapsedMs": 168,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
@@ -210,7 +210,7 @@
             }
           ],
           "preconditions": [
-            "Proposed S004 behavior; current saved/temporary mutation paths reject remove. Retain parseMutationRequest and exact ticket-target validation; the typed HLD shape gains mode:'remove' only in the existing wire adapter. [[c1]] [[c2]] [[c4]]",
+            "Reuse existing shared OperationTicket remove mode, CommittedOutcome removed registration, LeaseState remove barrier, parseMutationRequest remove decoding and SavedTicketAuthority.issue support unchanged. S004 removes the explicit rejection branches in the saved and temporary RPC/services, widens SessionOperationLedger's create/update-only admission to remove, and implements the planned commit and cleanup branches; no new shared remove-ticket or wire mode is introduced. [[c1]] [[c2]] [[c4]]",
             "Confirmation is pure and precedes ticket issue/mutation. It identifies selected repository, ID and Saved/Temporary scope; copy says registration/owned credentials only, source data is preserved. Cancel invokes no mutation, credential or cleanup port. S005 renders this contract; S004 does not implement either client. [[c1]] [[c2]] [[c4]]",
             "Saved management uses the explicit existing saved channel with registered canonical root. A presented session binding must never be stripped to choose that channel. Temporary management requires current workbench-ui owner/root/generation; unverified MCP cannot remove or inspect private state. [[c1]] [[c2]] [[c4]]",
             "Feature advertisement is additive sc6 capability only after verified readiness. Old/missing capability refuses upgrade-required before issuing a removal ticket; do not interpret an unknown method as permission for legacy deletion. [[c1]] [[c2]] [[c4]]",
@@ -862,7 +862,7 @@
     "openQuestions": [],
     "erDefinition": {
       "id": "s004-removal-ownership",
-      "narrative": "Removal deletes a live registration while retaining its operation receipt and, when necessary, exact cleanup-only resources. Saved receipts and credential cleanup can persist; runtime retirement and all temporary receipts stay with their existing in-memory owner. [[c4]]",
+      "narrative": "Removal deletes a live registration while retaining its operation receipt and, when necessary, exact cleanup-only resources. Saved receipts and credential cleanup can persist; runtime retirement and all temporary receipts stay with their existing in-memory owner. [[c4]] The inverse key-to-receipts relation shows repeated removals after same-ID recreation without implying one receipt per key.",
       "classes": {
         "ConnectionKey": {
           "description": "Exact registered root, scope and ID identity used by existing protocol.",
@@ -871,6 +871,12 @@
               "description": "Conceptual composite identity; never a new serialized field.",
               "range": "string",
               "identifier": true
+            },
+            "receipts": {
+              "description": "Conceptual inverse relation: one exact key identifies zero-to-many historical removal receipts across same-ID recreation. Each receipt belongs to exactly one key; this is not a new serialized field.",
+              "range": "RemovalReceipt",
+              "multivalued": true,
+              "minimum_cardinality": 0
             }
           }
         },
@@ -903,11 +909,6 @@
               "description": "Unique signed operation identity.",
               "range": "string",
               "identifier": true
-            },
-            "key": {
-              "description": "Receipt points to exactly one key, even after that ID is recreated.",
-              "range": "ConnectionKey",
-              "required": true
             },
             "retired": {
               "description": "Removal coordinates zero-to-many exact old runtime handles through a daemon-memory index, not persisted receipt fields.",

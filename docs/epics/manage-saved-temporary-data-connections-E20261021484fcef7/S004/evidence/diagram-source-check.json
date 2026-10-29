@@ -7,7 +7,7 @@
   "renderingLimit": "Computer-use reported Browser is not available: iab; available browser inventory was empty.",
   "observations": [
     "Both generated HTML companions contain embedded Mermaid runtime and no external script source.",
-    "ER source includes five conceptual entities and four relationships; ownership and unchanged receipt-schema qualifications are described alongside the diagram.",
+    "ER source includes five conceptual entities and four relationships; ownership and unchanged receipt-schema qualifications are described alongside the diagram. The ConnectionKey-to-RemovalReceipt relation is one-to-many so same-ID recreation can produce multiple historical receipts; each receipt belongs to one key.",
     "Sequence source includes six participants and eleven messages covering confirmation, authentication, lease barrier, commit, detachment, cleanup and same-ticket reconciliation."
   ],
   "testClaim": "Design evidence only; no S004 implementation or test execution is claimed."

@@ -1,0 +1,591 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7c39e5cd2c076e86",
+    "storyId": "S001",
+    "createdAt": "2026-10-29T10:48:19.520Z",
+    "updatedAt": "2026-10-29T11:21:08.440Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T10:24:05.423Z",
+    "epicSlug": "move-session-s-queue-forward-only"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "5eabd465c",
+        "ranAt": "2026-10-29T10:48:19.520Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "channel.test.ts: wireRequest with ack sets trackCompletion for unary and stream requests; without it the rule is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/channel.test.ts",
+                "title": "wireRequest with ack asks for the completion message for unary and stream requests; without it the rule is unchanged (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/channel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 587,
+            "titles": [
+              {
+                "title": "a worker's hub request is answered with its own requestId",
+                "result": "pass"
+              },
+              {
+                "title": "closing the port rejects every pending hub request with HubUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "wireRequest with ack asks for the completion message for unary and stream requests; without it the rule is unchanged (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "fde043bdb",
+        "ranAt": "2026-10-29T10:52:02.569Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "router-session.test.ts: a duplicate or unknown completion message is ignored and onAck runs once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router-session.test.ts: a postMessage failure answers 'request channel unavailable' and the queue moves on",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router-thread-view.test.ts: a session request stays busy in the thread view and in the pool's busy count until its ack",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: a request awaiting its ack stays busy past its reply until its worker's ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 839,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 489,
+            "titles": [
+              {
+                "title": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: a request awaiting its ack stays busy past its reply until its worker's ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "92b13b4cc",
+        "ranAt": "2026-10-29T10:59:12.741Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "router-session.test.ts: a pool start failure and a cancel before the worker resolved move the queue on",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router-session.test.ts: a queued shared-state method waits for the shared-state worker's ack in both toShared branches",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 990,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c5e733841",
+        "ranAt": "2026-10-29T11:11:26.856Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "router-session.test.ts: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first (its handler settled)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router-session.test.ts: a queued stream cancelled by its socket keeps the next request queued until the worker acks it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router-session.test.ts: a unary reply is delivered at once but the next request starts only after the worker's ack, after work registered with registerDrain is done",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router-session.test.ts: a worker exit answers the running request with 'session worker failed' and the next queued request runs on the new worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router-session.test.ts: FIFO-exempt, unattributed and admin requests keep today's ends and never wait for an ack",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "worker-requests.test.ts or router-session.test.ts: a queued request refused under the maintenance lock is still acked and the queue moves on",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1140,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: a request awaiting its ack stays busy past its reply until its worker's ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6740,
+            "titles": [
+              {
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              },
+              {
+                "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              },
+              {
+                "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+                "result": "pass"
+              },
+              {
+                "title": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)",
+                "result": "pass"
+              },
+              {
+                "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "ebfd418c3",
+        "ranAt": "2026-10-29T11:14:21.875Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "fifo-ack-acceptance.test.ts: the second connection's request starts only after the first, whose socket closed, has finished on the worker",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/fifo-ack-acceptance.test.ts",
+                "title": "fifo ack: the second connection's request starts only after the first, whose socket closed, has finished on the worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/fifo-ack-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4603,
+            "titles": [
+              {
+                "title": "fifo ack: the second connection's request starts only after the first, whose socket closed, has finished on the worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "aec3e8681",
+        "ranAt": "2026-10-29T11:21:08.440Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "session-source inventory test passes with the refreshed router.ts, channel.ts and supervisor.ts entries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "fail"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 10922,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "fail"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named test cases that did not pass: fail: 'CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline' in src/daemon/db/__tests__/session-source-inventory.test.ts"
+      }
+    ]
+  }
+}

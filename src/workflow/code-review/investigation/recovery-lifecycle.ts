@@ -18,8 +18,9 @@ export function foldRecoveryLifecycle(view:RecoveryView,event:RecoveryEvent,raw:
   const renewing=old.owner?.leaseId===leaseId;
   if(renewing){if(event.generation!==old.generation||Date.parse(old.owner!.expiresAt)<=wall)throw new RecoveryError('corrupt','Expired lease renewal.');}
   else if(event.generation!==old.generation+1||old.owner&&Date.parse(old.owner.expiresAt)>wall&&processEpoch===old.processEpoch)throw new RecoveryError('corrupt','Conflicting lease claim.');
-  if(['completed','cancelled','stale','completion-requested'].includes(old.state))throw new RecoveryError('corrupt','Cannot claim terminal/completion run.');
-  lifecycle={...lifecycle,state:'running',generation:event.generation,owner:{leaseId,generation:event.generation,expiresAt},processEpoch};
+  if(['completed','cancelled','stale'].includes(old.state))throw new RecoveryError('corrupt','Cannot claim terminal run.');
+  if(old.state==='completion-requested'&&!publication)throw new RecoveryError('unsupported','Legacy pending publication has no frozen intent.');
+  lifecycle={...lifecycle,state:old.state==='completion-requested'?'completion-requested':'running',generation:event.generation,owner:{leaseId,generation:event.generation,expiresAt},processEpoch};
  }else{
   if(!old.owner||event.generation!==old.generation||p['leaseId']!==old.owner.leaseId||Date.parse(old.owner.expiresAt)<=wall)throw new RecoveryError('corrupt','Foreign lifecycle owner.');
   if(event.kind==='publication-intent'){
@@ -32,7 +33,7 @@ export function foldRecoveryLifecycle(view:RecoveryView,event:RecoveryEvent,raw:
    publication={version:1,intentRef:ref,intentDigest:digest,checkpointDigest:checkpoint,acceptedGeneration:event.generation};lifecycle={...lifecycle,state:'completion-requested'};
   }else if(event.kind==='release'){
    const state=p['state'];if(state!=='paused'&&state!=='cancelled'&&state!=='stale')throw new RecoveryError('corrupt','Invalid release state.');
-   lifecycle={...lifecycle,state,owner:null};
+   lifecycle={...lifecycle,state:publication&&state==='paused'?'completion-requested':state,owner:null};
   }else if(event.kind==='state'){
    const state=p['state'];
    if(state==='completion-requested'&&old.state==='running')lifecycle={...lifecycle,state};

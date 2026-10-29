@@ -1,0 +1,61 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { join } from 'node:path';
+import { readFileSync,writeFileSync } from 'node:fs';
+import { subjectFixture } from '../../workflow/code-review/investigation/__tests__/fixtures.js';
+import { catalogFixture } from '../../workflow/code-review/investigation/__tests__/ledger-fixtures.js';
+import { identifySubject } from '../../workflow/code-review/investigation/identity.js';
+import { buildLedgerBasis } from '../../workflow/code-review/investigation/ledger-catalog.js';
+import { sourceReference } from '../../workflow/code-review/investigation/source.js';
+import { evidenceFromReceipt } from '../../workflow/code-review/investigation/ledger-evidence.js';
+import { InvestigationNavigation } from '../../workflow/code-review/investigation/navigation.js';
+import { continuationFixture } from '../../workflow/code-review/investigation/__tests__/continuation-fixtures.js';
+import { ArtifactStore } from '../../workflow/artifact-core/store.js';
+import { History } from '../../workflow/artifact-core/history.js';
+import { createFileSidecarStore } from '../../workflow/artifact-core/sidecar-store.js';
+import { createFileJournal } from '../../workflow/artifact-core/journal.js';
+import { creationContextProvider } from '../../workflow/artifact-core/codecs.js';
+import { emptyLifecycle } from '../../workflow/artifact-core/decode.js';
+import { ProductionEvidenceAdapter,verifiedTaskResult } from '../review-investigation-evidence.js';
+import { productionImpactAdapter } from '../review-investigation-impact.js';
+import type { Entity } from '../../shared/types.js';
+import type { TestRecordTask } from '../../workflow/runners/build/test-record.js';
+
+test('Pinned source artifact test and caller evidence preserve provenance and limitations',async()=>{
+ const f=await subjectFixture();try{
+  const c=catalogFixture(),{subjectId:_,subjectDigest:__,...projection}=c.subject;
+  const subject=identifySubject({...projection,build:{...projection.build,sourceCommit:f.commitId},contextTree:f.git('rev-parse',`${f.commitId}^{tree}`),packets:[{...f.packet,attribution:{basis:'verified',evidenceRefs:['scope']},blocks:[{...f.packet.blocks[0]!,attributionRefs:['scope']}]}]});
+  const basis=buildLedgerBasis({...c,repoPath:f.dir,subject,lld:{...c.lld!,artifact:{...c.lld!.artifact,meta:{...c.lld!.artifact.meta,repoPath:f.dir}}},plan:{...c.plan!,artifact:{...c.plan!.artifact,meta:{...c.plan!.artifact.meta,repoPath:f.dir}}}});
+  const work=await f.deps.readWork(f.request),sources={...f.deps,readWork:async()=>({...work,contracts:subject.contracts,contractText:Object.fromEntries(subject.contracts.map(p=>[p.artifactId,'approved text']))})};
+  const history=new History(createFileSidecarStore(f.dir)),store=new ArtifactStore({repoPath:f.dir,history,journal:createFileJournal(f.dir),contexts:creationContextProvider(f.dir,{rootKinds:['TESTS']})});
+  const actor={id:'test:gate',kind:'system' as const,properties:{}},id='TESTS-c32aa60534232f36-s1';
+  const task:TestRecordTask={taskId:'t1',commit:f.commitId,ranAt:'2026-10-29T00:00:00Z',testsPassed:true,tests:[{name:'keeps data',source:'mapping',cases:[{file:'x.test.ts',title:'keeps data',result:'pass'}],files:[]}],files:[{file:'x.test.ts',exitCode:0,timedOut:false,durationMs:1,titles:[{title:'keeps data',result:'pass'}],otherFailures:[]}]};
+  await store.write({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{tasks:[task]},citations:[]}},actor);
+  let current=true;const adapter=new ProductionEvidenceAdapter({basis,sources,canonical:store,assertCurrent:async()=>{if(!current)throw Error('owner lost');}}),signal=new AbortController().signal;
+  const block=subject.packets[0]!.blocks[0]!,ref=sourceReference({kind:'blob',oid:block.newBlob!,start:block.newLines![0],end:block.newLines![1]});
+  const changed=await adapter.inspect(ref,'attempt-1',signal);assert.equal(changed.inspection.kind,'changed-block');assert.ok(evidenceFromReceipt(basis,changed.inspection));
+  assert.equal((await adapter.inspect(sourceReference({kind:'context',path:'a.txt',start:2,end:2}),'attempt-1',signal)).inspection.role,'context-only');
+  await assert.rejects(()=>adapter.inspect(sourceReference({kind:'blob',oid:block.newBlob!,start:1,end:10}),'attempt-1',signal),/exact selected/);
+  const artifact=await adapter.inspect(sourceReference({kind:'artifact',artifactId:subject.contracts[0]!.artifactId,start:1,end:1}),'attempt-1',signal);assert.equal(artifact.inspection.kind,'artifact');
+  const actual=await adapter.inspect(JSON.stringify({kind:'test-result',taskId:'t1'}),'attempt-1',signal);assert.equal(actual.inspection.testResult,'pass');assert.equal(actual.inspection.readReceipt,null);
+  assert.equal(verifiedTaskResult({...task,tests:[{...task.tests[0]!,reported:{result:'pass',evidence:'builder'}}]}),'unknown');
+  assert.equal(verifiedTaskResult({...task,files:[{...task.files[0]!,timedOut:true}]}),'fail');
+  assert.equal(verifiedTaskResult({...task,tests:[{...task.tests[0]!,cases:[{...task.tests[0]!.cases[0]!,result:'skipped'}]}],files:[{...task.files[0]!,titles:[{title:'keeps data',result:'skipped'}]}]}),'skipped');
+  const abort=new AbortController();abort.abort();await assert.rejects(()=>adapter.inspect(ref,'attempt-1',abort.signal));current=false;await assert.rejects(()=>adapter.inspect(ref,'attempt-1',signal),/owner lost/);current=true;
+  const file=join(f.dir,'.insrc','artifacts',`${id}.json`),raw=JSON.parse(readFileSync(file,'utf8'));raw.body.tasks[0].testsPassed=false;writeFileSync(file,JSON.stringify(raw));await assert.rejects(()=>adapter.inspect(JSON.stringify({kind:'test-result',taskId:'t1'}),'attempt-1',signal),/integrity/);
+  const entity:Entity={id:'selected',kind:'function',name:'selected',language:'typescript',repoId:1,repo:f.dir,file:join(f.dir,'a.txt'),startLine:1,endLine:1,body:'ONE',embedding:[],indexedAt:'now'};
+  let revision='g1',body='ONE',foreign=false;
+  const graph={state:async()=>({revision,completeness:'partial' as const}),closure:async()=>[f.dir],entities:async()=>[{...entity,kind:'file' as const,id:'file',hash:changed.read.sourceDigest.slice(0,16)},{...entity,body}],callers:async()=>foreign?[{...entity,repo:'/outside'}]:[]};
+  const options={basis,sources,canonical:store,graph,mode:'indexed-impact' as const,attemptId:'attempt-1',signal,assertCurrent:async()=>{}};
+  const sourceOnly=await productionImpactAdapter({...options,mode:'source-only'});assert.equal(sourceOnly.impact.queryChangedEntityCallers,null);
+  const impact=await productionImpactAdapter(options);assert.ok(impact.changedEntity('selected'));assert.equal(impact.changedEntity('foreign'),null);
+  const empty=await impact.impact.queryChangedEntityCallers!('selected');assert.equal(empty.length,1);assert.equal(empty[0]!.completeness,'partial');assert.match(empty[0]!.limitations.join(' '),/Empty results do not prove/);assert.equal(impact.impactReceipts(empty)[0]!.index!.freshness,'unknown');
+  const continuation=continuationFixture(),turn={...continuation.turn,runId:basis.runId,subjectDigest:subject.subjectDigest,attemptId:'attempt-1'};
+  let impactRequired=false;const nav=new InvestigationNavigation(turn,{...continuation.context,basis,...impact,validation:{attempt:{runId:basis.runId,subjectDigest:subject.subjectDigest,attemptId:'attempt-1'},receipts:[]}},signal,async(b)=>{impactRequired=b.requirements.some(r=>r.category==='impact');});
+  await nav.capability().queryChangedEntityCallers!('selected');assert.equal(impactRequired,true);assert.ok(nav.basis.requirements.some(r=>r.category==='impact'&&!r.allowNotApplicable));
+  foreign=true;assert.ok((await impact.impact.queryChangedEntityCallers!('selected'))[0]!.contentRef.includes('[]'));
+  revision='g2';await assert.rejects(()=>impact.impact.queryChangedEntityCallers!('selected'),/Index changed/);
+  body='STALE';assert.equal((await productionImpactAdapter(options)).changedEntity('selected'),null);
+ }finally{f.close();}
+});

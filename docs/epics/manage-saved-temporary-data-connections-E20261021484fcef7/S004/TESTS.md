@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -155,3 +155,22 @@ Run at 2026-10-29T10:52:17.847Z on commit `fde043bdb`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 11 | 6 s |  |
+
+## t9
+
+Run at 2026-10-29T10:59:03.604Z on commit `92b13b4cc`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-STATE/CREDENTIALS/RETIRE: saved owner state/retry tests for independent phases, authenticated same-ticket cleanup and restart journal recovery.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-STATE: Saved removal state authenticates before registry lookup and never infers absent success | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-CREDENTIALS: Saved removal state survives credential cleanup failure and restart independently of runtime cleanup | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-RETIRE: Saved cleanup retries leave new generations usable and retain expired pending receipts | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-STATE: committed truth stays observable while original credential cleanup is still in flight | `src/daemon/db/__tests__/saved-management.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 15 | 6.1 s |  |

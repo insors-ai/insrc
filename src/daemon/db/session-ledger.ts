@@ -1,6 +1,6 @@
 /** Session-private tickets and safe receipt truth. No keychain or durable receipt ports. */
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
-import type { ConnectionKey, OperationTicket, MutationRequest, MutationOutcome, CommittedOutcome, OperationStatus, SafeConnection } from '../../shared/connection-management.js';
+import type { ConnectionKey, OperationTicket, MutationRequest, MutationOutcome, CommittedOutcome, OperationStatus } from '../../shared/connection-management.js';
 import { parseConnectionKey, parseMutationRequest, parseOperationTicket } from '../../shared/connection-management-wire.js';
 import { canonicalRequestJson } from './management-tickets.js';
 import { ManagementServiceError, managementRejection } from './management.js';
@@ -12,7 +12,7 @@ interface LedgerPorts {
 }
 interface Issued { readonly expires: number; requestMac?: string | undefined }
 interface Receipt { readonly requestMac: string; readonly outcome: CommittedOutcome }
-type Commit = (publishEntry: () => SafeConnection) => MutationOutcome;
+type Commit = (publish: () => { readonly revision: string }) => MutationOutcome;
 const fail = (code: 'busy' | 'invalid-input' | 'operation-mismatch' | 'reconciliation-required' | 'session-expired') => new ManagementServiceError(code);
 export class SessionOperationLedger {
  readonly #ports: LedgerPorts;
@@ -32,9 +32,9 @@ export class SessionOperationLedger {
   return createHmac('sha256', this.#ports.key).update(`connection-session-v2:${domain}\0`).update(canonicalRequestJson({ daemonEpoch: this.#ports.daemonEpoch, sessionHandle: this.#ports.sessionHandle, value })).digest('base64url');
  }
  #same(a: string, b: string): boolean { const x = Buffer.from(a, 'base64url'), y = Buffer.from(b, 'base64url'); return x.length === y.length && timingSafeEqual(x, y); }
- issue(value: ConnectionKey, mode: 'create' | 'update'): OperationTicket {
+ issue(value: ConnectionKey, mode: OperationTicket['mode']): OperationTicket {
   this.#active(); const key = parseConnectionKey(JSON.parse(canonicalRequestJson(value)));
-  if (key.scope !== 'temporary' || !['create', 'update'].includes(mode)) throw fail('operation-mismatch');
+  if (key.scope !== 'temporary' || !['create', 'update', 'remove'].includes(mode)) throw fail('operation-mismatch');
   const now = this.#now();
   if (this.#issued.size + this.#receipts.size >= MAX_SESSION_OPERATION_RECORDS) {
    for (const [id, issued] of this.#issued) if (issued.expires <= now && !this.#inflight.has(id)) this.#issued.delete(id);
@@ -48,7 +48,7 @@ export class SessionOperationLedger {
  }
  inspect(value: unknown): { readonly ticket: OperationTicket; readonly expired: boolean } {
   this.#active(); const ticket = parseOperationTicket(JSON.parse(canonicalRequestJson(value)));
-  if (ticket.scope !== 'temporary' || ticket.mode === 'remove') throw fail('operation-mismatch');
+  if (ticket.scope !== 'temporary') throw fail('operation-mismatch');
   const { signature, ...unsigned } = ticket;
   if (!/^[A-Za-z0-9_-]{43}$/.test(signature) || Buffer.from(signature, 'base64url').toString('base64url') !== signature || !this.#same(signature, this.#mac('ticket', unsigned))) throw fail('invalid-input');
   const issued = Date.parse(ticket.issuedAt), expires = Date.parse(ticket.expiresAt), now = this.#now();
@@ -65,7 +65,7 @@ export class SessionOperationLedger {
   try {
    this.#active(); assertRequest();
    const request = parseMutationRequest(JSON.parse(canonicalRequestJson(value))), { expired } = this.inspect(request.ticket);
-   if (request.key.scope !== 'temporary' || request.mode === 'remove') throw fail('operation-mismatch');
+   if (request.key.scope !== 'temporary') throw fail('operation-mismatch');
    const mac = this.#mac('request', request), receipt = this.#receipts.get(request.operationId);
    const pending = this.#inflight.get(request.operationId);
    if (pending) { if (!this.#same(mac, pending.mac)) throw fail('operation-mismatch'); const result = await pending.promise; this.#active(); assertRequest(); return structuredClone(result); }
@@ -77,17 +77,23 @@ export class SessionOperationLedger {
    if (this.#receipts.size >= MAX_SESSION_OPERATION_RECORDS) throw fail('busy');
    issued.requestMac = mac;
    let committed = false;
-   const commit: Commit = publishEntry => {
+   const commit: Commit = publish => {
     this.#active(); assertRequest(); if (this.inspect(request.ticket).expired) throw fail('reconciliation-required');
     if (committed || this.#receipts.has(request.operationId)) throw fail('operation-mismatch');
     if (this.#receipts.size >= MAX_SESSION_OPERATION_RECORDS) throw fail('busy');
-    const entry = publishEntry();
-    const outcome = Object.freeze({ operationId: request.operationId, revision: entry.revision, registration: 'session-added' as const, activation: 'pending' as const, credentialCleanup: 'complete' as const });
+    const entry = publish();
+    const outcome: CommittedOutcome = Object.freeze({ operationId: request.operationId, revision: entry.revision,
+     registration: request.mode === 'remove' ? 'removed' : 'session-added',
+     activation: request.mode === 'remove' ? 'not-applicable' : 'pending',credentialCleanup:'complete' });
     this.#receipts.set(request.operationId, { requestMac: mac, outcome }); this.#issued.delete(request.operationId); committed = true;
     return { status: 'committed', value: { ...outcome } };
    };
    // Defer apply until the in-flight identity is installed, including synchronous preparations.
-   const promise = Promise.resolve().then(() => apply(request, commit)).catch(error => managementRejection(error));
+   const truth = (fallback: MutationOutcome): MutationOutcome => {
+    const receipt=this.#receipts.get(request.operationId);
+    return receipt ? {status:'committed',value:{...receipt.outcome}} : fallback;
+   };
+   const promise = Promise.resolve().then(() => apply(request, commit)).then(result=>truth(result),error=>truth(managementRejection(error)));
    this.#inflight.set(request.operationId, { mac, promise });
    try { const result = await promise; this.#active(); assertRequest(); return structuredClone(result); }
    finally { if (this.#inflight.get(request.operationId)?.promise === promise) this.#inflight.delete(request.operationId); }
@@ -100,13 +106,13 @@ export class SessionOperationLedger {
  }
  cleanup(operationId: string, revision: string, phase: 'complete' | 'pending'): void {
   this.#active(); const receipt = this.#receipts.get(operationId);
-  if (!receipt || receipt.outcome.revision !== revision) throw fail('operation-mismatch');
+  if (!receipt || receipt.outcome.revision !== revision || (receipt.outcome.registration === 'removed' && phase !== 'complete')) throw fail('operation-mismatch');
   this.#receipts.set(operationId, { requestMac: receipt.requestMac, outcome: Object.freeze({ ...receipt.outcome, credentialCleanup: phase }) });
  }
  /** Activation follows commit; changing its phase never erases committed registration truth. */
  activation(operationId: string, revision: string, phase: 'active' | 'failed'): void {
   this.#active(); const receipt = this.#receipts.get(operationId);
-  if (!receipt || receipt.outcome.revision !== revision) throw fail('operation-mismatch');
+  if (!receipt || receipt.outcome.revision !== revision || receipt.outcome.registration === 'removed') throw fail('operation-mismatch');
   this.#receipts.set(operationId, { requestMac: receipt.requestMac, outcome: Object.freeze({ ...receipt.outcome, activation: phase }) });
  }
  close(): void { this.#closed = true; this.#ports.key.fill(0); this.#issued.clear(); this.#receipts.clear(); this.#inflight.clear(); }

@@ -25,6 +25,64 @@ function request(ticket: OperationTicket): MutationRequest { return { ticket, op
 const safe = (ticket: OperationTicket, revision = 'revision'): SafeConnection => ({ key: { ...key, id: ticket.connectionId, repoRoot: ticket.lookupRoot }, revision, kind: 'postgres', family: 'rdbms', effectiveFamily: 'rdbms', publicConfig: { endpoint: 'postgres://host/db' }, credentialPresence: { 'url.password': true } });
 const active = () => {};
 function committed(result: MutationOutcome) { assert.equal(result.status, 'committed', JSON.stringify(result)); if (result.status !== 'committed') throw new Error('expected committed'); return result.value; }
+function removeRequest(ticket:OperationTicket,expectedRevision='selected-revision'):MutationRequest{return{ticket,operationId:ticket.operationId,key:{repoRoot:ticket.lookupRoot,scope:'temporary',id:ticket.connectionId},mode:'remove',expectedRevision};}
+
+test('CM-S4-TEMP-REPLAY: remove commits revision-only truth and replay cannot select a recreated row',async()=>{
+ const f=fixture(),rows=new Map([['row','selected-revision']]);let publishes=0,release!:()=>void,entered!:()=>void;
+ const held=new Promise<void>(resolve=>{release=resolve;}),started=new Promise<void>(resolve=>{entered=resolve;});
+ try{
+  const ticket=f.ledger.issue(key,'remove'),input=removeRequest(ticket);
+  assert.equal(f.ledger.inspect(ticket).ticket.mode,'remove');
+  const first=f.ledger.mutate(input,async(_request,commit)=>{entered();await held;return commit(()=>{publishes++;rows.delete('row');return{revision:'removal-revision'};});},active);
+  await started;assert.equal(f.ledger.status(ticket).status,'pending');
+  const same=f.ledger.mutate(structuredClone(input),async()=>{throw new Error('duplicate removal');},active);
+  rejected(await f.ledger.mutate({...input,expectedRevision:'other'},async()=>{throw new Error('changed payload');},active),'operation-mismatch');
+  release();const outcome=committed(await first);assert.deepEqual(committed(await same),outcome);assert.equal(publishes,1);assert.equal(rows.size,0);
+  assert.deepEqual(outcome,{operationId:ticket.operationId,revision:'removal-revision',registration:'removed',activation:'not-applicable',credentialCleanup:'complete'});
+  rows.set('row','new-revision');assert.deepEqual(committed(await f.ledger.mutate(input,async()=>{throw new Error('replay must not delete');},active)),outcome);assert.equal(rows.get('row'),'new-revision');
+  assert.throws(()=>f.ledger.activation(ticket.operationId,outcome.revision,'active'),code('operation-mismatch'));
+  assert.throws(()=>f.ledger.cleanup(ticket.operationId,outcome.revision,'pending'),code('operation-mismatch'));
+  f.ledger.cleanup(ticket.operationId,outcome.revision,'complete');assert.equal(f.ledger.status(ticket).status,'committed');
+ }finally{release();f.ledger.close();}
+});
+
+test('CM-S4-TEMP-REPLAY: postcommit apply failure returns the existing removal receipt without payload leakage',async()=>{
+ const f=fixture();let publishes=0;
+ try{
+  const ticket=f.ledger.issue(key,'remove'),input=removeRequest(ticket);
+  rejected(await f.ledger.mutate({...input,registration:'removed'},async()=>{throw new Error('invalid payload must not apply');},active),'invalid-input');
+  const outcome=committed(await f.ledger.mutate(input,async(_request,commit)=>{commit(()=>{publishes++;return{revision:'removed-revision'};});throw new Error('private-postcommit-canary');},active));
+  assert.equal(outcome.registration,'removed');assert.equal(publishes,1);assert.ok(!JSON.stringify(outcome).includes('canary'));assert.ok(!JSON.stringify(f.ledger).includes('removed-revision'));
+ }finally{f.ledger.close();}
+});
+
+test('CM-S4-TEMP-REPLAY: ticket owner and request-generation expiry prevent removal publication after awaits',async()=>{
+ for(const loss of ['ticket','owner','request'] as const){
+  const f=fixture();let release!:()=>void,entered!:()=>void,publishes=0,revoked=false;
+  const held=new Promise<void>(resolve=>{release=resolve;}),started=new Promise<void>(resolve=>{entered=resolve;});
+  const assertRequest=()=>{if(revoked)throw new ManagementServiceError('session-expired');};
+  try{
+   const ticket=f.ledger.issue(key,'remove');f.extend(180000);
+   const pending=f.ledger.mutate(removeRequest(ticket),async(_request,commit)=>{entered();await held;return commit(()=>{publishes++;return{revision:'must-not-publish'};});},assertRequest);
+   await started;if(loss==='ticket')f.setNow(90000);else if(loss==='owner')f.ledger.close();else revoked=true;
+   release();rejected(await pending,loss==='ticket'?'reconciliation-required':'session-expired');assert.equal(publishes,0);
+  }finally{release();f.ledger.close();}
+ }
+});
+
+test('CM-S4-TEMP-REPLAY: 16384 remove receipts retain history at expiry without a separate tombstone quota',async()=>{
+ const f=fixture();let first:OperationTicket|undefined;
+ try{
+  for(let i=0;i<MAX_SESSION_OPERATION_RECORDS;i++){
+   const ticket=f.ledger.issue(key,'remove');first??=ticket;
+   committed(await f.ledger.mutate(removeRequest(ticket),async(_request,commit)=>commit(()=>({revision:`removed-${i}`})),active));
+  }
+  assert.throws(()=>f.ledger.issue(key,'remove'),code('busy'));f.extend(180000);f.setNow(90000);
+  assert.equal(f.ledger.status(first!).status,'committed');assert.throws(()=>f.ledger.issue(key,'create'),code('busy'));
+  const replay=committed(await f.ledger.mutate(removeRequest(first!),async()=>{throw new Error('expired receipt must replay');},active));assert.equal(replay.registration,'removed');
+  f.ledger.close();assert.throws(()=>f.ledger.status(first!),code('session-expired'));assert.ok(f.bytes.every(byte=>byte===0));
+ }finally{f.ledger.close();}
+});
 
 test('CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt', async () => {
  const f = fixture(); let release!: () => void, entered!: () => void, commits = 0;

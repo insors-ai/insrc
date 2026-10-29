@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -425,3 +425,13 @@ Run at 2026-10-29T12:44:58.155Z on commit `63b37ad78`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 3 | 5 s |  |
 | `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 3 | 9.9 s |  |
+
+## t23
+
+Run at 2026-10-29T13:01:25.109Z on commit `7c2d26b59`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: CM-S4-CLIENT: verify backend contract/handoff fixtures against approved sc6 states and generated source artifacts; record both-client rendering/keyboard acceptance pending S005, not a backend pass.**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Commit 7c2d26b59. S004/S005-HANDOFF.html, consumer-contract-fixtures.json and evidence/t23/result.json; Node22 --import tsx evidence/t23/verify-handoff.mjs passes 20 backend confirmation/state snapshots, local links and approved structured diagram/source checks. Approved LLD/PLAN and generated companions unchanged; stale illustrative retireRemoved name explicitly clarified against approved prepare/commit/cancel contract. Both-client rendering/keyboard acceptance remains pending S005; visual layout remains unverified (native ER AX content loaded, screenshot switched tab). Migration/drain/downgrade/no resurrection, external/global affinity prerequisites and exact historical S003 sweep counts preserved.

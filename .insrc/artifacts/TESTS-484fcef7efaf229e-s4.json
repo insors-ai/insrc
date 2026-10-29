@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T12:44:58.155Z",
+    "updatedAt": "2026-10-29T13:01:25.109Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2538,6 +2538,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "7c2d26b59",
+        "ranAt": "2026-10-29T13:01:25.109Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-CLIENT: verify backend contract/handoff fixtures against approved sc6 states and generated source artifacts; record both-client rendering/keyboard acceptance pending S005, not a backend pass.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Commit 7c2d26b59. S004/S005-HANDOFF.html, consumer-contract-fixtures.json and evidence/t23/result.json; Node22 --import tsx evidence/t23/verify-handoff.mjs passes 20 backend confirmation/state snapshots, local links and approved structured diagram/source checks. Approved LLD/PLAN and generated companions unchanged; stale illustrative retireRemoved name explicitly clarified against approved prepare/commit/cancel contract. Both-client rendering/keyboard acceptance remains pending S005; visual layout remains unverified (native ER AX content loaded, screenshot switched tab). Migration/drain/downgrade/no resurrection, external/global affinity prerequisites and exact historical S003 sweep counts preserved."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

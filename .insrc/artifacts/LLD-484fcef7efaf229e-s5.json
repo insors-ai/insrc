@@ -1,0 +1,1543 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793280871734-66co5i",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-29T13:43:51.091Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 559333,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicHash": "484fcef7efaf229e",
+    "epicSlug": "manage-saved-temporary-data-connections",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1792569414548-dvzndd",
+    "hldEffectiveHash": "dc1a3f91a768c5e20e9788e76390b96ae43e65586f3afa87762c1a5834745047",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "S005's deliverables (including treating the insrc-ide fork as a required, in-scope client requiring parity, mirrored type-sync manifests, direct edits to its main-process/renderer files, and 'both-client execution is mandatory before release') are not a non-goal that should not be built.",
+          "evidence": "The HLD (docs/epics/.../HLD.md §Framework summary and the 'External IDE integration findings' block) explicitly mandates this: 'External IDE integration discovery is completed at HLD level... S005 owns implementation and end-to-end execution against those identified surfaces; it does not defer contract discovery. Backend-only success does not satisfy S005.' The LLD's §3.1,3.2,3.3,3.4,3.7,3.8, Migration steps 3-4, and the 'live'/'smoke' test levels (CM-S5-UI, CM-S5-SOURCE, CM-S5-GATE) all build out concrete edits inside /Users/subhagho/work/projects/insors/insrc-ide/.... This directly contradicts the standing project-level instruction already on record: the user said on 2026-10-08 'ignore the insrc-ide fork, that's dead' and that it must not be treated as 'a consumer to keep compatible' in designs — the live IDE surfaces are vscode-plugin/ and jetbrains-plugin/ inside this same repo. The HLD itself already committed this scope (so the problem predates this LLD), but the LLD compounds it with ~6 concrete 'new'/'invariant-change' sections of IDE-fork work and a release gate that blocks on it, which is building work the project owner has directed to stop building. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
+          "action": "Flag to the user before approval: confirm whether the IDE-fork integration scope in HLD §Framework/External-IDE-integration and this LLD's §3.1/3.2/3.3/3.4/3.7/3.8 + migration + release-gate should be dropped or carved into a separate, explicitly-scoped exception given the standing 'ignore insrc-ide' instruction, or whether that instruction has since been superseded for this epic.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's claim (§3.3, c3) that the IDE's current `insrcDbConnectionsServiceImpl.ts` 'catches every exception to return []' for list/listDriverKinds, and that the v2 manager must not call this swallowed-error path, accurately describes current code.",
+          "evidence": "Read insrcDbConnectionsServiceImpl.ts:33-45: `list()` wraps the daemon RPC in try/catch and on any exception logs a warning and `return [];` — matching the design's and the HLD's own citation ('insrcDbConnectionsServiceImpl.ts:34 calls db.listConnections and catches every exception to return []') verbatim. [files: /Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts]",
+          "action": "No action; claim confirmed against source.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§2.2's `removalConfirmation(key, expectedRevision): RemovalConfirmation` is reused from S004/sc6 with the stated shape (Delete-vs-Discard, source-preservation guarantee, ManagementInputError on malformed input).",
+          "evidence": "src/shared/connection-removal.ts:12-20 defines exactly `removalConfirmation(key: ConnectionKey, expectedRevision: string): RemovalConfirmation`, throwing `ManagementInputError` on malformed input, returning `action:'Delete'|'Discard'` keyed on scope and a message guaranteeing 'Source files, databases, tables and remote data will be preserved' — matching the LLD's contract and prose exactly. [files: src/shared/connection-removal.ts]",
+          "action": "No action; reused contract confirmed to exist with the stated shape.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§3.7's session open/resume/heartbeat/delegate/end client-protocol semantics (30s heartbeat, 90s expiry, same-epoch resume) are properly treated as consuming an already-built sc5 daemon contract (owned by s3), not mislabeled as newly-invented policy.",
+          "evidence": "src/daemon/connection-session-rpc.ts already fully implements session open/resume/attach/delegate/heartbeat/end with epoch checks, and src/daemon/db/session-owner.ts defines `CONNECTION_SESSION_HEARTBEAT_MS = 30_000` and `CONNECTION_SESSION_LEASE_MS = 90_000`. The LLD's §5 contracts table marks sc5 as 'consumes', and §3.7's 'new' label applies to the client-side extension of ipc-client.ts (persistent multiplexing), not to the already-implemented daemon heartbeat/expiry numbers it restates. [files: src/daemon/connection-session-rpc.ts, src/daemon/db/session-owner.ts]",
+          "action": "No action; the 30s/90s figures are an accurate restatement of an existing, s3-owned contract, not duplicated invention.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "§3.1 names `vscode-plugin/src/panels/types.ts` as a call site for the new `ConnectionManagerState` type/model wiring.",
+          "evidence": "Reading the file shows it is the sc9 WebviewPanelHost contract for a different epic/Story (E20260922401ae5fb:S004, the Detailed-Status/Repo-Configuration panel host) — its exports are `WebviewPanelHost`, `DaemonDataGateway`, `WorkflowChainView`, `RepoRef`, `PanelHandle`, etc., with no existing hook, import, or placeholder for connection management. Naming it as a call site for `ConnectionManagerState` without any supporting extension point in that file risks the builder bolting unrelated connection-manager state into an unrelated panel-host types module shared by other Stories. [files: vscode-plugin/src/panels/types.ts]",
+          "action": "Correct the call-site list: either name the actual file(s) that will host the new connection-manager webview/panel wiring (e.g. a new panels/connectionManager types module, or extension.ts's own command/panel registration) or explain concretely how this type is meant to extend panels/types.ts's existing sc9 surface.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§3.3/3.4/3.5's 'Wire unchanged'/'No wire/persistent-schema change' claims for SafeConnection, DraftTestRequest and OperationTicket, and the Migration section's 'no registry migration... no data rewrite' claim, match the actual sc1/sc2/sc4 interfaces and the registry's storage approach.",
+          "evidence": "HLD §5.1/5.2/5.4 define `SafeConnection`, `OperationTicket`, `DraftTestRequest` exactly as the LLD's local echoes describe them, and HLD §3 Architecture shape states persistence adds 'optional versioned management metadata to the same JSON document for revisions and bounded operation receipts; do not add another persistent connection registry' — consistent with the LLD's no-rewrite, no-new-registry migration claim. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "No action; claims consistent with the approved HLD contracts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§3.7 (session client ownership) and §3.8 (privileged IDE transport isolation), both labeled 'new', stay within client-side transport adaptation and consumption of sc5 (owned by s3) and sc8 (owned by s1) rather than redesigning those Stories' daemon-owned semantics.",
+          "evidence": "§3.8 states explicitly 'This is client transport adaptation of sc5, not new daemon authorization,' and §5's contracts table marks sc5 and sc8 as 'consumes' with language restricted to client lane/channel wiring ('Workbench memory-only control owner, per-root delegated UI/data sockets...'; 'Consume unsupported/resource-limit messages without local conversion/cache/spill fallback; file runtime remains daemon-owned'). The Adjacent Scope note in the same LLD correctly attributes sc5's open/resume/heartbeat/end design to s3 and sc8's conversion/cache/DuckDB lifecycle to s1, and §3.7/3.8's content does not redefine either. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
+          "action": "No action on Story-to-Story ownership; the only boundary-adjacent problem found is the IDE-fork scope conflict already raised under coverage-of-intent.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The error-paths table's detection/response pairs for 'upgrade-required' and 'session-expired'/lease-loss map onto real, already-implemented daemon error codes and throw sites, so they are genuinely detectable as described.",
+          "evidence": "HLD §5.2 defines `ManagementErrorCode` including exactly `'session-expired'|'upgrade-required'|...`, and src/daemon/connection-session-rpc.ts's `fail()` helper and `#context()` guard throw `fail('session-expired')` on missing/aborted/epoch-mismatched context and `fail('upgrade-required')` on an unsupported/disabled method — matching the LLD's described detection points ('Required version/features unavailable...' / 'session-expired response, failed same-epoch resume or capabilities epoch differs'). [files: src/daemon/connection-session-rpc.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "No action; the cited error codes and detection points exist in the current daemon code.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Acceptance mapping table (§7) covers every element of the HLD's own S005/ac1, ac2, ac3 acceptance definitions with a named test subject.",
+          "evidence": "HLD's 'Planned acceptance-to-test mapping' defines S005/ac1 (Settings/manage action, retained repo, multi-root selection, descriptor-driven choices, palette/editor route equivalence in extension+IDE), ac2 (counts/states, reveal, dirty discard/cancel, legacy lookup preservation) and ac3 (keyboard/themes, masked replacements, upgrade gate, mirrored IDE contracts, both-client mandatory). The LLD's mapping assigns ac1→{ENTRY,FORM,WIRE,SYNC,BUILD}, ac2→{STATE,DIRTY,TEST,OWNER,WINDOW,OUTCOME,REMOVE,LIFETIME}, ac3→{UI,COMPAT,PRIVACY,TRANSPORT,SOURCE,SWEEP,GATE}, and each named subject's own description (§7 Test levels) textually covers the corresponding ac items (e.g. CM-S5-ENTRY covers 'Settings query/command link, palette and existing editor/pane actions route same selected state'; CM-S5-GATE covers the both-client/production-gate mandate). [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
+          "action": "No action; mapping is complete against the upstream acceptance criteria.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 1,
+        "low": 7,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-29T13:44:41.987Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "Add a Settings-discoverable connection manager to the standalone VS Code extension and upgrade the IDE fork’s Data Sources editor to the same behavior. Users explicitly choose a registered repository and Saved or Temporary scope, filter by lifetime, edit safe driver-specific fields, test drafts, and Delete or Discard with truthful recovery states. Workbench-owned temporary connections survive closing the manager; incomplete backend release evidence continues to block production admission."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a daemon-owned application service over the existing repository JSON registry and driver implementations. Separate saved commit, runtime activation and client refresh; use immutable credential generations and atomic JSON replacement rather than pretending the filesystem and keychain share a transaction. Temporary configurations remain in daemon memory under a workbench lease. All descriptions below are proposed architecture, not assertions of current implementation.",
+      "ownedContracts": [
+        {
+          "id": "sc7",
+          "name": "Manager state and scope filter",
+          "purpose": "Preserve the PRD interaction across the two client implementations.",
+          "interfaceSketch": "type ScopeFilter = 'all'|'saved'|'temporary'; type ConnectionListState = 'loading'|'ready'|'empty-registry'|'empty-filter'|'read-error'|'offline'|'no-repository'|'upgrade-required'; interface ConnectionManagerState { repoRoot?: string | undefined; filter: ScopeFilter; listState: ConnectionListState; draftRevision: number; dirty: boolean; mutationOperationId?: string | undefined; refreshError?: string | undefined }",
+          "ownedByStory": "s5",
+          "consumedByStories": [],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Connection management protocol and driver descriptors",
+          "purpose": "One safe wire contract and compatibility boundary for all consumers.",
+          "interfaceSketch": "type ConnectionScope = 'saved' | 'temporary'; interface ConnectionKey { repoRoot: string; scope: ConnectionScope; id: string } interface SafeConnection { key: ConnectionKey; revision: string; kind: string; family: 'rdbms'|'kv'|'file'; label?: string | undefined; publicConfig: Readonly<Record<string, unknown>>; declaredFamily?: string | undefined; registeredFamily?: string | undefined; effectiveFamily: string; compatibilityWarning?: string | undefined; credentialPresence: Readonly<Record<string, boolean>> } type CredentialPatch = { action: 'keep' } | { action: 'replace'; value: string } | { action: 'clear' }; interface DriverDescriptor { kind: string; family: 'rdbms'|'kv'|'file'; publicInputSchema: Readonly<Record<string, unknown>>; secretSlots: readonly string[] } interface ManagementCapabilities { version: 2; daemonEpoch: string; features: readonly string[]; receiptRetentionDays: 30 }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Revision-checked mutation and recovery outcomes",
+          "purpose": "Make persistence and retries truthful across registry and credential boundaries.",
+          "interfaceSketch": "interface OperationTicket { operationId: string; lookupRoot: string; scope: ConnectionScope; connectionId: string; mode: \"create\"|\"update\"|\"remove\"; issuedAt: string; expiresAt: string; signature: string } interface OperationStatusRequest { ticket: OperationTicket } interface MutationRequest { ticket: OperationTicket; operationId: string; key: ConnectionKey; mode: 'create'|'update'|'remove'; expectedRevision?: string | undefined; publicPatch?: Readonly<Record<string, unknown>> | undefined; credentials?: Readonly<Record<string, CredentialPatch>> | undefined } type ManagementErrorCode = 'invalid-input'|'duplicate-id'|'conflict'|'not-found'|'busy'|'registry-unreadable'|'secret-unavailable'|'recovery-required'|'session-expired'|'upgrade-required'|'operation-mismatch'|'reconciliation-required'; interface CommittedOutcome { operationId: string; revision: string; registration: 'persisted'|'session-added'|'removed'; activation: 'active'|'pending'|'failed'|'not-applicable'; credentialCleanup: 'complete'|'pending' } type MutationOutcome = { status: 'committed'; value: CommittedOutcome } | { status: 'rejected'; code: ManagementErrorCode; message: string }; type OperationStatus = { status:'committed'; value:CommittedOutcome } | { status:'pending'|'not-seen'|'reconciliation-required' }; interface ActivationRetry { key: ConnectionKey; committedRevision: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Validated connection access context and driver leases",
+          "purpose": "A foundational extension point for session isolation and busy-use correctness across dependency branches.",
+          "interfaceSketch": "interface ConnectionAccessContext { lookupRoot: string; managementRepoRoot?: string | undefined; daemonEpoch: string; sessionHandle?: string | undefined } interface ConnectionLease { key: ConnectionKey; revision: string; release(): Promise<void> } interface ConnectionResolver { list(context: ConnectionAccessContext): Promise<readonly SafeConnection[]>; lease(context: ConnectionAccessContext, id: string): Promise<ConnectionLease> } interface ManagementRequestContext { connectionIdentity: string; access: ConnectionAccessContext }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Transient draft test contract",
+          "purpose": "Test the same draft as Save with bounded lifetime and stale-result identity.",
+          "interfaceSketch": "interface DraftTestRequest { requestId: string; draftRevision: number; key: ConnectionKey; expectedRevision?: string | undefined; publicPatch: Readonly<Record<string, unknown>>; credentials: Readonly<Record<string, CredentialPatch>> } interface DraftTestResult { requestId: string; draftRevision: number; repoRoot: string; daemonEpoch: string; status: 'reachable'|'failed'|'timeout'|'canceled'; tookMs: number; safeMessage?: string | undefined } interface TestCancellation { requestId: string }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Workbench session registration and ephemeral overlay",
+          "purpose": "Memory-only temporary state independent from panels and chat sessions.",
+          "interfaceSketch": "interface OpenConnectionSessionResult { sessionHandle: string; capability: string; daemonEpoch: string; heartbeatMs: 30000; leaseMs: 90000 } interface SessionResume { sessionHandle: string; capability: string; daemonEpoch: string } interface TemporaryConnectionStore { register(context: ConnectionAccessContext, request: MutationRequest): Promise<MutationOutcome>; end(sessionHandle: string): Promise<void> }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Safe removal and cleanup presentation",
+          "purpose": "Treat saved Delete and temporary Discard consistently without touching source data.",
+          "interfaceSketch": "interface RemoveConnectionRequest { ticket: OperationTicket; operationId: string; key: ConnectionKey; expectedRevision: string } interface RemovalState { key: ConnectionKey; operationId: string; state: 'confirming'|'removing'|'busy'|'conflict'|'unknown'|'removed-cleanup-pending'|'removed'; safeMessage?: string | undefined }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Settings contributions and shared command routing, themed editor/forms, filters, dirty guards, stale-test suppression and truthful feedback in extension and external IDE. HLD has inspected the external pane, actions, service, mirrored types and Settings registrations; S005 implements the recorded plan and validates its mirrored contract before integration acceptance."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [],
+          "internal": "Safe saved-config read/patch, canonical repo validation, driver profiles, registry metadata/receipts and crash recovery, immutable secret generation staging, compatibility adapters and lease accounting foundation. Does not own temporary storage or rich manager layout. Preserve saved-only scope-local lookup and legacy pinned-family values; signed operation tickets make expiry/replay decidable after receipt pruning. Own the shared memory-only conversion/probe driver foundation, converter-cache policy/identity changes and private DuckDB lifecycle (sc8), completed before the S002/S003 branches."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "internal": "Transient process probe transport, deadline/cancellation and sanitization. Uses foundational context slots without depending on s3’s session implementation."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "internal": "Session open/resume/heartbeat/end, memory-only temporary overlays and receipts, trusted execution-context propagation through analyzer/tool/MCP call paths, expiry and saved/temporary collision rules. Bind the S001-owned sc8 file execution policy to session identity and expiry; S001 owns conversion, cache-policy isolation and private DuckDB lifecycle. Every native/converted kind uses that foundation rather than a branch-local converter."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "Removal coordination for both scopes, busy/revision enforcement, confirmation state, postcommit credential cleanup retry and operation-status recovery. Never invokes source data deletion."
+        }
+      ],
+      "rolloutPhase": "D — manager integration",
+      "nonFunctional": {
+        "performance": "Draft tests have a 10-second parent-enforced deadline, with forced child reap if graceful termination fails. Workbench heartbeat is 30 seconds and expiry 90 seconds after last valid heartbeat. Mutations serialize per repo; list/filter work does not perform driver probes. LLD load tests must verify no leaked children, leases or session entries after cancellation/expiry.",
+        "security": "Daemon owns every saved/temporary config and credential decision; client labels/PIDs are not authorization. Registered-root eligibility gates management and temporary operations; saved-only analysis preserves canonical scope-local lookup without gaining mutation rights. Safe read responses return a profile allowlist and presence booleans only. Secrets, capabilities and full requests never enter logs, receipts, prompts, artifacts, telemetry or checkpoints. Temporary inputs never reach disk or keychain. A test worker receives config via private IPC and may not emit raw driver errors. Temporary file conversion, query spill and metadata/logging are part of the no-persistence boundary, including test workers.",
+        "observability": "Use getLogger with operation ID, safe code, repo ID, scope, revision and phase only; timing and counters for commit, activation, recovery, timeout, busy refusal and session expiry. No raw exceptions or endpoint/options. Operation status exposes committed truth even when response delivery or activation failed. Recovery-required and cleanup-pending are visible and actionable.",
+        "durability": "Saved JSON remains authoritative. Same-directory atomic rename/fsync commits registry, revisions and receipts together; immutable keychain generations preserve previous effective credentials until commit. Recover preparation records before enabling mutation. Issue signed 30-day operation tickets; preserve receipts through ticket expiry and pending cleanup, and distinguish expired-unreceipted from valid-not-seen after restart. Temporary state and receipts expire on explicit session end, 90-second lease loss or daemon epoch change."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ConnectionManagerState",
+          "signature": "interface ConnectionManagerState { repoRoot?: string | undefined; filter: 'all'|'saved'|'temporary'; listState: 'loading'|'ready'|'empty-registry'|'empty-filter'|'read-error'|'offline'|'no-repository'|'upgrade-required'; draftRevision: number; dirty: boolean; mutationOperationId?: string | undefined; refreshError?: string | undefined; }",
+          "parameters": [],
+          "returns": {
+            "type": "ConnectionManagerState",
+            "meaning": "sc7 public projection; privileged credentials, capabilities and transport ownership never enter this projection."
+          },
+          "errors": [
+            {
+              "type": "read-error",
+              "condition": "List or descriptor reply fails strict validation; no fallback empty list."
+            },
+            {
+              "type": "upgrade-required",
+              "condition": "Required version/features unavailable or release admission withheld."
+            }
+          ],
+          "preconditions": [
+            "Daemon-authoritative registered root selection; retain selected root in memory, never derive it from the active text editor.",
+            "All external messages and v2 replies decoded as unknown at host boundary."
+          ],
+          "postconditions": [
+            "All/Saved/Temporary counts and rows use full key plus revision, from one successful authoritative snapshot.",
+            "Dirty transitions require Discard/Cancel; mutation unknown state is reconciled before another mutation of that selected target."
+          ]
+        },
+        {
+          "name": "removalConfirmation",
+          "signature": "removalConfirmation(key: ConnectionKey, expectedRevision: string): RemovalConfirmation",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "ConnectionKey",
+              "purpose": "Exact selected repository/scope/ID",
+              "optional": false
+            },
+            {
+              "name": "expectedRevision",
+              "type": "string",
+              "purpose": "Captured selected generation",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RemovalConfirmation",
+            "meaning": "S004-owned pure copy; Delete versus Discard and source-preservation guarantee."
+          },
+          "errors": [
+            {
+              "type": "ManagementInputError",
+              "condition": "Malformed key/revision"
+            }
+          ],
+          "preconditions": [
+            "Dirty form resolved before removal confirmation.",
+            "No ticket issued until explicit confirm."
+          ],
+          "postconditions": [
+            "Cancel issues zero ticket/mutation/cleanup calls.",
+            "Confirm uses exact captured target and revision; unknown uses the original ticket, never the current same-ID row."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ConnectionManagerState",
+        "change": "new",
+        "callSites": [
+          "vscode-plugin/src/extension.ts",
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts"
+        ],
+        "details": "Proposed pure core in src/shared/connection-manager/{model,controller,wire}.ts (new files, no daemon/storage/provider imports). Mirror only this reviewed pure module closure into IDE common/connectionManagement via deterministic sync manifest with source/destination hashes and divergence refusal; no separate package/runtime dependency. Both renderers consume the same reducer/events/effect descriptors; injected adapters execute effects. One workbench controller owns 0..many per-root manager views; each view has 0..1selected key, 0..1draft and monotonically increasing view generation. UI selection never grants backend authority. Keep selected repo/filter in workbench memory; reject stale list/read responses on root+view-generation+epoch mismatch. Do not persist temporary state in webview getState/setState, memento, Settings, logs or telemetry. Persistence of non-sensitive preferences is unnecessary for this scope. The extension manager owns proposed vscode-plugin/src/connections/{types,host,wiring,renderer}.ts modules. Existing vscode-plugin/src/panels/types.ts remains unchanged: it is a reference for injection patterns only, not a connection-state extension point."
+      },
+      {
+        "entity": "ConnectionListState",
+        "change": "new",
+        "callSites": [
+          "vscode-plugin/package.json",
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/insrcConfiguration.ts"
+        ],
+        "details": "Settings keyword group 'insrc connections' exposes a command link Manage Connections; it is discovery text, not a writable URL/options/scope setting. Standalone extension adds insrc.openDataSources and legacy add/edit/remove/test aliases only where absent, all to one manager route. Existing IDE command/editor IDs retained. No-repository shows register guidance; multiple registered workspace roots require explicit selection, none inferred. A retained selected root wins over active editor; if registration is removed, invalidate selection. Successful zero rows => empty-registry; nonempty total but zero filtered => empty-filter; failed read/offline/upgrade states distinct, retry only re-reads. Preserve last-good rows as visibly stale non-actionable context on error, never count as authoritative. All/Saved/Temporary counts computed before filter for selected root; search then filter matching count is explicit. Add reveals committed row by switching to matching scope or All and selecting exact new key/revision; does not fake a successful refresh."
+      },
+      {
+        "entity": "SafeConnection",
+        "change": "invariant-change",
+        "callSites": [
+          "src/shared/connection-management.ts",
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts",
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts"
+        ],
+        "details": "Wire unchanged. Add separate v2 methods and result decoders to IDE service/types; preserve legacy list/save/test/remove signatures for unrelated callers, but v2 manager never calls swallowed-error list or legacy upsert/delete. Validate capabilities, descriptors, lists, safe read, signed-ticket target, mutation/status/test/removal replies as exact discriminated structures with size/depth bounds. Validate descriptors with supported schema subset; unknown required input/schema kind => driver unavailable/read-only with safe guidance, never infer endpoint format or accept arbitrary options. Every daemon descriptor offered with unsupported/read-only explanation if not editable. Fixed edit ID/kind/scope/family; pinned legacy family and unknown private fields stay server-side. Credential Keep default on existing slots, Replace masked blank new value, Clear explicit confirmation; do not round-trip presence booleans as secret values."
+      },
+      {
+        "entity": "DraftTestRequest",
+        "change": "invariant-change",
+        "callSites": [
+          "src/shared/connection-management.ts",
+          "vscode-plugin/src/extension.ts",
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbConnectionCommands.ts"
+        ],
+        "details": "Wire unchanged. Host holds effective UI draft only in memory and increments draftRevision on every field/credential edit. Test and Save share one draft serializer; Test is optional, never saves, emits requestId/revision/key/expectedRevision/publicPatch/credential intent. Only one in-flight probe per transport; cancellation on edit, root/scope/selection switch and close. Display result only when requestId,draftRevision,repoRoot,epoch plus locally captured full key/view-generation all match. Ignore late results and retain safe elapsed duration. Preserve the source controller till daemon drain completes even if panel closes; timeout/cancel response is not proof of cleanup. Raw SDK/transport exceptions replaced with fixed local messages."
+      },
+      {
+        "entity": "OperationTicket",
+        "change": "invariant-change",
+        "callSites": [
+          "src/shared/connection-management.ts",
+          "src/shared/connection-removal.ts"
+        ],
+        "details": "No wire/persistent-schema change. Each manager view has at most one active mutation and one memory-only immutable attempted request (including credential intent), paired with signed ticket. Freeze exact draft before ticket/mutate; disable duplicate submit. Lost delivery => unknown, retain draft and same operation, never reset to editable form and create a new ID. Status pending continues bounded/backoff polling with explicit retry; not-seen permits only identical same-ticket replay after explicit action; expired/unreceipted => reconciliation-required, no replay. Saved disconnect/reconnect may reconcile same ticket on an unclaimed Saved lane; temporary reconnect resumes only matching live owner/epoch and current root delegation. Committed response clears sensitive draft, reports saved/session-added independently from activation and refresh; retry activation by committed revision or list refresh only, never repeat mutation. Closing dirty draft uses Discard/Cancel; unknown mutation close may hide the view but workbench retains its reconciliation record and reopens it before new target mutation. No disk recovery store; after workbench loss Saved requires authoritative reload/status only when ticket still in memory, otherwise describe uncertain last operation without inventing outcome."
+      },
+      {
+        "entity": "RemovalState",
+        "change": "invariant-change",
+        "callSites": [
+          "src/shared/connection-removal.ts",
+          "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/S005-HANDOFF.html"
+        ],
+        "details": "Consume current independent credentialCleanup/resourceCleanup projection, not older HLD illustrative simplification. Exact selection confirmation shows repository+scope+ID and source-data guarantee. Busy/conflict keep row, selection and draft; conflict reload requires reconfirm fresh revision. Unknown never inferred removed from absent list row. Committed removed-cleanup-pending removes usable registration from authoritative rows but retains a separate operation status card with both cleanup phases; retry sends only {ticket}. Cannot close a recreated generation. Cancel uses zero ticket/mutation effects. S00420consumer snapshots reused for state copy; actual rendering/keyboard evidence still required in both clients."
+      },
+      {
+        "entity": "Workbench session client ownership",
+        "change": "new",
+        "callSites": [
+          "src/shared/ipc-client.ts",
+          "vscode-plugin/src/extension.ts",
+          "src/daemon/connection-session-rpc.ts",
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/electron-sandbox/daemonServiceImpl.ts"
+        ],
+        "details": "One workbench lifetime owns one memory-only session and dedicated multiplexed control socket, initially opened with selected registered root. Heartbeat every30s while workbench live; end on actual disposal, not manager close/root switch. Extend existing thin src/shared/ipc-client.ts socket code with persistent request-ID multiplexing and sanitized disconnect outcome, preserving one-shot exports unchanged; no independent socket implementation in extension. Control lane carries only session open/resume/delegate/heartbeat/end plus permitted metadata; per-root workbench-ui delegated data sockets carry temporary management and scoped analysis/tool/probe calls. Saved actions use separate unclaimed sockets. Root switching delegates existing owner to new registered root, never creates a new owner or discards previous overlay. Same-root data channels may carry concurrent bound requests but no raw capabilities reach renderer. On disconnect stop dependent effects, resume old in-memory owner within90s and same epoch then re-delegate/attach current generation; expired/new epoch clears temporary UI/attempt records, cancels drafts/tests, displays lifetime loss, no silent recreation. Temporary copy shown before Add: survives panelclose/root switch; ends on workbench end,90s lease loss or daemonrestart. No guessed heartbeat extends a daemon deadline."
+      },
+      {
+        "entity": "Privileged IDE transport isolation",
+        "change": "new",
+        "callSites": [
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts",
+          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts"
+        ],
+        "details": "Current IDE generic daemon service funnels renderer RPCs through a global main-process socket, so it cannot host workbench-bound sc5 claims. S005 client integration adds a window-scoped management channel in /Users/subhagho/work/projects/insors/insrc-ide/src/vs/code/electron-main/app.ts and /Users/subhagho/work/projects/insors/insrc-ide/src/vs/platform/insrc/electron-main/insrcDaemonMainService.ts, using trusted Electron IPC caller/window identity from server context, never JSON windowId or labels. Main owns 1control+0..many root-data sockets per trusted window and a separate Saved lane; exact allowlisted management/session/scoped execution methods, request IDs and result events routed only to owner. Browser/electron-sandbox daemonServiceImpl exposes typed intent API with no capability serialization to browser/editor state; lifecycle disposal tied to window lifecycle. Existing global generic channel remains unclaimed Saved/legacy traffic. Two renderer pending RPC maps cannot consume each other's reply IDs; collision tests mandatory. This is client transport adaptation of sc5, not new daemon authorization. If trusted caller identity cannot be established at build, block external integration and raise amendment/question; never use payload identity. External edits require tracked commits and authorized filesystem access before execution."
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc7",
+        "role": "implements",
+        "howDetails": "Pure manager model, counts, mutually distinct list states, retained repo, explicit scope, dirty navigation, generation-bound tests and truthful effects; independent host rendering."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Strict capabilities/descriptors/safe reads and feature-by-feature fail-closed admission; no new wire contract."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Consume signed operation/status and activation semantics unchanged; immutable same-ticket retry, no persistence inference from transport delivery."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Client conveys only trusted scoped session lane; daemon owns leases, authority and global busy enforcement."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Draft-test serializer/cancel/result identity consumed unchanged; true drain is daemon owned."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Workbench memory-only control owner, per-root delegated UI/data sockets, explicit resume/end and90s lifetime; no panel/chat session lifetime."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Consume S004 confirmation/state/ticket-only cleanup and independent phases; never delete source or select cleanup by current ID."
+      },
+      {
+        "contractId": "sc8",
+        "role": "consumes",
+        "howDetails": "Consume unsupported/resource-limit messages without local conversion/cache/spill fallback; file runtime remains daemon-owned."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Unavailable or mixed capability/version/release evidence",
+          "detection": "Capabilities decoder rejects shape/version/epoch or required feature set is missing; unknown-method replies are classified as upgrade-required.",
+          "response": "Show upgrade-required and disable affected add/edit/test/remove controls, with metadata readable only if that feature is advertised. No legacy mutation fallback and no synthetic positive gate evidence shipped.",
+          "userImpact": "Can see explicit compatibility guidance rather than unsafe forms.",
+          "recoverable": true
+        },
+        {
+          "scenario": "List/driver/read failure or malicious descriptor",
+          "detection": "Rejected transport call or strict bounded decoder/schema-subset validation fails before render/use.",
+          "response": "read-error/offline as appropriate; preserve last-good view marked stale, disable mutations; do not show zero counts, empty registry or invent fields. Fixed safe error text.",
+          "userImpact": "Draft stays in memory; Retry reads only.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Mutation reply lost or timed out after possible write",
+          "detection": "Transport reports written-but-unanswered/disconnected, RPC timeout or malformed outcome on an attempted operation.",
+          "response": "Unknown state freezes exact request+ticket and blocks new mutation for target; status and identical same-ticket replay only under sc2 rules. Reconnect Saved separately; never send changed payload or fresh ticket.",
+          "userImpact": "No duplicate create/delete or false success; explicit reconciliation action.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Committed save but activation or authoritative refresh failed",
+          "detection": "Validated committed outcome plus failed activation phase/list call.",
+          "response": "Show Saved/Added for this session separately from activation/refresh failures; retry failed effect only. Clear credential replacements after known commit. Do not reset truth to unsaved.",
+          "userImpact": "User sees committed data with actionable partial success.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Busy/stale removal or concurrent edit",
+          "detection": "Validated busy/conflict rejection or exact expectedRevision differs after reload.",
+          "response": "Keep row/draft and safe explanation. Busy retry after work ends; stale must refresh/read and reconfirm revision. Independent cleanup pending keeps operation card and sends ticket-only retry.",
+          "userImpact": "No source-data deletion, row loss or old retry closing new handle.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Temporary lease loss/new daemon epoch",
+          "detection": "session-expired response, failed same-epoch resume or capabilities epoch differs; local timer never claims authoritative renewal.",
+          "response": "Revoke lane/view generation; cancel tests, clear temporary inputs/attempt records and show expired registration guidance. Require new explicit session/add; preserve Saved operations for separate reconciliation.",
+          "userImpact": "Expired temporary rows unavailable; no silent persistence/recreation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Cross-window/spoofed or stale privileged request",
+          "detection": "Main-process IPC context owner differs, unknown lane, wrong root/generation or forbidden method; IDs correlated within owner lane.",
+          "response": "Refuse before socket send/lookup, route fixed failure only to caller. No JSON window ID authorization, no global broadcast of sensitive results or capabilities.",
+          "userImpact": "Other workbenches retain isolation.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Late test/list reply after editing or navigation",
+          "detection": "Captured request/root/key/revision/view-generation/epoch tuple fails current comparison.",
+          "response": "Ignore for visible state, cancel prior work and retain drain ownership. Do not paint success on another draft.",
+          "userImpact": "Current form remains accurate.",
+          "recoverable": true
+        },
+        {
+          "scenario": "External checkout drift or missing trusted caller integration",
+          "detection": "Pinned source/commit/sync manifest check fails or IPC ownership test cannot bind to trusted Electron identity.",
+          "response": "Stop only cross-repo integration task; report explicit dependency/amendment instead of guessing caller identity or stamping both-client acceptance.",
+          "userImpact": "Release remains gated; approved backend work unaffected.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "No registered roots or multiple registered roots",
+          "expected": "No-repository with registration guidance, or explicit picker; retain selection while valid, no active-file inference."
+        },
+        {
+          "input": "Empty registry versus all rows excluded by scope/search",
+          "expected": "Different empty-registry and empty-filter copy; All/Saved/Temporary counts use authoritative selected-root snapshot."
+        },
+        {
+          "input": "Add Temporary while Saved filter selected",
+          "expected": "Scope default is Saved unless explicitly chosen; successful temporary add reveals new row by scope/All adjustment after actual refresh. Show lifecycle copy before adding."
+        },
+        {
+          "input": "Dirty navigation, root/filter/row/scope change, removal or panelclose",
+          "expected": "Discard/Cancel before leaving dirty form; Discard means throw away unsaved draft only, not temporary registration. Scope fixed when editing. Unknown operations retained at workbench level on hide; unresolved targets reopen reconciliation before another mutation."
+        },
+        {
+          "input": "Read-only legacy pinned family or unknown private fields",
+          "expected": "Safe read-only guidance and confirmation removal remain if advertised; no JSON editor to bypass descriptor constraints or silent family normalization."
+        },
+        {
+          "input": "Manager closed then reopened, root A→B→A, or second window",
+          "expected": "Same workbench owner retains overlays A andB; other window independent session/control/data sockets. No parent shared socket capability. No end on panelclose."
+        },
+        {
+          "input": "Temporary resource-limit/unsupported file type",
+          "expected": "Actionable safe refusal; do not perform client conversion or write cache/source/sidecars. Test failure does not persist draft."
+        },
+        {
+          "input": "Dark/light/high contrast and keyboard only",
+          "expected": "VSCode tokens, programmatic labels, focus-visible, logical navigation, focus restored to initiating row/toolbar after modal; status/error live region. Password inputs masked without accidental reveal from presence booleans."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Daemon remains authority for configs, credentials, atomic operation receipts and revision leases; client core imports only pure shared modules. Grounded by s1 symbol/data-model bundles.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing thin shared IPC one-shot public API remains compatible; persistent workbench lane extends the same boundary, not a new backend/storage path. Grounded by s1 source supplement.",
+          "source": "c2"
+        },
+        {
+          "text": "Existing IDE editor identity and action IDs preserved; v2 uses a separate typed service surface instead of changing legacy array projections. Grounded by s1 external source supplement.",
+          "source": "c3"
+        },
+        {
+          "text": "S004 source-preservation, exact ticket/revision retry and independent cleanup phases remain unchanged. Grounded by s1 removal usage and handoff.",
+          "source": "c4"
+        },
+        {
+          "text": "Production release gate stays disabled until genuine both-client and backend prerequisites are verified; no test fixture is product acceptance.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Extend existing node:test + node:assert/strict injectable extension cores and fake webview/command ports, as found by s1 source/test inspection; Node22+tsx for backend/shared and extension tests. IDE uses its existing workbench browser test runner and actual Electron IPC integration harness; discover exact invocation from that checkout before build. Include explicit extension test paths: backend src/** glob alone excludes vscode-plugin. No fabricated browser/native acceptance.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Portable sc7 reducer and projections with side-effect counters",
+          "subjects": [
+            "CM-S5-STATE: all list states distinct, retained root, full-key identity, filter/search/counts, add reveal and stale-view rejection",
+            "CM-S5-DIRTY: every draft exit Discard/Cancel; editing fixed identity/scope; zero effects after Cancel; unknown mutation retains reconciliation on close",
+            "CM-S5-FORM: descriptor subset validation, every offered driver, safe endpoint/secret-slot serialization and Keep/Replace/Clear; pinned/read-only compatibility",
+            "CM-S5-TEST: same draft serializer for Save/Test, optional testing, exact stale-result tuple, repeated click suppression and cancel"
+          ],
+          "fixturesNeeded": [
+            "Fake clock and deferred effects with controlled ordering",
+            "S00420consumer snapshots plus new full sc7 transcripts, malformed descriptor and credential canaries"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Exact decoded consumer contract and cross-repo parity",
+          "subjects": [
+            "CM-S5-WIRE: capabilities, descriptors, safe lists/reads, tickets, outcomes/status, test/removal replies strict/size-bounded; old/missing/malformed fails closed",
+            "CM-S5-SYNC: deterministic shared module closure copy, hash parity and source/destination drift negative controls; no daemon/storage/provider in client bundles",
+            "CM-S5-COMPAT: old daemon/new client upgrade UI; no legacy mutation fallback, legacy unrelated projections retained, pinned family retained"
+          ],
+          "fixturesNeeded": [
+            "Real shared wire contracts, safe malformed/accessor/prototype/oversized shapes",
+            "Pinned source/compiled manifests and standalone packaged extension loaded without backend node_modules"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Actual sockets/workbench and privileged host boundary",
+          "subjects": [
+            "CM-S5-TRANSPORT: persistent request multiplexing, disconnect pre/postwrite, timeout/abort, request ID collisions, finite buffers, exactly-once disposal and no raw error leak",
+            "CM-S5-OWNER: one control owner per workbench;30sheartbeat,90sexpiry,sameepochresume,new epoch invalidation; rootA→B→A,close/reopen and no capability persistence",
+            "CM-S5-WINDOW: two real trusted IPC window identities, overlapping request IDs, forged JSON IDs, wrong-root/method/generation refusal, owner-only response delivery and disposal",
+            "CM-S5-OUTCOME: known commit vs activation/refresh failure; lostreply same-ticket recovery, expiry, no changedpayload/new operation retry; row/card independent cleanup phases",
+            "CM-S5-REMOVE: exact root/scope/ID confirmation, zero-effect Cancel, busy/conflict retention, unknown status, ticket-only retry and same-ID recreation safety",
+            "CM-S5-ENTRY: Settings query/command link, palette and existing editor/pane actions route same selected state in each client; no-repo/multiroot cases"
+          ],
+          "fixturesNeeded": [
+            "Isolated real daemon IPC fixture with private feature evidence only; production gates unchanged",
+            "Extension host fake/adaptor plus actual IDE main/window lifecycle and scoped socket channels",
+            "Actual S004 receipt/state and S002 probe services, fault-controlled delivery"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Both actual client renderers and supported service/file flows",
+          "subjects": [
+            "CM-S5-UI: extension and IDE screenshots with native light/dark/highcontrast tokens, labelled controls, focus/live regions and keyboard-only add/edit/test/Delete/Discard flows",
+            "CM-S5-LIFETIME: before-add temporary copy in both clients, panelclose/root switch retention, workbench disposal/reconnect/expiry/restart loss; no inferred lifecycle success from backend snapshots",
+            "CM-S5-SOURCE: both clients supported SQL/KV/file Test/Save/discard/delete leave seeded source rows/bytes unchanged; SQL Server unavailable remains pending",
+            "CM-S5-PRIVACY: synthetic endpoint/secret/config/capability canaries absent from Settings,memento,webview state,logs,telemetry,artifacts and other-window events; temporary actions cause zero persistence"
+          ],
+          "fixturesNeeded": [
+            "Running standalone extension host and separate IDE build, real UI automation and keyboard evidence",
+            "Disposable PostgreSQL/Redis and native/converted files; no production data",
+            "Collect only safe screenshots, never secret field content/capabilities"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Final build and evidence after all planned implementation, with honest release gate",
+          "subjects": [
+            "CM-S5-BUILD: fresh Node22 backend and extension typecheck/bundle plus IDE targeted typecheck/build, current mirrored contracts; packaged runtime smoke",
+            "CM-S5-SWEEP: per-task relevant tests, then final frozen full backend+extension+IDE relevant suites with exact logs/counts, no live gates forced and no historical failures relabeled",
+            "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates"
+          ],
+          "fixturesNeeded": [
+            "Two-repo commit/test manifests, original raw failures/skips/TODO retained",
+            "Manual review per user direction for implementation; mandatory LLD review before approval, no automated post-build CR"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "CM-S5-ENTRY",
+            "CM-S5-FORM",
+            "CM-S5-WIRE",
+            "CM-S5-SYNC",
+            "CM-S5-BUILD"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "CM-S5-STATE",
+            "CM-S5-DIRTY",
+            "CM-S5-TEST",
+            "CM-S5-OWNER",
+            "CM-S5-WINDOW",
+            "CM-S5-OUTCOME",
+            "CM-S5-REMOVE",
+            "CM-S5-LIFETIME"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "CM-S5-UI",
+            "CM-S5-COMPAT",
+            "CM-S5-PRIVACY",
+            "CM-S5-TRANSPORT",
+            "CM-S5-SOURCE",
+            "CM-S5-SWEEP",
+            "CM-S5-GATE"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "S1 backend analyzer locates v2types/session/removal helpers; source supplement confirms extension has injectable panels/commands but no current connection manager. IDE still uses legacy Data Sources input/pane, generic globally shared main socket and service list errors→[]. S004 completion approved with explicit failed-sweep/manual-review exceptions; release gates remain disabled.",
+      "stateAfter": "Both VSCode clients have Settings/palette/editor routing into common sc7 state semantics, safe descriptor forms, explicit registered root and scope, full-key counts, memory-only workbench session transport, generation-safe Test, signed same-operation recovery and S004 removal presentation. Separate privileged per-window transport verified; backend schemas, credentials/registry ownership and release requirements unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Freeze both checkout commits and current integration files; pin generated consumer module closure and verify uncommitted source drift. Track external edits under this S005 ledger and obtain filesystem access through normal escalation before writes. No external edits during design.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add pure sc7 types/model/reply decoders and extend existing thin shared client with persistent multiplexed sockets, preserving one-shot exports. Test independently with real isolated socket server and bounded faults.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add workbench-memory session owner and scope-aware client effects in extension; add trusted window-scoped privileged IDE lanes and mechanically synchronize reviewed pure core. Verify two-workbench/root isolation before enabling any temporary UI.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "Private current contract/lifecycle fixtures pass; no shipped positive evidence"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Wire extension Settings/commands/webview and migrate IDE pane/actions/service/types/native Settings to v2-only manager path. Keep old IDs/legacy unrelated signatures. Add theme/keyboard UI, descriptors, dirty/reconciliation states and exact Delete/Discard.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Execute focused tests per task, then both-client native interaction, service/file/privacy/lifecycle evidence and final frozen builds/sweeps after implementation. Review manually per user direction, retain original failed/skipped results. Submit consumer proof without clearing external backend prerequisites.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Release manager mutations/temporary visibility only when genuine current S001/provider/worker-affinity/SQLServer and both-client evidence is independently accepted. Otherwise ship explicit upgrade/unsupported gate; never activate using fixture hashes or accepted historical test exceptions.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "User-confirmed Saved changes/deletes are intentional data mutations and cannot be undone by rolling back UI. UI rollback first disables new mutation admission, preserves reconciliation/cleanup/end controls for live owners, cancels probes and drains/end sessions on workbench disposal. Never downgrade backend to binaries that discard receipt metadata or secret refs.",
+          "rollbackable": false
+        }
+      ],
+      "backwardCompat": "Backend wire contracts unchanged; IDE mirrored v2 declarations are additive, legacy arrays/results stay separate. Existing editor and action IDs preserved. Extension new aliases route same manager. Older daemon => explicit upgrade-required, no legacy upsert/remove fallback for manager. No registry migration, directory lookup redirection, persisted temporary form/session state or implicit family normalization.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared pure manager state with native host adapters",
+        "oneLineSummary": "One transport-free sc7 transition core, two host-specific renderers and lifecycle adapters.",
+        "approach": "Use a pure TypeScript state/projection core and strict v2 reply decoders shared by the extension and mechanically synchronized into the IDE fork with a pinned manifest. Extension reuses its injectable webview host conventions; IDE preserves DbDriversInput/pane and service/action identities. Each workbench owns a memory-only control connection independently of panel lifetime; scope-specific data and Saved lanes remain explicit. No new backend ownership or persistent client connection store.",
+        "pros": [
+          "Smallest model that shares risky state/recovery semantics while respecting two existing host architectures",
+          "Core transcript fixtures and synchronized hashes detect client drift",
+          "Native focus/theme/disposal adapters stay idiomatic"
+        ],
+        "cons": [
+          "Two renderers require independent visual/keyboard evidence",
+          "Cross-repo sync and privileged IPC lifecycle must be tested"
+        ],
+        "costEstimate": "L",
+        "alternativeId": "a1",
+        "winnerRank": 1,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies",
+            "notes": "One memory-only workbench control owner with explicit per-root delegated UI lanes and separate unclaimed Saved lanes; no panel-owned lifetime."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies",
+            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+          },
+          {
+            "constraintId": "sc7",
+            "verdict": "satisfies",
+            "notes": "Single pure sc7 model gives identical state transitions/counts/dirty guards; two adapters retain native accessibility."
+          },
+          {
+            "constraintId": "sc8",
+            "verdict": "satisfies",
+            "notes": "Daemon-owned file execution consumed; unsupported/resource-limit fails before any client fallback."
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies",
+            "notes": "No stored secret retrieval; daemon IPC owns persistence."
+          },
+          {
+            "constraintId": "k2",
+            "verdict": "satisfies",
+            "notes": "Strict read errors and immutable same-ticket recovery."
+          },
+          {
+            "constraintId": "k3",
+            "verdict": "satisfies",
+            "notes": "Workbench-memory owner, root-isolated lanes, authoritative lease/epoch."
+          },
+          {
+            "constraintId": "k4",
+            "verdict": "satisfies",
+            "notes": "Existing safe removal and busy barrier consumed unchanged."
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "satisfies",
+            "notes": "Additive v2 contract, retained legacy IDs and explicit synchronized parity."
+          }
+        ],
+        "rationale": "Meets ac1–ac3 and sc1–sc7 with shared safety/recovery semantics and existing host patterns. Separate renderers and real socket/privileged routing tests remain mandatory."
+      },
+      {
+        "id": "a2",
+        "name": "Independent client controllers with common protocol fixtures",
+        "oneLineSummary": "Each client owns its sc7 controller and renderer, checked against common contract scenarios.",
+        "approach": "Implement the same public sc7 state model separately inside the extension and IDE workbench, preserving host conventions and existing commands. Both validate exact backend contracts and run the same scenario fixtures; each implements memory-only session control, dirty guards, same-ticket recovery and safe outcome presentation independently.",
+        "pros": [
+          "No cross-repo source synchronization mechanism",
+          "Host-specific controllers integrate directly with current ownership patterns"
+        ],
+        "cons": [
+          "Duplicates subtle unknown-outcome and lease/session recovery logic",
+          "Greater review/test burden to keep long-term behavior equivalent"
+        ],
+        "costEstimate": "L",
+        "alternativeId": "a2",
+        "winnerRank": 2,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc7",
+            "verdict": "satisfies",
+            "notes": "Can satisfy the contract with equivalent independent implementations and full two-client integration/transcript coverage; duplicates logic and drift controls."
+          },
+          {
+            "constraintId": "sc8",
+            "verdict": "satisfies",
+            "notes": "Daemon-owned file execution consumed; unsupported/resource-limit fails before any client fallback."
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies",
+            "notes": "No stored secret retrieval; daemon IPC owns persistence."
+          },
+          {
+            "constraintId": "k2",
+            "verdict": "satisfies",
+            "notes": "Strict read errors and immutable same-ticket recovery."
+          },
+          {
+            "constraintId": "k3",
+            "verdict": "satisfies",
+            "notes": "Workbench-memory owner, root-isolated lanes, authoritative lease/epoch."
+          },
+          {
+            "constraintId": "k4",
+            "verdict": "satisfies",
+            "notes": "Existing safe removal and busy barrier consumed unchanged."
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "satisfies",
+            "notes": "Additive v2 contract, retained legacy IDs and explicit synchronized parity."
+          }
+        ],
+        "rationale": "Also fulfills every acceptance/contract, but duplicates subtle operation reconciliation, dirty and session-state rules with no user benefit.",
+        "reasonRejected": "Also fulfills every acceptance/contract, but duplicates subtle operation reconciliation, dirty and session-state rules with no user benefit."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "narrative": "Two-pane manager shared across standalone VSCode extension and IDE editor: repository/scope filters and authoritative rows on the left, descriptor-driven draft on the right. Separate recovery examples show that busy, unknown and committed cleanup are different outcomes; this generated mock is illustrative and submits no real credentials or mutations.",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "Manage Connections",
+          "description": "Themed editor title reached by Settings and palette.",
+          "wrap": true
+        },
+        {
+          "type": "Input.ChoiceSet",
+          "id": "repo",
+          "label": "Registered repository",
+          "choices": [
+            {
+              "title": "insrc — /workspace/insrc",
+              "value": "insrc"
+            },
+            {
+              "title": "analytics — /workspace/analytics",
+              "value": "analytics"
+            }
+          ],
+          "description": "Explicit selection in multiroot workspaces; retained selected root remains independent of active editor."
+        },
+        {
+          "type": "Input.ChoiceSet",
+          "id": "filter",
+          "label": "Connection scope",
+          "choices": [
+            {
+              "title": "All (3)",
+              "value": "all"
+            },
+            {
+              "title": "Saved repository (2)",
+              "value": "saved"
+            },
+            {
+              "title": "Temporary session (1)",
+              "value": "temporary"
+            }
+          ],
+          "description": "Counts from successful authoritative selected-root snapshot before filtering; no counts inferred on read error."
+        },
+        {
+          "type": "ColumnSet",
+          "description": "Master/detail layout stacks when narrow; keyboard order follows header, list, draft and actions.",
+          "columns": [
+            {
+              "type": "Column",
+              "width": 1,
+              "description": "Connection list with scope badges and distinct loading/failure/empty states.",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Connections · 3 matching",
+                  "description": "Matching count after selected scope/search.",
+                  "wrap": true
+                },
+                {
+                  "type": "Input.Text",
+                  "id": "search",
+                  "label": "Search connections",
+                  "placeholder": "ID, label or driver",
+                  "description": "Local filter of current authoritative root; no probes."
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "warehouse · PostgreSQL · Saved repository\norders · Parquet · Temporary session\ncache · Redis · Saved repository",
+                  "description": "Safe row metadata only; full repo/scope/ID/revision retained in host selection.",
+                  "wrap": true
+                },
+                {
+                  "type": "ActionSet",
+                  "description": "Actions route the same guarded manager state as palette and Settings. Saved row action is Delete, temporary is Discard.",
+                  "actions": [
+                    {
+                      "type": "Action.Submit",
+                      "title": "Add connection",
+                      "description": "Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls."
+                    },
+                    {
+                      "type": "Action.Submit",
+                      "title": "Edit selected",
+                      "description": "Preview Edit selected; actual implementation uses validated controller intent, not direct daemon calls."
+                    },
+                    {
+                      "type": "Action.Submit",
+                      "title": "Discard selected",
+                      "description": "Preview Discard selected; actual implementation uses validated controller intent, not direct daemon calls."
+                    }
+                  ]
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "Read error: Connections could not be read. Retry.\nEmpty filter: No connections match this filter.\nEmpty registry: No connections yet.",
+                  "description": "Alternative state copy, not simultaneous production messages; unavailable reads never become empty state.",
+                  "wrap": true
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 2,
+              "description": "Add form; editing fixes ID, kind and scope. Native secret widgets rendered separately and always masked.",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Add connection",
+                  "description": "Draft remains on safe failed operations; not on temporary expiry.",
+                  "wrap": true
+                },
+                {
+                  "type": "Input.Text",
+                  "id": "id",
+                  "label": "Connection ID",
+                  "placeholder": "orders-preview",
+                  "description": "Required unique ID; fixed during edit."
+                },
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "driver",
+                  "label": "Driver",
+                  "choices": [
+                    {
+                      "title": "Parquet",
+                      "value": "parquet"
+                    },
+                    {
+                      "title": "CSV",
+                      "value": "csv"
+                    },
+                    {
+                      "title": "JSON",
+                      "value": "json"
+                    },
+                    {
+                      "title": "PostgreSQL",
+                      "value": "postgres"
+                    }
+                  ],
+                  "description": "Illustrative subset; actual picker offers every validated daemon descriptor with actionable unsupported guidance."
+                },
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "scope",
+                  "label": "Lifetime",
+                  "choices": [
+                    {
+                      "title": "Saved repository (default)",
+                      "value": "saved"
+                    },
+                    {
+                      "title": "Temporary session",
+                      "value": "temporary"
+                    }
+                  ],
+                  "description": "Scope independent of driver family; fixed during edit."
+                },
+                {
+                  "type": "Input.Text",
+                  "id": "path",
+                  "label": "File path",
+                  "placeholder": "data/orders.parquet",
+                  "description": "Illustrative descriptor field; host validates descriptor-specific schema. No arbitrary raw config editor."
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "Temporary connections stay available when this manager closes or you switch repositories. They expire when the workbench ends, after lease loss, or when the daemon restarts.",
+                  "description": "Always visible before temporary Add; temporary configs/credentials are memory-only.",
+                  "wrap": true
+                },
+                {
+                  "type": "ActionSet",
+                  "description": "Test optional and does not persist. Save/Test consume the identical captured draft; duplicate submission blocked.",
+                  "actions": [
+                    {
+                      "type": "Action.Submit",
+                      "title": "Test draft",
+                      "description": "Preview Test draft; actual implementation uses validated controller intent, not direct daemon calls."
+                    },
+                    {
+                      "type": "Action.Submit",
+                      "title": "Add connection",
+                      "description": "Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls."
+                    },
+                    {
+                      "type": "Action.Submit",
+                      "title": "Cancel draft",
+                      "description": "Preview Cancel draft; actual implementation uses validated controller intent, not direct daemon calls."
+                    }
+                  ]
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "Credential slots use native masked Keep / Replace / Clear controls in the implementation. Stored values are never returned.",
+                  "description": "No unmasked password input in this schematic renderer.",
+                  "wrap": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "Confirm Discard · orders · Temporary session · /workspace/insrc\nDiscard this registration and release its application-owned resources. Source files, databases, tables and remote data will be preserved.",
+          "description": "Modal content example: exact target and selected revision captured before ticket issuance.",
+          "wrap": true
+        },
+        {
+          "type": "ActionSet",
+          "description": "Cancel has zero ticket/mutation effects; confirmed request consumes signed ticket and exact revision.",
+          "actions": [
+            {
+              "type": "Action.Submit",
+              "title": "Cancel removal",
+              "description": "Preview Cancel removal; actual implementation uses validated controller intent, not direct daemon calls."
+            },
+            {
+              "type": "Action.Submit",
+              "title": "Confirm Discard",
+              "description": "Preview Confirm Discard; actual implementation uses validated controller intent, not direct daemon calls."
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "Recovery examples\nBusy: Connection in use. Retry after current work finishes.\nUnknown: Removal outcome unknown. Reconcile the same operation.\nRemoved; cleanup pending: credentials complete, resources pending. Retry cleanup only.",
+          "description": "Separate operation status card persists after committed registration removal; never infer outcome from absent row.",
+          "wrap": true
+        },
+        {
+          "type": "ActionSet",
+          "description": "Ticket-only recovery; no current-ID selector or repeated create.",
+          "actions": [
+            {
+              "type": "Action.Submit",
+              "title": "Reconcile operation",
+              "description": "Preview Reconcile operation; actual implementation uses validated controller intent, not direct daemon calls."
+            },
+            {
+              "type": "Action.Submit",
+              "title": "Retry owned cleanup",
+              "description": "Preview Retry owned cleanup; actual implementation uses validated controller intent, not direct daemon calls."
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "Dirty draft: Discard unsaved changes or Cancel navigation?",
+          "description": "Draft discard is distinct from discarding an existing temporary registration.",
+          "wrap": true
+        },
+        {
+          "type": "ActionSet",
+          "description": "Cancel keeps current form and produces no navigation/mutation effect.",
+          "actions": [
+            {
+              "type": "Action.Submit",
+              "title": "Discard unsaved draft",
+              "description": "Preview Discard unsaved draft; actual implementation uses validated controller intent, not direct daemon calls."
+            },
+            {
+              "type": "Action.Submit",
+              "title": "Cancel navigation",
+              "description": "Preview Cancel navigation; actual implementation uses validated controller intent, not direct daemon calls."
+            }
+          ]
+        }
+      ]
+    },
+    "sequenceDefinition": {
+      "id": "s005-lifecycle-and-recovery",
+      "narrative": "Opening and switching roots attaches scoped lanes to the same workbench owner. A lost mutation response reconciles the original operation; closing the panel does not end the temporary session.",
+      "participants": [
+        {
+          "id": "ui",
+          "label": "Manager renderer",
+          "description": "Untrusted view sends validated intents, never raw capabilities."
+        },
+        {
+          "id": "core",
+          "label": "sc7 workbench controller",
+          "description": "Memory-only state, immutable attempt and view-generation guard."
+        },
+        {
+          "id": "host",
+          "label": "Privileged workbench lane owner",
+          "description": "Per-window control/data/Saved lanes; trusted caller identity."
+        },
+        {
+          "id": "daemon",
+          "label": "Existing daemon sc1–sc6",
+          "description": "Owns authority, receipts, registry, temporary memory and cleanup."
+        }
+      ],
+      "messages": [
+        {
+          "from": "ui",
+          "to": "core",
+          "label": "Open manager; choose registered root",
+          "description": "Retain selected root and request feature handshake before forms.",
+          "kind": "call"
+        },
+        {
+          "from": "core",
+          "to": "host",
+          "label": "Acquire workbench owner and exact root lane",
+          "description": "Control socket is independent of renderer lifetime; Saved actions use unclaimed Saved lane.",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "daemon",
+          "label": "Open/resume; delegate workbench-ui; attach root data socket",
+          "description": "Existing sc5 methods; capabilities remain inside privileged host.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "host",
+          "label": "Bound root/epoch and authoritative safe list",
+          "description": "Decode exact replies before UI state; read failures are errors.",
+          "kind": "call"
+        },
+        {
+          "from": "core",
+          "to": "host",
+          "label": "Issue ticket then submit frozen draft",
+          "description": "Only after user submit/confirmation; exact same serializer for Test/Save.",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "core",
+          "label": "Written request lost its reply",
+          "description": "Unknown truth; retain same request/ticket and block fresh mutation.",
+          "kind": "call"
+        },
+        {
+          "from": "core",
+          "to": "host",
+          "label": "Status(original ticket) via proper scope lane",
+          "description": "Same owner/epoch for temporary; separate Saved lane for Saved.",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "daemon",
+          "label": "Reconcile exact operation",
+          "description": "Never infer from absent row or resend with changed payload/new ID.",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "core",
+          "label": "Committed truth with independent phases",
+          "description": "Render registration, activation/refresh and owned cleanup separately.",
+          "kind": "call"
+        },
+        {
+          "from": "ui",
+          "to": "core",
+          "label": "Close panel or switch root",
+          "description": "Dirty guard; retain workbench owner and unknown operation memory.",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "daemon",
+          "label": "Heartbeat while workbench live; end on workbench disposal",
+          "description": "30sheartbeat; daemon90sdeadline/epoch authoritative. End does not occur on panelclose.",
+          "kind": "call"
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "s005-client-boundaries",
+      "narrative": "Both native renderers consume one pure state/decoder core and use host-specific privileged transport adapters. Only adapters reach daemon IPC; no client imports daemon storage, providers or runtime drivers.",
+      "components": [
+        {
+          "id": "extension",
+          "label": "Standalone extension renderer",
+          "path": "vscode-plugin/src/extension.ts",
+          "description": "New manager webview/commands using existing injectable host patterns."
+        },
+        {
+          "id": "ide",
+          "label": "IDE Data Sources renderer",
+          "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts",
+          "description": "Preserves editor/palette identities, replaces legacy manager path."
+        },
+        {
+          "id": "core",
+          "label": "Pure sc7 core",
+          "description": "Proposed shared manager model/controller/strict decoders, synchronized to fork with hash checks."
+        },
+        {
+          "id": "extHost",
+          "label": "Extension workbench adapter",
+          "path": "src/shared/ipc-client.ts",
+          "description": "Existing thin client extended with persistent lane multiplexing; no daemon imports."
+        },
+        {
+          "id": "main",
+          "label": "IDE window-scoped adapter",
+          "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/platform/insrc/electron-main/insrcDaemonMainService.ts",
+          "description": "Trusted Electron caller binds separate memory-only lanes per window; current global channel remains unclaimed."
+        },
+        {
+          "id": "daemon",
+          "label": "Existing backend owners",
+          "path": "src/daemon/connection-session-rpc.ts",
+          "description": "Consumes unchanged sc1–sc6/sc8 ownership and evidence gates."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "extension",
+          "to": "core",
+          "label": "view/events"
+        },
+        {
+          "from": "ide",
+          "to": "core",
+          "label": "same synchronized transitions"
+        },
+        {
+          "from": "extension",
+          "to": "extHost",
+          "label": "validated effects"
+        },
+        {
+          "from": "ide",
+          "to": "main",
+          "label": "trusted owner-scoped intents"
+        },
+        {
+          "from": "extHost",
+          "to": "daemon",
+          "label": "control/root-data/Saved sockets"
+        },
+        {
+          "from": "main",
+          "to": "daemon",
+          "label": "isolated window-owned sockets"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "ux",
+        "diagram-sequence",
+        "diagram-component",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0..2]",
+      "quotedText": "Backend symbols located; SafeConnection field/call graph incomplete, source supplemented."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts",
+      "quotedText": "Existing shared thin one-shot socket client; persistent workbench support is proposed consumer extension."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts",
+      "quotedText": "Legacy list catches errors and returns empty array; new v2 lane must preserve failure."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/S005-HANDOFF.html",
+      "quotedText": "Consume exact transport, confirmation and independent removal phases; shared release prerequisites remain pending."
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/connection-management-prd.html",
+      "quotedText": "CM01–CM08 scope/filter/edit/test/safe removal and both-client interaction."
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s4",
+      "quotedText": "sc7 contract and client integration details; sc1–sc6/sc8 consumed unchanged."
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s5",
+      "quotedText": "Failure detection, valid edge cases and invariants."
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s6",
+      "quotedText": "Twenty proving subjects across ac1/ac2/ac3; planned evidence is not acceptance."
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s7",
+      "quotedText": "Phased migration with rollback boundaries; release gates unchanged."
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s2,s3,s8",
+      "quotedText": "Two viable alternatives; final score table explicitly includes ac1–ac3,sc1–sc8,k1–k5."
+    }
+  ]
+}

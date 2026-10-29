@@ -1,0 +1,13 @@
+{
+  "status": "scope-decision-required",
+  "reviewVerdict": "block",
+  "high": "Approved HLD requires insrc-ide; reviewer reports earlier instruction retiring fork in favor of vscode-plugin and jetbrains-plugin. Current supplied project instructions also describe fork IPC consumer, so do not silently supersede either source. Asked user to choose current client scope.",
+  "med": "Corrected ConnectionManagerState callsites to remove unrelated panels/types.ts; proposed dedicated extension connections/types,host,wiring,renderer modules; needs independent re-review.",
+  "reviewCallsThisCycle": 2,
+  "reviewCallHistory": [
+    "Canonical JSON path returned no artifact md; no stamp.",
+    "Document MD path completed independent review:HIGH1,MED1,7holds."
+  ],
+  "next": "After user scope decision, amend upstream scope if needed, correct/regenerate LLD/companions, use remaining review call this cycle before approval. No LLD approval or implementation authorized by this draft.",
+  "unchanged": "No external checkout edits or release activation; backend failures/limits retained."
+}

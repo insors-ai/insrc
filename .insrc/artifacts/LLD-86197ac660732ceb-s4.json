@@ -35,7 +35,217 @@
         "rationale": "User decision 2026-10-29: connection-scoped requests stay on the main thread (lazily built runtime) until plans/connection-session-worker-crossing.md lands after Epic 484fcef7 and Story 34798d20.",
         "resolvedAt": "2026-10-29T07:28:25.378Z"
       }
-    }
+    },
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's partial coverage of HLD ac1 (main thread should load no handler runtime) is a disclosed, user-approved scope narrowing rather than a silently dropped acceptance criterion.",
+          "evidence": "The 'Resolved questions' section records an explicit 2026-10-29 user decision: connection-scoped requests stay on the main thread with a lazily-built runtime until plans/connection-session-worker-crossing.md lands after Epic 484fcef7 and Story 34798d20 complete — matching alternative a1 (chosen) and a3 (rejected as out of s4's boundary). [files: docs/epics (LLD text, section 10/Resolved questions)]",
+          "action": "Read the LLD's open-questions/resolved-questions sections and cross-checked against the HLD context and alternatives-considered section.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "None of the Story's own contract changes (§2) build functionality explicitly marked as owned by s1/s2/s3 ('do NOT implement here').",
+          "evidence": "Read router.ts dispatch()/dispatchSession() and session-pool.ts in full: s4's additions are limited to an optional board/roleOf publish hook on the Router and optional onCreated/restarted hooks on SessionPool — the maintenance-lock dispatch, FIFO ordering and idle-release mechanics that s1/s2/s3 own are untouched by §2's contract list. [files: src/daemon/threads/router.ts, src/daemon/threads/session-pool.ts]",
+          "action": "Read router.ts (dispatch/dispatchSession, lines 1-240) and session-pool.ts (lines 1-90) and compared their unchanged core logic against the LLD's §2 contract list.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today, buildHandlerRuntime is called eagerly at daemon boot (the 'before' state the migration section claims), not lazily on first local request.",
+          "evidence": "src/daemon/index.ts:451 unconditionally calls `buildHandlerRuntime({...})` during startup before the server/router is wired, exactly as cited in [[c1]]. [files: src/daemon/index.ts]",
+          "action": "Read src/daemon/index.ts lines 420-500 around the cited line 451.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's shutdown closeStores awaits maintenance.stop(), then sessionPool.close(), then supervisor.terminateAll(), before closing the stores — as the LLD's invariant [[c4]]-tagged bullet and migration 'state before' both claim.",
+          "evidence": "src/daemon/index.ts:591-597: `await maintenance?.stop(); await sessionPool?.close(); await supervisor.terminateAll(); log.info(...)` runs inside closeStores before closeDb/closeDuckDB/closeGraphStore/closeLanceConn. [files: src/daemon/index.ts]",
+          "action": "Read src/daemon/index.ts lines 575-604 (the closeStores implementation).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "What the LLD calls new — Supervisor.track(worker,name) as a public method, and SessionPoolDeps.onCreated/restarted — does not already exist; Supervisor currently only has a private closure named track inside start(), and SessionPoolDeps has no such fields.",
+          "evidence": "Full read of src/daemon/threads/supervisor.ts (171 lines): no public `track` method exists, only `const track = (worker: Worker): void => {...}` local to start(). Full read of session-pool.ts SessionPoolDeps (lines 49-63): fields are options, registry, start, attach, detach, activeRuns, exited, now, pidAlive — no onCreated/restarted. [files: src/daemon/threads/supervisor.ts, src/daemon/threads/session-pool.ts]",
+          "action": "Read both files in full and diffed their current public surface against the LLD's §2.7/§2.8 proposed signatures.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "What the LLD calls new on the Router/StatusBoard side — RouterOptions.board/roleOf and ThreadStatus.role — do not already exist, so they are genuinely additive rather than mislabeled reuse.",
+          "evidence": "RouterOptions (router.ts lines 46-57) has classOf, registry, routed, local, holdMs, onRequest, sessions — no board or roleOf. ThreadStatus (status-board.ts lines 21-29) has threadId, cls, session, busy, method, since, queued — no role. Repo-wide grep for 'roleOf', 'ThreadRole', 'threads?: ThreadView' returned no matches. [files: src/daemon/threads/router.ts, src/daemon/threads/status-board.ts]",
+          "action": "Read both interfaces and ran a repo-wide grep for the proposed new type/field names.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's 9 numbered code citations [[c1]]-[[c9]] quote real code at the exact file:line given.",
+          "evidence": "Verified verbatim matches for [[c1]] index.ts:451, [[c2]] router.ts:213, [[c3]] supervisor.ts:138, [[c4]] admin-handlers.ts:111, [[c5]] s3-acceptance.test.ts:221, [[c6]] status-board.ts:92, [[c7]] shutdown.ts:79, [[c8]] ipc-client.ts:153, [[c9]] session-routing.ts:28 — every quoted string matches the file content at that line exactly. [files: src/daemon/index.ts, src/daemon/threads/router.ts, src/daemon/threads/supervisor.ts, src/daemon/admin-handlers.ts, src/daemon/threads/status-board.ts, src/daemon/shutdown.ts, src/shared/ipc-client.ts, src/daemon/threads/session-routing.ts, src/daemon/threads/__tests__/s3-acceptance.test.ts]",
+          "action": "Read each cited file at/around the cited line and compared the quoted string to the actual source.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The §3.1 call-site range `src/shared/types.ts:985-1028` for the DaemonStatus field-add correctly bounds the DaemonStatus interface the change targets.",
+          "evidence": "Lines 985-1028 of shared/types.ts are exactly the `export interface DaemonStatus { ... }` body (uptime through maintenance?), matching the cited range precisely. [files: src/shared/types.ts]",
+          "action": "Read src/shared/types.ts lines 980-1029.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The new optional `DaemonStatus.threads` field follows an already-established additive-optional-field pattern (k5) in this exact interface, supporting the backward-compat claim rather than introducing a novel compatibility risk.",
+          "evidence": "DaemonStatus already carries several optional fields documented with the same 'a consumer that does not know this field sees no change' language: modelPullStatus, lmdbFileSizeMb, storeFailure, unattributedUnwritable, queueLanes, maintenance (shared/types.ts:985-1028). [files: src/shared/types.ts]",
+          "action": "Read the full DaemonStatus interface and compared its existing optional-field documentation style to the LLD's k5 claim for `threads`.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No on-disk/persisted record shape changes, so the 'no data rewrite' / zero-downtime migration claim is consistent with what the design actually touches.",
+          "evidence": "StatusBoard (the only structure gaining fields that matter at runtime) holds its state in process-local Maps/fields (`new Map<number, ThreadStatus>()`, etc.) built fresh in the constructor — nothing here is read from or written to LMDB/Lance/disk, so there is no stored schema for a migration to reconcile. [files: src/daemon/threads/status-board.ts]",
+          "action": "Read the StatusBoard class body (lines 80-163) to confirm its state is in-memory only.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s4's contract changes do not redesign s2's router dispatch/maintenance-lock logic that s2 owns, beyond the stated additive board/roleOf hook.",
+          "evidence": "router.ts's dispatch()/dispatchSession() (lines 195-234) — the maintenance-lock-aware forwarding, FIFO/session routing and trusted-context local-dispatch rule — are read in full and contain no board/roleOf-related branching logic beyond what §2.5 describes as additive; the routing decision tree itself is unchanged. [files: src/daemon/threads/router.ts]",
+          "action": "Read router.ts lines 1-240 in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s4's Supervisor-tracking addition for session-pool workers does not redesign s3's owned FIFO/idle-release mechanics; today's session-routing.ts starts workers directly via startWorker with no Supervisor involvement, and the LLD only adds a bystander onCreated/restarted hook.",
+          "evidence": "session-routing.ts:23-41 constructs SessionPool with start, attach, detach, activeRuns, exited — no onCreated/restarted param exists today, and the pool's own entries/FIFO logic (session-pool.ts lines 1-90) is untouched by anything in §2.7/§2.8. [files: src/daemon/threads/session-routing.ts, src/daemon/threads/session-pool.ts]",
+          "action": "Read session-routing.ts in full and the SessionPool class/Deps definitions in session-pool.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'session-pool worker exits while requests are in flight' error path's cited mechanism (router.failWorker + board.forget interplay) matches real code, not an invented API.",
+          "evidence": "router.ts:165-175 defines `failWorker(threadId, reason, session)` producing the literal message `session worker failed: ${reason}`, and session-routing.ts's `detach`/`exited` hooks (lines 31-36) call `router.failWorker(...)` and `board.failRunsOwnedBy(...)` exactly as the LLD's error-path narrative describes. [files: src/daemon/threads/router.ts, src/daemon/threads/session-routing.ts]",
+          "action": "Read router.ts's failWorker implementation and session-routing.ts's wiring of detach/exited callbacks.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'shared-state worker keeps exiting (crash loop)' terminal path's cited detection/response (restart-window accounting -> shutdown with a named reason) matches the real Supervisor.replace mechanism the LLD proposes to extend.",
+          "evidence": "supervisor.ts:151-169 `replace()` already implements the exact restart-window/limit/shutdown pattern the LLD describes ('past 5 restarts in 60s... shutdown(`the ${spec.name} worker exceeded the restart limit`)'), confirming the LLD's 'as for the admin and indexing workers' claim about the mechanism it is extending to the shared-state worker via a new `restarted` query. [files: src/daemon/threads/supervisor.ts]",
+          "action": "Read Supervisor.replace() in full (lines 151-169).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test-strategy's cited fixture and integration test files are real, existing files, not invented paths — in particular the cited ac7 test exists verbatim.",
+          "evidence": "Glob confirmed src/daemon/threads/__tests__/router-session.test.ts and session-pool.test.ts exist; grep confirmed the exact test title 'ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins' exists at s3-acceptance.test.ts:221, matching citation [[c5]]. [files: src/daemon/threads/__tests__/router-session.test.ts, src/daemon/threads/__tests__/session-pool.test.ts, src/daemon/threads/__tests__/s3-acceptance.test.ts]",
+          "action": "Glob'd for the two fixture files and grep'd for the exact cited ac7 test title.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion ac1-ac6 named in HLD/LLD scope has at least one proving test named in the Acceptance mapping table, and ac1's dependency on a not-yet-existing test hook is disclosed as a fixture to add, not claimed as already present.",
+          "evidence": "The Acceptance mapping table lists both an integration and a unit proving test for ac1 through ac6; ac1's integration test depends on 'a new test hook reporting whether the main thread built its handler runtime', which the Fixtures list explicitly marks as new ('plus a new test hook...'), consistent with it not existing yet rather than a false current-state claim.",
+          "action": "Read the LLD's §6 Test strategy table and Acceptance mapping table and checked internal consistency between the fixtures list and the acceptance-mapping claims (no separate repo file to check for a not-yet-built hook).",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-29T07:28:47.291Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-29T07:50:14.702Z"
   },
   "body": {
     "summary": {

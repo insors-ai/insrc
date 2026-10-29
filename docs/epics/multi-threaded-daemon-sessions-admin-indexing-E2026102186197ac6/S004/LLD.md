@@ -364,3 +364,21 @@ The thread view and the additive daemon.status / debug-status fields of a1, with
 - **[[c7]]** `code` `src/daemon/shutdown.ts:79` — "if (health.state === 'locks-lost') endAfterStoreFailure(reason, health, deps);"
 - **[[c8]]** `code` `src/shared/ipc-client.ts:153` — "return 'running';"
 - **[[c9]]** `code` `src/daemon/threads/session-routing.ts:28` — "start: (name, opts) => startWorker(services, name, 'session-worker', opts?.shared ? { workerData: { shared: true }, transferList: [] } : undefined),"
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T07:28:47.291Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

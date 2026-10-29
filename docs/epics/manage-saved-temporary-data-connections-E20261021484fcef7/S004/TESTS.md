@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
+**Totals:** 80 pass, 0 fail, 0 skipped, 0 not found; 5 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -435,3 +435,13 @@ the gate ran no test: every named test of this Task was reported by the builder
 **smoke: CM-S4-CLIENT: verify backend contract/handoff fixtures against approved sc6 states and generated source artifacts; record both-client rendering/keyboard acceptance pending S005, not a backend pass.**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: Commit 7c2d26b59. S004/S005-HANDOFF.html, consumer-contract-fixtures.json and evidence/t23/result.json; Node22 --import tsx evidence/t23/verify-handoff.mjs passes 20 backend confirmation/state snapshots, local links and approved structured diagram/source checks. Approved LLD/PLAN and generated companions unchanged; stale illustrative retireRemoved name explicitly clarified against approved prepare/commit/cancel contract. Both-client rendering/keyboard acceptance remains pending S005; visual layout remains unverified (native ER AX content loaded, screenshot switched tab). Migration/drain/downgrade/no resurrection, external/global affinity prerequisites and exact historical S003 sweep counts preserved.
+
+## t24
+
+Run at 2026-10-29T13:27:16.421Z on commit `d54b4e080`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: CM-S4-SWEEP: fresh npm run build under /opt/homebrew/opt/node@22/bin/node, then npx tsx --test 'src/**/__tests__/*.test.ts' with Node22 on PATH after all implementation tasks; complete manifests/logs/outcomes and LLD evidence matrix.
+
+**smoke: CM-S4-SWEEP: fresh npm run build under /opt/homebrew/opt/node@22/bin/node, then npx tsx --test 'src/**/__tests__/*.test.ts' with Node22 on PATH after all implementation tasks; complete manifests/logs/outcomes and LLD evidence matrix.**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: Commit d54b4e080; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/FINAL-VALIDATION.html and evidence/t24/{run.json,sweep.tap,interventions.json,acceptance-matrix.json,manual-review.json,diagnostics.json}. Frozen commit7ffa301c2,846files,6964tests:6806pass21fail134skip3TODO;build exit0,sweep exit1,zero tracked drift;3owned test worker terminations recorded. Focused audit corrections3/3,source+compiled lifecycle7/7;provider diagnostic6/6;original counts unchanged. No production changes after frozen sweep, no automatic code review/release/daemon restart.

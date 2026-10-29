@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T13:01:25.109Z",
+    "updatedAt": "2026-10-29T13:27:16.421Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -102,9 +102,13 @@
       {
         "id": "t23",
         "passed": true
+      },
+      {
+        "id": "t24",
+        "passed": false
       }
     ],
-    "summary": "S004 has internal Saved removal/recovery/state and private temporary removal receipts, overlay commit and owner-scoped cleanup state/retry. Public adapters and release admission remain unfinished and disabled.",
+    "summary": "Implemented S004 Saved delete and temporary discard with atomic receipts, strict generation barriers, bounded cleanup ownership and independent state/retry. Tasks t1–t23 passed focused validation; final frozen Node22 build passed but full sweep failed (6806 pass,21 fail,134 skip,3 TODO), with exact evidence and manual session-author inspection retained. Two private audit/probe fixture corrections passed relevant tests; positive worker affinity, SQL Server/provider/S001 and S005 client acceptance remain pending, and release admission remains disabled.",
     "testRecord": {
       "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/TESTS.md"
     },
@@ -114,618 +118,758 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management-wire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-removal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/shared/connection-removal.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/removal-retirement.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/removal-retirement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-leases.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/pool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-cleanup.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-resources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-entries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-resources.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5-first-validation.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/daemon-first-reporter-failure.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/local-sandbox-refusal.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/node22-relevant-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/resolution.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/credential-generations.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/secrets.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/saved-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/saved-removal-restart.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-ledger.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-ledger.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-entries.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-owner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/connection-management-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/connection-session-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/draft-preparation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/probe-disposal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/draft-test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/first-redis-startup-failure.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/full-relevant-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/joined-cleanup-assertion-failure.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/removal-live-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-services.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-service-isolation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t18/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t18/source-compiled-relevant-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/file-removal-acceptance-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/file-removal-run.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-file-inputs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-file-resources-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-file-matrix.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-file-resources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t18/initial-filesystem-notification-assertion-failure.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t18/node22-build.log"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t19/analyzer-result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t19/first-socket-path-failure.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t19/production-refusal-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t19/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/removal-production-affinity.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t20/privacy-source-compiled-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t20/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/removal-privacy-child.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/removal-privacy-run.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-driver-logs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t20/first-daemon-composed-socket-failure.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t20/first-daemon-validation-failure.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t20/privacy-path-fix-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t21/focused-compatibility-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t21/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t22/node22-build.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t22/private-gates-and-inventory-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t22/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t22/reviewed-source-classifications.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-release-gate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-source-inventory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management-enablement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/S005-HANDOFF.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/consumer-contract-fixtures.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t23/contract-and-artifact-smoke.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t23/first-artifact-shape-assumption-failure.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t23/handoff-smoke-pass.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t23/result.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t23/verify-handoff.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T13:01:25.109Z"
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/FINAL-VALIDATION.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/acceptance-matrix.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/audit-correction.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/audit-correction.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/build.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/diagnostics.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/interventions.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/manual-review.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/probe-correction.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/probe-diagnostic.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/provider-diagnostic.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/run-sweep.py"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/run.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/sweep.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/test-files.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/tracked-after.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/tracked-before.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/connection-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/driver-field-matrix.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-probe-child.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:27:16.421Z"
       }
     ],
-    "commit": "7c2d26b59"
+    "commit": "d54b4e080"
   }
 }

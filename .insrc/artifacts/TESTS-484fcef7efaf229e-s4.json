@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T13:01:25.109Z",
+    "updatedAt": "2026-10-29T13:27:16.421Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2559,6 +2559,27 @@
         ],
         "files": [],
         "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t24",
+        "commit": "d54b4e080",
+        "ranAt": "2026-10-29T13:27:16.421Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S4-SWEEP: fresh npm run build under /opt/homebrew/opt/node@22/bin/node, then npx tsx --test 'src/**/__tests__/*.test.ts' with Node22 on PATH after all implementation tasks; complete manifests/logs/outcomes and LLD evidence matrix.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "Commit d54b4e080; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/FINAL-VALIDATION.html and evidence/t24/{run.json,sweep.tap,interventions.json,acceptance-matrix.json,manual-review.json,diagnostics.json}. Frozen commit7ffa301c2,846files,6964tests:6806pass21fail134skip3TODO;build exit0,sweep exit1,zero tracked drift;3owned test worker terminations recorded. Focused audit corrections3/3,source+compiled lifecycle7/7;provider diagnostic6/6;original counts unchanged. No production changes after frozen sweep, no automatic code review/release/daemon restart."
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: CM-S4-SWEEP: fresh npm run build under /opt/homebrew/opt/node@22/bin/node, then npx tsx --test 'src/**/__tests__/*.test.ts' with Node22 on PATH after all implementation tasks; complete manifests/logs/outcomes and LLD evidence matrix."
       }
     ]
   }

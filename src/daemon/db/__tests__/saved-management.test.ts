@@ -20,6 +20,65 @@ import { setTimeout as delay } from 'node:timers/promises';
 import type { MutationRequest, MutationOutcome } from '../../../shared/connection-management.js';
 import '../drivers/index.js';
 import { environment, committed, deferred } from './fixtures/saved-management-fixture.js';
+
+async function removalRequest(f:Awaited<ReturnType<Awaited<ReturnType<typeof environment>>['rootFixture']>>,id:string,revision:string):Promise<MutationRequest>{
+	const key={repoRoot:f.root,scope:'saved' as const,id};const ticket=await f.service.ticket(f.context,key,'remove');
+	return {ticket,operationId:ticket.operationId,key,mode:'remove',expectedRevision:revision};
+}
+test('CM-S4-SAVED: removal atomically drops selected row and revision while preserving source and unrelated document',async()=>{
+	const env=await environment(),f=await env.rootFixture('remove',{id:'preserved',kind:'postgres',family:'kv',url:'postgres://host/kept',label:'Pinned'});
+	try {
+		const source=join(f.root,'source.csv'),bytes='id,value\n1,source-data-canary\n';await writeFile(source,bytes);
+		const create={...await f.request('selected'),publicPatch:{kind:'csv',path:'source.csv'},credentials:{}};
+		const initial=committed(await f.service.mutate(f.context,create));
+		const before=f.store.snapshot.file,selected=before.connections.find(c=>c.id==='selected')!;
+		const request=await removalRequest(f,'selected',initial.revision);f.reset();
+		const result=committed(await f.service.mutate(f.context,request));const after=f.store.snapshot.file;
+		assert.equal(result.registration,'removed');assert.equal(result.activation,'not-applicable');assert.equal(result.credentialCleanup,'complete');assert.notEqual(result.revision,initial.revision);
+		assert.deepEqual(after.connections,before.connections.filter(c=>c.id!=='selected'));assert.equal(after.connections[0]!.family,'kv');
+		assert.deepEqual((after as Record<string,unknown>)['retainedDocument'],(before as Record<string,unknown>)['retainedDocument']);
+		assert.equal(Object.hasOwn(after._management!.revisions,'selected'),false);assert.equal(after._management!.revisions['preserved'],before._management!.revisions['preserved']);
+		assert.deepEqual(after._management!.receipts[create.operationId],before._management!.receipts[create.operationId]);
+		const receipt=after._management!.receipts[request.operationId]!;
+		assert.deepEqual(Object.keys(receipt).sort(),['cleanupRefs','outcome','requestMac','ticket']);assert.equal(receipt.outcome.revision,result.revision);
+		assert.deepEqual(Object.keys(receipt.outcome).sort(),['activation','credentialCleanup','operationId','registration','revision']);
+		assert.equal(f.counts.writes,1);assert.equal(f.counts.credentialGets,0);assert.equal(f.counts.sets,0);assert.equal(f.counts.deletes,0);
+		assert.equal(await readFile(source,'utf8'),bytes);assert.equal(selected.kind,'csv');
+		assert.equal(f.service.legacyProjection('selected'),undefined);await assert.rejects(f.pool.acquire('selected'),{code:'not-found'});
+	}finally{await env.cleanup();}
+});
+test('CM-S4-REPLAY: concurrent identical removal and recreated-ID replay preserve exact original operation',async()=>{
+	const env=await environment(),f=await env.rootFixture('replay');
+	try{
+		const initial=committed(await f.service.mutate(f.context,await f.request('selected')));
+		const request=await removalRequest(f,'selected',initial.revision);f.reset();
+		const [a,b]=await Promise.all([f.service.mutate(f.context,request),f.service.mutate(f.context,structuredClone(request))]);
+		const removed=committed(a);assert.deepEqual(b,a);assert.equal(f.counts.writes,1);
+		const fresh=committed(await f.service.mutate(f.context,await f.request('selected')));assert.notEqual(fresh.revision,initial.revision);
+		const before=await readFile(f.path,'utf8');f.reset();
+		assert.deepEqual(committed(await f.service.mutate(f.context,request)),removed);
+		const mismatch=await f.service.mutate(f.context,{...request,expectedRevision:fresh.revision});assert.equal(mismatch.status,'rejected');if(mismatch.status==='rejected')assert.equal(mismatch.code,'operation-mismatch');
+		assert.equal(f.store.snapshot.file._management!.revisions['selected'],fresh.revision);assert.equal(await readFile(f.path,'utf8'),before);
+		assert.equal(f.counts.writes,0);assert.equal(f.counts.deletes,0);assert.equal(f.counts.sets,0);
+	}finally{await env.cleanup();}
+});
+test('CM-S4-SAVED: busy stale and missing removals preserve registration credentials and receipts',async()=>{
+	const env=await environment(),f=await env.rootFixture('refusal');
+	try{
+		const initial=committed(await f.service.mutate(f.context,await f.request('selected')));
+		const busy=await removalRequest(f,'selected',initial.revision),stale=await removalRequest(f,'selected','stale'),missing=await removalRequest(f,'missing',initial.revision);
+		const lease=await f.pool.lease('selected');
+		try{
+			for(const [request,code] of [[busy,'busy'],[stale,'conflict'],[missing,'not-found']] as const){
+				const bytes=await readFile(f.path,'utf8'),vault=[...f.values];f.reset();const result=await f.service.mutate(f.context,request);
+				assert.equal(result.status,'rejected');if(result.status==='rejected')assert.equal(result.code,code);
+				assert.equal(await readFile(f.path,'utf8'),bytes);assert.deepEqual([...f.values],vault);
+				assert.equal(f.counts.writes,0);assert.equal(f.counts.credentialGets,0);assert.equal(f.counts.sets,0);assert.equal(f.counts.deletes,0);
+				assert.equal(f.pool.leaseState('selected').barrier,'none');
+			}
+		}finally{await lease.release();}
+	}finally{await env.cleanup();}
+});
 test('CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports', async () => {
 	const env = await environment();
 	const f = await env.rootFixture('root');

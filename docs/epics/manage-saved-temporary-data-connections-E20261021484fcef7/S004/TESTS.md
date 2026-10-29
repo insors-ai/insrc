@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -101,3 +101,21 @@ Run at 2026-10-29T10:33:28.336Z on commit `dac5143e6`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 4 | 15.1 s |  |
 | `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 9 | 1.8 s |  |
+
+## t6
+
+Run at 2026-10-29T10:38:24.577Z on commit `386d5fd7f`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-CREDENTIALS: extend src/daemon/db/__tests__/credential-generations.test.ts with empty-staging removal, own/foreign/shared/live references and journal/finalization failures.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-CREDENTIALS: removal prepares an empty journal and precommit recovery without reading plaintext | `src/daemon/db/__tests__/credential-generations.test.ts` |
+| pass | CM-S4-CREDENTIALS: removal preserves foreign and shared live refs through restart and cleanup finalization failures | `src/daemon/db/__tests__/credential-generations.test.ts` |
+| pass | CM-S4-CREDENTIALS: stale removal and journal preparation failure preserve registry and credentials | `src/daemon/db/__tests__/credential-generations.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/credential-generations.test.ts` | 0 | 10 | 13.9 s |  |

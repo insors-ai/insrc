@@ -25,7 +25,7 @@ test('Crash concurrent resume cancel and frozen publication recover without dupl
  for(const boundary of ['after-block','canonical-head']){
   const f=await fixture(false,true,false);try{
    await crash(f,boundary);const id=productionRunId('repo',f.start.requestId as string);let executions=0;
-   const restarted=new InvestigationRepository({...f.repository.options,processEpoch:'restarted-daemon',daemonAdapter:async()=>({provider:continuationFixture().provider,modelLabel:'scripted-restart-fixture',assertQualified:async()=>{},drain:async()=>{},execute:async(turn,tools,_signal,runtime)=>{
+   const restarted=new InvestigationRepository({...f.repository.options,processEpoch:'restarted-daemon',assertReady:async()=>{if(boundary==='canonical-head')throw Error('Rollback disables new work');},daemonAdapter:async()=>({provider:continuationFixture().provider,modelLabel:'scripted-restart-fixture',assertQualified:async()=>{},drain:async()=>{},execute:async(turn,tools,_signal,runtime)=>{
     executions++;assert.ok(!turn.assignment.includes(f.packet.blocks[0]!.blockId));const remaining=f.packet.blocks.find(b=>turn.assignment.includes(b.blockId));assert.ok(remaining);await tools.progress(progressFor(turn,remaining.blockId,runtime.state().sequence));const state=runtime.state();return {...finalReply(turn,state.accepted.map(a=>a.receipt.progressId),state.sequence),next:{kind:'pause',remainingWork:[state.ledger.coverage[0]!.requirementRef],reason:'Remaining fixture coverage is explicit'}};
    }})});
    const before=(await restarted.service.open(id)).store.replay();assert.equal(before.state.accepted[0]!.progress.disposition,'reviewed');

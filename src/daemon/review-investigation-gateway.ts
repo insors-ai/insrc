@@ -1,3 +1,4 @@
+import { productionInvestigationAdmission } from './review-investigation-adoption.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpathSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
@@ -22,7 +23,7 @@ export async function dispatchInvestigation(raw:unknown,deps:InvestigationGatewa
   case 'start':{
    if(command.repoId!==repository.options.repoId)throw new ReviewIntegrationError('identity-conflict','Registered repository identity changed');
    const accepted=await repository.start(command,envelope.reviewBudget);
-   return repository.advance(accepted.descriptor.runId,envelope.reviewBudget,command);
+   return accepted.created?repository.advance(accepted.descriptor.runId,envelope.reviewBudget,command):repository.view(accepted.descriptor.runId);
   }
   case 'status':return repository.view(command.runId);
   case 'resume':return repository.advance(command.runId,envelope.reviewBudget,command);
@@ -38,6 +39,7 @@ const epoch=randomUUID(),repositories=new Map<string,InvestigationRepository>();
  * command JSON. Installation is explicit and cannot replace an active runtime. */
 export interface InvestigationProductionAdmission {
  readonly assertReady:InvestigationRepository['options']['assertReady'];
+ readonly assertSelected?:(()=>void)|undefined;
  readonly daemonAdapter:InvestigationRepository['options']['daemonAdapter'];
 }
 let admission:InvestigationProductionAdmission|undefined;
@@ -51,9 +53,8 @@ const productionGateway:InvestigationGatewayDeps={repository:async repo=>{
  const id=await lookupRepoId(repo);if(id===undefined)throw new ReviewIntegrationError('identity-conflict','Repository is not registered');
  let runtime=repositories.get(repo);if(runtime)return runtime;
  const registered=async()=>{if(await lookupRepoId(repo)!==id)throw new ReviewIntegrationError('identity-conflict','Repository registration changed');};
- runtime=new InvestigationRepository({repoId:String(id),repoPath:repo,canonical:lifecycleFor(repo).store,processEpoch:epoch,assertRegistered:registered,assertProcessOwner:()=>daemonRunFiles.assertSocketOwned(),
-  assertReady:async operation=>{if(!admission)throw new ReviewIntegrationError('not-ready','Investigation activation requires verified readiness and predecessor reconciliation');await admission.assertReady(operation);},
-  daemonAdapter:async(subject,mode)=>{if(!admission)throw new ReviewIntegrationError('unsupported-backend','No independently qualified installed investigation adapter');return admission.daemonAdapter(subject,mode);}});
+ const base={repoId:String(id),repoPath:repo,canonical:lifecycleFor(repo).store,assertRegistered:registered},policy=admission??productionInvestigationAdmission(base);
+ runtime=new InvestigationRepository({...base,processEpoch:epoch,assertProcessOwner:()=>daemonRunFiles.assertSocketOwned(),assertExecutionAllowed:()=>policy.assertSelected?.(),assertReady:(operation,mode)=>policy.assertReady(operation,mode),daemonAdapter:(subject,mode)=>policy.daemonAdapter(subject,mode)});
  repositories.set(repo,runtime);return runtime;
 }};
 
@@ -75,3 +76,5 @@ export async function legacyInvestigationDiagnostics(raw:unknown,deps:Investigat
  const runId=review.head.meta['runId'];if(typeof runId!=='string')return legacyReviewStatus(null);
  return legacyReviewStatus({runId,buildFingerprint:reviewedBuildFingerprint(build.head),dimensions:dimensions.map(d=>({name:d.dimension as string,completed:true})),phase:'persisted-code-review'});
 }
+
+export function investigationCapabilities(){return {version:1,engines:['legacy','plan-investigation-v1'],investigationWireVersions:[1],canonicalInvestigationVersions:[1],operations:['start','status','resume','cancel','read','impact','progress','reply'],activation:'requires-verified-readiness',defaultEngine:'legacy'};}

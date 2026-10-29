@@ -44,7 +44,7 @@ import { InvestigationControllerHost } from './review-investigation-controller.j
 import type { InvestigationEnvelope } from '../shared/review-investigation-wire.js';
 
 export interface InvestigationDaemonAdapter {
- readonly provider:LLMProvider;readonly modelLabel:string;
+ readonly provider:LLMProvider;readonly modelLabel:string;readonly compatibilityDigest?:string|undefined;
  readonly assertQualified:()=>Promise<void>;
  readonly execute:(turn:InvestigationTurnV1,tools:InvestigationTools,signal:AbortSignal,runtime:NativeInvestigationRuntime)=>Promise<InvestigationReplyV1>;
  readonly drain:(runId:string)=>Promise<void>;
@@ -52,7 +52,8 @@ export interface InvestigationDaemonAdapter {
 export interface InvestigationRepositoryOptions {
  readonly repoId:string;readonly repoPath:string;readonly canonical:ArtifactStore;readonly processEpoch:string;
  readonly assertRegistered:()=>Promise<void>;readonly assertProcessOwner:()=>void;
- readonly assertReady:(operation:'start'|'resume'|'publish')=>Promise<void>;
+ readonly assertReady:(operation:'start'|'resume'|'publish',mode?:'source-only'|'indexed-impact')=>Promise<void>;
+ readonly assertExecutionAllowed?:(()=>void)|undefined;
  readonly daemonAdapter:(subject:ReviewSubjectV1,mode:InvestigationStart['sourceMode'])=>Promise<InvestigationDaemonAdapter>;
  readonly graph?:ReviewImpactGraph|undefined;readonly usageWriter?:RecoveryUsageWriter|undefined;
  readonly onProgress?:((runId:string,sequence:number,blockId:string|null)=>void)|undefined;
@@ -67,6 +68,7 @@ export class InvestigationRepository {
  readonly work:CanonicalReviewWorkAdapter;readonly service:ProductionReviewService;
  private readonly preflights=new Map<string,ReviewBudgetBreakdown>();
  private readonly prepared=new Map<string,Prepared>();private readonly hosts=new Map<string,InvestigationControllerHost>();
+ private readonly advances=new Map<string,Promise<Record<string,unknown>>>();
  private readonly owners=new Map<string,{generation:number;attemptId:string}>();private readonly runs=new Map<string,Promise<unknown>>();
  constructor(readonly options:InvestigationRepositoryOptions){
   this.work=new CanonicalReviewWorkAdapter(options);
@@ -75,7 +77,7 @@ export class InvestigationRepository {
     assertOwner:(generation,attemptId)=>{options.assertProcessOwner();const owner=this.owners.get(id);if(!owner||owner.generation!==generation||owner.attemptId!==attemptId)throw new RecoveryError('ownership-lost','Execution authority is no longer active');},
     readEvidence:async(subjectId,reference)=>{if(subjectId!==m.basis.subject.subjectId)throw new ReviewIntegrationError('identity-conflict','Foreign evidence subject');const d=this.descriptor(id);return readReviewSource(m.basis.subject,reference,{},this.sources(d.start));},
     ...(options.usageWriter?{usageWriter:options.usageWriter}:{})};},
-   assertFresh:(d,m)=>this.assertFresh(d,m),assertQualified:async d=>{await options.assertReady('resume');const p=this.required(d.runId);if(p.manifest.policyDigest!==d.policyDigest||p.reviewerParty!==d.reviewerParty)throw new RecoveryError('stale','Runtime policy or reviewer changed');await p.daemon?.assertQualified();},
+   assertFresh:(d,m)=>this.assertFresh(d,m),assertQualified:async d=>{await options.assertReady('resume',d.start.sourceMode);const p=this.required(d.runId);if(p.manifest.policyDigest!==d.policyDigest||p.reviewerParty!==d.reviewerParty||digestValue(p.manifest.compatibility)!==d.backendDigest)throw new RecoveryError('stale','Runtime policy or reviewer changed');await p.daemon?.assertQualified();},
    admitProvider:signal=>this.admitProvider(signal),execution:(d,s,l,signal)=>this.execution(d,s,l,signal)});
  }
  private required(id:string):Prepared{const p=this.prepared.get(id);if(!p)throw new ReviewIntegrationError('not-ready','A fresh compatible execution adapter is required');return p;}
@@ -111,7 +113,7 @@ export class InvestigationRepository {
   if(start.sourceMode==='indexed-impact')basis=appendImpactRequirements(basis,subject.packets.flatMap(packet=>packet.blocks.map(block=>({category:'impact' as const,requirementRef:`impact:selected-block:${packet.packetId}/${block.blockId}`,text:`Assess caller applicability for selected block ${block.blockId}. Missing entity mappings, deletions and empty/partial discovery remain required work; do not infer no impact.`,needs:'inspection' as const,allowNotApplicable:false}))));
   const manifest:RecoveryManifest={version:1,runId:id,subjectDigest:subject.subjectDigest,policyDigest:policy.digest,basis,policy,receipts:[],
    initial:{ledger:initializeReviewLedger(basis),sequence:0,checkpoint:'initial',accepted:[],consumedActiveMs:0,attempts:0,uncertainProgressId:null,usage:[]},
-   compatibility:{engine:1,evidence:1,toolsDigest:scopedReviewCatalogDigest(start.sourceMode==='indexed-impact'),providerDigest:digestValue({profile:policy.budget.profile,role:'review',tier:'core',reviewerParty})}};
+   compatibility:{engine:1,evidence:1,toolsDigest:scopedReviewCatalogDigest(start.sourceMode==='indexed-impact'),providerDigest:digestValue({profile:policy.budget.profile,role:'review',tier:'core',reviewerParty,adapterDigest:daemon?.compatibilityDigest??null})}};
   const prepared:Prepared={manifest,sources,authorParty,reviewerParty,controller,daemon,modelLabel:controller?'client':daemon!.modelLabel};this.prepared.set(id,prepared);return prepared;
  }
  private admissionTail:Promise<void>=Promise.resolve();
@@ -124,11 +126,12 @@ export class InvestigationRepository {
   try{await Promise.race([prior,new Promise<never>((_,reject)=>{onAbort=()=>reject(signal.reason??new Error('Investigation admission cancelled'));signal.addEventListener('abort',onAbort,{once:true});if(signal.aborted)onAbort();})]);signal.throwIfAborted();return release;}
   catch(cause){release();throw cause;}finally{signal.removeEventListener('abort',onAbort);}
  }
- private async execution(d:ProductionReviewDescriptor,store:RecoveryStore,lease:NonNullable<ReturnType<RecoveryStore['status']>['owner']>,signal:AbortSignal):Promise<Awaited<ReturnType<ProductionReviewServiceOptions['execution']>>>{
+ private async execution(d:ProductionReviewDescriptor,store:RecoveryStore,lease:NonNullable<ReturnType<RecoveryStore['status']>['owner']>,serviceSignal:AbortSignal):Promise<Awaited<ReturnType<ProductionReviewServiceOptions['execution']>>>{
+  const abort=new AbortController(),signal=AbortSignal.any([serviceSignal,abort.signal]);
   const p=this.required(d.runId),view=store.replay(),attemptId=randomUUID(),subject=view.basis.subject;
   const owner:{generation:number;attemptId:string}={generation:lease.generation,attemptId};
   const assertLease=()=>{this.options.assertProcessOwner();store.assertLease(store.replay(),lease.leaseId,lease.generation);};
-  const assertCurrent=()=>{signal.throwIfAborted();assertLease();};
+  const assertCurrent=()=>{signal.throwIfAborted();this.options.assertExecutionAllowed?.();assertLease();};
   const evidence=new ProductionEvidenceAdapter({basis:view.basis,sources:p.sources,canonical:this.options.canonical,assertCurrent:async()=>assertCurrent()});
   const impact=await productionImpactAdapter({basis:view.basis,sources:p.sources,graph:this.options.graph??daemonReviewImpactGraph(this.options.repoPath),mode:d.start.sourceMode,attemptId,currentAttemptId:()=>owner.attemptId,signal,assertCurrent:async()=>assertCurrent()});
   const sourceRefs=subject.contracts.map(pin=>sourceReference({kind:'artifact',artifactId:pin.artifactId,start:1,end:200}));
@@ -142,19 +145,30 @@ export class InvestigationRepository {
    assignment:[...subject.packets.flatMap(packet=>packet.blocks.map(b=>b.blockId)),...view.state.ledger.coverage.filter(row=>['pending','unverified'].includes(row.disposition)).map(row=>row.requirementRef)],navigationRefs:[],unresolvedRefs:view.outstandingWork,priorAcceptedCheckpoint:view.state.checkpoint,
    limits:{attemptMs:Math.min(300000,view.accounting.activeLimitMs-view.state.consumedActiveMs),activeMsRemaining:view.accounting.activeLimitMs-view.state.consumedActiveMs,continuationsRemaining:view.accounting.attemptLimit-view.state.attempts,inclusiveTokenLimit:128000}};
   const turn={...draft,requestDigest:investigationRequestDigest(draft,seed)};
+  const watcher=this.options.assertExecutionAllowed?setInterval(()=>{try{this.options.assertExecutionAllowed!();}catch{abort.abort();}},250):undefined;watcher?.unref();
   this.owners.set(d.runId,owner);
   const context:InvestigationContext={basis:view.basis,state:view.state,policy:view.manifest.policy,generation:lease.generation,authorParty:d.authorParty,reviewerParty:d.reviewerParty,role:'review',tier:'core',providerId:view.manifest.policy.budget.profile.providerId,
-   backend:{provider,qualification:{providerId:view.manifest.policy.budget.profile.providerId,profileDigest:digestValue(view.manifest.policy.budget.profile),pinnedReads:true,readOnly:true,progressMode:'in-session-progress',cancellable:true},execute:async(t,tools,sig)=>{owner.attemptId=t.attemptId;return p.controller?p.controller.execute(t,tools,sig,runtime):p.daemon!.execute(t,tools,sig,runtime);}},
+   backend:{provider,qualification:{providerId:view.manifest.policy.budget.profile.providerId,profileDigest:digestValue(view.manifest.policy.budget.profile),pinnedReads:true,readOnly:true,progressMode:'in-session-progress',cancellable:true},execute:async(t,tools,sig)=>{owner.attemptId=t.attemptId;const executionSignal=AbortSignal.any([sig,signal]);return p.controller?p.controller.execute(t,tools,executionSignal,runtime):p.daemon!.execute(t,tools,executionSignal,runtime);}},
    ports:store.ports(lease.generation,attemptId,lease.leaseId),validation:{attempt:{runId:d.runId,subjectDigest:d.subjectDigest,attemptId},receipts:view.receipts},schema:JSON.parse(JSON.stringify(InvestigationReplySchema)) as StructuredSchema,seed,now:()=>performance.now(),assertFresh:()=>this.assertFresh(d,view.manifest),assertOwner:generation=>{if(generation!==lease.generation)throw new RecoveryError('ownership-lost','Foreign generation');assertLease();},inspect:evidence.inspect,impact:impact.impact,changedEntity:impact.changedEntity,impactReceipts:impact.impactReceipts,observeUsage:()=>null,signal,
    onState:state=>{try{this.options.onProgress?.(d.runId,state.sequence,state.accepted.at(-1)?.progress.blockId??null);}catch{/* Delivery is not acceptance authority. */}}};
-  return {turn,context,drain:async()=>{try{if(p.controller)await p.controller.drain(d.runId);else await p.daemon!.drain(d.runId);}finally{if(this.owners.get(d.runId)===owner)this.owners.delete(d.runId);}}};
+  return {turn,context,drain:async()=>{if(watcher)clearInterval(watcher);try{if(p.controller)await p.controller.drain(d.runId);else await p.daemon!.drain(d.runId);}finally{if(this.owners.get(d.runId)===owner)this.owners.delete(d.runId);}}};
  }
- async start(start:InvestigationStart,declaration?:ReviewControllerBudgetDeclaration){return this.serializeAdmission(async()=>{await this.options.assertReady('start');const existing=this.service.descriptors.read(productionRunId(start.repoId,start.requestId));if(existing&&existing.requestDigest!==digestValue(start))throw new ReviewIntegrationError('identity-conflict','Request UUID reused with different inputs');await this.prepare(start,declaration);return this.service.start(start);});}
- async advance(runId:string,declaration?:ReviewControllerBudgetDeclaration,receivedCommand?:unknown):Promise<Record<string,unknown>>{return this.serializeAdmission(()=>this.advanceAdmitted(runId,declaration,receivedCommand));}
+ async start(start:InvestigationStart,declaration?:ReviewControllerBudgetDeclaration){return this.serializeAdmission(async()=>{
+  const existing=this.service.descriptors.read(productionRunId(start.repoId,start.requestId));if(existing){if(existing.requestDigest!==digestValue(start))throw new ReviewIntegrationError('identity-conflict','Request UUID reused with different inputs');return {...await this.service.start(start),created:false};}
+  await this.options.assertReady('start',start.sourceMode);await this.prepare(start,declaration);return {...await this.service.start(start),created:true};
+ });}
+ async advance(runId:string,declaration?:ReviewControllerBudgetDeclaration,receivedCommand?:unknown):Promise<Record<string,unknown>>{
+  const pending=this.advances.get(runId);if(pending){const descriptor=this.descriptor(runId);if(descriptor.reviewerParty==='controller'){await pending;const host=this.hosts.get(runId),work=this.runs.get(runId);if(host&&work){host.refresh(declaration,receivedCommand);return host.waitForTurn(runId,work);}return this.view(runId);}return pending;}
+  const work=this.advanceAdmitted(runId,declaration,receivedCommand);this.advances.set(runId,work);
+  void work.then(()=>{if(this.advances.get(runId)===work)this.advances.delete(runId);},()=>{if(this.advances.get(runId)===work)this.advances.delete(runId);});return work;
+ }
  private async advanceAdmitted(runId:string,declaration?:ReviewControllerBudgetDeclaration,receivedCommand?:unknown):Promise<Record<string,unknown>>{
-  const d=this.descriptor(runId),opened=await this.service.open(runId);if(opened.store.replay().publication)return this.complete(runId);
+  const d=this.descriptor(runId),opened=await this.service.open(runId),accepted=opened.store.replay();if(accepted.publication)return this.complete(runId);
+  const last=new Map(accepted.state.accepted.map(a=>[a.progress.blockId,a.progress.disposition]));
+  if(!accepted.lifecycle.owner&&!accepted.outstandingWork.length&&!accepted.accounting.attempts.some(a=>['issued','partially-accepted','uncertain'].includes(a.state))
+   &&!accepted.state.ledger.coverage.some(row=>['pending','unverified'].includes(row.disposition))&&accepted.basis.subject.packets.flatMap(p=>p.blocks).every(b=>last.get(b.blockId)==='reviewed'))return this.complete(runId);
   const prior=this.runs.get(runId);if(prior){const host=this.hosts.get(runId);if(host){host.refresh(declaration,receivedCommand);return host.waitForTurn(runId,prior);}return this.view(runId);}
-  await this.options.assertReady('resume');const p=await this.prepare(d.start,declaration);p.controller?.refresh(declaration,receivedCommand);p.controller?.arm(runId);
+  await this.options.assertReady('resume',d.start.sourceMode);const p=await this.prepare(d.start,declaration);p.controller?.refresh(declaration,receivedCommand);p.controller?.arm(runId);
   const work=this.service.resume(runId).then(async reply=>{if(reply.next.kind==='request-completion')return this.complete(runId);return this.view(runId);});this.runs.set(runId,work);
   void work.then(()=>{if(this.runs.get(runId)===work)this.runs.delete(runId);},()=>{if(this.runs.get(runId)===work)this.runs.delete(runId);});
   return p.controller?p.controller.waitForTurn(runId,work):await work;
@@ -164,7 +178,7 @@ export class InvestigationRepository {
  async view(runId:string):Promise<Record<string,unknown>>{
   const {descriptor,store}=await this.service.open(runId),view=store.replay();let fresh=true,available=true,reason:string|null=null;
   try{await this.assertFresh(descriptor,view.manifest);}catch{fresh=false;}
-  try{await this.options.assertReady('resume');}catch{available=false;reason='Investigation execution is disabled or readiness is unavailable.';}
+  try{await this.options.assertReady('resume',descriptor.start.sourceMode);}catch{available=false;reason='Investigation execution is disabled or readiness is unavailable.';}
   const compatibility=recoveryCompatibility(view,{...view.manifest,compatibility:{...view.manifest.compatibility,toolsDigest:scopedReviewCatalogDigest(descriptor.start.sourceMode==='indexed-impact')}},fresh);
   let receipt=null,error=null;
   if(view.lifecycle.completionReceipt)try{receipt=await readReviewCompletion(store,{canonical:this.options.canonical,actor:{id:'insrc:review-status',kind:'system',properties:{}},current:()=>this.completionContext(descriptor,view.manifest)});}catch{error={code:'completion-receipt-unavailable',retryable:false};}
@@ -177,7 +191,7 @@ export class InvestigationRepository {
  }
  async complete(runId:string):Promise<Record<string,unknown>>{
   const {descriptor:d,store}=await this.service.open(runId),view=store.replay(),m=view.manifest;
-  if(!view.publication)await this.options.assertReady('publish');
+  if(!view.publication)await this.options.assertReady('publish',d.start.sourceMode);
   const deps={canonical:this.options.canonical,actor:{id:'insrc:review-investigation',kind:'agent' as const,properties:{}},current:()=>this.completionContext(d,m)};
   const current=await deps.current(),root=ArtifactIds.parse(d.start.rootArtifactId)!;
   const existing=await this.options.canonical.readHeadSnapshot(`CR-${root.epicHash}-${d.start.storyId}`);

@@ -89,6 +89,7 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 	insrc_code_review_step: {
 		phases: ['start', 'judgements', 'investigation'],
 		dynamicNote:
+			'Explicit opt-in phase=investigation uses version/engine/command/capabilities and scoped durable progress; it never falls through to legacy. ' +
 			'Multi-turn: the judgements body is a schema the run hands back — ' +
 			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
 	},

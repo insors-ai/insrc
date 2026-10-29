@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-e6e8df70-e1fc-4b0a-b7c6-7f49bcb4b332",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T16:54:19.586Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "a0bc3ff78e02130805da4e3bcf8091e3f96f2aed6abb6e647b51975a73accec2",
+        "at": "2026-10-29T16:54:19.587Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-8315a11f29fd2812-1",
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "hldBaseRunId": "wf-1792389266411-gvxl8y",
+    "amendment": {
+      "type": "nonFunctional.retarget",
+      "property": "performance",
+      "oldTarget": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
+      "newTarget": "For explicit plan-investigation-v1 CODE reviews only, Epic c32aa60534232f36 supersedes predecessor S002/S003 chunk/gather and S005 new CODE-review controller frames. Legacy and pre-S005 saved states retain their original adapters; DEF/HLD/LLD and all other design reviews retain the predecessor pipeline. No automatic migration, default flip or live quality/token-savings claim. Adoption requires current readiness evidence and independent installed-backend qualification; rollback disables new turns, drains active attempts, and preserves status, cancel, usage, accepted receipts and frozen publication reconciliation.",
+      "rationale": "Add only the explicit new-engine CODE-review exception; retain predecessor design and legacy behavior."
+    },
+    "rationale": "S6 adoption prerequisite. This proposal neither changes sibling LLDs nor enables investigation. Separate explicit approval and independently verified readiness are still required.",
+    "proposedBy": {
+      "workflow": "build",
+      "runId": "adoption-c32aa60534232f36",
+      "storyId": "s6",
+      "stepId": "t12"
+    },
+    "proposedAt": "2026-10-29T16:54:19.585Z"
+  },
+  "citations": []
+}

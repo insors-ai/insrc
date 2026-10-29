@@ -16,10 +16,10 @@ import type { ReviewControllerBudgetDeclaration } from '../../shared/review-budg
 export const hash='c32aa60534232f36',root=`ISSUE-${hash}`,buildId=`BUILD-${hash}-s1`,scopeId='ISSUE-1234567890abcdef';
 const actor={id:'github:fixture',kind:'person' as const,properties:{}};
 export const caps={version:1,engines:['legacy','plan-investigation-v1'],investigationWireVersions:[1],canonicalInvestigationVersions:[1],operations:['start','status','resume','cancel','read','impact','progress','reply']};
-const budget:ReviewControllerBudgetDeclaration={version:1,hostContextReserveTokens:1000,profile:{profileVersion:1,providerId:'fixture-host',transport:'controller',transportVersion:'1',schemaDialect:'controller-json-v1',promptDialect:'controller-frame-v1',qualification:'controller-reserved',declaredToolsJson:'[]',nativeReserveTokens:0,transportReserveTokens:4096,completionReserveTokens:8192,inspectionReserveTokens:8192}};
+export const budget:ReviewControllerBudgetDeclaration={version:1,hostContextReserveTokens:1000,profile:{profileVersion:1,providerId:'fixture-host',transport:'controller',transportVersion:'1',schemaDialect:'controller-json-v1',promptDialect:'controller-frame-v1',qualification:'controller-reserved',declaredToolsJson:'[]',nativeReserveTokens:0,transportReserveTokens:4096,completionReserveTokens:8192,inspectionReserveTokens:8192}};
 export async function fixture(controller:boolean,planned:boolean,indexed:boolean,complete=false){
  const f=await subjectFixture(),contexts=creationContextProvider(f.dir,{rootKinds:['ISSUE','PLAN','BUILD']});
- const store=new ArtifactStore({repoPath:f.dir,history:new History(createFileSidecarStore(f.dir)),journal:createFileJournal(f.dir),contexts:key=>({...contexts(key),extraMeta:{authoredBy:controller?'daemon':'controller'}})});
+ const store=new ArtifactStore({repoPath:f.dir,history:new History(createFileSidecarStore(f.dir)),journal:createFileJournal(f.dir),contexts:key=>({...contexts(key),epicSlug:'fixture',extraMeta:{authoredBy:controller?'daemon':'controller'}})});
  const lifecycle=new LifecycleService({store});
  const create=async(id:string,body:Record<string,unknown>,approve=true)=>{await store.write({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body,citations:[]}},actor);if(approve)await lifecycle.apply(id,'approve',actor);};
  const issue={title:'Pinned fixture',reproduction:'Selected change',rootCause:'Fixture',fixIntent:'Check selected source'};

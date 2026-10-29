@@ -850,7 +850,7 @@ test('full degraded and confirm-wait controller continuations use complete-frame
 	const stored = (await getStepStateStore().read<import('../types.js').CodeReviewStepStatePayload>('code-review', chunkFrame.state))!.payload.controller!;
 	const leaves = stored.job!.workUnits.filter(unit => !unit.replaced).length;
 	assert.ok(leaves > 1, 'material and host reserve force real whole-atom partitioning');
-	assert.equal(stored.job!.deadlineBudgetMs, leaves * 600_000);
+	assert.equal(stored.job!.deadlineBudgetMs, leaves * 300_000);
 	assert.equal(new Set(stored.job!.plan.chunks.flatMap(chunk => chunk.atomIds)).size, 20, 'every source atom remains in the plan');
 	admitControllerFrame(chunkFrame, stored.policy, reserve);
 	clock = stored.job!.deadlineAt! + 1;
@@ -869,11 +869,11 @@ test('controller dimensions retain independent epochs and reject expired attempt
 	const request = (frame: any, extra: Record<string, unknown> = {}) => ({ phase: 'judgements', state: frame.state, reviewBudget: CONTROLLER_DECLARATION,
 		reply: { version: 1, generation: frame.call.generation, callId: frame.call.callId, answer: { findings: [] } }, ...extra });
 	let frame: any = parse(await rawControllerCall(start, deps));
-	clock = 500000;
+	clock = 200000;
 	frame = parse(await rawControllerCall(request(frame), deps));
-	assert.equal(frame.timing.deadlineAt, 1100000, 'each dimension owns an independent ten-minute allocation');
-	assert.equal(frame.timing.logicalWorkUnits, 1); assert.equal(frame.timing.elapsedMs, 0); assert.equal(frame.timing.remainingMs, 600000);
-	clock = 500000 + frame.timing.attemptLimitMs;
+	assert.equal(frame.timing.deadlineAt, 500000, 'each dimension owns an independent five-minute allocation');
+	assert.equal(frame.timing.logicalWorkUnits, 1); assert.equal(frame.timing.elapsedMs, 0); assert.equal(frame.timing.remainingMs, 300000);
+	clock = 200000 + frame.timing.attemptLimitMs;
 	assert.equal(clock, frame.timing.deadlineAt);
 	const late: any = parse(await rawControllerCall(request(frame), deps));
 	assert.equal(late.error.code, 'review-job-timeout'); assert.equal(late.error.retryable, false); assert.equal(writes.length, 0);

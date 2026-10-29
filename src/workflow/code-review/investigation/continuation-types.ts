@@ -48,8 +48,8 @@ export interface InvestigationPolicy {
 export interface InvestigationBackend {
  readonly provider: LLMProvider;
  readonly qualification: { readonly providerId: string; readonly profileDigest: string;
-  readonly pinnedReads: boolean; readonly readOnly: boolean;
-  readonly progressMode: 'in-session-progress' | 'block-yield'; readonly cancellable: boolean };
+  readonly pinnedReads: true; readonly readOnly: true;
+  readonly progressMode: 'in-session-progress' | 'block-yield'; readonly cancellable: true };
  readonly execute: (turn: InvestigationTurnV1, tools: InvestigationTools, signal: AbortSignal) => Promise<InvestigationReplyV1>;
 }
 export interface InvestigationTools {

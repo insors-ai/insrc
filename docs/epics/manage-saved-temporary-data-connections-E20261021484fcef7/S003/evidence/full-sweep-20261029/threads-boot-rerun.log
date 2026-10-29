@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down
+ok 1 - the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down
+  ---
+  duration_ms: 2636.969833
+  type: 'test'
+  ...
+# Subtest: SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged
+ok 2 - SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged
+  ---
+  duration_ms: 16949.015541
+  type: 'test'
+  ...
+# Subtest: daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down
+ok 3 - daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down
+  ---
+  duration_ms: 5831.841459
+  type: 'test'
+  ...
+# Subtest: boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0
+ok 4 - boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0
+  ---
+  duration_ms: 2183.499
+  type: 'test'
+  ...
+# Subtest: boot: threads disabled runs every session method on the main thread as today
+ok 5 - boot: threads disabled runs every session method on the main thread as today
+  ---
+  duration_ms: 1234.851167
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29120.217792

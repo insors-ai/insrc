@@ -1,0 +1,15 @@
+[
+  {
+    "recordedAt": "2026-10-29T07:24:46.247279+00:00",
+    "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+    "sweepPid": 80522,
+    "testPid": 75756,
+    "elapsed": "05:12",
+    "signal": "SIGTERM",
+    "reason": "Worker-store test process remained blocked beyond five minutes with no completed test output; terminate only this owned file so the complete sweep can report its failure.",
+    "ownedPids": [
+      75756,
+      75924
+    ]
+  }
+]

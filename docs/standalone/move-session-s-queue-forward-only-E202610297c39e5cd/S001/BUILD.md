@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-29T10:48:19.520Z  ·  **Updated:** 2026-10-29T11:21:08.440Z
+**Standalone:** yes  ·  **Created:** 2026-10-29T10:48:19.520Z  ·  **Updated:** 2026-10-29T11:34:12.744Z
 
-**Commit:** aec3e8681
+**Commit:** bd5f04a5d
 
 ## Summary
 
@@ -33,3 +33,6 @@ A session's queue in the threaded daemon's router now moves only on the worker's
 - `src/daemon/threads/worker-requests.ts` — **insrc-build** (2026-10-29T11:21:08.440Z)
 - `src/daemon/threads/__tests__/fifo-ack-acceptance.test.ts` — **insrc-build** (2026-10-29T11:21:08.440Z)
 - `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-29T11:21:08.440Z)
+- `.insrc/artifacts/PLAN-7c39e5cd2c076e86-S001.json` — **insrc-build** (2026-10-29T11:34:12.744Z)
+- `docs/standalone/move-session-s-queue-forward-only-E202610297c39e5cd/S001/PLAN.md` — **insrc-build** (2026-10-29T11:34:12.744Z)
+- `docs/standalone/move-session-s-queue-forward-only-E202610297c39e5cd/S001/sequence-diagram.html` — **insrc-build** (2026-10-29T11:34:12.744Z)

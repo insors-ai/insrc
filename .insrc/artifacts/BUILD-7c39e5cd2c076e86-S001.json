@@ -4,11 +4,16 @@
     "epicHash": "7c39e5cd2c076e86",
     "storyId": "S001",
     "createdAt": "2026-10-29T10:48:19.520Z",
-    "updatedAt": "2026-10-29T11:21:08.440Z",
+    "updatedAt": "2026-10-29T11:34:12.744Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-29T10:24:05.423Z",
-    "epicSlug": "move-session-s-queue-forward-only"
+    "epicSlug": "move-session-s-queue-forward-only",
+    "approvedAt": "2026-10-29T11:34:13.124Z",
+    "reviewOverride": {
+      "reason": "User override (in chat, 2026-10-29): t6's inventory test fails only on a pre-existing gap outside this Story (src/daemon/db/removal-retirement.ts from Epic 484fcef7 has no inventory entry); this Story's entries are refreshed. Code review was manual (the daemon code-review framework is being rewritten): no HIGH/MED findings.",
+      "at": "2026-10-29T11:34:13.124Z"
+    }
   },
   "body": {
     "tasks": [
@@ -110,9 +115,33 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-10-29T11:21:08.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-7c39e5cd2c076e86-S001.json",
+          "version": "bd5f04a5d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:34:12.744Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/move-session-s-queue-forward-only-E202610297c39e5cd/S001/PLAN.md",
+          "version": "bd5f04a5d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:34:12.744Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/move-session-s-queue-forward-only-E202610297c39e5cd/S001/sequence-diagram.html",
+          "version": "bd5f04a5d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:34:12.744Z"
       }
     ],
-    "commit": "aec3e8681",
+    "commit": "bd5f04a5d",
     "summary": "A session's queue in the threaded daemon's router now moves only on the worker's explicit ack (its completion message) for each request sent from it; a reply, a last frame or a closed socket no longer moves it, and every end after which no ack can come (worker exit, failed post, start failure, cancel before start) acks with an error answer. The pool's busy count and the daemon.status thread view end such a request at the ack; unqueued requests are unchanged. Deviation from the LLD ('no worker change'): the test.servingThread hook in src/daemon/threads/worker-requests.ts answers requests itself, so it now also sends the completion message when asked; without it 10 spawned-daemon tests stalled. t6: the inventory entries for the four changed files were refreshed, but the inventory test still fails on a pre-existing gap outside this Story (src/daemon/db/removal-retirement.ts, Epic 484fcef7, commit 0ce46e23e, has no entry); closed with the user's override. Code review: manual (the daemon code review is being rewritten); no HIGH or MED findings. Full sweep: 6934 tests, 7 failed and 11 cancelled, none in this Story's files (other session's CM-S1/CM-S3 db checks and inventory, the known SIGTERM boot flake, the pre-existing file-tools test; the cancelled lock-manager tests pass alone)."
   }
 }

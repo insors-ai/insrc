@@ -12,6 +12,7 @@ import { join } from 'node:path';
 
 import * as vscode from 'vscode';
 
+import { ConnectionsWorkbenchOwner } from './connections/session-owner.js';
 import { createIpcClient } from '../../src/shared/ipc-client.js';
 import { PATHS } from '../../src/shared/paths.js';
 import { createStatusSurface } from './surfaces/status-surface.js';
@@ -101,6 +102,9 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusItem);
 
   const client = createIpcClient();
+  // Connection sessions outlive every manager view; no socket is opened until requested.
+  const connectionsOwner = new ConnectionsWorkbenchOwner();
+  context.subscriptions.push(connectionsOwner);
 
   const commands = createCommandRegistry(
     (command, callback) => vscode.commands.registerCommand(command, callback),

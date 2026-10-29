@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -110,3 +110,19 @@ Run at 2026-10-29T15:38:33.421Z on commit `300eff40c`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-model.test.ts` | 0 | 1 | 0.4 s |  |
+
+## t7
+
+Run at 2026-10-29T15:42:56.912Z on commit `3fa48b8f5`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O | `src/shared/__tests__/connection-manager-kotlin-model.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-kotlin-model.test.ts` | 0 | 1 | 4.6 s |  |

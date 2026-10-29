@@ -710,6 +710,7 @@ export class OllamaProvider implements LLMProvider {
    * `opts.signal` cancels it with AbortError.
    */
   async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    if (opts.investigationBinding !== undefined) throw new Error('Ollama has no qualified native investigation adapter.');
     const closingInstruction = 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema);
     if (opts.reviewBudget) {
       const profile = this.getReviewBudgetProfile('reviewer-session');

@@ -246,6 +246,8 @@ export interface LLMProvider {
 
 /** Options for {@link LLMProvider.runReviewSession}. */
 export interface ReviewSessionOpts {
+  /** Trusted in-process qualification/capability binding; JSON lookalikes are never authority. */
+  readonly investigationBinding?: QualifiedInvestigationSessionBinding | undefined;
   /** Optional immutable per-review admission contract; absent for non-review callers. */
   readonly reviewBudget?: ReviewExecutionBudget | undefined;
   /** The repo root the session reads. */
@@ -260,6 +262,13 @@ export interface ReviewSessionOpts {
   readonly stallMs?: number | undefined;
   /** Cancels the session. */
   readonly signal?: AbortSignal | undefined;
+}
+
+export interface QualifiedInvestigationSessionBinding {
+  readonly version: 1; readonly bindingId: string; readonly adapterVersion: string;
+  readonly profileDigest: string; readonly catalogDigest: string;
+  readonly tools: import('../workflow/code-review/investigation/continuation-types.js').InvestigationTools;
+  readonly qualificationRef: string;
 }
 
 /**

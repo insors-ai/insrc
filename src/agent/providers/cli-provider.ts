@@ -61,6 +61,7 @@ import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } 
 import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars } from './review-budget.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
+import { InvestigationQualificationError } from './investigation-session.js';
 
 const log = getLogger('cli-provider');
 
@@ -454,6 +455,7 @@ export class CliProvider implements LLMProvider {
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+		if (opts.investigationBinding !== undefined) throw new InvestigationQualificationError('Native investigation adapter is not installed; broad review fallback is forbidden.');
 		const startedAt = Date.now();
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
 		const maxAttempts = opts.reviewBudget || opts.internalRetry === false ? 1 : 2;

@@ -1,0 +1,677 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1793292978249-2ujf5k",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-29T17:00:24.794Z",
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 246517,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b220bb6174a2f5ed",
+    "epicSlug": "run-claude-codex-ollama-models",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion in DEF-b220bb6174a2f5ed (s1 ac1-ac4; s2 ac1-ac5; s3/s4/s5 ac1-ac3/ac4) is addressed by a named HLD element (sc1/sc2 interfaces, the five Story boundaries, or an NFT).",
+          "evidence": "DEF s1 ac1/ac2/ac3/ac4 map onto sc1's host/hosting fields and sc2's TierResolution.fallback='model-not-supported' plus the explicit k6 regression-test commitment; DEF s2 ac1-ac3 map onto S002's boundary text ('how the CLI provider points a run at Ollama…the pre-run checks…the failure messages that name the cause, and the time limit'); ac4 (serial calls) maps onto Architecture shape §3's 'keeps calls serial'; ac5 maps onto 'adds nothing for direct families'. s3/s4/s5 ac1/ac2/ac3(4) map onto the matching Story-boundary bullets (runner+model lists, cloud/local labels, effort gating, VS Code's save-time refusal, and each client's display of the resolved tier). [files: .insrc/artifacts/DEF-b220bb6174a2f5ed.json]",
+          "action": "none — verified against DEF-b220bb6174a2f5ed.json body.stories",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No DEF non-goal (GPU-contention sharing, installer default setup, Ollama auto-discovery of installed models, or direct cloud REST calls from insrc's process) is designed or built by this HLD.",
+          "evidence": "The HLD's supported-model source is exclusively the shipped definitions file (closed list, sc1), never live Ollama auto-discovery; it adds no installer-setup content; its Security NFT states 'the user's own CLI configuration files and the daemon's environment are never changed' and the alternatives section explicitly rejects any model-API-direct approach, consistent with routing only through the existing CliProvider subprocess as DEF k2/c7 require. [files: .insrc/artifacts/DEF-b220bb6174a2f5ed.json]",
+          "action": "none — cross-checked against DEF.body.nonGoals",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today FamilyId is a closed 3-member union ('cli-claude'|'cli-codex'|'ollama') and isCliFamily is keyed on `id !== 'ollama'`, as the HLD's citations c2/c11/c12 claim.",
+          "evidence": "src/daemon/model-catalog.ts:37 `export type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama';`, :127 `const FAMILY_IDS: readonly FamilyId[] = ['cli-claude', 'cli-codex', 'ollama'];`, :140-142 `function isCliFamily(id: FamilyId): id is CliFamilyId { return id !== 'ollama'; }` — exact verbatim matches of the HLD's cited behaviour. [files: src/daemon/model-catalog.ts]",
+          "action": "none — verified by direct read",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "All three client surfaces today gate 'enter an unlisted model id' / 'can be model-checked' purely on `cliKind !== undefined` (equivalently `!= null`), the exact ambiguous test the HLD says a host family would also satisfy unless re-keyed.",
+          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:342 `if (family.cliKind !== undefined) items.push({ label: 'Enter another model id…' … })`; jetbrains-plugin ModelCheckFlow.kt:63 `fun families(): List<DefinedFamilyDto> = definitions.families.filter { it.cliKind != null }`; src/cli/panes/model-tiers.ts:189 `if (family.cliKind === undefined) return { kind: 'refused', reason: \\`only listed ${family.displayName} models are selectable\\` };` — all three verbatim-match the HLD's c7/c8/c10 citations. [files: vscode-plugin/src/models/model-tier-picker.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt, src/cli/panes/model-tiers.ts]",
+          "action": "none — verified by direct grep+read",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The two family ids the HLD calls 'new' ('ollama-claude', 'ollama-codex') do not already exist anywhere in the shipped definitions type or test fixtures.",
+          "evidence": "FamilyId (model-catalog.ts:37) lists only cli-claude/cli-codex/ollama; the validator's own minimal fixture (src/daemon/__tests__/model-catalog.test.ts:35-49, 'A valid minimal fixture with all three families') enumerates only those three. No 'ollama-claude'/'ollama-codex' literal exists in the codebase today. [files: src/daemon/model-catalog.ts, src/daemon/__tests__/model-catalog.test.ts]",
+          "action": "none — verified by direct read",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "CliProviderOpts has no existing field for pointing the subprocess at Ollama (base URL / placeholder token / local-provider flags), so the Story-2 work the HLD calls new (per-run Ollama environment/flags for the CLI subprocess) genuinely does not already exist and is not a reuse mislabel.",
+          "evidence": "src/agent/providers/cli-provider.ts:144-163 CliProviderOpts carries only kind, model, binPath, timeoutMs, embedDelegate, codexFirstOutputMs, effort, inputBudgetChars — no Ollama/base-url/env option; a grep of the file for OLLAMA|ANTHROPIC_BASE_URL|ANTHROPIC_AUTH_TOKEN|localProvider found no matches. [files: src/agent/providers/cli-provider.ts]",
+          "action": "none — verified by direct read + grep",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemon-side citations the HLD gives for the CLI-kind/host classification sites it must re-key (model-registry.ts:105/277-278, model-check.ts:319-320, config-write.ts:74, attribution.ts:49, analyze.ts:371) quote the real, current code.",
+          "evidence": "All five read verbatim as cited: model-registry.ts:105-108 `familyForClient`; :277-278 `setting.runner !== 'ollama' && rejected(setting.runner).includes(setting.model) ? 'rejected-model' : 'unlisted-model'`; model-check.ts:319 `registry.cliKind(family as CliFamilyId)`; config-write.ts:74 `registry.cliKind(family.id) === undefined`; attribution.ts:49 `if (f.cliKind !== undefined && label.startsWith(f.cliKind)) return stamp(f.id, label);`; analyze.ts:371 `function isRunner(x): x is AnalyzeShaperProviderKind { return … SHIPPED_MODEL_DEFAULTS.familyIds.includes(x); }`. [files: src/daemon/model-registry.ts, src/daemon/model-check.ts, src/daemon/config-write.ts, src/workflow/attribution.ts, src/config/analyze.ts]",
+          "action": "none — verified by direct read",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The specific claim that `isRunner` (analyze.ts:371) will admit the two new families with NO code change, because its allow-list is derived dynamically from the shipped JSON file via `SHIPPED_MODEL_DEFAULTS.familyIds`, is accurate.",
+          "evidence": "src/config/model-defaults.ts:57-60 `deriveModelDefaults` computes `familyIds = families.map(f => str(f['id'])).filter(...)` straight from the parsed `defs.families` array (which is the shipped JSON), and analyze.ts:371-372 checks membership in exactly that derived list — adding two family entries to the JSON file changes `familyIds` with zero code change to isRunner. [files: src/config/model-defaults.ts, src/config/analyze.ts]",
+          "action": "none — verified by direct read",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three client-side citations for the 'enter unlisted id' / 'checkable family' sites (vscode c7, jetbrains c8, cli c10) are both accurate quotes and are the same cliKind-presence ambiguity the daemon-side sites have, consistent with Story boundaries s3-s5 promising to re-key them for host families — though HLD §3's classification-rule paragraph enumerates only the daemon-side files, not these three client paths by line (self-flagged as open question f2).",
+          "evidence": "Confirmed verbatim in current-behaviour's second premise above; the gap is disclosed by the HLD itself as open question f2 ('names… clients by role rather than quoting each … path inline'), so it is not a silent omission, but the precise re-keying for these three sites is not yet pinned down by citation the way the daemon-side sites are. [files: vscode-plugin/src/models/model-tier-picker.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt, src/cli/panes/model-tiers.ts]",
+          "action": "no artifact change required now — track open question f2 to resolution before/ during s3-s5 LLDs so the re-keying is pinned per file:line",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Stored tier settings keep their current shape unchanged when the two new family ids are added — the runner/model fields are already validated generically against the registry's family/model lists rather than against a hardcoded 3-member enum, so no migration is needed.",
+          "evidence": "config/analyze.ts:371-372 `isRunner` validates against the dynamically-derived `familyIds` list (not a literal union); config-write.ts's `rejectedIn`/write-validation path (lines ~68-77) looks up `registry.families().find(f => f.id === runner)` and `registry.cliKind(family.id)` rather than switching on literal family strings; model-registry.ts's `resolveTier` (:267-286) resolves any `setting.runner` generically via `find(setting.runner, setting.model)`. None of these hardcode the 3-member set, so adding two ids changes no stored shape and needs no migration. [files: src/config/analyze.ts, src/daemon/config-write.ts, src/daemon/model-registry.ts]",
+          "action": "none — verified by direct read",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No other currently in-flight Story or Epic in this repo owns or is mid-edit on the files this HLD's Story boundaries touch (model-catalog.ts, model-registry.ts, model-check.ts, config-write.ts, attribution.ts, shaper-provider.ts, and the three client pickers), so s1-s5 do not redesign work another Story currently owns.",
+          "evidence": "The predecessor epic that established the per-family definitions shape these files implement (Epic ce99b72065d03b1b) is complete (s1-s7 all shipped, per repo memory and the HLD's own framing of it as a settled prior decision, §3/§9.1 'Follows the per-family definitions shape Epic ce99b720 established'). The only in-flight work visible in git status is Epic 484fcef7efaf229e ('manage-saved-temporary-data-connections'), touching unrelated connection-mutation files (.insrc/artifacts/TESTS-484fcef7efaf229e-s5.json, docs/epics/manage-saved-temporary-data-connections-.../S005/TESTS.md) with no overlap with the model-definitions/registry/provider files this HLD changes.",
+          "action": "none — cross-checked against git status snapshot and prior-epic completion; re-check immediately before s1 build starts, since this is a point-in-time check",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every DEF-S002 error-path acceptance criterion (ac3: Ollama not running / model unavailable / cloud model not signed in → a failure naming the cause, nothing waits indefinitely; ac5: existing direct-family runs are unaffected) has a corresponding, specific design statement in the HLD rather than being silently unaddressed.",
+          "evidence": "HLD §3 Story-s2 text: 'the pre-run checks that Ollama answers and the model is available or signed in for a cloud model, the failure messages that name the cause, and the time limit that keeps a run from waiting forever stay inside s2'; §7 Performance NFT: 'a run on a host family adds one Ollama reachability and model-availability check before the CLI starts; a run never waits beyond the existing CLI time limit'; §7 Observability NFT: 'a failed pre-run check logs which check failed'; §3 Run-layer text: 'adds nothing for direct families' covers ac5. These map 1:1 onto DEF ac3/ac5 (.insrc/artifacts/DEF-b220bb6174a2f5ed.json body.stories[1].acceptanceCriteria). [files: .insrc/artifacts/DEF-b220bb6174a2f5ed.json]",
+          "action": "none — cross-checked HLD text against DEF acceptance criteria",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Per-AC test mapping is correctly deferred to each Story's LLD (not expected at this Epic-level HLD per framework convention), and the one test commitment this HLD does make at its own level — a regression test for k6 (today's three families' behaviour unchanged) grown into the validator's existing fixture set — is grounded in a real, extensible test file rather than an invented one.",
+          "evidence": "docs/workflow.md:27-37 describes the HLD as 'the framework-level design for the whole Epic' with acceptance criteria living at the Story level, and states 'HLD never enters implementation' — consistent with this HLD naming regression-test intent (§3 'the validator's test fixtures … grow to the five-family set', §8 risk-mitigation row) rather than a full AC-test matrix. src/daemon/__tests__/model-catalog.test.ts:35-49 is a real, minimal 'all three families' fixture that can be grown to five members exactly as claimed. [files: docs/workflow.md, src/daemon/__tests__/model-catalog.test.ts]",
+          "action": "none — verified HLD-vs-LLD test-ownership split against docs/workflow.md and the cited fixture file; confirm each Story's LLD actually carries a full AC-to-test map when s1-s5 LLDs are reviewed",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 13,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-29T17:08:07.241Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-29T17:18:41.714Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Each new runner is a new model family in insrc's shipped model definitions: one for the Claude command-line tool on Ollama and one for the Codex command-line tool on Ollama. Each declares that its tool runs on Ollama, and each of its models is marked cloud or local. A tier selects one of these families exactly as it selects a family today. The daemon starts the same command-line tool it starts today, pointed at Ollama for that run only, and the three settings clients list the new families from the definitions answer they already read.",
+      "audience": "technical"
+    },
+    "frameworkSummary": "Model the two new runners as two new families in the model definitions (alternative a1). The definitions file, its validator and the definitions answer gain two families, 'ollama-claude' and 'ollama-codex', each with the CLI kind of the tool it runs and a host mark 'ollama'; every model of those families carries a hosting mark, 'cloud' or 'local'. Tier settings, effort filtering and provider construction keep their one per-family path. A family with the Ollama host mark builds the existing CLI provider with an Ollama target applied to that subprocess only, and clients use the host mark to show cloud/local and to never offer unlisted model ids for those families.",
+    "architectureShape": "Three layers, each changed in one place. (1) Definitions layer (s1): the shipped definitions file and the catalog validator admit a five-member closed family set; the two new families carry cliKind and host 'ollama', have no tier defaults or summariser of their own, and every model carries hosting. The registry exposes host and hosting, resolves a tier on a host family only to a declared model (otherwise a 'model-not-supported' resolution), maps a CLI client to its direct family only, and refuses the unknown-model check and the approved-model store for host families. The definitions answer gains the two marks. (2) Run layer (s2): the per-family provider factory passes the family's host to the CLI provider; for host 'ollama' the provider starts the claude CLI with an environment pointing it at the local Ollama (base URL, placeholder token, empty API key) or the codex CLI with Ollama's local-provider flags, adds nothing for direct families, checks Ollama reachability and the model's availability before a run and names the cause on failure, and keeps calls serial. (3) Client layer (s3, s4, s5): the terminal UI, the VS Code picker and settings, and the JetBrains Settings page list the new families from the answer, label each model cloud or local, offer effort only from the model's efforts, withhold 'Enter another model id' for host families, and show the tier the daemon reports. The on-disk tier validator (isRunner, src/config/analyze.ts:371) checks family ids against the list derived from the shipped definitions file (src/config/model-defaults.ts:57-60), so it admits the two new families with no code change; s1 covers it with a regression test. Classification rule (s1): today the daemon decides family behaviour from two tests that the new families would pass the wrong way, 'the family is not ollama' and 'the family has a CLI kind'. s1 classifies every such site into one of two meanings and keys it accordingly: 'runs a CLI' stays on the CLI kind and includes the host families (provider kind in src/analyze/context/shaper-provider.ts:228, :274, :287, :339; src/analyze/context/driver.ts:1160; src/daemon/list-models.ts:92-105; src/daemon/model-definitions.ts:104, :203), while 'a vendor CLI family' keys on the host mark being absent and excludes the host families: tier defaults and summariser required by the validator (isCliFamily, src/daemon/model-catalog.ts:140-142, :186-191), the unknown-model check (src/daemon/model-check.ts:319-320), the approved-model store (src/daemon/model-registry.ts:142, already closed), the unlisted-model fallback (src/daemon/model-registry.ts:277-278), the tier write's model check (src/daemon/config-write.ts:74) and run attribution by CLI-kind label prefix (src/workflow/attribution.ts:49), which must name the family that ran, not the first family with that CLI kind. The validator's test fixtures (src/daemon/__tests__/model-catalog.test.ts:35) grow to the five-family set.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Ollama-hosted CLI families in the definitions answer",
+        "purpose": "The wire shape every consumer reads to know the two new families, that they run a CLI on Ollama, and which of their models are cloud or local.",
+        "interfaceSketch": "type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama' | 'ollama-claude' | 'ollama-codex';\ntype FamilyHost = 'ollama';\ntype ModelHosting = 'cloud' | 'local';\ninterface FamilyDefinitionEntry {\n  readonly id: FamilyId;\n  readonly displayName: string;\n  readonly cliKind?: 'claude' | 'codex';\n  /** Present only on the two new families: the CLI runs against Ollama. */\n  readonly host?: FamilyHost;\n  readonly models: readonly ModelDefinitionEntry[];\n}\ninterface ModelDefinitionEntry {\n  readonly id: string;\n  readonly displayName: string;\n  readonly aliases?: readonly string[];\n  readonly efforts: readonly string[];\n  readonly inputLimit?: { readonly unit: 'chars' | 'tokens'; readonly max: number };\n  /** Required on every model of a family with host; absent elsewhere. */\n  readonly hosting?: ModelHosting;\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c4",
+          "c5"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Tier resolution on an Ollama-hosted family",
+        "purpose": "How the daemon reports the tier it actually runs when the tier names a host family, including a model the definitions do not declare, so the run layer and every settings surface show the same outcome.",
+        "interfaceSketch": "type FallbackReason = /* existing reasons */ string | 'model-not-supported';\ninterface TierResolution {\n  readonly family: FamilyId;\n  /** undefined when the configured model is not declared for a host family. */\n  readonly model: ResolvedModel | undefined;\n  readonly effort: string | undefined;\n  readonly fallback?: { readonly reason: FallbackReason; readonly configured: string };\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c3"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "The shipped definitions entries for the two families and their models (which cloud and local models are supported), the catalog validator's five-member check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1."
+      },
+      {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "How the CLI provider points a run at Ollama (the claude environment and the codex local-provider flags, applied only to that subprocess), the pre-run checks that Ollama answers and the model is available or signed in for a cloud model, the failure messages that name the cause, and the time limit that keeps a run from waiting forever stay inside s2."
+      },
+      {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The terminal UI's runner list, model list with cloud/local labels, effort step and the withheld 'enter another id' path for host families, and its display of the resolved tier, stay inside s3."
+      },
+      {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The VS Code tier picker's family and model steps, the settings write validation that refuses an undeclared model for a host family, the cloud/local labels and the withheld 'enter another id' item stay inside s4."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The JetBrains Settings page's family and model selectors, the cloud/local labels, the filter that keeps host families out of the model-check flow, and its display of the resolved tier stay inside s5."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "No added cost on today's runners. A run on a host family adds one Ollama reachability and model-availability check before the CLI starts; a run never waits beyond the existing CLI time limit.",
+      "security": "The Ollama settings are applied only to the started subprocess's environment or arguments; the user's own CLI configuration files and the daemon's environment are never changed. No API key is stored; the claude CLI gets the placeholder token Ollama accepts locally.",
+      "observability": "The daemon logs the family, model, hosting and Ollama target of each host-family run, and a failed pre-run check logs which check failed; the tier resolution reported to clients names a 'model-not-supported' fallback.",
+      "durability": "Nothing new is persisted: tier settings keep their stored shape, and the new families live in the shipped definitions file."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — definitions contract",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns both shared contracts (sc1, sc2); every other Story consumes them.",
+          "backwardCompat": "The three existing families keep their entries, ids, tier defaults and resolution; a client that does not yet understand the host and hosting marks still reads the answer, because the marks are additive.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — run on Ollama and expose in settings",
+          "includesStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "rationale": "Each depends only on s1 and on sc1/sc2, so the daemon run path and the three client surfaces can land in any order after Phase A.",
+          "backwardCompat": "Direct-family runs start the CLI exactly as before (no Ollama environment or flags); clients keep their current behaviour for the three existing families, including 'Enter another model id' for the direct CLI families.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "s1 is the only Story every other Story depends on and the owner of both shared contracts, so it lands first; s2-s5 have no edges between them and each consumes only sc1/sc2.",
+      "riskyBits": [
+        {
+          "area": "Clients exposing the new families before the daemon can run them",
+          "why": "If a client ships s3/s4/s5 before s2, a user could pick a host family the daemon cannot yet run.",
+          "mitigation": "The daemon only lists the new families once s1 lands, and s2's pre-run check reports a clear cause; release the daemon with s2 before announcing the client releases."
+        },
+        {
+          "area": "CLI-kind to family mapping",
+          "why": "Two families now share each CLI kind; code that maps a CLI kind back to a family could pick the Ollama family and change today's behaviour (k6).",
+          "mitigation": "s1 restricts the client-to-family mapping to direct families and adds a regression test that today's mapping is unchanged."
+        },
+        {
+          "area": "Supported model list going stale",
+          "why": "Ollama's cloud model names change; a shipped entry may stop existing.",
+          "mitigation": "s2's pre-run check names a missing model as the cause; the list is data in the shipped definitions file and is updated with a daemon release."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Two new model families in the definitions",
+        "oneLineSummary": "Add a Claude-on-Ollama family and a Codex-on-Ollama family to the shipped definitions, each marked as running its CLI on Ollama, with every model marked cloud or local.",
+        "approach": "The definitions file and its validator gain two families next to the three existing ones. Each new family names the CLI it runs (the same claude/codex kind the existing CLI families carry) and additionally declares that the CLI is pointed at Ollama; each of its models carries the existing fields (id, display name, efforts, input limit) plus a hosting mark, cloud or local. The family set becomes five, still a closed list validated at load, and a tier selects one of the new families exactly as it selects a family today, so the tier, model and effort settings are reused unchanged.\n\nThe daemon turns a tier on a new family into the same CLI provider it builds for the existing CLI families, with one extra input: the Ollama endpoint that this run's CLI process is pointed at (an environment for the claude CLI, flags for the codex CLI), applied only to that subprocess. The definitions answer the clients already read carries the new families and the two new marks, so each client lists them through the code path it already has; each client uses the 'runs on Ollama' mark to show cloud/local and to withhold the 'enter another model id' path for those families.",
+        "pros": [
+          "Follows the per-family definitions shape Epic ce99b720 established: a runner is a family, so tier resolution, effort filtering and provider construction keep one code path.",
+          "The three clients already iterate the answer's families, so a new family appears in every surface without a new endpoint; the client change is limited to reading two new marks.",
+          "Today's three families keep their file entries, ids and settings byte for byte, which keeps k6 checkable by an unchanged-definitions test."
+        ],
+        "cons": [
+          "The closed family-id union and the 'exactly one entry per family' validation grow from three to five members, touching every exhaustive switch over family ids.",
+          "Two families share a CLI kind with an existing family, so every place that maps a CLI kind back to a family (the client-to-family mapping) must pick the direct one, not the Ollama one.",
+          "Clients that today equate 'has a CLI kind' with 'accepts unlisted model ids' must change that rule, in three codebases."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Ollama as a transport on the existing CLI families",
+        "oneLineSummary": "Keep the two CLI families and add an 'on Ollama' transport choice to the tier setting, with each CLI family declaring a separate list of Ollama-served models.",
+        "approach": "The definitions keep three families. Each CLI family gains a second model list, the Ollama-served models its CLI can run, each marked cloud or local. A tier setting gains a transport field (the CLI's own service, or Ollama); the model is validated against the list that matches the transport.\n\nThe daemon builds the same CLI provider for either transport, adding the Ollama endpoint to the subprocess when the tier's transport is Ollama. Clients add a transport selector to the tier editor and switch the model list on it.",
+        "pros": [
+          "The family-id union and the client-to-family mapping stay unchanged.",
+          "A user sees the Claude tool as one runner with two hosting choices, which matches how the CLI vendors describe it."
+        ],
+        "cons": [
+          "Changes the stored tier setting shape (a new field) in every client's write path and in the daemon's tier parser, which puts today's settings (k6) at risk and needs a migration story for tiers without the field.",
+          "Two model lists per family break the one-list-per-family invariant every client and the effort filter rely on today.",
+          "The 'enter another model id' rule now depends on transport as well as family, a two-variable condition in three codebases."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Scores 'partial' on k3 and k6: it adds a transport field to the stored tier setting and needs a default rule for every existing tier, so today's settings shape changes."
+      },
+      {
+        "id": "a3",
+        "name": "CLI front-ends on the Ollama family",
+        "oneLineSummary": "Keep the Ollama family as the runner and let each of its models declare which CLI front-ends (claude, codex) may drive it.",
+        "approach": "The Ollama family's model list is extended with cloud models and a hosting mark; each model lists the CLI front-ends that can drive it. A tier on the Ollama family gains an optional front-end choice; with none it calls Ollama directly as today, with one it starts that CLI pointed at Ollama.\n\nThe daemon branches on the front-end inside the Ollama provider path; clients add a front-end selector under the Ollama family.",
+        "pros": [
+          "One model list for everything served by Ollama, so a model is declared once even if both CLIs can drive it.",
+          "No new family ids."
+        ],
+        "cons": [
+          "Mixes a direct-API runner and two subprocess runners inside one family, so the family no longer tells the daemon which provider kind to build; the provider choice depends on a per-tier field instead.",
+          "Cloud models would appear under the plain Ollama runner too unless separately excluded, contradicting the user decision that the plain runner stays as it is (k6).",
+          "Adds a tier field like a2, with the same migration and k6 exposure."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Violates k6 (the plain Ollama family's model list and behaviour change) and is 'partial' on k1, k2 and k3: one family would build a direct Ollama provider or a CLI subprocess depending on a per-tier field."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Item f2: architectureShape names the definitions file, validator, registry, provider factory, CLI provider and clients by role rather than quoting each s1 bundle path inline (partial)."
+    ],
+    "componentDependencyDefinition": {
+      "id": "ollama-cli-runners-components",
+      "narrative": "Where the two new families flow: the definitions file feeds the catalog and registry, the registry feeds the provider factory that starts the CLI provider (pointed at Ollama for host families), and the definitions answer feeds the three settings clients.",
+      "components": [
+        {
+          "id": "defs",
+          "label": "Model definitions file",
+          "description": "Shipped families and models; gains ollama-claude and ollama-codex with host and hosting marks (s1).",
+          "path": "src/assets/models/cloud-model-catalog.json"
+        },
+        {
+          "id": "catalog",
+          "label": "Catalog validator",
+          "description": "Validates the five-member family set and the hosting rule (s1).",
+          "path": "src/daemon/model-catalog.ts"
+        },
+        {
+          "id": "registry",
+          "label": "Model registry",
+          "description": "Families, CLI kind, host; tier resolution with the model-not-supported outcome (s1, sc2).",
+          "path": "src/daemon/model-registry.ts"
+        },
+        {
+          "id": "answer",
+          "label": "Definitions answer",
+          "description": "The models.definitions answer every client reads (sc1).",
+          "path": "src/daemon/model-definitions.ts"
+        },
+        {
+          "id": "factory",
+          "label": "Provider factory",
+          "description": "Builds the provider for a tier's family; passes the host to the CLI provider (s2).",
+          "path": "src/analyze/context/shaper-provider.ts"
+        },
+        {
+          "id": "cli",
+          "label": "CLI provider",
+          "description": "Starts the claude or codex CLI; for host 'ollama' points that subprocess at Ollama (s2).",
+          "path": "src/agent/providers/cli-provider.ts"
+        },
+        {
+          "id": "tui",
+          "label": "Terminal UI tiers screen",
+          "description": "Lists families and models from the answer (s3).",
+          "path": "src/cli/panes/model-tiers.ts"
+        },
+        {
+          "id": "vscode",
+          "label": "VS Code tier picker",
+          "description": "Lists families and models from the answer (s4).",
+          "path": "vscode-plugin/src/models/model-tier-picker.ts"
+        },
+        {
+          "id": "jetbrains",
+          "label": "JetBrains model definitions",
+          "description": "Reads the answer for the Settings page (s5).",
+          "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt"
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "catalog",
+          "to": "defs",
+          "label": "validates"
+        },
+        {
+          "from": "registry",
+          "to": "catalog",
+          "label": "built from"
+        },
+        {
+          "from": "answer",
+          "to": "registry",
+          "label": "projects"
+        },
+        {
+          "from": "factory",
+          "to": "registry",
+          "label": "resolves tier"
+        },
+        {
+          "from": "factory",
+          "to": "cli",
+          "label": "constructs with host"
+        },
+        {
+          "from": "tui",
+          "to": "answer",
+          "label": "models.definitions"
+        },
+        {
+          "from": "vscode",
+          "to": "answer",
+          "label": "models.definitions"
+        },
+        {
+          "from": "jetbrains",
+          "to": "answer",
+          "label": "models.definitions"
+        }
+      ]
+    },
+    "sequenceDefinition": {
+      "id": "ollama-host-run",
+      "narrative": "A tier on a host family: the daemon resolves the declared model, checks Ollama before the run, then starts the CLI with the Ollama target for that subprocess only and checks the structured answer.",
+      "participants": [
+        {
+          "id": "work",
+          "label": "Daemon work",
+          "description": "A workflow or analyze step routed to a tier."
+        },
+        {
+          "id": "registry",
+          "label": "Model registry",
+          "description": "Resolves the tier's family, model and effort."
+        },
+        {
+          "id": "cli",
+          "label": "CLI provider",
+          "description": "Starts the claude or codex CLI."
+        },
+        {
+          "id": "ollama",
+          "label": "Local Ollama",
+          "description": "Serves the model, locally or from Ollama's cloud when signed in."
+        }
+      ],
+      "messages": [
+        {
+          "from": "work",
+          "to": "registry",
+          "label": "resolve tier",
+          "kind": "call",
+          "description": "Returns the host family and a declared model, or a model-not-supported fallback."
+        },
+        {
+          "from": "work",
+          "to": "cli",
+          "label": "run with host ollama",
+          "kind": "call",
+          "description": "One call at a time (k5)."
+        },
+        {
+          "from": "cli",
+          "to": "ollama",
+          "label": "pre-run check: reachable, model available / signed in",
+          "kind": "call",
+          "description": "Fails with the named cause if not."
+        },
+        {
+          "from": "cli",
+          "to": "ollama",
+          "label": "start CLI pointed at Ollama",
+          "kind": "call",
+          "description": "claude: environment for this subprocess; codex: local-provider flags."
+        },
+        {
+          "from": "ollama",
+          "to": "cli",
+          "label": "model output",
+          "kind": "return",
+          "description": "Structured answer from the CLI."
+        },
+        {
+          "from": "cli",
+          "to": "work",
+          "label": "checked structured answer",
+          "kind": "return",
+          "description": "Validated against the requested structure."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: runner families in the registry and definitions",
+      "quotedText": "Families live in the model registry; each carries a CLI kind ('claude' | 'codex' | undefined) and familyForClient maps a CLI client to its family."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/model-catalog.ts:37",
+      "quotedText": "export type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama';"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/model-catalog.ts:127",
+      "quotedText": "const FAMILY_IDS: readonly FamilyId[] = ['cli-claude', 'cli-codex', 'ollama'];"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/analyze/context/shaper-provider.ts:218",
+      "quotedText": "export function familyProvider("
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:144",
+      "quotedText": "export interface CliProviderOpts {"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:1452",
+      "quotedText": "'models.definitions':   () => modelDefinitions(),"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/models/model-tier-picker.ts:342",
+      "quotedText": "if (family.cliKind !== undefined) items.push({ label: 'Enter another model id…', description: 'checked by the daemon before it can be used', kind: 'enter-id' });"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt:63",
+      "quotedText": "fun families(): List<DefinedFamilyDto> = definitions.families.filter { it.cliKind != null }"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/model-registry.ts:105",
+      "quotedText": "familyForClient(client: StepClient | undefined, registry: ModelRegistry = getModelRegistry()): FamilyId | undefined"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/cli/panes/model-tiers.ts:189",
+      "quotedText": "if (family.cliKind === undefined) return { kind: 'refused', reason: `only listed ${family.displayName} models are selectable` };"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/config/analyze.ts:371",
+      "quotedText": "function isRunner(x: unknown): x is AnalyzeShaperProviderKind {"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/model-catalog.ts:140",
+      "quotedText": "function isCliFamily(id: FamilyId): id is CliFamilyId {"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/daemon/model-check.ts:319",
+      "quotedText": "const kind = typeof family === 'string' && registry.families().some(f => f.id === family) ? registry.cliKind(family as CliFamilyId) : undefined;"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/daemon/model-registry.ts:277",
+      "quotedText": "setting.runner !== 'ollama' && rejected(setting.runner).includes(setting.model) ? 'rejected-model' : 'unlisted-model';"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/workflow/attribution.ts:49",
+      "quotedText": "if (f.cliKind !== undefined && label.startsWith(f.cliKind)) return stamp(f.id, label);"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/model-catalog.test.ts:35",
+      "quotedText": "/** A valid minimal fixture with all three families. */"
+    }
+  ]
+}

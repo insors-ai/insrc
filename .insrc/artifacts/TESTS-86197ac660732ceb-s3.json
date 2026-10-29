@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s3",
     "createdAt": "2026-10-28T06:11:04.160Z",
-    "updatedAt": "2026-10-28T11:36:36.954Z",
+    "updatedAt": "2026-10-29T07:09:42.304Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -183,8 +183,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "09c477ff3",
-        "ranAt": "2026-10-28T06:16:49.401Z",
+        "commit": "1a0d20884",
+        "ranAt": "2026-10-29T07:02:03.199Z",
         "testsPassed": true,
         "tests": [
           {
@@ -209,6 +209,11 @@
                 "file": "src/daemon/threads/__tests__/registry-board.test.ts",
                 "title": "board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is",
+                "result": "pass"
               }
             ],
             "files": []
@@ -232,7 +237,7 @@
             "file": "src/daemon/__tests__/workflow-run-registry.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1074,
+            "durationMs": 950,
             "titles": [
               {
                 "title": "startWorkflowRun returns a runId synchronously and poll transitions running → done",
@@ -265,7 +270,7 @@
             "file": "src/daemon/threads/__tests__/registry-board.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 772,
+            "durationMs": 801,
             "titles": [
               {
                 "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
@@ -293,6 +298,10 @@
               },
               {
                 "title": "board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread",
+                "result": "pass"
+              },
+              {
+                "title": "board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is",
                 "result": "pass"
               }
             ],
@@ -401,8 +410,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "1f514e892",
-        "ranAt": "2026-10-28T06:27:16.702Z",
+        "commit": "1a0d20884",
+        "ranAt": "2026-10-29T07:03:15.315Z",
         "testsPassed": true,
         "tests": [
           {
@@ -413,6 +422,11 @@
               {
                 "file": "src/daemon/threads/__tests__/session-worker.test.ts",
                 "title": "session worker: starts, reports ready and serves a session method with today's response under the maintenance request hold",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-worker.test.ts",
+                "title": "session worker: the running full indexes published on the board reach the worker's search guard",
                 "result": "pass"
               }
             ],
@@ -437,7 +451,7 @@
             "file": "src/daemon/threads/__tests__/session-worker.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1370,
+            "durationMs": 1470,
             "titles": [
               {
                 "title": "session worker: starts, reports ready and serves a session method with today's response under the maintenance request hold",
@@ -445,6 +459,10 @@
               },
               {
                 "title": "session worker: a nested session-class call runs inline on the worker thread",
+                "result": "pass"
+              },
+              {
+                "title": "session worker: the running full indexes published on the board reach the worker's search guard",
                 "result": "pass"
               }
             ],
@@ -490,8 +508,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "39dbb0d76",
-        "ranAt": "2026-10-28T06:37:17.423Z",
+        "commit": "1a0d20884",
+        "ranAt": "2026-10-29T07:04:52.718Z",
         "testsPassed": true,
         "tests": [
           {
@@ -516,6 +534,16 @@
                 "file": "src/daemon/threads/__tests__/session-pool.test.ts",
                 "title": "session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: close waits for a start under way, releases that worker too, and refuses any later start",
+                "result": "pass"
               }
             ],
             "files": []
@@ -528,6 +556,11 @@
               {
                 "file": "src/daemon/threads/__tests__/session-pool.test.ts",
                 "title": "session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: a worker that exits is unregistered and disconnected from its main-thread services",
                 "result": "pass"
               }
             ],
@@ -552,7 +585,7 @@
             "file": "src/daemon/threads/__tests__/session-pool.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 540,
+            "durationMs": 590,
             "titles": [
               {
                 "title": "session pool: concurrent workerFor calls for one session start one worker",
@@ -569,6 +602,18 @@
               {
                 "title": "session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config",
                 "result": "pass"
+              },
+              {
+                "title": "session pool: a worker that exits is unregistered and disconnected from its main-thread services",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: close waits for a start under way, releases that worker too, and refuses any later start",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -577,8 +622,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "364788cb5",
-        "ranAt": "2026-10-28T11:10:37.130Z",
+        "commit": "e166feb0e",
+        "ranAt": "2026-10-29T07:05:52.300Z",
         "testsPassed": true,
         "tests": [
           {
@@ -589,6 +634,16 @@
               {
                 "file": "src/daemon/threads/__tests__/router-session.test.ts",
                 "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
                 "result": "pass"
               }
             ],
@@ -626,7 +681,7 @@
             "file": "src/daemon/threads/__tests__/router-session.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 630,
+            "durationMs": 706,
             "titles": [
               {
                 "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
@@ -639,6 +694,22 @@
               {
                 "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
                 "result": "pass"
+              },
+              {
+                "title": "router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -647,8 +718,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "bccc20bed",
-        "ranAt": "2026-10-28T11:17:46.173Z",
+        "commit": "e166feb0e",
+        "ranAt": "2026-10-29T07:07:07.362Z",
         "testsPassed": true,
         "tests": [
           {
@@ -659,6 +730,16 @@
               {
                 "file": "src/daemon/threads/__tests__/session-failure.test.ts",
                 "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
                 "result": "pass"
               }
             ],
@@ -672,6 +753,11 @@
               {
                 "file": "src/daemon/threads/__tests__/session-failure.test.ts",
                 "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
                 "result": "pass"
               }
             ],
@@ -693,10 +779,47 @@
         ],
         "files": [
           {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 686,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/threads/__tests__/session-failure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3854,
+            "durationMs": 5449,
             "titles": [
               {
                 "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
@@ -708,6 +831,10 @@
               },
               {
                 "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+                "result": "pass"
+              },
+              {
+                "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
                 "result": "pass"
               }
             ],
@@ -782,8 +909,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "d3224a1c4",
-        "ranAt": "2026-10-28T11:32:55.336Z",
+        "commit": "e166feb0e",
+        "ranAt": "2026-10-29T07:09:42.304Z",
         "testsPassed": true,
         "tests": [
           {
@@ -832,7 +959,7 @@
             "cases": [
               {
                 "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
-                "title": "ac5: no Promise.all over provider calls in the new modules",
+                "title": "ac5: no Promise.all over provider calls in the modules s3 adds or changes",
                 "result": "pass"
               }
             ],
@@ -845,7 +972,7 @@
             "cases": [
               {
                 "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
-                "title": "ac5: a recording provider shows a session method's provider calls strictly sequential",
+                "title": "ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once",
                 "result": "pass"
               }
             ],
@@ -870,7 +997,7 @@
             "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 20130,
+            "durationMs": 39983,
             "titles": [
               {
                 "title": "ac1: session B is answered on its own thread while session A's worker spins",
@@ -885,15 +1012,23 @@
                 "result": "pass"
               },
               {
-                "title": "ac5: no Promise.all over provider calls in the new modules",
+                "title": "ac5: no Promise.all over provider calls in the modules s3 adds or changes",
                 "result": "pass"
               },
               {
-                "title": "ac5: a recording provider shows a session method's provider calls strictly sequential",
+                "title": "ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once",
                 "result": "pass"
               },
               {
                 "title": "ac6: a token of each step kind resumes on a new worker after an idle release",
+                "result": "pass"
+              },
+              {
+                "title": "ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins",
+                "result": "pass"
+              },
+              {
+                "title": "parity: moved session methods answer over the socket as the single-thread daemon does",
                 "result": "pass"
               }
             ],

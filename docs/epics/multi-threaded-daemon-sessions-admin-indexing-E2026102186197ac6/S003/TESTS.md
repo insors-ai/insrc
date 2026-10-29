@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 43 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -53,7 +53,7 @@ Run at 2026-10-28T06:12:47.117Z on commit `74622c083`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-10-28T06:16:49.401Z on commit `09c477ff3`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T07:02:03.199Z on commit `1a0d20884`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: workflow run registry: poll from the board returns frames since cursor, model, result and error; unknown after forgetRun**
 
@@ -66,6 +66,7 @@ Run at 2026-10-28T06:16:49.401Z on commit `09c477ff3`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread | `src/daemon/threads/__tests__/registry-board.test.ts` |
+| pass | board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is | `src/daemon/threads/__tests__/registry-board.test.ts` |
 
 **unit: workflow run registry: with threads disabled start/poll/abort answer as today**
 
@@ -77,8 +78,8 @@ Run at 2026-10-28T06:16:49.401Z on commit `09c477ff3`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/workflow-run-registry.test.ts` | 0 | 6 | 1.1 s |  |
-| `src/daemon/threads/__tests__/registry-board.test.ts` | 0 | 7 | 0.8 s |  |
+| `src/daemon/__tests__/workflow-run-registry.test.ts` | 0 | 6 | 1 s |  |
+| `src/daemon/threads/__tests__/registry-board.test.ts` | 0 | 8 | 0.8 s |  |
 
 ## t4
 
@@ -111,13 +112,14 @@ Run at 2026-10-28T06:22:10.306Z on commit `2ba5a8688`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-10-28T06:27:16.702Z on commit `1f514e892`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T07:03:15.315Z on commit `1a0d20884`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: session worker: starts, reports ready and serves a session method with today's response under the maintenance request hold**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | session worker: starts, reports ready and serves a session method with today's response under the maintenance request hold | `src/daemon/threads/__tests__/session-worker.test.ts` |
+| pass | session worker: the running full indexes published on the board reach the worker's search guard | `src/daemon/threads/__tests__/session-worker.test.ts` |
 
 **integration: session worker: a nested session-class call runs inline on the worker thread**
 
@@ -129,7 +131,7 @@ Run at 2026-10-28T06:27:16.702Z on commit `1f514e892`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/session-worker.test.ts` | 0 | 2 | 1.4 s |  |
+| `src/daemon/threads/__tests__/session-worker.test.ts` | 0 | 3 | 1.5 s |  |
 
 ## t6
 
@@ -149,7 +151,7 @@ Run at 2026-10-28T06:30:30.547Z on commit `1504ebb63`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-10-28T06:37:17.423Z on commit `39dbb0d76`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T07:04:52.718Z on commit `1a0d20884`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: session pool: concurrent workerFor calls for one session start one worker**
 
@@ -162,12 +164,15 @@ Run at 2026-10-28T06:37:17.423Z on commit `39dbb0d76`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight | `src/daemon/threads/__tests__/session-pool.test.ts` |
+| pass | session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn | `src/daemon/threads/__tests__/session-pool.test.ts` |
+| pass | session pool: close waits for a start under way, releases that worker too, and refuses any later start | `src/daemon/threads/__tests__/session-pool.test.ts` |
 
 **unit: session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries | `src/daemon/threads/__tests__/session-pool.test.ts` |
+| pass | session pool: a worker that exits is unregistered and disconnected from its main-thread services | `src/daemon/threads/__tests__/session-pool.test.ts` |
 
 **unit: session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config**
 
@@ -179,17 +184,19 @@ Run at 2026-10-28T06:37:17.423Z on commit `39dbb0d76`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/session-pool.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/daemon/threads/__tests__/session-pool.test.ts` | 0 | 7 | 0.6 s |  |
 
 ## t8
 
-Run at 2026-10-28T11:10:37.130Z on commit `364788cb5`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T07:05:52.300Z on commit `e166feb0e`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame | `src/daemon/threads/__tests__/router-session.test.ts` |
+| pass | router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes) | `src/daemon/threads/__tests__/router-session.test.ts` |
+| pass | router: a request cancelled while its worker is still starting never leaves the worker busy | `src/daemon/threads/__tests__/router-session.test.ts` |
 
 **unit: router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed**
 
@@ -207,23 +214,26 @@ Run at 2026-10-28T11:10:37.130Z on commit `364788cb5`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/router-session.test.ts` | 0 | 3 | 0.6 s |  |
+| `src/daemon/threads/__tests__/router-session.test.ts` | 0 | 7 | 0.7 s |  |
 
 ## t9
 
-Run at 2026-10-28T11:17:46.173Z on commit `bccc20bed`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T07:07:07.362Z on commit `e166feb0e`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: failure: a session worker exit fails only its running and queued requests; the next request gets a new worker**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | failure: a session worker exit fails only its running and queued requests; the next request gets a new worker | `src/daemon/threads/__tests__/session-failure.test.ts` |
+| pass | router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker | `src/daemon/threads/__tests__/router-session.test.ts` |
+| pass | close: a request in flight on a released worker is answered, and a request after close is refused | `src/daemon/threads/__tests__/session-failure.test.ts` |
 
 **integration: runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason | `src/daemon/threads/__tests__/session-failure.test.ts` |
+| pass | router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here | `src/daemon/threads/__tests__/router-session.test.ts` |
 
 **integration: shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one**
 
@@ -235,7 +245,8 @@ Run at 2026-10-28T11:17:46.173Z on commit `bccc20bed`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 3 | 3.9 s |  |
+| `src/daemon/threads/__tests__/router-session.test.ts` | 0 | 7 | 0.7 s |  |
+| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 4 | 5.4 s |  |
 
 ## t10
 
@@ -261,7 +272,7 @@ Run at 2026-10-28T11:22:52.060Z on commit `29d2430be`. Tests check: **passed**. 
 
 ## t11
 
-Run at 2026-10-28T11:32:55.336Z on commit `d3224a1c4`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T07:09:42.304Z on commit `e166feb0e`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: ac1: session B is answered on its own thread while session A's worker spins**
 
@@ -285,13 +296,13 @@ Run at 2026-10-28T11:32:55.336Z on commit `d3224a1c4`. Tests check: **passed**. 
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | ac5: no Promise.all over provider calls in the new modules | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+| pass | ac5: no Promise.all over provider calls in the modules s3 adds or changes | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
 
 **integration: ac5: a recording provider shows a session method's provider calls strictly sequential**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | ac5: a recording provider shows a session method's provider calls strictly sequential | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
+| pass | ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once | `src/daemon/threads/__tests__/s3-acceptance.test.ts` |
 
 **integration: ac6: a token of each step kind resumes on a new worker after an idle release**
 
@@ -303,7 +314,7 @@ Run at 2026-10-28T11:32:55.336Z on commit `d3224a1c4`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/s3-acceptance.test.ts` | 0 | 6 | 20.1 s |  |
+| `src/daemon/threads/__tests__/s3-acceptance.test.ts` | 0 | 8 | 40 s |  |
 
 ## t12
 

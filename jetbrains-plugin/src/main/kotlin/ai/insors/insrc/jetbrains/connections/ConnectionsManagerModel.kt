@@ -29,6 +29,7 @@ sealed interface ManagerEvent {
     data class Select(val selection: ConnectionSelection) : ManagerEvent
     data class CommittedReveal(val selection: ConnectionSelection) : ManagerEvent
     data class Epoch(val value: String) : ManagerEvent
+    data object TemporaryEnded : ManagerEvent
     data class Unavailable(val code: String) : ManagerEvent
     data object Close : ManagerEvent
 }
@@ -103,6 +104,7 @@ object ConnectionsManagerModel {
             is ManagerEvent.Select -> if(!live(s) || visible(s).none {it.key==event.selection.key && it.revision==event.selection.revision}) unchanged() else changed(s.copy(selected=event.selection))
             is ManagerEvent.CommittedReveal -> if(event.selection.key.repoRoot!=s.repoRoot) unchanged() else refresh(s.copy(pendingReveal=event.selection))
             is ManagerEvent.Epoch -> if(event.value==s.daemonEpoch) unchanged() else changed(s.copy(daemonEpoch=event.value,viewGeneration=advance(s),awaitingRead=false,listState=if(s.repoRoot!=null)"offline" else "no-repository",storedRows=s.rows.filter {it.key.scope=="saved"},selected=null,pendingReveal=null))
+            ManagerEvent.TemporaryEnded -> changed(s.copy(viewGeneration=advance(s),awaitingRead=false,listState=if(s.repoRoot!=null)"offline"else"no-repository",storedRows=s.rows.filter{it.key.scope=="saved"},selected=s.selected?.takeIf{it.key.scope=="saved"},pendingReveal=null))
             is ManagerEvent.Unavailable -> {
                 require(event.code in setOf("offline","upgrade-required"));changed(s.copy(awaitingRead=false,viewGeneration=advance(s),listState=if(s.repoRoot!=null)event.code else "no-repository"))
             }

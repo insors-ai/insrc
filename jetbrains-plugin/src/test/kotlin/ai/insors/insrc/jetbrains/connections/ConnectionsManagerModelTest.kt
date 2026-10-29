@@ -23,14 +23,15 @@ class ConnectionsManagerModelTest {
             "select" -> ManagerEvent.Select(selection(o.getAsJsonObject("selection")))
             "committed-reveal" -> ManagerEvent.CommittedReveal(selection(o.getAsJsonObject("selection")))
             "epoch" -> ManagerEvent.Epoch(o["value"].asString)
+            "temporary-ended" -> ManagerEvent.TemporaryEnded
             "unavailable" -> ManagerEvent.Unavailable(o["code"].asString)
             "close" -> ManagerEvent.Close
             else -> error("Unsupported shared model event")
         }
     }
-    @Test fun `same fifteen sc7 transcripts match state projections and effects`() {
+    @Test fun `same sixteen sc7 transcripts match state projections and effects`() {
         val scenarios=ConnectionCorpus.load().getAsJsonArray("managerScenarios")
-        assertEquals(15,scenarios.size())
+        assertEquals(16,scenarios.size())
         for(raw in scenarios) {
             val scenario=raw.asJsonObject;val id=scenario["id"].asString
             var state=ConnectionsManagerModel.create(listOf("/fixture/repo-a","/fixture/repo-b"),"fixture-epoch")

@@ -4900,6 +4900,204 @@
           }
         }
       ]
+    },
+    {
+      "id": "authenticated-temporary-revocation",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "viewGeneration": 1
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "daemonEpoch": "fixture-epoch",
+            "viewGeneration": 1,
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {},
+                "ephemeral": true
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "revoked-fixture"
+              },
+              "revision": "33333333-3333-4333-8333-333333333333"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "revoked-fixture"
+              },
+              "revision": "33333333-3333-4333-8333-333333333333"
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "listState": "loading",
+            "viewGeneration": 2
+          }
+        },
+        {
+          "event": {
+            "type": "temporary-ended"
+          },
+          "expected": {
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              }
+            ],
+            "selected": null,
+            "listState": "offline",
+            "viewGeneration": 3,
+            "counts": {
+              "all": 1,
+              "saved": 1,
+              "temporary": 0
+            },
+            "awaitingRead": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "daemonEpoch": "fixture-epoch",
+            "viewGeneration": 2,
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {},
+                "ephemeral": true
+              }
+            ]
+          },
+          "expected": {
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              }
+            ],
+            "selected": null,
+            "listState": "offline",
+            "viewGeneration": 3
+          }
+        }
+      ]
     }
   ],
   "draftScenarios": [

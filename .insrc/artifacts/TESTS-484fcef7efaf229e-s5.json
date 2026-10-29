@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T18:07:35.864Z",
+    "updatedAt": "2026-10-29T18:42:25.291Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -817,6 +817,69 @@
             "titles": [
               {
                 "title": "CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "7298b13b8",
+        "ranAt": "2026-10-29T18:42:25.291Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4076,
+            "titles": [
+              {
+                "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON",
                 "result": "pass"
               }
             ],

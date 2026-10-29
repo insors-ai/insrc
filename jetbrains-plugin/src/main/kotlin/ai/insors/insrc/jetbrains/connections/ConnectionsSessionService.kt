@@ -3,11 +3,15 @@ package ai.insors.insrc.jetbrains.connections
 import ai.insors.insrc.jetbrains.daemon.ConnectionLaneCall
 import ai.insors.insrc.jetbrains.daemon.ConnectionLaneException
 import ai.insors.insrc.jetbrains.daemon.PersistentDaemonLane
+import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
+import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
@@ -19,10 +23,22 @@ class ConnectionsSessionService(private val project: Project) : Disposable {
     private var owner = ConnectionsSessionOwner(alive = { !project.isDisposed && !serviceDisposed })
     private var mutationOwner: ProjectMutationOwner? = null
     private var removalOwner: ConnectionRemovals? = null
+    private var managerOwner: ConnectionsManagerGateway? = null
+    private var managerRoots:()->List<String> = {
+        when(val result=service<DaemonGatewayService>().registeredRepos()){
+            is RegisteredReposResult.Loaded->result.repos
+            is RegisteredReposResult.Unavailable->throw ConnectionOwnerException("offline")
+        }
+    }
     private var draftTests: ConnectionDraftTests? = null
     private var testRevocation: AutoCloseable? = null
     private var mutationTiming = MutationTiming()
     @Volatile private var serviceDisposed = false
+    @Synchronized fun manager():ConnectionsManagerGateway {
+        if(serviceDisposed||project.isDisposed)throw MutationStateException("disposed")
+        return managerOwner?:ConnectionsManagerGateway(this,managerRoots){!serviceDisposed&&!project.isDisposed}.also{managerOwner=it}
+    }
+    @Synchronized internal fun installManagerFixtureRoots(roots:()->List<String>){check(!serviceDisposed&&managerOwner==null);managerRoots=roots}
     @Synchronized fun removals():ConnectionRemovals {
         if(serviceDisposed||project.isDisposed)throw MutationStateException("disposed")
         return removalOwner?:ConnectionRemovals(mutations()).also{removalOwner=it}
@@ -32,7 +48,7 @@ class ConnectionsSessionService(private val project: Project) : Disposable {
         val subscription=controller.onChange{
             val generation=controller.generation;val app=ApplicationManager.getApplication()
             val deliver=Runnable{if(active.get()&&!project.isDisposed&&!serviceDisposed&&generation==controller.generation)listener()}
-            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver)
+            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver,ModalityState.any())
         }
         return AutoCloseable{active.set(false);subscription.close()}
     }
@@ -47,7 +63,7 @@ class ConnectionsSessionService(private val project: Project) : Disposable {
         val subscription=controller.onChange {
             val generation=controller.generation;val app=ApplicationManager.getApplication()
             val deliver=Runnable{if(active.get()&&!project.isDisposed&&!serviceDisposed&&generation==controller.generation)listener()}
-            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver)
+            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver,ModalityState.any())
         }
         return AutoCloseable{active.set(false);subscription.close()}
     }
@@ -60,7 +76,7 @@ class ConnectionsSessionService(private val project: Project) : Disposable {
         val subscription=mutations().onChange {
             val app=ApplicationManager.getApplication()
             val deliver=Runnable{if(active.get()&&!project.isDisposed&&!serviceDisposed)listener()}
-            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver)
+            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver,ModalityState.any())
         }
         return AutoCloseable{active.set(false);subscription.close()}
     }
@@ -75,17 +91,17 @@ class ConnectionsSessionService(private val project: Project) : Disposable {
         val subscription=owner.onChange { view ->
             val app = ApplicationManager.getApplication()
             val deliver = Runnable { if (active.get()&&!project.isDisposed && view.generation == owner.view.generation) listener(view) }
-            if (app.isDispatchThread) deliver.run() else app.invokeLater(deliver)
+            if (app.isDispatchThread) deliver.run() else app.invokeLater(deliver,ModalityState.any())
         }
         return AutoCloseable{active.set(false);subscription.close()}
     }
     /** Private controller erasure is synchronous; it must not wait for EDT delivery. */
     fun onTemporaryInvalidated(listener: () -> Unit): AutoCloseable = owner.onTemporaryInvalidated(listener)
     override fun dispose() {
-        synchronized(this){if(serviceDisposed)return;serviceDisposed=true;testRevocation?.close();draftTests?.close();removalOwner?.close();mutationOwner?.revocation?.close();mutationOwner?.controller?.close()}
+        synchronized(this){if(serviceDisposed)return;serviceDisposed=true;managerOwner?.close();testRevocation?.close();draftTests?.close();removalOwner?.close();mutationOwner?.revocation?.close();mutationOwner?.controller?.close()}
         owner.close()
     }
-    fun whenDisposed(): CompletionStage<Void> = CompletableFuture.allOf(owner.whenDisposed().toCompletableFuture(),mutationOwner?.controller?.whenDisposed()?.toCompletableFuture()?:CompletableFuture.completedFuture(null))
+    fun whenDisposed(): CompletionStage<Void> = CompletableFuture.allOf(owner.whenDisposed().toCompletableFuture(),mutationOwner?.controller?.whenDisposed()?.toCompletableFuture()?:CompletableFuture.completedFuture(null),managerOwner?.whenDisposed()?.toCompletableFuture()?:CompletableFuture.completedFuture(null))
     @Synchronized internal fun installMutationFixtureTiming(timing:MutationTiming){check(!serviceDisposed&&mutationOwner==null);mutationTiming=timing}
     /** Per-instance transport/clock seam, installable only before any root/session work. */
     internal fun installFixturePorts(ports: ConnectionOwnerPorts) {

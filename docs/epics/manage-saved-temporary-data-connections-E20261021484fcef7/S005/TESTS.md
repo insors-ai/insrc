@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 39 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 43 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -299,3 +299,22 @@ Run at 2026-10-29T18:07:35.864Z on commit `8f1861afd`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-removal.test.ts` | 0 | 1 | 11.6 s |  |
+
+## t18
+
+Run at 2026-10-29T18:42:25.291Z on commit `7298b13b8`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 4 | 4.1 s |  |

@@ -31,6 +31,7 @@ export type DaemonReachability = 'running' | 'stopped' | 'errored';
 const DAEMON_DOWN_PREFIX = 'daemon is not running';
 
 let _nextId = 1;
+const connectToDaemon = (): Socket => createConnection(PATHS.sockFile);
 
 /**
  * The connection to the daemon was lost after a request was written and before
@@ -61,7 +62,7 @@ export class DaemonDisconnectedError extends Error {
  * Moved verbatim from src/cli/client.ts (which now re-exports it) so the CLI/TUI
  * and the extension share exactly one socket-client path.
  */
-export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T> {
+export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = connectToDaemon): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const socket = connect();
     let   buffer = '';
@@ -184,7 +185,7 @@ function laneRequestJson(value:unknown):string {
  const active=new Set<object>();let nodes=0,estimated=0;
  const visit=(v:unknown,depth:number):void=>{
   if(++nodes>IPC_LANE_LIMITS.nodes||depth>IPC_LANE_LIMITS.depth)throw new IpcLaneError('invalid-request',false);
-  if(typeof v==='string'){estimated+=Buffer.byteLength(JSON.stringify(v));}
+  if(typeof v==='string'){if(v.length>IPC_LANE_LIMITS.frameBytes)throw new IpcLaneError('invalid-request',false);estimated+=Buffer.byteLength(JSON.stringify(v));}
   else if(v===null||typeof v==='boolean'||typeof v==='number'&&Number.isFinite(v)){estimated+=String(v).length;}
   else {
    if(typeof v!=='object'||active.has(v))throw new IpcLaneError('invalid-request',false);
@@ -193,7 +194,7 @@ function laneRequestJson(value:unknown):string {
    const d=Object.getOwnPropertyDescriptors(v),keys=Reflect.ownKeys(d);
    if(array&&keys.length!==(v as unknown[]).length+1)throw new IpcLaneError('invalid-request',false);
    for(const k of keys){
-    if(typeof k!=='string')throw new IpcLaneError('invalid-request',false);
+    if(typeof k!=='string'||k.length>IPC_LANE_LIMITS.frameBytes)throw new IpcLaneError('invalid-request',false);
     if(array&&k==='length')continue;
     const item=d[k]!;
     if(!item.enumerable||!Object.hasOwn(item,'value')||['__proto__','constructor','prototype'].includes(k)||array&&!/^(0|[1-9]\d*)$/.test(k))throw new IpcLaneError('invalid-request',false);
@@ -219,6 +220,10 @@ function laneReplyJson(text:string):IpcResponse {
   }else if(c==='{'||c==='['){if(++nodes>IPC_LANE_LIMITS.nodes||stack.length>=IPC_LANE_LIMITS.depth+1)throw new Error();stack.push({object:c==='{',key:c==='{',keys:new Set()});}
   else if(c==='}'||c===']'){const top=stack.pop();if(!top||top.object!==(c==='}'))throw new Error();}
   else if(c===','&&stack.at(-1)?.object){stack.at(-1)!.key=true;}
+  else if(c==='-'||c!==undefined&&(/[0-9]/.test(c)||c==='t'||c==='f'||c==='n')){
+   if(++nodes>IPC_LANE_LIMITS.nodes)throw new Error();
+   while(i+1<text.length&&!/[\s,}\]]/.test(text[i+1]!))i++;
+  }
  }
  if(stack.length)throw new Error();
  const v=JSON.parse(text) as IpcResponse;
@@ -238,9 +243,9 @@ export function openIpcLane(options:IpcLaneOptions={}):PersistentIpcLane {
  let nextId=options.firstRequestId??1;
  if(!Number.isSafeInteger(nextId)||nextId<1)throw new IpcLaneError('invalid-request',false);
  let socket:Socket;
- try{socket=(options.connect??(()=>createConnection(PATHS.sockFile)))();}catch{throw new IpcLaneError('disconnected',false);}
+ try{socket=(options.connect??connectToDaemon)();}catch{throw new IpcLaneError('disconnected',false);}
  const pending=new Map<number,LanePending>(),abandoned=new Set<number>(),listeners=new Set<(reason:IpcLaneFailure)=>void>();
- let closed=false,connected=false,backpressure=false,inFlightBytes=0,partial=Buffer.alloc(0),closeReason:IpcLaneFailure='closed';
+ let closed=false,connected=false,backpressure=false,inFlightBytes=0,partial=Buffer.alloc(8192),partialBytes=0,closeReason:IpcLaneFailure='closed';
  const finish=(p:LanePending,error?:IpcLaneError,value?:unknown):void=>{
   if(pending.get(p.id)!==p)return;
   pending.delete(p.id);inFlightBytes-=p.bytes;p.frame='';if(p.timer)clearTimeout(p.timer);if(p.abort)p.signal?.removeEventListener('abort',p.abort);
@@ -249,7 +254,7 @@ export function openIpcLane(options:IpcLaneOptions={}):PersistentIpcLane {
  const close=(reason:IpcLaneFailure):void=>{
   if(closed)return;closed=true;closeReason=reason;
   for(const p of pending.values())finish(p,new IpcLaneError(reason,p.written));
-  abandoned.clear();partial=Buffer.alloc(0);
+  abandoned.clear();partial=Buffer.alloc(0);partialBytes=0;
   socket.off('connect',onConnect);socket.off('data',onData);socket.off('error',onError);socket.off('end',onEnd);socket.off('close',onSocketClose);socket.off('drain',onDrain);
   // Destroy without forwarding a raw error; absorb any already queued socket error until close.
   socket.on('error',ignoreLaneSocketError);socket.once('close',()=>socket.off('error',ignoreLaneSocketError));socket.destroy();
@@ -269,7 +274,7 @@ export function openIpcLane(options:IpcLaneOptions={}):PersistentIpcLane {
  const onConnect=():void=>{connected=true;flush();};
  const onDrain=():void=>{backpressure=false;flush();};
  const onError=():void=>close('disconnected');
- const onEnd=():void=>close(partial.length?'invalid-response':'disconnected');
+ const onEnd=():void=>close(partialBytes?'invalid-response':'disconnected');
  const onSocketClose=():void=>close('disconnected');
  const onData=(chunk:Buffer):void=>{
   if(closed)return;
@@ -277,10 +282,13 @@ export function openIpcLane(options:IpcLaneOptions={}):PersistentIpcLane {
    let offset=0;
    while(offset<chunk.length){
     const end=chunk.indexOf(10,offset),stop=end<0?chunk.length:end;
-    if(partial.length+stop-offset>IPC_LANE_LIMITS.frameBytes)throw new Error();
-    partial=Buffer.concat([partial,chunk.subarray(offset,stop)]);offset=stop+(end<0?0:1);
+    const needed=partialBytes+stop-offset;
+    if(needed>IPC_LANE_LIMITS.frameBytes)throw new Error();
+    if(needed>partial.length){const grown=Buffer.alloc(Math.min(IPC_LANE_LIMITS.frameBytes,Math.max(needed,partial.length*2)));partial.copy(grown,0,0,partialBytes);partial=grown;}
+    chunk.copy(partial,partialBytes,offset,stop);partialBytes=needed;offset=stop+(end<0?0:1);
     if(end<0)break;
-    const reply=laneReplyJson(new TextDecoder('utf-8',{fatal:true}).decode(partial));partial=Buffer.alloc(0);
+    const reply=laneReplyJson(new TextDecoder('utf-8',{fatal:true}).decode(partial.subarray(0,partialBytes)));partialBytes=0;
+    if(partial.length>65536)partial=Buffer.alloc(8192);
     const p=pending.get(reply.id);
     if(!p){if(abandoned.delete(reply.id))continue;throw new Error();}
     if(!p.written)throw new Error();

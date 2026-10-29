@@ -1,0 +1,43 @@
+{
+  "task": "s5/t4",
+  "result": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "typecheck": "Node22 tsc --noEmit passed",
+  "limits": {
+    "frameBytes": 16777216,
+    "inFlightBytes": 16777216,
+    "pending": 64,
+    "abandoned": 256,
+    "timeoutMs": 15000,
+    "depth": 32,
+    "nodes": 131072
+  },
+  "actualSocketChecks": [
+    "Persistent multiplexing/out-of-order replies",
+    "Split UTF8 and multiple frames in one chunk",
+    "Late canceled reply cannot alias a new request",
+    "Legacy one-shot compatibility"
+  ],
+  "controlledChecks": [
+    "Pre/postwrite disconnect, partial-write throw always unknown",
+    "Backpressure/queued timeout or cancel, no later write",
+    "Pending count and aggregate byte refusal before send; no eviction",
+    "Malformed/duplicate/unsolicited/invalid UTF8/depth/node/frame bounds",
+    "Getter/cycle/oversized request refusal before write",
+    "ID exhaustion closes rather than reuses an ID",
+    "Idempotent disposal and zero owned listeners"
+  ],
+  "thinBoundary": "Existing module imports still only node:net, shared types and shared paths; one default socket factory reused by both lanes and one-shot rpc.",
+  "fullSweepRun": false,
+  "releaseEnabled": false,
+  "hashes": {
+    "src/shared/ipc-client.ts": "a06f7a2ca4ec1604c515f08b0eff028c5d32fb79bdffdf6bd4f315e0a25e9617",
+    "src/shared/__tests__/ipc-lane.test.ts": "2c6a459f1baa3e5b78cefccadc3d09388a220c5f82bf80f80f8f4982a945ddd0"
+  }
+}

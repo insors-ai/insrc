@@ -210,12 +210,16 @@
 	},
 	"src/analyze/orchestrator/live-runs.ts#liveCount": {
 		"class": "per-thread",
-		"reason": "MOVING INLINE (user decision 2026-10-29): analyze.run.status and analyze.run.purge (session-class) judge a run alive by this thread's count; served by another worker they see no live run, rewrite a running run's record as run-abandoned, or purge a live run."
+		"reason": "Counts the analyze runs live on this thread; each run id that becomes live is published to the status board with its owner thread, and analyze.run.status / analyze.run.purge for it are sent to that owner, where this count is true (Story 5d393a4b)."
 	},
 	"src/analyze/orchestrator/live-runs.ts#ownerLiveCounts": {
 		"class": "one-owner",
 		"owner": "main",
 		"reason": "Live-run counts for session-memory executions only; those are connection-scoped and run on the main thread."
+	},
+	"src/analyze/orchestrator/live-runs.ts#publisher": {
+		"class": "per-thread",
+		"reason": "This thread's hook publishing its live analyze runs to the status board with its own thread id; each thread installs its own (the main thread and every session worker)."
 	},
 	"src/analyze/orchestrator/persistence.ts#recordPortAuthorities": {
 		"class": "per-thread",

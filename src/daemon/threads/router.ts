@@ -160,6 +160,8 @@ export class Router {
 	private sessions: RouterSessions | undefined;
 	/** The thread that owns a detached run (the status board), for workflow.run.abort. */
 	private runOwner: ((runId: string) => number | undefined) | undefined;
+	/** The thread running a live analyze run (the status board), for analyze.run.status and analyze.run.purge (Story 5d393a4b). */
+	private analyzeRunOwner: ((runId: string) => number | undefined) | undefined;
 	private readonly holdMs: number;
 	/** opts.local, each request under the maintenance lock's request hold. */
 	private readonly local: ForwardRequest;
@@ -171,10 +173,14 @@ export class Router {
 		this.local = holdingForward(opts.local);
 	}
 
-	/** Route session work through the session pool from now on (s3); `runOwner` names a detached run's owner thread. */
-	useSessions(sessions: RouterSessions, runOwner?: (runId: string) => number | undefined): void {
+	/**
+	 * Route session work through the session pool from now on (s3); `runOwner` names a detached run's owner thread,
+	 * `analyzeRunOwner` the thread running a live analyze run.
+	 */
+	useSessions(sessions: RouterSessions, runOwner?: (runId: string) => number | undefined, analyzeRunOwner?: (runId: string) => number | undefined): void {
 		this.sessions = sessions;
 		this.runOwner = runOwner;
+		this.analyzeRunOwner = analyzeRunOwner;
 	}
 
 	/**
@@ -246,8 +252,13 @@ export class Router {
 		// An abort goes to the thread that owns the run, whichever session sends it: this thread
 		// for a run a connection-scoped request started here, else the owner's worker, which is
 		// busy (not idle-released) until the abort's reply.
-		if (request.method === 'workflow.run.abort') {
-			const owner = this.runOwner?.(String((request.params as { runId?: unknown } | null)?.runId ?? ''));
+		// The same for the status or purge of a live analyze run (Story 5d393a4b): only the thread
+		// running it knows it is live; anywhere else it would read as abandoned. A run live nowhere
+		// is answered as before, by the session's worker.
+		const ownerOf = request.method === 'workflow.run.abort' ? this.runOwner
+			: request.method === 'analyze.run.status' || request.method === 'analyze.run.purge' ? this.analyzeRunOwner : undefined;
+		if (ownerOf !== undefined) {
+			const owner = ownerOf(String((request.params as { runId?: unknown } | null)?.runId ?? ''));
 			if (owner === mainThreadId) return this.local(request, deliver);
 			if (owner !== undefined && this.ports.has(owner)) {
 				const sessions = this.sessions!;

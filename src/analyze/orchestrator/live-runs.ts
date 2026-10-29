@@ -21,18 +21,36 @@ import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 
 const liveCount = new Map<string, number>();
 
+/**
+ * Told when a run id starts or stops being live on this thread (Story 5d393a4b): with daemon
+ * threads, the status board then knows the owner, and analyze.run.status / analyze.run.purge
+ * for that id are sent to it, where this count is true.
+ */
+let publisher: ((runId: string, live: boolean) => void) | undefined;
+export function setLiveRunPublisher(fn: ((runId: string, live: boolean) => void) | undefined): void {
+	publisher = fn;
+}
+const up = (runId: string): void => {
+	const count = liveCount.get(runId) ?? 0;
+	liveCount.set(runId, count + 1);
+	if (count === 0) publisher?.(runId, true);
+};
+const down = (runId: string): void => {
+	const count = liveCount.get(runId) ?? 0;
+	if (count <= 1) { liveCount.delete(runId); if (count === 1) publisher?.(runId, false); }
+	else liveCount.set(runId, count - 1);
+};
+
 /** One more run is going under this id. */
 export function raiseRunLive(runId: string): void {
 	assertSessionReuseNow(undefined);
-	liveCount.set(runId, (liveCount.get(runId) ?? 0) + 1);
+	up(runId);
 }
 
 /** One run under this id has returned or thrown. */
 export function lowerRunLive(runId: string): void {
 	assertSessionReuseNow(undefined);
-	const count = liveCount.get(runId) ?? 0;
-	if (count <= 1) liveCount.delete(runId);
-	else liveCount.set(runId, count - 1);
+	down(runId);
 }
 
 /** How many runs are going under this id in this process. */
@@ -54,9 +72,9 @@ const ownerLiveCounts = new Map<string, Map<string, number>>();
 export function trackRunLive(runId: string, execution?: ConnectionExecutionContext): () => void {
 	assertSessionReuseNow(execution);
 	if (execution?.mode !== 'session-memory') {
-		liveCount.set(runId, (liveCount.get(runId) ?? 0) + 1);
+		up(runId);
 		let released = false;
-		return () => { if (released) return; released = true; const count = liveCount.get(runId) ?? 0; if (count <= 1) liveCount.delete(runId); else liveCount.set(runId, count - 1); };
+		return () => { if (released) return; released = true; down(runId); };
 	}
 	const owner = sessionReuseWindow(execution).owner;
 	let counts = ownerLiveCounts.get(owner);

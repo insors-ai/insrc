@@ -82,6 +82,8 @@ const IDLE_INDEXING: IndexingStatus = { index: { depth: 0, processing: false }, 
 export class StatusBoard {
 	private readonly threads = new Map<number, ThreadStatus>();
 	private readonly runs = new Map<string, RunRecord>();
+	/** Live analyze runs and the thread running each (Story 5d393a4b). */
+	private readonly analyzeRuns = new Map<string, number>();
 	private indexing: IndexingStatus = IDLE_INDEXING;
 	private clients: readonly AttachedClientSnapshot[] = [];
 	private store: StoreStatusSnapshot = { publishedAt: 0 };
@@ -150,6 +152,18 @@ export class StatusBoard {
 	/** Remove a run the owner's retention evicted (an additive sc4 method, s3); a later poll for it answers 'unknown'. */
 	forgetRun(runId: string): void { this.runs.delete(runId); }
 
+	/** An analyze run started (live) or stopped on `threadId`; a stop from another thread leaves a later owner in place. */
+	markAnalyzeRun(runId: string, threadId: number, live: boolean): void {
+		if (live) this.analyzeRuns.set(runId, threadId);
+		else if (this.analyzeRuns.get(runId) === threadId) this.analyzeRuns.delete(runId);
+	}
+	/** The thread running the analyze run `runId`, if it is live anywhere. */
+	analyzeRunOwner(runId: string): number | undefined { return this.analyzeRuns.get(runId); }
+	/** The thread exited or was released: none of its analyze runs is live any more. */
+	forgetAnalyzeRunsOf(threadId: number): void {
+		for (const [runId, owner] of this.analyzeRuns) if (owner === threadId) this.analyzeRuns.delete(runId);
+	}
+
 	/** Remove a thread's status (its worker exited or was released). */
 	forget(threadId: number): void { this.threads.delete(threadId); }
 
@@ -171,7 +185,7 @@ export class StatusBoard {
 const OPS = {
 	publish: 'board.publish', publishIndexing: 'board.publishIndexing', publishLane: 'board.publishLane', publishClients: 'board.publishClients',
 	publishRun: 'board.publishRun', forgetRun: 'board.forgetRun', publishStore: 'board.publishStore', snapshot: 'board.snapshot',
-	publishIndexRuns: 'board.publishIndexRuns',
+	publishIndexRuns: 'board.publishIndexRuns', markAnalyzeRun: 'board.markAnalyzeRun',
 } as const;
 
 /** The main thread's hub services for the board. */
@@ -186,6 +200,7 @@ export function statusBoardHubHandlers(board: StatusBoard): HubHandlers {
 		[OPS.publishStore]:    a => board.publishStore(a as StoreStatusSnapshot),
 		[OPS.snapshot]:        () => board.snapshot(),
 		[OPS.publishIndexRuns]: a => board.publishIndexRuns(a as readonly IndexRunView[]),
+		[OPS.markAnalyzeRun]:  a => { const { runId, threadId, live } = a as { runId: string; threadId: number; live: boolean }; board.markAnalyzeRun(runId, threadId, live); },
 	};
 }
 
@@ -202,5 +217,6 @@ export class StatusBoardClient {
 	forgetRun(runId: string): void { this.hub.send(OPS.forgetRun, runId); }
 	publishStore(store: StoreStatusSnapshot): void { this.hub.send(OPS.publishStore, store); }
 	publishIndexRuns(runs: readonly IndexRunView[]): void { this.hub.send(OPS.publishIndexRuns, runs); }
+	markAnalyzeRun(runId: string, threadId: number, live: boolean): void { this.hub.send(OPS.markAnalyzeRun, { runId, threadId, live }); }
 	snapshot(): Promise<StatusSnapshot> { return this.hub.request<StatusSnapshot>(OPS.snapshot, null); }
 }

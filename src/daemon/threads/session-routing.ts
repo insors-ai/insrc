@@ -34,14 +34,15 @@ export function startSessionRouting(services: ThreadServices, router: Router, id
 		} : {}),
 		attach: (threadId, port) => router.attach(threadId, port),
 		// A released worker should have nothing in flight; anything that was is answered, never left hanging.
-		detach: threadId => { router.failWorker(threadId, 'it was released'); },
+		detach: threadId => { board.forgetAnalyzeRunsOf(threadId); router.failWorker(threadId, 'it was released'); },
 		activeRuns: threadId => board.snapshot().runs.filter(r => r.ownerThreadId === threadId && r.status === 'running').length,
 		exited: (info, code) => {
 			board.failRunsOwnedBy(info.threadId, OWNER_EXITED);
+			board.forgetAnalyzeRunsOf(info.threadId);
 			router.failWorker(info.threadId, `it exited with code ${code}`, info.session);
 		},
 	});
-	router.useSessions(pool, runId => board.snapshot().runs.find(r => r.runId === runId)?.ownerThreadId);
+	router.useSessions(pool, runId => board.snapshot().runs.find(r => r.runId === runId)?.ownerThreadId, runId => board.analyzeRunOwner(runId));
 	services.onRoute(r => router.request(r.cls, r.method, r.params, { underHold: r.underHold, shared: r.shared }));
 	return pool;
 }

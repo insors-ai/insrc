@@ -47,6 +47,7 @@ import type { RouteRequest, WorkerConnection } from './main-services.js';
 import { inDaemonTarget } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
 import type { StatusSnapshot } from './status-board.js';
+import { setLiveRunPublisher } from '../../analyze/orchestrator/live-runs.js';
 import { pushedIndexRun, startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
@@ -57,6 +58,8 @@ const hub = startDaemonWorker(init);
 const board = new StatusBoardClient(hub);
 // Detached runs started here are mirrored to the board, so any thread answers their polls.
 setRunBoard(board);
+// So are the analyze runs live here: their status and purge are sent to this worker (Story 5d393a4b).
+setLiveRunPublisher((runId, live) => board.markAnalyzeRun(runId, threadId, live));
 // The running full indexes, pushed from the board: the search guard refuses or filters a repository under index, as on the main thread.
 setIndexRunSource(pushedIndexRun);
 

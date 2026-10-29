@@ -139,6 +139,7 @@ test('module-state inventory: every module-scope mutable value the session worke
 test('module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism', () => {
 	const entries = Object.entries(fixture());
 	assert.deepEqual(entries.filter(([, e]) => e.reason.startsWith('MOVE CANDIDATE')).map(([k]) => k), [], 'no candidate is left without a decision');
+	assert.deepEqual(entries.filter(([, e]) => e.reason.startsWith('MOVING INLINE')).map(([k]) => k), [], 'every move decided inline is made');
 	for (const [key, e] of entries) {
 		if (e.class === 'one-owner') assert.ok(e.owner !== undefined, `${key}: names its owner thread`);
 		if (e.class === 'shared-store') assert.match(e.reason, /board|store|block/, `${key}: names the cross-thread store`);

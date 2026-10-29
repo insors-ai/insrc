@@ -1,3 +1,4 @@
+import { threadId as mainThreadId } from 'node:worker_threads';
 import { connectionTestSupervisor } from './db/draft-test.js';
 import { connectionSessionRuntime } from './connection-session-rpc.js';
 import { UnderstandingService } from '../understanding/service.js';
@@ -253,6 +254,9 @@ async function main(): Promise<void> {
 		// tools.config.set is served here; each change reaches every worker (Story 5d393a4b).
 		const { onToolSettingsChange } = await import('./tools/config.js');
 		onToolSettingsChange(settings => threadServices.setToolSettings(settings));
+		// An analyze run live on this thread is known to the board, like a worker's (Story 5d393a4b).
+		const { setLiveRunPublisher } = await import('../analyze/orchestrator/live-runs.js');
+		setLiveRunPublisher((runId, live) => threadServices.board.markAnalyzeRun(runId, mainThreadId, live));
 	}
 
 	// 3. Open DB

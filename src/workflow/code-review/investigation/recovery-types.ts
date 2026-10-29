@@ -33,7 +33,7 @@ export interface RecoveryManifest {
  readonly compatibility: RecoveryCompatibility; readonly receipts: readonly TrustedInspectionReceipt[];
 }
 export type RecoveryEventKind = 'lease' | 'release' | 'block' | 'attempt-issued' | 'attempt-settled'
- | 'usage-pending' | 'usage-recorded' | 'state' | 'extension';
+ | 'usage-pending' | 'usage-recorded' | 'state' | 'extension' | 'publication-intent';
 export interface RecoveryEvent {
  readonly version: 1; readonly ordinal: number; readonly previousDigest: string; readonly eventId: string;
  readonly runId: string; readonly subjectDigest: string; readonly policyDigest: string;
@@ -67,4 +67,10 @@ export function recoveryVersion(value: unknown): asserts value is 1 {
 /** Opaque protocol identity; unlike run IDs, this is never a filesystem component. */
 export function recoveryLabel(value:unknown):asserts value is string {
  if(typeof value!=="string"||!value.trim()||value.length>512||value.includes("\0"))throw new RecoveryError("invalid-input","Invalid recovery record identity.");
+}
+
+/** Internal immutable binding; canonical review content remains opaque to recovery. */
+export interface RecoveryPublicationBinding {
+ readonly version: 1; readonly intentRef: string; readonly intentDigest: string;
+ readonly checkpointDigest: string; readonly acceptedGeneration: number;
 }

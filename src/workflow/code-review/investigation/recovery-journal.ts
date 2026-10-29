@@ -16,7 +16,7 @@ interface RootQueue { tail: Promise<void>; }
 // One queue per canonical run root, even when two callers construct separate handles.
 const queues = new Map<string, RootQueue>();
 const nofollow = constants.O_NOFOLLOW;
-const eventKinds: readonly RecoveryEventKind[] = ['lease','release','block','attempt-issued','attempt-settled','usage-pending','usage-recorded','state','extension'];
+const eventKinds: readonly RecoveryEventKind[] = ['lease','release','block','attempt-issued','attempt-settled','usage-pending','usage-recorded','state','extension','publication-intent'];
 function syncDirectory(path: string): void {
  const fd = openSync(path, constants.O_RDONLY | nofollow);
  try { fsyncSync(fd); } finally { closeSync(fd); }

@@ -38,7 +38,7 @@ export class RecoveryStore {
  private control(view:RecoveryView,kind:'lease'|'release'|'state'|'attempt-issued'|'attempt-settled'|'extension'|'usage-pending'|'usage-recorded',generation:number,payload:Record<string,unknown>):RecoveryView{
   const staged=this.journal.stage(payload),m=view.manifest;
   const candidate={version:1 as const,runId:m.runId,subjectDigest:m.subjectDigest,policyDigest:m.policyDigest,generation,kind,payloadRef:staged.reference,eventId:randomUUID(),ordinal:view.eventOrdinal+1,previousDigest:view.eventDigest,digest:'candidate'};
-  foldRecoveryLifecycle(view,candidate,payload);this.journal.append(eventInput(candidate));return this.replay();
+  foldRecoveryLifecycle(view,candidate,payload,r=>this.journal.read(r));this.journal.append(eventInput(candidate));return this.replay();
  }
  async claim(leaseMs:number){return this.journal.exclusive(()=>{
   const view=this.replay(true),wallMs=this.now(view);if(!Number.isSafeInteger(leaseMs)||leaseMs<1||leaseMs>300000)throw new RecoveryError('invalid-input','Invalid lease duration.');

@@ -260,22 +260,22 @@ export class Router {
 			}
 		}
 		const shared = SHARED_STATE_METHODS.has(request.method);
-		const send = (d: DeliverEnvelope): () => void => shared
-			? this.toShared(request, d, dropped)
-			: this.toSessionWorker(request.session, request, d, dropped);
+		const send = (d: DeliverEnvelope, onAck?: () => void): () => void => shared
+			? this.toShared(request, d, dropped, onAck)
+			: this.toSessionWorker(request.session, request, d, dropped, onAck);
 		if (request.session === undefined || FIFO_EXEMPT_METHODS.has(request.method)) return send(deliver);
 		return this.enqueue(request.session, request, deliver, send, dropped);
 	}
 
 	/** To the shared-state worker, which the pool starts (again, after an exit) when there is none. */
-	private toShared(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
+	private toShared(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void, onAck?: () => void): () => void {
 		const target = this.opts.registry.targetFor('session', undefined, { shared: true });
-		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
-		return this.toPoolWorker(() => this.sessions!.sharedWorker(), request, deliver, dropped);
+		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver, onAck);
+		return this.toPoolWorker(() => this.sessions!.sharedWorker(), request, deliver, dropped, undefined, onAck);
 	}
 
 	/** To the session's worker (the unattributed worker for no session), started by the pool if it has none. */
-	private toSessionWorker(session: SessionId | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
+	private toSessionWorker(session: SessionId | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void, onAck?: () => void): () => void {
 		const sessions = this.sessions!;
 		// Reported started once the pool has the worker (a start before it would be lost, and the idle sweep could
 		// release the worker mid-request); reported ended only if it was reported started. A request that ended
@@ -286,37 +286,46 @@ export class Router {
 			if (!over) { sessions.started(session); begun = true; }
 			return w;
 		});
-		return this.toPoolWorker(worker, request, deliver, dropped, () => { over = true; if (begun) sessions.ended(session); });
+		return this.toPoolWorker(worker, request, deliver, dropped, () => { over = true; if (begun) sessions.ended(session); }, onAck);
 	}
 
-	/** To a pool worker once `worker` resolves; `done` runs once when the request ends, fails or is cancelled first. */
-	private toPoolWorker(worker: () => Promise<{ readonly threadId: number }>, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void, done: () => void = () => {}): () => void {
+	/**
+	 * To a pool worker once `worker` resolves; `done` runs once when the request ends, fails or is cancelled first.
+	 * With `onAck` (ISSUE-7c39e5cd) the request ends only at its worker's ack, or when it fails or is cancelled
+	 * before it was sent (no ack can come then): `done` and then `onAck` run once, at that end.
+	 */
+	private toPoolWorker(worker: () => Promise<{ readonly threadId: number }>, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void, done: () => void = () => {}, onAck?: () => void): () => void {
 		let cancelled = false;
 		let sent: (() => void) | undefined;
 		let ended = false;
 		const end = (): void => { if (!ended) { ended = true; done(); } };
+		let acked = false;
+		const ack = onAck === undefined ? undefined : (): void => { if (!acked) { acked = true; end(); onAck(); } };
+		const close = (): void => { if (ack) ack(); else end(); };
 		const fail = (error: string): void => {
 			try {
 				deliver(request.stream
 					? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } }
 					: { kind: 'reply', requestId: request.requestId, error });
-			} finally { request.lifetime?.complete(); end(); }
+			} finally { request.lifetime?.complete(); close(); }
 		};
 		const tracked: DeliverEnvelope = envelope => {
-			try { deliver(envelope); } finally { if (isTerminal(envelope)) end(); }
+			try { deliver(envelope); } finally { if (!ack && isTerminal(envelope)) end(); }
 		};
 		void worker().then(
 			worker => {
-				if (cancelled) { end(); return; }
+				if (cancelled) { close(); return; }
 				if (!this.ports.has(worker.threadId)) { fail('the session\'s worker thread is not available'); return; }
-				sent = this.send(worker.threadId, request, tracked);
+				sent = this.send(worker.threadId, request, tracked, ack);
 			},
-			(err: unknown) => { if (!cancelled) fail(err instanceof Error ? err.message : String(err)); else end(); },
+			(err: unknown) => { if (!cancelled) fail(err instanceof Error ? err.message : String(err)); else close(); },
 		);
 		return () => {
 			cancelled = true;
 			if (sent !== undefined) {
 				sent();
+				// An acked request ends at its worker's ack, cancelled or not.
+				if (ack) return;
 				// A cancelled stream gets no last frame from its worker: it has ended once the worker
 				// finished with it (its lifetime completes), or at once without a lifetime. A unary
 				// request runs on and ends at its reply.
@@ -325,13 +334,13 @@ export class Router {
 			}
 			request.lifetime?.abort();
 			request.lifetime?.complete();
-			end();
+			close();
 			dropped();
 		};
 	}
 
 	/** Through the session's FIFO: sent once the session's previous request has ended. */
-	private enqueue(session: SessionId, request: LocalRequestEnvelope, deliver: DeliverEnvelope, send: (d: DeliverEnvelope) => () => void, dropped: () => void): () => void {
+	private enqueue(session: SessionId, request: LocalRequestEnvelope, deliver: DeliverEnvelope, send: (d: DeliverEnvelope, onAck?: () => void) => () => void, dropped: () => void): () => void {
 		const key = `${session.label}:${session.pid}`;
 		let fifo = this.fifos.get(key);
 		if (fifo === undefined) { fifo = { session, waiting: [] }; this.fifos.set(key, fifo); }

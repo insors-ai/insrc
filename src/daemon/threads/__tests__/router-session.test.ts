@@ -76,6 +76,13 @@ function harness(): Harness {
 			'chat.cancel': async () => { log.push(`${name} chat.cancel`); return { ok: true }; },
 			'chat.list': async () => { log.push(`${name} chat.list`); return []; },
 			'workflow.run.abort': async () => { log.push(`${name} workflow.run.abort`); return { ok: true }; },
+			// Replies at once; work it registers keeps its completion message (the ack) back until the test opens 'drain <tag>'.
+			'x.drain': async (p, ctx) => {
+				const tag = (p as { tag: string }).tag;
+				log.push(`${name} start ${tag}`);
+				ctx?.registerDrain?.(gates.get(`drain ${tag}`).wait.then(() => { log.push(`${name} drained ${tag}`); }));
+				return tag;
+			},
 		},
 		stream: {
 			'x.stream': async (p, send) => {
@@ -378,4 +385,92 @@ test("router: detach answers a request awaiting its ack through the caller and h
 		const orphans = h.router.detach(950);
 		assert.deepEqual(orphans, [], 'nothing left');
 	} finally { h.gates.open('drain k3'); h.gates.open('drain k4'); h.close(); }
+});
+
+type AckPaths = {
+	toSessionWorker(s: SessionId | undefined, r: LocalRequestEnvelope, d: DeliverEnvelope, dropped: () => void, onAck?: () => void): () => void;
+	toShared(r: LocalRequestEnvelope, d: DeliverEnvelope, dropped: () => void, onAck?: () => void): () => void;
+};
+const TRUSTED = { connectionIdentity: 'socket', daemonEpoch: 'epoch' } as const;
+const drainRequest = (id: string): LocalRequestEnvelope => ({ kind: 'request', requestId: id, method: 'x.drain', params: { tag: id }, stream: false, trustedContext: TRUSTED });
+
+test("router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const failing: SessionId = { label: 'mcp', pid: 1201 };
+		const portless: SessionId = { label: 'mcp', pid: 1202 };
+		h.router.useSessions({
+			...h.sessions,
+			workerFor: async s => {
+				if (s?.pid === failing.pid) throw new Error('the worker could not start');
+				if (s?.pid === portless.pid) return { threadId: 9999 };
+				return h.sessions.workerFor(s);
+			},
+			// The harness's pool asserts it has the worker; the portless session's has no port to have.
+			started: s => { if (s?.pid !== portless.pid) h.sessions.started(s); },
+			ended: s => { if (s?.pid !== portless.pid) h.sessions.ended(s); },
+		});
+		const paths = h.router as unknown as AckPaths;
+		const acks: string[] = [];
+		const replies: unknown[] = [];
+		paths.toSessionWorker(failing, drainRequest('f1'), e => { replies.push(e); }, () => {}, () => { acks.push('f1'); });
+		await until(() => acks.length === 1, 'a start failure acks');
+		assert.deepEqual(replies, [{ kind: 'reply', requestId: 'f1', error: 'the worker could not start' }]);
+		paths.toSessionWorker(portless, drainRequest('p1'), e => { replies.push(e); }, () => {}, () => { acks.push('p1'); });
+		await until(() => acks.length === 2, 'a missing port acks');
+		assert.deepEqual(replies[1], { kind: 'reply', requestId: 'p1', error: "the session's worker thread is not available" });
+
+		// Cancelled while its worker was still starting: acked at the cancel, never sent, never busy.
+		h.slowStarts.add('mcp:1001');
+		let dropped = 0;
+		const cancel = paths.toSessionWorker(A, drainRequest('c1'), e => { replies.push(e); }, () => { dropped++; }, () => { acks.push('c1'); });
+		cancel();
+		assert.deepEqual(acks, ['f1', 'p1', 'c1'], 'acked at the cancel');
+		assert.equal(dropped, 1);
+		h.gates.open('start mcp:1001');
+		await tick(30);
+		assert.deepEqual(acks, ['f1', 'p1', 'c1'], 'once');
+		assert.ok(!h.log.some(l => l.includes('start c1')), 'never sent');
+		assert.deepEqual(h.pool.started, [], 'never counted busy');
+
+		// Sent and replied: busy for the pool until its worker's ack, not its reply.
+		paths.toSessionWorker(A, drainRequest('b1'), e => { replies.push(e); }, () => {}, () => { acks.push('b1'); });
+		await until(() => replies.some(r => (r as { requestId: string }).requestId === 'b1'), 'b1 replied');
+		await tick(30);
+		assert.deepEqual(h.pool.started, ['mcp:1001']);
+		assert.deepEqual(h.pool.ended, [], 'still busy past its reply');
+		assert.equal(acks.includes('b1'), false);
+		h.gates.open('drain b1');
+		await until(() => acks.includes('b1'), 'acked');
+		assert.deepEqual(h.pool.ended, ['mcp:1001'], 'the pool ended it at the ack');
+	} finally { h.gates.open('start mcp:1001'); h.gates.open('drain b1'); h.close(); }
+});
+
+test("router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const paths = h.router as unknown as AckPaths;
+		const acks: string[] = [];
+		const replies: string[] = [];
+		const deliver: DeliverEnvelope = e => { replies.push((e as { requestId: string }).requestId); };
+		// Attached and registered: sent directly.
+		paths.toShared(drainRequest('s1'), deliver, () => {}, () => { acks.push('s1'); });
+		await until(() => replies.includes('s1'), 's1 replied');
+		await tick(30);
+		assert.deepEqual(acks, [], 'no ack past the reply while its work drains');
+		h.gates.open('drain s1');
+		await until(() => acks.includes('s1'), 's1 acked');
+		assert.ok(h.log.includes('shared drained s1'), 'the ack came after the drained work');
+
+		// Not registered: through the pool's sharedWorker.
+		// The harness keeps its registry inside the router.
+		(h.router as unknown as { opts: { registry: TargetRegistry } }).opts.registry.unregister(h.sharedId());
+		paths.toShared(drainRequest('s2'), deliver, () => {}, () => { acks.push('s2'); });
+		await until(() => replies.includes('s2'), 's2 replied');
+		await tick(30);
+		assert.deepEqual(acks, ['s1'], 'no ack past the reply on the pool path either');
+		h.gates.open('drain s2');
+		await until(() => acks.includes('s2'), 's2 acked');
+		assert.ok(h.log.includes('shared drained s2'));
+	} finally { h.gates.open('drain s1'); h.gates.open('drain s2'); h.close(); }
 });

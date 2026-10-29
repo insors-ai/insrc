@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s4
 
-**Standalone:** no  ·  **Created:** 2026-10-29T10:08:25.734Z  ·  **Updated:** 2026-10-29T13:27:16.421Z
+**Standalone:** no  ·  **Created:** 2026-10-29T10:08:25.734Z  ·  **Updated:** 2026-10-29T13:33:24.330Z
 
-**Commit:** d54b4e080
+**Commit:** af3d2ac4b
 
 ## Summary
 
@@ -149,3 +149,4 @@ Implemented S004 Saved delete and temporary discard with atomic receipts, strict
 - `src/daemon/db/__tests__/fixtures/connection-source-inventory.json` — **insrc-build** (2026-10-29T13:27:16.421Z)
 - `src/daemon/db/__tests__/fixtures/driver-field-matrix.json` — **insrc-build** (2026-10-29T13:27:16.421Z)
 - `src/daemon/db/__tests__/fixtures/session-probe-child.ts` — **insrc-build** (2026-10-29T13:27:16.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/task-validation.json` — **insrc-build** (2026-10-29T13:33:24.330Z)

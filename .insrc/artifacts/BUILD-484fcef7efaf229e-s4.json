@@ -4,10 +4,15 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T13:27:16.421Z",
+    "updatedAt": "2026-10-29T13:33:24.330Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
-    "epicSlug": "manage-saved-temporary-data-connections"
+    "epicSlug": "manage-saved-temporary-data-connections",
+    "approvedAt": "2026-10-29T13:33:26.936Z",
+    "reviewOverride": {
+      "reason": "User explicitly approved S004 BUILD completion in chat after presentation of FINAL-VALIDATION.html and the failed-sweep/manual-review exceptions. Automated code review was intentionally not invoked at user's direction; session-author manual inspection is retained in evidence/t24/manual-review.json and is not independent CR. Accept completion with t24 remaining failed: frozen Node22 build passed; original full sweep 6806 pass,21 fail,134 skipped,3 TODO and three owned-worker interventions retained without relabeling. Tasks t1–t23 passed; private audit/probe corrections passed focused tests. Approval does not clear historical S003 t34, SQL Server, positive all-consumer Saved worker affinity, S001/provider or S005 both-client acceptance. Shipped release admission remains disabled; no daemon update/restart or push authorized by this approval.",
+      "at": "2026-10-29T13:33:26.936Z"
+    }
   },
   "body": {
     "tasks": [
@@ -868,8 +873,16 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-10-29T13:27:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t24/task-validation.json",
+          "version": "af3d2ac4b"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:33:24.330Z"
       }
     ],
-    "commit": "d54b4e080"
+    "commit": "af3d2ac4b"
   }
 }

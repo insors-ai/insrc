@@ -135,3 +135,12 @@ test('module-state inventory: every module-scope mutable value the session worke
 	const problems = inventoryProblems(realSites(), fixture(), routed);
 	assert.deepEqual(problems, [], `classify each new value in fixtures/module-state-inventory.json (per-thread, shared-store or one-owner, with a reason):\n${problems.join('\n')}`);
 });
+
+test('module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism', () => {
+	const entries = Object.entries(fixture());
+	assert.deepEqual(entries.filter(([, e]) => e.reason.startsWith('MOVE CANDIDATE')).map(([k]) => k), [], 'no candidate is left without a decision');
+	for (const [key, e] of entries) {
+		if (e.class === 'one-owner') assert.ok(e.owner !== undefined, `${key}: names its owner thread`);
+		if (e.class === 'shared-store') assert.match(e.reason, /board|store|block/, `${key}: names the cross-thread store`);
+	}
+});

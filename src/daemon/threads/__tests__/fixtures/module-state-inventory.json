@@ -210,7 +210,7 @@
 	},
 	"src/analyze/orchestrator/live-runs.ts#liveCount": {
 		"class": "per-thread",
-		"reason": "MOVE CANDIDATE: analyze.run.status and analyze.run.purge (session-class) judge a run alive by this thread's count; served by another worker they see no live run, rewrite a running run's record as run-abandoned, or purge a live run."
+		"reason": "MOVING INLINE (user decision 2026-10-29): analyze.run.status and analyze.run.purge (session-class) judge a run alive by this thread's count; served by another worker they see no live run, rewrite a running run's record as run-abandoned, or purge a live run."
 	},
 	"src/analyze/orchestrator/live-runs.ts#ownerLiveCounts": {
 		"class": "one-owner",
@@ -345,7 +345,7 @@
 	},
 	"src/daemon/code-review-operations.ts#codeReviewOperations": {
 		"class": "per-thread",
-		"reason": "MOVE CANDIDATE: running code-review operations are looked up by handle across codeReview.run and the code-review step's turns, which are session-class; a turn served by another worker, or after an idle release, does not find the operation."
+		"reason": "MOVING INLINE (user decision 2026-10-29): running code-review operations are looked up by handle across codeReview.run and the code-review step's turns, which are session-class; a turn served by another worker, or after an idle release, does not find the operation."
 	},
 	"src/daemon/connection-session-rpc.ts#PROBE_METHODS": {
 		"class": "per-thread",
@@ -511,11 +511,11 @@
 	},
 	"src/daemon/model-check.ts#chain": {
 		"class": "per-thread",
-		"reason": "MOVE CANDIDATE: meant to run one CLI model check at a time daemon-wide, but models.check is session-class, so each session worker has its own chain and checks on different workers overlap."
+		"reason": "MOVING INLINE (user decision 2026-10-29): meant to run one CLI model check at a time daemon-wide, but models.check is session-class, so each session worker has its own chain and checks on different workers overlap."
 	},
 	"src/daemon/model-check.ts#pending": {
 		"class": "per-thread",
-		"reason": "MOVE CANDIDATE: a check started by models.check is approved or rejected later by models.approve/models.reject; those are session-class, so a decision served by another worker, or after an idle release, finds no pending check."
+		"reason": "MOVING INLINE (user decision 2026-10-29): a check started by models.check is approved or rejected later by models.approve/models.reject; those are session-class, so a decision served by another worker, or after an idle release, finds no pending check."
 	},
 	"src/daemon/model-definitions.ts#_ollamaProvider": {
 		"class": "per-thread",
@@ -580,7 +580,7 @@
 	},
 	"src/daemon/steps/code-review-step/state-store.ts#leases": {
 		"class": "per-thread",
-		"reason": "MOVE CANDIDATE: leases tie a code-review step token to a running operation in codeReviewOperations; they live with that registry and are lost with it when a later turn reaches another worker."
+		"reason": "MOVING INLINE (user decision 2026-10-29): leases tie a code-review step token to a running operation in codeReviewOperations; they live with that registry and are lost with it when a later turn reaches another worker."
 	},
 	"src/daemon/steps/daemon-client.ts#_installed": {
 		"class": "per-thread",
@@ -676,7 +676,7 @@
 	},
 	"src/daemon/tools/config.ts#current": {
 		"class": "per-thread",
-		"reason": "MOVE CANDIDATE: the IDE pushes tool settings with tools.config.set (session-class); only the worker that serves it updates its copy, so tool loops on other workers keep the defaults."
+		"reason": "MOVING INLINE (user decision 2026-10-29): the IDE pushes tool settings with tools.config.set (session-class); only the worker that serves it updates its copy, so tool loops on other workers keep the defaults."
 	},
 	"src/daemon/tools/registry.ts#aliasToId": {
 		"class": "per-thread",
@@ -1012,7 +1012,7 @@
 	},
 	"src/workflow/code-review/publication.ts#owners": {
 		"class": "per-thread",
-		"reason": "MOVE CANDIDATE: claims that one independent review publishes a target at a time; reviews served on different workers each see an empty map, so two can publish the same target."
+		"reason": "MOVING INLINE (user decision 2026-10-29): claims that one independent review publishes a target at a time; reviews served on different workers each see an empty map, so two can publish the same target."
 	},
 	"src/workflow/delivery/currency.ts#ITEM_KINDS": {
 		"class": "per-thread",

@@ -1,4 +1,322 @@
 {
+	"src/agent/providers/cli-provider.ts#resolvedBinCache": {
+		"class": "per-thread",
+		"reason": "Resolved paths of the claude/codex CLI binaries; the same lookup gives the same answer on every thread, so a per-thread cache is correct."
+	},
+	"src/agent/providers/ollama.ts#NOT_A_REQUEST_REJECTION": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/agent/providers/ollama.ts#_localDefaults": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/agent/providers/ollama.ts#_toolCallId": {
+		"class": "per-thread",
+		"reason": "A counter for tool-call ids within this thread's Ollama conversations; ids only need to be unique within one conversation, which never spans threads."
+	},
+	"src/agent/providers/ollama.ts#nativePrivacyIdentities": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/agent/providers/ollama.ts#originalAdapterMethods": {
+		"class": "per-thread",
+		"reason": "A snapshot of the OllamaProvider prototype taken at module load, used to detect tampering; identical on every thread."
+	},
+	"src/agent/providers/onnx-embedder.ts#pipelinePromise": {
+		"class": "per-thread",
+		"reason": "This thread's lazily loaded ONNX embedding pipeline; embedding is pure, so each thread may load its own model."
+	},
+	"src/agent/providers/structured-output.ts#ajv": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/agent/providers/structured-schema.ts#CHECKED_FORMATS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/agent/providers/structured-schema.ts#CODEX_FORMATS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/agent/providers/structured-schema.ts#CODEX_KEPT_KEYWORDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/agent/providers/structured-schema.ts#DATA_KEYWORDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/agent/providers/structured-schema.ts#NAMED_SCHEMA_MAPS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/agent/providers/structured-schema.ts#codexReplyAjv": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/analyze/classifier/schema.ts#_validator": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/analyze/classifier/schema.ts#ajv": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/analyze/classifier/validate.ts#FILESYSTEM_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/context/driver.ts#READ_ONLY_SET": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/context/schema.ts#_validator": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/analyze/context/schema.ts#ajv": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/analyze/context/schema.ts#modelFacing": {
+		"class": "per-thread",
+		"reason": "A cache of the model-facing schema variants derived from a constant schema; identical on every thread."
+	},
+	"src/analyze/context/shaper-provider.ts#clientProviderContextStorage": {
+		"class": "per-thread",
+		"reason": "An AsyncLocalStorage: its store lives in the async context of the current thread by design, so each thread has its own."
+	},
+	"src/analyze/context/shaper-provider.ts#routingContextStorage": {
+		"class": "per-thread",
+		"reason": "An AsyncLocalStorage: its store lives in the async context of the current thread by design, so each thread has its own."
+	},
+	"src/analyze/context/synthesizer.ts#promptPathOverrides": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/context/tool-surface.ts#READ_ONLY_SET": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/docs-retrieval.ts#STOPWORDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/docs-retrieval.ts#vectorPass": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/executor/registry.ts#REGISTRY": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/analyze/executor/registry.ts#sessionReadOnly": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/analyze/explore/concept-resolve.ts#IGNORE_DIRS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/concept-resolve.ts#STOPWORDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/concept-resolve.ts#STRUCTURAL_ENTITY_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/concept-resolve.ts#STRUCTURAL_TOKENS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/config-trace.ts#CONFIG_EXTS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/executor.ts#NARROW_LLM_TYPES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/executor.ts#NARROW_RUNNERS": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/analyze/explore/executor.ts#NON_CACHEABLE": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/executor.ts#RUNNERS": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/analyze/explore/manifests-locate.ts#WHOLE_FILE_ENTITY_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/module-profile.ts#IGNORE_DIRS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/module-profile.ts#INDEX_FILENAMES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/explore/test-locate.ts#STOP": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/item-length.ts#WHOLE_FILE_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/measure.ts#SAMPLED_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/measure.ts#depsForTest": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/measure.ts#ownerMeasureSlots": {
+		"class": "one-owner",
+		"owner": "main",
+		"reason": "Measure slots keyed by a connection session handle; connection-scoped requests carry that handle, cannot cross a worker channel and are measured on the main thread."
+	},
+	"src/analyze/measure.ts#pendingListings": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/analyze/orchestrator/driver.ts#classifyImpl": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/orchestrator/driver.ts#executorImpl": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/orchestrator/driver.ts#measureRequestScopeImpl": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/orchestrator/driver.ts#recursivePlannerImpl": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/orchestrator/driver.ts#runShaperFor": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/orchestrator/live-runs.ts#liveCount": {
+		"class": "per-thread",
+		"reason": "MOVE CANDIDATE: analyze.run.status and analyze.run.purge (session-class) judge a run alive by this thread's count; served by another worker they see no live run, rewrite a running run's record as run-abandoned, or purge a live run."
+	},
+	"src/analyze/orchestrator/live-runs.ts#ownerLiveCounts": {
+		"class": "one-owner",
+		"owner": "main",
+		"reason": "Live-run counts for session-memory executions only; those are connection-scoped and run on the main thread."
+	},
+	"src/analyze/orchestrator/persistence.ts#recordPortAuthorities": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/analyze/orchestrator/persistence.ts#sessionRecords": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/analyze/planner/driver.ts#structuredStageForTest": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/planner/schema.ts#_planValidator": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/analyze/planner/schema.ts#_plannedTaskValidator": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/analyze/planner/schema.ts#ajv": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/analyze/planner/templates/bootstrap.ts#_bootstrapped": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/analyze/planner/templates/registry.ts#REGISTRY": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/analyze/planner/wire-schema.ts#DATA": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/planner/wire-schema.ts#NAME_MAPS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/planner/wire-schema.ts#cache": {
+		"class": "per-thread",
+		"reason": "A cache of planner wire schemas derived from constant templates; identical on every thread."
+	},
+	"src/analyze/runtimes/bootstrap.ts#LATCHED": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/analyze/runtimes/code/discovery-entrypoints.ts#ENTRYPOINT_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/runtimes/code/surface-functional.ts#SURFACE_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/runtimes/data/_shared.ts#poolSource": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/runtimes/infra/_shared.ts#SKIP_DIRS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/runtimes/infra/inventory-ci.ts#GITLAB_RESERVED": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/runtimes/shared/adherence-topic-constraints.ts#enumerateForTest": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/runtimes/shared/task-scope.ts#GRAPH_FAMILIES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/runtimes/shared/task-scope.ts#depsForTest": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/analyze/session-reuse.ts#continuations": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/analyze/session-reuse.ts#windows": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/config/analyze.ts#cached": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/config/local.ts#cached": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/config/role-taxonomy.ts#ROLE_INDEX": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
 	"src/daemon/analyze-rpc.ts#classifierImpl": {
 		"class": "per-thread",
 		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
@@ -379,5 +697,477 @@
 	"src/daemon/workflow-run-registry.ts#runs": {
 		"class": "per-thread",
 		"reason": "Each thread keeps the runs it started (s3); the run board makes them visible across threads and routes polls and aborts to the owning thread."
+	},
+	"src/db/doc-summaries.ts#packr": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/db/doc-summaries.ts#unpackr": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/db/exploration-cache.ts#packr": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/db/exploration-cache.ts#unpackr": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/db/graph/codec.ts#packr": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/db/graph/codec.ts#unpackr": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/db/graph/pending-class.ts#BOUNDARY_RELATION_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/db/graph/store.ts#_crashAt": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/db/graph/store.ts#_failInstead": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/db/graph/store.ts#_health": {
+		"class": "per-thread",
+		"reason": "This thread's view of the graph store's health; the main thread decides it and broadcasts it, and each worker mirrors the broadcast."
+	},
+	"src/db/graph/store.ts#_healthBroadcast": {
+		"class": "per-thread",
+		"reason": "The hook this thread's store uses to publish health changes; set on the thread that owns the live store and absent elsewhere."
+	},
+	"src/db/graph/store.ts#_initPromise": {
+		"class": "per-thread",
+		"reason": "This thread's pending graph-store open; each thread opens its own LMDB handle over the shared files."
+	},
+	"src/db/graph/store.ts#_instance": {
+		"class": "per-thread",
+		"reason": "This thread's graph-store handle; each thread opens its own LMDB handle over the shared files, as the worker-stores design requires."
+	},
+	"src/db/graph/store.ts#_lastCompactionCheck": {
+		"class": "per-thread",
+		"reason": "The result of this thread's last compaction check of its own handle; compaction itself is coordinated through the maintenance lock."
+	},
+	"src/db/graph/store.ts#_mirroredAt": {
+		"class": "per-thread",
+		"reason": "When this thread last mirrored the broadcast health; per-thread by construction."
+	},
+	"src/db/graph/store.ts#_ownsLiveStore": {
+		"class": "per-thread",
+		"reason": "Whether this thread's handle is the live store owner; true on exactly the thread that opened it as owner, false on the others."
+	},
+	"src/db/graph/store.ts#_path": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/db/graph/store.ts#_probeObserver": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/db/graph/store.ts#_writeProbeAfterMs": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/db/graph/store.ts#graphMutators": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/db/graph/store.ts#structuralTables": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/db/lance/artifact-vec.ts#_tableCache": {
+		"class": "per-thread",
+		"reason": "This thread's LanceDB table handle; each thread opens its own handles over the shared Lance directory, as the worker-stores design requires."
+	},
+	"src/db/lance/config-vec.ts#_tableCache": {
+		"class": "per-thread",
+		"reason": "This thread's LanceDB table handle; each thread opens its own handles over the shared Lance directory, as the worker-stores design requires."
+	},
+	"src/db/lance/conn.ts#_initPromise": {
+		"class": "per-thread",
+		"reason": "This thread's pending Lance connection; each thread opens its own connection over the shared Lance directory."
+	},
+	"src/db/lance/conn.ts#_instance": {
+		"class": "per-thread",
+		"reason": "This thread's Lance connection; each thread opens its own connection over the shared Lance directory."
+	},
+	"src/db/lance/conn.ts#_path": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/db/lance/conn.ts#lanceHandles": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/db/lance/entity-vec.ts#_tableCache": {
+		"class": "per-thread",
+		"reason": "This thread's LanceDB table handle; each thread opens its own handles over the shared Lance directory, as the worker-stores design requires."
+	},
+	"src/db/lance/response-segment-vec.ts#_tableCache": {
+		"class": "per-thread",
+		"reason": "This thread's LanceDB table handle; each thread opens its own handles over the shared Lance directory, as the worker-stores design requires."
+	},
+	"src/db/lance/session-vec.ts#_tableCache": {
+		"class": "per-thread",
+		"reason": "This thread's LanceDB table handle; each thread opens its own handles over the shared Lance directory, as the worker-stores design requires."
+	},
+	"src/db/lance/turn-vec.ts#_tableCache": {
+		"class": "per-thread",
+		"reason": "This thread's LanceDB table handle; each thread opens its own handles over the shared Lance directory, as the worker-stores design requires."
+	},
+	"src/db/relations.ts#KIND_OF_BYTE": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/db/repos.ts#BANNED_REPO_ROOTS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/db/store-guard.ts#_guard": {
+		"class": "per-thread",
+		"reason": "This thread's store guard over its own store handles; each thread guards the handles it opened."
+	},
+	"src/docgen/extract/narrative-generator.ts#cachedProvider": {
+		"class": "per-thread",
+		"reason": "This thread's lazily built LLM provider for narratives; providers hold no shared state, so each thread may build its own."
+	},
+	"src/docgen/extract/type-structure.ts#TYPE_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/docgen/render/shell.ts#assetDirOverride": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/docgen/render/shell.ts#runtimeCache": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/indexer/embedder.ts#_ollama": {
+		"class": "per-thread",
+		"reason": "This thread's Ollama client for embeddings; it holds no shared state beyond the endpoint."
+	},
+	"src/indexer/embedder.ts#activeBackend": {
+		"class": "per-thread",
+		"reason": "The embedding backend chosen by the main thread at boot and pushed to every worker (EMBEDDER_BACKEND_OP); each thread mirrors the one decision."
+	},
+	"src/indexer/run-record.ts#listener": {
+		"class": "per-thread",
+		"reason": "The publisher of this thread's index-run view; only the thread that runs indexing installs it."
+	},
+	"src/indexer/run-record.ts#publishTimer": {
+		"class": "per-thread",
+		"reason": "The debounce timer of this thread's index-run publisher; per-thread with the publisher."
+	},
+	"src/indexer/run-record.ts#runs": {
+		"class": "per-thread",
+		"reason": "Index runs recorded by the thread that runs indexing (the code-indexing worker); other threads see them through the published index-run view."
+	},
+	"src/indexer/run-record.ts#source": {
+		"class": "per-thread",
+		"reason": "Where this thread reads index-run views from: its own records on the indexing worker, the pushed mirror elsewhere."
+	},
+	"src/shared/connection-provider.ts#admittedFacades": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/connection-provider.ts#attempts": {
+		"class": "per-thread",
+		"reason": "An AsyncLocalStorage: its store lives in the async context of the current thread by design, so each thread has its own."
+	},
+	"src/shared/connection-provider.ts#currentModules": {
+		"class": "per-thread",
+		"reason": "The module generations this thread has loaded; each thread evaluates its own copy of the provider modules, so their tracking is per thread."
+	},
+	"src/shared/connection-provider.ts#identities": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/connection-provider.ts#loadedModules": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/connection-provider.ts#proofs": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/connection-provider.ts#verificationCounts": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/locks/lock-manager.ts#_manager": {
+		"class": "shared-store",
+		"reason": "This thread's lock manager over the one SharedArrayBuffer lock block shared by every thread; the lock state itself lives in that block."
+	},
+	"src/shared/locks/lock-manager.ts#decoder": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/shared/locks/lock-manager.ts#encoder": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/shared/locks/lock-manager.ts#grantHook": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/shared/locks/maintenance-lock.ts#enabled": {
+		"class": "per-thread",
+		"reason": "Set on every thread at boot when daemon threads are enabled; each thread holds the same flag."
+	},
+	"src/shared/logger.ts#_children": {
+		"class": "per-thread",
+		"reason": "This thread's cache of child loggers; logging writes to the shared destinations from every thread."
+	},
+	"src/shared/logger.ts#_mode": {
+		"class": "per-thread",
+		"reason": "The logging mode set at each thread's start from the same configuration."
+	},
+	"src/shared/logger.ts#_root": {
+		"class": "per-thread",
+		"reason": "This thread's root logger, created from the same configuration on each thread."
+	},
+	"src/shared/step-context.ts#executionErrorCodes": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/step-context.ts#savedExecutions": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/step-context.ts#sessionExecutions": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/shared/step-context.ts#storage": {
+		"class": "per-thread",
+		"reason": "An AsyncLocalStorage: its store lives in the async context of the current thread by design, so each thread has its own."
+	},
+	"src/shared/todos.ts#TERMINAL_ITEM_STATUSES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/amendments/types.ts#AMENDMENT_TYPES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/artifacts/companion/adaptive-cards.ts#schemaCache": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/workflow/artifacts/companion/er.ts#LINKML_SCALAR_TYPES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/artifacts/companion/metamodel.ts#schemaCache": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/workflow/artifacts/companion/metamodel.ts#schemaDirOverride": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/workflow/artifacts/companion/shell.ts#assetDirOverride": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/workflow/artifacts/format/template-loader.ts#cache": {
+		"class": "per-thread",
+		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
+	},
+	"src/workflow/artifacts/format/template-loader.ts#warnedFallback": {
+		"class": "per-thread",
+		"reason": "Which template fallbacks this thread has already warned about; per-thread only repeats a log line once per thread."
+	},
+	"src/workflow/artifacts/plan.ts#TEST_LEVELS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/artifacts/spec.ts#CATEGORY_IDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/code-review/dimensions/diagram/index.ts#NO_MODEL": {
+		"class": "per-thread",
+		"reason": "A stateless provider stand-in that throws on use, built once at load; identical on every thread."
+	},
+	"src/workflow/code-review/dimensions/diagram/registry.ts#REGISTRY": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/code-review/dimensions/test-record-view.ts#TITLE_RESULTS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/code-review/grounding.ts#COVERAGE_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/code-review/publication.ts#owners": {
+		"class": "per-thread",
+		"reason": "MOVE CANDIDATE: claims that one independent review publishes a target at a time; reviews served on different workers each see an empty map, so two can publish the same target."
+	},
+	"src/workflow/delivery/currency.ts#ITEM_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/delivery/currency.ts#VERDICTS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/delivery/describe.ts#FEEDBACK_ENTRY_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/delivery/describe.ts#SIZES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/delivery/gate.ts#VERDICTS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/delivery/handlers.ts#ARTIFACT_ID_RE": {
+		"class": "per-thread",
+		"reason": "A stateless codec or validator instance (MessagePack, Ajv, text encoding); it holds only compiled configuration, so each thread may build its own."
+	},
+	"src/workflow/delivery/markdown.ts#MD_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/delivery/snapshot.ts#PLAN_ROUTES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/delivery/stage.ts#PLAN_ROUTES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/executor.ts#registry": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/orchestrator.ts#companionHeaderDeps": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/workflow/path-scheme.ts#STORY_SCOPED": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/pending.ts#PENDING_KIND_SET": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/questions.ts#providerOverride": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/adapters/code-review-duplicates.ts#descriptionIndexes": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/adapters/code-review-duplicates.ts#fragmentFlags": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/adapters/code-review-duplicates.ts#materialIndexes": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/adapters/code-review-material.ts#callIndex": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/adapters/code-review-material.ts#nameIndex": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/adapters/diff-parent-evidence.ts#cache": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/job.ts#GATHER_ROLES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/review-pipeline/job.ts#immutableSnapshots": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review-pipeline/prepare.ts#USAGE_KINDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/review-pipeline/timing.ts#activations": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/workflow/review/probe.ts#IGNORE": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/review/resolve.ts#BLOCKING": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/runners/brainstorm/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/runners/define/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/runners/design-epic/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/runners/design-story/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/runners/issue/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/runners/plan/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/runners/stub/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/runners/tracker/index.ts#registered": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
+	"src/workflow/slug.ts#STOPWORDS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/tracker/github-adapter.ts#CAPABILITIES": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/workflow/tracker/github.ts#_exec": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/workflow/tracker/resolve.ts#EXPLICIT_EVIDENCE": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	}
 }

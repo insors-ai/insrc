@@ -130,3 +130,8 @@ test('module-state inventory: every scanned key under src/daemon/ has a valid fi
 	assert.deepEqual(entries['src/daemon/threads/session-worker.ts#understanding'], { ...entries['src/daemon/threads/session-worker.ts#understanding'], class: 'one-owner', owner: 'shared-state', methods: 'understanding.' });
 	assert.equal(entries['src/daemon/workflow-run-registry.ts#board']?.class, 'shared-store');
 });
+
+test('module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)', { timeout: 120_000 }, () => {
+	const problems = inventoryProblems(realSites(), fixture(), routed);
+	assert.deepEqual(problems, [], `classify each new value in fixtures/module-state-inventory.json (per-thread, shared-store or one-owner, with a reason):\n${problems.join('\n')}`);
+});

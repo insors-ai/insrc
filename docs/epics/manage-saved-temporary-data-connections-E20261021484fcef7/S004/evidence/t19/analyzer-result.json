@@ -1,0 +1,54 @@
+{
+  "next": "done",
+  "markdown": "Incomplete: 4 incomplete: import.graph [e2] — limit of 12 imported files each reached (18 imported files were found and 12 are kept) | usage.example [e3] — completeness could not be established: this result holds what the stored code graph has; the graph's own coverage of the code is not established. The repository's index is not complete: 3 relationships have not been attempted by the cross-file pass; 260 relationships could not be stored (source-missing: 260) | test.locate [e4] — limit of 12 tests reached (266 tests were found and 12 are kept) | convention.detect [e5] — completeness could not be established: this result holds what the stored code graph has; the graph's own coverage of the code is not established. The repository's index is not complete: 3 relationships have not been attempted by the cross-file pass; 260 relationships could not be stored (source-missing: 260). Note: this result holds what the stored code graph has; the graph's own coverage of the code is not established this result holds what the stored code graph has; the graph's own coverage of the code is not established. The repository's index is not complete: 3 relationships have not been attempted by the cross-file pass; 260 relationships could not be stored (source-missing: 260)\nSize: S, measured from what the lookups returned: 20 files, 30 items, 11,104 characters. The caller asked for S.\n\n<!-- insrc-analyze meta: shaper=code mode=run toolCalls=5 model=client repoIndexedAt=2026-10-27T19:05:51.835Z -->\n\n## System\n\ncode-shaper: adherence-check anchored on exact management-owner lease affinity across daemon consumers.\n\n## Focus\n\nIntent focus: existing single-thread/threaded lease-owner affinity and reusable production acceptance fixtures. Answer type: adherence-check. Scope bucket: XL. Rule sources retrieved: 0 (no ground-truth document comparison). Code sites inspected: 6. Import and usage graph coverage is incomplete; test lookup returned 12 of 266 results.\n\n## Summary\n\nNo stated owner-affinity rule was retrieved from the doc corpus. Five owner/resolver/probe symbols were located, but signatures alone do not establish shared process-local identity. Matches: 0; drifts: 0; contradictions: 0. A global compliance or violation verdict cannot be inferred from this bundle.\nThe graph's acquirePool caller coverage is incomplete (3 unattempted cross-file relationships and 260 source-missing relationships). Its sole caller is a test fixture; production callers require source verification.\n\n## Structure\n\n## Rule\nNo document constraints retrieved.\n## Matches\n_None verified from signatures alone._\n## Drifts\n_None classified; absence of graph edges is not evidence of absence._\n## Contradictions\n_None._\n## Conventions\n- Function naming: mixed (180 samples).\n- Class naming: PascalCase (13 samples).\n- Test files: *.test (53 files).\n## Related docs\n_None retrieved._\n## Diagnostics\nIncomplete import and caller graphs cannot prove cross-worker pool identity. Test discovery surfaced unrelated JetBrains gateway tests rather than a usable production daemon fixture.\n\n## Surface\n\nLocated ConnectionSessionRpc (src/daemon/connection-session-rpc.ts:44), DraftTestSupervisor (src/daemon/db/draft-test.ts:30), SavedConnectionManagement (src/daemon/db/management.ts:81), createConnectionResolver (src/daemon/db/pool-cache.ts:76) and DriverPool (src/daemon/db/pool.ts:43). These are inspection anchors, not evidence that every consumer shares one instance.\n\n## Artefacts\n\nThe usage graph found src/daemon/steps/__tests__/fixtures/tool-owner-context.ts:1 as an acquirePool caller. test.locate(spawnDaemon) returned unrelated JetBrains gateway tests and a limited result set; no reusable real-daemon fixture was established by that lookup.\n\n## Upstream\n\nsession-worker import graph reports 18 outgoing file edges, returning 12 including db/client.ts, workflow-rpc.ts and server.ts. No incoming edges were surfaced. This incomplete structural view does not establish lease-owner affinity.",
+  "meta": {
+    "mode": "run",
+    "shaper": "code",
+    "toolCalls": 5,
+    "modelId": "client",
+    "emptyLayers": [],
+    "schemaVersion": 2,
+    "repoLastIndexedAt": 1793127951835
+  },
+  "report": {
+    "completeness": {
+      "complete": false,
+      "incomplete": [
+        {
+          "sourceId": "import.graph [e2]",
+          "sourceKind": "lookup",
+          "reason": "limit of 12 imported files each reached (18 imported files were found and 12 are kept)"
+        },
+        {
+          "sourceId": "usage.example [e3]",
+          "sourceKind": "lookup",
+          "reason": "completeness could not be established: this result holds what the stored code graph has; the graph's own coverage of the code is not established. The repository's index is not complete: 3 relationships have not been attempted by the cross-file pass; 260 relationships could not be stored (source-missing: 260)"
+        },
+        {
+          "sourceId": "test.locate [e4]",
+          "sourceKind": "lookup",
+          "reason": "limit of 12 tests reached (266 tests were found and 12 are kept)"
+        },
+        {
+          "sourceId": "convention.detect [e5]",
+          "sourceKind": "lookup",
+          "reason": "completeness could not be established: this result holds what the stored code graph has; the graph's own coverage of the code is not established. The repository's index is not complete: 3 relationships have not been attempted by the cross-file pass; 260 relationships could not be stored (source-missing: 260)"
+        }
+      ],
+      "failed": [],
+      "basisNotes": [
+        "this result holds what the stored code graph has; the graph's own coverage of the code is not established",
+        "this result holds what the stored code graph has; the graph's own coverage of the code is not established. The repository's index is not complete: 3 relationships have not been attempted by the cross-file pass; 260 relationships could not be stored (source-missing: 260)"
+      ]
+    },
+    "measure": {
+      "source": "lookup-results",
+      "items": 30,
+      "files": 20,
+      "characters": 11104,
+      "size": "S",
+      "determined": true,
+      "sizeHint": "S"
+    }
+  }
+}

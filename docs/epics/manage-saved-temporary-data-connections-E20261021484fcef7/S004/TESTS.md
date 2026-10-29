@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -325,3 +325,13 @@ the gate ran no test: every named test of this Task was reported by the builder
 **live: CM-S4-SOURCE: extend src/daemon/db/__tests__/session-service-isolation.test.ts and existing disposable service fixtures for real PostgreSQL/Redis data preservation and actual connection closure; unavailable prerequisites remain pending.**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: Commit fceafd0ec; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/result.json and full-relevant-pass.tap: Node22 actual PostgreSQL 17.10 + Redis 7.4, 2 tests pass, zero fail/skip/TODO. Both-scope SQL/KV remove, real SDK close failure/retry, live observer drain, source preservation and same-ID recreation. Original startup/joined-attempt failures retained. SQL Server, foundation/provider and client prerequisites remain pending; shipped gates unchanged.
+
+## t18
+
+Run at 2026-10-29T12:09:06.306Z on commit `e9233ca80`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: CM-S4-FILES/NO-PERSIST: extend src/daemon/db/__tests__/session-file-matrix.test.ts and src/daemon/db/__tests__/session-file-resources.test.ts for actual native/converted source hashes, private runtime cleanup and filesystem canaries.**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Commits 3dbb2876a and e9233ca80; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t18/result.json, source-compiled-relevant-pass.tap and node22-build.log. Fresh Node22 build; affected suites 4/4 pass, zero fail/skip/TODO. Actual source + compiled modules, ten supported native/converted kinds and CSV directories in both scopes, hashes/poisoned source mutation ports, 11 temporary and 11 saved actual closes per mode, private DuckDB zero counters/no spill/unchanged temporary state tree. Arrow/Feather negative controls retained. Original filesystem notification assertion failure preserved; no release activation.

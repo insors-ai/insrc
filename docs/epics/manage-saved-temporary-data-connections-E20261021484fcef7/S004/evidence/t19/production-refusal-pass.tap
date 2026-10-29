@@ -1,0 +1,24 @@
+TAP version 13
+# Subtest: CM-S4-AFFINITY: production single-thread daemon refuses unproved removal and private consumers before use
+ok 1 - CM-S4-AFFINITY: production single-thread daemon refuses unproved removal and private consumers before use
+  ---
+  duration_ms: 2060.472708
+  type: 'test'
+  ...
+# {"threaded":false,"sc6":"refused-before-ticket","privateConsumers":"refused-before-use","allConsumerOwnerAffinity":"pending","reason":"No production sc6 capability; worker-local Saved pool identity is not proved across consumers."}
+# Subtest: CM-S4-AFFINITY: production threaded daemon refuses unproved removal and private consumers before use
+ok 2 - CM-S4-AFFINITY: production threaded daemon refuses unproved removal and private consumers before use
+  ---
+  duration_ms: 2134.516833
+  type: 'test'
+  ...
+# {"threaded":true,"sc6":"refused-before-ticket","privateConsumers":"refused-before-use","allConsumerOwnerAffinity":"pending","reason":"No production sc6 capability; worker-local Saved pool identity is not proved across consumers."}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4517.156709

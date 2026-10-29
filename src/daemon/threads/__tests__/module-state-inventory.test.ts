@@ -17,7 +17,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { moduleStateInventory } from './module-state-inventory.js';
+import { inventoryProblems, moduleStateInventory } from './module-state-inventory.js';
+import type { ModuleStateSite, StateEntry } from './module-state-inventory.js';
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
 
@@ -78,4 +79,39 @@ test('module-state inventory: the scanner throws on an unreadable tsconfig and i
 		rmSync(join(dir, 'tsconfig.json'));
 		assert.throws(() => moduleStateInventory(dir, 'src/entry.ts'), /Cannot read module-state inventory tsconfig/);
 	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input', () => {
+	const site = (key: string): ModuleStateSite => ({ key, file: key.split('#')[0]!, name: key.split('#')[1]!, kind: 'let' });
+	const reason = 'A reason long enough to explain the classification of this value.';
+	const routed = new Set(['chat.list', 'todos.subscribe']);
+	const sites = ['src/a.ts#one', 'src/a.ts#two', 'src/b/c.ts#three', 'src/b/c.ts#four'].map(site);
+	const clean: Record<string, StateEntry> = {
+		'src/a.ts#one': { class: 'per-thread', reason },
+		'src/a.ts#two': { class: 'shared-store', reason },
+		'src/b/c.ts#three': { class: 'one-owner', owner: 'shared-state', methods: 'chat.', reason },
+		'src/b/c.ts#four': { class: 'one-owner', owner: 'main', reason },
+	};
+	assert.deepEqual(inventoryProblems(sites, clean, routed), [], 'a clean input reports nothing');
+
+	const broken: Record<string, StateEntry> = {
+		'src/a.ts#one': { class: 'per-thread', reason: 'too short' },
+		'src/a.ts#gone': { class: 'per-thread', reason },
+		'src/b/c.ts#three': { class: 'one-owner', owner: 'shared-state', methods: 'repo.', reason },
+		'src/b/c.ts#four': { class: 'one-owner', reason },
+		'src/a.ts#two': { class: 'everywhere' as never, reason },
+	};
+	assert.deepEqual(inventoryProblems([...sites, site('src/b/c.ts#new')], broken, routed), [
+		"src/a.ts#gone: stale (no such module-scope state any more)",
+		"src/a.ts#one: reason under 40 characters",
+		"src/a.ts#two: invalid class 'everywhere'",
+		"src/b/c.ts#four: one-owner without a valid owner",
+		"src/b/c.ts#new: not classified (add a class and a reason)",
+		"src/b/c.ts#three: owned by the shared-state worker but no routed method starts with 'repo.'",
+	]);
+	assert.deepEqual(inventoryProblems([...sites, site('src/b/c.ts#new')], broken, routed, 'src/b/'), [
+		"src/b/c.ts#four: one-owner without a valid owner",
+		"src/b/c.ts#new: not classified (add a class and a reason)",
+		"src/b/c.ts#three: owned by the shared-state worker but no routed method starts with 'repo.'",
+	], 'a prefix limits the check to keys under it');
 });

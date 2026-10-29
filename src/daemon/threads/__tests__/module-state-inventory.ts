@@ -162,3 +162,48 @@ export function moduleStateInventory(root: string, entry: string = SESSION_WORKE
 	}
 	return sites.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 }
+
+/** How one module-scope value is held across threads. */
+export type StateClass = 'per-thread' | 'shared-store' | 'one-owner';
+export type StateOwner = 'shared-state' | 'main' | 'admin' | 'indexing';
+
+/** One reviewed entry of the module-state inventory fixture. */
+export interface StateEntry {
+	readonly class: StateClass;
+	/** one-owner only: the thread that holds the value. */
+	readonly owner?: StateOwner | undefined;
+	/** one-owner on the shared-state worker: the method prefix whose methods reach it there (as s3 routes chat., todos., understanding.). */
+	readonly methods?: string | undefined;
+	readonly reason: string;
+}
+
+const CLASSES: ReadonlySet<string> = new Set(['per-thread', 'shared-store', 'one-owner']);
+const OWNERS: ReadonlySet<string> = new Set(['shared-state', 'main', 'admin', 'indexing']);
+
+/**
+ * What is wrong between the scanned sites and the fixture, one line per problem naming the key:
+ * an unclassified site, a stale entry, or an entry with an invalid class, owner or reason, or a
+ * shared-state owner whose methods no routed method starts with. `prefix` limits both sides to
+ * keys under it.
+ */
+export function inventoryProblems(
+	sites: readonly ModuleStateSite[], fixture: Readonly<Record<string, StateEntry>>, routed: ReadonlySet<string>, prefix = '',
+): string[] {
+	const problems: string[] = [];
+	const scanned = new Set(sites.map(s => s.key).filter(k => k.startsWith(prefix)));
+	const listed = Object.keys(fixture).filter(k => k.startsWith(prefix));
+	for (const key of scanned) if (!Object.hasOwn(fixture, key)) problems.push(`${key}: not classified (add a class and a reason)`);
+	for (const key of listed) {
+		if (!scanned.has(key)) { problems.push(`${key}: stale (no such module-scope state any more)`); continue; }
+		const entry = fixture[key]!;
+		if (!CLASSES.has(entry.class)) problems.push(`${key}: invalid class '${String(entry.class)}'`);
+		if (typeof entry.reason !== 'string' || entry.reason.trim().length < 40) problems.push(`${key}: reason under 40 characters`);
+		if (entry.class !== 'one-owner') continue;
+		if (entry.owner === undefined || !OWNERS.has(entry.owner)) { problems.push(`${key}: one-owner without a valid owner`); continue; }
+		if (entry.owner === 'shared-state') {
+			const methods = entry.methods;
+			if (!methods || ![...routed].some(m => m.startsWith(methods))) problems.push(`${key}: owned by the shared-state worker but no routed method starts with '${methods ?? ''}'`);
+		}
+	}
+	return problems.sort();
+}

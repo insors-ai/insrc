@@ -17,5 +17,6 @@ export function claudeInvestigationArgs(schema:StructuredSchema,modelArgs:readon
 export const claudeInvestigationLaunchDigest=(args:readonly string[],cwd:string)=>digestValue({adapter:CLAUDE_INVESTIGATION_ADAPTER,args,cwd,environment:nativeInvestigationEnvironment(),auth:'existing-cli-oauth'});
 const adapter:NativeInvestigationAdapter={kind:'claude',version:CLAUDE_INVESTIGATION_ADAPTER,args:claudeInvestigationArgs,launchDigest:claudeInvestigationLaunchDigest,
  configuration:(cwd,indexed)=>({[join(cwd,'investigation-settings.json')]:{},[join(cwd,'investigation-mcp.json')]:nativeReviewMcpConfiguration(cwd,indexed)})};
+export { adapter as claudeInvestigationAdapter };
 export type ClaudeInvestigationInvocation=Omit<NativeInvestigationInvocation,'adapter'>;
 export const runClaudeInvestigationSession=(input:ClaudeInvestigationInvocation)=>runNativeInvestigationSession({...input,adapter});

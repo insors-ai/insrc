@@ -62,8 +62,10 @@ import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars 
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { InvestigationQualificationError } from './investigation-session.js';
-import { runClaudeInvestigationSession } from './claude-investigation-session.js';
-import { runCodexInvestigationSession } from './codex-investigation-session.js';
+import { runClaudeInvestigationSession, claudeInvestigationAdapter } from './claude-investigation-session.js';
+import { runCodexInvestigationSession, codexInvestigationAdapter } from './codex-investigation-session.js';
+import { runNativeInvestigationProbe } from './native-investigation-probe.js';
+import type { InvestigationProbeOptions, InvestigationProbeExport } from '../../shared/review-investigation-probe.js';
 
 const log = getLogger('cli-provider');
 
@@ -456,6 +458,11 @@ export class CliProvider implements LLMProvider {
 	 * with the time that remains. Passing the deadline throws
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
+  async runInvestigationProbe(options: InvestigationProbeOptions): Promise<InvestigationProbeExport> {
+    return runNativeInvestigationProbe({ options, adapter: this.kind === 'claude' ? claudeInvestigationAdapter : codexInvestigationAdapter,
+      binaryPath: resolveBin(this.binPath), modelArgs: this.modelArgs(), profile: this.getReviewBudgetProfile('reviewer-session'),
+      invoke: (args, prompt, execution) => runInProcessGroup(execution.binaryPath, args, { ...execution, stdin: prompt }) });
+  }
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
 		if (opts.investigationBinding !== undefined) {
 			if (this.kind === 'claude') return await runClaudeInvestigationSession({binding:opts.investigationBinding,prompt,schema,opts,binaryPath:resolveBin(this.binPath),modelArgs:this.modelArgs(),profile:this.getReviewBudgetProfile('reviewer-session'),

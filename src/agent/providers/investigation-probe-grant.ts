@@ -5,6 +5,14 @@ import type { InvestigationProbeGrant, InvestigationProbeObservation } from '../
 import type { ReviewExecutionBudget } from '../../shared/review-budget.js';
 import type { NativeAdapterIdentity } from './investigation-session.js';
 import { digestValue, freezeValue, snapshotValue } from '../../workflow/code-review/investigation/identity.js';
+import type { InvestigationProbeFixture } from '../../daemon/review-investigation-probe-fixtures.js';
+
+export interface ProbeExecutionRuntime {
+  readonly requestId: string;
+  readonly sourceCommit: string;
+  readonly sourceDigest: string;
+  readonly fixture: InvestigationProbeFixture;
+}
 
 export interface ProbeGrantContext {
   readonly origin: 'installed-probe' | 'scripted-fixture';
@@ -18,6 +26,8 @@ export interface ProbeGrantContext {
   readonly deadlineAt: number;
   readonly assertCurrent: () => void;
   readonly observe: (observation: InvestigationProbeObservation) => Promise<void>;
+  /** Present only on a daemon-prepared fixture invocation, never a wire option. */
+  readonly runtime?: ProbeExecutionRuntime | undefined;
 }
 const grants = new WeakMap<InvestigationProbeGrant, ProbeGrantContext>();
 

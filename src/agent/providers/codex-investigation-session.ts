@@ -29,4 +29,5 @@ const adapter:NativeInvestigationAdapter={kind:'codex',version:CODEX_INVESTIGATI
   try{writeFileSync(fd,JSON.stringify(codexStrictSchema(schema)));}catch(cause){try{unlinkSync(path);}catch{/* Retain a private failed temporary if cleanup is unavailable. */}throw cause;}finally{closeSync(fd);}return ()=>unlinkSync(path);}
 };
 export type CodexInvestigationInvocation=Omit<NativeInvestigationInvocation,'adapter'>;
+export { adapter as codexInvestigationAdapter };
 export const runCodexInvestigationSession=(input:CodexInvestigationInvocation)=>runNativeInvestigationSession({...input,adapter});

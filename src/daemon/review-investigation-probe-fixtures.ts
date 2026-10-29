@@ -40,6 +40,7 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     socket.end('probe canary\n');
   });
   let failure: unknown, closing: Promise<void> | undefined;
+  let trafficChars = 0, trafficGuard: ((chars: number) => void) | undefined;
   const bridge = new ScopedReviewBridge(`probe-${randomUUID()}`, options.assertCurrent);
   function append(value: unknown) {
     signal.throwIfAborted(); options.assertCurrent();
@@ -123,7 +124,19 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     };
     const grant = bridge.issue({ repo: cwd, turn, tools, peer: 'native-cli', signal, ttlMs: 300000,
       assertCurrent: options.assertCurrent, state: () => state });
-    broker = await startNativeReviewBroker(cwd, grant.binding, raw => bridge.dispatch(raw, 'native-cli'));
+    broker = await startNativeReviewBroker(cwd, grant.binding, async raw => {
+      try {
+        trafficChars += JSON.stringify(raw).length; trafficGuard?.(trafficChars);
+        const result = await bridge.dispatch(raw, 'native-cli');
+        trafficChars += JSON.stringify(result).length; trafficGuard?.(trafficChars);
+        return result;
+      } catch (cause) {
+        // Invalid capabilities are ordinary refusals. A budget guard failure
+        // aborts the probe instead of continuing on an unbudgeted tool history.
+        if (trafficGuard) { try { trafficGuard(trafficChars); } catch { failure = cause; abort.abort(); } }
+        throw cause;
+      }
+    });
     const configuration = nativeReviewMcpConfiguration(cwd, options.sourceMode === 'indexed-impact');
     writeFileSync(join(cwd, 'investigation-mcp.json'), JSON.stringify(configuration), { mode: 0o600 });
     writeFileSync(join(cwd, 'investigation-settings.json'), '{}', { mode: 0o600 });
@@ -132,6 +145,10 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     return { root, cwd, turn, tools, binding: grant.binding, bindingPath: broker.bindingPath,
       journalPath, canaryPath, syntheticConfig: shadow, networkUrl: `http://127.0.0.1:${address.port}/`,
       state: () => snapshotValue(state), error: () => failure,
+      setTrafficGuard: (guard: (chars: number) => void) => {
+        if (trafficGuard || trafficChars) throw Error('Probe traffic guard must be installed before use');
+        guard(0); trafficGuard = guard;
+      },
       dispatch: (raw: unknown) => bridge.dispatch(raw, 'native-cli'),
       close,
       // Preserve immutable configuration/evidence after close for independent
@@ -142,3 +159,4 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     await close(); rmSync(root, { recursive: true, force: true }); throw cause;
   }
 }
+export type InvestigationProbeFixture = Awaited<ReturnType<typeof createInvestigationProbeFixture>>;

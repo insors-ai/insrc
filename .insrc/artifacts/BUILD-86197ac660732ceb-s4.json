@@ -4,10 +4,15 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T09:22:25.430Z",
+    "updatedAt": "2026-10-29T10:07:11.853Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
-    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "approvedAt": "2026-10-29T10:07:12.559Z",
+    "reviewOverride": {
+      "reason": "User-approved 2026-10-29: the daemon code-review framework is being rewritten, so s4 was reviewed manually by an independent reviewer agent given only s4's commits (round 1: no HIGH; the shared-state start-failure restart gap and the vacuous ac1 check were fixed in 1ee787f77 with tests that fail without the fix; t4/t6 re-validated in 9e0008a53). Full sweep 6876 tests: none of the 12 failures from s4. Accepted, not fixed: a compaction coinciding with an idle-sweep release is abandoned safely; ac5's 100 ms p99 bound may flake on a loaded machine.",
+      "at": "2026-10-29T10:07:12.559Z"
+    }
   },
   "body": {
     "tasks": [
@@ -214,6 +219,6 @@
         "timestamp": "2026-10-29T09:22:25.430Z"
       }
     ],
-    "commit": "1ee787f77"
+    "commit": "9e0008a53"
   }
 }

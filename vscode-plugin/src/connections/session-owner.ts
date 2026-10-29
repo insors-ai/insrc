@@ -191,5 +191,7 @@ export class ConnectionsWorkbenchOwner {
    this.#disposeDone=control.rpc(PREFIX+'session.end',{}).then(()=>{},()=>{}).finally(()=>{timeout.dispose();control.dispose();});
   }
  }
+ /** Authenticated daemon expiry is a revocation only; it can never grant a new owner. */
+ expireTemporary():void{if(!this.#disposed)this.#invalidate('expired');}
  whenDisposed():Promise<void>{return this.#disposeDone;}
 }

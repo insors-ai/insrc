@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -178,3 +178,20 @@ Run at 2026-10-29T16:30:27.553Z on commit `79cb1e42f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-draft.test.ts` | 0 | 2 | 0.6 s |  |
+
+## t11
+
+Run at 2026-10-29T16:42:41.556Z on commit `7faf99e13`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence | `src/shared/__tests__/connection-manager-kotlin-draft.test.ts` |
+| pass | CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients | `src/shared/__tests__/connection-manager-kotlin-draft.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-kotlin-draft.test.ts` | 0 | 2 | 5.1 s |  |

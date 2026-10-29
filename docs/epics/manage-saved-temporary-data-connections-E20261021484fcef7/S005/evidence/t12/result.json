@@ -1,0 +1,41 @@
+{
+  "task": "t12",
+  "focusedTests": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "cancelled": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "recoveryIntegrationCases": 7,
+  "adjacentOwnerCases": 4,
+  "realAuthority": "Actual IpcServer/ConnectionSessionRpc/SavedConnectionManagement/SavedTicketAuthority/ManagedRegistry/CredentialGenerations; test-owned files, memory keystore, driver factory and fixture-only enablement",
+  "privacy": "Exact signed request retained only in ECMAScript private fields; public views exclude ticket/signature/credentials. Known commit clears original draft and request immediately. Temporary invalidation clears its payload/ticket, leaves an ended-session marker, and never replays it; Saved unknowns retain reconciliation independently.",
+  "limits": {
+    "records": 64,
+    "aggregateAttemptBytes": 16777216,
+    "automaticPolls": 5,
+    "backoffMs": [
+      1000,
+      2000,
+      4000,
+      8000,
+      16000
+    ]
+  },
+  "replay": "Only explicit not-seen replay while ticket unexpired; bytes remain identical even if original private draft changes. Expired/unreceipted target blocks replay and fresh mutation.",
+  "postCommit": "Registration/revision preserved across activation, cleanup and refresh failures. Recovery uses activate by committed revision, status by original ticket for create/update credential maintenance, or list only. No repeated create/update.",
+  "lifecycle": "One lazy mutation controller in actual extension activation; no view subscription owns it. Workbench dispose clears private records/polls. Refresh observers capture view generations before reads.",
+  "initialFailure": "attempt1-failed.tap and attempt1-intervention.json retained. Harness corrected receipt-finalization write assertions, pending-work wait, and node:test mock restore; only its owned runner/child were terminated after failed-finally leak.",
+  "typechecks": "Node22 backend and extension tsc --noEmit passed",
+  "fullSweep": "deferred until all implementation tasks",
+  "releaseEnabled": false,
+  "sourceSha256": {
+    "src/shared/connection-manager/controller.ts": "ac5575806bb9bf5f93af949d19b958461b0a12c0259c5749d0aca7506189e233",
+    "vscode-plugin/src/connections/gateway.ts": "c0b6cc2c6f12ef9ceca138af49f32cc86b02340dddcc1d5f56d7e62b787af844",
+    "vscode-plugin/src/connections/session-owner.ts": "f8f1e5d27b542e7a1dd3d8ca01488251c120606e3933b36ab2255e4a358b9752",
+    "vscode-plugin/src/connections/__tests__/mutation.test.ts": "24c7db02c891890f40192da684c4c871c07e9a4d1faae0d32e2604e53195b4ca",
+    "vscode-plugin/src/extension.ts": "756b908324418e1c83cefde2243b106e2c6ad41a0e342e54fc2afb5093558d6e"
+  }
+}

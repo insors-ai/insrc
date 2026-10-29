@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T16:30:27.553Z",
+    "updatedAt": "2026-10-29T16:42:41.556Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -480,6 +480,51 @@
               },
               {
                 "title": "CM-S5-FORM-TS: unsafe input and unknown shapes refuse without changing draft or invoking getters",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "7faf99e13",
+        "ranAt": "2026-10-29T16:42:41.556Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-draft.test.ts",
+                "title": "CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-draft.test.ts",
+                "title": "CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-draft.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5143,
+            "titles": [
+              {
+                "title": "CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients",
                 "result": "pass"
               }
             ],

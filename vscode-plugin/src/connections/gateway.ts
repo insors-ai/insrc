@@ -1,0 +1,35 @@
+/** Scope routing stays privileged in the extension host, never in renderer payloads. */
+import type { ConnectionKey } from '../../../src/shared/connection-management.js';
+import { ConnectionMutationController } from '../../../src/shared/connection-manager/controller.js';
+import type { MutationPorts } from '../../../src/shared/connection-manager/controller.js';
+import { decodeMutationOutcome } from '../../../src/shared/connection-manager/wire.js';
+import { ConnectionsWorkbenchOwner, ConnectionOwnerError } from './session-owner.js';
+
+export function createConnectionsMutationController(owner:ConnectionsWorkbenchOwner,timing:Pick<MutationPorts,'now'|'timer'>={}):ConnectionMutationController {
+ let lifetime=0;
+ const stamp=(key:ConnectionKey):string|null=>key.scope==='saved'?null:JSON.stringify([owner.view.daemonEpoch,lifetime]);
+ const controller=new ConnectionMutationController({
+  ...timing,
+  sessionStamp:stamp,
+  call:async(key,method,params,expected)=>{
+   if(key.scope==='saved')return await owner.requestSaved(key.repoRoot,method,params);
+   if(expected===null||stamp(key)!==expected)throw new ConnectionOwnerError('expired');
+   // Only explicit recovery/status may resume a live owner. Never replay a mutation during reconnect.
+   if(method.endsWith('.status')&&owner.view.status==='offline')await owner.selectRoot(key.repoRoot);
+   if(stamp(key)!==expected)throw new ConnectionOwnerError('expired');
+   const response=await owner.requestTemporary(key.repoRoot,owner.view,method,params);
+   // An authenticated expiry response revokes inputs immediately, including on status/read-shaped calls.
+   try{const result=decodeMutationOutcome(response,{key});if(result.status==='rejected'&&result.code==='session-expired')owner.expireTemporary();}catch{/* The effect's own strict decoder handles other reply shapes. */}
+   return response;
+  },
+  refresh:async key=>{
+   const view=await owner.selectRoot(key.repoRoot);
+   return await owner.requestTemporary(key.repoRoot,view,'db.connections.v2.list',{repoRoot:key.repoRoot});
+  },
+  expireTemporary:()=>owner.expireTemporary(),
+ });
+ const invalidation=owner.onTemporaryInvalidated(()=>{lifetime++;controller.endTemporary();});
+ const dispose=controller.dispose.bind(controller);
+ controller.dispose=()=>{invalidation.dispose();dispose();};
+ return controller;
+}

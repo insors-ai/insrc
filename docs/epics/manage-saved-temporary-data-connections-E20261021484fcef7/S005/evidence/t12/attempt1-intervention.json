@@ -1,0 +1,6 @@
+{
+  "attempt": 1,
+  "intervention": "Terminated only owned Node test runner PID76725 and child PID76735 after a test-finally mock API error prevented fixture teardown; cleaned its exact cm-service-6LPAVi temporary directory. No daemon or unrelated process touched.",
+  "output": "attempt1-failed.tap",
+  "reason": "recovery.restore is not the node:test MockFunctionContext API; fixed to recovery.mock.restore."
+}

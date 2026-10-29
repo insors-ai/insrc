@@ -67,7 +67,7 @@ export type DecisionResult =
 
 export interface InvalidParams { readonly error: string; readonly recoverable: false }
 
-type CliKind = 'claude' | 'codex';
+type CliKind = 'claude' | 'codex' | 'vibe';
 type Run = (command: string, args: readonly string[], opts: ProcessGroupOpts) => Promise<ProcessGroupResult>;
 
 /** Test seams; production uses the defaults. */
@@ -132,8 +132,8 @@ interface Context {
 	readonly modelId:   string;
 }
 
-async function call(ctx: Context, args: readonly string[], stdin?: string): Promise<ProcessGroupResult> {
-	const r = await serial(() => ctx.run(ctx.bin, args, { timeoutMs: ctx.timeoutMs, cwd: ctx.cwd, ...(stdin !== undefined ? { stdin } : {}) }));
+async function call(ctx: Context, args: readonly string[], stdin?: string, env?: NodeJS.ProcessEnv): Promise<ProcessGroupResult> {
+	const r = await serial(() => ctx.run(ctx.bin, args, { timeoutMs: ctx.timeoutMs, cwd: ctx.cwd, ...(stdin !== undefined ? { stdin } : {}), ...(env !== undefined ? { env } : {}) }));
 	log.info({ family: ctx.family, modelId: ctx.modelId, cli: ctx.kind, args, exitCode: r.exitCode, timedOut: r.timedOut, spawnError: r.spawnError, durationMs: r.durationMs }, 'model check: CLI call');
 	return r;
 }
@@ -305,6 +305,35 @@ async function checkClaude(ctx: Context, claimed: readonly EffortLevel[]): Promi
 	return { cliVersion, runs: true, efforts: reported, ...(inputLimit !== undefined ? { inputLimit } : {}) };
 }
 
+// ── the Vibe procedure ──────────────────────────────────────────────────────
+
+/** vibe exposes no CLI surface listing a model's thinking levels (they live in
+ *  the user's config.toml [[models]] entries), so every claimed level is
+ *  'recognised-unconfirmed' — the user's approval admits it, exactly as with
+ *  claude. One headless probe decides whether the model runs; the model is
+ *  pinned through VIBE_ACTIVE_MODEL because vibe has no --model flag. */
+async function checkVibe(ctx: Context, claimed: readonly EffortLevel[]): Promise<Procedure> {
+	const notChecked = (cliVersion: string, error: string): Procedure => ({
+		cliVersion, runs: false,
+		efforts: claimed.map(effort => ({ effort, verdict: 'rejected', evidence: 'not checked: the CLI could not be reached' })),
+		error,
+	});
+	const version = await call(ctx, ['--version']);
+	const down = unreachable(ctx, version);
+	if (down !== undefined) return notChecked('', down);
+	const cliVersion = version.exitCode === 0 ? version.stdout.trim() : '';
+	const efforts: EffortCheck[] = claimed.map(effort => ({
+		effort,
+		verdict: 'recognised-unconfirmed',
+		evidence: `the vibe CLI lists no thinking levels for ${ctx.modelId} (they are set per model in config.toml); only your approval admits '${effort}'`,
+	}));
+	const run = await call(ctx, ['-p', '--output', 'text'], PROBE_PROMPT, { ...process.env, VIBE_ACTIVE_MODEL: ctx.modelId });
+	const runDown = unreachable(ctx, run);
+	if (runDown !== undefined) return { cliVersion, runs: false, efforts, error: runDown };
+	if (run.exitCode !== 0 || run.stdout.trim().length === 0) return { cliVersion, runs: false, efforts, error: unreadable(ctx, run) };
+	return { cliVersion, runs: true, efforts };
+}
+
 // ── models.check ────────────────────────────────────────────────────────────
 
 function invalid(what: string): InvalidParams {
@@ -333,7 +362,9 @@ export async function checkModel(params: unknown, deps: ModelCheckDeps = {}): Pr
 		timeoutMs: deps.timeoutMs ?? DEFAULT_TIMEOUT_MS,
 		cwd:       deps.cwd ?? tmpdir(),
 	};
-	const outcome = kind === 'codex' ? await checkCodex(ctx, claimed) : await checkClaude(ctx, claimed);
+	const outcome = kind === 'codex' ? await checkCodex(ctx, claimed)
+		: kind === 'vibe' ? await checkVibe(ctx, claimed)
+		: await checkClaude(ctx, claimed);
 	const result: ModelCheckResult = {
 		checkId: randomUUID(), family: cliFamily, modelId, runs: outcome.runs,
 		...(outcome.inputLimit !== undefined ? { inputLimit: outcome.inputLimit } : {}),

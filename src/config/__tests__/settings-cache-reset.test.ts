@@ -41,6 +41,8 @@ const ALTERNATE: ModelDefinitionsFile = {
 		{ id: 'cli-claude', cliKind: 'claude', displayName: 'Claude', models: [{ id: 'claude-z', efforts: [] }], tierDefaults: { core: { model: 'claude-z' }, mid: { model: 'claude-z' }, cheap: { model: 'claude-z' } }, summariserModel: 'claude-z' },
 		{ id: 'cli-codex', cliKind: 'codex', displayName: 'Codex', models: [{ id: 'gpt-x', efforts: ['low'] }], tierDefaults: { core: { model: 'gpt-x', effort: 'low' }, mid: { model: 'gpt-x' }, cheap: { model: 'gpt-x' } }, summariserModel: 'gpt-x' },
 		{ id: 'ollama', displayName: 'Ollama', models: [{ id: 'llama:1b', efforts: [], inputLimit: { unit: 'tokens', max: 4096 } }], toolLoopModel: 'llama:1b' },
+		{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+		{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 	],
 };
 

@@ -1270,7 +1270,7 @@ function renderFrame(f: WorkflowProgress): string {
 export async function handleWorkflowRun(
 	args:   WorkflowRunArgs,
 	deps:   UnaryRpcDeps = {},
-	client?: 'claude' | 'codex' | undefined,
+	client?: StepClient | undefined,
 ): Promise<WorkflowRunEnvelope> {
 	try {
 		const result = await dispatchWorkflowRun(args, deps, client);
@@ -1289,7 +1289,7 @@ export async function handleWorkflowRun(
 async function dispatchWorkflowRun(
 	args:   WorkflowRunArgs,
 	deps:   UnaryRpcDeps,
-	client?: 'claude' | 'codex' | undefined,
+	client?: StepClient | undefined,
 ): Promise<Record<string, unknown>> {
 	// ABORT — highest precedence.
 	if (typeof args.abort === 'string' && args.abort.length > 0) {
@@ -1373,6 +1373,7 @@ function detectClient(name: string | undefined): StepClient | undefined {
 	const n = name.toLowerCase();
 	if (n.includes('codex'))  return 'codex';
 	if (n.includes('claude')) return 'claude';
+	if (n.includes('vibe'))   return 'vibe';
 	return undefined;
 }
 

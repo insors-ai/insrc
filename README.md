@@ -15,7 +15,7 @@ Use it through MCP, the terminal dashboard, or companion IDE plugins.
 
 **Local storage and embeddings. Cloud reasoning through your existing CLI login.**
 Graph and vector data stay on disk. When you select a cloud model, relevant
-context is sent through the `claude` or `codex` CLI; background document summaries
+context is sent through the `claude`, `codex` or `vibe` CLI; background document summaries
 also follow the configured model tier. insrc does not require cloud LLM API keys.
 
 [![docs](https://img.shields.io/badge/docs-insrc.insors.io-4ade80?style=flat-square)](https://insrc.insors.io)
@@ -84,7 +84,7 @@ Code, Codex, or any MCP client.
 - **Local-first.** Embeddings run locally through Ollama or the embedded ONNX
   backend; the graph + vectors live on your disk under `~/.insrc/`.
 - **No direct cloud REST calls.** Cloud LLM access goes exclusively through the
-  locally-installed `claude` and `codex` CLI binaries (via `CliProvider`), so
+  locally-installed `claude`, `codex` and `vibe` CLI binaries (via `CliProvider`), so
   auth and quota stay with the user's CLI OAuth sessions.
 - **Daemon owns all storage.** The CLI, MCP server, and IDE never open LMDB or
   LanceDB directly — everything goes through daemon IPC.
@@ -97,7 +97,7 @@ Everything routes through one daemon. Clients never open a database directly —
 the daemon is the single owner of the graph, the vectors, and the tool registry.
 
 ```
-   claude / codex CLI        insrc TUI          IDE workbench
+   claude / codex / vibe CLI  insrc TUI          IDE workbench
           │                     │                     │
           └──────────┬──────────┴──────────┬──────────┘
                      ▼                      ▼
@@ -130,7 +130,7 @@ the daemon is the single owner of the graph, the vectors, and the tool registry.
 
 You need Git and Node.js **≥22.13.0** for a source installation. Choose local
 Ollama embeddings or the embedded ONNX alternative. Reasoning can use a local
-Ollama model or an authenticated `claude` / `codex` CLI. Model downloads and
+Ollama model or an authenticated `claude` / `codex` / `vibe` CLI. Model downloads and
 cloud reasoning require network access.
 
 ```bash
@@ -196,7 +196,7 @@ MCP binary is `out/bin/insrc-mcp.js` (registered as `insrc-mcp`).
 **Tech stack** — TypeScript (strict, ESM-only, NodeNext) · Node.js ≥22.13.0 (`tsx` in
 dev; native modules build against Node 22 headers) · LMDB + LanceDB + DuckDB ·
 tree-sitter (TS/JS, Python, Go, Java, Scala, Kotlin) · Ollama (local LLM +
-embeddings) / ONNX (local embeddings) + `CliProvider` (claude + codex CLI subprocesses) · pino logging ·
+embeddings) / ONNX (local embeddings) + `CliProvider` (claude + codex + vibe CLI subprocesses) · pino logging ·
 ink + react TUI · undici HTTP.
 
 ## CLI

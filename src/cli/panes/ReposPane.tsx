@@ -28,7 +28,7 @@ const STATUS_COLOR: Record<RegisteredRepo['status'], string> = {
 	ready: 'green', indexing: 'yellow', pending: 'gray', error: 'red',
 };
 
-type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'confirm-remove' | 'tracker' | 'models';
+type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'steer-vibe' | 'confirm-remove' | 'tracker' | 'models';
 
 export function ReposPane(props: {
 	daemon: DaemonState;
@@ -42,20 +42,22 @@ export function ReposPane(props: {
 	const [cursor, setCursor] = useState(0);
 	const [modal, setModal] = useState<Modal>('none');
 	// Steering-injection add flow: path entered, then a per-file confirm for
-	// CLAUDE.md and AGENTS.md before the repo.add call carries the selection.
+	// CLAUDE.md and AGENTS.md, then a confirm for the Mistral Vibe MCP
+	// registration, before the repo.add call carries the selection.
 	const [addPath, setAddPath] = useState('');
 	const [steerClaude, setSteerClaude] = useState(false);
+	const [steerAgents, setSteerAgents] = useState(false);
 	// Tracker-setup modal: `running` while the (synchronous, gh-shelling) engine
 	// runs on a deferred tick; `report` once it returns (or a synthetic failed
 	// report if it threw).
 	const [running, setRunning] = useState(false);
 	const [report, setReport] = useState<TrackerSetupReport | null>(null);
 
-	const finishAdd = (claude: boolean, agents: boolean): void => {
+	const finishAdd = (claude: boolean, agents: boolean, vibe: boolean): void => {
 		setModal('none'); ui.capture(false);
 		const picks = [claude ? 'CLAUDE.md' : null, agents ? 'AGENTS.md' : null].filter(Boolean).join(' + ');
 		act('add', async () => {
-			const { path: registered, mcp } = await svc.repo.add(addPath, { claude, agents });
+			const { path: registered, mcp } = await svc.repo.add(addPath, { claude, agents, vibe });
 			const mcpLine = formatMcpOutcome(mcp);
 			return `registered ${registered} — indexing started${picks ? ` · steering → ${picks}` : ''}${mcpLine ? ` · mcp: ${mcpLine}` : ''}`;
 		});
@@ -141,9 +143,21 @@ export function ReposPane(props: {
 		return (
 			<Panel title="Repos · add · steering" active>
 				<ConfirmPrompt
-					label="install the insrc steering block into this repo's AGENTS.md (Codex)?"
-					onYes={() => finishAdd(steerClaude, true)}
-					onNo={()  => finishAdd(steerClaude, false)}
+					label="install the insrc steering block into this repo's AGENTS.md (Codex, Mistral Vibe)?"
+					onYes={() => { setSteerAgents(true);  setModal('steer-vibe'); }}
+					onNo={()  => { setSteerAgents(false); setModal('steer-vibe'); }}
+				/>
+			</Panel>
+		);
+	}
+
+	if (modal === 'steer-vibe') {
+		return (
+			<Panel title="Repos · add · steering" active>
+				<ConfirmPrompt
+					label="register the insrc MCP server with Mistral Vibe (vibe mcp add)?"
+					onYes={() => finishAdd(steerClaude, steerAgents, true)}
+					onNo={()  => finishAdd(steerClaude, steerAgents, false)}
 				/>
 			</Panel>
 		);

@@ -40,6 +40,23 @@
       "summariserModel": "gpt-6-luna"
     },
     {
+      "id": "cli-vibe",
+      "cliKind": "vibe",
+      "displayName": "Mistral Vibe CLI",
+      "models": [
+        { "id": "mistral-large-latest", "displayName": "Mistral Large", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "mistral-vibe-cli-latest", "aliases": ["mistral-medium-3.5"], "displayName": "Mistral Medium 3.5 (Vibe default)", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "devstral-latest", "displayName": "Devstral (coding)", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "mistral-small-latest", "displayName": "Mistral Small", "efforts": ["low", "medium", "high", "xhigh", "max"] }
+      ],
+      "tierDefaults": {
+        "core":  { "model": "mistral-large-latest" },
+        "mid":   { "model": "mistral-vibe-cli-latest" },
+        "cheap": { "model": "mistral-small-latest" }
+      },
+      "summariserModel": "mistral-small-latest"
+    },
+    {
       "id": "ollama",
       "displayName": "Ollama (local)",
       "models": [
@@ -47,6 +64,20 @@
         { "id": "qwen3.8:27b", "displayName": "Qwen 3.8 27B", "efforts": [], "inputLimit": { "unit": "tokens", "max": 32768 }, "memoryMb": 18000 }
       ],
       "toolLoopModel": "qwen3.6:27b"
+    },
+    {
+      "id": "ollama-claude",
+      "cliKind": "claude",
+      "host": "ollama",
+      "displayName": "Claude CLI on Ollama",
+      "models": [
+        { "id": "deepseek-v4-pro:cloud", "displayName": "DeepSeek V4 Pro", "efforts": [], "hosting": "cloud" },
+        { "id": "deepseek-v4.1-flash:cloud", "displayName": "DeepSeek V4.1 Flash", "efforts": ["low", "high", "max"], "hosting": "cloud" },
+        { "id": "glm-5.3:cloud", "displayName": "GLM 5.3", "efforts": ["low", "high", "max"], "hosting": "cloud" },
+        { "id": "glm-5.3-flash:cloud", "displayName": "GLM 5.3 Flash", "efforts": ["low", "high", "max"], "hosting": "cloud" },
+        { "id": "mistral-large-4:cloud", "displayName": "Mistral Large 4", "efforts": [], "hosting": "cloud" },
+        { "id": "kimi-k3:cloud", "displayName": "Kimi K3", "efforts": ["low", "high", "max"], "hosting": "cloud" }
+      ]
     }
   ]
 }

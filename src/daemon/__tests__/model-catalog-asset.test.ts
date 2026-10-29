@@ -45,7 +45,7 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 	assert.equal(process.env['INSRC_MODEL_CATALOG_DIR'], undefined);
 	const file = validateModelCatalog();
 	assert.equal(file.defaultFamily, 'cli-claude');
-	assert.deepEqual(file.families.map(f => f.id), ['cli-claude', 'cli-codex', 'ollama']);
+	assert.deepEqual(file.families.map(f => f.id), ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama', 'ollama-claude']);
 
 	// Ships via copy-assets: the file lives under src/assets/, which copy-assets copies whole to out/assets/.
 	assert.equal(relative(join(repoRoot, 'src'), MODEL_CATALOG_DIR).split(/[\\/]/).join('/'), 'assets/models');

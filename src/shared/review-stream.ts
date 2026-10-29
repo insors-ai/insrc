@@ -17,6 +17,7 @@ import { isReviewInputFingerprint, REVIEW_INPUT_SCHEMA_VERSION } from './review-
 import type { CodeReviewProgress } from '../workflow/code-review/runner.js';
 import { CODE_REVIEW_SCHEMA_VERSION } from '../workflow/code-review/types.js';
 import type { CodeReviewArtifact, CodeReviewFallbackReason, CodeReviewGrounding, ReviewTimingPlan } from '../workflow/code-review/types.js';
+import type { StepClient } from './step-context.js';
 
 /** Why a review request did not produce a review. */
 export type ReviewStreamFailure =
@@ -60,7 +61,7 @@ export interface CodeReviewStreamParams {
 	readonly repo?:    string | undefined;
 	readonly epicHash: string;
 	readonly storyId:  string;
-	readonly client?:  'claude' | 'codex' | undefined;
+	readonly client?:  StepClient | undefined;
 	/** How the daemon should ground the review. Omitted means `full`. */
 	readonly groundingMode?: 'full' | 'degraded' | undefined;
 	/** Why a degraded review fell back to the diff (ISSUE-1102dc71). */

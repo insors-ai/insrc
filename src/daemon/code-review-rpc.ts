@@ -24,6 +24,7 @@ import type { CodeReviewProgress as OperationProgress } from '../workflow/code-r
 import { assertReviewFingerprintCurrent } from '../workflow/code-review/publication.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
+import type { StepClient } from '../shared/step-context.js';
 import { SamePartyReviewError } from '../workflow/review/party.js';
 import { buildAuthorParty } from '../workflow/code-review/author.js';
 import { captureReviewInputFingerprint } from '../workflow/code-review/input-fingerprint.js';
@@ -58,8 +59,8 @@ interface CodeReviewRunParams {
 	readonly epicHash:  string;
 	readonly storyId:   string;
 	/** Invoking MCP agent, so a config with no explicit shaperProvider falls
-	 *  back to that CLI (claude/codex) instead of Ollama. */
-	readonly client?:   'claude' | 'codex';
+	 *  back to that CLI (claude/codex/vibe) instead of Ollama. */
+	readonly client?:   StepClient;
 	/** How to ground the review. `degraded` grounds on the diff, stamps the
 	 *  record `degraded` and caps the verdict at warn; omitted or `full` grounds
 	 *  on the graph, as this request always has. */
@@ -80,7 +81,7 @@ export interface CodeReviewRunDeps {
  readonly captureInput?: ((subject: CodeReviewSubject) => ReviewInputFingerprint | undefined) | undefined;
 	readonly resolveSubject?: ((repoPath: string, epicHash: string, storyId: string) => Promise<CodeReviewSubjectResolution>) | undefined;
 	/** The provider and its label for this review. */
-	readonly resolveProvider?: ((repoPath: string, client: 'claude' | 'codex' | undefined) => { provider: LLMProvider; modelLabel: string }) | undefined;
+	readonly resolveProvider?: ((repoPath: string, client: StepClient | undefined) => { provider: LLMProvider; modelLabel: string }) | undefined;
 	readonly runReview?: typeof RunCodeReview | undefined;
 	readonly assembleDiffGrounding?: typeof assembleDiffCodeReviewGrounding | undefined;
 	/** Where the record is written (the runner's `write`). */
@@ -209,7 +210,7 @@ export async function codeReviewRunStart(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultProvider(_repoPath: string, client: 'claude' | 'codex' | undefined): { provider: LLMProvider; modelLabel: string } {
+function defaultProvider(_repoPath: string, client: StepClient | undefined): { provider: LLMProvider; modelLabel: string } {
 	const cfg = loadAnalyzeConfig();
 	const clientDefault: AnalyzeShaperProviderKind | undefined = familyForClient(client);
 	return {

@@ -90,7 +90,7 @@ export interface ModelRegistry {
 	tierDefault(family: CliFamilyId, tier: TierName): TierDefault;
 	summariserModel(family: CliFamilyId): ResolvedModel;
 	toolLoopModel(): ResolvedModel;
-	cliKind(family: FamilyId): 'claude' | 'codex' | undefined;
+	cliKind(family: FamilyId): 'claude' | 'codex' | 'vibe' | undefined;
 	/** De-duplicated union of every served model's efforts, by first appearance. */
 	effortLevels(): readonly EffortLevel[];
 	resolveTier(tier: TierName, setting: TierSetting): TierResolution;
@@ -139,7 +139,7 @@ function isStringList(v: unknown): v is string[] {
 export function profileProblem(e: unknown): string | undefined {
 	if (typeof e !== 'object' || e === null || Array.isArray(e)) return 'not an object';
 	const p = e as Record<string, unknown>;
-	if (p['family'] !== 'cli-claude' && p['family'] !== 'cli-codex') return `unknown family '${String(p['family'])}'`;
+	if (p['family'] !== 'cli-claude' && p['family'] !== 'cli-codex' && p['family'] !== 'cli-vibe') return `unknown family '${String(p['family'])}'`;
 	if (typeof p['modelId'] !== 'string' || p['modelId'].length === 0) return 'missing modelId';
 	if (p['status'] !== 'approved' && p['status'] !== 'rejected') return `status '${String(p['status'])}' is not approved | rejected`;
 	if (!isStringList(p['efforts'])) return 'efforts is not a list of strings';
@@ -220,7 +220,7 @@ export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonl
 	const byDecision = [...effective.values()].sort((a, b) => Date.parse(a.decidedAt) - Date.parse(b.decidedAt));
 
 	const served = new Map<FamilyId, ResolvedModel[]>();
-	const rejectedIds = new Map<CliFamilyId, string[]>([['cli-claude', []], ['cli-codex', []]]);
+	const rejectedIds = new Map<CliFamilyId, string[]>([['cli-claude', []], ['cli-codex', []], ['cli-vibe', []]]);
 	for (const f of file.families) {
 		served.set(f.id, f.models.map(m => Object.freeze({ ...m, family: f.id, source: 'shipped' as const })));
 	}
@@ -273,9 +273,13 @@ export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonl
 					? { family: setting.runner, model: found, effort }
 					: { family: setting.runner, model: found, droppedEffort: effort };
 			}
+			// Only a vendor CLI family carries rejected ids / tier defaults; the
+			// local and Ollama-hosted families fall back to the default family.
+			const runner = setting.runner;
+			const vendorCli = runner === 'cli-claude' || runner === 'cli-codex' || runner === 'cli-vibe' ? runner : undefined;
 			const reason: FallbackReason =
-				setting.runner !== 'ollama' && rejected(setting.runner).includes(setting.model) ? 'rejected-model' : 'unlisted-model';
-			const fbFamily: CliFamilyId = setting.runner === 'ollama' ? file.defaultFamily : setting.runner;
+				vendorCli !== undefined && rejected(vendorCli).includes(setting.model) ? 'rejected-model' : 'unlisted-model';
+			const fbFamily: CliFamilyId = vendorCli ?? file.defaultFamily;
 			const def = tierDefault(fbFamily, tier);
 			return {
 				family: fbFamily,

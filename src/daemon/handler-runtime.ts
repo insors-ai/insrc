@@ -335,7 +335,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			let steering: Awaited<ReturnType<typeof injectSteeringBlock>> | undefined;
 			let mcp: Awaited<ReturnType<typeof registerMcpClients>> | undefined;
 			const sel = (params as { steering?: SteeringSelection }).steering;
-			if (sel !== undefined && (sel.claude === true || sel.agents === true)) {
+			if (sel !== undefined && (sel.claude === true || sel.agents === true || sel.vibe === true)) {
 				try {
 					steering = await injectSteeringBlock(normalisedPath, sel);
 				} catch (err) {

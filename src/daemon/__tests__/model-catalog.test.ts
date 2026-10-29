@@ -32,7 +32,7 @@ import {
 
 const CATALOG_FILE = 'cloud-model-catalog.json';
 
-/** A valid minimal fixture with all three families. */
+/** A valid minimal fixture with all five families (ollama-claude with one cloud and one local model). */
 function valid(): Record<string, any> {
 	return {
 		version: 1,
@@ -58,6 +58,19 @@ function valid(): Record<string, any> {
 				id: 'ollama', displayName: 'Ollama',
 				models: [{ id: 'qwen:1b', efforts: [], inputLimit: { unit: 'tokens', max: 8192 } }],
 				toolLoopModel: 'qwen:1b',
+			},
+			{
+				id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama',
+				models: [
+					{ id: 'glm:cloud', aliases: ['glm'], efforts: ['low', 'high'], hosting: 'cloud' },
+					{ id: 'qwen:local', efforts: [], hosting: 'local' },
+				],
+			},
+			{
+				id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe',
+				models: [{ id: 'vibe-big', aliases: ['vbig'], efforts: ['low', 'max'] }, { id: 'vibe-small', efforts: ['low'] }],
+				tierDefaults: { core: { model: 'vbig' }, mid: { model: 'vibe-big' }, cheap: { model: 'vibe-small' } },
+				summariserModel: 'vibe-small',
 			},
 		],
 	};
@@ -88,8 +101,11 @@ function refusals(): Array<[string, string | null, RegExp]> {
 		['non-numeric version', mut(x => { x.version = '1'; }), /missing or non-numeric `version`/],
 		['defaultFamily ollama', mut(x => { x.defaultFamily = 'ollama'; }), /defaultFamily 'ollama' is not a CLI family/],
 		['unknown family', mut(x => { x.families[2].id = 'gemini'; }), /families\[2\]: unknown family id 'gemini'/],
-		['repeated family', mut(x => { x.families.push(valid().families[1]); }), /families\[3\]: family 'cli-codex' is repeated/],
-		['missing ollama family', mut(x => { x.families.pop(); }), /families: family 'ollama' is missing/],
+		['repeated family', mut(x => { x.families.push(valid().families[1]); }), /families\[5\]: family 'cli-codex' is repeated/],
+		['missing ollama family', mut(x => { x.families.splice(2, 1); }), /families: family 'ollama' is missing/],
+		['missing host family', mut(x => { x.families.splice(3, 1); }), /families: family 'ollama-claude' is missing/],
+		['missing vibe family', mut(x => { x.families.splice(4, 1); }), /families: family 'cli-vibe' is missing/],
+		['vibe family without cliKind', mut(x => { delete x.families[4].cliKind; }), /families\[4\] \(cli-vibe\): cliKind is missing/],
 		['missing non-default CLI family', mut(x => { x.families.splice(1, 1); }), /families: family 'cli-codex' is missing/],
 		['CLI family without cliKind', mut(x => { delete x.families[1].cliKind; }), /families\[1\] \(cli-codex\): cliKind is missing/],
 		['CLI family without tierDefaults', mut(x => { delete x.families[0].tierDefaults; }), /families\[0\] \(cli-claude\): tierDefaults is missing/],
@@ -134,7 +150,7 @@ test('model-catalog.test.ts: validateModelCatalog returns and caches the frozen 
 	const dir = useAsset(JSON.stringify(valid()));
 	const first = validateModelCatalog();
 	assert.equal(first.defaultFamily, 'cli-claude');
-	assert.deepEqual(first.families.map(f => f.id), ['cli-claude', 'cli-codex', 'ollama']);
+	assert.deepEqual(first.families.map(f => f.id), ['cli-claude', 'cli-codex', 'ollama', 'ollama-claude', 'cli-vibe']);
 	assert.ok(Object.isFrozen(first) && Object.isFrozen(first.families) && Object.isFrozen(first.families[0]!.models));
 	assert.ok(Object.isFrozen(first.families[0]!.models[0]!.efforts));
 	// The file is gone from disk: a second call is served from the cache.
@@ -196,4 +212,82 @@ test('model-catalog.test.ts: memoryMb accepted on Ollama models, refused when no
 		assert.throws(() => validateModelCatalog(), (e: unknown) => e instanceof ModelCatalogValidationError && reason.test(e.reason), label);
 		_resetModelCatalogForTests();
 	}
+});
+
+// ── the Ollama-hosted family (Epic b220bb61, Story s1 · t1) ──────────────────
+
+test('model-catalog.test.ts: the five-family fixture with ollama-claude and cli-vibe validates', () => {
+	useAsset(JSON.stringify(valid()));
+	const host = validateModelCatalog().families.find(f => f.id === 'ollama-claude')!;
+	assert.equal(host.cliKind, 'claude');
+	assert.equal(host.host, 'ollama');
+	assert.deepEqual(host.models.map(m => [m.id, m.hosting]), [['glm:cloud', 'cloud'], ['qwen:local', 'local']]);
+	assert.ok(!('tierDefaults' in host) && !('summariserModel' in host) && !('toolLoopModel' in host));
+	const vibe = validateModelCatalog().families.find(f => f.id === 'cli-vibe')!;
+	assert.equal(vibe.cliKind, 'vibe');
+	assert.deepEqual(vibe.tierDefaults?.core, { model: 'vbig' });
+	assert.equal(vibe.summariserModel, 'vibe-small');
+});
+
+/** Expect one refusal of `mutate(valid())` whose reason matches `reason`. */
+function assertRefused(label: string, mutate: (x: Record<string, any>) => void, reason: RegExp): void {
+	const x = valid();
+	mutate(x);
+	useAsset(JSON.stringify(x));
+	assert.throws(() => validateModelCatalog(), (e: unknown) => {
+		assert.ok(e instanceof ModelCatalogValidationError, `${label}: ModelCatalogValidationError`);
+		assert.match(e.reason, reason, label);
+		return true;
+	}, label);
+	_resetModelCatalogForTests();
+}
+
+test("model-catalog.test.ts: a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails naming the family and field", () => {
+	const at = 'families\\[3\\] \\(ollama-claude\\)';
+	const cases: Array<[string, (x: Record<string, any>) => void, RegExp]> = [
+		['no host', x => { delete x.families[3].host; }, new RegExp(`${at}: host is missing or not 'ollama'`)],
+		['wrong host', x => { x.families[3].host = 'lmstudio'; }, new RegExp(`${at}: host is missing or not 'ollama'`)],
+		['no cliKind', x => { delete x.families[3].cliKind; }, new RegExp(`${at}: cliKind is missing or not 'claude' \\| 'codex'`)],
+		['model without hosting', x => { delete x.families[3].models[1].hosting; }, new RegExp(`${at}: model 'qwen:local' has no hosting`)],
+		['bad hosting value', x => { x.families[3].models[0].hosting = 'remote'; }, new RegExp(`${at}: models\\[0\\] 'glm:cloud': hosting is not 'cloud' \\| 'local'`)],
+		['tierDefaults', x => { x.families[3].tierDefaults = valid().families[0].tierDefaults; }, new RegExp(`${at}: tierDefaults is not allowed`)],
+		['summariserModel', x => { x.families[3].summariserModel = 'glm'; }, new RegExp(`${at}: summariserModel is not allowed`)],
+	];
+	for (const [label, mutate, reason] of cases) assertRefused(label, mutate, reason);
+});
+
+test('model-catalog.test.ts: hosting on a vendor or plain-Ollama model fails', () => {
+	assertRefused('hosting on a vendor model', x => { x.families[0].models[0].hosting = 'cloud'; },
+		/families\[0\] \(cli-claude\): model 'claude-big' has hosting, which only Ollama-hosted families take/);
+	assertRefused('hosting on a plain-Ollama model', x => { x.families[2].models[0].hosting = 'local'; },
+		/families\[2\] \(ollama\): model 'qwen:1b' has hosting, which only Ollama-hosted families take/);
+	assertRefused('host on a vendor family', x => { x.families[1].host = 'ollama'; },
+		/families\[1\] \(cli-codex\): host is only allowed on an Ollama-hosted family/);
+});
+
+test('model-catalog.test.ts: the three existing families validate as before', () => {
+	useAsset(JSON.stringify(valid()));
+	const [claude, codex, ollama] = validateModelCatalog().families;
+	assert.deepEqual(claude, {
+		id: 'cli-claude', cliKind: 'claude', displayName: 'Claude',
+		models: [
+			{ id: 'claude-big', aliases: ['big'], displayName: 'Claude Big', efforts: ['low', 'high'] },
+			{ id: 'claude-small', aliases: ['small'], efforts: ['low'] },
+			{ id: 'claude-plain', efforts: [] },
+		],
+		tierDefaults: { core: { model: 'big', effort: 'high' }, mid: { model: 'claude-big' }, cheap: { model: 'small' } },
+		summariserModel: 'small',
+	});
+	assert.deepEqual(codex, {
+		id: 'cli-codex', cliKind: 'codex', displayName: 'Codex',
+		models: [{ id: 'gpt-a', efforts: ['low', 'ultra'] }, { id: 'gpt-b', displayName: 'GPT B', efforts: ['low'] }],
+		tierDefaults: { core: { model: 'gpt-a' }, mid: { model: 'gpt-a' }, cheap: { model: 'gpt-b' } },
+		summariserModel: 'gpt-b',
+	});
+	assert.deepEqual(ollama, {
+		id: 'ollama', displayName: 'Ollama',
+		models: [{ id: 'qwen:1b', efforts: [], inputLimit: { unit: 'tokens', max: 8192 } }],
+		toolLoopModel: 'qwen:1b',
+	});
+	for (const f of [claude, codex, ollama]) assert.ok(!('host' in f!), `${f!.id} has no host`);
 });

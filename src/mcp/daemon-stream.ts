@@ -26,6 +26,7 @@ import { getLogger } from '../shared/logger.js';
 import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc.js';
 import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
+import type { StepClient } from '../shared/step-context.js';
 import type { WorkflowPendingError, WorkflowPendingResult } from '../workflow/pending.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
@@ -271,7 +272,7 @@ export interface PollRunResult {
 }
 
 /** Start a detached daemon workflow run; returns its runId immediately. */
-export function startRun(params: RunWorkflowStreamParams & { client?: 'claude' | 'codex' | undefined }, deps: UnaryRpcDeps = {}): Promise<StartRunResult> {
+export function startRun(params: RunWorkflowStreamParams & { client?: StepClient | undefined }, deps: UnaryRpcDeps = {}): Promise<StartRunResult> {
 	return unaryRpc<StartRunResult>('workflow.run.start', {
 		workflow: params.workflow,
 		focus:    params.focus,

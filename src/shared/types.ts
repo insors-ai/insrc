@@ -700,8 +700,13 @@ export interface Relation {
 export interface SteeringSelection {
   /** Install the steering block into the repo's CLAUDE.md (Claude Code). */
   readonly claude?: boolean | undefined;
-  /** Install the steering block into the repo's AGENTS.md (Codex). */
+  /** Install the steering block into the repo's AGENTS.md (Codex, Mistral Vibe). */
   readonly agents?: boolean | undefined;
+  /** Register the insrc MCP server with the Mistral Vibe CLI (`vibe mcp add`).
+   *  Vibe reads the same AGENTS.md steering block as Codex, so the block
+   *  injection is covered by `agents`; this flag only gates the MCP
+   *  registration. */
+  readonly vibe?: boolean | undefined;
 }
 
 /**
@@ -713,7 +718,7 @@ export interface SteeringSelection {
  * fork render it. Note: the `agents` selection flag maps to the `codex`
  * client, so outcomes are keyed on the CLIENT name to avoid that mislabel.
  */
-export type McpClient = 'claude' | 'codex';
+export type McpClient = 'claude' | 'codex' | 'vibe';
 export type McpRegisterAction = 'registered' | 'unchanged' | 'skipped' | 'failed';
 export interface McpClientOutcome {
   readonly client: McpClient;

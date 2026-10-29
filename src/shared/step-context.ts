@@ -121,8 +121,8 @@ export function requireConnectionExecution(value: ConnectionExecutionContext | u
 }
 
 /** The calling client in its one form. The one-shot analyze converts it to
- *  'cli-claude' | 'cli-codex' for runWithClientProviderContext. */
-export type StepClient = 'claude' | 'codex';
+ *  'cli-claude' | 'cli-codex' | 'cli-vibe' for runWithClientProviderContext. */
+export type StepClient = 'claude' | 'codex' | 'vibe';
 
 export interface StepCallContext {
  /** Verified helper carrier checked by the step host; never read from raw tool arguments. */

@@ -93,9 +93,11 @@ test('Repos add flow drives repo.add with the entered path (+ per-file steering)
 	await settle();
 	stdin.write('y');          // install into CLAUDE.md
 	await settle();
-	stdin.write('n');          // skip AGENTS.md → finish add
+	stdin.write('n');          // skip AGENTS.md → vibe MCP registration confirm
 	await settle();
-	assert.deepEqual(addCalls, [{ path: '/tmp/some-repo', steering: { claude: true, agents: false } }]);
+	stdin.write('y');          // register the insrc MCP with Mistral Vibe → finish add
+	await settle();
+	assert.deepEqual(addCalls, [{ path: '/tmp/some-repo', steering: { claude: true, agents: false, vibe: true } }]);
 	unmount();
 });
 

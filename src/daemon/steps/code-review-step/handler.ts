@@ -69,7 +69,7 @@ import type {
 	DimensionResult,
 	ReviewDimension,
 } from '../../../workflow/code-review/types.js';
-import { currentStepContext, stepClient, stepEnvRepo } from '../../../shared/step-context.js';
+import { currentStepContext, stepClient, stepEnvRepo, type StepClient } from '../../../shared/step-context.js';
 import { StateTransitionBusyError, StateTokenNotFound, loadState, releaseState, saveState, savePendingState, saveControllerState, replaceControllerState, withControllerStateLock } from './state-store.js';
 import type {
 	CodeReviewPendingState,
@@ -117,7 +117,7 @@ export interface CodeReviewStepDeps {
 	/** Ask the daemon to review the Story's code (`codeReview.run`). */
 	readonly reviewByDaemon?: ((params: CodeReviewStreamParams, opts: ReviewStreamOpts) => Promise<CodeReviewStreamResult>) | undefined;
 	/** The invoking MCP client, so the daemon can fall back to that CLI. */
-	readonly client?: 'claude' | 'codex' | undefined;
+	readonly client?: StepClient | undefined;
 	/** Aborts the daemon code-review wait, and with it the review run. */
 	readonly signal?: AbortSignal | undefined;
 	/** The step tool's progress callback: each frame of the daemon review is relayed to it. */
@@ -158,8 +158,8 @@ export const DEFAULT_DEPS: CodeReviewStepDeps = {
 	freshnessTimeoutMs: readFreshnessTimeoutMs,
 };
 
-/** `deps` with the step context's client, as it is ('claude' | 'codex'); `deps`
- *  unchanged outside a step call or when the caller's client is unknown. */
+/** `deps` with the step context's client, as it is ('claude' | 'codex' | 'vibe');
+ *  `deps` unchanged outside a step call or when the caller's client is unknown. */
 export function withStepClient(deps: CodeReviewStepDeps): CodeReviewStepDeps {
 	const client = stepClient();
  const controllerExecution = currentStepContext()?.controllerReview;

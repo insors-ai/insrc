@@ -33,6 +33,7 @@ import { buildShaperProvider, shaperModelLabel, runWithClientProviderContext, ru
 import { createRoleRouter, type RoleRouter } from '../analyze/context/role-router.js';
 import type { RoleId } from '../config/role-taxonomy.js';
 import { familyForClient } from './model-registry.js';
+import type { StepClient } from '../shared/step-context.js';
 import { loadAnalyzeConfig, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { resolveStageFocus } from '../workflow/seed-focus.js';
@@ -363,8 +364,8 @@ interface WorkflowRunParams {
 	readonly focus:     string;
 	readonly params?:   Record<string, unknown>;
 	/** Invoking MCP agent, so a config with no explicit shaperProvider falls
-	 *  back to that CLI (claude/codex) instead of Ollama. */
-	readonly client?:   'claude' | 'codex';
+	 *  back to that CLI (claude/codex/vibe) instead of Ollama. */
+	readonly client?:   StepClient;
 	/** Ask for a review at finalize. The run does not review its own artifact: it
 	 *  reports `review-skipped` instead (see RunWorkflowOpts.review). */
 	readonly review?:   boolean;

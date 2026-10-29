@@ -29,6 +29,8 @@ const FIXTURE = {
 		{ id: 'cli-claude', cliKind: 'claude', displayName: 'Claude', models: [{ id: 'claude-a', aliases: ['ca'], efforts: ['high'] }], tierDefaults: { core: { model: 'claude-a' }, mid: { model: 'claude-a' }, cheap: { model: 'claude-a' } }, summariserModel: 'claude-a' },
 		{ id: 'cli-codex', cliKind: 'codex', displayName: 'Codex', models: [{ id: 'gpt-a', aliases: ['ay'], efforts: ['low'] }], tierDefaults: { core: { model: 'gpt-a' }, mid: { model: 'gpt-a' }, cheap: { model: 'gpt-a' } }, summariserModel: 'gpt-a' },
 		{ id: 'ollama', displayName: 'Ollama', models: [{ id: 'o:1', efforts: [], inputLimit: { unit: 'tokens', max: 4096 } }], toolLoopModel: 'o:1' },
+		{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: [], hosting: 'cloud' }] },
+		{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['high'] }], tierDefaults: { core: { model: 'vibe-a' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' },
 	],
 } as unknown as ModelDefinitionsFile;
 

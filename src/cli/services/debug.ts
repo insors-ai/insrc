@@ -14,7 +14,9 @@
 
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, watch as fsWatch } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { vibeConfigHasServer } from '../../daemon/mcp-register.js';
 
 import type { DebugSection, DaemonCardModel, OrphanScanResult, OrphanProcess, KillOutcome, DebugStatusModel, McpClientStatus, LogCategory, LogCategoryId, LogLine, LogFilter } from './debug-types.js';
 import type { AttachedClient, DaemonStatus } from '../../shared/types.js';
@@ -255,8 +257,8 @@ export interface AttachedClientsDeps {
 	readonly fetch: () => Promise<{ clients: readonly AttachedClient[] }>;
 }
 
-/** The known MCP clients (claude, codex) — one McpClientStatus is always returned per. */
-export const MCP_CLIENTS: readonly McpClientStatus['client'][] = ['claude', 'codex'];
+/** The known MCP clients (claude, codex, vibe) — one McpClientStatus is always returned per. */
+export const MCP_CLIENTS: readonly McpClientStatus['client'][] = ['claude', 'codex', 'vibe'];
 
 /** Result of a non-throwing `<cli> mcp list` run. `spawnError` is set when the
  *  binary itself could not be launched (ENOENT — not on PATH). */
@@ -266,9 +268,13 @@ export interface McpListRun {
 	readonly spawnError?: string;
 }
 
-/** Injectable dep for the MCP-status read (Story s4): runs `<cli> mcp list`. */
+/** Injectable dep for the MCP-status read (Story s4): runs `<cli> mcp list`
+ *  (claude/codex) or `<cli> --version` (vibe, whose availability probe), plus
+ *  vibe's config.toml text for its registration pre-check. */
 export interface McpStatusDeps {
 	readonly runList: (bin: string) => Promise<McpListRun>;
+	readonly runVersion?: (bin: string) => Promise<McpListRun>;
+	readonly readVibeConfig?: () => string | undefined;
 }
 
 /**
@@ -307,6 +313,22 @@ export async function mcpStatusWith(deps: McpStatusDeps): Promise<readonly McpCl
 	const out: McpClientStatus[] = [];
 	for (const client of MCP_CLIENTS) {
 		try {
+			if (client === 'vibe') {
+				// vibe has no `mcp list`: availability = the binary answers
+				// --version; registered = an [[mcp_servers]] insrc table in its
+				// user config.toml; connected is not observable without a session.
+				const runVersion = deps.runVersion ?? realRunVersion;
+				const v = await runVersion(client);
+				if (v.spawnError !== undefined || v.code !== 0) {
+					out.push({ client, available: false, registered: false, connected: false });
+					continue;
+				}
+				const readVibeConfig = deps.readVibeConfig ?? defaultReadVibeConfig;
+				const text = readVibeConfig();
+				const registered = text !== undefined && vibeConfigHasServer(text, 'insrc');
+				out.push({ client, available: true, registered, connected: false });
+				continue;
+			}
 			const r = await deps.runList(client);
 			if (r.spawnError !== undefined || r.code !== 0) {
 				out.push({ client, available: false, registered: false, connected: false });
@@ -340,8 +362,28 @@ export function attachedClients(): Promise<DebugStatusModel> {
 }
 
 /** The Story-s4 `mcpStatus()` facade method — bound onto the `debug` entry. */
+/** Real `<cli> --version` runner (vibe's availability probe): same capture
+ *  contract as realRunList, NEVER throws. */
+function realRunVersion(bin: string): Promise<McpListRun> {
+	return new Promise(resolve => {
+		const child = spawn(bin, ['--version'], { stdio: ['ignore', 'pipe', 'pipe'] });
+		let stdout = '';
+		child.stdout.on('data', c => { stdout += c.toString(); });
+		child.stderr.on('data', () => { /* ignored */ });
+		child.on('error', err => resolve({ code: -1, stdout, spawnError: err.message }));
+		child.on('close', code => resolve({ code: code ?? 0, stdout }));
+	});
+}
+
+/** vibe's user config.toml text ($VIBE_HOME, ~/.vibe fallback), or undefined. */
+function defaultReadVibeConfig(): string | undefined {
+	const home = process.env['VIBE_HOME'] ?? join(homedir(), '.vibe');
+	try { return readFileSync(join(home, 'config.toml'), 'utf8'); }
+	catch { return undefined; }
+}
+
 export function mcpStatus(): Promise<readonly McpClientStatus[]> {
-	return mcpStatusWith({ runList: realRunList });
+	return mcpStatusWith({ runList: realRunList, runVersion: realRunVersion, readVibeConfig: defaultReadVibeConfig });
 }
 
 // --- Story s5: rotation-aware log tailer + filter -----------------------------

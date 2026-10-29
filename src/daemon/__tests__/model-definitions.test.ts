@@ -51,6 +51,8 @@ function fixture(): Record<string, unknown> {
 				],
 				toolLoopModel: 'qwen:1b',
 			},
+			{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+			{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 		],
 	};
 }
@@ -111,6 +113,17 @@ test('model-definitions.test.ts: every sc3 field of a fixture file, aliases alwa
 					{ id: 'qwen:1b', aliases: ['qwen'], efforts: [], inputLimit: { unit: 'tokens', max: 8192 }, source: 'shipped', installed: true },
 					{ id: 'qwen3.6:27b', aliases: [], efforts: [], inputLimit: { unit: 'tokens', max: 32768 }, source: 'shipped', installed: false },
 				],
+			},
+			{
+				id: 'ollama-claude', cliKind: 'claude', displayName: 'Claude on Ollama', rejectedModels: [],
+				models: [{ id: 'glm:cloud', aliases: [], efforts: ['low'], source: 'shipped' }],
+			},
+			{
+				id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe',
+				tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } },
+				summariserModel: 'vibe-a',
+				rejectedModels: [],
+				models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'], source: 'shipped' }],
 			},
 		],
 	});

@@ -92,13 +92,13 @@ function contextOf(raw: unknown, verifyController: (client: StepClient, cwd: str
 	if (c['envRepo'] !== undefined && typeof c['envRepo'] !== 'string') return '`context.envRepo` must be a string';
 	// The client's identity; the daemon maps it to a model family where a family is
 	// needed (familyForClient), so a client no family runs still reaches its tools.
-	if (c['client'] !== undefined && c['client'] !== 'claude' && c['client'] !== 'codex') return "`context.client` must be 'claude' or 'codex'";
+	if (c['client'] !== undefined && c['client'] !== 'claude' && c['client'] !== 'codex' && c['client'] !== 'vibe') return "`context.client` must be 'claude', 'codex' or 'vibe'";
  let controllerReview: ControllerExecutionCapability | undefined;
  if (c['controllerReview'] !== undefined) {
   const descriptor = c['controllerReview'];
   if (typeof descriptor !== 'object' || descriptor === null || Array.isArray(descriptor)) return 'invalid isolated controller helper descriptor';
   const d = descriptor as Record<string, unknown>, client = c['client'];
-  if ((client !== 'claude' && client !== 'codex') || d['adapterId'] !== `cli-${client}` || !Number.isSafeInteger(d['maxInputChars']) || (d['maxInputChars'] as number) <= 0 || (d['maxInputChars'] as number) > 384_000 || typeof d['helperEpoch'] !== 'string' || d['helperEpoch'].length === 0 || typeof d['modelLabel'] !== 'string' || !d['modelLabel'].startsWith(`cli-${client}:`) || Object.keys(d).some(k => !['adapterId', 'maxInputChars', 'helperEpoch', 'modelLabel'].includes(k))) return 'unsupported isolated controller helper identity';
+  if ((client !== 'claude' && client !== 'codex' && client !== 'vibe') || d['adapterId'] !== `cli-${client}` || !Number.isSafeInteger(d['maxInputChars']) || (d['maxInputChars'] as number) <= 0 || (d['maxInputChars'] as number) > 384_000 || typeof d['helperEpoch'] !== 'string' || d['helperEpoch'].length === 0 || typeof d['modelLabel'] !== 'string' || !d['modelLabel'].startsWith(`cli-${client}:`) || Object.keys(d).some(k => !['adapterId', 'maxInputChars', 'helperEpoch', 'modelLabel'].includes(k))) return 'unsupported isolated controller helper identity';
   const dir = mkdtempSync(join(tmpdir(), 'insrc-controller-host-'));
   try { verifyController(client, dir); } catch { return 'installed CLI cannot verify isolated controller capability'; } finally { rmSync(dir, { recursive: true, force: true }); }
   controllerReview = { adapterId: d['adapterId'] as ControllerExecutionCapability['adapterId'], maxInputChars: d['maxInputChars'] as number, helperEpoch: d['helperEpoch'], modelLabel: d['modelLabel'] };

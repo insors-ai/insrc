@@ -16,7 +16,7 @@
  * no React type leaks into the services layer.
  */
 
-import type { AttachedClient, RegisteredRepo } from '../../shared/types.js';
+import type { AttachedClient, McpClient, RegisteredRepo } from '../../shared/types.js';
 
 /** The closed union of the three Debug-pane inner sections, in authored order. */
 export type DebugSectionId = 'daemon' | 'mcp' | 'logs';
@@ -129,10 +129,12 @@ export type DebugStatusModel =
  * client-side `<cli> mcp list` parse. `available` = the CLI is on PATH and the
  * listing succeeded; `registered` = an `insrc` server line is present;
  * `connected` = that line reports a live connection. Independent of daemon
- * reachability. One entry per known client (claude, codex); never omitted.
+ * reachability. One entry per known client (claude, codex, vibe); never
+ * omitted. For vibe there is no `<cli> mcp list`: `registered` comes from a
+ * $VIBE_HOME/config.toml [[mcp_servers]] scan and `connected` is always false.
  */
 export interface McpClientStatus {
-	readonly client: 'claude' | 'codex';
+	readonly client: McpClient;
 	readonly available: boolean;
 	readonly registered: boolean;
 	readonly connected: boolean;

@@ -32,7 +32,7 @@ test('boot-model-catalog.test.ts: daemon entry in a temp home with INSRC_MODEL_C
 	try {
 		cpSync(join(MODEL_CATALOG_DIR, CATALOG), join(assets, CATALOG));
 		const file = JSON.parse(readFileSync(join(assets, CATALOG), 'utf8')) as { families: Array<{ models: Array<{ inputLimit?: unknown }> }> };
-		delete file.families[2]!.models[0]!.inputLimit;
+		delete file.families[3]!.models[0]!.inputLimit;  // families[3] is ollama in the shipped asset
 		writeFileSync(join(assets, CATALOG), JSON.stringify(file));
 
 		const child = spawn(process.execPath, ['--import', fileURLToPath(import.meta.resolve('tsx/esm')), join(REPO_ROOT, 'src', 'daemon', 'index.ts')], {
@@ -51,7 +51,7 @@ test('boot-model-catalog.test.ts: daemon entry in a temp home with INSRC_MODEL_C
 		assert.notEqual(code, 0, `the daemon must exit non-zero; stderr: ${stderr.slice(-2000)}`);
 		assert.notEqual(code, null, 'it exited on its own, not by the test kill');
 		assert.match(stderr, /ModelCatalogValidationError/);
-		assert.match(stderr, /families\[2\] \(ollama\): model 'qwen3\.6:27b' has no token inputLimit/);
+		assert.match(stderr, /families\[3\] \(ollama\): model 'qwen3\.6:27b' has no token inputLimit/);
 		assert.equal(existsSync(join(home, '.insrc', 'config.json')), false, 'no config.json was reconciled');
 		assert.equal(sawSocket || existsSync(sockOf(home)), false, 'the socket never opened');
 	} finally {

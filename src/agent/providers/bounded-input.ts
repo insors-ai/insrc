@@ -13,7 +13,7 @@ const FLAGS = ['--safe-mode', '--no-session-persistence', '--system-prompt', '--
 /** Flags are checked without a model request; ordinary completions never probe. */
 export function verifyBoundedCli(kind: CliKind, bin: string, cwd: string): void {
 	// 0.164.0 still exposes model-catalog-driven tools without a verified zero-tool switch.
-	if (kind !== 'claude') throw new UnsupportedBoundedInputError('Codex bounded isolation is unsupported: tool-free execution cannot be verified');
+	if (kind !== 'claude') throw new UnsupportedBoundedInputError('Bounded isolation is only verified for the claude CLI: tool-free execution cannot be verified for this kind');
 	let help: string;
 	try { help = execFileSync(bin, ['--help'], { cwd, encoding: 'utf8', timeout: 5_000, maxBuffer: 512_000, env: boundedClaudeEnv(), stdio: ['ignore', 'pipe', 'pipe'] }); }
 	catch { throw new UnsupportedBoundedInputError('Cannot verify installed CLI isolation support'); }

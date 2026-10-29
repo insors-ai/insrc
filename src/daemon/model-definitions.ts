@@ -51,7 +51,7 @@ export interface ModelDefinitionEntry {
 /** One family in the answer. */
 export interface FamilyDefinitionEntry {
 	readonly id:               FamilyId;
-	readonly cliKind?:         'claude' | 'codex' | undefined;
+	readonly cliKind?:         'claude' | 'codex' | 'vibe' | undefined;
 	readonly displayName:      string;
 	readonly tierDefaults?:    Readonly<Record<TierName, TierDefault>> | undefined;
 	readonly summariserModel?: string | undefined;
@@ -173,7 +173,7 @@ export interface ResolvedRole {
 	readonly effort?:     EffortLevel | undefined;
 	readonly inputLimit?: InputLimit | undefined;
 	readonly fallback?:   { readonly reason: FallbackReason; readonly requested: string } | undefined;
-	readonly cli?:        { readonly kind: 'claude' | 'codex' } | undefined;
+	readonly cli?:        { readonly kind: 'claude' | 'codex' | 'vibe' } | undefined;
 	readonly ollama?:     { readonly host: string; readonly numCtx: number; readonly numPredict: number } | undefined;
 }
 

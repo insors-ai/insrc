@@ -39,6 +39,8 @@ const FIXTURE = {
 		{ id: 'cli-claude', cliKind: 'claude', displayName: 'C', models: [{ id: 'claude-a', efforts: ['low'] }], tierDefaults: { core: { model: 'claude-a' }, mid: { model: 'claude-a' }, cheap: { model: 'claude-a' } }, summariserModel: 'claude-a' },
 		{ id: 'cli-codex', cliKind: 'codex', displayName: 'X', models: [{ id: 'gpt-x', aliases: ['x'], efforts: ['low', 'turbo'], inputLimit: { unit: 'chars', max: 5000 } }], tierDefaults: { core: { model: 'gpt-x', effort: 'turbo' }, mid: { model: 'gpt-x' }, cheap: { model: 'gpt-x' } }, summariserModel: 'gpt-x' },
 		{ id: 'ollama', displayName: 'O', models: [{ id: 'llama:big', efforts: [], inputLimit: { unit: 'tokens', max: 65536 } }], toolLoopModel: 'llama:big' },
+		{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+		{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 	],
 };
 

@@ -32,7 +32,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "57ae9faf71200d1ea24048fdff39e6702c6aa17ac536d70de02c0ad830c87ff1",
-      "sourceDigest": "f6b9bca76ea0ddf8f52f6bb3be466277a01b6ae796926b5f7fb9d13d44bead0e",
+      "sourceDigest": "0145530afb154dab69583da6dd0bcc753470813c44c35ec9abec02064650cd26",
       "boundaries": [
         "provider-adapter",
         "serialization"
@@ -56,6 +56,10 @@
         ],
         [
           "provider-adapter",
+          "buildRetryNote"
+        ],
+        [
+          "provider-adapter",
           "classifyInputTooLarge"
         ],
         [
@@ -65,6 +69,10 @@
         [
           "provider-adapter",
           "claudeReviewSessionArgs"
+        ],
+        [
+          "provider-adapter",
+          "cliExitError"
         ],
         [
           "provider-adapter",
@@ -152,6 +160,14 @@
         ],
         [
           "provider-adapter",
+          "isRecord"
+        ],
+        [
+          "provider-adapter",
+          "isRecord"
+        ],
+        [
+          "provider-adapter",
           "isTransientCliError"
         ],
         [
@@ -181,6 +197,22 @@
         [
           "serialization",
           "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "serialization",
@@ -264,7 +296,19 @@
         ],
         [
           "provider-adapter",
+          "ModelResponseShapeError"
+        ],
+        [
+          "provider-adapter",
           "op"
+        ],
+        [
+          "provider-adapter",
+          "outputContractNote"
+        ],
+        [
+          "provider-adapter",
+          "outputContractNote"
         ],
         [
           "provider-adapter",
@@ -332,11 +376,19 @@
         ],
         [
           "provider-adapter",
+          "runSubprocess"
+        ],
+        [
+          "provider-adapter",
           "self.complete"
         ],
         [
           "provider-use",
           "self.complete"
+        ],
+        [
+          "provider-adapter",
+          "serialiseMessages"
         ],
         [
           "provider-adapter",
@@ -395,11 +447,35 @@
           "this.completeStructuredOnce"
         ],
         [
+          "provider-adapter",
+          "this.completeStructuredVibe"
+        ],
+        [
+          "provider-use",
+          "this.completeStructuredVibe"
+        ],
+        [
           "provider-use",
           "this.embedDelegate.embed"
         ],
         [
           "provider-adapter",
+          "this.envForModel"
+        ],
+        [
+          "provider-use",
+          "this.envForModel"
+        ],
+        [
+          "provider-adapter",
+          "this.execIn"
+        ],
+        [
+          "provider-adapter",
+          "this.execIn"
+        ],
+        [
+          "provider-adapter",
           "this.execIn"
         ],
         [
@@ -412,6 +488,14 @@
         ],
         [
           "provider-adapter",
+          "this.execIn"
+        ],
+        [
+          "provider-use",
+          "this.execIn"
+        ],
+        [
+          "provider-use",
           "this.execIn"
         ],
         [
@@ -576,6 +660,38 @@
         ],
         [
           "provider-adapter",
+          "this.runVibe"
+        ],
+        [
+          "provider-adapter",
+          "this.runVibe"
+        ],
+        [
+          "provider-adapter",
+          "this.runVibe"
+        ],
+        [
+          "provider-adapter",
+          "this.runVibe"
+        ],
+        [
+          "provider-use",
+          "this.runVibe"
+        ],
+        [
+          "provider-use",
+          "this.runVibe"
+        ],
+        [
+          "provider-use",
+          "this.runVibe"
+        ],
+        [
+          "provider-use",
+          "this.runVibe"
+        ],
+        [
+          "provider-adapter",
           "this.withTransientRetry"
         ],
         [
@@ -613,6 +729,14 @@
         [
           "provider-adapter",
           "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
+          "validateAgainstSchema"
+        ],
+        [
+          "provider-adapter",
+          "validateCodexReply"
         ],
         [
           "provider-adapter",
@@ -625,6 +749,34 @@
         [
           "provider-adapter",
           "verifyBoundedCli"
+        ],
+        [
+          "provider-adapter",
+          "vibeArgs"
+        ],
+        [
+          "provider-adapter",
+          "vibeArgs"
+        ],
+        [
+          "provider-adapter",
+          "vibeArgs"
+        ],
+        [
+          "provider-adapter",
+          "vibeArgs"
+        ],
+        [
+          "provider-adapter",
+          "vibeLastAssistantText"
+        ],
+        [
+          "provider-adapter",
+          "vibeLastAssistantText"
+        ],
+        [
+          "provider-adapter",
+          "withStructuredRetry"
         ],
         [
           "provider-adapter",
@@ -659,9 +811,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 154,
-      "sitesDigest": "930f0fbe7631ff968c19ad91f4b2d4e5db03ff644f75cee8a1163df4ab0b9001",
-      "sourceDigest": "f24c4576c6bac3d281aedff252bbde93f32687e9f61f9197e2e1d2776a7f2279",
+      "siteCount": 192,
+      "sitesDigest": "e440bad0b31a163191bf282bfb665ec42351bd7454b55dadf767e51a170de839",
+      "sourceDigest": "107228c4e894d68fab79043a2ca189892adbecbdd5ca5ced77c63dedd014a6fa",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -6195,6 +6347,14 @@
           "c.toString"
         ],
         [
+          "serialization",
+          "c.toString"
+        ],
+        [
+          "unresolved-call",
+          "c.toString"
+        ],
+        [
           "unresolved-call",
           "c.toString"
         ],
@@ -6229,11 +6389,15 @@
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ]
       ],
-      "siteCount": 10,
-      "sitesDigest": "a730848f560888e4c6a3c08ffab8cd4f84b2bcfff394377f5429b9ff0a48e9e1",
-      "sourceDigest": "436ef6724a355a7991846437789c1f2757e17d3d2f6960f9d4b36a247b46d59f",
+      "siteCount": 13,
+      "sitesDigest": "a7ce403925f225cc7c90c47b0d95777a8732a649bcc84dbf331e904ad3a1b3b3",
+      "sourceDigest": "e3c48db49f4540cb599e7d284c5328e6594d02d6b7954cb852f2a24119563743",
       "boundaries": [
         "filesystem-read",
         "serialization",
@@ -7954,7 +8118,7 @@
       ],
       "siteCount": 25,
       "sitesDigest": "892cc923da032f9a9b2d9d956f002ebd7a7209e1dffd761d69a09115c660b0ec",
-      "sourceDigest": "8adce3bdd94d040c6670cc6910d6ad9af16dc005c89c7eeeff232cc333daa706",
+      "sourceDigest": "c76d0b96892b412b9c34994e7f26af723ff98d947aba5a2789cd20f6e3b6e3ec",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -13544,7 +13708,7 @@
       ],
       "siteCount": 186,
       "sitesDigest": "5921b4bc1eeb566312410e7ec48b1c82a34921c636b726d039ece97e61171db9",
-      "sourceDigest": "e0b4e6ea86ee698bb3ef8104ad000d68233662c70dc4ef4e35afa1298d06cc3c",
+      "sourceDigest": "f1e94a91f7af40a4227d921f445afed815f14805cbfdf2e259b3136ce5df29c3",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14010,13 +14174,18 @@
         [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "aa8ff827600345b1db6e720221995bbff8debde24bf5be279af788cc41a5d64c",
-      "sourceDigest": "fadb9df9fb31ea09985d2574a2b4bea8f502f9c5c0eba5ccf3dd4f5e8f88979b",
+      "siteCount": 7,
+      "sitesDigest": "1de22e74821111ff6894d99bf0e75077cda69441cdb81f4cbb8e71e370f13cf5",
+      "sourceDigest": "e265b60a7497ff20127d927085920a0b919acea601566462a132933819d7480e",
       "boundaries": [
         "diagnostic",
+        "filesystem-read",
         "serialization",
         "unresolved-call"
       ]
@@ -14044,7 +14213,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "b758c6bb5bb9aee16e20cca69a16ff8106e095c2a63c9019494924f0cb833117",
-      "sourceDigest": "4174a15e2f212e72f166423f3f0f3bfe764046b1aec7a446ec332a4816057c42",
+      "sourceDigest": "ace73e737f3d1d022d31b7eabb3333551ff299ef24d1673981bd398be6514569",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14122,7 +14291,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "40c37e01db0c9d72c610c83df0a7d95b6f671eec98a316c783d0494e1bc0a0a1",
-      "sourceDigest": "f89be2f68e2241e2c564957f66afead4706259c81c1436ae388cef1707eb75a2",
+      "sourceDigest": "fc02843286bbe6afd61e6275e0580d323dfff825ff227d202bb1b2e4e374fc00",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14157,7 +14326,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "326304d8c5625ccfca11092963eed7382d88406254ad07d562e3c187d7c65c1a",
-      "sourceDigest": "ce093c894637e6ed7f63606b6bfb55f05273232b48f145932352e77ef85450b2",
+      "sourceDigest": "16513ebf07949246a24b776f4550996770baed6ace879a70e976ad549903734f",
       "boundaries": [
         "provider-adapter",
         "provider-factory",
@@ -14207,7 +14376,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "2304578cc597a834292c2ce8ef9bd354497d295570e26d06a412d098b728de84",
-      "sourceDigest": "c96cd49d81bbae096f9073965c9daeb6271bab02e9352c178bc1c808c9b04311",
+      "sourceDigest": "2cdf49537627f2a8f73bd1da1d4234e4bda8085a9905e27a1f78e8073232b7b2",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -15220,7 +15389,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "68d80e625e3af71114c80d0a74b1122a626caa36f1b2d47f8eb3d2894174f549",
-      "sourceDigest": "8d6590eb9738a713eba2d0ec8eee5393ad79cd2ae115b63d4eb1973d23039be2",
+      "sourceDigest": "b7d3de8cee4ce0230d8a1a83ab69cc2c7106db8b61f4ebf54e585e6de69a7c1b",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -15270,7 +15439,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a014ddff3ca06d569de329e28b86795b1267875d458337985a0a39e56a96118d",
-      "sourceDigest": "621e43773d1f746d8826ebba8d83e5dff2a5be781344ec5a7c0d70c534507e35",
+      "sourceDigest": "3ae60e4dee73125d3bfd8e67f4e29c389cc0b09949f007c4b61fae15bfe2c952",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -19477,7 +19646,7 @@
       ],
       "siteCount": 25,
       "sitesDigest": "871d1654b4fe43d7e441a23ecf39ea31b6bc1341925c1449eab4e184f35a84ca",
-      "sourceDigest": "ea6d8f8d5fca6c9dc79f4a9a1480262693f47e953be4c756b40fdffc19ab9e2e",
+      "sourceDigest": "3685cb75131d79d41ef6003234ba9deb1e93bd65d42dc5a6920d26fcb2ce64e8",
       "boundaries": [
         "diagnostic",
         "provider-factory",
@@ -31794,7 +31963,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "ec3321264249fb3f9c9d11d564422c5a5cfed11d58080aac59c184c8135e27a7",
-      "sourceDigest": "c9863b232d73fb75c49b998775ce54ef130a2a10355c139ad2a6ed5f14243e39",
+      "sourceDigest": "5767a87f400e7f04fba57e2d682fa7e8a3f91c3ef984643ab5f59c82e48a2633",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31954,7 +32123,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a8ce25ee55e92f906c493216e179e3b5abc04a91e9e75964b94f8da3d38d913b",
-      "sourceDigest": "e20136fee665e84372fc739806d4b384baba24f3ada0c4b1a98974698678ac03",
+      "sourceDigest": "a68ac2d1c94a9bc49f286319a30ed579574dc56cecf792fb633e7be91f70f969",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -32353,7 +32522,7 @@
     "src/shared/review-stream.ts": {
       "classification": "forbidden-session-service",
       "rationale": "Validates persistent review IPC target and input identity with canonical repository reads. Temporary session methods cannot dispatch workflow review and gain no authority from this codec.",
-      "sourceDigest": "916e39560a39c530b6520b20ce20f48fbcaf928869389a3282b4206fde6c5d28",
+      "sourceDigest": "9fc7ad646c41a415bc19485ff5eb0462dff3a67be94d2a36f0eccb7a7c3871b1",
       "sites": [
         [
           "filesystem-read",
@@ -32381,7 +32550,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "f5463792f7442de1b6667602cae5523983ee3eaac5853d02b5079c5c61c9b9e0",
-      "sourceDigest": "09bd2ffa77bb5979ff9eb53c69667e7fc3c3967434ccf2810b4b422cc4565053",
+      "sourceDigest": "3c65565082a1d47b50811214869ff6878d206181642f130494a870292db2cd1d",
       "boundaries": [
         "unresolved-call"
       ]

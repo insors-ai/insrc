@@ -430,7 +430,7 @@ narrow probes, tracker rendering, and summaries can run on a cheap model
 always via the `claude`/`codex` CLI subprocess (never a direct REST call).
 
 **Three tiers.** Each maps a `runner` (`ollama` \| `cli-claude` \|
-`cli-codex` — no REST target) to a `model`:
+`cli-codex` \| `cli-vibe` — no REST target) to a `model`:
 
 | Tier | Built-in default | Serves |
 | :--- | :--- | :--- |

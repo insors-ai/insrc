@@ -16,11 +16,17 @@
  * Best-effort + per-client isolated, mirroring injectSteeringBlock: a failure
  * for one client is recorded on that client's outcome and NEVER thrown — MCP
  * registration must never fail the repo add. Emits one outcome per client
- * (claude, codex); an unselected client is 'skipped', not omitted.
+ * (claude, codex, vibe); an unselected client is 'skipped', not omitted.
+ *
+ * vibe has no `vibe mcp list`, so its idempotency pre-check reads vibe's user
+ * config.toml ($VIBE_HOME/config.toml) and looks for an [[mcp_servers]] table
+ * named `insrc`; registration is `vibe mcp add insrc --transport stdio
+ * --command node --arg <insrc-mcp.js>`.
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -68,15 +74,38 @@ function runCli(bin: string, args: readonly string[]): Promise<CliRun> {
 export interface McpRegisterDeps {
 	readonly run?: (bin: string, args: readonly string[]) => Promise<CliRun>;
 	readonly entrypointExists?: (mcpJs: string) => boolean;
+	/** vibe's pre-check seam: the text of vibe's user config.toml, or undefined
+	 *  when it cannot be read (default: $VIBE_HOME/config.toml, ~/.vibe fallback). */
+	readonly vibeConfigText?: () => string | undefined;
 }
 
 /** One client's registration plan. `selected` comes from the SteeringSelection
- *  flag (claude→claude, agents→codex); `bin` + `addArgs` are the CLI shape. */
+ *  flag (claude→claude, agents→codex, vibe→vibe); `bin` + `addArgs` are the CLI
+ *  shape. `listArgs` is the idempotency pre-check's command; undefined for vibe,
+ *  which has no `mcp list` and is pre-checked against its config.toml instead. */
 interface ClientPlan {
-	readonly client:   McpClient;
-	readonly bin:      string;
-	readonly selected: boolean;
-	readonly addArgs:  (mcpJs: string) => string[];
+	readonly client:    McpClient;
+	readonly bin:       string;
+	readonly selected:  boolean;
+	readonly listArgs?: readonly string[] | undefined;
+	readonly addArgs:   (mcpJs: string) => string[];
+}
+
+/** vibe's user config.toml text, or undefined when unreadable. */
+function defaultVibeConfigText(): string | undefined {
+	const home = process.env['VIBE_HOME'] ?? join(homedir(), '.vibe');
+	try { return readFileSync(join(home, 'config.toml'), 'utf8'); }
+	catch { return undefined; }
+}
+
+/** Does vibe's config.toml text already declare an [[mcp_servers]] table named
+ *  `name`? Heuristic on the TOML text — the same line-anchored spirit as
+ *  alreadyRegistered: each `[[...]]` chunk must start with `mcp_servers]]` and
+ *  carry a `name = "..."` line for the server. */
+export function vibeConfigHasServer(configText: string, name: string): boolean {
+	const chunks = configText.split(/^\[\[/m);
+	const nameLine = new RegExp(`^\\s*name\\s*=\\s*["']${name}["']`, 'm');
+	return chunks.some(c => c.startsWith('mcp_servers]]') && nameLine.test(c));
 }
 
 /** Heuristic: does `<cli> mcp list` stdout already list an `insrc` server?
@@ -100,17 +129,19 @@ export async function registerMcpClients(
 ): Promise<{ clients: McpClientOutcome[] }> {
 	const run = deps.run ?? runCli;
 	const entrypointExists = deps.entrypointExists ?? existsSync;
+	const vibeConfigText = deps.vibeConfigText ?? defaultVibeConfigText;
 	const mcpJs = join(installRoot, 'out', 'bin', 'insrc-mcp.js');
 
 	const plans: ClientPlan[] = [
-		{ client: 'claude', bin: 'claude', selected: selection.claude === true, addArgs: js => ['mcp', 'add', 'insrc', '--scope', 'user', '--', 'node', js] },
-		{ client: 'codex',  bin: 'codex',  selected: selection.agents === true, addArgs: js => ['mcp', 'add', 'insrc', '--', 'node', js] },
+		{ client: 'claude', bin: 'claude', selected: selection.claude === true, listArgs: ['mcp', 'list'], addArgs: js => ['mcp', 'add', 'insrc', '--scope', 'user', '--', 'node', js] },
+		{ client: 'codex',  bin: 'codex',  selected: selection.agents === true, listArgs: ['mcp', 'list'], addArgs: js => ['mcp', 'add', 'insrc', '--', 'node', js] },
+		{ client: 'vibe',   bin: 'vibe',   selected: selection.vibe === true, addArgs: js => ['mcp', 'add', 'insrc', '--transport', 'stdio', '--command', 'node', '--arg', js] },
 	];
 
 	const clients: McpClientOutcome[] = [];
 	for (const p of plans) {
 		if (!p.selected) { clients.push({ client: p.client, action: 'skipped' }); continue; }
-		clients.push(await registerOne(p, mcpJs, run, entrypointExists));
+		clients.push(await registerOne(p, mcpJs, run, entrypointExists, vibeConfigText));
 	}
 	return { clients };
 }
@@ -120,23 +151,33 @@ async function registerOne(
 	mcpJs: string,
 	run: (bin: string, args: readonly string[]) => Promise<CliRun>,
 	entrypointExists: (mcpJs: string) => boolean,
+	vibeConfigText: () => string | undefined,
 ): Promise<McpClientOutcome> {
 	try {
 		if (!entrypointExists(mcpJs)) {
 			return { client: p.client, action: 'failed', note: `MCP entrypoint missing at ${mcpJs}` };
 		}
-		// Idempotency pre-check.
-		const list = await run(p.bin, ['mcp', 'list']);
-		if (list.spawnError !== undefined) {
-			return { client: p.client, action: 'failed', note: `${p.bin} CLI not found on PATH` };
+		// Idempotency pre-check: `<cli> mcp list` where the CLI has one, else
+		// (vibe) vibe's user config.toml.
+		if (p.listArgs !== undefined) {
+			const list = await run(p.bin, p.listArgs);
+			if (list.spawnError !== undefined) {
+				return { client: p.client, action: 'failed', note: `${p.bin} CLI not found on PATH` };
+			}
+			if (list.code !== 0) {
+				// Cannot verify current state → do NOT blind-add (avoid a duplicate).
+				return { client: p.client, action: 'failed', note: 'could not verify existing registration' };
+			}
+			if (alreadyRegistered(list.stdout)) {
+				return { client: p.client, action: 'unchanged' };
+			}
+		} else {
+			const text = vibeConfigText();
+			if (text !== undefined && vibeConfigHasServer(text, 'insrc')) {
+				return { client: p.client, action: 'unchanged' };
+			}
 		}
-		if (list.code !== 0) {
-			// Cannot verify current state → do NOT blind-add (avoid a duplicate).
-			return { client: p.client, action: 'failed', note: 'could not verify existing registration' };
-		}
-		if (alreadyRegistered(list.stdout)) {
-			return { client: p.client, action: 'unchanged' };
-		}
+		// The vibe binary's presence is checked by the add itself (spawnError).
 		// Register.
 		const add = await run(p.bin, p.addArgs(mcpJs));
 		if (add.spawnError !== undefined) {

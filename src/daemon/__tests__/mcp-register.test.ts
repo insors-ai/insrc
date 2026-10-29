@@ -14,16 +14,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { registerMcpClients, type McpRegisterDeps } from '../mcp-register.js';
-import type { McpClientOutcome } from '../../shared/types.js';
+import { registerMcpClients, vibeConfigHasServer, type McpRegisterDeps } from '../mcp-register.js';
+import type { McpClient, McpClientOutcome } from '../../shared/types.js';
 
 const ROOT = '/opt/insrc/daemon';
 
 interface RunResult { code: number; stdout: string; stderr: string; spawnError?: string }
 
 /** A scriptable subprocess stub. `script(bin, args)` returns the canned result;
- *  every call is recorded for spawn-count assertions. */
-function stub(script: (bin: string, args: readonly string[]) => RunResult): {
+ *  every call is recorded for spawn-count assertions. vibe's config pre-check
+ *  is pinned to "unreadable" unless a test overrides it. */
+function stub(script: (bin: string, args: readonly string[]) => RunResult, vibeConfigText?: () => string | undefined): {
 	deps: McpRegisterDeps;
 	calls: { bin: string; args: string[] }[];
 } {
@@ -32,13 +33,13 @@ function stub(script: (bin: string, args: readonly string[]) => RunResult): {
 		calls.push({ bin, args: [...args] });
 		return script(bin, args);
 	};
-	return { deps: { run, entrypointExists: () => true }, calls };
+	return { deps: { run, entrypointExists: () => true, vibeConfigText: vibeConfigText ?? (() => undefined) }, calls };
 }
 
 const isList = (args: readonly string[]): boolean => args[0] === 'mcp' && args[1] === 'list';
 const isAdd  = (args: readonly string[]): boolean => args[0] === 'mcp' && args[1] === 'add';
 const ok = (stdout = ''): RunResult => ({ code: 0, stdout, stderr: '' });
-const byClient = (r: { clients: McpClientOutcome[] }, c: 'claude' | 'codex'): McpClientOutcome =>
+const byClient = (r: { clients: McpClientOutcome[] }, c: McpClient): McpClientOutcome =>
 	r.clients.find(x => x.client === c)!;
 
 // ---------------------------------------------------------------------------
@@ -48,9 +49,10 @@ const byClient = (r: { clients: McpClientOutcome[] }, c: 'claude' | 'codex'): Mc
 test('unselected clients are always emitted as skipped, never omitted', async () => {
 	const { deps, calls } = stub(() => ok());
 	const r = await registerMcpClients(ROOT, {}, deps);
-	assert.deepEqual(r.clients.map(c => c.client), ['claude', 'codex']);
+	assert.deepEqual(r.clients.map(c => c.client), ['claude', 'codex', 'vibe']);
 	assert.equal(byClient(r, 'claude').action, 'skipped');
 	assert.equal(byClient(r, 'codex').action, 'skipped');
+	assert.equal(byClient(r, 'vibe').action, 'skipped');
 	assert.equal(calls.length, 0, 'no subprocess spawned for a fully-unselected selection');
 });
 
@@ -70,9 +72,81 @@ test('{agents:true} maps to the codex client (agents flag → codex, --scope omi
 	const r = await registerMcpClients(ROOT, { agents: true }, deps);
 	assert.equal(byClient(r, 'codex').action, 'registered');
 	assert.equal(byClient(r, 'claude').action, 'skipped');
+	assert.equal(byClient(r, 'vibe').action, 'skipped');
 	assert.deepEqual(calls.map(c => c.bin), ['codex', 'codex']);
 	const add = calls.find(c => isAdd(c.args))!;
 	assert.deepEqual(add.args, ['mcp', 'add', 'insrc', '--', 'node', `${ROOT}/out/bin/insrc-mcp.js`]);
+});
+
+// ---------------------------------------------------------------------------
+// the vibe client (vibe mcp add --transport stdio; config.toml pre-check)
+// ---------------------------------------------------------------------------
+
+test('{vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned', async () => {
+	const { deps, calls } = stub(() => ok(), () => undefined);
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps);
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	assert.equal(byClient(r, 'claude').action, 'skipped');
+	assert.equal(byClient(r, 'codex').action, 'skipped');
+	assert.deepEqual(calls.map(c => c.bin), ['vibe'], 'vibe has no mcp list — only the add runs');
+	assert.deepEqual(calls[0]!.args, ['mcp', 'add', 'insrc', '--transport', 'stdio', '--command', 'node', '--arg', `${ROOT}/out/bin/insrc-mcp.js`]);
+});
+
+test('vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned', async () => {
+	const config = [
+		'active_model = "mistral-medium-3.5"',
+		'',
+		'[[mcp_servers]]',
+		'name = "other"',
+		'transport = "stdio"',
+		'command = "npx"',
+		'',
+		'[[mcp_servers]]',
+		'name = "insrc"',
+		'transport = "stdio"',
+		'command = "node"',
+		'args = ["/opt/insrc/daemon/out/bin/insrc-mcp.js"]',
+		'',
+	].join('\n');
+	const { deps, calls } = stub(() => ok(), () => config);
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps);
+	assert.equal(byClient(r, 'vibe').action, 'unchanged');
+	assert.equal(calls.filter(c => isAdd(c.args)).length, 0);
+});
+
+test('vibe add failure → failed carrying the CLI stderr; other clients unaffected', async () => {
+	const { deps } = stub((bin, args) => bin === 'vibe' && isAdd(args)
+		? { code: 1, stdout: '', stderr: 'vibe mcp add blew up' }
+		: ok(), () => undefined);
+	const r = await registerMcpClients(ROOT, { vibe: true, claude: true }, deps);
+	assert.equal(byClient(r, 'vibe').action, 'failed');
+	assert.match(byClient(r, 'vibe').note ?? '', /blew up/);
+	assert.equal(byClient(r, 'claude').action, 'registered');
+});
+
+test('vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values', () => {
+	const config = [
+		'[other]',
+		'name = "insrc"',
+		'',
+		'[[mcp_servers]]',
+		'name = "docs"',
+		'url = "https://insrc.example/mcp"',
+		'',
+		'[mcp_servers.auth]',
+		'type = "oauth"',
+		'',
+		'[[mcp_servers]]',
+		"name = 'insrc'",
+		'transport = "stdio"',
+		'command = "node"',
+		'',
+	].join('\n');
+	assert.equal(vibeConfigHasServer(config, 'insrc'), true, 'single-quoted name in a later table');
+	assert.equal(vibeConfigHasServer(config, 'docs'), true);
+	assert.equal(vibeConfigHasServer(config, 'missing'), false);
+	assert.equal(vibeConfigHasServer('[[mcp_servers]]\nurl = "https://insrc.example"\n', 'insrc'), false, 'insrc in a URL value is not a name');
+	assert.equal(vibeConfigHasServer('', 'insrc'), false);
 });
 
 // ---------------------------------------------------------------------------

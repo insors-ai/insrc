@@ -56,14 +56,15 @@ export interface LocalRequestEnvelope extends RequestEnvelope {
 	readonly trustedContext?: TrustedRpcContext | undefined;
 	readonly lifetime?: RequestLifetime | undefined;
 }
-export function wireRequest(request: LocalRequestEnvelope): RequestEnvelope {
+/** `ack`: the router waits for this request's completion message (a session-queued request), whatever its kind. */
+export function wireRequest(request: LocalRequestEnvelope, opts: { readonly ack?: true | undefined } = {}): RequestEnvelope {
 	if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution !== undefined) {
 		throw new Error('Session execution cannot cross a worker channel.');
 	}
 	return {
 		kind: 'request', requestId: request.requestId, method: request.method,
 		params: request.params, stream: request.stream,
-		...(request.stream && request.lifetime ? { trackCompletion: true as const } : {}),
+		...(opts.ack || (request.stream && request.lifetime) ? { trackCompletion: true as const } : {}),
 		...(request.session ? { session: { label: request.session.label, pid: request.session.pid } } : {}),
 		...(request.underHold !== undefined ? { underHold: request.underHold } : {}),
 		...(request.trustedContext ? { trustedContext: { connectionIdentity: request.trustedContext.connectionIdentity, daemonEpoch: request.trustedContext.daemonEpoch } } : {}),

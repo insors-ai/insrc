@@ -73,7 +73,7 @@ import {
 import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient, IndexJob } from '../shared/types.js';
-import { basename } from 'node:path';
+import { basename, dirname, resolve as resolvePath } from 'node:path';
 import type { ConfigStore } from '../config/store.js';
 import { applyConfigWrite } from './config-write.js';
 import { getModelRegistry } from './model-registry.js';
@@ -257,8 +257,11 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// 6. Tmp directory at ~/.insrc/tmp/<sessionId>/.
 		let tmpFilesDeleted = 0;
 		try {
-			const tmpDir = join(PATHS.tmp, sessionId);
-			if (existsFs(tmpDir)) {
+			// Only a direct child of the tmp root: an id such as '..' or 'a/b' never reaches rmSync.
+			const tmpDir = sessionTmpDir(PATHS.tmp, sessionId);
+			if (tmpDir === undefined) {
+				log.warn({ sessionId }, 'purgeSession: the session id does not name a directory under the tmp root; not removed');
+			} else if (existsFs(tmpDir)) {
 				// Count files (one level deep) for telemetry, then nuke
 				// the directory. We don't recurse into subdirs for the
 				// count -- the synth-spill / reports layout is flat.
@@ -809,6 +812,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { sessionId } = params as { sessionId: string };
 			if (typeof sessionId !== 'string' || sessionId.length === 0) {
 				return { deleted: false, reason: 'invalid-input', message: 'sessionId required' };
+			}
+			if (!isSafeSessionId(sessionId)) {
+				return { deleted: false, reason: 'invalid-input', message: 'sessionId must not be a path' };
 			}
 			const counts = await purgeSession(sessionId, { compact: true });
 			return { deleted: true, counts };
@@ -1745,4 +1751,16 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	Object.assign(rpcHandlers, understandingRoutes.rpc);
 	Object.assign(streamHandlers, understandingRoutes.streams);
 	return { rpcHandlers, streamHandlers, understandingRoutes };
+}
+
+/** A session id that is a single path segment: not '.', '..', empty, or holding a separator or NUL. */
+export function isSafeSessionId(id: string): boolean {
+	return id.length > 0 && id !== '.' && id !== '..' && !/[\\/\0]/.test(id);
+}
+
+/** The session's own tmp directory under `root`, or undefined when the id would name anything else. */
+export function sessionTmpDir(root: string, sessionId: string): string | undefined {
+	if (!isSafeSessionId(sessionId)) return undefined;
+	const dir = resolvePath(root, sessionId);
+	return dirname(dir) === resolvePath(root) ? dir : undefined;
 }

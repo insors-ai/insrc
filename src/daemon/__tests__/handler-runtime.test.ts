@@ -108,3 +108,29 @@ test('handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approv
 			{ ok: false, reason: 'unknown-check', detail: 'no pending check never-issued; run models.check again' }, m);
 	}
 });
+
+test("session.delete refuses a session id that is a path ('..', a separator) before anything is purged", async () => {
+	const { isSafeSessionId } = await import('../handler-runtime.js');
+	for (const id of ['..', '.', 'a/b', 'a\\b', '../x', 'a\0b', '']) assert.equal(isSafeSessionId(id), false, JSON.stringify(id));
+	for (const id of ['s-1f2e', 'abc..def', '9b2c']) assert.equal(isSafeSessionId(id), true, id);
+	// Every dependency fails the test if touched: the refusal comes first.
+	const runtime = buildHandlerRuntime({
+		db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
+		startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+	});
+	try {
+		for (const sessionId of ['..', '../..', 'x/../..']) {
+			assert.deepEqual(await runtime.rpcHandlers['session.delete']!({ sessionId }), { deleted: false, reason: 'invalid-input', message: 'sessionId must not be a path' });
+		}
+	} finally {
+		runtime.understandingRoutes.stop();
+	}
+});
+
+test("the session purge's tmp directory is the id's direct child of the tmp root, and nothing for an id that names anything else", async () => {
+	const { sessionTmpDir } = await import('../handler-runtime.js');
+	const root = join(tmpdir(), 'insrc-tmp-root');
+	assert.equal(sessionTmpDir(root, 's-1f2e'), join(root, 's-1f2e'));
+	assert.equal(sessionTmpDir(root, 'abc..def'), join(root, 'abc..def'));
+	for (const id of ['..', '.', '', 'a/b', 'a/../..', '..\\x', 'a\0b']) assert.equal(sessionTmpDir(root, id), undefined, JSON.stringify(id));
+});

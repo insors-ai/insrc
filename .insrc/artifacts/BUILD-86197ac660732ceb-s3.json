@@ -4,10 +4,15 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s3",
     "createdAt": "2026-10-28T06:11:04.160Z",
-    "updatedAt": "2026-10-29T07:09:42.304Z",
+    "updatedAt": "2026-10-29T07:11:00.164Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
-    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "approvedAt": "2026-10-29T07:11:05.010Z",
+    "reviewOverride": {
+      "reason": "User-directed 2026-10-29: the daemon code-review framework is being rewritten (too slow / too many tokens), so s3 was reviewed manually in two rounds by independent reviewer agents given only the code. All confirmed defects were fixed with tests that fail without each fix (9dce52087, 735cbd53f); records re-validated (92d30be9f). Left open, not fixed: the session FIFO advances at a cancel before the worker stops the request (the approved LLD's 'ends at its cancel' rule), and an abort of a finished run the board evicted answers ok:false.",
+      "at": "2026-10-29T07:11:05.010Z"
+    }
   },
   "body": {
     "tasks": [
@@ -304,6 +309,6 @@
         "timestamp": "2026-10-29T07:09:42.304Z"
       }
     ],
-    "commit": "735cbd53f"
+    "commit": "92d30be9f"
   }
 }

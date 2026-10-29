@@ -74,12 +74,12 @@ export function startIndexingWorkers(workers: Supervisor, indexingBlock: SharedA
 			const end = endFor(SUMMARY_WORKER, CODE_INDEXING_WORKER);
 			return { workerData: { summaryPort: end }, transferList: [end] };
 		},
-		// The router sends it no request, so it is listed here; its busy state is the summary lane's (s4).
+		// The router sends it no request, so it is listed here, and unlisted the moment it exits; its busy state is the summary lane's (s4).
 		started: w => {
 			ready(SUMMARY_WORKER, 'document-summary')(w);
 			board?.publish({ threadId: w.threadId, cls: 'indexing', role: 'document-summary', busy: false, queued: 0 });
+			w.worker.once('exit', () => board?.forget(w.threadId));
 		},
-		exited: threadId => board?.forget(threadId),
 	});
 
 	return {

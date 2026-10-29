@@ -49,14 +49,18 @@ test("s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a
 		const r = await once(d.sock, method, params, client);
 		assert.equal(r.error, undefined, `${method} answered: ${r.error ?? ''}`);
 	}
-	assert.equal(count(d.stderr(), BUILT), 0, "no routed request built the main thread's runtime");
 
 	// A connection-management method stays on the main thread: it is answered there, and builds the runtime then.
 	const conn = await once(d.sock, 'db.listDriverKinds', {});
 	assert.equal(conn.error, undefined, `db.listDriverKinds answered: ${conn.error ?? ''}`);
-	await until(() => count(d.stderr(), BUILT) === 1, 'the build logged once');
 	assert.equal((await once(d.sock, 'db.listDriverKinds', {})).error, undefined);
-	assert.equal(count(d.stderr(), BUILT), 1, 'a later local request reuses it');
+	// The build is logged with the method that caused it, and only once: had a routed request built it,
+	// that request would be the one named (the log is written asynchronously, so its absence alone proves nothing).
+	await until(() => count(d.stderr(), BUILT) >= 1, 'the build logged');
+	await new Promise(r => setTimeout(r, 500));
+	assert.equal(count(d.stderr(), BUILT), 1, 'built once; the later local request reused it');
+	const after = d.stderr().slice(d.stderr().indexOf(BUILT));
+	assert.match(after.slice(0, 300), /method: "db\.listDriverKinds"/, 'built by the connection-management request, not by any routed one');
 });
 
 test("s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated", { timeout: 180_000 }, async () => {

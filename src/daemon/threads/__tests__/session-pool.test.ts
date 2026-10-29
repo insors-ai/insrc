@@ -244,3 +244,23 @@ test('session pool: every created worker is handed to onCreated; a refused share
 	assert.notEqual(a2.threadId, a.threadId);
 	assert.deepEqual(asked, ['shared-state', 'shared-state']);
 });
+
+test('session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart', async () => {
+	const asked: string[] = [];
+	let allow = true;
+	const { p, workers } = pool({ restarted: name => { asked.push(name); return allow; } });
+	workers.fail('a bad model-definitions file');
+	await assert.rejects(p.sharedWorker(), SessionWorkerStartError);
+	assert.deepEqual(asked, [], 'the first start is not a restart');
+	await assert.rejects(p.sharedWorker(), SessionWorkerStartError);
+	assert.deepEqual(asked, ['shared-state'], 'the start after a failed one is counted');
+	allow = false;
+	await assert.rejects(p.sharedWorker(), (err: unknown) => err instanceof SessionWorkerStartError && /exceeded the restart limit/.test(err.message), 'past the limit no worker is started');
+	assert.equal(workers.starts.filter(n => n === 'shared-state').length, 2, 'the refused start spawned nothing');
+	workers.fail(undefined);
+	allow = true;
+	await p.sharedWorker();
+	const startsAfter = asked.length;
+	await p.sharedWorker();
+	assert.equal(asked.length, startsAfter, 'once running, asking for it again is not a restart');
+});

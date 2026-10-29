@@ -7,8 +7,8 @@
  * The main thread's handler runtime, built on first need (Epic 86197ac6, Story s4): with daemon
  * threads, every request is served on a worker except those that must stay on the main thread
  * (a connection-scoped request, an unclassified method, the abort of a run started here). The
- * runtime is built when the first of those arrives, so a daemon that never sees one never
- * loads it. A build that fails answers that request with its error; the next one builds again.
+ * handler tables are built when the first of those arrives, so a daemon that never sees one never
+ * builds them (the modules themselves are imported at boot). A build that fails answers that request with its error; the next one builds again.
  */
 
 import { getLogger } from '../../shared/logger.js';

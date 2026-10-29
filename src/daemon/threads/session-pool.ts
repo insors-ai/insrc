@@ -227,9 +227,8 @@ export class SessionPool {
 	}
 
 	private async startEntry(key: string, session: SessionId | undefined, shared: boolean): Promise<Entry> {
-		if (shared && this.sharedExited) {
-			if (this.deps.restarted?.('shared-state') === false) throw new SessionWorkerStartError('the shared-state worker exceeded the restart limit');
-			this.sharedExited = false;
+		if (shared && this.sharedExited && this.deps.restarted?.('shared-state') === false) {
+			throw new SessionWorkerStartError('the shared-state worker exceeded the restart limit');
 		}
 		const name = shared ? 'shared-state' : session === undefined ? 'unattributed' : `session ${session.label}:${session.pid}`;
 		const onCreated = (worker: StartedWorker['worker']): void => { this.deps.onCreated?.(worker, name); };
@@ -239,8 +238,11 @@ export class SessionPool {
 				? await this.deps.start(name, { shared: true }, onCreated)
 				: await this.deps.start(name, undefined, onCreated);
 		} catch (err) {
+			// A shared-state worker that dies before it is ready counts like one that exited: its next start is a restart.
+			if (shared) this.sharedExited = true;
 			throw new SessionWorkerStartError(err instanceof Error ? err.message : String(err));
 		}
+		if (shared) this.sharedExited = false;
 		const now = this.now();
 		const entry: Entry = { key, session, shared, started, createdAt: now, lastRequestAt: now, inFlight: 0, queued: 0, released: false };
 		this.deps.registry.register(shared

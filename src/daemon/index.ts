@@ -454,7 +454,7 @@ async function main(): Promise<void> {
 		} catch { log.warn({ repo: registered.path }, 'connection management disabled: maintenance or recovery required'); }
 	}
 	// Built at boot without daemon threads; with them, only when the first request that must stay
-	// on this thread arrives (s4), so a daemon that never sees one never loads it here.
+	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
 	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
 	const buildRuntime = (): ForwardRequest => {
 		const runtime = buildHandlerRuntime({

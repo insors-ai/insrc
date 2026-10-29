@@ -12,6 +12,7 @@ export interface RecoveryView {
  readonly manifest: RecoveryManifest; readonly basis: LedgerBasis; readonly state: InvestigationState;
  readonly receipts: readonly TrustedInspectionReceipt[]; readonly outstandingWork: readonly string[];
  readonly eventOrdinal: number; readonly eventDigest: string;
+ readonly lifecycle: { readonly state: import('./recovery-types.js').ReviewRecoveryV1['state']; readonly owner: import('./recovery-types.js').ReviewRecoveryV1['owner']; readonly generation: number; readonly lastWallMs: number; readonly completionReceipt: string | null; readonly processEpoch: string | null }; 
 }
 export function validateRecoveryManifest(raw: RecoveryManifest): RecoveryManifest {
  const m=recoveryValue(raw);recoveryVersion(m.version);recoveryId(m.runId);recoveryDigest(m.subjectDigest);recoveryDigest(m.policyDigest);
@@ -24,6 +25,7 @@ export function validateRecoveryManifest(raw: RecoveryManifest): RecoveryManifes
 }
 export function applyRecoveryBlock(view: RecoveryView,t: BlockProgressTransitionV1,event: RecoveryEvent,read:(ref:string)=>unknown):RecoveryView {
  const p=t.progress,m=view.manifest;
+ if(!view.lifecycle.owner||view.lifecycle.owner.generation!==event.generation||view.lifecycle.state!=='running')throw new RecoveryError('corrupt','Block is not from current run owner.');
  if(t.version!==1||t.kind!=='block-progress'||p.runId!==m.runId||p.subjectDigest!==m.subjectDigest||p.generation!==event.generation
   ||t.payloadDigest!==ledgerDigest(p)||t.predecessorCheckpoint!==view.state.checkpoint||p.expectedSequence!==view.state.sequence
   ||view.state.accepted.some(a=>a.progress.progressId===p.progressId)||!p.notes?.trim()||p.notes.length>16000
@@ -57,7 +59,7 @@ export function replayRecovery(journal:RecoveryJournal,repairTail=false,control?
  const events=journal.events(repairTail),first=events[0];
  if(!first||first.kind!=='state'||first.eventId!=='prepared'||first.generation!==0)throw new RecoveryError('unsupported','No resumable investigation manifest.');
  const manifest=validateRecoveryManifest(journal.read(first.payloadRef) as RecoveryManifest);
- let view:RecoveryView={manifest,basis:manifest.basis,state:manifest.initial,receipts:manifest.receipts,outstandingWork:manifest.basis.requirements.map(r=>r.requirementRef),eventOrdinal:1,eventDigest:first.digest};
+ let view:RecoveryView={manifest,basis:manifest.basis,state:manifest.initial,receipts:manifest.receipts,outstandingWork:manifest.basis.requirements.map(r=>r.requirementRef),eventOrdinal:1,eventDigest:first.digest,lifecycle:{state:'prepared',owner:null,generation:0,lastWallMs:0,completionReceipt:null,processEpoch:null}};
  for(const event of events){
   if(event.runId!==manifest.runId||event.subjectDigest!==manifest.subjectDigest||event.policyDigest!==manifest.policyDigest)throw new RecoveryError('corrupt','Event changed subject or policy binding.');
   if(event===first)continue;

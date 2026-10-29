@@ -11,7 +11,7 @@ import { ledgerDigest } from '../ledger-identity.js';
 import type { BlockProgressTransitionV1 } from '../continuation-types.js';
 test('Verified replay recomputes sc2 deltas and rejects forged candidates and corrupt closure',async()=>{
  const f=recoveryFixture();try{
-  await f.store.prepare(f.manifest);const ports=f.store.ports(1,f.turn.attemptId);
+  await f.store.prepare(f.manifest);await f.store.claim(300000);const ports=f.store.ports(1,f.turn.attemptId,f.store.replay().lifecycle.owner!.leaseId);
   const p=progressFor(f.turn,'block-1',0);
   const basis=await ports.stageImmutableValue(f.turn.runId,{...f.basis});
   const forged=await ports.stageImmutableValue(f.turn.runId,{...f.context.state.ledger,findings:[{findingId:'forged'}]});
@@ -26,9 +26,9 @@ test('Verified replay recomputes sc2 deltas and rejects forged candidates and co
 });
 test('Per-block checkpoint ACK, uncertain receipt replay and snapshot reconstruction',async()=>{
  const f=recoveryFixture();try{
-  await f.store.prepare(f.manifest);let fault=false;
+  await f.store.prepare(f.manifest);await f.store.claim(300000);let fault=false;
   const store=new RecoveryStore(f.repo,f.turn.runId,{...f.options,fault:p=>{if(fault&&p==='event-synced')throw Error('ACK lost');}});
-  const ports=store.ports(1,f.turn.attemptId),owner=new BlockProgressCoordinator(f.turn,{...f.context,ports});
+  const ports=store.ports(1,f.turn.attemptId,f.store.replay().lifecycle.owner!.leaseId),owner=new BlockProgressCoordinator(f.turn,{...f.context,ports});
   const p=progressFor(f.turn,'block-1',0);const first=await owner.accept(p);assert.equal(store.replay().state.sequence,1);
   fault=true;await assert.rejects(()=>owner.accept(progressFor(f.turn,'block-2',1)));fault=false;
   assert.equal(owner.state.sequence,1);assert.equal(store.replay().state.sequence,2);
@@ -36,8 +36,8 @@ test('Per-block checkpoint ACK, uncertain receipt replay and snapshot reconstruc
   // No snapshot can override the journal, even with apparently newer malicious state.
   writeFileSync(join(store.journal.directory,'snapshot.json'),'{"sequence":999999}',{mode:0o600});
   const view=reopened.replay();assert.equal(view.state.sequence,2);assert.ok(view.outstandingWork.length>0);
-  const hydrated=new BlockProgressCoordinator(f.turn,{...f.context,state:view.state,ports:reopened.ports(1,f.turn.attemptId)});
-  assert.deepEqual(await hydrated.accept(p),first);assert.equal(reopened.journal.events().length,3);
+  const hydrated=new BlockProgressCoordinator(f.turn,{...f.context,state:view.state,ports:reopened.ports(1,f.turn.attemptId,f.store.replay().lifecycle.owner!.leaseId)});
+  assert.deepEqual(await hydrated.accept(p),first);assert.equal(reopened.journal.events().length,4);
   await assert.rejects(()=>hydrated.accept({...p,notes:'conflict'}));
  }finally{f.cleanup();}
 });

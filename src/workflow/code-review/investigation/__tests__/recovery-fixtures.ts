@@ -12,7 +12,7 @@ import type { RecoveryManifest } from '../recovery-types.js';
 export function recoveryFixture(){
  const d=recoveryDirectory(),f=twoBlockFixture();
  const manifest:RecoveryManifest={version:1,runId:f.basis.runId,subjectDigest:f.basis.subject.subjectDigest,policyDigest:f.context.policy.digest,basis:f.basis,initial:f.context.state,policy:f.context.policy,compatibility:{engine:1,evidence:1,toolsDigest:'tools-v1',providerDigest:'provider-v1'},receipts:[]};
- const options={assertProcessOwner:()=>{},assertOwner:()=>{},readEvidence:f.context.ports.readEvidence};
+ const options={processEpoch:"test-daemon",assertProcessOwner:()=>{},assertOwner:()=>{},readEvidence:f.context.ports.readEvidence};
  const store=new RecoveryStore(d.repo,manifest.runId,options);
  return {...d,...f,manifest,store,options};
 }

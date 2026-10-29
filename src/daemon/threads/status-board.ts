@@ -68,6 +68,13 @@ export interface StatusSnapshot {
 	readonly store: StoreStatusSnapshot;
 }
 
+/**
+ * Cap on the run records the board keeps, over every owner thread: the oldest terminal ones
+ * go first, a running one never. It is the run registry's own cap, so the daemon retains as
+ * many runs as a single thread did; without it, a released worker's finished runs would stay.
+ */
+export const MAX_RUNS = 64;
+
 const IDLE_INDEXING: IndexingStatus = { index: { depth: 0, processing: false }, summary: { depth: 0, processing: false }, idle: true };
 
 export class StatusBoard {
@@ -123,6 +130,12 @@ export class StatusBoard {
 			return;
 		}
 		this.runs.set(run.runId, run);
+		if (this.runs.size <= MAX_RUNS) return;
+		const terminal = [...this.runs.values()].filter(r => r.status !== 'running').sort((a, b) => a.startedAt - b.startedAt);
+		for (const r of terminal) {
+			if (this.runs.size <= MAX_RUNS) break;
+			this.runs.delete(r.runId);
+		}
 	}
 
 	/** The owner thread exited (s3): each of its runs still running ends 'error' with `error`, keeping its frames. */

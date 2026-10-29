@@ -17,7 +17,7 @@ import { MessageChannel, Worker } from 'node:worker_threads';
 
 import { serveHub } from '../channel.js';
 import { TargetConflictError, TargetRegistry } from '../registry.js';
-import { StatusBoard, statusBoardHubHandlers } from '../status-board.js';
+import { MAX_RUNS, StatusBoard, statusBoardHubHandlers } from '../status-board.js';
 import type { RunRecord } from '../status-board.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -161,4 +161,16 @@ test('board: forgetRun hub binding removes a run published from a worker; ownerT
 		await worker.terminate();
 		rmSync(repo, { recursive: true, force: true });
 	}
+});
+
+test('board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is', () => {
+	const b = new StatusBoard();
+	const run = (n: number, status: RunRecord['status']): RunRecord => ({ runId: `r${n}`, status, ownerThreadId: 100 + (n % 3), startedAt: n, model: 'm', frames: [] });
+	b.publishRun(run(0, 'running'));
+	for (let n = 1; n <= MAX_RUNS + 5; n++) b.publishRun(run(n, n % 2 === 0 ? 'done' : 'error'));
+	const ids = b.snapshot().runs.map(r => r.runId);
+	assert.equal(ids.length, MAX_RUNS, 'kept at the cap');
+	assert.ok(ids.includes('r0'), 'the oldest run is kept while it is running');
+	for (let n = 1; n <= 5; n++) assert.ok(!ids.includes(`r${n}`), `r${n}, among the oldest finished, was dropped`);
+	assert.ok(ids.includes(`r${MAX_RUNS + 5}`), 'the newest is kept');
 });

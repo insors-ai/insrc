@@ -30,14 +30,15 @@ const { PATHS } = await import('../../../shared/paths.js');
 import type { StartedWorker } from '../workers.js';
 
 /** A fake started worker: terminate() records itself and emits no exit (a release, not a crash). */
-function fakeWorkers(): { start: (name: string) => Promise<StartedWorker>; starts: string[]; terminated: number[]; fail: (reason: string | undefined) => void; gate: (p: Promise<void> | undefined) => void } {
+function fakeWorkers(): { start: (name: string) => Promise<StartedWorker>; starts: string[]; terminated: number[]; disconnected: number[]; fail: (reason: string | undefined) => void; gate: (p: Promise<void> | undefined) => void } {
 	let next = 100;
 	const starts: string[] = [];
 	const terminated: number[] = [];
+	const disconnected: number[] = [];
 	let failWith: string | undefined;
 	let wait: Promise<void> | undefined;
 	return {
-		starts, terminated,
+		starts, terminated, disconnected,
 		fail: reason => { failWith = reason; },
 		gate: p => { wait = p; },
 		start: async name => {
@@ -46,7 +47,7 @@ function fakeWorkers(): { start: (name: string) => Promise<StartedWorker>; start
 			if (failWith !== undefined) throw new Error(failWith);
 			const threadId = next++;
 			const worker = Object.assign(new EventEmitter(), { threadId, terminate: async () => { terminated.push(threadId); return 0; } });
-			return { worker: worker as unknown as StartedWorker['worker'], threadId, port: new MessageChannel().port1, reclaimed: Promise.resolve({ locks: [], stores: { released: [], unhealthy: [] } }), disconnect: () => {} };
+			return { worker: worker as unknown as StartedWorker['worker'], threadId, port: new MessageChannel().port1, reclaimed: Promise.resolve({ locks: [], stores: { released: [], unhealthy: [] } }), disconnect: () => { disconnected.push(threadId); } };
 		},
 	};
 }
@@ -162,4 +163,51 @@ test('session pool: the unattributed worker starts once under session:unattribut
 	assert.equal(sessionIdleMs(), 60_000, 'the configured value');
 	writeFileSync(PATHS.config, JSON.stringify({ daemon: { threads: { sessionIdleMs: -5 } } }));
 	assert.equal(sessionIdleMs(), 900_000, 'an invalid value falls back to the default');
+});
+
+test('session pool: a worker that exits is unregistered and disconnected from its main-thread services', async () => {
+	const { p, workers, registry, detached } = pool();
+	const mcp = { label: 'mcp', pid: 4250 };
+	const info = await p.workerFor(mcp);
+	assert.deepEqual(workers.disconnected, [], 'connected while it runs');
+	// The fake's worker is the EventEmitter the pool listens on: a crash is its exit event.
+	const entryWorker = (p as unknown as { entries: Map<string, { started: { worker: EventEmitter } }> }).entries.get('session:mcp:4250')!.started.worker;
+	entryWorker.emit('exit', 1);
+	await new Promise(r => setTimeout(r, 10));
+	assert.deepEqual(workers.disconnected, [info.threadId], 'disconnected once reclaimed, as a release does');
+	assert.deepEqual(detached, [info.threadId]);
+	assert.equal(registry.targetFor('session', mcp), undefined, 'its slot is unregistered');
+	assert.equal(p.sessions().length, 0);
+});
+
+test('session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn', async () => {
+	let now = 0;
+	const { p, workers } = pool({ idleTimeoutMs: 1_000, now: () => now });
+	const info = await p.workerFor({ label: 'mcp', pid: 4251 });
+	p.startedOn(info.threadId);
+	now = 5_000;
+	await p.sweep();
+	assert.deepEqual(workers.terminated, [], 'busy with the request: not released');
+	p.endedOn(info.threadId);
+	await p.sweep();
+	assert.deepEqual(workers.terminated, [], 'its end counts as activity: not idle yet');
+	now = 7_000;
+	await p.sweep();
+	assert.deepEqual(workers.terminated, [info.threadId], 'released once idle after it ended');
+});
+
+test('session pool: close waits for a start under way, releases that worker too, and refuses any later start', async () => {
+	const { p, workers } = pool();
+	let open!: () => void;
+	workers.gate(new Promise<void>(r => { open = r; }));
+	const starting = p.workerFor({ label: 'mcp', pid: 4252 });
+	const closing = p.close();
+	open();
+	const info = await starting;
+	await closing;
+	assert.deepEqual(workers.terminated, [info.threadId], 'the worker that finished starting during close was released');
+	await assert.rejects(p.sharedWorker(), (err: unknown) => err instanceof SessionWorkerStartError && /shutting down/.test(err.message));
+	await assert.rejects(p.workerFor({ label: 'mcp', pid: 4253 }), SessionWorkerStartError);
+	assert.equal(workers.starts.length, 1, 'no start after close began');
+	assert.equal(p.sessions().length, 0);
 });

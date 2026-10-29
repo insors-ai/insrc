@@ -155,22 +155,39 @@ test('ac4: a session worker failure is contained; a throwing handler keeps its w
 	assert.notEqual(threadOf(await once('test.servingThread', null, A)), before, "the session's next request runs on a new worker");
 });
 
-test('ac5: no Promise.all over provider calls in the new modules', () => {
-	// The modules s3 adds: none runs calls concurrently, so none can run provider calls concurrently.
-	for (const file of ['session-pool.ts', 'session-routing.ts', 'session-worker.ts']) {
-		const source = readFileSync(join(REPO_ROOT, 'src', 'daemon', 'threads', file), 'utf8');
-		assert.doesNotMatch(source, /Promise\.(all|allSettled|any|race)\s*\(/, `${file} runs nothing concurrently`);
+test('ac5: no Promise.all over provider calls in the modules s3 adds or changes', () => {
+	// None runs calls concurrently, so none can run provider calls concurrently. The one exception is the
+	// router's wait for a request lifetime's two promises (completed and drained), which reach no provider.
+	const files = [
+		'threads/session-pool.ts', 'threads/session-routing.ts', 'threads/session-worker.ts', 'threads/router.ts',
+		'threads/status-board.ts', 'threads/main-services.ts', 'threads/method-class.ts', 'threads/registry.ts',
+		'workflow-run-registry.ts', 'steps/daemon-client.ts',
+	];
+	for (const file of files) {
+		const lines = readFileSync(join(REPO_ROOT, 'src', 'daemon', file), 'utf8').split('\n')
+			.filter(line => /Promise\.(all|allSettled|any|race)\s*\(/.test(line) && !/Promise\.all\(\[request\.lifetime\.completed, request\.lifetime\.drained\]\)/.test(line));
+		assert.deepEqual(lines, [], `${file} runs nothing concurrently`);
 	}
 });
 
-test("ac5: a recording provider shows a session method's provider calls strictly sequential", { timeout: 60_000 }, async () => {
+test("ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once", { timeout: 60_000 }, async () => {
 	const A = { label: 'mcp', pid: 7301 };
-	const r = (await once('test.recordedRun', { repo: REPO, runId: 'recorded-1' }, A)).result as { threadId: number; status: string; calls: { startedAt: number; endedAt: number }[]; maxActive: number };
-	assert.ok(r.threadId > 0, 'run on a session worker');
-	assert.equal(r.status, 'done');
-	assert.equal(r.calls.length, 2, 'decompose and synthesize');
-	assert.equal(r.maxActive, 1, 'never two provider calls at once');
-	assert.ok(r.calls[1]!.startedAt >= r.calls[0]!.endedAt, 'the second started after the first resolved');
+	type Recorded = { threadId: number; status: string; calls: { startedAt: number; endedAt: number }[]; maxActive: number };
+	// Two runs sent together from two connections of one session: its FIFO must keep their provider calls apart.
+	const [one, two] = (await Promise.all([
+		once('test.recordedRun', { repo: REPO, runId: 'recorded-1' }, A),
+		once('test.recordedRun', { repo: REPO, runId: 'recorded-2' }, A),
+	])).map(r => r.result as Recorded);
+	for (const r of [one!, two!]) {
+		assert.ok(r.threadId > 0, 'run on a session worker');
+		assert.equal(r.status, 'done');
+		assert.equal(r.calls.length, 2, 'decompose and synthesize');
+		assert.equal(r.maxActive, 1, 'never two provider calls at once on the worker');
+		assert.ok(r.calls[1]!.startedAt >= r.calls[0]!.endedAt, 'the second started after the first resolved');
+	}
+	assert.equal(one!.threadId, two!.threadId, 'one worker for the session');
+	const [first, second] = one!.calls[0]!.startedAt <= two!.calls[0]!.startedAt ? [one!, two!] : [two!, one!];
+	assert.ok(second.calls[0]!.startedAt >= first.calls[1]!.endedAt, 'the later run began only after the earlier one finished');
 });
 
 test('ac6: a token of each step kind resumes on a new worker after an idle release', { timeout: 60_000 }, async () => {

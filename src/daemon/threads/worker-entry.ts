@@ -20,10 +20,12 @@ import { closeGraphStore, declareLiveStoreOwner } from '../../db/graph/store.js'
 import { installStoreGuard } from '../../db/store-guard.js';
 import { setActiveEmbedderBackend } from '../../indexer/embedder.js';
 import type { EmbedderBackend } from '../../indexer/embedder.js';
+import type { IndexRunView } from '../../indexer/run-record.js';
 import { installLockManager } from '../../shared/locks/lock-manager.js';
 import { enableMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { getModelRegistry } from '../model-registry.js';
 import { HubClient } from './channel.js';
+import { INDEX_RUNS_OP } from './main-services.js';
 import { HubStepStateStore, installStepStateStore } from './step-state.js';
 import { wireWorkerStoreHealth } from './store-health-hub.js';
 
@@ -50,6 +52,14 @@ export class NotADaemonWorkerError extends Error {
  */
 export const GRAPH_CLOSE_OP = 'graph.close';
 
+/** The running full indexes as the main thread last pushed them (s3); every worker takes the push. */
+let indexRuns: readonly IndexRunView[] = [];
+
+/** The running full index of `repoPath`, from the last push (a session worker's search guard reads it). */
+export function pushedIndexRun(repoPath: string): IndexRunView | undefined {
+	return indexRuns.find(r => r.repoPath === repoPath);
+}
+
 /** Prepare this worker thread; returns its hub client. */
 export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	if (isMainThread) throw new NotADaemonWorkerError();
@@ -65,6 +75,7 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	// The embedder's backend is per thread: take the one the main thread decided (Epic 86197ac6 s2).
 	hub.onPush('embedder.backend', backend => setActiveEmbedderBackend(backend as EmbedderBackend));
 	installStepStateStore(new HubStepStateStore(hub));
+	hub.onPush(INDEX_RUNS_OP, runs => { indexRuns = runs as readonly IndexRunView[]; });
 	hub.onPush(GRAPH_CLOSE_OP, async ack => {
 		await closeGraphStore();
 		(ack as MessagePort).postMessage('closed');

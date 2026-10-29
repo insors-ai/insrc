@@ -88,6 +88,7 @@ export class SessionPool {
 	private readonly entries = new Map<string, Entry>();
 	private readonly starting = new Map<string, Promise<Entry>>();
 	private timer: NodeJS.Timeout | undefined;
+	private closed = false;
 	private readonly now: () => number;
 	private readonly pidAlive: (pid: number) => boolean;
 
@@ -132,6 +133,21 @@ export class SessionPool {
 		e.lastRequestAt = this.now();
 	}
 
+	/** A request sent straight to the worker on `threadId` (an abort to its run's owner) started: busy until endedOn(). */
+	startedOn(threadId: number): void {
+		const e = this.entryOn(threadId);
+		if (e === undefined) return;
+		e.inFlight++;
+		e.lastRequestAt = this.now();
+	}
+
+	endedOn(threadId: number): void {
+		const e = this.entryOn(threadId);
+		if (e === undefined) return;
+		e.inFlight = Math.max(0, e.inFlight - 1);
+		e.lastRequestAt = this.now();
+	}
+
 	/** How many of the session's requests wait in its FIFO (kept by the router). */
 	setQueued(session: SessionId | undefined, queued: number): void {
 		const e = this.entries.get(keyOf(session));
@@ -163,9 +179,14 @@ export class SessionPool {
 		this.timer = undefined;
 	}
 
-	/** Release every worker (daemon shutdown). */
+	/**
+	 * Release every worker (daemon shutdown). No worker starts after this begins: a start
+	 * already under way is waited for and its worker released too.
+	 */
 	async close(): Promise<void> {
+		this.closed = true;
 		this.stopSweeping();
+		for (const start of [...this.starting.values()]) await start.catch(() => undefined);
 		for (const e of [...this.entries.values()]) await this.release(e);
 	}
 
@@ -177,7 +198,13 @@ export class SessionPool {
 		};
 	}
 
+	private entryOn(threadId: number): Entry | undefined {
+		for (const e of this.entries.values()) if (e.started.threadId === threadId) return e;
+		return undefined;
+	}
+
 	private entryFor(session: SessionId | undefined, shared = false): Promise<Entry> {
+		if (this.closed) return Promise.reject(new SessionWorkerStartError('the daemon is shutting down'));
 		const key = shared ? SHARED : keyOf(session);
 		const live = this.entries.get(key);
 		if (live !== undefined) return Promise.resolve(live);
@@ -211,7 +238,11 @@ export class SessionPool {
 			log.warn({ session, shared, threadId: started.threadId, code }, 'session pool: a session worker exited');
 			// Told first, while the worker's channel is still known, so what it was serving can be failed.
 			try { this.deps.exited?.(this.info(entry), code); }
-			finally { this.forget(entry); }
+			finally {
+				this.forget(entry);
+				// Its main-thread services (pushes, hub) stop once its thread is reclaimed, as on a release.
+				void started.reclaimed.then(started.disconnect, started.disconnect);
+			}
 		});
 		return entry;
 	}

@@ -109,7 +109,8 @@ export const ROUTE_OP = 'router.request';
 
 /**
  * The running full indexes, pushed to every worker as the code-indexing worker publishes them
- * (s3): a session worker's search guard reads them synchronously, as the main thread reads the board.
+ * (s3); every worker takes them (worker-entry) and a session worker's search guard reads them
+ * synchronously, as the main thread reads the board.
  */
 export const INDEX_RUNS_OP = 'board.indexRuns';
 

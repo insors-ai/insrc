@@ -24,6 +24,7 @@
  * as on a single thread. Requests bound to a connection session stay on this thread.
  */
 
+import { threadId as mainThreadId } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../../shared/logger.js';
@@ -66,6 +67,9 @@ export interface RouterSessions {
 	ended(session: SessionId | undefined): void;
 	/** How many of the session's requests wait in its FIFO. */
 	setQueued(session: SessionId | undefined, queued: number): void;
+	/** A request sent straight to a pool worker's thread (an abort to its run's owner) started, and ended. */
+	startedOn(threadId: number): void;
+	endedOn(threadId: number): void;
 }
 
 /** One request in a session's FIFO. */
@@ -155,7 +159,8 @@ export class Router {
 
 	/**
 	 * A pool worker exited (s3): the requests it was serving are answered 'session worker
-	 * failed: <reason>' (an error frame for a stream), and so are its session's queued ones.
+	 * failed: <reason>' (an error frame for a stream), and so are its session's queued ones
+	 * bound for it (one bound for the shared-state worker stays queued).
 	 */
 	failWorker(threadId: number, reason: string, session?: SessionId): void {
 		const error = `session worker failed: ${reason}`;
@@ -167,11 +172,15 @@ export class Router {
 		if (session !== undefined) {
 			// The queue first: the running request's failure below would otherwise send the next one to the dead worker.
 			const fifo = this.fifos.get(`${session.label}:${session.pid}`);
-			for (const item of fifo?.waiting.splice(0) ?? []) {
-				try { answer(item.request.requestId, item.request.stream, item.deliver); }
-				finally { item.request.lifetime?.complete(); }
+			if (fifo !== undefined) {
+				const failed = fifo.waiting.filter(item => !SHARED_STATE_METHODS.has(item.request.method));
+				fifo.waiting.splice(0, fifo.waiting.length, ...fifo.waiting.filter(item => SHARED_STATE_METHODS.has(item.request.method)));
+				for (const item of failed) {
+					try { answer(item.request.requestId, item.request.stream, item.deliver); }
+					finally { item.request.lifetime?.complete(); }
+				}
+				this.sessions?.setQueued(session, fifo.waiting.length);
 			}
-			if (fifo !== undefined) this.sessions?.setQueued(session, 0);
 		}
 		for (const orphan of this.detach(threadId)) answer(orphan.requestId, orphan.stream, orphan.deliver);
 	}
@@ -211,10 +220,21 @@ export class Router {
 
 	/** A session-class request (s3): to the shared-state worker or the session's worker, through the session's FIFO unless exempt or unattributed. */
 	private dispatchSession(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void {
-		// An abort goes to the thread that owns the run, whichever session sends it.
+		// An abort goes to the thread that owns the run, whichever session sends it: this thread
+		// for a run a connection-scoped request started here, else the owner's worker, which is
+		// busy (not idle-released) until the abort's reply.
 		if (request.method === 'workflow.run.abort') {
 			const owner = this.runOwner?.(String((request.params as { runId?: unknown } | null)?.runId ?? ''));
-			if (owner !== undefined && this.ports.has(owner)) return this.send(owner, request, deliver);
+			if (owner === mainThreadId) return this.local(request, deliver);
+			if (owner !== undefined && this.ports.has(owner)) {
+				const sessions = this.sessions!;
+				sessions.startedOn(owner);
+				let ended = false;
+				return this.send(owner, request, envelope => {
+					try { deliver(envelope); }
+					finally { if (!ended && isTerminal(envelope)) { ended = true; sessions.endedOn(owner); } }
+				});
+			}
 		}
 		const shared = SHARED_STATE_METHODS.has(request.method);
 		const send = (d: DeliverEnvelope): () => void => shared
@@ -267,7 +287,14 @@ export class Router {
 		);
 		return () => {
 			cancelled = true;
-			if (sent !== undefined) { sent(); return; }
+			if (sent !== undefined) {
+				sent();
+				// A cancelled stream gets no last frame from its worker: it has ended once the worker
+				// finished with it (its lifetime completes), or at once without a lifetime. A unary
+				// request runs on and ends at its reply.
+				if (request.stream) { if (request.lifetime) void request.lifetime.completed.then(end); else end(); }
+				return;
+			}
 			request.lifetime?.abort();
 			request.lifetime?.complete();
 			end();

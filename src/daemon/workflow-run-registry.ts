@@ -24,6 +24,7 @@ import { threadId } from 'node:worker_threads';
 import { getLogger } from '../shared/logger.js';
 import { runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { appendProgressLog } from '../workflow/storage.js';
+import { MAX_RUNS } from './threads/status-board.js';
 import type { RunRecord, StatusSnapshot } from './threads/status-board.js';
 import {
 	formatProgressDetail,
@@ -74,9 +75,8 @@ export interface PollResult {
 
 const runs = new Map<string, RunState>();
 
-/** Cap on retained runs. When exceeded, oldest TERMINAL runs are dropped first
- *  (a running run is never evicted). Simple size-cap GC — no timers. */
-const MAX_RUNS = 64;
+// Cap on retained runs (MAX_RUNS, shared with the status board). When exceeded, oldest
+// TERMINAL runs are dropped first (a running run is never evicted). Simple size-cap GC — no timers.
 
 /**
  * Where detached runs are mirrored for other threads (Epic 86197ac6 s3, sc4): the status

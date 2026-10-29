@@ -30,7 +30,6 @@ import { scheduleTodosRetention } from '../todos-rpc.js';
 import { getDb } from '../../db/client.js';
 import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { readIndexRun, setIndexRunSource } from '../../indexer/run-record.js';
-import type { IndexRunView } from '../../indexer/run-record.js';
 import { buildHandlerRuntime, inDaemonOnlyHandlers } from '../handler-runtime.js';
 import { directDispatch } from '../server.js';
 import type { RpcHandlers } from '../server.js';
@@ -43,12 +42,12 @@ import type { InDaemonClient } from '../steps/daemon-client.js';
 import { setRunBoard } from '../workflow-run-registry.js';
 import type { MethodClass } from './channel.js';
 import { IndexingPortClient } from './indexing-port.js';
-import { INDEX_RUNS_OP, ROUTE_OP, SHUTDOWN_OP } from './main-services.js';
+import { ROUTE_OP, SHUTDOWN_OP } from './main-services.js';
 import type { RouteRequest, WorkerConnection } from './main-services.js';
 import { inDaemonTarget } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
 import type { StatusSnapshot } from './status-board.js';
-import { startDaemonWorker } from './worker-entry.js';
+import { pushedIndexRun, startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
 const log = getLogger('session-worker');
@@ -59,9 +58,7 @@ const board = new StatusBoardClient(hub);
 // Detached runs started here are mirrored to the board, so any thread answers their polls.
 setRunBoard(board);
 // The running full indexes, pushed from the board: the search guard refuses or filters a repository under index, as on the main thread.
-let indexRuns: readonly IndexRunView[] = [];
-hub.onPush(INDEX_RUNS_OP, runs => { indexRuns = runs as readonly IndexRunView[]; });
-setIndexRunSource(repoPath => indexRuns.find(r => r.repoPath === repoPath));
+setIndexRunSource(pushedIndexRun);
 
 const db = await getDb();
 const configStore = new ConfigStore(db);
@@ -92,6 +89,9 @@ inDaemon = createInDaemonClient(runtime.rpcHandlers, runtime.streamHandlers, {
 });
 installStepDaemonClient(inDaemon);
 
+/** Provider calls of test.recordedRun in progress on this worker, over every such request. */
+let recordedActive = 0;
+
 /** Test-only methods (INSRC_TEST_HOOKS=1): CPU-bound work, ordered work, and a nested session-class call. */
 function testHandlers(): RpcHandlers {
 	return {
@@ -111,7 +111,8 @@ function testHandlers(): RpcHandlers {
 		'test.nested': async () => ({ threadId, nested: await inDaemon!.request('session.list', {}) }),
 		'test.throw': async () => { throw new Error('the test handler threw'); },
 		'test.indexRun': async (params) => ({ threadId, run: readIndexRun((params as { repoPath: string }).repoPath) ?? null }),
-		// A detached stub workflow run on this worker with a provider that records its calls: none may overlap (k6).
+		// A detached stub workflow run on this worker with a provider that records its calls: none may overlap (k6),
+		// counted over every recorded run on the worker, so two of one session's requests overlapping would show.
 		'test.recordedRun': async (params) => {
 			const { repo, runId } = params as { repo: string; runId: string };
 			const { pollWorkflowRun, startWorkflowRun } = await import('../workflow-run-registry.js');
@@ -119,7 +120,6 @@ function testHandlers(): RpcHandlers {
 				{ workflow: 'stub', steps: [{ id: 's1', runner: 'echo.a', params: {} }, { id: 's2', runner: 'echo.b', params: {} }, { id: 's3', runner: 'echo.c', params: {} }] },
 				{ body: { title: 'Demo', summary: 'A demo summary grounded in a step [[c1]].', bulletList: ['first point [[c1]]'] }, citations: [{ id: 'c1', kind: 'step-output', ref: 's1' }] },
 			];
-			let active = 0;
 			let maxActive = 0;
 			const calls: { startedAt: number; endedAt: number }[] = [];
 			const recording = {
@@ -129,10 +129,10 @@ function testHandlers(): RpcHandlers {
 				stream: () => { throw new Error('unused'); },
 				embed: async () => [],
 				completeStructured: async () => {
-					active++; maxActive = Math.max(maxActive, active);
+					recordedActive++; maxActive = Math.max(maxActive, recordedActive);
 					const startedAt = Date.now();
 					await new Promise(r => setTimeout(r, 50));
-					active--;
+					recordedActive--;
 					calls.push({ startedAt, endedAt: Date.now() });
 					return answers.shift();
 				},

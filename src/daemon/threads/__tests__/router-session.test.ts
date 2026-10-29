@@ -11,8 +11,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MessageChannel } from 'node:worker_threads';
+import { MessageChannel, threadId as mainThreadId } from 'node:worker_threads';
 
+import { RequestLifetime } from '../../request-context.js';
 import { directDispatch } from '../../server.js';
 import type { DeliverEnvelope, RpcHandlers, StreamHandlers } from '../../server.js';
 import { methodClasses } from '../method-class.js';
@@ -41,8 +42,10 @@ interface Harness {
 	router: Router;
 	log: string[];
 	gates: Gates;
-	pool: { started: string[]; ended: string[]; queued: number[] };
-	ask(id: string, method: string, params: unknown, opts?: { session?: SessionId; stream?: boolean; trusted?: LocalRequestEnvelope['trustedContext'] }): { replies: unknown[]; cancel: () => void; done: Promise<void> };
+	pool: { started: string[]; ended: string[]; queued: number[]; startedOn: number[]; endedOn: number[] };
+	sessions: RouterSessions;
+	sharedId: () => number;
+	ask(id: string, method: string, params: unknown, opts?: { session?: SessionId; stream?: boolean; trusted?: LocalRequestEnvelope['trustedContext']; lifetime?: RequestLifetime }): { replies: unknown[]; cancel: () => void; done: Promise<void> };
 	close(): void;
 }
 
@@ -56,6 +59,7 @@ function harness(): Harness {
 	const local: RpcHandlers = {
 		'x.local': async () => { log.push('local x.local'); return 'local'; },
 		'db.listConnections': async () => { log.push('local db.listConnections'); return []; },
+		'workflow.run.abort': async () => { log.push('local workflow.run.abort'); return { ok: true }; },
 	};
 	const router = new Router({ classOf, registry, routed: new Set<MethodClass>(['session']), local: directDispatch(local), sessions: undefined as never });
 	let nextThread = 500;
@@ -64,6 +68,8 @@ function harness(): Harness {
 			'x.order': async p => { const tag = (p as { tag: string }).tag; log.push(`${name} start ${tag}`); await gates.get(tag).wait; log.push(`${name} end ${tag}`); return tag; },
 			'workflow.run.poll': async () => { log.push(`${name} workflow.run.poll`); return { status: 'running' }; },
 			'chat.cancel': async () => { log.push(`${name} chat.cancel`); return { ok: true }; },
+			'chat.list': async () => { log.push(`${name} chat.list`); return []; },
+			'workflow.run.abort': async () => { log.push(`${name} workflow.run.abort`); return { ok: true }; },
 		},
 		stream: {
 			'x.stream': async (p, send) => {
@@ -86,7 +92,7 @@ function harness(): Harness {
 		return threadId;
 	};
 	const workers = new Map<string, number>();
-	const pool = { started: [] as string[], ended: [] as string[], queued: [] as number[] };
+	const pool = { started: [] as string[], ended: [] as string[], queued: [] as number[], startedOn: [] as number[], endedOn: [] as number[] };
 	const keyOf = (s?: SessionId): string => s === undefined ? 'unattributed' : `${s.label}:${s.pid}`;
 	let sharedId = -1;
 	const sessions: RouterSessions = {
@@ -101,12 +107,14 @@ function harness(): Harness {
 		started: s => { assert.ok(workers.has(keyOf(s)), `started reported for ${keyOf(s)} before its worker exists`); pool.started.push(keyOf(s)); },
 		ended: s => pool.ended.push(keyOf(s)),
 		setQueued: (_s, n) => pool.queued.push(n),
+		startedOn: id => pool.startedOn.push(id),
+		endedOn: id => pool.endedOn.push(id),
 	};
 	router.useSessions(sessions);
 	sharedId = startWorker('shared');
 	registry.register({ threadId: sharedId, cls: 'session', shared: true });
 	return {
-		router, log, gates, pool,
+		router, log, gates, pool, sessions, sharedId: () => sharedId,
 		ask(id, method, params, opts = {}) {
 			const replies: unknown[] = [];
 			let finished!: () => void;
@@ -119,6 +127,7 @@ function harness(): Harness {
 				kind: 'request', requestId: id, method, params, stream: opts.stream ?? false,
 				...(opts.session !== undefined ? { session: opts.session } : {}),
 				...(opts.trusted !== undefined ? { trustedContext: opts.trusted } : {}),
+				...(opts.lifetime !== undefined ? { lifetime: opts.lifetime } : {}),
 			}, deliver);
 			return { replies, cancel, done };
 		},
@@ -202,4 +211,64 @@ test('router: connection-scoped requests stay local; unattributed requests inter
 		await u1.done;
 		assert.deepEqual(h.pool.queued, [], 'no FIFO was kept for them');
 	} finally { h.close(); }
+});
+
+test('router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes)', { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const bare = h.ask('s1', 'x.stream', { tag: 'bare' }, { session: A, stream: true });
+		await tick(30);
+		assert.deepEqual(h.pool.started, ['mcp:1001']);
+		bare.cancel();
+		await tick(30);
+		assert.deepEqual(h.pool.ended, ['mcp:1001'], 'a cancelled stream with no lifetime ends at its cancel');
+		const lifetime = new RequestLifetime();
+		const tracked = h.ask('s2', 'x.stream', { tag: 'tracked' }, { session: A, stream: true, lifetime });
+		await tick(30);
+		assert.deepEqual(h.pool.started, ['mcp:1001', 'mcp:1001'], 'the next request ran once the cancelled one ended');
+		tracked.cancel();
+		await tick(30);
+		assert.deepEqual(h.pool.ended, ['mcp:1001'], 'a cancelled stream with a lifetime is busy while its handler still runs on the worker');
+		h.gates.open('tracked');
+		await lifetime.completed;
+		await tick(30);
+		assert.deepEqual(h.pool.ended, ['mcp:1001', 'mcp:1001'], 'and ends once its worker completed it');
+		assert.ok(!tracked.replies.some(r => ['done', 'error'].includes(((r as { frame?: { stream?: string } }).frame?.stream) ?? '')), 'no last frame was needed');
+	} finally { h.gates.open('bare'); h.gates.open('tracked'); h.close(); }
+});
+
+test("router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const owner = h.sharedId();
+		h.router.useSessions(h.sessions, runId => runId === 'main-run' ? mainThreadId : runId === 'worker-run' ? owner : undefined);
+		await h.ask('a1', 'workflow.run.abort', { runId: 'worker-run' }, { session: A }).done;
+		assert.deepEqual(h.log, ['shared workflow.run.abort'], "to the owner's worker");
+		assert.deepEqual(h.pool.startedOn, [owner], 'counted busy while it runs');
+		assert.deepEqual(h.pool.endedOn, [owner], 'and ended at its reply');
+		await h.ask('a2', 'workflow.run.abort', { runId: 'main-run' }, { session: A }).done;
+		assert.deepEqual(h.log.slice(1), ['local workflow.run.abort'], 'a run owned by this thread is aborted here');
+		assert.deepEqual(h.pool.started, [], 'neither went to the session worker');
+	} finally { h.close(); }
+});
+
+test("router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const running = h.ask('f1', 'x.order', { tag: 'stuck' }, { session: A });
+		await tick(30);
+		const own = h.ask('f2', 'x.order', { tag: 'own' }, { session: A });
+		const list = h.ask('f3', 'chat.list', {}, { session: A });
+		await tick(20);
+		const worker = (await h.sessions.workerFor(A)).threadId;
+		h.router.failWorker(worker, 'boom', A);
+		await running.done;
+		await own.done;
+		await list.done;
+		assert.deepEqual(running.replies.map(r => (r as { error?: string }).error), ['session worker failed: boom']);
+		assert.deepEqual(own.replies.map(r => (r as { error?: string }).error), ['session worker failed: boom'], 'its own queued request is failed');
+		assert.deepEqual(list.replies.map(r => (r as { error?: string }).error), [undefined], 'the shared-state one ran');
+		assert.ok(h.log.includes('shared chat.list'));
+		assert.ok(!h.log.includes('mcp:1001 start own'));
+	} finally { h.gates.open('stuck'); h.close(); }
 });

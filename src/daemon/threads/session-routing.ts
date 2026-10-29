@@ -27,7 +27,8 @@ export function startSessionRouting(services: ThreadServices, router: Router, id
 		registry: services.registry,
 		start: (name, opts) => startWorker(services, name, 'session-worker', opts?.shared ? { workerData: { shared: true }, transferList: [] } : undefined),
 		attach: (threadId, port) => router.attach(threadId, port),
-		detach: threadId => { router.detach(threadId); },
+		// A released worker should have nothing in flight; anything that was is answered, never left hanging.
+		detach: threadId => { router.failWorker(threadId, 'it was released'); },
 		activeRuns: threadId => board.snapshot().runs.filter(r => r.ownerThreadId === threadId && r.status === 'running').length,
 		exited: (info, code) => {
 			board.failRunsOwnedBy(info.threadId, OWNER_EXITED);

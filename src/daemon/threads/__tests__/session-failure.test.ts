@@ -133,3 +133,15 @@ test('shared-state worker exit ends an open todos.subscribe with an error frame 
 	const second = services.registry.targetFor('session', undefined, { shared: true })!.threadId;
 	assert.notEqual(second, first, 'by a new shared-state worker');
 });
+
+// Last: it closes the pool.
+test('close: a request in flight on a released worker is answered, and a request after close is refused', { timeout: 60_000 }, async () => {
+	const E: SessionId = { label: 'mcp', pid: 9201 };
+	const long = ask('test.order', { tag: 'long', ms: 60_000 }, E);
+	await until(() => services.registry.targetFor('session', E) !== undefined, "E's worker started");
+	await new Promise(r => setTimeout(r, 100));
+	await pool!.close();
+	assert.equal((await long.done).error, 'session worker failed: it was released', 'answered, not left hanging');
+	assert.equal((await ask('test.servingThread', null, E).done).error, 'session worker could not start: the daemon is shutting down');
+	assert.equal(services.registry.targetFor('session', undefined, { shared: true }), undefined, 'no worker started after close');
+});

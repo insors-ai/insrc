@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "53789c6d3acea7df",
+    "storyId": "S001",
+    "createdAt": "2026-10-29T14:01:24.128Z",
+    "authoredBy": "controller",
+    "triageRationale": "Test-only and mechanical: one test file plus a small searcher worker helper; reuses the existing writer helper and searchEntityVecs.",
+    "epicCreatedAt": "2026-10-29T14:01:24.128Z",
+    "updatedAt": "2026-10-29T14:04:54.612Z",
+    "approvedAt": "2026-10-29T14:34:59.292Z",
+    "reviewOverride": {
+      "reason": "User approval in chat 2026-10-29. Test-only change; code review was manual (the daemon code-review framework is being rewritten): no HIGH/MED findings. Daemon validate passed (tsc clean, lance-cross-thread.test.ts 2/2).",
+      "at": "2026-10-29T14:34:59.292Z"
+    }
+  },
+  "body": {
+    "focus": "Extend src/db/lance/__tests__/lance-cross-thread.test.ts so the Lance cross-thread regression gate covers several searching worker threads at once (as session workers do since Epic 86197ac6 s3) while writer workers write continuously, not just one writer and one searcher. Test-only change; the multi-searcher case was verified by hand on 2026-10-29.",
+    "producesLld": false,
+    "commit": "d83c0a988",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "The Lance cross-thread gate now also runs three searching worker threads and the main thread against writer workers that write the whole 20 s window (GC pressure on both sides), the shape of a threaded daemon since s3. Both tests reset the entity-vector table cache. Passed 3 of 3 runs on lancedb 0.40.0; not re-run against 0.27.2 (a downgrade would change the shared node_modules another session uses).",
+    "testRecord": {
+      "md": "docs/standalone/53789c6d3acea7df-E2026102953789c6d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/db/lance/__tests__/helpers/cross-thread-searcher.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T14:04:54.612Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/__tests__/lance-cross-thread.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T14:04:54.612Z"
+      }
+    ]
+  }
+}

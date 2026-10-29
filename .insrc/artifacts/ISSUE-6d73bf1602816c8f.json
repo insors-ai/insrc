@@ -21,7 +21,11 @@
     "epicSlug": "refuse-path-shaped-session-ids-before",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-29T14:10:27.212Z",
+    "parentRef": {
+      "slug": "refuse-path-shaped-session-ids-before"
+    }
   },
   "body": {
     "title": "Refuse path-shaped session ids before purging a session's tmp directory",

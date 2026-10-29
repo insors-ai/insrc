@@ -13,3 +13,7 @@ export { buildLedgerBasis, appendImpactRequirements } from './ledger-catalog.js'
 export type { LedgerCatalogInput } from './ledger-catalog.js';
 export { initializeReviewLedger, applyReviewLedgerDelta, validateReviewLedger } from './ledger.js';
 export { admitLedgerEvidence } from './ledger-evidence.js';
+export type * from './continuation-types.js';
+export { InvestigationError } from './continuation-types.js';
+export { createInvestigationPolicy, buildInvestigationSeed, investigationRequestDigest } from './continuation-policy.js';
+export { runInvestigationContinuation, InvestigationTransientError } from './continuation.js';

@@ -9,20 +9,7 @@ import { initializeReviewLedger } from '../ledger.js';
 import { buildInvestigationSeed, investigationRequestDigest } from '../continuation-policy.js';
 import { runInvestigationContinuation, InvestigationTransientError } from '../continuation.js';
 import type { InvestigationTurnV1, InvestigationReplyV1, ReviewBlockProgressV1 } from '../continuation-types.js';
-export function twoBlockFixture(){
- const f=continuationFixture(),input=catalogFixture(),{subjectId:_,subjectDigest:__,...projection}=input.subject;
- const packet=input.subject.packets[0]!;
- const subject=identifySubject({...projection,packets:[{...packet,blocks:[...packet.blocks,{...packet.blocks[0]!,blockId:'block-2',kind:'mode'}]}]});
- const basis=buildLedgerBasis({...input,subject}),state={...f.context.state,ledger:initializeReviewLedger(basis)},seed=buildInvestigationSeed(basis,state);
- const context={...f.context,basis,state,seed,validation:{...f.context.validation,attempt:{...f.context.validation.attempt,subjectDigest:subject.subjectDigest}}};
- const t={...f.turn,subjectDigest:subject.subjectDigest};return {...f,basis,context,turn:{...t,requestDigest:investigationRequestDigest(t,seed)}};
-}
-export function progressFor(turn:InvestigationTurnV1,blockId:string,expectedSequence:number):ReviewBlockProgressV1{
- return {runId:turn.runId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,progressId:`${turn.attemptId}-${blockId}`,expectedSequence,blockId,disposition:'unverified',evidenceIds:[],notes:'Needs additional inspection',coverageUpdates:[],findings:[],outstandingWork:[]};
-}
-export function finalReply(turn:InvestigationTurnV1,ids:readonly string[],sequence:number):InvestigationReplyV1{
- return {runId:turn.runId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,acceptedBlockReceiptIds:ids,lastAcceptedSequence:sequence,inspectedEvidenceIds:[],coverageUpdates:[],findings:[],next:{kind:'continue',remainingWork:[],reason:'More work remains'}};
-}
+import { twoBlockFixture, progressFor, finalReply } from './continuation-fixtures.js';
 test('Grouped continuation execution, bounded retries and cancellation',async()=>{
  const f=twoBlockFixture();let calls=0;
  const backend={...f.context.backend,execute:async(turn,tools)=>{calls++;assert.equal(tools.execution.internalRetry,false);const a=await tools.progress(progressFor(turn,'block-1',0));const b=await tools.progress(progressFor(turn,'block-2',1));return finalReply(turn,[a.progressId,b.progressId],2);}} satisfies typeof f.context.backend;

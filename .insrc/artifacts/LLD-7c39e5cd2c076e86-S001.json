@@ -1,0 +1,638 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793269628421-nopi3f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-29T10:31:34.747Z",
+    "epicCreatedAt": "2026-10-29T10:24:05.423Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 266319,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7c39e5cd2c076e86",
+    "epicSlug": "move-session-s-queue-forward-only",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793269628421-nopi3f",
+    "hldEffectiveHash": "6ef82362274788311b08567c277126bd8eb4dcfe08e9fa8f598a44d1ab7c424a",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's fix mechanism (ack-based FIFO advance, with an onAck fallback on ends that cannot be acknowledged) matches the ISSUE-7c39e5cd2c076e86 fixIntent ('each request in a session's queue is moved past only by an explicit acknowledgement... when the acknowledgement can never come... the request is ended with an error and the queue moves on') and leaves nothing from it out.",
+          "evidence": "ISSUE body.fixIntent (.insrc/artifacts/ISSUE-7c39e5cd2c076e86.json) states exactly this two-part rule; LLD section 2.2 postconditions and section 5 error-paths implement both the ack-advances-FIFO rule and the three unacknowledgeable-end cases (detach, postMessage failure, never-reached-worker) with onAck called once in each. The LLD also extends scope to busy count + thread view ending at the ack, which is additive consistency (not a deviation from the fix intent) and doesn't omit anything the issue asked for.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today Router.enqueue advances a session's FIFO when a delivered envelope is terminal (router.ts:338-339) and at once on the cancel of a started item (router.ts:357-358), and wireRequest sets trackCompletion only for `stream && lifetime` (channel.ts:66), with the router's completion branch acting only `if (pending.lifetime)` (router.ts:403-407).",
+          "evidence": "Read router.ts live: lines 337-340 `item.run: ... item.cancel = send(envelope => { ...; if (isTerminal(envelope)) this.next(key, item); })`; lines 350-358 the returned cancel calls `item.cancel?.(); this.next(key, item);`. channel.ts:66 reads `...(request.stream && request.lifetime ? { trackCompletion: true } : {})`. router.ts attach() handler lines 403-407: completion branch is gated on `if (pending.lifetime)`. All match the LLD's 'State before' and section 3 claims exactly, including line numbers. [files: src/daemon/threads/router.ts, src/daemon/threads/channel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every call site the LLD lists for the pending-entry/onAck change (router.ts:182-203 failWorker, 403-416 attach, 426-441 detach, 503-514 send, 546-552 cancel; supervisor.ts:165-169) exists at the stated location and is a real caller/writer of the pending entry or detach, and no caller/writer of the FIFO-advance machinery is missing from the list.",
+          "evidence": "Read router.ts in full (150-553): failWorker at 182-204 calls `this.detach(threadId)` then answers orphans (203); attach's handler at 398-423 contains the pending lookup + completion branch at exactly 403-416; detach at 426-443; send at 503-515; private cancel at 546-552. supervisor.ts exited() at 160-177 calls `router.detach(worker.threadId)` at line 165 and answers each orphan through line 169 — matches the cited 165-169 exactly. worker-requests.ts:67-70 and channel.ts:43/66 also verified present and unchanged in content as described. No other FIFO-advance or pending-removal site was found outside this list via the read of the whole router.ts file. [files: src/daemon/threads/router.ts, src/daemon/threads/supervisor.ts, src/daemon/threads/worker-requests.ts, src/daemon/threads/channel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "[[c2]]/[[c3]]: a worker already answers any request whose envelope sets trackCompletion with exactly one completion message once RequestLifetime.completed and .drained both settle, for unary and stream requests alike, with no worker-side code change needed.",
+          "evidence": "worker-requests.ts:67-71 creates `lifetime` generically off `msg.trackCompletion === true` (not stream-specific) and does `Promise.all([lifetime.completed, lifetime.drained]).then(() => port.postMessage({kind:'complete',...}))`. server.ts's directDispatch: the unary path (lines 82-98) calls `lifetime?.complete()` in `finish()`'s finally after every reply, and the stream path (100-124) calls `lifetime?.complete()` in `.finally()`. request-context.ts's RequestLifetime.drained only resolves after seal()+all registerDrain work settles (lines 46-54). This confirms the mechanism already generalizes to unary without any handler-side change, exactly as LLD §2.4 and §5 invariant [[c3]] claim. [files: src/daemon/threads/worker-requests.ts, src/daemon/server.ts, src/daemon/request-context.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "[[c4]]: a worker's exit still answers its in-flight requests with 'session worker failed: <reason>' and fails the session's queued requests bound for that worker, unchanged by this design.",
+          "evidence": "router.ts failWorker (182-204) is untouched by the LLD's data-model-change list (only detach's return shape gains an `ack` field per §3.1) and still builds the same error string and answers both the session's waiting FIFO items (193-201) and the detached orphans (203) exactly as today; the LLD only adds a call to the orphan's `ack` after that answer, per §5's first error case. [files: src/daemon/threads/router.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test infra and files the LLD names for its acceptance mapping and test levels (router-session.test.ts, router-thread-view.test.ts, s3-acceptance.test.ts-style spawned daemon with test.spin/test.servingThread hooks, helpers/daemon-socket.ts) exist and match the described fixture shape (fake workers served with serveRequests + directDispatch), so the planned ac1-ac4 tests are buildable against real harnesses rather than invented infrastructure.",
+          "evidence": "Glob confirmed src/daemon/threads/__tests__/router-session.test.ts, router-thread-view.test.ts, s3-acceptance.test.ts, s4-acceptance.test.ts and helpers/daemon-socket.ts all exist. worker-requests.ts's testHooks block (lines 48, 59-65) confirms INSRC_TEST_HOOKS-gated SERVING_THREAD_METHOD/TEST_EXIT_METHOD hooks are real, backing the LLD's 'test.spin / test.servingThread' smoke-test claim. The s5-ack acceptance test itself is new (not yet written) but follows the existing s3/s4-acceptance naming convention, consistent with migration step 5. [files: src/daemon/threads/__tests__/router-session.test.ts, src/daemon/threads/__tests__/router-thread-view.test.ts, src/daemon/threads/__tests__/s3-acceptance.test.ts, src/daemon/threads/worker-requests.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-29T10:39:03.913Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-29T10:43:28.745Z",
+    "rangeBase": "386d5fd7f7060b67e364e3db9b1829511ce00ad7",
+    "questionResolutions": {
+      "q99f9b9e7": {
+        "question": "ts1 (ambiguous): the standalone Story carries no acceptance criteria; ac1-ac4 in the test strategy are derived from the ISSUE's expected behaviour and fix intent (ac1 no overlap after a socket close; ac2 the ack follows drains; ac3 never stuck on ends that cannot be acked; ac4 unqueued requests unchanged, busy count and thread view end at the ack).",
+        "status": "resolved",
+        "choice": "Adopt ac1-ac4 as-is, sourced to the ISSUE",
+        "rationale": "Raised with the LLD at presentation; the user approved the LLD with ac1-ac4 as stated.",
+        "resolvedAt": "2026-10-29T10:44:04.746Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Every request the router sends from a session's queue asks its worker for an explicit acknowledgement, the worker's existing completion message, which the worker sends once that request's handler has settled and its follow-up work is done, cancelled or not. Only that acknowledgement moves the session's queue on; a reply, a stream's last frame or a closed socket no longer do. When an acknowledgement can never come (the worker exited, the request could not be posted, or it never reached a worker) the request is ended with an error and the queue moves on. The pool's busy count and the daemon.status thread view end such a request at the same point, and requests outside a session queue are unchanged."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "LLD for bugfix ISSUE-7c39e5cd2c076e86: a session's queue in the threaded daemon's router moves forward only on the worker's explicit acknowledgement (the existing CompletionEnvelope 'complete') for each request it sends from the queue; replies, terminal frames and socket closes no longer move it; a request whose ack can never come (worker exited, send failed, request dropped before it reached a worker) is ended with an error and the queue moves on."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "wireRequest",
+          "signature": "wireRequest(request: LocalRequestEnvelope, opts?: { readonly ack?: true | undefined }): RequestEnvelope",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "LocalRequestEnvelope",
+              "purpose": "The request to put on the channel",
+              "optional": false
+            },
+            {
+              "name": "opts.ack",
+              "type": "true | undefined",
+              "purpose": "The router waits for this request's acknowledgement: ask the worker for its completion message whatever the request kind",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "RequestEnvelope",
+            "meaning": "trackCompletion is set when opts.ack is set, and (as today) for a stream with a lifetime; otherwise unchanged."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "As today: a request whose trusted context carries a connection session cannot cross a worker channel (such requests never enter a session queue)."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "A request sent with ack: true is answered by the worker's serveRequests with exactly one CompletionEnvelope after its handler settled and its drains finished, cancelled or not."
+          ]
+        },
+        {
+          "name": "Router",
+          "signature": "class Router { /* private */ send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope, onAck?: () => void): () => void; /* Router.enqueue moves a session's FIFO only from the item's onAck */ }",
+          "parameters": [
+            {
+              "name": "onAck",
+              "type": "() => void",
+              "purpose": "Called exactly once when the request is over for good: the worker's CompletionEnvelope for it, or an end after which none can come (postMessage failure, the worker's detach)",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "() => void",
+            "meaning": "The request's cancel, as today: it cancels the request on its worker but no longer ends it for the queue."
+          },
+          "errors": [],
+          "preconditions": [
+            "onAck is given only for requests sent from a session FIFO"
+          ],
+          "postconditions": [
+            "A pending entry awaiting an ack stays pending after its reply or terminal frame (later frames and the reply are still delivered as today) and is removed only at the ack or the worker's detach",
+            "For a request with onAck, the thread view's in-flight entry and the pool's busy count end at the ack, not at the reply or terminal frame",
+            "Router.enqueue advances the FIFO only from onAck; a terminal envelope and the cancel of a started item no longer advance it",
+            "Every end that cannot be acknowledged calls onAck once: toPoolWorker's failure before send (pool start failed, worker port gone, cancel before the worker resolved), send's postMessage failure, and detach (the orphan is answered as today, then acknowledged)"
+          ]
+        },
+        {
+          "name": "CompletionEnvelope",
+          "signature": "interface CompletionEnvelope { readonly kind: 'complete'; readonly requestId: string; }  // unchanged; now also the ack of every session-queued request",
+          "parameters": [],
+          "returns": {
+            "type": "CompletionEnvelope",
+            "meaning": "Unchanged shape. Its meaning widens: for a request sent with ack, it is the explicit acknowledgement that moves the session's queue."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The router acts on at most one completion per request id; a completion for an unknown or already-ended request is ignored as today"
+          ]
+        },
+        {
+          "name": "serveRequests",
+          "signature": "serveRequests(port: Port, unheld: ForwardRequest, opts: ServeRequestsOptions = {}): () => void  // unchanged",
+          "parameters": [],
+          "returns": {
+            "type": "() => void",
+            "meaning": "Unchanged: it already sends the completion message for any request whose envelope sets trackCompletion, unary or stream."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "No worker change is needed; every worker that serves requests (admin, session, test harnesses) answers the ack the same way"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Router pending entry",
+        "change": "field-add",
+        "details": "A pending request records its onAck (the session FIFO's acknowledgement) and whether it awaits the worker's completion message; such an entry is not removed at its reply or terminal frame but at the completion message or detach. In attach()'s message handler (src/daemon/threads/router.ts:403-416) the removal and finished() guards at the reply and at a terminal frame change from `pending.lifetime` alone to 'has a lifetime OR awaits an ack': an acked entry, unary or stream, is kept and stays in flight past its reply or terminal frame. The completion branch acts on an entry that awaits an ack whether or not it has a lifetime: it removes the entry, completes its lifetime if any, calls finished() and then onAck once. Router's private cancel (src/daemon/threads/router.ts:546-552) no longer removes a lifetime-less stream's entry when that entry awaits an ack; it stays until the ack. Router.detach (src/daemon/threads/router.ts:426-441) returns each orphan with an `ack` callback (its onAck, or a no-op), and both callers of detach, failWorker (src/daemon/threads/router.ts:182-203) and the supervisor's exit handler (src/daemon/threads/supervisor.ts:165-169), call it after answering the orphan.",
+        "schemaDiff": "+ onAck?: () => void  (awaits the worker's 'complete' for this request)",
+        "callSites": [
+          "src/daemon/threads/router.ts:182-203",
+          "src/daemon/threads/router.ts:400",
+          "src/daemon/threads/router.ts:403-416",
+          "src/daemon/threads/router.ts:426-441",
+          "src/daemon/threads/router.ts:503-514",
+          "src/daemon/threads/router.ts:546-552",
+          "src/daemon/threads/supervisor.ts:165-169"
+        ]
+      },
+      {
+        "entity": "Session FIFO end rule",
+        "change": "invariant-change",
+        "details": "Before: a session's queued request ended at its reply, its terminal frame or its socket's cancel (src/daemon/threads/router.ts:338-339, src/daemon/threads/router.ts:357-358). After: it ends only at the worker's acknowledgement or at an end that cannot be acknowledged.",
+        "schemaDiff": "end := ack | detach | send-failure | never-reached-worker  (was: reply | terminal frame | cancel)",
+        "callSites": [
+          "src/daemon/threads/router.ts:338-339",
+          "src/daemon/threads/router.ts:357-358"
+        ]
+      },
+      {
+        "entity": "RequestEnvelope.trackCompletion",
+        "change": "invariant-change",
+        "details": "Before: set only for a stream with a lifetime (src/daemon/threads/channel.ts:66). After: also set for every request the router sends from a session FIFO, unary included.",
+        "schemaDiff": "trackCompletion := (stream && lifetime) || ack",
+        "callSites": [
+          "src/daemon/threads/channel.ts:43",
+          "src/daemon/threads/channel.ts:66",
+          "src/daemon/threads/worker-requests.ts:67-70"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The session's worker exits while a queued request is running on it (no ack will ever come).",
+          "detection": "The pool's worker exit runs router.failWorker, whose detach returns the thread's pending entries, including those awaiting an ack.",
+          "response": "Each orphan is answered with today's 'session worker failed: <reason>' (an error frame for a stream) and its onAck is called once, so the session's FIFO moves on; the session's queued requests bound for that worker are failed as today.",
+          "userImpact": "The running request gets an error and the session's next request runs on a new worker; the session is never stuck.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Posting the request to the worker fails (the channel is closed or the payload cannot be cloned).",
+          "detection": "Router.send catches the postMessage throw.",
+          "response": "The request is answered 'request channel unavailable' as today, its pending entry is removed, and onAck is called once.",
+          "userImpact": "That request fails; the session's next request is sent.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The request never reaches a worker: the pool cannot start the session's worker, its port is gone, or the request is cancelled before the worker resolved.",
+          "detection": "toPoolWorker's fail() and its cancel-before-send path.",
+          "response": "The request is answered or dropped as today and onAck is called once.",
+          "userImpact": "The session's queue moves on instead of waiting for an ack that cannot come.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A completion message arrives twice, for an unknown request, or from a thread that does not own the request.",
+          "detection": "attach's handler looks up the pending entry by request id and checks its thread, as today.",
+          "response": "Ignored; onAck runs at most once per request (it is cleared when called).",
+          "userImpact": "None.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A unary queued request whose handler replies and then finishes work it registered with registerDrain",
+          "expected": "The reply is delivered at once; the session's next request starts only after the worker's ack, i.e. after the registered work is done."
+        },
+        {
+          "input": "A queued request whose client socket closes while it runs (unary)",
+          "expected": "Its reply is dropped as today; the queue moves only when the worker acks it after its handler settles."
+        },
+        {
+          "input": "A queued stream whose client socket closes while it runs",
+          "expected": "The router cancels it on the worker as today; frames after the cancel are dropped; the queue moves on the worker's ack after the handler stops."
+        },
+        {
+          "input": "A queued request refused by the worker under the maintenance lock",
+          "expected": "The refusal is the reply; the worker's ack follows (holdingForward completes the lifetime) and the queue moves on."
+        },
+        {
+          "input": "A FIFO-exempt request (chat.cancel, workflow.run.poll, a subscription), an unattributed request, or an admin/indexing request",
+          "expected": "Unchanged: no ack is asked for beyond today's (streams with a lifetime), and it never touches a session FIFO."
+        },
+        {
+          "input": "A queued chat.list or other shared-state method sent from a session FIFO to the shared-state worker",
+          "expected": "It asks the shared-state worker for the ack the same way; the session's queue moves on that ack."
+        },
+        {
+          "input": "A queued request cancelled while still waiting in the FIFO",
+          "expected": "Unchanged: removed from the queue at once; it was never sent, so no ack is awaited."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A worker answers every request whose envelope sets trackCompletion with one completion message after the request's lifetime completed and drained; no worker code changes.",
+          "source": "c2"
+        },
+        {
+          "text": "Replies and stream frames are still delivered to the client exactly as today, including the dropping of frames after a cancel and the reply of a cancelled unary request.",
+          "source": "c1"
+        },
+        {
+          "text": "A worker's exit still answers its in-flight requests with 'session worker failed: <reason>' and fails the session's queued requests bound for it.",
+          "source": "c4"
+        },
+        {
+          "text": "Requests outside a session FIFO (exempt, unattributed, admin, indexing, internal router.request calls) keep today's ends.",
+          "source": "c4"
+        },
+        {
+          "text": "The worker sends the completion message only once the handler settled, cancelled or not, for unary and stream requests alike.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run with npx tsx --test (convention reported in s1: src/daemon/threads/__tests__/*.test.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The ack contract at the channel: wireRequest asks for the completion message when opts.ack is set, for unary and stream requests, and keeps today's rule otherwise.",
+          "subjects": [
+            "wireRequest (src/daemon/threads/channel.ts)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The router's session FIFO over in-thread fake workers (MessageChannel ports served with serveRequests and directDispatch): the queue moves only on the worker's ack, including after a closed socket, a registered drain, a worker exit, a postMessage failure and a pool start failure; requests outside a FIFO are unchanged; the pool busy count and the thread view end at the ack.",
+          "subjects": [
+            "Router.enqueue / Router.send / attach / detach (src/daemon/threads/router.ts)",
+            "toPoolWorker failure paths",
+            "SessionPool started/ended via RouterSessions",
+            "router thread view (inFlight/began/finished)"
+          ],
+          "fixturesNeeded": [
+            "The router-session.test.ts harness: fake session workers served with serveRequests, gated handlers, a RouterSessions stub that records started/ended",
+            "A handler that registers a drain with registerDrain and resolves it on a gate"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Over the real threaded daemon: one session's request on a second connection does not start while the first, whose socket closed, still runs on the worker.",
+          "subjects": [
+            "src/daemon/threads/__tests__/s3-acceptance.test.ts style spawned daemon with test hooks (test.spin / test.servingThread)"
+          ],
+          "fixturesNeeded": [
+            "helpers/daemon-socket.ts spawnDaemon/once/Conn",
+            "A test hook that records when a session request starts and ends on its worker"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "router-session.test.ts: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first (its handler settled)",
+            "router-session.test.ts: a queued stream cancelled by its socket keeps the next request queued until the worker acks it",
+            "s5-ack acceptance (spawned daemon): the second connection's request starts only after the first, whose socket closed, has finished on the worker"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "router-session.test.ts: a unary reply is delivered at once but the next request starts only after the worker's ack, after work registered with registerDrain is done",
+            "channel test: wireRequest with ack: true sets trackCompletion for unary and stream requests; without it the rule is unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "router-session.test.ts: a worker exit answers the running request with 'session worker failed' and the next queued request runs on the new worker",
+            "router-session.test.ts: a postMessage failure answers 'request channel unavailable' and the queue moves on",
+            "router-session.test.ts: a pool start failure and a cancel before the worker resolved move the queue on",
+            "router-session.test.ts: a duplicate or unknown completion message is ignored and onAck runs once"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "router-session.test.ts: FIFO-exempt, unattributed and admin requests keep today's ends and never wait for an ack",
+            "router-thread-view.test.ts: a session request stays busy in the thread view and in the pool's busy count until its ack"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 bundles: Router.enqueue moves a session's FIFO when a delivered envelope is terminal (src/daemon/threads/router.ts:338-339) and at once when a started item is cancelled by its socket (src/daemon/threads/router.ts:357-358). wireRequest asks for the worker's completion message only for a stream with a lifetime (src/daemon/threads/channel.ts:66), and the router uses that message only to complete the stream's lifetime (src/daemon/threads/router.ts:400). The pool's busy count and the s4 thread view end a request at its reply, terminal frame, lifetime completion or detach.",
+      "stateAfter": "Every request the router sends from a session FIFO is wired with ack, so its worker answers it with one completion message after its handler settled and drained. Router.send keeps such a pending entry until that message or the worker's detach, and calls its onAck once; Router.enqueue advances the FIFO only from onAck. Ends that cannot be acknowledged (detach, postMessage failure, never reaching a worker) call onAck once after answering the request as today. The pool's busy count and the thread view end acked requests at the ack. Requests outside a session FIFO are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the ack option to wireRequest: set trackCompletion when ack is asked for, keeping today's stream-with-lifetime rule.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add onAck to Router.send and its pending entry: keep the entry past its reply or terminal frame when it awaits an ack, call onAck once on the completion message, on postMessage failure, and on detach after the orphan is answered.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Thread onAck through every path a session-FIFO item's send can take: dispatchSession's send closure (src/daemon/threads/router.ts:257-262); toShared (src/daemon/threads/router.ts:266-270) in BOTH branches, the direct this.send when the shared-state worker is already attached and the toPoolWorker branch when it is not; toSessionWorker (src/daemon/threads/router.ts:273-284); and toPoolWorker (src/daemon/threads/router.ts:287-322), which passes it to this.send and calls it once on each failure before send (pool start failed, port gone, cancel before the worker resolved). For acked requests toPoolWorker's end (the pool's busy count) runs at the ack, not at a terminal envelope or, for a cancelled stream, at its lifetime's completion; the thread view's in-flight entry also ends at the ack.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Change Router.enqueue so a queue item passes onAck to its send and advances only from it; remove the advance on a terminal envelope and on the cancel of a started item.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Extend router-session.test.ts and router-thread-view.test.ts and add the spawned-daemon check; refresh the session-source inventory fixture for the edited daemon files.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Internal only: no IPC method, payload or client-visible field changes. Clients see the same replies and frames; the only visible change is that one session's next request now starts after the worker finished the previous one rather than at its reply or socket close. The channel envelope shape is unchanged (trackCompletion already exists and serveRequests already honours it for any request kind), and main and workers are always the same build, so there is no mixed-version channel. Threads stay behind daemon.threads.enabled (default off), so a threads-disabled daemon is untouched.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Ack for queued requests, one end for the queue, the busy count and the thread view",
+        "oneLineSummary": "Every request the router sends from a session's FIFO asks its worker for the existing completion message; that ack (or a definite failure) is the one end of the request, which moves the FIFO and also ends the pool's busy count and the thread view.",
+        "approach": "The router's send gains an onAck option. wireRequest asks for the completion message (trackCompletion) whenever the router asks for an ack, unary or stream, as well as today for a stream with a lifetime. A pending entry that awaits an ack stays pending past its reply or terminal frame and ends when the worker's 'complete' arrives: the router completes the stream's lifetime as today and calls onAck once. Router.enqueue moves the FIFO only from onAck; the terminal-envelope advance and the advance in the started item's cancel are removed (cancel still cancels the request on the worker as today). onAck is also called, once, on each end that can never be acknowledged: the worker's detach (its orphans are answered with today's failure messages), a postMessage failure in send, and toPoolWorker ending a request that never reached a worker (start failure, worker port gone, cancel before the worker resolved). For these acked requests the pool's busy count (toPoolWorker's end) and the thread view (finished) also end at the ack, so all three agree on when a request is over. Requests outside a FIFO (FIFO-exempt methods, unattributed requests, admin and indexing classes, internal router.request calls) are unchanged.",
+        "pros": [
+          "Exactly the user's rule: only an explicit ack from the worker (or a definite failure) moves the queue",
+          "Reuses the existing CompletionEnvelope and worker loop; serveRequests already sends it when asked, so no worker change",
+          "The queue, the idle sweep's busy count and the daemon.status thread view share one end, so a worker still draining a request is neither idle-released nor shown idle",
+          "Unqueued traffic keeps today's behaviour and cost"
+        ],
+        "cons": [
+          "One extra message per queued request on the channel",
+          "A handler that never settles holds its session's queue until the worker exits (this is the intended serial behaviour, and the session's own other requests wait as they would on one thread)"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Ack for every routed request, every class",
+        "oneLineSummary": "Ask every worker for the completion message on every request (admin, indexing, session, exempt, unattributed) and end every routed request at its ack.",
+        "approach": "wireRequest always sets trackCompletion; Router keeps every pending entry until 'complete' and ends busy counts and the thread view there for all classes; the FIFO moves on ack as in a1.",
+        "pros": [
+          "One uniform end rule for every routed request",
+          "The thread view of admin and indexing workers also reflects follow-up work after a reply"
+        ],
+        "cons": [
+          "Changes the end of every admin and indexing request, which the issue does not ask for and which s2's latency and parity tests cover",
+          "A message per request on every channel, including the liveness-critical admin channel",
+          "Larger blast radius for a session-queue defect"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Satisfies the session constraints but changes every routed request's end, outside the issue's scope and on the liveness-critical admin channel."
+      },
+      {
+        "id": "a3",
+        "name": "Router-side end from the request's own lifetime (no worker ack)",
+        "oneLineSummary": "Move the FIFO when the router-side RequestLifetime completes, without asking the worker.",
+        "approach": "On cancel of a started item, wait for request.lifetime.completed before moving the FIFO; replies and terminal frames move it otherwise.",
+        "pros": [
+          "No change to what the worker is asked for"
+        ],
+        "cons": [
+          "Rejected by the user's direction: the end is still inferred by the router, not acknowledged by the worker",
+          "A unary reply moves the queue before work the handler registered to finish after the reply is done"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Does not meet the user's rule: the queue still moves on an end the router infers."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ts1 (ambiguous): the standalone Story carries no acceptance criteria; ac1-ac4 in the test strategy are derived from the ISSUE's expected behaviour and fix intent (ac1 no overlap after a socket close; ac2 the ack follows drains; ac3 never stuck on ends that cannot be acked; ac4 unqueued requests unchanged, busy count and thread view end at the ack)."
+    ],
+    "sequenceDefinition": {
+      "narrative": "How one session's two queued requests move through the router after the fix: the second is sent only on the worker's ack of the first, not at the first's reply or socket close.",
+      "participants": [
+        {
+          "id": "client",
+          "label": "Client (one session, two connections)",
+          "description": "A client process whose requests share one session FIFO"
+        },
+        {
+          "id": "router",
+          "label": "Router",
+          "description": "src/daemon/threads/router.ts: the session FIFO, pending entries and onAck"
+        },
+        {
+          "id": "worker",
+          "label": "Session worker",
+          "description": "serveRequests over directDispatch on the session's worker thread"
+        }
+      ],
+      "messages": [
+        {
+          "from": "client",
+          "to": "router",
+          "label": "request 1 (conn 1)",
+          "kind": "call",
+          "description": "Queued first; sent at once"
+        },
+        {
+          "from": "router",
+          "to": "worker",
+          "label": "request 1, trackCompletion",
+          "kind": "call",
+          "description": "wireRequest with ack asks for the completion message"
+        },
+        {
+          "from": "client",
+          "to": "router",
+          "label": "request 2 (conn 2)",
+          "kind": "call",
+          "description": "Waits in the session FIFO"
+        },
+        {
+          "from": "client",
+          "to": "router",
+          "label": "conn 1 closes",
+          "kind": "call",
+          "description": "Cancels request 1 on the worker; no longer advances the FIFO"
+        },
+        {
+          "from": "worker",
+          "to": "router",
+          "label": "reply / terminal frame for request 1",
+          "kind": "return",
+          "description": "Delivered or dropped as today; the pending entry stays"
+        },
+        {
+          "from": "worker",
+          "to": "router",
+          "label": "complete (ack) for request 1",
+          "kind": "return",
+          "description": "Sent after the handler settled and its drains finished; onAck runs once"
+        },
+        {
+          "from": "router",
+          "to": "worker",
+          "label": "request 2, trackCompletion",
+          "kind": "call",
+          "description": "The FIFO advances only from onAck"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/move-session-s-queue-forward-only-E202610297c39e5cd/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "Where the session FIFO moves forward today (insrc_analyze_step how-does-it-work over src/daemon/threads/router.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "The worker's completion message and who asks for it (insrc_analyze_step how-does-it-work over the ack path)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "When the worker-side lifetime completes, so when the ack would be sent (direct source read of directDispatch and the maintenance hold)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "Other ends of a queued request the router already handles (direct source read of src/daemon/threads/router.ts)"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "Tests to extend"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-7c39e5cd2c076e86"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "User direction 2026-10-29: for each message in the queue there should be an explicit ack that moves the queue forward"
+    }
+  ]
+}

@@ -76,6 +76,11 @@ function harness(): Harness {
 			'chat.cancel': async () => { log.push(`${name} chat.cancel`); return { ok: true }; },
 			'chat.list': async () => { log.push(`${name} chat.list`); return []; },
 			'workflow.run.abort': async () => { log.push(`${name} workflow.run.abort`); return { ok: true }; },
+			// Story 5d393a4b: families moved to the shared-state worker.
+			'models.check': async () => { log.push(`${name} models.check`); return { checkId: 'c1' }; },
+			'models.approve': async () => { log.push(`${name} models.approve`); return { ok: true }; },
+			'codeReview.run': async () => { log.push(`${name} codeReview.run`); return { ok: true }; },
+			'step.call': async p => { log.push(`${name} step.call ${(p as { tool: string }).tool}`); return { ok: true }; },
 			// Replies at once; work it registers keeps its completion message (the ack) back until the test opens 'drain <tag>'.
 			'x.drain': async (p, ctx) => {
 				const tag = (p as { tag: string }).tag;
@@ -545,6 +550,22 @@ test("router: FIFO-exempt and unattributed requests keep today's ends: they neve
 		assert.ok(h.log.includes('shared chat.cancel'), 'the exempt request (a shared-state one) ran while the queue waited for an ack');
 		assert.ok(!h.log.includes('mcp:1001 drained e1'), 'the queue was still held');
 	} finally { h.gates.open('drain n1'); h.gates.open('drain e1'); h.close(); }
+});
+
+test("router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const B: SessionId = { label: 'codex', pid: 1002 };
+		await h.ask('m1', 'models.check', {}, { session: A }).done;
+		await h.ask('m2', 'models.approve', {}, { session: B }).done;
+		await h.ask('m3', 'codeReview.run', {}, { session: B }).done;
+		await h.ask('m4', 'step.call', { tool: 'insrc_code_review_step' }, { session: A }).done;
+		await h.ask('m5', 'step.call', { tool: 'insrc_analyze_step' }, { session: B }).done;
+		assert.deepEqual(h.log, [
+			'shared models.check', 'shared models.approve', 'shared codeReview.run', 'shared step.call insrc_code_review_step',
+			'codex:1002 step.call insrc_analyze_step',
+		], "a check started by one session is decided by another on the same worker; code-review turns from any session share it");
+	} finally { h.close(); }
 });
 
 // Last in this file: it turns the maintenance lock on for the process.

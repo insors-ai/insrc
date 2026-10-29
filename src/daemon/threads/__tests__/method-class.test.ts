@@ -85,12 +85,13 @@ test('method sets: every shared-state and FIFO-exempt member is a session-class 
 	for (const m of [...SHARED_STATE_METHODS, ...FIFO_EXEMPT_METHODS]) assert.equal(methodClasses.classOf(m), 'session', m);
 });
 
-test('method sets: every served chat.*, todos.* and understanding.* method is in the shared-state set', () => {
+test('method sets: every served chat.*, todos.*, understanding.*, models.* and codeReview.* method is in the shared-state set', () => {
 	const { rpc, stream } = servedTables();
-	const family = [...rpc, ...stream].filter(m => /^(chat|todos|understanding)\./.test(m));
+	const family = [...rpc, ...stream].filter(m => /^(chat|todos|understanding|models|codeReview)\./.test(m));
 	assert.ok(family.includes('chat.start') && family.includes('todos.subscribe') && family.includes('understanding.watch'), 'the three families are served');
 	assert.deepEqual(family.filter(m => !SHARED_STATE_METHODS.has(m)).sort(), [], 'every one runs on the shared-state worker');
-	assert.deepEqual([...SHARED_STATE_METHODS].filter(m => !/^(chat|todos|understanding)\./.test(m)), [], 'and nothing else does');
+	assert.ok(family.includes('models.check') && family.includes('models.approve') && family.includes('codeReview.run'), 'models and codeReview are served (Story 5d393a4b)');
+	assert.deepEqual([...SHARED_STATE_METHODS].filter(m => !/^(chat|todos|understanding|models|codeReview)\./.test(m)), [], 'and nothing else does');
 });
 
 test('in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline', async () => {

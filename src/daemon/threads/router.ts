@@ -33,7 +33,7 @@ import type { IpcStreamMessage, ThreadRole } from '../../shared/types.js';
 import type { RequestLifetime } from '../request-context.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope, SessionId } from './channel.js';
-import { FIFO_EXEMPT_METHODS, MAIN_DAEMON_CONNECTION_METHODS, SHARED_STATE_METHODS } from './method-class.js';
+import { FIFO_EXEMPT_METHODS, MAIN_DAEMON_CONNECTION_METHODS, servedOnSharedState } from './method-class.js';
 import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry, ThreadTarget } from './registry.js';
@@ -193,8 +193,8 @@ export class Router {
 			// The queue first: the running request's failure below would otherwise send the next one to the dead worker.
 			const fifo = this.fifos.get(`${session.label}:${session.pid}`);
 			if (fifo !== undefined) {
-				const failed = fifo.waiting.filter(item => !SHARED_STATE_METHODS.has(item.request.method));
-				fifo.waiting.splice(0, fifo.waiting.length, ...fifo.waiting.filter(item => SHARED_STATE_METHODS.has(item.request.method)));
+				const failed = fifo.waiting.filter(item => !servedOnSharedState(item.request.method, item.request.params));
+				fifo.waiting.splice(0, fifo.waiting.length, ...fifo.waiting.filter(item => servedOnSharedState(item.request.method, item.request.params)));
 				for (const item of failed) {
 					try { answer(item.request.requestId, item.request.stream, item.deliver); }
 					finally { item.request.lifetime?.complete(); }
@@ -259,7 +259,7 @@ export class Router {
 				});
 			}
 		}
-		const shared = SHARED_STATE_METHODS.has(request.method);
+		const shared = servedOnSharedState(request.method, request.params);
 		const send = (d: DeliverEnvelope, onAck?: () => void): () => void => shared
 			? this.toShared(request, d, dropped, onAck)
 			: this.toSessionWorker(request.session, request, d, dropped, onAck);

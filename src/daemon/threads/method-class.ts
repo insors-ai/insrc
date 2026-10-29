@@ -255,13 +255,27 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 	entries: (): readonly MethodClassEntry[] => ENTRIES,
 });
 
-/** The session-class families whose state is one process-wide copy (s3): chat (the chat session pool), todos (the todos event bus) and understanding (the understanding service). */
-const SHARED_STATE_FAMILIES = ['chat.', 'todos.', 'understanding.'] as const;
+/**
+ * The session-class families whose state is one process-wide copy (s3): chat (the chat session pool), todos (the todos event bus)
+ * and understanding (the understanding service); and (Story 5d393a4b) models, whose checks run one at a time and are decided by a
+ * later call, and codeReview, whose running operations later turns look up.
+ */
+const SHARED_STATE_FAMILIES = ['chat.', 'todos.', 'understanding.', 'models.', 'codeReview.'] as const;
 
 /** The session-class methods served on the one shared-state worker (s3), so their state stays whole. */
 export const SHARED_STATE_METHODS: ReadonlySet<string> = new Set(
 	ENTRIES.filter(e => e.cls === 'session' && SHARED_STATE_FAMILIES.some(f => e.method.startsWith(f))).map(e => e.method),
 );
+
+/** The step.call tools served on the shared-state worker (Story 5d393a4b): the code-review step's turns reach the operations codeReview.run started there. */
+export const SHARED_STATE_STEP_TOOLS: ReadonlySet<string> = new Set(['insrc_code_review_step']);
+
+/** Whether a session-class request is served on the shared-state worker: a shared-state method, or step.call for a shared-state step tool. */
+export function servedOnSharedState(method: string, params: unknown): boolean {
+	if (SHARED_STATE_METHODS.has(method)) return true;
+	const tool = method === 'step.call' && typeof params === 'object' && params !== null ? (params as { tool?: unknown }).tool : undefined;
+	return typeof tool === 'string' && SHARED_STATE_STEP_TOOLS.has(tool);
+}
 
 /**
  * The session-class methods a session's FIFO does not hold back (s3): subscriptions, and

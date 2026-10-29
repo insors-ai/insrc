@@ -344,8 +344,10 @@
 		"reason": "The chat session pool (s3): every chat.* method is in SHARED_STATE_METHODS and served on the one shared-state worker, so only that worker holds the pool."
 	},
 	"src/daemon/code-review-operations.ts#codeReviewOperations": {
-		"class": "per-thread",
-		"reason": "MOVING INLINE (user decision 2026-10-29): running code-review operations are looked up by handle across codeReview.run and the code-review step's turns, which are session-class; a turn served by another worker, or after an idle release, does not find the operation."
+		"class": "one-owner",
+		"owner": "shared-state",
+		"methods": "codeReview.",
+		"reason": "Every codeReview.* method is in SHARED_STATE_METHODS and step.call for insrc_code_review_step is served there too (SHARED_STATE_STEP_TOOLS, Story 5d393a4b), so every turn finds the operations it started."
 	},
 	"src/daemon/connection-session-rpc.ts#PROBE_METHODS": {
 		"class": "per-thread",
@@ -510,12 +512,16 @@
 		"reason": "A cache of the validated model definitions file, a shipped asset that does not change at run time, so each thread may keep its own copy."
 	},
 	"src/daemon/model-check.ts#chain": {
-		"class": "per-thread",
-		"reason": "MOVING INLINE (user decision 2026-10-29): meant to run one CLI model check at a time daemon-wide, but models.check is session-class, so each session worker has its own chain and checks on different workers overlap."
+		"class": "one-owner",
+		"owner": "shared-state",
+		"methods": "models.",
+		"reason": "Model checks run one at a time daemon-wide: every models.* method is in SHARED_STATE_METHODS (Story 5d393a4b), so only the shared-state worker runs checks and holds this chain."
 	},
 	"src/daemon/model-check.ts#pending": {
-		"class": "per-thread",
-		"reason": "MOVING INLINE (user decision 2026-10-29): a check started by models.check is approved or rejected later by models.approve/models.reject; those are session-class, so a decision served by another worker, or after an idle release, finds no pending check."
+		"class": "one-owner",
+		"owner": "shared-state",
+		"methods": "models.",
+		"reason": "A check started by models.check is decided by models.approve/models.reject; all are in SHARED_STATE_METHODS (Story 5d393a4b), so the decision always reaches the worker holding the pending check."
 	},
 	"src/daemon/model-definitions.ts#_ollamaProvider": {
 		"class": "per-thread",
@@ -579,8 +585,10 @@
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	},
 	"src/daemon/steps/code-review-step/state-store.ts#leases": {
-		"class": "per-thread",
-		"reason": "MOVING INLINE (user decision 2026-10-29): leases tie a code-review step token to a running operation in codeReviewOperations; they live with that registry and are lost with it when a later turn reaches another worker."
+		"class": "one-owner",
+		"owner": "shared-state",
+		"methods": "codeReview.",
+		"reason": "Leases tie code-review step tokens to operations; the code-review step (step.call, SHARED_STATE_STEP_TOOLS) and codeReview.* run on the shared-state worker, beside the operation registry (Story 5d393a4b)."
 	},
 	"src/daemon/steps/daemon-client.ts#_installed": {
 		"class": "per-thread",
@@ -1011,8 +1019,10 @@
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	},
 	"src/workflow/code-review/publication.ts#owners": {
-		"class": "per-thread",
-		"reason": "MOVING INLINE (user decision 2026-10-29): claims that one independent review publishes a target at a time; reviews served on different workers each see an empty map, so two can publish the same target."
+		"class": "one-owner",
+		"owner": "shared-state",
+		"methods": "codeReview.",
+		"reason": "Publication claims are made by codeReview.run and the code-review step, which both run on the shared-state worker (Story 5d393a4b), so one map sees every claim."
 	},
 	"src/workflow/delivery/currency.ts#ITEM_KINDS": {
 		"class": "per-thread",

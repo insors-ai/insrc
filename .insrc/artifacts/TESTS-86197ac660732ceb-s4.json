@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T09:08:08.853Z",
+    "updatedAt": "2026-10-29T09:22:25.430Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -277,8 +277,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "0dc785949",
-        "ranAt": "2026-10-29T08:57:00.353Z",
+        "commit": "1ee787f77",
+        "ranAt": "2026-10-29T09:19:32.933Z",
         "testsPassed": true,
         "tests": [
           {
@@ -316,6 +316,11 @@
                 "file": "src/daemon/threads/__tests__/session-pool.test.ts",
                 "title": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart",
+                "result": "pass"
               }
             ],
             "files": []
@@ -339,7 +344,7 @@
             "file": "src/daemon/threads/__tests__/session-failure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5396,
+            "durationMs": 7309,
             "titles": [
               {
                 "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
@@ -358,6 +363,10 @@
                 "result": "pass"
               },
               {
+                "title": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)",
+                "result": "pass"
+              },
+              {
                 "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
                 "result": "pass"
               }
@@ -368,7 +377,7 @@
             "file": "src/daemon/threads/__tests__/session-pool.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 378,
+            "durationMs": 385,
             "titles": [
               {
                 "title": "session pool: concurrent workerFor calls for one session start one worker",
@@ -401,6 +410,10 @@
               {
                 "title": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
                 "result": "pass"
+              },
+              {
+                "title": "session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -409,7 +422,7 @@
             "file": "src/daemon/threads/__tests__/supervisor-track.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 371,
+            "durationMs": 345,
             "titles": [
               {
                 "title": "supervisor: a tracked worker is terminated by terminateAll and its error is logged",
@@ -426,8 +439,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "1ef5e8603",
-        "ranAt": "2026-10-29T09:03:25.232Z",
+        "commit": "4ed9e00a6",
+        "ranAt": "2026-10-29T09:22:25.430Z",
         "testsPassed": true,
         "tests": [
           {
@@ -480,7 +493,7 @@
             "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7220,
+            "durationMs": 29137,
             "titles": [
               {
                 "title": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
@@ -488,6 +501,18 @@
               },
               {
                 "title": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition",
                 "result": "pass"
               }
             ],
@@ -497,7 +522,7 @@
             "file": "src/daemon/threads/__tests__/session-failure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6720,
+            "durationMs": 7665,
             "titles": [
               {
                 "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
@@ -530,7 +555,7 @@
             "file": "src/daemon/threads/__tests__/supervisor.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10342,
+            "durationMs": 10092,
             "titles": [
               {
                 "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",

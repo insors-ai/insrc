@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t5
 
@@ -102,7 +102,7 @@ Run at 2026-10-29T08:49:45.478Z on commit `b9477bb83`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-10-29T08:57:00.353Z on commit `0dc785949`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T09:19:32.933Z on commit `1ee787f77`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: supervisor: a tracked worker is terminated by terminateAll and its error is logged**
 
@@ -121,6 +121,7 @@ Run at 2026-10-29T08:57:00.353Z on commit `0dc785949`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError | `src/daemon/threads/__tests__/session-pool.test.ts` |
+| pass | session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart | `src/daemon/threads/__tests__/session-pool.test.ts` |
 
 **integration: session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking**
 
@@ -132,13 +133,13 @@ Run at 2026-10-29T08:57:00.353Z on commit `0dc785949`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 5 | 5.4 s |  |
-| `src/daemon/threads/__tests__/session-pool.test.ts` | 0 | 8 | 0.4 s |  |
-| `src/daemon/threads/__tests__/supervisor-track.test.ts` | 0 | 2 | 0.4 s |  |
+| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 6 | 7.3 s |  |
+| `src/daemon/threads/__tests__/session-pool.test.ts` | 0 | 9 | 0.4 s |  |
+| `src/daemon/threads/__tests__/supervisor-track.test.ts` | 0 | 2 | 0.3 s |  |
 
 ## t6
 
-Run at 2026-10-29T09:03:25.232Z on commit `1ef5e8603`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T09:22:25.430Z on commit `4ed9e00a6`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it**
 
@@ -163,9 +164,9 @@ Run at 2026-10-29T09:03:25.232Z on commit `1ef5e8603`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/s4-acceptance.test.ts` | 0 | 2 | 7.2 s |  |
-| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 6 | 6.7 s |  |
-| `src/daemon/threads/__tests__/supervisor.test.ts` | 0 | 4 | 10.3 s |  |
+| `src/daemon/threads/__tests__/s4-acceptance.test.ts` | 0 | 5 | 29.1 s |  |
+| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 6 | 7.7 s |  |
+| `src/daemon/threads/__tests__/supervisor.test.ts` | 0 | 4 | 10.1 s |  |
 
 ## t7
 

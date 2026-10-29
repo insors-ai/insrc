@@ -8,7 +8,8 @@
  * HOME with daemon.threads.enabled and INSRC_TEST_HOOKS=1). ac1: routed requests leave the main
  * thread's handler runtime unbuilt; a connection-scoped request builds it and is answered. ac3:
  * SIGTERM and daemon.shutdown end with 'bye' and exit 0, the workers (session-pool workers
- * included) terminated before the stores close.
+ * included) terminated before the stores close. t7: ac4 the threads list, ac5 liveness while a
+ * session worker spins, ac6 field parity with a threads-disabled daemon.
  *
  * Run: npx tsx --test src/daemon/threads/__tests__/s4-acceptance.test.ts
  */
@@ -16,10 +17,13 @@
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
+import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { once, spawnDaemon, stopDaemon, until } from './helpers/daemon-socket.js';
+import { createIpcClient } from '../../../shared/ipc-client.js';
+import type { ThreadView } from '../../../shared/types.js';
+import { Conn, once, spawnDaemon, stopDaemon, until } from './helpers/daemon-socket.js';
 import type { SpawnedDaemon } from './helpers/daemon-socket.js';
 
 const BUILT = 'handler runtime built on the main thread';
@@ -76,4 +80,98 @@ test("s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, 
 		assert.ok(exited >= 0 && closed > exited && bye > closed, `${how}: the workers exited, then the stores closed, then 'bye'`);
 		assert.doesNotMatch(log, /supervisor: a worker failed|session pool: a session worker exited/, `${how}: no worker ended on its own`);
 	}
+});
+
+/** The threads of a daemon.status answer. */
+const threadsOf = async (sock: string): Promise<ThreadView[]> => ((await once(sock, 'daemon.status', {})).result as { threads?: ThreadView[] }).threads ?? [];
+
+test('s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session', { timeout: 120_000 }, async () => {
+	const d = await spawnDaemon(home(), CONFIG);
+	daemons.push(d);
+	const A = { label: 'mcp', pid: 9421 };
+	const B = { label: 'codex', pid: 9422 };
+	const a = ((await once(d.sock, 'test.servingThread', null, A)).result as { threadId: number }).threadId;
+	const b = ((await once(d.sock, 'test.servingThread', null, B)).result as { threadId: number }).threadId;
+	await until(async () => (await threadsOf(d.sock)).some(t => t.role === 'shared-state') && (await threadsOf(d.sock)).some(t => t.role === 'document-summary'), 'the shared-state and document-summary threads listed');
+	const threads = await threadsOf(d.sock);
+	const byRole = (role: string) => threads.filter(t => t.role === role);
+	assert.equal(byRole('admin').length, 1);
+	assert.equal(byRole('admin')[0]!.cls, 'admin');
+	assert.equal(byRole('code-indexing').length, 1);
+	assert.equal(byRole('code-indexing')[0]!.cls, 'indexing');
+	assert.equal(byRole('document-summary').length, 1);
+	assert.equal(byRole('document-summary')[0]!.cls, undefined, 'the summary worker serves no request class');
+	assert.equal(byRole('shared-state').length, 1);
+	assert.equal(byRole('shared-state')[0]!.cls, 'session');
+	const sessions = byRole('session');
+	assert.deepEqual(sessions.find(t => t.threadId === a)?.session, A, "session A's thread, with its session");
+	assert.deepEqual(sessions.find(t => t.threadId === b)?.session, B, "session B's thread, with its session");
+	assert.equal(new Set(threads.map(t => t.threadId)).size, threads.length, 'each thread once');
+	for (const t of threads) {
+		assert.equal(typeof t.busy, 'boolean');
+		assert.equal(typeof t.queued, 'number');
+		assert.equal(typeof t.activeRuns, 'number');
+	}
+});
+
+test('s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running', { timeout: 120_000 }, async () => {
+	const d = await spawnDaemon(home(), CONFIG);
+	daemons.push(d);
+	const A = { label: 'mcp', pid: 9431 };
+	const spinner = ((await once(d.sock, 'test.servingThread', null, A)).result as { threadId: number }).threadId;
+	const spinning = once(d.sock, 'test.spin', { ms: 12_000 }, A);
+	await until(async () => (await threadsOf(d.sock)).find(t => t.threadId === spinner)?.busy === true, "A's worker busy");
+	const c = await Conn.open(d.sock);
+	const latencies: number[] = [];
+	const elapsed: number[] = [];
+	try {
+		for (let i = 0; i < 100; i++) {
+			const t0 = performance.now();
+			const r = await c.ask('daemon.status', {});
+			latencies.push(performance.now() - t0);
+			assert.equal(r.error, undefined);
+			const me = ((r.result as { threads?: ThreadView[] }).threads ?? []).find(t => t.threadId === spinner);
+			assert.equal(me?.busy, true, 'the spinning session is reported busy');
+			assert.equal(me?.method, 'test.spin');
+			assert.deepEqual(me?.session, A);
+			elapsed.push(me!.elapsedMs!);
+			if (i % 10 === 9) await new Promise(r => setTimeout(r, 50));
+		}
+	} finally { c.close(); }
+	const sorted = [...latencies].sort((x, y) => x - y);
+	const p99 = sorted[Math.ceil(sorted.length * 0.99) - 1]!;
+	assert.ok(p99 < 100, `p99 ${p99.toFixed(1)} ms over 100 calls while a session worker spun`);
+	assert.ok(elapsed.every((e, i) => i === 0 || e >= elapsed[i - 1]!), 'elapsedMs never goes back');
+	assert.ok(elapsed.at(-1)! > elapsed[0]! + 300, `elapsedMs grows (${elapsed[0]} -> ${elapsed.at(-1)})`);
+	const ipc = createIpcClient(() => connect(d.sock));
+	assert.equal(await ipc.reachability(), 'running', 'a client checking liveness finds the daemon running');
+	assert.equal((await spinning).error, undefined, 'the spin finished on its worker');
+});
+
+test('s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition', { timeout: 180_000 }, async () => {
+	const threaded = await spawnDaemon(home(), CONFIG);
+	daemons.push(threaded);
+	const single = await spawnDaemon(home(), { daemon: { threads: { enabled: false } } });
+	daemons.push(single);
+	const client = { label: 'mcp', pid: 9441 };
+	// The same traffic on both, so each has an attached client with a lastMethod.
+	for (const d of [threaded, single]) assert.equal((await once(d.sock, 'session.list', {}, client)).error, undefined);
+	await until(async () => (await threadsOf(threaded.sock)).length > 0, 'the threaded daemon lists its threads');
+	const types = (o: Record<string, unknown>): Record<string, string> =>
+		Object.fromEntries(Object.entries(o).map(([k, v]) => [k, Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v]));
+	for (const method of ['daemon.status', 'daemon.debug-status']) {
+		const one = (await once(single.sock, method, {})).result as Record<string, unknown>;
+		const many = (await once(threaded.sock, method, {})).result as Record<string, unknown>;
+		assert.equal('threads' in one, false, `${method}: no threads without daemon threads`);
+		assert.ok(Array.isArray(many['threads']) && (many['threads'] as unknown[]).length > 0, `${method}: threads with them`);
+		const { threads: _threads, ...rest } = many;
+		assert.deepEqual(types(rest), types(one), `${method}: the same fields with the same value types; threads is the only addition`);
+	}
+	// debug-status clients keep their shape, lastMethod included.
+	const clientsOf = async (sock: string) => ((await once(sock, 'daemon.debug-status', {}, client)).result as { clients: Record<string, unknown>[] }).clients;
+	const one = (await clientsOf(single.sock)).find(c => c['pid'] === client.pid)!;
+	const many = (await clientsOf(threaded.sock)).find(c => c['pid'] === client.pid)!;
+	assert.ok(one !== undefined && many !== undefined, 'the client is listed by both');
+	assert.deepEqual(Object.keys(many).sort(), Object.keys(one).sort(), 'the same client fields');
+	assert.equal(typeof many['lastMethod'], 'string', 'lastMethod is kept');
 });

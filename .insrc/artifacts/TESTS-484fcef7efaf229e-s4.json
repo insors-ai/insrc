@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:59:03.604Z",
+    "updatedAt": "2026-10-29T11:03:27.461Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -772,6 +772,89 @@
               },
               {
                 "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "7d6467db5",
+        "ranAt": "2026-10-29T11:03:27.461Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-TEMP-REPLAY: extend src/daemon/db/__tests__/session-ledger.test.ts for remove admission, no fabricated row, 16384-record boundaries and atomic callback/receipt behavior.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S4-TEMP-REPLAY: remove commits revision-only truth and replay cannot select a recreated row",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S4-TEMP-REPLAY: postcommit apply failure returns the existing removal receipt without payload leakage",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S4-TEMP-REPLAY: ticket owner and request-generation expiry prevent removal publication after awaits",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+                "title": "CM-S4-TEMP-REPLAY: 16384 remove receipts retain history at expiry without a separate tombstone quota",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-ledger.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5479,
+            "titles": [
+              {
+                "title": "CM-S4-TEMP-REPLAY: remove commits revision-only truth and replay cannot select a recreated row",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP-REPLAY: postcommit apply failure returns the existing removal receipt without payload leakage",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP-REPLAY: ticket owner and request-generation expiry prevent removal publication after awaits",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP-REPLAY: 16384 remove receipts retain history at expiry without a separate tombstone quota",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: ticket and receipt quotas never evict live operation history",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume",
                 "result": "pass"
               }
             ],

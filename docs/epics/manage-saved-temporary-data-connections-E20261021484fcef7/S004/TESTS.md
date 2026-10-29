@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -174,3 +174,22 @@ Run at 2026-10-29T10:59:03.604Z on commit `92b13b4cc`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 15 | 6.1 s |  |
+
+## t10
+
+Run at 2026-10-29T11:03:27.461Z on commit `7d6467db5`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-TEMP-REPLAY: extend src/daemon/db/__tests__/session-ledger.test.ts for remove admission, no fabricated row, 16384-record boundaries and atomic callback/receipt behavior.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-TEMP-REPLAY: remove commits revision-only truth and replay cannot select a recreated row | `src/daemon/db/__tests__/session-ledger.test.ts` |
+| pass | CM-S4-TEMP-REPLAY: postcommit apply failure returns the existing removal receipt without payload leakage | `src/daemon/db/__tests__/session-ledger.test.ts` |
+| pass | CM-S4-TEMP-REPLAY: ticket owner and request-generation expiry prevent removal publication after awaits | `src/daemon/db/__tests__/session-ledger.test.ts` |
+| pass | CM-S4-TEMP-REPLAY: 16384 remove receipts retain history at expiry without a separate tombstone quota | `src/daemon/db/__tests__/session-ledger.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-ledger.test.ts` | 0 | 9 | 5.5 s |  |

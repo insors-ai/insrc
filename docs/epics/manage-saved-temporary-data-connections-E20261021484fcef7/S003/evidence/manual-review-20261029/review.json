@@ -127,5 +127,6 @@
   "approvalRecordsChanged": false,
   "daemonReviewArtifactStamped": false,
   "releaseGatesChanged": false,
-  "reviewSystemRebuildChanged": false
+  "reviewSystemRebuildChanged": false,
+  "resolutionRecord": "resolution.json"
 }

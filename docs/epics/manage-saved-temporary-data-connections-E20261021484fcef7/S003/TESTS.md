@@ -661,7 +661,7 @@ Run at 2026-10-26T16:32:59.145Z on commit `c14001644`. Tests check: **passed**. 
 
 ## t33
 
-Run at 2026-10-26T17:15:41.397Z on commit `51b3bdb11`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-29T07:05:57.321Z on commit `e166feb0e`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S3-INVENTORY: final resolved production site audit and saved compatibility regressions**
 
@@ -695,15 +695,15 @@ Run at 2026-10-26T17:15:41.397Z on commit `51b3bdb11`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 12 | 1.6 s |  |
-| `src/daemon/db/__tests__/connection-management-rpc.test.ts` | 0 | 6 | 1.6 s |  |
-| `src/daemon/db/__tests__/connection-reservations.test.ts` | 0 | 8 | 2 s |  |
-| `src/daemon/db/__tests__/draft-test-routes.test.ts` | 0 | 2 | 2.2 s |  |
-| `src/daemon/db/__tests__/driver-field-audit.test.ts` | 0 | 3 | 6.1 s |  |
-| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 5 | 1.9 s |  |
-| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 9.1 s |  |
-| `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 2 | 3 s |  |
-| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 10.4 s |  |
+| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 12 | 1.5 s |  |
+| `src/daemon/db/__tests__/connection-management-rpc.test.ts` | 0 | 6 | 1.4 s |  |
+| `src/daemon/db/__tests__/connection-reservations.test.ts` | 0 | 8 | 1.9 s |  |
+| `src/daemon/db/__tests__/draft-test-routes.test.ts` | 0 | 2 | 1.9 s |  |
+| `src/daemon/db/__tests__/driver-field-audit.test.ts` | 0 | 3 | 6.6 s |  |
+| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 5 | 1.8 s |  |
+| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 8.3 s |  |
+| `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 2 | 3.2 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 11.9 s |  |
 
 ## t34
 

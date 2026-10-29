@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T18:35:22.559Z",
+    "updatedAt": "2026-10-29T07:05:57.321Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -2339,8 +2339,8 @@
       },
       {
         "taskId": "t33",
-        "commit": "51b3bdb11",
-        "ranAt": "2026-10-26T17:15:41.397Z",
+        "commit": "e166feb0e",
+        "ranAt": "2026-10-29T07:05:57.321Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2438,7 +2438,7 @@
             "file": "src/daemon/db/__tests__/connection-leases.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1605,
+            "durationMs": 1462,
             "titles": [
               {
                 "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
@@ -2495,7 +2495,7 @@
             "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1592,
+            "durationMs": 1428,
             "titles": [
               {
                 "title": "CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required",
@@ -2528,7 +2528,7 @@
             "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1982,
+            "durationMs": 1889,
             "titles": [
               {
                 "title": "CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes",
@@ -2569,7 +2569,7 @@
             "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2151,
+            "durationMs": 1867,
             "titles": [
               {
                 "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
@@ -2586,7 +2586,7 @@
             "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6082,
+            "durationMs": 6601,
             "titles": [
               {
                 "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
@@ -2607,7 +2607,7 @@
             "file": "src/daemon/db/__tests__/saved-management.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1900,
+            "durationMs": 1762,
             "titles": [
               {
                 "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
@@ -2636,7 +2636,7 @@
             "file": "src/daemon/db/__tests__/session-probe.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9134,
+            "durationMs": 8327,
             "titles": [
               {
                 "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
@@ -2653,7 +2653,7 @@
             "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2987,
+            "durationMs": 3217,
             "titles": [
               {
                 "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
@@ -2670,7 +2670,7 @@
             "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10424,
+            "durationMs": 11923,
             "titles": [
               {
                 "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",

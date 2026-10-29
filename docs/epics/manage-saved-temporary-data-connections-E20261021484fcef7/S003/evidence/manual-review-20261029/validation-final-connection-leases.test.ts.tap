@@ -1,0 +1,86 @@
+TAP version 13
+# Subtest: CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked
+ok 1 - CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked
+  ---
+  duration_ms: 92.814584
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection
+ok 2 - CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection
+  ---
+  duration_ms: 57.939958
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle
+ok 3 - CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle
+  ---
+  duration_ms: 23.263292
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision
+ok 4 - CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision
+  ---
+  duration_ms: 35.649584
+  type: 'test'
+  ...
+# Subtest: CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects
+ok 5 - CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects
+  ---
+  duration_ms: 2.263917
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage
+ok 6 - CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage
+  ---
+  duration_ms: 5.480375
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use
+ok 7 - CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use
+  ---
+  duration_ms: 39.543125
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape
+ok 8 - CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape
+  ---
+  duration_ms: 13.875041
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape
+ok 9 - CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape
+  ---
+  duration_ms: 2.389625
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes
+ok 10 - CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes
+  ---
+  duration_ms: 23.800208
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics
+ok 11 - CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics
+  ---
+  duration_ms: 2.746166
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out
+ok 12 - CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out
+  ---
+  duration_ms: 1.95275
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 304.713291
+# 
+# npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.

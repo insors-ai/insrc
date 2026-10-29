@@ -1,0 +1,281 @@
+TAP version 13
+# (node:53534) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [13:22:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [13:22:53] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# Subtest: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+not ok 1 - CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+  ---
+  duration_ms: 8042.52925
+  type: 'test'
+  location: '/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/session-cleanup.test.ts:1:1868'
+  failureType: 'testCodeFailure'
+  error: |-
+    (node:53647) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    /private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15
+     socket.on('error', () => {}); socket.on('close', () => { for (const call of pending.values()) call.reject(new Error('test socket closed')); pending.clear(); });
+                                                                                                               ^
+    
+    Error: test socket closed
+        at Socket.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15:108)
+        at Socket.emit (node:events:531:35)
+        at Pipe.<anonymous> (node:net:347:12)
+    
+    Node.js v22.23.2
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    Socket.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15:108)
+    Socket.emit (node:events:531:35)
+    Pipe.<anonymous> (node:net:347:12)
+    runProbeMatrix (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-probe-matrix.ts:9:148)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async TestContext.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/session-cleanup.test.ts:26:166)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+ok 2 - CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+  ---
+  duration_ms: 0.395834
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+ok 3 - CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+  ---
+  duration_ms: 4.411083
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+ok 4 - CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+  ---
+  duration_ms: 0.264667
+  type: 'test'
+  ...
+# [13:23:01] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-i7xY6F/retry"
+#     [35mcount[39m: 0
+# [13:23:01] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-i7xY6F/retry"
+#     [35mcount[39m: 0
+# [13:23:01] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-i7xY6F/retry"
+#     [35mcount[39m: 0
+# Subtest: CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation
+ok 5 - CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation
+  ---
+  duration_ms: 116.165333
+  type: 'test'
+  ...
+# Subtest: CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+not ok 6 - CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+  ---
+  duration_ms: 2418.992209
+  type: 'test'
+  location: '/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/session-probe.test.ts:1:92'
+  failureType: 'testCodeFailure'
+  error: |-
+    (node:53544) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    /private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15
+     socket.on('error', () => {}); socket.on('close', () => { for (const call of pending.values()) call.reject(new Error('test socket closed')); pending.clear(); });
+                                                                                                               ^
+    
+    Error: test socket closed
+        at Socket.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15:108)
+        at Socket.emit (node:events:531:35)
+        at Pipe.<anonymous> (node:net:347:12)
+    
+    Node.js v22.23.2
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    Socket.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15:108)
+    Socket.emit (node:events:531:35)
+    Pipe.<anonymous> (node:net:347:12)
+    runProbeMatrix (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-probe-matrix.ts:9:148)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async TestContext.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/session-probe.test.ts:3:158)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+not ok 7 - CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+  ---
+  duration_ms: 1456.297333
+  type: 'test'
+  location: '/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/session-probe.test.ts:1:276'
+  failureType: 'testCodeFailure'
+  error: |-
+    (node:53592) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    /private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15
+     socket.on('error', () => {}); socket.on('close', () => { for (const call of pending.values()) call.reject(new Error('test socket closed')); pending.clear(); });
+                                                                                                               ^
+    
+    Error: test socket closed
+        at Socket.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15:108)
+        at Socket.emit (node:events:531:35)
+        at Pipe.<anonymous> (node:net:347:12)
+    
+    Node.js v22.23.2
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    Socket.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-rpc-client.ts:15:108)
+    Socket.emit (node:events:531:35)
+    Pipe.<anonymous> (node:net:347:12)
+    runProbeMatrix (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/fixtures/session-probe-matrix.ts:9:148)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async TestContext.<anonymous> (/private/tmp/cm-s4-sweep-20261029-sfatxjdu/src/daemon/db/__tests__/session-probe.test.ts:4:112)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 4
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9877.393166

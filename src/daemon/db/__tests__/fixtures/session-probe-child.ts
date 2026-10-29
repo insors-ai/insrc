@@ -43,13 +43,19 @@ try {
  const draft = { requestId: randomUUID(), draftRevision: 2, key: { ...key, id: 'new' }, publicPatch: { kind: 'csv', path: 'edited.csv' }, credentials: {} };
  assert.equal((await other.call<{ status: string }>('db.connections.v2.test', draft)).status, 'reachable');
  assert.equal(JSON.stringify(overlay.list()), list); assert.equal((await ui.call<{ status: string }>('db.connections.v2.status', { ticket })).status, 'not-seen'); assert.deepEqual(await tree(), before); assert.equal(keychain, 0);
- // A concurrent legitimate edit while path preparation is suspended must prevent stale spawn.
+ // S004: an edit probe owns its revision until preparation and actual child drain.
  const originalPrepare = runtime.prepareTemporary.bind(runtime); let announced!: () => void, release!: () => void;
  const preparing = new Promise<void>(r => { announced = r; }), held = new Promise<void>(r => { release = r; });
  runtime.prepareTemporary = async (...args: Parameters<typeof originalPrepare>) => { const value = await originalPrepare(...args); announced(); await held; return value; };
  const raceCount = children.length, race = ui.call<{ status: string }>('db.connections.v2.test', { ...input, requestId: randomUUID() }); await preparing;
+ try {
+  await assert.rejects(overlay.prepare({ key, mode: 'update', expectedRevision: saved.revision, publicPatch: { path: 'edited.csv' } }), { code: 'busy' });
+  assert.throws(() => overlay.prepareRemoval({ id: key.id, expectedRevision: saved.revision }), { code: 'busy' });
+  assert.equal(JSON.stringify(overlay.list()), list);
+ } finally { release(); }
+ assert.equal((await race).status, 'reachable'); assert.equal(children.length, raceCount + 1);
  overlay.commit(await overlay.prepare({ key, mode: 'update', expectedRevision: saved.revision, publicPatch: { path: 'edited.csv' } }));
- const changed = JSON.stringify(overlay.list()); release(); assert.equal((await race).status, 'failed'); assert.equal(children.length, raceCount); assert.equal(JSON.stringify(overlay.list()), changed); runtime.prepareTemporary = originalPrepare;
+ runtime.prepareTemporary = originalPrepare;
  const pending = ui.call<{ status: string }>('db.connections.v2.test', { requestId: randomUUID(), draftRevision: 3, key: { ...key, id: 'pg' }, expectedRevision: remote.revision, publicPatch: {}, credentials: { 'url.password': { action: 'keep' } } });
 	await accepted; assert.ok(children.some(child => child.exitCode === null && child.signalCode === null)); assert.ok(sockets.size > 0);
 	if (lifecycle === 'end') await ui.call('db.connections.v2.session.end');

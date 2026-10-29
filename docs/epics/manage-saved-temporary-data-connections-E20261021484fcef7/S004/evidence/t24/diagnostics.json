@@ -1,0 +1,56 @@
+{
+  "logs": {
+    "audit-correction.tap": {
+      "sha256": "04f3e3cad9564b14ba93177f9fbb232991f63039d2b6264dd801cf5a5a898c83",
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "probe-diagnostic.tap": {
+      "sha256": "db1dc8b21b1c4d667f9a23875c6c24588b3cf7e4b7b7cd3a597acae3fe9db486",
+      "counts": {
+        "tests": 7,
+        "pass": 4,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "probe-correction.tap": {
+      "sha256": "4883a756c6dad4dd4b672c04bf4b1b13f69907bafa062fcc7054d14ef25845e5",
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    "provider-diagnostic.tap": {
+      "sha256": "3a07615bb745f3425c75618fdc18df41c3a55eb8d491f00809acaec6b73bdf9f",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  },
+  "corrections": [
+    "Private S001 field/source inventories explicitly refreshed for reviewed S004 changes; shipped release assets unchanged.",
+    "Existing probe fixture now verifies busy during preparation, no removal, successful probe and subsequent post-drain update."
+  ],
+  "productionCodeChangedAfterSweep": false,
+  "fullSweepRepeated": false,
+  "revalidationReason": "Only private JSON audit fixtures and a test scenario changed. Relevant audit3/3 and source+compiled lifecycle7/7 passed. Frozen original 21 failures remain unchanged.",
+  "remainingFullSweepFailures": "Provider transport parent timeout passes isolated6/6; index-observation timeouts, latency threshold, shutdown, protected-file search and three fixture nonterminations remain unresolved. No baseline attribution beyond preserved historical findings."
+}

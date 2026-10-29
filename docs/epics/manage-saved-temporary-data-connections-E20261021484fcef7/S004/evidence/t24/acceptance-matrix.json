@@ -1,0 +1,280 @@
+{
+  "story": "484fcef7efaf229e/s4",
+  "asOf": "2026-10-29T13:26:17.737615+00:00",
+  "testedSnapshot": "7ffa301c2d60b89098741190449560f68d8b2c2a",
+  "subjects": [
+    {
+      "subject": "CM-S4-CONFIRM",
+      "requirement": "exact ID/scope/repository copy and source-data guarantee; cancel causes zero ticket/mutation/credential/cleanup calls",
+      "status": "proved",
+      "tasks": [
+        "t2",
+        "t23"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-INPUT",
+      "requirement": "signed remove target and expected revision; reject extra patch/credentials, changed payload, scope/mode/root mismatch and malformed cleanup ticket",
+      "status": "proved",
+      "tasks": [
+        "t1",
+        "t13"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-STATE",
+      "requirement": "committed removal and independent credential/resource phases project correctly; absent row/not-seen is never removed",
+      "status": "proved",
+      "tasks": [
+        "t2",
+        "t9",
+        "t12"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-SAVED",
+      "requirement": "atomic selected-row/revision removal plus exact receipt; preserve unrelated document bytes/semantics, pinned families and all other rows",
+      "status": "proved",
+      "tasks": [
+        "t4",
+        "t6",
+        "t7",
+        "t8"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-REPLAY",
+      "requirement": "same-operation concurrent replay and changed-payload refusal; lost response, rename/fsync ambiguity, expiry, receipt pruning and same-ID recreation",
+      "status": "proved",
+      "tasks": [
+        "t7",
+        "t8",
+        "t9",
+        "t16"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-CREDENTIALS",
+      "requirement": "only obsolete app-owned refs retire; preserve foreign/shared/live refs; deletion and finalization failures remain pending and recover after restart",
+      "status": "proved",
+      "tasks": [
+        "t6",
+        "t7",
+        "t9"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-TEMP",
+      "requirement": "exact owner/root/revision discard and quota changes atomic with memory receipt; unaffected roots, owners and delegations survive",
+      "status": "proved",
+      "tasks": [
+        "t5",
+        "t10",
+        "t11",
+        "t12"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-TEMP-REPLAY",
+      "requirement": "concurrent replay, stale staged edit, new same-ID revision, expiry/end/resume/restart and receipt-capacity boundaries",
+      "status": "proved",
+      "tasks": [
+        "t10",
+        "t11",
+        "t12",
+        "t16"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-NO-PERSIST",
+      "requirement": "poison registry/keychain/cache/checkpoint/log/telemetry ports; assert zero access and no config/capability/canary persistence",
+      "status": "proved",
+      "tasks": [
+        "t11",
+        "t12",
+        "t20"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-BUSY",
+      "requirement": "callback/iterator/constructor and existing-row edit-probe use blocks remove, with exactly-once lease/drain release",
+      "status": "proved",
+      "tasks": [
+        "t4",
+        "t5",
+        "t15",
+        "t16"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-INVALIDATE",
+      "requirement": "no new list/lease/acquire resolves removed generation before cleanup finishes; late staged writes fail CAS",
+      "status": "proved",
+      "tasks": [
+        "t4",
+        "t5",
+        "t11",
+        "t16"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-RETIRE",
+      "requirement": "unused, late-building, idle and close-failing resources retain exact cleanup ownership; retry never selects a new same-ID generation",
+      "status": "proved",
+      "tasks": [
+        "t3",
+        "t4",
+        "t5",
+        "t9",
+        "t12",
+        "t16"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-RACES",
+      "requirement": "controlled root-gate ordering for remove/remove, remove/update, remove/acquire and cleanup/create; no timing-based Promise.all ordering assumptions",
+      "status": "proved",
+      "tasks": [
+        "t16"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-SOURCE",
+      "requirement": "real PostgreSQL and Redis rows remain intact after removal, while app connections/owned handles really close",
+      "status": "proved",
+      "tasks": [
+        "t17"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Real PostgreSQL/Redis data and owned-handle checks passed; SQL Server coverage pending as explicitly authorized."
+    },
+    {
+      "subject": "CM-S4-FILES",
+      "requirement": "actual supported native/converted file bytes and directories remain intact; only owned sc8 runtime/cache metadata may close",
+      "status": "proved",
+      "tasks": [
+        "t18"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Actual supported native/converted sources unchanged. Temporary Arrow/Feather unsupported refusal retained; no support claim."
+    },
+    {
+      "subject": "CM-S4-AFFINITY",
+      "requirement": "threads-enabled and single-thread production analysis/tool/probe routes share exact management lease authority, or are refused before unsupported use; main-only unit tests cannot satisfy global busy acceptance",
+      "status": "pending",
+      "tasks": [
+        "t19"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Production single/threads-enabled refusal proved; positive all-consumer Saved worker lease affinity remains pending and release-blocking."
+    },
+    {
+      "subject": "CM-S4-RPC",
+      "requirement": "both scopes route new sc6 state/cleanup methods to main; old/missing feature refuses; unverified MCP denied before lookup; explicit saved channel never strips a presented session",
+      "status": "proved",
+      "tasks": [
+        "t13",
+        "t14",
+        "t19"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-COMPAT",
+      "requirement": "create/update, strict legacy shapes, read-only nested/alias targets, descriptor/pinned-family behavior and S002/S003 lifetime tests remain green",
+      "status": "proved",
+      "tasks": [
+        "t21"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "114 focused cases passed before sweep. Sweep exposed three old probe-fixture failures; corrected busy-until-drained expectation now passes source/compiled lifecycle 7/7. No production code correction."
+    },
+    {
+      "subject": "CM-S4-PRIVACY",
+      "requirement": "fixed safe status/error/progress/retry output; no endpoint/config/source contents/credential refs or capabilities emitted",
+      "status": "proved",
+      "tasks": [
+        "t20"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-GATE",
+      "requirement": "mixed/stale/missing source+compiled/inventory/evidence refuses; private positive verifier fixture uses matching current build maps, never relabels shipped prerequisites",
+      "status": "proved",
+      "tasks": [
+        "t22"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Focused daemon validation passed; production release remains gated by shared prerequisites."
+    },
+    {
+      "subject": "CM-S4-CLIENT",
+      "requirement": "S005 consumes exact Delete/Discard confirmation, cancel, busy/stale, unknown and cleanup-pending models in both clients; external client rendering/keyboard acceptance remains pending until S005 proves it",
+      "status": "pending",
+      "tasks": [
+        "t23"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Twenty backend consumer snapshots and artifact source checks passed. VSCode/JetBrains rendering, keyboard and lifetime-copy acceptance pending S005. Graphical layout not verified."
+    },
+    {
+      "subject": "CM-S4-SWEEP",
+      "requirement": "each task runs relevant tests; after all implementation run fresh Node22 build and one full sweep, preserve exact outcomes and existing worker-store/file-refusal/shutdown-under-load findings",
+      "status": "failed",
+      "tasks": [
+        "t24"
+      ],
+      "evidence": "TESTS.md and named task evidence directories",
+      "limits": "Fresh build passed; frozen full sweep failed with 21 original failures, including three recorded terminated workers. Zero tracked source drift. Focused test-only corrections do not replace original totals."
+    }
+  ],
+  "releaseEnabled": false,
+  "pendingPrerequisites": [
+    "Independent S001 foundation review",
+    "All-consumer Saved worker lease affinity",
+    "SQL Server Linux x64/remote evidence",
+    "Current-generation provider privacy enrollment",
+    "S005 both-client rendering/keyboard/lifetime-copy acceptance",
+    "Unresolved full-sweep failures and historical S003 t34 findings"
+  ],
+  "originalSweep": {
+    "tests": 6964,
+    "suites": 112,
+    "pass": 6806,
+    "fail": 21,
+    "cancelled": 0,
+    "skipped": 134,
+    "todo": 3,
+    "duration_ms": 815194.649458
+  },
+  "countsAdjustedForDiagnostics": false
+}

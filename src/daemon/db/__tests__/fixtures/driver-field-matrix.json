@@ -2372,13 +2372,13 @@
     "src/daemon/db/drivers/pg.ts": "76560b7c7a506f487ff406c19743c151c1f1575cb032f8aa6cb7c7fc8ec74ba2",
     "src/daemon/db/drivers/redis.ts": "eed01a448003dc7a6c30b148c6e1b46b02fa4003a9ac5e9ca7f1603d311015b2",
     "src/daemon/db/drivers/sqlite.ts": "343b358cf3d3136b5607f974679cdf4d24625919ec749d046636210358deed51",
-    "src/daemon/db/pool.ts": "a1e2a330d6a298dc4e01f3a9d9e13bd6a01566ca3221788b6e3c1d5747e1a32f",
-    "src/daemon/db/secrets.ts": "c946f590ea0875227e4ee865152516878f4d1bb6830308fb9bc0feb17c756979",
+    "src/daemon/db/pool.ts": "8a1a5b3ed74d4b6463fbfb0b65820dd79d0a546d2414d77540a4a5f07e98d183",
+    "src/daemon/db/secrets.ts": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca",
     "src/daemon/tools/builtins/db/index.ts": "1554dc4a03d915b260efc43c5971d21fe294965c17b5f87849925b6e90af3fed",
     "src/shared/db-driver.ts": "bd13706157b9d8c74e82103be3e3c3a5b64cf5462fd0cffee9e59b280428334e",
     "src/daemon/db/file-policy.ts": "06c559235bf80e7265f81d87439b0c951c831b17fee45cac463e8005bbea2538",
-    "src/daemon/db-rpc.ts": "377c1b7cd75b76ea9ea54ee6dfd08715a109e0c205e0ab220fe2b4af2b050333",
-    "src/daemon/db/management.ts": "45ed592215c20cbe92adcfbe98739d869591d004c8c65e87657e62508566a708"
+    "src/daemon/db-rpc.ts": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da",
+    "src/daemon/db/management.ts": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489"
   },
   "classificationUpdates": [
     {

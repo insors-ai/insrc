@@ -1,0 +1,91 @@
+{
+  "kind": "manual session-author inspection; not independent daemon code-review",
+  "story": "484fcef7efaf229e/s4",
+  "rangeBase": "9e0008a5370840df0cc4b35c3707198b45e78cf6",
+  "rangeHead": "7ffa301c2d60b89098741190449560f68d8b2c2a",
+  "productionFiles": [
+    "src/daemon/connection-management-rpc.ts",
+    "src/daemon/connection-session-rpc.ts",
+    "src/daemon/db-rpc.ts",
+    "src/daemon/db/draft-test.ts",
+    "src/daemon/db/management-enablement.ts",
+    "src/daemon/db/management.ts",
+    "src/daemon/db/pool.ts",
+    "src/daemon/db/removal-retirement.ts",
+    "src/daemon/db/secrets.ts",
+    "src/daemon/db/session-entries.ts",
+    "src/daemon/db/session-ledger.ts",
+    "src/daemon/db/session-management.ts",
+    "src/daemon/db/session-resources.ts",
+    "src/daemon/threads/method-class.ts",
+    "src/shared/connection-management-wire.ts",
+    "src/shared/connection-management.ts",
+    "src/shared/connection-removal.ts"
+  ],
+  "dimensions": {
+    "adherence": "Checked strict remove/ticket contracts, atomic row+receipt publication, unknown outcome reconciliation, independent credentials/runtime phases, source preservation and bounded retirement. S005 and affinity requirements remain pending rather than treated as implemented.",
+    "conventions": "Existing daemon-owned IPC, exact-root/session authority, HMAC replay, existing root/revision gates and NodeNext type conventions retained. No direct cloud REST, persistent temporary state or public handle/token/config serialization introduced.",
+    "coverage": "Focused task gates t1\u2013t23 passed. Real SQL/KV and file preservation evidence retained. Full sweep is failed; audited private fixtures and obsolete probe expectation corrected with relevant tests. Original failures and skips preserved.",
+    "quality": "Checked precommit reservation/cancel, canonical ambiguous-commit reconciliation, detachment before SDK close, exact old-generation retry, bounded pending owner maps, late construction and true child drain. No additional production blocker identified in this inspection; this does not clear external prerequisites."
+  },
+  "findings": [
+    {
+      "id": "M1",
+      "status": "corrected",
+      "finding": "S001 private field/source acquisition audit fixtures had not been refreshed for S004 source changes.",
+      "evidence": "audit-correction.json; audit-correction.tap (3/3)"
+    },
+    {
+      "id": "M2",
+      "status": "corrected",
+      "finding": "Lifecycle fixture assumed update could commit during edit-probe preparation; S004 correctly keeps the generation busy until actual drain.",
+      "evidence": "probe-diagnostic.tap; probe-correction.tap (7/7)"
+    },
+    {
+      "id": "M3",
+      "status": "open",
+      "finding": "Full repository suite is not green; original 21 failures retained. Positive worker affinity and shared release prerequisites remain unproved.",
+      "evidence": "run.json; sweep.tap; interventions.json; acceptance-matrix.json"
+    }
+  ],
+  "limitations": [
+    "Same session authored implementation; no independent/formal CR is claimed. Automated code-review tool intentionally not invoked per user direction.",
+    "ER accessibility content and diagram sources inspected; screenshot switched to another tab so visual layout not verified.",
+    "No installed daemon update/restart, release activation, cloud live-test enrollment or SQL Server acceptance."
+  ],
+  "approval": "Final BUILD completion requires explicit user approval with a recorded manual-review exception; not granted by earlier PLAN approval.",
+  "concurrentOtherStoryChangesExcluded": [
+    "src/analyze/orchestrator/live-runs.ts",
+    "src/daemon/index.ts",
+    "src/daemon/threads/channel.ts",
+    "src/daemon/threads/main-services.ts",
+    "src/daemon/threads/router.ts",
+    "src/daemon/threads/session-routing.ts",
+    "src/daemon/threads/session-worker.ts",
+    "src/daemon/threads/status-board.ts",
+    "src/daemon/threads/supervisor.ts",
+    "src/daemon/threads/worker-entry.ts",
+    "src/daemon/threads/worker-requests.ts",
+    "src/daemon/tools/config.ts"
+  ],
+  "productionSourceSha256": {
+    "src/shared/connection-management.ts": "91420d8952759a0c5c4a1602b9b143979fa211e7b656192bade5bab749a01200",
+    "src/shared/connection-management-wire.ts": "21d770c2c25207ceb009955d05ebf72d9c22f79a3afd8f630b2ea718072f6ead",
+    "src/shared/connection-removal.ts": "e8597a68c8bbd87253dc646340c7adf6b43730a92041779641ebc792d486378e",
+    "src/daemon/connection-management-rpc.ts": "d7a58fa450f9ed84da8ae39b19921469bfad880b57c128d6d0b26c4df836a8da",
+    "src/daemon/connection-session-rpc.ts": "e5e63916aebfc404150cdc3e139755f3e2493713f64b22d788ad0d674dccdb6b",
+    "src/daemon/db-rpc.ts": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da",
+    "src/daemon/db/draft-test.ts": "6e477ef30876fe9e32da4e867e3aca709896d0d1e8eef6f57fed0b34cc21a95c",
+    "src/daemon/db/management-enablement.ts": "544958c37a664d48cdd3d1492472f06d5bf32aa2d7756df145febd6bf83397ae",
+    "src/daemon/db/management.ts": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489",
+    "src/daemon/db/pool.ts": "8a1a5b3ed74d4b6463fbfb0b65820dd79d0a546d2414d77540a4a5f07e98d183",
+    "src/daemon/db/secrets.ts": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca",
+    "src/daemon/db/session-entries.ts": "91b68d5f4b7bd58181898e0d95bc9f41a8eb24395cb2da9142847c39f7e83191",
+    "src/daemon/db/session-ledger.ts": "258b6153921318c4f73db96ce5f29c6d7dd1ddae4bd6ce5493a424c13d3fdc50",
+    "src/daemon/db/session-management.ts": "b787103b0618f24543d6b636c79d2472a67ea11d8fdccb1a1c19d1f3c6846ada",
+    "src/daemon/db/session-resources.ts": "344be9a116afd0d1ec644d63f63a8498f056175acef3adf00db81ba21ab7f348",
+    "src/daemon/db/removal-retirement.ts": "ed9393a9adad751cf0752f103cb1951a5a70d6953a90d48fd937b7aa92b60169",
+    "src/daemon/threads/method-class.ts": "496fc43a45cc0be52939068b8d7f4eedc4ab38e3673d366fdca6202a214afa65"
+  },
+  "scopeNote": "PLAN range includes other sessions on shared main; inspection scope is the 17 S004 production files, not concurrent unrelated Story changes."
+}

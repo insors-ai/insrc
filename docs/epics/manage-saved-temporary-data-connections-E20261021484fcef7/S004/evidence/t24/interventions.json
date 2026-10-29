@@ -1,0 +1,29 @@
+[
+  {
+    "at": "2026-10-29T13:23:31.058091+00:00",
+    "pid": 18630,
+    "parentPid": 3658,
+    "elapsed": "09:14",
+    "command": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node --import tsx src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+    "signal": "SIGTERM",
+    "reason": "No sweep output progress; isolated test worker remained alive over seven minutes. Intervention is recorded as failed/cancelled test evidence, not a successful run."
+  },
+  {
+    "at": "2026-10-29T13:23:31.058310+00:00",
+    "pid": 31007,
+    "parentPid": 3658,
+    "elapsed": "08:08",
+    "command": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node --import tsx src/daemon/threads/__tests__/worker-stores.test.ts",
+    "signal": "SIGTERM",
+    "reason": "No sweep output progress; isolated test worker remained alive over seven minutes. Intervention is recorded as failed/cancelled test evidence, not a successful run."
+  },
+  {
+    "at": "2026-10-29T13:24:03.394575+00:00",
+    "pid": 76338,
+    "parentPid": 3658,
+    "elapsed": "05:50",
+    "command": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node --import tsx src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+    "signal": "SIGTERM",
+    "reason": "Remaining isolated fixture nontermination after over five minutes; no output progress. Preserve failure, no successful-run claim."
+  }
+]

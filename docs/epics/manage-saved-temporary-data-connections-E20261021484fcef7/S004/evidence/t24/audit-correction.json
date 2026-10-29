@@ -1,0 +1,198 @@
+{
+  "reason": "Full sweep found omitted S001 private audit refresh for S004 source changes",
+  "delta": {
+    "added": [
+      {
+        "file": "src/daemon/connection-session-rpc.ts",
+        "expression": "owned.overlay.resolver(owned.binding.access,{assertActive:owned.assertActive,signal:owned.binding.signal,...(context.registerDrain?{registerDrain:context.registerDrain}:{})})",
+        "boundary": "resolver-port-call"
+      },
+      {
+        "file": "src/daemon/connection-session-rpc.ts",
+        "expression": "resolver.lease",
+        "boundary": "resolver-member"
+      },
+      {
+        "file": "src/daemon/db-rpc.ts",
+        "expression": "savedConnectionResolver.lease",
+        "boundary": "resolver-member"
+      },
+      {
+        "file": "src/daemon/db-rpc.ts",
+        "expression": "savedConnectionResolver",
+        "boundary": "symbol:savedConnectionResolver"
+      },
+      {
+        "file": "src/daemon/db-rpc.ts",
+        "expression": "savedConnectionResolver",
+        "boundary": "symbol:savedConnectionResolver"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.cancelRemoval",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.cancelRemoval",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.commitRemoval",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.lease",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.prepareRemoval",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.removalCleanupPending",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.removalCleanupPending",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/management.ts",
+        "expression": "this.ports.pool.retryRemovalCleanup",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemoval",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemoval",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemovals",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemovals",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemovals",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemovals",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemovals",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#preparedRemovals",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#removalTokens",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#removalTokens",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.#retirements",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "expression": "this.beginMutation",
+        "boundary": "pool-member"
+      },
+      {
+        "file": "src/daemon/db/session-resources.ts",
+        "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { if (!selected.removal) this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })",
+        "boundary": "driver-port-call"
+      },
+      {
+        "file": "src/daemon/db/session-resources.ts",
+        "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { if (!selected.removal) this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })",
+        "boundary": "driver-port-call"
+      }
+    ],
+    "removed": [
+      {
+        "file": "src/daemon/db/session-resources.ts",
+        "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   }).finally(() => { selected.building = undefined; })",
+        "boundary": "driver-port-call"
+      },
+      {
+        "file": "src/daemon/db/session-resources.ts",
+        "expression": "Promise.resolve().then(async () => {\n    this.#check();\n    const factory = (this.#ports.factory ?? getFactory)(config.kind);\n    if (!factory) throw new ManagementServiceError('unsupported-temporary');\n    const context = temporaryDriverContext(this.#factoryAuthority, fileExecutionPolicy(config, { lookupRoot: this.#root, ownerId: this.#ownerId, revision, persistence: 'memory-only' }), resource => {\n     selected.files.add(resource); if (this.#closed || selected.retired) void this.#closeFile(selected, resource).catch(() => {});\n    });\n    let driver: Driver;\n    try { driver = await invokeTemporaryFactory(factory, config, context); }\n    catch (error) {\n     const closed = await Promise.allSettled([...selected.files].map(file => this.#closeFile(selected, file)));\n     if (closed.some(value => value.status === 'rejected')) { this.#failedClose = true; throw new ManagementServiceError('recovery-required'); }\n     throw error;\n    }\n    selected.driver = driver; // Private cleanup ownership, never a published callback view.\n    return driver;\n   })",
+        "boundary": "driver-port-call"
+      }
+    ]
+  },
+  "review": {
+    "src/daemon/connection-session-rpc.ts": "S004 reviewed: exact-root owner-bound resolver forwards actual drain registration; edit probes retain the selected generation lease until preparation and child exit finish. No raw driver escapes.",
+    "src/daemon/db-rpc.ts": "S004 reviewed: legacy persisted-config probes retain the existing Saved resolver lease through actual worker drain, including cancellation. Unsaved drafts do not invent a lease.",
+    "src/daemon/db/management.ts": "S004 reviewed: remove preparation reserves retirement before commit; cancel restores admission only on proven noncommit; commit detaches exact old generation. State and retry select authenticated receipt-owned cleanup. Edit probe lease lasts through actual drain.",
+    "src/daemon/db/pool.ts": "S004 reviewed: opaque prepared-removal tokens hold the existing revision barrier; bounded retirements own exact old handles and late construction until close. Private map/set sites are ownership bookkeeping. No changed ConnectionConfig field reads.",
+    "src/daemon/db/session-resources.ts": "S004 reviewed: private memory-only temporary factory path is unchanged; failed file cleanup is retained by the removal retirement owner when present, otherwise existing failed-close path. Construction remains revision-pinned, owned and drained."
+  },
+  "fieldReview": "Reviewed pool, management, secrets and legacy RPC: no public/credential field classification changes. Removal uses existing id/revision and owned secret refs, with no plaintext reads or new driver options; probes add drain-held leases only.",
+  "shippedReleaseAssetsChanged": false
+}

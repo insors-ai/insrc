@@ -194,7 +194,16 @@
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-29T17:18:41.714Z"
+    "approvedAt": "2026-10-29T17:18:41.714Z",
+    "questionResolutions": {
+      "qeb5df016": {
+        "question": "Item f2: architectureShape names the definitions file, validator, registry, provider factory, CLI provider and clients by role rather than quoting each s1 bundle path inline (partial).",
+        "status": "resolved",
+        "choice": "Leave role-only; defer paths to the LLD",
+        "rationale": "The HLD already grounds the roles in paths: the component-dependency definition gives each component's repo path, and the section 3 classification rule lists every change site by path:line. The s1 LLD carries the remaining concrete paths.",
+        "resolvedAt": "2026-10-29T17:40:48.348Z"
+      }
+    }
   },
   "body": {
     "summary": {

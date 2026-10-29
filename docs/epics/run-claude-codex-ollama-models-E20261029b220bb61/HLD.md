@@ -249,20 +249,26 @@ The daemon branches on the front-end inside the Ollama provider path; clients ad
 
 - Item f2: architectureShape names the definitions file, validator, registry, provider factory, CLI provider and clients by role rather than quoting each s1 bundle path inline (partial).
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qeb5df016` — Item f2: architectureShape names the definitions file, validator, registry, provider factory, CLI provider and clients by role rather than quoting each s1 bundle path inline (partial).
+  - **resolved**: Leave role-only; defer paths to the LLD — The HLD already grounds the roles in paths: the component-dependency definition gives each component's repo path, and the section 3 classification rule lists every change site by path:line. The s1 LLD carries the remaining concrete paths. _(2026-10-29T17:40:48.348Z)_
 
-### ✅ Review `PASS` — design.epic (design.epic)
+## Citations
 
-**0 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T17:08:07.241Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `s1 bundle: runner families in the registry and definitions` — "Families live in the model registry; each carries a CLI kind ('claude' | 'codex' | undefined) and familyForClient maps a CLI client to its family."
+- **[[c2]]** `code` `src/daemon/model-catalog.ts:37` — "export type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama';"
+- **[[c3]]** `code` `src/daemon/model-catalog.ts:127` — "const FAMILY_IDS: readonly FamilyId[] = ['cli-claude', 'cli-codex', 'ollama'];"
+- **[[c4]]** `code` `src/analyze/context/shaper-provider.ts:218` — "export function familyProvider("
+- **[[c5]]** `code` `src/agent/providers/cli-provider.ts:144` — "export interface CliProviderOpts {"
+- **[[c6]]** `code` `src/daemon/handler-runtime.ts:1452` — "'models.definitions':   () => modelDefinitions(),"
+- **[[c7]]** `code` `vscode-plugin/src/models/model-tier-picker.ts:342` — "if (family.cliKind !== undefined) items.push({ label: 'Enter another model id…', description: 'checked by the daemon before it can be used', kind: 'enter-id' });"
+- **[[c8]]** `code` `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt:63` — "fun families(): List<DefinedFamilyDto> = definitions.families.filter { it.cliKind != null }"
+- **[[c9]]** `code` `src/daemon/model-registry.ts:105` — "familyForClient(client: StepClient | undefined, registry: ModelRegistry = getModelRegistry()): FamilyId | undefined"
+- **[[c10]]** `code` `src/cli/panes/model-tiers.ts:189` — "if (family.cliKind === undefined) return { kind: 'refused', reason: `only listed ${family.displayName} models are selectable` };"
+- **[[c11]]** `code` `src/config/analyze.ts:371` — "function isRunner(x: unknown): x is AnalyzeShaperProviderKind {"
+- **[[c12]]** `code` `src/daemon/model-catalog.ts:140` — "function isCliFamily(id: FamilyId): id is CliFamilyId {"
+- **[[c13]]** `code` `src/daemon/model-check.ts:319` — "const kind = typeof family === 'string' && registry.families().some(f => f.id === family) ? registry.cliKind(family as CliFamilyId) : undefined;"
+- **[[c14]]** `code` `src/daemon/model-registry.ts:277` — "setting.runner !== 'ollama' && rejected(setting.runner).includes(setting.model) ? 'rejected-model' : 'unlisted-model';"
+- **[[c15]]** `code` `src/workflow/attribution.ts:49` — "if (f.cliKind !== undefined && label.startsWith(f.cliKind)) return stamp(f.id, label);"
+- **[[c16]]** `code` `src/daemon/__tests__/model-catalog.test.ts:35` — "/** A valid minimal fixture with all three families. */"

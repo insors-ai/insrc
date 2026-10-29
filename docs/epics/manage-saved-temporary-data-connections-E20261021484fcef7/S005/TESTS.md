@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -366,3 +366,21 @@ Run at 2026-10-29T19:43:06.192Z on commit `5e347aa1c`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-entry.test.ts` | 0 | 1 | 27.5 s |  |
+
+## t22
+
+Run at 2026-10-29T19:49:45.573Z on commit `86515b7ec`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-WINDOW: two real workbench/project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-WINDOW: two real workbench owners isolate same IDs, overlapping lane IDs, roots and disposal | `vscode-plugin/src/connections/__tests__/isolation.test.ts` |
+| pass | CM-S5-WINDOW: two real project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal | `src/shared/__tests__/connection-manager-isolation.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-isolation.test.ts` | 0 | 1 | 28.9 s |  |
+| `vscode-plugin/src/connections/__tests__/isolation.test.ts` | 0 | 1 | 1.9 s |  |

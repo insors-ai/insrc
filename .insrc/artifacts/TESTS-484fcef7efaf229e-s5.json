@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T19:43:06.192Z",
+    "updatedAt": "2026-10-29T19:49:45.573Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -988,6 +988,60 @@
             "titles": [
               {
                 "title": "CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t22",
+        "commit": "86515b7ec",
+        "ranAt": "2026-10-29T19:49:45.573Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-WINDOW: two real workbench/project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+                "title": "CM-S5-WINDOW: two real workbench owners isolate same IDs, overlapping lane IDs, roots and disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-isolation.test.ts",
+                "title": "CM-S5-WINDOW: two real project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 28935,
+            "titles": [
+              {
+                "title": "CM-S5-WINDOW: two real project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1886,
+            "titles": [
+              {
+                "title": "CM-S5-WINDOW: two real workbench owners isolate same IDs, overlapping lane IDs, roots and disposal",
                 "result": "pass"
               }
             ],

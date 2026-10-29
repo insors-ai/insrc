@@ -32,6 +32,7 @@ class ConnectionsManagerModelTest {
     @Test fun `same sixteen sc7 transcripts match state projections and effects`() {
         val scenarios=ConnectionCorpus.load().getAsJsonArray("managerScenarios")
         assertEquals(16,scenarios.size())
+        val actual=JsonArray()
         for(raw in scenarios) {
             val scenario=raw.asJsonObject;val id=scenario["id"].asString
             var state=ConnectionsManagerModel.create(listOf("/fixture/repo-a","/fixture/repo-b"),"fixture-epoch")
@@ -49,8 +50,10 @@ class ConnectionsManagerModelTest {
                 }
                 for((key,value) in step.getAsJsonObject("expected").entrySet()) assertEquals(value,projected[key],"$id: $key")
                 if(step.has("effects"))assertEquals(step["effects"],gson.toJsonTree(result.effects),id)
+                actual.add(JsonObject().apply { addProperty("scenario",id);add("projection",projected);add("effects",gson.toJsonTree(result.effects)) })
             }
         }
+        System.getenv("INSRC_PARITY_DIR")?.let { java.nio.file.Files.writeString(java.nio.file.Path.of(it,"model.json"),actual.toString()) }
     }
     @Test fun `root snapshots rows and public projections are defensive and pure`() {
         val roots=mutableListOf("/fixture/repo-a")

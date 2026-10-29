@@ -27,13 +27,16 @@ class ConnectionProtocolTest {
     }
 
     @Test fun `common valid and invalid wire cases use strict typed decoders`() {
+        val actual=JsonArray()
         for (item in corpus.getAsJsonArray("wire")) {
             val c = item.asJsonObject
             if (c["valid"].asBoolean) assertNotNull(decode(c["kind"].asString, c["input"]))
             else refuses { decode(c["kind"].asString, c["input"]) }
+            actual.add(JsonObject().apply { addProperty("id",c["id"].asString);addProperty("accepted",runCatching{decode(c["kind"].asString,c["input"])}.isSuccess) })
         }
         assertEquals(2, ConnectionProtocol.capabilities(example("capabilities")).version)
         assertEquals(2, ConnectionProtocol.list(example("list"), key.repoRoot).size)
+        System.getenv("INSRC_PARITY_DIR")?.let { java.nio.file.Files.writeString(java.nio.file.Path.of(it,"wire.json"),actual.toString()) }
     }
 
     @Test fun `all actual daemon descriptors supported and unknown schema stays disabled`() {

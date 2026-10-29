@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail
+ok 1 - CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail
+  ---
+  duration_ms: 59024.990417
+  type: 'test'
+  ...
+# Subtest: CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations
+not ok 2 - CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations
+  ---
+  duration_ms: 57.024625
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-parity.test.ts:1:3170'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + [
+    +   'vscode-plugin/src/daemon/subprocess.ts',
+    +   'vscode-plugin/src/daemon/paths.ts',
+    +   'vscode-plugin/src/daemon/controller.ts',
+    +   'vscode-plugin/src/daemon/commands.ts'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'vscode-plugin/src/daemon/subprocess.ts'
+    1: 'vscode-plugin/src/daemon/paths.ts'
+    2: 'vscode-plugin/src/daemon/controller.ts'
+    3: 'vscode-plugin/src/daemon/commands.ts'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-parity.test.ts:48:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 59307.673333

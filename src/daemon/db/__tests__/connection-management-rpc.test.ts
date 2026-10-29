@@ -228,3 +228,28 @@ test('CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preser
 		await env.cleanup();
 	}
 });
+
+test('CM-S4-INPUT/RPC: saved removal requires sc6 and accepts only exact authenticated ticket requests', async () => {
+ const env=await environment(),f=await env.rootFixture('remove-root');
+ const removeCall=(method:typeof CONNECTION_V2_METHODS[number],value:unknown)=>connectionManagementRpc(method,value,transport,{removalEnabled:async()=>true});
+ try{
+  const {key,result}=await create(f);assert.equal(result.status,'committed');if(result.status!=='committed')throw new Error('fixture');
+  assert.equal((await call('db.connections.v2.ticket',{key,mode:'remove'}) as any).code,'upgrade-required');
+  const caps=await removeCall('db.connections.v2.capabilities',{repoRoot:f.root}) as ManagementCapabilities;
+  assert.ok(caps.features.includes('saved-remove'));assert.ok(caps.features.includes('removal-state'));
+  const ticket=await removeCall('db.connections.v2.ticket',{key,mode:'remove'}) as OperationTicket;
+  assert.equal(ticket.mode,'remove');
+  for(const method of ['db.connections.v2.removalState','db.connections.v2.retryRemovalCleanup'] as const){
+   for(const value of [{ticket,revision:result.value.revision},{ticket,key},null])assert.equal((await removeCall(method,value) as any).code,'invalid-input');
+   assert.equal((await removeCall(method,{ticket:{...ticket,mode:'update'}}) as any).code,'operation-mismatch');
+   assert.equal((await call(method,{ticket}) as any).code,'upgrade-required');
+   assert.equal((await connectionManagementRpc(method,{ticket:{...ticket,signature:'A'.repeat(ticket.signature.length)}},transport,{removalEnabled:async()=>true}) as any).code,'invalid-input');
+  }
+  const request={key,ticket,operationId:ticket.operationId,mode:'remove',expectedRevision:result.value.revision};
+  assert.equal((await removeCall('db.connections.v2.mutate',request) as any).value.registration,'removed');
+  assert.equal((await removeCall('db.connections.v2.removalState',{ticket}) as any).state,'removed');
+  assert.equal((await removeCall('db.connections.v2.retryRemovalCleanup',{ticket}) as any).state,'removed');
+  assert.equal((await removeCall('db.connections.v2.mutate',request) as any).value.registration,'removed');
+  assert.deepEqual(await call('db.connections.v2.list',{repoRoot:f.root}),[]);
+ }finally{_resetCacheForTests();await env.cleanup();}
+});

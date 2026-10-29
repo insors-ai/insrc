@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -212,3 +212,22 @@ Run at 2026-10-29T11:14:28.803Z on commit `ebfd418c3`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-entries.test.ts` | 0 | 9 | 2.3 s |  |
+
+## t12
+
+Run at 2026-10-29T11:24:27.864Z on commit `cb3e917ee`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-TEMP-REPLAY/NO-PERSIST/STATE: extend src/daemon/db/__tests__/session-owner.test.ts and src/daemon/db/__tests__/session-cleanup.test.ts for retry, expiry/end/resume/restart and zero persistent-port access.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-NO-PERSIST: temporary state and retry use only exact owner receipts without registry keychain or file ports | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S4-STATE: resume preserves temporary receipt truth but expiry end and a new epoch revoke it | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 5 | 37.1 s |  |
+| `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 13 | 4 s |  |

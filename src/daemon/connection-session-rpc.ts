@@ -3,7 +3,7 @@ import { sessionConnectionExecution } from '../shared/step-context.js';
 import { CONNECTION_SESSION_METHODS } from '../shared/connection-management.js';
 import type { ConnectionSessionMethod } from '../shared/connection-management.js';
 import { ManagementInputError, parseSessionOpen, parseSessionResume, parseSessionAttach, parseSessionDelegate, parseSessionEmpty, parseDraftTestRequest, parseTestCancellation } from '../shared/connection-management-wire.js';
-import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement } from './db/session-management.js';
+import { TEMPORARY_MANAGEMENT_METHODS, parseTemporaryManagement, temporaryRemovalState, retryTemporaryRemovalCleanup } from './db/session-management.js';
 import { bindSessionConnectionResolver, savedConnectionResolver } from './db/pool-cache.js';
 import type { ConnectionAccessContext, MutationOutcome, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
 import { installConnectionReservations } from './db/connection-reservations.js';
@@ -26,12 +26,14 @@ interface Claim { readonly kind: 'control' | 'data'; readonly root: string; read
 export interface SessionRpcRuntime {
 	call(method: ConnectionSessionMethod, value: unknown, context: TrustedRpcContext): Promise<unknown>;
 	ready(): Promise<boolean>;
+ removalReady?(): Promise<boolean>;
  probeContext?(context: TrustedRpcContext, request: DraftTestRequest): Promise<TrustedRpcContext>;
  prepareTemporary?(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal): Promise<EffectiveDraft>;
 	manage?(method: string, value: unknown, context: TrustedRpcContext): Promise<unknown>;
 }
 export interface ConnectionSessionRpcPorts<Overlay> extends Omit<SessionOwnerPorts<Overlay>, 'daemonEpoch'> {
 	readonly enabled: () => Promise<boolean>;
+ readonly removalEnabled?: (() => Promise<boolean>) | undefined;
 }
 const SESSION_METHODS: ReadonlySet<string> = new Set(CONNECTION_SESSION_METHODS);
 const SAFE_METADATA: ReadonlySet<string> = new Set(['db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.listDriverKinds']);
@@ -56,6 +58,7 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 		});
 	}
 	async ready(): Promise<boolean> { return !this.#closed && await this.#ports.enabled() && !this.#closed; }
+ async removalReady(): Promise<boolean> { return await this.ready() && await (this.#ports.removalEnabled ?? (async () => (await connectionManagementEnablement(undefined, ['sc5','sc6'])).ready))() && !this.#closed; }
 	#context(context: TrustedRpcContext): void {
 		if (this.#closed || !context?.connectionIdentity || !context.daemonEpoch || context.signal?.aborted || context.connectionSignal?.aborted) throw fail('session-expired');
 		if (this.#epoch !== undefined && context.daemonEpoch !== this.#epoch) throw fail('session-expired');
@@ -155,7 +158,9 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 			if (binding.audience !== 'workbench-ui' || !this.#owner) throw fail('upgrade-required');
 			const { overlay, ledger, binding: current } = await this.#owner.management(context, command.root);
 			if (!(overlay instanceof TemporaryConnectionOverlay)) throw fail('upgrade-required');
-			const assertRequest = () => { binding.assertActive(); current.assertActive(); };
+			const assertRequest = () => { this.#context(context); context.assertRequestActive?.(); binding.assertActive(); current.assertActive(); };
+   const removal = command.method === 'db.connections.v2.removalState' || command.method === 'db.connections.v2.retryRemovalCleanup' || (command.method === 'db.connections.v2.ticket' && command.mode === 'remove') || (command.method === 'db.connections.v2.mutate' && command.request.mode === 'remove') || (command.method === 'db.connections.v2.status' && command.ticket.mode === 'remove');
+   if(removal && !await this.removalReady())throw fail('upgrade-required');
 			assertRequest();
 			const signal = AbortSignal.any([binding.signal, ...(context.signal ? [context.signal] : []), ...(context.connectionSignal ? [context.connectionSignal] : [])]);
 			if (command.method === 'db.connections.v2.list') {
@@ -175,19 +180,26 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
 				}
 				return { status: 'committed', value: ledger.outcome(revision) };
 			};
-			if (command.method === 'db.connections.v2.ticket') return ledger.issue(command.key, command.mode);
+			if(command.method==='db.connections.v2.removalState')return temporaryRemovalState({binding:current,overlay,ledger,assertRequest},command.ticket);
+   if(command.method==='db.connections.v2.retryRemovalCleanup')return await retryTemporaryRemovalCleanup({binding:current,overlay,ledger,assertRequest},command.ticket);
+   if (command.method === 'db.connections.v2.ticket') return ledger.issue(command.key, command.mode);
 			if (command.method === 'db.connections.v2.status') return ledger.status(command.ticket);
 			if (command.method === 'db.connections.v2.read') return overlay.read(command.key.id);
 			if (command.method === 'db.connections.v2.activate') return await activate(command.key.id, command.revision);
 			return await ledger.mutate(command.request, async (request, commit) => {
 				const result = await withSavedRootGate(command.root, async () => {
 					assertRequest();
+					if(request.mode==='remove'){
+      const prepared=await overlay.prepareRemoval({id:request.key.id,expectedRevision:request.expectedRevision!},signal);
+      try{assertRequest();return commit(()=>overlay.commitRemoval(prepared));}
+      catch(error){overlay.cancelRemoval(prepared);throw error;}
+     }
 					if ((await savedConnectionIds(connectionsPath(command.root))).has(request.key.id)) throw new ManagementServiceError('duplicate-id');
 					assertRequest();
 					const prepared = await overlay.prepare({ key: request.key, mode: request.mode as 'create' | 'update', publicPatch: request.publicPatch ?? {}, credentials: request.credentials ?? {}, ...(request.expectedRevision !== undefined ? { expectedRevision: request.expectedRevision } : {}) }, context.signal);
 					assertRequest(); return commit(() => overlay.commit(prepared));
 				});
-				if (result.status !== 'committed') return result;
+				if (result.status !== 'committed' || request.mode==='remove') return result;
 				if (overlay.cleanupPending) {
 					ledger.cleanup(result.value.operationId, result.value.revision, 'pending');
 					const cleanup = overlay.retiredCleanup(); context.registerDrain?.(cleanup);

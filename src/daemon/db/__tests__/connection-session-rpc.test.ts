@@ -1,3 +1,6 @@
+import { createTemporaryOverlay } from '../session-entries.js';
+import type { TemporaryConnectionOverlay } from '../session-entries.js';
+import '../drivers/index.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mkdtempSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
@@ -126,4 +129,38 @@ test('CM-S3-AUTH: disconnect during eligibility cannot publish a session or over
  const pending = runtime.call('db.connections.v2.session.open', { repoRoot: root }, { connectionIdentity: 'late', daemonEpoch: 'epoch', connectionSignal: controller.signal });
  try { await entered; controller.abort(); release(true); assert.equal((await pending as { code: string }).code, 'session-expired'); assert.equal(allocations, 0); }
  finally { await runtime.close(); rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade',async()=>{
+ const directory=realpathSync(mkdtempSync(join(tmpdir(),'cm-remove-rpc-'))),root=join(directory,'root');mkdirSync(root);
+ let enabled=false,overlay!:TemporaryConnectionOverlay;
+ const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>enabled,isRegistered:async value=>value===root,createOverlay:(...args)=>{overlay=createTemporaryOverlay(...args);return overlay;},dropOverlay:value=>value.close()});
+ const server=new IpcServer(runtime.forward(directDispatch(connectionManagementHandlers({sessionRuntime:runtime}))),Date.now,join(directory,'d.sock'));
+ server.onConnectionClose(context=>runtime.disconnect(context));await server.listen();
+ const control=await client(join(directory,'d.sock')),mcp=await client(join(directory,'d.sock')),foreign=await client(join(directory,'d.sock'));
+ try{
+  await control.call('db.connections.v2.session.open',{repoRoot:root});
+  const key={repoRoot:root,scope:'temporary' as const,id:'row'};
+  const row=overlay.commit(await overlay.prepare({key,mode:'create',publicPatch:{kind:'postgres',endpoint:'postgres://host/db'}}));
+  assert.equal((await control.call('db.connections.v2.ticket',{key,mode:'remove'})).code,'upgrade-required');
+  enabled=true;
+  const ticket=await control.call('db.connections.v2.ticket',{key,mode:'remove'});assert.equal(ticket.mode,'remove');
+  const delegation=await control.call('db.connections.v2.session.delegate',{repoRoot:root,audience:'mcp-unverified'});
+  await mcp.call('db.connections.v2.session.attach',{...delegation,repoRoot:root});
+  const request={key,ticket,operationId:ticket.operationId,mode:'remove',expectedRevision:row.revision};
+  for(const method of ['db.connections.v2.removalState','db.connections.v2.retryRemovalCleanup'] as const){
+   assert.equal((await mcp.call(method,{ticket})).code,'upgrade-required');
+   assert.equal((await foreign.call(method,{ticket})).code,'upgrade-required');
+   assert.equal((await control.call(method,{ticket,revision:row.revision})).code,'invalid-input');
+   assert.equal((await control.call(method,{ticket:{...ticket,scope:'saved'}})).code,'upgrade-required');
+  }
+  assert.equal((await control.call('db.connections.v2.ticket',{key:{...key,scope:'saved'},mode:'remove'})).code,'upgrade-required');
+  assert.equal((await mcp.call('db.connections.v2.mutate',request)).code,'upgrade-required');
+  assert.equal(overlay.read('row').revision,row.revision);
+  assert.equal((await control.call('db.connections.v2.mutate',request)).value.registration,'removed');
+  assert.equal((await control.call('db.connections.v2.removalState',{ticket})).state,'removed');
+  assert.equal((await control.call('db.connections.v2.retryRemovalCleanup',{ticket})).state,'removed');
+  assert.equal((await control.call('db.connections.v2.mutate',request)).value.registration,'removed');
+  await control.call('db.connections.v2.session.end');assert.equal((await control.call('db.connections.v2.removalState',{ticket})).code,'session-expired');
+ }finally{await Promise.all([control.close(),mcp.close(),foreign.close()]);await server.close();await runtime.close();rmSync(directory,{recursive:true,force:true});}
 });

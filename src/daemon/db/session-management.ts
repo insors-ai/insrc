@@ -39,12 +39,14 @@ export async function retryTemporaryRemovalCleanup(owner: TemporaryRemovalOwner,
  try{await owner.overlay.retryRemovalCleanup(status.value.revision);}catch{assertRemovalOwner(owner);}
  assertRemovalOwner(owner);return temporaryRemovalState(owner,ticket);
 }
-export const TEMPORARY_MANAGEMENT_METHODS: ReadonlySet<string> = new Set(['db.connections.v2.list', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.read', 'db.connections.v2.activate']);
+export const TEMPORARY_MANAGEMENT_METHODS: ReadonlySet<string> = new Set(['db.connections.v2.list', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.read', 'db.connections.v2.activate', 'db.connections.v2.removalState', 'db.connections.v2.retryRemovalCleanup']);
 export type TemporaryManagementCommand =
 	| { readonly method: 'db.connections.v2.list'; readonly root: string }
  | { readonly method: 'db.connections.v2.activate'; readonly root: string; readonly key: ConnectionKey; readonly revision: string }
- | { readonly method: 'db.connections.v2.ticket'; readonly root: string; readonly key: ConnectionKey; readonly mode: 'create' | 'update' }
+ | { readonly method: 'db.connections.v2.ticket'; readonly root: string; readonly key: ConnectionKey; readonly mode: 'create' | 'update' | 'remove' }
  | { readonly method: 'db.connections.v2.read'; readonly root: string; readonly key: ConnectionKey }
+ | { readonly method: 'db.connections.v2.removalState'; readonly root: string; readonly ticket: OperationTicket }
+ | { readonly method: 'db.connections.v2.retryRemovalCleanup'; readonly root: string; readonly ticket: OperationTicket }
  | { readonly method: 'db.connections.v2.status'; readonly root: string; readonly ticket: OperationTicket }
  | { readonly method: 'db.connections.v2.mutate'; readonly root: string; readonly request: MutationRequest };
 export function parseTemporaryManagement(method: string, value: unknown): TemporaryManagementCommand {
@@ -55,8 +57,13 @@ export function parseTemporaryManagement(method: string, value: unknown): Tempor
 	if (method === 'db.connections.v2.list') return { method, root: parseSessionOpen(params).repoRoot };
  if (method === 'db.connections.v2.mutate') {
   const request = parseMutationRequest(params);
-  if (request.key.scope !== 'temporary' || request.mode === 'remove') throw new ManagementServiceError('upgrade-required');
+  if (request.key.scope !== 'temporary') throw new ManagementServiceError('upgrade-required');
   return { method, root: request.key.repoRoot, request };
+ }
+ if (method === 'db.connections.v2.removalState' || method === 'db.connections.v2.retryRemovalCleanup') {
+  const {ticket}=parseRemovalStateRequest(params);
+  if(ticket.scope!=='temporary')throw new ManagementServiceError('upgrade-required');
+  return {method,root:ticket.lookupRoot,ticket};
  }
  if (method === 'db.connections.v2.status') {
   exact(['ticket']); const ticket = parseOperationTicket(p['ticket']);
@@ -73,7 +80,7 @@ export function parseTemporaryManagement(method: string, value: unknown): Tempor
   exact(method.endsWith('ticket') ? ['key', 'mode'] : ['key']); const key = parseConnectionKey(p['key']);
   if (key.scope !== 'temporary') throw new ManagementServiceError('upgrade-required');
   if (method === 'db.connections.v2.read') return { method, root: key.repoRoot, key };
-  if (p['mode'] !== 'create' && p['mode'] !== 'update') throw new ManagementInputError();
+  if (p['mode'] !== 'create' && p['mode'] !== 'update' && p['mode'] !== 'remove') throw new ManagementInputError();
   return { method, root: key.repoRoot, key, mode: p['mode'] };
  }
  throw new ManagementServiceError('upgrade-required');

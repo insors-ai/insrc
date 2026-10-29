@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:14:28.803Z",
+    "updatedAt": "2026-10-29T11:24:27.864Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -938,6 +938,129 @@
               },
               {
                 "title": "CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "cb3e917ee",
+        "ranAt": "2026-10-29T11:24:27.864Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-TEMP-REPLAY/NO-PERSIST/STATE: extend src/daemon/db/__tests__/session-owner.test.ts and src/daemon/db/__tests__/session-cleanup.test.ts for retry, expiry/end/resume/restart and zero persistent-port access.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S4-NO-PERSIST: temporary state and retry use only exact owner receipts without registry keychain or file ports",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S4-STATE: resume preserves temporary receipt truth but expiry end and a new epoch revoke it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 37066,
+            "titles": [
+              {
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4036,
+            "titles": [
+              {
+                "title": "CM-S4-NO-PERSIST: temporary state and retry use only exact owner receipts without registry keychain or file ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-STATE: resume preserves temporary receipt truth but expiry end and a new epoch revoke it",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
                 "result": "pass"
               }
             ],

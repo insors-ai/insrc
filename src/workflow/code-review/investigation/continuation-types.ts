@@ -94,6 +94,6 @@ export interface InvestigationContext {
 }
 export interface BlockProgressTransitionV1 {
  readonly version: 1; readonly kind: 'block-progress'; readonly progress: ReviewBlockProgressV1;
- readonly payloadDigest: string; readonly candidateLedgerRef: string; readonly trustedReceiptRefs: readonly string[];
+ readonly payloadDigest: string; readonly candidateLedgerRef: string; readonly basisRef: string; readonly trustedReceiptRefs: readonly string[];
  readonly predecessorCheckpoint: string;
 }

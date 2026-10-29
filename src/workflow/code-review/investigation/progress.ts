@@ -4,14 +4,15 @@ import { evidenceFromReceipt } from './ledger-evidence.js';
 import { ledgerDigest, ledgerSnapshot, requireText } from './ledger-identity.js';
 import { InvestigationError } from './continuation-types.js';
 import type { InvestigationContext, InvestigationTurnV1, InvestigationState, ReviewBlockProgressV1, BlockCheckpointReceiptV1, BlockProgressTransitionV1 } from './continuation-types.js';
-import type { LedgerValidationContext } from './ledger-types.js';
+import type { LedgerValidationContext, LedgerBasis } from './ledger-types.js';
 
 /** One owner view only. Durable append, idempotent storage and generation fencing are sc4/sc6 responsibilities. */
 export class BlockProgressCoordinator {
  private current:InvestigationState;
  private busy=false;
  constructor(private readonly turn:InvestigationTurnV1,private readonly context:InvestigationContext,
-  private readonly validation:()=>LedgerValidationContext=()=>context.validation){
+  private readonly validation:()=>LedgerValidationContext=()=>context.validation,
+  private readonly basis:()=>LedgerBasis=()=>context.basis){
   this.current=ledgerSnapshot(context.state);
   validateReviewLedger(this.current.ledger,context.basis,validation());
   const ids=new Set<string>();
@@ -36,27 +37,30 @@ export class BlockProgressCoordinator {
   if(p.runId!==this.turn.runId||p.subjectDigest!==this.turn.subjectDigest||p.generation!==this.turn.generation||p.attemptId!==this.turn.attemptId)throw new InvestigationError('invalid-progress','Foreign progress identity.');
   requireText(p.progressId,'progress id');requireText(p.notes,'progress notes');
   if(p.notes.length>16000||!['reviewed','needs-followup','unverified'].includes(p.disposition))throw new InvestigationError('invalid-progress','Invalid progress assessment.');
-  const block=this.context.basis.subject.packets.flatMap(packet=>packet.blocks).find(b=>b.blockId===p.blockId);
+  const block=this.basis().subject.packets.flatMap(packet=>packet.blocks).find(b=>b.blockId===p.blockId);
   if(!block)throw new InvestigationError('invalid-progress','Progress block is outside selected packets.');
   const prior=this.current.accepted.find(r=>r.progress.progressId===p.progressId);
   if(prior){if(prior.payloadDigest!==digest)throw new InvestigationError('acceptance-conflict','Progress identity has conflicting content.');return prior.receipt;}
   if(p.expectedSequence!==this.current.sequence)throw new InvestigationError('acceptance-conflict','Progress expected sequence mismatch.');
-  const refs=new Set(this.context.basis.requirements.map(r=>r.requirementRef));for(const b of this.context.basis.subject.packets.flatMap(packet=>packet.blocks))refs.add(b.blockId);
+  const refs=new Set(this.basis().requirements.map(r=>r.requirementRef));for(const b of this.basis().subject.packets.flatMap(packet=>packet.blocks))refs.add(b.blockId);
   if(!Array.isArray(p.outstandingWork)||p.outstandingWork.some(r=>!refs.has(r))||!Array.isArray(p.evidenceIds)||new Set(p.evidenceIds).size!==p.evidenceIds.length)throw new InvestigationError('invalid-progress','Invalid outstanding/evidence references.');
   const validation=this.validation();
-  const inspectionById=new Map(validation.receipts.map(r=>[evidenceFromReceipt(this.context.basis,r).evidenceId,r]));
+  const inspectionById=new Map(validation.receipts.map(r=>[evidenceFromReceipt(this.basis(),r).evidenceId,r]));
   const known=new Set(this.current.ledger.evidence.map(e=>e.evidenceId));
   if(p.evidenceIds.some(id=>!known.has(id)&&!inspectionById.has(id)))throw new InvestigationError('invalid-progress','Uninspected evidence cannot be accepted.');
   const receiptIds=p.evidenceIds.flatMap(id=>{const r=inspectionById.get(id);return r?[r.receiptId]:[];});
   let candidate;
-  try{candidate=applyReviewLedgerDelta(this.current.ledger,{receiptIds,findings:p.findings,assessments:p.coverageUpdates},this.context.basis,validation);}
+  try{candidate=applyReviewLedgerDelta(this.current.ledger,{receiptIds,findings:p.findings,assessments:p.coverageUpdates},this.basis(),validation);}
   catch(cause){throw new InvestigationError('invalid-progress','Ledger progress failed validation.',{cause});}
   this.busy=true;let appendStarted=false;
   try{
    const stagedLedger=await this.context.ports.stageImmutableValue(this.turn.runId,{...candidate});
    this.context.assertOwner(this.turn.generation);
-   const transition:BlockProgressTransitionV1={version:1,kind:'block-progress',progress:p,payloadDigest:digest,candidateLedgerRef:stagedLedger.reference,
-    trustedReceiptRefs:receiptIds,predecessorCheckpoint:this.current.checkpoint};
+   const stagedBasis=await this.context.ports.stageImmutableValue(this.turn.runId,{...this.basis()});
+   const trustedReceiptRefs:string[]=[];
+   for(const id of receiptIds){const native=validation.receipts.find(r=>r.receiptId===id)!;const stored=await this.context.ports.stageImmutableValue(this.turn.runId,{...native});trustedReceiptRefs.push(stored.reference);}
+   const transition:BlockProgressTransitionV1={version:1,kind:'block-progress',progress:p,payloadDigest:digest,candidateLedgerRef:stagedLedger.reference,basisRef:stagedBasis.reference,
+    trustedReceiptRefs,predecessorCheckpoint:this.current.checkpoint};
    const staged=await this.context.ports.stageImmutableValue(this.turn.runId,{...transition});
    this.context.assertOwner(this.turn.generation);appendStarted=true;
    const appended=await this.context.ports.appendTransition(this.turn.runId,this.turn.generation,p.expectedSequence,staged.reference);

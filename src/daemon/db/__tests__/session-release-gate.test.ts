@@ -12,11 +12,21 @@ const root = new URL('../../../../', import.meta.url);
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const scopes = ['sc1', 'sc2', 'sc3', 'sc4', 'sc5', 'sc6', 'sc7', 'sc8'];
 type Build = { version: number; producerDigest: string; sourceFiles: Record<string, string>; compiledFiles: Record<string, string> };
+/** Private verifier input, never shipped inventory or product acceptance evidence. */
+function verificationInventory(sourceFiles: Record<string, string>): Buffer {
+	return Buffer.from(JSON.stringify({
+		productionFiles: sourceFiles,
+		files: Object.fromEntries(Object.entries(sourceFiles).map(([path, sourceDigest]) => ['src/' + path, {
+			sourceDigest, classification: 'verification-fixture',
+			rationale: 'Private copied verifier fixture; no product evidence claim.',
+		}])),
+	}));
+}
 test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled', { timeout: 120000 }, async () => {
 	const directory = await mkdtemp(join(tmpdir(), 'cm-session-gate-'));
 	try {
 		const build = JSON.parse(await readFile(new URL('out/assets/connection-management-build.json', root), 'utf8')) as Build;
-		const inventoryBytes = await readFile(new URL('src/assets/connection-management-inventory.json', root));
+		const inventoryBytes = verificationInventory(build.sourceFiles);
 		// Synthetic completion statuses are private positive verifier controls, never shipped/client acceptance.
 		const report = JSON.parse(await readFile(new URL('src/assets/connection-management-evidence.json', root), 'utf8'));
 		report.releaseReady = true;
@@ -30,6 +40,14 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 		for (const verify of [connectionManagementEnablement, compiled.connectionManagementEnablement]) {
 			const check = async (proof: unknown) => { await writeFile(path, JSON.stringify(proof)); return (await verify(pathToFileURL(path), ['sc5'])).ready; };
 			assert.equal(await check(valid), true, 'a complete current build must be a positive verification control');
+			// A new build must not turn an older, self-consistent inventory into current evidence.
+			const stale = JSON.parse(inventoryBytes.toString());
+			stale.productionFiles['shared/connection-persistence.ts'] = '0'.repeat(64);
+			stale.files['src/shared/connection-persistence.ts'].sourceDigest = '0'.repeat(64);
+			const staleBytes = JSON.stringify(stale);
+			await writeFile(join(directory, 'inventory.json'), staleBytes);
+			assert.equal(await check({ ...valid, inventoryDigest: digest(staleBytes) }), false);
+			await writeFile(join(directory, 'inventory.json'), inventoryBytes);
 			for (const proof of [
 				{ ...valid, inventoryDigest: 'a'.repeat(64) }, { ...valid, testReportDigest: 'b'.repeat(64) }, { ...valid, inventoryFile: 'missing.json' }, { ...valid, testReportFile: 'missing.json' },
 				{ ...valid, ready: false }, { ...valid, sourceFiles: {} }, { ...valid, compiledFiles: {} },
@@ -78,7 +96,7 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 		const copied = await import(pathToFileURL(join(copy, 'out/daemon/db/management-enablement.js')).href) as typeof import('../management-enablement.js');
 		const proof = { ...valid, sourceFiles, compiledFiles }, proofPath = pathToFileURL(join(copy, 'proof.json'));
 		const ready = async () => {
-			const inventory = JSON.stringify({ productionFiles: sourceFiles, files: Object.fromEntries(Object.entries(sourceFiles).map(([path, sourceDigest]) => ['src/' + path, { sourceDigest, classification: 'verification-fixture', rationale: 'Private copied verifier fixture; no product evidence claim.' }])) });
+			const inventory = verificationInventory(sourceFiles);
 			await writeFile(join(copy, 'inventory.json'), inventory); await writeFile(join(copy, 'report.json'), reportBytes); proof.inventoryDigest = digest(inventory); proof.testReportDigest = digest(reportBytes);
 			await writeFile(proofPath, JSON.stringify(proof)); return (await copied.connectionManagementEnablement(proofPath, ['sc5'])).ready;
 		};

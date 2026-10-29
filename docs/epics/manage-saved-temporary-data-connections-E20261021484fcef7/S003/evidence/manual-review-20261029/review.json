@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-10-29T06:39:41.549610+00:00",
+  "target": {
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s3"
+  },
+  "mode": "user-authorized-manual",
+  "authorization": "User requested manual review while code review is being rebuilt with resume support.",
+  "head": "c13900818aae2512e6899f1c12b2891d3b4213d2",
+  "attribution": "story-trailer",
+  "scopeFiles": 321,
+  "scopeManifest": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/scope.json",
+  "verdict": "changes-requested",
+  "findings": [
+    {
+      "id": "MANUAL-S3-01",
+      "priority": "P2",
+      "severity": "MED",
+      "category": "coverage/test-validity",
+      "title": "Build the positive release-verifier fixture from matching inventory and build bytes",
+      "location": {
+        "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+        "startLine": 18,
+        "endLine": 32
+      },
+      "problem": "The fixture uses current out/assets/connection-management-build.json hashes with the frozen shipped source inventory, then labels it valid. After subsequent production changes, even a fresh build fails the positive assertion at line 32, and the test never reaches the remaining negative verification matrix.",
+      "observed": "Current build lists 878 production files versus 875 in the inventory, with 17 changed hashes and three new files. Fresh Node22 build passes; isolated gate rerun still fails. A private synthetic inventory aligned with the exact current build passes the real source verifier.",
+      "impact": "The regression suite remains red after ordinary subsequent production changes, while rejecting stale shipped evidence is correct runtime behavior.",
+      "recommendation": "Construct a private positive inventory matching the current build, with complete private fixture classifications; use stale inventory as an explicit negative case. Keep shipped inventory/report and production release gates unchanged until real prerequisites are met.",
+      "reproduction": {
+        "build": "PATH=/opt/homebrew/opt/node@22/bin:$PATH npm run build",
+        "test": "/opt/homebrew/opt/node@22/bin/node --import tsx --test src/daemon/db/__tests__/session-release-gate.test.ts"
+      },
+      "evidence": [
+        "gate-after-build.log",
+        "positive-control.json"
+      ]
+    }
+  ],
+  "inspection": {
+    "areas": [
+      "Session owner control/data capabilities, delegation, generation revocation, exact deadline and cleanup",
+      "Temporary entry generations, quotas, callback leases, receipts/replay and saved-root reservation",
+      "Main-daemon routing, trusted stream context, step host, request/maintenance drains",
+      "Owner-bound analysis scope, continuation/cache provenance, run/task persistence and serialization guards",
+      "Provider proof admission, embedding refusal, quiet driver/runtime diagnostics",
+      "Fail-closed release enablement and historical final sweep evidence"
+    ],
+    "method": "Manual risk-focused source/contract review plus targeted executable checks. Scope manifest records all attributable files; it does not assert a line-by-line inspection of every fixture or file.",
+    "otherConfirmedProductionDefects": []
+  },
+  "validation": {
+    "node": "v22.23.2",
+    "build": "pass",
+    "uniqueTopLevelTests": 67,
+    "pass": 66,
+    "fail": 1,
+    "skipped": 0,
+    "ownershipGroup": {
+      "files": 8,
+      "pass": 50,
+      "fail": 0
+    },
+    "privacyGroup": {
+      "files": 11,
+      "pass": 16,
+      "fail": 1
+    },
+    "gateRerunAfterFreshBuild": {
+      "pass": 1,
+      "fail": 1
+    },
+    "originalSandboxAttempt": "Local socket EPERM failures; cancelled only its owned processes and reran with socket access. Original log retained.",
+    "fullSweepRerun": false,
+    "llmCallsMade": false,
+    "liveExternalServicesRerun": false
+  },
+  "retainedLimits": {
+    "priorS003FullSweep": {
+      "tests": 6667,
+      "pass": 6528,
+      "fail": 1,
+      "cancelled": 1,
+      "skipped": 134,
+      "todo": 3,
+      "sourceDrift": []
+    },
+    "externalAcceptancePending": [
+      "S001 foundation review",
+      "SQL Server external coverage",
+      "prior S002 sweep gaps",
+      "current provider-service privacy enrollment",
+      "S004 removal",
+      "S005 both-client lifetime UX"
+    ],
+    "diagrams": "Source relationships considered; browser rendering not verified in this manual review.",
+    "chunkingStoryTask23": "Actual automated S003 runtime smoke still has no completed verdict; this manual review does not relabel it as a successful automated runtime smoke."
+  },
+  "logs": {
+    "sandbox-restricted-tests.log": {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/sandbox-restricted-tests.log",
+      "sha256": "21085fb15cb6b4c3c105208125d10ec6b76b0e663e3d76c524f7ded70db5a9f4"
+    },
+    "ownership-tests.log": {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/ownership-tests.log",
+      "sha256": "43f1e5c202d2523c4bf225e32093068513709aa8e6ec642565af7edfb06cc502"
+    },
+    "privacy-tests.log": {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/privacy-tests.log",
+      "sha256": "9ed96c44cb1a202882e5b264f8bcc8d032e3e1fc8dec4b474e04e3c02e5cce61"
+    },
+    "build.log": {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/build.log",
+      "sha256": "ea0ab260a6dd25f4aea50d0dde235e6da2adac1a416c7f4b1c1cef7a3d2cdae2"
+    },
+    "gate-after-build.log": {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/gate-after-build.log",
+      "sha256": "16217f8c28248cc7974ee7c26a55bf2ba0b2fcdd2d432d5d2f2492399bd99716"
+    },
+    "positive-control.json": {
+      "path": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/positive-control.json",
+      "sha256": "d6d6d59c9e7771b54c1f6dfc49932216ee546ef6d2927e68f8434ed9f74fc849"
+    }
+  },
+  "productionCodeChanged": false,
+  "approvalRecordsChanged": false,
+  "daemonReviewArtifactStamped": false,
+  "releaseGatesChanged": false,
+  "reviewSystemRebuildChanged": false
+}

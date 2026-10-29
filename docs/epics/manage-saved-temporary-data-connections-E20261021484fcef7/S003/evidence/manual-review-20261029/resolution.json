@@ -1,0 +1,33 @@
+{
+  "findingId": "MANUAL-S3-01",
+  "status": "addressed",
+  "userAuthorization": "User approved the manual review finding.",
+  "recordedAt": "2026-10-29T06:55:29.816446+00:00",
+  "task": "484fcef7efaf229e/s3/t33",
+  "change": "Generate both private verifier inventories from their respective current build source maps; explicitly reject a stale self-consistent inventory with a recomputed document digest.",
+  "testSourceSha256": "af3250f7185181962eab6a40578d560d9e8733468c286c5c8658603923941d88",
+  "validation": {
+    "node": "v22.23.2",
+    "build": "pass",
+    "mappedTaskTestFiles": 9,
+    "tests": 42,
+    "pass": 42,
+    "fail": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "shippedEvidenceUnchanged": {
+    "src/assets/connection-management-gates.json": true,
+    "src/assets/connection-management-inventory.json": true,
+    "src/assets/connection-management-evidence.json": true
+  },
+  "fullSweepRepeated": false,
+  "daemonRestarted": false,
+  "approvalRecordsChanged": false,
+  "reviewSystemRebuildChanged": false,
+  "notes": [
+    "A preliminary post-edit run correctly refused a build made stale by concurrent production edits; rebuilt and ran all t33 mapped files successfully.",
+    "Historical manual review findings/logs retained; this file records their resolution.",
+    "Original full-sweep gaps and automated chunking smoke remain pending; no acceptance claim for either."
+  ]
+}

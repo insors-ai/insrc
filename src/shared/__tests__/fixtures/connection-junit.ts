@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export function runConnectionJUnit(className: string, expectedTests: number, parityDirectory?: string): void {
+export function runConnectionJUnit(className: string, expectedTests: number, parityDirectory?: string): string {
  const reports=mkdtempSync(join(tmpdir(),'insrc-junit-'));
  try {
   const javaHome=process.platform==='darwin'?spawnSync('/usr/libexec/java_home',['-v','21'],{encoding:'utf8'}).stdout.trim():process.env['JAVA_HOME'];
@@ -17,5 +17,6 @@ export function runConnectionJUnit(className: string, expectedTests: number, par
   assert.match(result.stdout,/BUILD SUCCESSFUL/);
   const report=readFileSync(join(reports,`TEST-${className}.xml`),'utf8');
   assert.match(report,new RegExp(`tests="${expectedTests}"`));assert.match(report,/failures="0"/);assert.match(report,/errors="0"/);
+  return report;
  } finally { rmSync(reports,{recursive:true,force:true}); }
 }

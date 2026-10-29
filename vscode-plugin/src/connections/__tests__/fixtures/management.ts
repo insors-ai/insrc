@@ -20,13 +20,14 @@ import { ConnectionsWorkbenchOwner } from '../../session-owner.js';
 import { createConnectionsMutationController } from '../../gateway.js';
 
 const PREFIX='db.connections.v2.';
-export async function managementFixture(options:{multipleRoots?:boolean}={}) {
+export async function managementFixture(options:{multipleRoots?:boolean;manualClock?:boolean}={}) {
  const env=await environment(),f=await env.rootFixture('root');_setPoolForTests(f.root,f.pool);
  const other=options.multipleRoots?await env.rootFixture('other'):null;if(other)_setPoolForTests(other.root,other.pool);
  const roots=[f.root,...other?[other.root]:[]];
  const lanes:PersistentIpcLane[]=[],requests:string[]=[],calls:string[]=[],removalRequests:{method:string;params:unknown}[]=[],held=new Set<Promise<unknown>>();
  let fault:'none'|'before'|'after'|'malformed'|'pending'='none',refreshFail=false,statusMalformed=false,ticketMalformed=false;
- const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,isRegistered:async root=>roots.includes(root),
+ const ownerClock={value:0};
+ const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,...options.manualClock?{monotonicNow:()=>ownerClock.value}:{},isRegistered:async root=>roots.includes(root),
   createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{},describe:async()=>({columns:[]})}) as Driver)}),dropOverlay:overlay=>overlay.close()});
  const handlers=connectionManagementHandlers({sessionRuntime:runtime,enabled:async()=>true,removalEnabled:async()=>true,isRegistered:async root=>roots.includes(root)});
  const baseMutate=handlers[PREFIX+'mutate']!,baseList=handlers[PREFIX+'list']!,baseStatus=handlers[PREFIX+'status']!,baseActivate=handlers[PREFIX+'activate']!,baseTicket=handlers[PREFIX+'ticket']!;
@@ -59,7 +60,7 @@ export async function managementFixture(options:{multipleRoots?:boolean}={}) {
  const controller=createConnectionsMutationController(owner,{now:()=>f.clock.value,timer:(callback,delay)=>{const id=++sequence;delays.push(delay);timers.set(id,callback);return{dispose:()=>{timers.delete(id);}};}});
  const descriptor=decodeDriverDescriptors(loadConnectionCorpus().driverDescriptors).find(d=>d.kind==='postgres')!;
  const draft=(id:string,scope:'saved'|'temporary'='saved')=>{const draft=new ConnectionDraft(descriptor,{repoRoot:f.root,scope,id});draft.setField(['endpoint'],'postgres://fixture.invalid/db');draft.setCredential('url.password','replace','fixture-only-private-replacement');return draft;};
- return {f,owner,controller,calls,requests,removalRequests,timers,delays,draft,forkOwner,roots,setFault:(value:typeof fault)=>{fault=value;},setRefreshFail:(value:boolean)=>{refreshFail=value;},setStatusMalformed:(value:boolean)=>{statusMalformed=value;},
+ return {f,owner,controller,calls,requests,removalRequests,timers,delays,draft,forkOwner,roots,advanceOwnerClock:(value:number)=>{ownerClock.value=value;},setFault:(value:typeof fault)=>{fault=value;},setRefreshFail:(value:boolean)=>{refreshFail=value;},setStatusMalformed:(value:boolean)=>{statusMalformed=value;},
   setTicketMalformed:(value:boolean)=>{ticketMalformed=value;},drain:async()=>{for(const work of held)await work;},
   nextTimer:()=>{const [id,callback]=timers.entries().next().value!;timers.delete(id);callback();},
   close:async()=>{for(const work of held)await work;controller.dispose();for(const owner of owners){owner.dispose();await owner.whenDisposed();}for(const lane of lanes)lane.dispose();await server.close();await runtime.close();await closeAll();await env.cleanup();}};

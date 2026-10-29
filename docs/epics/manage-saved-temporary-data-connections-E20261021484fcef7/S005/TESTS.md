@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -384,3 +384,26 @@ Run at 2026-10-29T19:49:45.573Z on commit `86515b7ec`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-isolation.test.ts` | 0 | 1 | 28.9 s |  |
 | `vscode-plugin/src/connections/__tests__/isolation.test.ts` | 0 | 1 | 1.9 s |  |
+
+## t23
+
+Run at 2026-10-29T20:05:05.638Z on commit `dd12ef1c8`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-SYNC: TypeScript and Kotlin execute identical wire/sc7 recovery transcripts and divergent-consumer negative controls**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail | `src/shared/__tests__/connection-manager-parity.test.ts` |
+| pass | CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations | `src/shared/__tests__/connection-manager-parity.test.ts` |
+| pass | CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets | `src/shared/__tests__/connection-manager-parity.test.ts` |
+| pass | CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source | `vscode-plugin/src/connections/__tests__/removal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-parity.test.ts` | 0 | 3 | 90.1 s |  |
+| `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 7 | 3 s |  |
+| `vscode-plugin/src/connections/__tests__/removal.test.ts` | 0 | 3 | 1.2 s |  |

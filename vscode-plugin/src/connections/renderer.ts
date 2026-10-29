@@ -8,11 +8,12 @@ let generation=Number(body.getAttribute('data-generation')),model=null,formId=-1
 const byId=id=>document.getElementById(id),make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);return e;};
 const clear=e=>{while(e.firstChild)e.removeChild(e.firstChild);};
 const send=p=>api.postMessage(Object.assign({v:1,viewId:viewId,generation:generation},p));
-const button=(text,fn)=>{const e=make('button',text);e.type='button';e.addEventListener('click',fn);return e;};
+const button=(text,fn)=>{const e=make('button',text);e.type='button';e.addEventListener('click',()=>{if(e.isConnected)fn();});return e;};
 const human=s=>s.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[-_.]/g,' ').replace(/^./,c=>c.toUpperCase());
 const label=(parent,text,input)=>{const id='cm-'+Math.random().toString(36).slice(2);input.id=id;const l=make('label',text);l.htmlFor=id;parent.appendChild(l);parent.appendChild(input);};
 const valueAt=(o,path)=>path.reduce((v,k)=>v==null?undefined:v[k],o);
 const fieldInputs=new Map(),secretControls=new Map();
+const eraseSecrets=()=>{for(const controls of secretControls.values())for(const input of controls.inputs)input.value='';};
 byId('root').addEventListener('change',e=>send({type:'root',value:e.target.value}));
 byId('search').addEventListener('change',e=>send({type:'search',value:e.target.value}));
 byId('search').addEventListener('keydown',e=>{if(e.key==='Enter')send({type:'search',value:e.target.value});});
@@ -40,7 +41,7 @@ function buildFields(schema,path,parent,required){
   const group=make('fieldset');group.appendChild(make('legend',name));const choose=make('select');
   const branch=branchFor(schema,current);choose.setAttribute('data-focus',JSON.stringify(path)+':format');
   options(choose,schema.anyOf.map((s,i)=>({value:String(i),label:Object.prototype.hasOwnProperty.call(s,'const')?'Fixed value: '+String(s.const):human(s.type||'value')})),String(branch));label(group,name+' format',choose);
-  choose.addEventListener('change',()=>send({type:'field',path:path,value:sample(schema.anyOf[Number(choose.value)])}));
+  choose.addEventListener('change',()=>{if(choose.isConnected)send({type:'field',path:path,value:sample(schema.anyOf[Number(choose.value)])});});
   buildFields(schema.anyOf[branch],path,group,required);parent.appendChild(group);return;
  }
  if(schema.type==='object'){
@@ -56,34 +57,34 @@ function buildFields(schema,path,parent,required){
  const row=make('div');row.className='field';let input;
  if(schema.enum||schema.type==='boolean'){
   input=make('select');const choices=[{value:'',label:model.draft.mode==='update'?'Keep original':'Use default'}].concat((schema.enum||[true,false]).map(v=>({value:String(v),label:String(v)})));
-  options(input,choices,current);input.addEventListener('change',()=>{if(input.value==='')send({type:'reset-field',path:path});else send({type:'field',path:path,value:schema.type==='boolean'?input.value==='true':['integer','number'].includes(schema.type)?Number(input.value):input.value});});
+  options(input,choices,current);input.addEventListener('change',()=>{if(!input.isConnected)return;if(input.value==='')send({type:'reset-field',path:path});else send({type:'field',path:path,value:schema.type==='boolean'?input.value==='true':['integer','number'].includes(schema.type)?Number(input.value):input.value});});
  }else{
   input=make('input');input.type=['number','integer'].includes(schema.type)?'number':'text';input.value=current===undefined?'':String(current);input.autocomplete='off';input.spellcheck=false;
   if(input.type==='number'){input.step=schema.type==='integer'?'1':'any';if(schema.minimum!==undefined)input.min=String(schema.minimum);if(schema.maximum!==undefined)input.max=String(schema.maximum);}
   if(schema.maxLength!==undefined)input.maxLength=schema.maxLength;
-  input.addEventListener('input',()=>{let value=input.value;if(input.type==='number'){if(value===''){send({type:'reset-field',path:path});return;}value=Number(value);if(!Number.isFinite(value))return;}send({type:'field',path:path,value:value});});
+  input.addEventListener('input',()=>{if(!input.isConnected)return;let value=input.value;if(input.type==='number'){if(value===''){send({type:'reset-field',path:path});return;}value=Number(value);if(!Number.isFinite(value))return;}send({type:'field',path:path,value:value});});
  }
  input.setAttribute('data-field',JSON.stringify(path));input.setAttribute('aria-required',required?'true':'false');
  label(row,name+(required?' *':''),input);if(!path.some(p=>/^\d+$/.test(p)))row.appendChild(button(model.draft.mode==='update'?'Keep original':'Use default',()=>send({type:'reset-field',path:path})));
  if(schema.description)row.appendChild(make('small',schema.description));parent.appendChild(row);fieldInputs.set(JSON.stringify(path),{input:input,schema:schema,path:path});
 }
 function buildSecrets(){
- const parent=byId('credentials');clear(parent);secretControls.clear();
+ const parent=byId('credentials');eraseSecrets();clear(parent);secretControls.clear();const createdForm=model.formId;
  for(const credential of model.draft.credentials){
   const group=make('fieldset');group.appendChild(make('legend',human(credential.slot)));group.appendChild(make('p',credential.present?'Stored value present.':'No stored value.'));
   const action=make('select');label(group,'Credential action',action);options(action,['keep','replace','clear'].map(v=>({value:v,label:human(v)})),credential.action);
   const entry=make('div');entry.className='replacement';group.appendChild(entry);const inputs=[];
-  const changed=()=>{if(credential.format==='address-list'){const values=inputs.map(e=>e.value);send(values.some(v=>!v)?{type:'credential',slot:credential.slot,action:'replace',value:''}:{type:'credential-addresses',slot:credential.slot,values:values});}else send({type:'credential',slot:credential.slot,action:'replace',value:inputs[0].value});};
-  const addInput=()=>{const row=make('div'),input=make('input');input.type='password';input.autocomplete='new-password';input.spellcheck=false;input.maxLength=16384;label(row,credential.format==='address-list'?'Replacement address':'Replacement value',input);entry.appendChild(row);inputs.push(input);input.addEventListener('input',changed);if(credential.format==='address-list')row.appendChild(button('Remove replacement address',()=>{const index=inputs.indexOf(input);if(index<0)return;inputs.splice(index,1);entry.removeChild(row);if(!inputs.length){addInput();send({type:'credential',slot:credential.slot,action:'replace',value:''});}else changed();}));};
+  const changed=()=>{if(!group.isConnected||model.formId!==createdForm)return;if(credential.format==='address-list'){const values=inputs.map(e=>e.value);send(values.some(v=>!v)?{type:'credential',slot:credential.slot,action:'replace',value:''}:{type:'credential-addresses',slot:credential.slot,values:values});}else send({type:'credential',slot:credential.slot,action:'replace',value:inputs[0].value});};
+  const addInput=()=>{const row=make('div'),input=make('input');input.type='password';input.autocomplete='new-password';input.spellcheck=false;input.maxLength=16384;label(row,credential.format==='address-list'?'Replacement address':'Replacement value',input);entry.appendChild(row);inputs.push(input);input.addEventListener('input',()=>{if(input.isConnected&&inputs.includes(input))changed();});if(credential.format==='address-list')row.appendChild(button('Remove replacement address',()=>{const index=inputs.indexOf(input);if(index<0)return;input.value='';inputs.splice(index,1);entry.removeChild(row);if(!inputs.length){addInput();send({type:'credential',slot:credential.slot,action:'replace',value:''});}else changed();}));};
   addInput();if(credential.format==='address-list')entry.appendChild(button('Add replacement address',()=>{addInput();changed();inputs[inputs.length-1].focus();}));
   group.appendChild(make('small','Replace starts blank. Entered replacements stay only in workbench memory and are never echoed back. Keep retains the stored value; Clear removes it.'));
-  action.addEventListener('change',()=>{for(const input of inputs)input.value='';send(action.value==='replace'?{type:'credential',slot:credential.slot,action:'replace',value:''}:{type:'credential',slot:credential.slot,action:action.value});});
+  action.addEventListener('change',()=>{if(!group.isConnected||model.formId!==createdForm)return;for(const input of inputs)input.value='';send(action.value==='replace'?{type:'credential',slot:credential.slot,action:'replace',value:''}:{type:'credential',slot:credential.slot,action:action.value});});
   parent.appendChild(group);secretControls.set(credential.slot,{action:action,entry:entry,inputs:inputs});
  }
 }
 function renderDraft(){
  const d=model.draft;byId('editor').hidden=!d;byId('no-selection').hidden=!!d;
- if(!d){if(formId!==-1){clear(byId('fields'));clear(byId('credentials'));fieldInputs.clear();secretControls.clear();}formId=-1;shape='';return;}
+ if(!d){if(formId!==-1){eraseSecrets();clear(byId('fields'));clear(byId('credentials'));fieldInputs.clear();secretControls.clear();}formId=-1;shape='';return;}
  if(formId!==model.formId){formId=model.formId;shape='';clear(byId('fields'));fieldInputs.clear();buildSecrets();byId('editor-title').focus();}
  const locked=model.blocked||d.readOnly||!model.list.canMutate;
  byId('editor-title').textContent=d.mode==='create'?'Add connection':'Edit connection';updateValue(byId('id'),d.key.id);byId('id').disabled=d.mode!=='create'||locked;
@@ -96,7 +97,7 @@ function renderDraft(){
  for(const field of fieldInputs.values()){updateValue(field.input,valueAt(d.publicValues,field.path));field.input.disabled=locked;}
  for(const control of byId('fields').querySelectorAll('button,select,input'))control.disabled=locked||control.getAttribute('data-limit')==='true';
  for(const control of byId('credentials').querySelectorAll('button'))control.disabled=locked;
- for(const credential of d.credentials){const controls=secretControls.get(credential.slot);if(!controls)continue;controls.action.value=credential.action;controls.action.disabled=locked;controls.entry.hidden=credential.action!=='replace';for(const input of controls.inputs)input.disabled=locked;}
+ for(const credential of d.credentials){const controls=secretControls.get(credential.slot);if(!controls)continue;controls.action.value=credential.action;controls.action.disabled=locked;controls.entry.hidden=credential.action!=='replace';for(const input of controls.inputs){if(credential.action!=='replace')input.value='';input.disabled=locked;}}
  byId('save').disabled=!model.list.canMutate||!model.valid||model.blocked||d.readOnly;byId('test').disabled=byId('save').disabled||model.test.status==='testing';
  byId('test-status').textContent=model.test.message+(model.test.tookMs===null?'':' ('+Math.round(model.test.tookMs)+' ms)')+(model.test.cleanupUnverified?' Worker cleanup is not yet verified.':'');
  byId('cancel-test').hidden=model.test.status!=='testing';
@@ -144,7 +145,8 @@ function render(m){
 }
 byId('previous').addEventListener('click',()=>{page=Math.max(0,page-1);if(model)render(model);});byId('next').addEventListener('click',()=>{page++;if(model)render(model);});
 window.addEventListener('message',event=>{const m=event.data;if(m&&m.type==='render'&&m.view&&m.view.viewId===viewId)try{render(m.view);}catch{byId('error').textContent='This connection view could not be rendered. Reopen Connections.';}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){for(const input of document.querySelectorAll('input[type=password]'))input.value='';send({type:'cancel-test'});}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){eraseSecrets();send({type:'cancel-test'});}});
+window.addEventListener('pagehide',eraseSecrets);
 send({type:'ready'});
 })();`;
 

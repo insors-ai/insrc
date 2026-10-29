@@ -19,21 +19,21 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Actual Project identity is supplied by the platform container, never a JSON owner hint. */
 @Service(Service.Level.PROJECT)
-class ConnectionsSessionService(private val project: Project) : Disposable {
-    private var owner = ConnectionsSessionOwner(alive = { !project.isDisposed && !serviceDisposed })
-    private var mutationOwner: ProjectMutationOwner? = null
-    private var removalOwner: ConnectionRemovals? = null
-    private var managerOwner: ConnectionsManagerGateway? = null
-    private var managerRoots:()->List<String> = {
+class ConnectionsSessionService(@Transient private val project: Project) : Disposable {
+    @Transient private var owner = ConnectionsSessionOwner(alive = { !project.isDisposed && !serviceDisposed })
+    @Transient private var mutationOwner: ProjectMutationOwner? = null
+    @Transient private var removalOwner: ConnectionRemovals? = null
+    @Transient private var managerOwner: ConnectionsManagerGateway? = null
+    @Transient private var managerRoots:()->List<String> = {
         when(val result=service<DaemonGatewayService>().registeredRepos()){
             is RegisteredReposResult.Loaded->result.repos
             is RegisteredReposResult.Unavailable->throw ConnectionOwnerException("offline")
         }
     }
-    private var draftTests: ConnectionDraftTests? = null
-    private var testRevocation: AutoCloseable? = null
-    private var mutationTiming = MutationTiming()
-    @Volatile private var serviceDisposed = false
+    @Transient private var draftTests: ConnectionDraftTests? = null
+    @Transient private var testRevocation: AutoCloseable? = null
+    @Transient private var mutationTiming = MutationTiming()
+    @Volatile @Transient private var serviceDisposed = false
     @Synchronized fun manager():ConnectionsManagerGateway {
         if(serviceDisposed||project.isDisposed)throw MutationStateException("disposed")
         return managerOwner?:ConnectionsManagerGateway(this,managerRoots){!serviceDisposed&&!project.isDisposed}.also{managerOwner=it}

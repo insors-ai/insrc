@@ -25,14 +25,15 @@ export class Element {
  get innerHTML():never{throw new Error('Connection renderer read innerHTML');}
 }
 export class RendererHarness {
- body=new Element('body',this);activeElement:Element|null=null;elements=new Map<string,Element>();posted:unknown[]=[];hidden=false;errors:string[]=[];
+ body=new Element('body',this);activeElement:Element|null=null;elements=new Map<string,Element>();posted:unknown[]=[];hidden=false;errors:string[]=[];sinkCalls:string[]=[];
  #window=new Map<string,(e:{data:unknown})=>void>();#document=new Map<string,()=>void>();
  constructor(html:string,post:(message:unknown)=>void=()=>{}){
   for(const m of html.matchAll(/<([a-z]+)[^>]*\sid="([^"]+)"[^>]*>/g)){const e=new Element(m[1]!,this);e.id=m[2]!;this.elements.set(e.id,e);this.body.appendChild(e);}
   this.body.setAttribute('data-view',/data-view="([^"]+)"/.exec(html)![1]!);this.body.setAttribute('data-generation',/data-generation="(\d+)"/.exec(html)![1]!);
   const self=this;
   const document={body:this.body,getElementById:(id:string)=>this.elements.get(id),createElement:(tag:string)=>new Element(tag,this),get activeElement(){return self.activeElement;},get hidden(){return self.hidden;},querySelectorAll:(s:string)=>this.body.querySelectorAll(s),addEventListener:(k:string,fn:()=>void)=>this.#document.set(k,fn)};
-  runInNewContext(CONNECTION_MANAGER_SCRIPT,{document,window:{addEventListener:(k:string,fn:(event:{data:unknown})=>void)=>this.#window.set(k,fn)},acquireVsCodeApi:()=>({postMessage:(value:unknown)=>{const copied=structuredClone(value);this.posted.push(copied);post(copied);},getState:()=>{throw new Error('Persistent state read');},setState:()=>{throw new Error('Persistent state write');}})});
+  const poison=(name:string)=>new Proxy(()=>{}, {get:()=>{this.sinkCalls.push(name);throw new Error('Forbidden renderer sink');},apply:()=>{this.sinkCalls.push(name);throw new Error('Forbidden renderer sink');}});
+  runInNewContext(CONNECTION_MANAGER_SCRIPT,{document,window:{addEventListener:(k:string,fn:(event:{data:unknown})=>void)=>this.#window.set(k,fn),localStorage:poison('localStorage'),sessionStorage:poison('sessionStorage'),indexedDB:poison('indexedDB')},localStorage:poison('localStorage'),sessionStorage:poison('sessionStorage'),indexedDB:poison('indexedDB'),fetch:poison('fetch'),navigator:{sendBeacon:poison('telemetry')},console:poison('console'),acquireVsCodeApi:()=>({postMessage:(value:unknown)=>{const copied=structuredClone(value);this.posted.push(copied);post(copied);},getState:()=>{this.sinkCalls.push('getState');throw new Error('Persistent state read');},setState:()=>{this.sinkCalls.push('setState');throw new Error('Persistent state write');}})});
  }
  all(root=this.body):Element[]{return[root,...root.children.flatMap(c=>this.all(c))];}
  el(id:string):Element{const e=this.elements.get(id);if(!e)throw new Error('Missing DOM control '+id);return e;}

@@ -13,6 +13,7 @@ import { IpcServer, directDispatch } from '../../../daemon/server.js';
 import type { Driver } from '../../db-driver.js';
 import type { MutationRequest } from '../../connection-management.js';
 import { _setKeystoreForTests } from '../../../daemon/db/secrets.js';
+import { connectionTestSupervisor } from '../../../daemon/db/draft-test.js';
 
 const dir=process.argv[2]!,env=await environment(),f=await env.rootFixture('managed');_setPoolForTests(f.root,f.pool);
 const other=await env.rootFixture('other');_setPoolForTests(other.root,other.pool);const roots=[f.root,other.root];
@@ -61,7 +62,7 @@ for(const method of ['removalState','retryRemovalCleanup']){
  };
 }
 handlers['fixture.info']=async()=>({roots,wallNow:f.clock.value});
-handlers['fixture.stats']=async()=>({tickets,mutations,statuses,activations,lists,identicalReplay,savedRows:f.store.snapshot.file.connections.length,removeStateCalls,cleanupCalls,ticketOnlyCleanup,originalCleanup,removeFieldsValid,oldCloses,newCloses,sourcePreserved:readFileSync(sourcePath).equals(sourceBytes)});
+handlers['fixture.stats']=async()=>({tickets,mutations,statuses,activations,lists,probeActive:connectionTestSupervisor.activeCount,identicalReplay,savedRows:f.store.snapshot.file.connections.length,registryWrites:f.counts.writes,credentialSets:f.counts.sets,credentialDeletes:f.counts.deletes,removeStateCalls,cleanupCalls,ticketOnlyCleanup,originalCleanup,removeFieldsValid,oldCloses,newCloses,sourcePreserved:readFileSync(sourcePath).equals(sourceBytes)});
 handlers['fixture.fault']=async params=>{
  const p=params as Record<string,unknown>;
  if(typeof p['mode']==='string')fault=p['mode'];if(typeof p['refreshFail']==='boolean')refreshFail=p['refreshFail'];if(typeof p['activationFail']==='boolean')activationFail=p['activationFail'];if(typeof p['cleanupFail']==='boolean')cleanupFail=p['cleanupFail'];

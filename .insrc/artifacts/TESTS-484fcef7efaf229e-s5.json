@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T19:49:45.573Z",
+    "updatedAt": "2026-10-29T20:05:05.638Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1042,6 +1042,133 @@
             "titles": [
               {
                 "title": "CM-S5-WINDOW: two real workbench owners isolate same IDs, overlapping lane IDs, roots and disposal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "dd12ef1c8",
+        "ranAt": "2026-10-29T20:05:05.638Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-SYNC: TypeScript and Kotlin execute identical wire/sc7 recovery transcripts and divergent-consumer negative controls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+                "title": "CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+                "title": "CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+                "title": "CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 90124,
+            "titles": [
+              {
+                "title": "CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3032,
+            "titles": [
+              {
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1245,
+            "titles": [
+              {
+                "title": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy",
                 "result": "pass"
               }
             ],

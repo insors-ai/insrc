@@ -1,0 +1,198 @@
+TAP version 13
+# (node:43629) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [20:13:12] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [20:13:12] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [20:13:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [20:13:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/daemon.sock[39m
+#     [35mmodule[39m: "ipc"
+# [20:13:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# [20:13:14] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cJM5XQ/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S5-PRIVACY-TS: real renderer erases replaced detached and hidden password widgets and refuses stale private events
+not ok 1 - CM-S5-PRIVACY-TS: real renderer erases replaced detached and hidden password widgets and refuses stale private events
+  ---
+  duration_ms: 524.798917
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/connections/__tests__/privacy.test.ts:1:1129'
+  failureType: 'testCodeFailure'
+  error: |-
+    Keep from privileged shared state must erase the DOM value
+    + actual - expected
+    
+    + '[REDACTED_SYNTHETIC_PASSWORD]'
+    - ''
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ''
+  actual: '[REDACTED_SYNTHETIC_PASSWORD]'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/connections/__tests__/privacy.test.ts:21:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2066.847709

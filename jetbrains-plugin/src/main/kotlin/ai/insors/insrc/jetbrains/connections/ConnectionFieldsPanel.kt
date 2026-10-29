@@ -33,7 +33,7 @@ internal class ConnectionFieldsPanel(private val gateway:ConnectionsManagerGatew
     private val buttons=mutableListOf<Pair<JButton,()->Boolean>>()
     private var latest:ConnectionsManagerView?=null;private var formId=-1L;private var shape="";private var updating=false;private var active=true
     init{val content=column();content.add(fieldBody);content.add(secrets);add(content,BorderLayout.NORTH)}
-    private fun accepting()=active&&!updating&&latest?.generation==gateway.snapshot().generation
+    private fun accepting(component:JComponent?=null)=active&&!updating&&latest?.generation==gateway.snapshot().generation&&(component==null||SwingUtilities.isDescendingFrom(component,this))
     private fun human(s:String)=s.replace(Regex("([a-z])([A-Z])"),"$1 $2").replace(Regex("[-_.]")," ").replaceFirstChar{it.uppercase()}
     private fun name(path:List<String>)=path.lastOrNull()?.let{it.toIntOrNull()?.let{n->"Item ${n+1}"}?:human(it)}?:"Connection fields"
     private fun at(value:JsonElement?,path:List<String>):JsonElement? {var current=value
@@ -55,14 +55,14 @@ internal class ConnectionFieldsPanel(private val gateway:ConnectionsManagerGatew
     }
     private fun row(parent:JPanel,label:String,input:JComponent):JPanel {val row=JPanel(BorderLayout(JBUI.scale(8),0)).apply{alignmentX=Component.LEFT_ALIGNMENT;border=JBUI.Borders.empty(3,0)}
         row.add(plainLabel(label).apply{labelFor=input},BorderLayout.WEST);row.add(input,BorderLayout.CENTER);parent.add(row);return row}
-    private fun action(parent:JPanel,label:String,allowed:()->Boolean={true},run:()->Unit):JButton=JButton(label).also{b->b.addActionListener{if(accepting())run()};buttons.add(b to allowed);parent.add(b)}
+    private fun action(parent:JPanel,label:String,allowed:()->Boolean={true},run:()->Unit):JButton=JButton(label).also{b->b.addActionListener{if(accepting(b))run()};buttons.add(b to allowed);parent.add(b)}
     private fun reset(parent:JPanel,path:List<String>){if(path.none{it.toIntOrNull()!=null})action(parent,if(latest?.draft?.mode=="update")"Keep original"else"Use default"){gateway.reset(path)}}
     private fun build(schema:JsonObject,path:List<String>,parent:JPanel,required:Boolean){
         if(schema.has("const"))return
         val current=at(latest?.draft?.publicValues,path);val key=path.joinToString(".")
         if(schema.has("anyOf")){val group=column().apply{border=BorderFactory.createTitledBorder(name(path))};val options=schema.getAsJsonArray("anyOf")
             val combo=JComboBox(options.mapIndexed{index,v->val s=v.asJsonObject;FieldChoice(if(s.has("const"))"Fixed value: ${s["const"]}"else human(s["type"].asString),JsonPrimitive(index))}.toTypedArray())
-            plainCombo(combo,{it.label});combo.name="format:$key";combo.selectedIndex=branch(schema,current);combo.addActionListener{if(accepting())gateway.field(path,sample(options[combo.selectedIndex].asJsonObject))};row(group,"${name(path)} format",combo)
+            plainCombo(combo,{it.label});combo.name="format:$key";combo.selectedIndex=branch(schema,current);combo.addActionListener{if(accepting(combo))gateway.field(path,sample(options[combo.selectedIndex].asJsonObject))};row(group,"${name(path)} format",combo)
             bindings.add(Binding(combo,path){value->combo.selectedIndex=branch(schema,value)});build(options[combo.selectedIndex].asJsonObject,path,group,required);parent.add(group);return
         }
         when(schema["type"]?.asString){
@@ -77,26 +77,26 @@ internal class ConnectionFieldsPanel(private val gateway:ConnectionsManagerGatew
         if(schema.has("enum")||type=="boolean"){
             val values=schema["enum"]?.asJsonArray?.toList()?:listOf(JsonPrimitive(true),JsonPrimitive(false))
             val options=(if(path.none{it.toIntOrNull()!=null})listOf(FieldChoice(if(latest?.draft?.mode=="update")"Keep original"else"Use default",null))else emptyList())+values.map{FieldChoice(if(it.isJsonPrimitive&&it.asJsonPrimitive.isString)it.asString else it.toString(),it)}
-            val combo=JComboBox(options.toTypedArray());plainCombo(combo,{it.label});combo.addActionListener{if(accepting()){val v=(combo.selectedItem as? FieldChoice)?.value;if(v==null)gateway.reset(path)else gateway.field(path,v.deepCopy())}}
+            val combo=JComboBox(options.toTypedArray());plainCombo(combo,{it.label});combo.addActionListener{if(accepting(combo)){val v=(combo.selectedItem as? FieldChoice)?.value;if(v==null)gateway.reset(path)else gateway.field(path,v.deepCopy())}}
             bindings.add(Binding(combo,path){v->combo.selectedIndex=options.indexOfFirst{it.value==v}.takeIf{it>=0}?:0});input=combo
         }else{
-            val field=JBTextField(24);field.name="field:$key";observe(field){if(accepting()){val text=field.text
+            val field=JBTextField(24);field.name="field:$key";observe(field){if(accepting(field)){val text=field.text
                 if(type in setOf("number","integer")){if(text.isEmpty())gateway.reset(path)else{val n=text.toDoubleOrNull();gateway.field(path,if(n!=null&&n.isFinite())JsonPrimitive(n)else JsonPrimitive(text))}}
                 else gateway.field(path,JsonPrimitive(text))}}
             bindings.add(Binding(field,path){v->val value=if(v==null)""else if(v.isJsonPrimitive&&v.asJsonPrimitive.isString)v.asString else v.toString();if((!field.hasFocus()||latest?.error?.isNotEmpty()==true)&&field.text!=value)field.text=value});input=field
         }
         input.name="field:$key";val line=row(parent,name(path)+(if(required)" *"else""),input);val controls=JPanel(FlowLayout(FlowLayout.LEFT,0,0));reset(controls,path);line.add(controls,BorderLayout.EAST)
     }
-    private fun buildSecrets(view:ConnectionDraftView){secrets.removeAll();secretBindings.clear()
+    private fun buildSecrets(view:ConnectionDraftView){erase();secrets.removeAll();secretBindings.clear()
         for(slot in view.credentials){val group=column().apply{border=BorderFactory.createTitledBorder(human(slot.slot))};group.add(plainLabel(if(slot.present)"Stored value present."else"No stored value."))
             val choice=JComboBox(arrayOf("keep","replace","clear"));plainCombo(choice,{human(it)});choice.name="credential-action:${slot.slot}";row(group,"Credential action",choice)
             val entry=column();group.add(entry);val inputs=mutableListOf<JBPasswordField>()
-            fun changed(){if(!accepting())return
+            fun changed(){if(!accepting(group))return
                 val arrays=inputs.map{it.password};try{val values=arrays.map{String(it)}
                     if(slot.format=="address-list"){if(values.any{it.isEmpty()})gateway.credential(slot.slot,"replace","")else gateway.addresses(slot.slot,values)}else gateway.credential(slot.slot,"replace",values.firstOrNull()?:"")
                 }finally{arrays.forEach{it.fill('\u0000')}}}
-            fun addInput(){val field=JBPasswordField();field.columns=24;field.name="credential:${slot.slot}:${inputs.size}";val line=row(entry,if(slot.format=="address-list")"Replacement address"else"Replacement value",field);inputs.add(field);observe(field,::changed)
-                if(slot.format=="address-list"){val controls=JPanel();action(controls,"Remove replacement address"){inputs.remove(field);entry.remove(line);if(inputs.isEmpty()){addInput();gateway.credential(slot.slot,"replace","")}else changed();entry.revalidate();entry.repaint()};line.add(controls,BorderLayout.EAST)}}
+            fun addInput(){val field=JBPasswordField();field.columns=24;field.name="credential:${slot.slot}:${inputs.size}";val line=row(entry,if(slot.format=="address-list")"Replacement address"else"Replacement value",field);inputs.add(field);observe(field){if(accepting(field))changed()}
+                if(slot.format=="address-list"){val controls=JPanel();action(controls,"Remove replacement address"){val previous=updating;updating=true;try{field.text=""}finally{updating=previous};inputs.remove(field);entry.remove(line);if(inputs.isEmpty()){addInput();gateway.credential(slot.slot,"replace","")}else changed();entry.revalidate();entry.repaint()};line.add(controls,BorderLayout.EAST)}}
             addInput();if(slot.format=="address-list")action(entry,"Add replacement address"){addInput();changed();inputs.last().requestFocusInWindow();entry.revalidate()}
             choice.addActionListener{if(accepting()){updating=true;inputs.forEach{it.text=""};updating=false;val action=choice.selectedItem as String;gateway.credential(slot.slot,action,if(action=="replace")""else null)}}
             group.add(plainLabel("Replace starts blank. Entered values stay only in Project memory and are never echoed back."));secrets.add(group);secretBindings[slot.slot]=Secret(choice,entry,inputs)
@@ -105,17 +105,17 @@ internal class ConnectionFieldsPanel(private val gateway:ConnectionsManagerGatew
     fun render(view:ConnectionsManagerView){check(SwingUtilities.isEventDispatchThread());latest=view;val form=view.draft
         updating=true
         try {
-            if(form==null){fieldBody.removeAll();secrets.removeAll();bindings.clear();secretBindings.clear();buttons.clear();formId=-1;shape="";return}
+            if(form==null){erase();fieldBody.removeAll();secrets.removeAll();bindings.clear();secretBindings.clear();buttons.clear();formId=-1;shape="";return}
             if(formId!=view.formId){fieldBody.removeAll();bindings.clear();buttons.clear();shape="";formId=view.formId;buildSecrets(form)}
             val next=structure(form.publicInputSchema,form.publicValues)
             if(shape!=next||fieldBody.componentCount==0){val focus=KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner?.name;buttons.removeAll{SwingUtilities.isDescendingFrom(it.first,fieldBody)};fieldBody.removeAll();bindings.clear();shape=next;build(form.publicInputSchema,emptyList(),fieldBody,false);if(focus!=null)bindings.firstOrNull{it.component.name==focus}?.component?.requestFocusInWindow()}
             val locked=view.blocked||form.readOnly||!view.list.canMutate
             for(binding in bindings){binding.update(at(form.publicValues,binding.path));binding.component.isEnabled=!locked}
             buttons.forEach{(button,allowed)->button.isEnabled=!locked&&allowed()}
-            for(slot in form.credentials){val widgets=secretBindings[slot.slot]?:continue;widgets.action.selectedItem=slot.action;widgets.action.isEnabled=!locked;widgets.entry.isVisible=slot.action=="replace";widgets.fields.forEach{if(slot.action!="replace"&&it.password.isNotEmpty())it.text="";it.isEnabled=!locked}}
+            for(slot in form.credentials){val widgets=secretBindings[slot.slot]?:continue;widgets.action.selectedItem=slot.action;widgets.action.isEnabled=!locked;widgets.entry.isVisible=slot.action=="replace";widgets.fields.forEach{if(slot.action!="replace"&&it.document.length>0)it.text="";it.isEnabled=!locked}}
         }finally{updating=false;revalidate();repaint()}
     }
-    fun erase(){updating=true;try{secretBindings.values.flatMap{it.fields}.forEach{it.text=""}}finally{updating=false}}
+    fun erase(){val previous=updating;updating=true;try{secretBindings.values.flatMap{it.fields}.forEach{it.text=""}}finally{updating=previous}}
     fun suspendView(){active=false;erase()}
     fun resumeView(){active=true}
     fun clearView(){updating=true;try{secretBindings.values.flatMap{it.fields}.forEach{it.text=""};secretBindings.clear();bindings.clear();buttons.clear();fieldBody.removeAll();secrets.removeAll();latest=null;formId=-1;shape=""}finally{updating=false}}

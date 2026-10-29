@@ -1,0 +1,8 @@
+{
+  "vscode-plugin/src/connections/renderer.ts": "2a6ea91854dc8d23542b2724fe526824d72196503508576f4b2502aa1479fbd5",
+  "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionFieldsPanel.kt": "476105ef9614d1386805fbcfc7016a379f4134b747cda587af2fc8769ce1d5aa",
+  "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt": "53766849a20641aea5a4da08bbadf714df95430a40c1f6812843fba665cf88c6",
+  "src/shared/__tests__/connection-manager-privacy.test.ts": "be2ec18558bd2d409c2c9a97c6884d2a4bcf310f8fb3ef7973a40638686e6e63",
+  "vscode-plugin/src/connections/__tests__/privacy.test.ts": "c40b9183aace997e051e59dfb5a8ba8146866541a3fbde64ca9ab1e5dc501e06",
+  "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsPrivacyTest.kt": "51d0ccb778c68d240f949726fca777e2df0b12298e5c7abd564ca9e76f070d6a"
+}

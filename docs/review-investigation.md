@@ -133,3 +133,27 @@ this governance-only read verifies the known canonical ID and full history in
 the registered evidence repo. Review subject adapters retain their strict
 current-project path checks. The proposal changes only the predecessor's
 performance target to document the explicit CODE-review exception above.
+
+## Deterministic comparison records
+
+`review-investigation-evaluation.ts` verifies a versioned oracle from approved
+canonical ISSUE content. The history's approving actor must be a person other
+than the content author and the declared record producer; a JSON adjudicator
+label or a serialized oracle handle is insufficient. The repository's seeded
+oracle includes executable defect/control probes. Unit fixtures use explicitly
+synthetic actors; they do not create an approved production oracle.
+
+Baseline and candidate records bind source commit/fingerprint, schema, adapter,
+provider profile, policy, tool catalog, fixture version and oracle digest. Every
+oracle case must remain in both records. Dropping a required defect or coverage
+row fails; additional unadjudicated findings remain a failure requiring oracle
+adjudication. Persisted reports are recomputed from their embedded immutable
+records, not trusted from a `passed` flag or a shortened expected-ID list.
+
+The checked-in baseline is labelled **recorded synthetic protocol fixture**.
+It does not represent an installed model's review or actual cloud bill. Input
+segments store hashes/character counts; repeated-input characters and scripted
+call counts are diagnostic fixture metrics. Unknown real model calls, tokens,
+cloud latency, recall, default quality and savings stay null. There is no live
+model invocation or automatic default-selection decision in this evaluator.
+Even a passing comparison requires all adoption/qualification/approval gates.

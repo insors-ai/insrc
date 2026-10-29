@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+import {readApprovedEvaluationOracle,scriptedEvaluationRecord,evaluateReviewRecords,evaluationOracleSchema} from '../review-investigation-evaluation.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,13 +30,17 @@ test('Opt in readiness and rollback retain status while refusing unsupported res
   await assert.rejects(()=>repository.advance(turn.runId,budget));await assert.rejects(()=>repository.start({...f.start,requestId:'11111111-1111-1111-1111-111111111111'} as Parameters<InvestigationRepository['start']>[0],budget));
   await assert.rejects(()=>repository.advance('pre-S005-volatile-token',budget));assert.equal((await repository.cancel(turn.runId)).next,'status');
   const work=f.repository.work,lifecycle=new LifecycleService({store:f.repository.options.canonical}),actor={id:'github:fixture',kind:'person' as const,properties:{}};
-  const put=async(id:string,data:unknown,approve=true)=>{await f.repository.options.canonical.write({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{title:'Protocol fixture only',reproduction:'Fixture',rootCause:'Fixture',fixIntent:JSON.stringify(data)},citations:[]}},actor);if(approve)await lifecycle.apply(id,'approve',actor);const head=(await work.readCanonicalHead(id))!;return approvedEvidenceReference(id,head);};
-  const unsignedEvidence={identity:{profileDigest:'a'.repeat(64)}} as NativeIsolationEvidence;
+  const put=async(id:string,data:unknown,approve=true,by:typeof actor|{id:string;kind:'agent';properties:{}}=actor)=>{await f.repository.options.canonical.write({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{title:'Protocol fixture only',reproduction:'Fixture',rootCause:'Fixture',fixIntent:JSON.stringify(data)},citations:[]}},by);if(approve)await lifecycle.apply(id,'approve',actor);const head=(await work.readCanonicalHead(id))!;return approvedEvidenceReference(id,head);};
+  const unsignedEvidence={identity:{profileDigest:'a'.repeat(64),adapterVersion:'candidate-script-v1'}} as NativeIsolationEvidence;
   const keys=generateKeyPairSync('ed25519'),keyPath=join(f.dir,'probe-trust.pem');writeFileSync(keyPath,keys.publicKey.export({type:'spki',format:'pem'}),{mode:0o600});
   const signature=sign(null,Buffer.from(JSON.stringify(snapshotValue(unsignedEvidence))),keys.privateKey).toString('base64');verifyInstalledProbeSignature(unsignedEvidence,signature,keyPath);assert.throws(()=>verifyInstalledProbeSignature(unsignedEvidence,Buffer.from('invalid').toString('base64'),keyPath));
   const probe=await put('ISSUE-1111111111111111',{version:1,kind:'review-investigation-installed-probe',origin:'installed-probe',evidence:unsignedEvidence,signature});
-  const adjudication=await put('ISSUE-2222222222222222',{kind:'fixture-oracle',label:'Protocol fixture, not installed qualification'});
-  const evaluation=await put('ISSUE-3333333333333333',{version:1,kind:'review-investigation-evaluation',sourceCommit:f.commitId,sourceDigest:'b'.repeat(64),profileDigest:'a'.repeat(64),policyDigest:'c'.repeat(64),catalogDigest:scopedReviewCatalogDigest(false),fixtureVersion:'test-v1',oracleDigest:'d'.repeat(64),adjudicationRef:adjudication,requiredDefects:['required'],foundDefects:['required'],requiredCoverage:['row'],covered:['row'],missingEvidence:[],liveEvidence:false,defaultReplacement:false});
+  const oracleData=evaluationOracleSchema.parse(JSON.parse(readFileSync(new URL('./fixtures/review-evaluation-oracle.v1.json',import.meta.url),'utf8')));
+  const adjudication=await put('ISSUE-2222222222222222',oracleData,true,{id:'insrc:oracle-author',kind:'agent',properties:{}});
+  const oracle=await readApprovedEvaluationOracle(work,adjudication),binding={sourceCommit:f.commitId,sourceDigest:'b'.repeat(64),profileDigest:'a'.repeat(64),policyDigest:'c'.repeat(64),catalogDigest:scopedReviewCatalogDigest(false),schemaVersion:1 as const,adapterVersion:'candidate-script-v1',fixtureVersion:oracleData.fixtureVersion,oracleDigest:oracle.oracleDigest};
+  const observations=oracleData.cases.map(c=>({caseId:c.caseId,foundDefects:c.requiredDefects,covered:c.requiredCoverage,unverified:[]}));
+  const baseline=scriptedEvaluationRecord(binding,observations,[['fixture contract'],['fixture contract']],'policy-baseline-fixture'),candidateRecord=scriptedEvaluationRecord(binding,observations,[['fixture contract']],'policy-candidate-fixture');
+  const evaluation=await put('ISSUE-3333333333333333',evaluateReviewRecords(oracle,baseline,candidateRecord));
   const readiness=await put('ISSUE-4444444444444444',{version:1,kind:'review-investigation-readiness',wire:1,canonical:1,sourceCommit:f.commitId,sourceDigest:'b'.repeat(64),evaluationRef:evaluation,backendRefs:{'source-only':probe,'indexed-impact':probe}});
   // Draft and wrong predecessor records never authorize execution.
   const draft=await put('ISSUE-5555555555555555',{kind:'draft'},false);await assert.rejects(()=>readApprovedEvidence(work,draft));

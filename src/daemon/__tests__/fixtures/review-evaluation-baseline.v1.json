@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "label": "Recorded synthetic source-partition protocol baseline; not an installed-model benchmark",
+  "origin": "recorded-fixture",
+  "recordedRef": "fixtures/review-evaluation-baseline.v1.json",
+  "observations": [
+    {"caseId":"empty-total","foundDefects":["empty-reduce-initializer"],"covered":["empty-total-behavior","empty-total-test"],"unverified":[]},
+    {"caseId":"unknown-usage","foundDefects":["unknown-tokens-to-zero"],"covered":["unknown-quality","unknown-token-test"],"unverified":[]},
+    {"caseId":"queued-reply","foundDefects":["queued-response-dropped"],"covered":["queued-path","queued-reply-test"],"unverified":[]},
+    {"caseId":"clean-control","foundDefects":[],"covered":["clean-control-test"],"unverified":[]}
+  ],
+  "inputs": [
+    ["all approved fixture contracts", "empty source partition"],
+    ["all approved fixture contracts", "empty source partition"],
+    ["all approved fixture contracts", "unknown source partition"],
+    ["all approved fixture contracts", "unknown source partition"],
+    ["all approved fixture contracts", "queued source partition"],
+    ["all approved fixture contracts", "queued source partition"],
+    ["all approved fixture contracts", "clean source partition"],
+    ["all approved fixture contracts", "clean source partition"]
+  ]
+}

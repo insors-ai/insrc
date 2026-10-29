@@ -30,19 +30,11 @@ const text=z.string().min(1).max(4096),digest=z.string().regex(/^[a-f0-9]{64}$/)
 export const readinessSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-readiness'),wire:z.literal(1),canonical:z.literal(1),
  sourceCommit:oid,sourceDigest:digest,evaluationRef:text,backendRefs:z.object({'source-only':text,'indexed-impact':text}).strict()}).strict();
 const probeSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-installed-probe'),origin:z.literal('installed-probe'),evidence:z.unknown(),signature:z.string().min(1).max(4096)}).strict();
-const evaluationSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-evaluation'),sourceCommit:oid,sourceDigest:digest,profileDigest:digest,policyDigest:digest,catalogDigest:digest,
- fixtureVersion:text,oracleDigest:digest,adjudicationRef:text,requiredDefects:z.array(text).min(1),foundDefects:z.array(text),requiredCoverage:z.array(text).min(1),covered:z.array(text),
- missingEvidence:z.array(text),liveEvidence:z.literal(false),defaultReplacement:z.literal(false)}).strict();
 export const PREDECESSOR_EPIC='8315a11f29fd2812';
 export const RECONCILIATION_CLAUSE='For explicit plan-investigation-v1 CODE reviews only, Epic c32aa60534232f36 supersedes predecessor S002/S003 chunk/gather and S005 new CODE-review controller frames. Legacy and pre-S005 saved states retain their original adapters; DEF/HLD/LLD and all other design reviews retain the predecessor pipeline. No automatic migration, default flip or live quality/token-savings claim. Adoption requires current readiness evidence and independent installed-backend qualification; rollback disables new turns, drains active attempts, and preserves status, cancel, usage, accepted receipts and frozen publication reconciliation.';
 function refuse(message:string):never{throw new ReviewIntegrationError('not-ready',message);}
-export function approvedEvidenceReference(id:string,head:HeadSnapshot):string{return `approved:${id}@${head.revision}#${digestValue({body:head.head.body,citations:head.head.citations??[]})}`;}
-export async function readApprovedEvidence(work:CanonicalReviewWorkAdapter,reference:string){
- const match=/^approved:(.+)@([1-9][0-9]*)#([a-f0-9]{64})$/.exec(reference);if(!match||!ArtifactIds.parse(match[1]!))refuse('A versioned canonical approval reference is required');
- const head=await work.readCanonicalHead(match[1]!);if(!head||head.revision!==Number(match[2])||approvalStateOf(head.head.meta)!=='approved'||approvedEvidenceReference(match[1]!,head)!==reference)refuse('Readiness evidence is missing, draft, stale or edited');
- const lifecycle=decodeArtifactHead(match[1]!,JSON.stringify(head.head)).artifact.lifecycle;if(lifecycle.stale||lifecycle.approval?.revision!==head.revision)refuse('Evidence approval does not cover its current revision');
- if(Buffer.byteLength(JSON.stringify(head.head))>1024*1024)refuse('Readiness evidence exceeds its bound');return head;
-}
+export {approvedEvidenceReference,readApprovedEvidence} from './review-investigation-approval.js';
+import {readApprovedEvidence} from './review-investigation-approval.js';
 /** Historical engine governance records can retain the checkout path where
  * authored. Bind this one known predecessor to the current canonical store and
  * audited history; never rewrite its metadata or relax review subject readers. */
@@ -95,9 +87,11 @@ export class InvestigationAdoptionPolicy {
   if(!predecessor||(currentPerformance!==amendment['oldTarget']&&currentPerformance!==RECONCILIATION_CLAUSE))refuse('Predecessor reconciliation no longer applies to the installed HLD');
   const report=probeSchema.parse(issueData(await readApprovedEvidence(this.deps.work,readiness.backendRefs[mode]))),evidence=snapshotValue(report.evidence) as NativeIsolationEvidence;
   (this.deps.verifyProbe??verifyInstalledProbeSignature)(evidence,report.signature);
-  const evaluation=evaluationSchema.parse(issueData(await readApprovedEvidence(this.deps.work,readiness.evaluationRef)));
-  if(evaluation.sourceCommit!==readiness.sourceCommit||evaluation.sourceDigest!==readiness.sourceDigest||evaluation.profileDigest!==evidence.identity.profileDigest||evaluation.catalogDigest!==scopedReviewCatalogDigest(mode==='indexed-impact')||evaluation.missingEvidence.length||evaluation.requiredDefects.some(id=>!evaluation.foundDefects.includes(id))||evaluation.requiredCoverage.some(id=>!evaluation.covered.includes(id)))refuse('Evaluation evidence is stale, incomplete or does not preserve required defects/coverage');
-  await readApprovedEvidence(this.deps.work,evaluation.adjudicationRef);
+  const rawEvaluation=issueData(await readApprovedEvidence(this.deps.work,readiness.evaluationRef));
+  const {readApprovedEvaluationOracle,verifyStoredEvaluation}=await import('./review-investigation-evaluation.js');
+  const oracleReference=z.object({adjudicationRef:text}).passthrough().parse(rawEvaluation).adjudicationRef;
+  const evaluation=verifyStoredEvaluation(rawEvaluation,await readApprovedEvaluationOracle(this.deps.work,oracleReference));
+  if(evaluation.sourceCommit!==readiness.sourceCommit||evaluation.sourceDigest!==readiness.sourceDigest||evaluation.profileDigest!==evidence.identity.profileDigest||evaluation.candidateRecord.binding.adapterVersion!==evidence.identity.adapterVersion||evaluation.catalogDigest!==scopedReviewCatalogDigest(mode==='indexed-impact')||evaluation.missingEvidence.length||evaluation.requiredDefects.some(id=>!evaluation.foundDefects.includes(id))||evaluation.requiredCoverage.some(id=>!evaluation.covered.includes(id)))refuse('Evaluation evidence is stale, incomplete or does not preserve required defects/coverage');
   return {readiness,report,evidence,evaluation};
  }
  async adapter(repo:string,mode:'source-only'|'indexed-impact'):Promise<InvestigationDaemonAdapter>{

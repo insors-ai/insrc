@@ -21,6 +21,8 @@ import type { MessagePort } from 'node:worker_threads';
 import { createStoreGuardBlock, installStoreGuard } from '../../db/store-guard.js';
 import type { EmbedderBackend } from '../../indexer/embedder.js';
 import { createLockBlock, installLockManager } from '../../shared/locks/lock-manager.js';
+import { TOOL_SETTINGS_OP } from '../tools/config.js';
+import type { ToolSettings } from '../tools/config.js';
 import { enableMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { PATHS } from '../../shared/paths.js';
 import type { DaemonStatus } from '../../shared/types.js';
@@ -147,6 +149,7 @@ export class ThreadServices {
 	private readonly ports = new Set<MessagePort>();
 	private readonly handlers: HubHandlers;
 	private embedderBackend: EmbedderBackend | undefined;
+	private toolSettings: ToolSettings | undefined;
 	private shutdown: ((reason: string) => void) | undefined;
 	private maintenance: (() => Promise<unknown>) | undefined;
 	private route: ((request: RouteRequest) => Promise<unknown>) | undefined;
@@ -197,6 +200,8 @@ export class ThreadServices {
 		this.ports.add(port1);
 		// A worker started after the backend was decided gets it at once.
 		if (this.embedderBackend !== undefined) pushToWorker(port1, EMBEDDER_BACKEND_OP, this.embedderBackend);
+		// And the tool settings the IDE last pushed (Story 5d393a4b).
+		if (this.toolSettings !== undefined) pushToWorker(port1, TOOL_SETTINGS_OP, this.toolSettings);
 		// And the running full indexes as they stand now.
 		if (this.board.indexRuns().length > 0) pushToWorker(port1, INDEX_RUNS_OP, this.board.indexRuns());
 		return {
@@ -215,5 +220,11 @@ export class ThreadServices {
 	setEmbedderBackend(backend: EmbedderBackend): void {
 		this.embedderBackend = backend;
 		for (const port of this.ports) pushToWorker(port, EMBEDDER_BACKEND_OP, backend);
+	}
+
+	/** The tool settings the main thread now holds (tools.config.set is served there): every worker is told now, and every later one when it connects. */
+	setToolSettings(settings: ToolSettings): void {
+		this.toolSettings = settings;
+		for (const port of this.ports) pushToWorker(port, TOOL_SETTINGS_OP, settings);
 	}
 }

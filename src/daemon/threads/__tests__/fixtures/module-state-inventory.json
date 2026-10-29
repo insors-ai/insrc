@@ -626,6 +626,10 @@
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	},
+	"src/daemon/threads/method-class.ts#MAIN_THREAD_STATE_METHODS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
 	"src/daemon/threads/method-class.ts#SHARED_STATE_METHODS": {
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
@@ -686,9 +690,13 @@
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	},
+	"src/daemon/tools/config.ts#changed": {
+		"class": "per-thread",
+		"reason": "The change listener the main thread installs to push tool settings to the workers; workers install none, they only receive the pushed snapshot."
+	},
 	"src/daemon/tools/config.ts#current": {
 		"class": "per-thread",
-		"reason": "MOVING INLINE (user decision 2026-10-29): the IDE pushes tool settings with tools.config.set (session-class); only the worker that serves it updates its copy, so tool loops on other workers keep the defaults."
+		"reason": "With daemon threads the main thread owns the tool settings: tools.config.set is a MAIN_THREAD_STATE_METHODS method served there, and each change is pushed to every worker (TOOL_SETTINGS_OP), whose copy is that mirror (Story 5d393a4b)."
 	},
 	"src/daemon/tools/registry.ts#aliasToId": {
 		"class": "per-thread",

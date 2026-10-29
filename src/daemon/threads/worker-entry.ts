@@ -24,6 +24,8 @@ import type { IndexRunView } from '../../indexer/run-record.js';
 import { installLockManager } from '../../shared/locks/lock-manager.js';
 import { enableMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
 import { getModelRegistry } from '../model-registry.js';
+import { TOOL_SETTINGS_OP, replaceToolSettings } from '../tools/config.js';
+import type { ToolSettings } from '../tools/config.js';
 import { HubClient } from './channel.js';
 import { INDEX_RUNS_OP } from './main-services.js';
 import { HubStepStateStore, installStepStateStore } from './step-state.js';
@@ -75,6 +77,8 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	// The embedder's backend is per thread: take the one the main thread decided (Epic 86197ac6 s2).
 	hub.onPush('embedder.backend', backend => setActiveEmbedderBackend(backend as EmbedderBackend));
 	installStepStateStore(new HubStepStateStore(hub));
+	// The tool settings live on the main thread, which pushes each change (Story 5d393a4b).
+	hub.onPush(TOOL_SETTINGS_OP, settings => replaceToolSettings(settings as ToolSettings));
 	hub.onPush(INDEX_RUNS_OP, runs => { indexRuns = runs as readonly IndexRunView[]; });
 	hub.onPush(GRAPH_CLOSE_OP, async ack => {
 		await closeGraphStore();

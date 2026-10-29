@@ -33,7 +33,7 @@ import type { IpcStreamMessage, ThreadRole } from '../../shared/types.js';
 import type { RequestLifetime } from '../request-context.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope, SessionId } from './channel.js';
-import { FIFO_EXEMPT_METHODS, MAIN_DAEMON_CONNECTION_METHODS, servedOnSharedState } from './method-class.js';
+import { FIFO_EXEMPT_METHODS, MAIN_DAEMON_CONNECTION_METHODS, MAIN_THREAD_STATE_METHODS, servedOnSharedState } from './method-class.js';
 import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry, ThreadTarget } from './registry.js';
@@ -234,7 +234,7 @@ export class Router {
 
 	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}): () => void {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
-			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
+			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || MAIN_THREAD_STATE_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		if (cls === 'session' && this.sessions !== undefined) return this.dispatchSession(request, deliver, dropped);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);

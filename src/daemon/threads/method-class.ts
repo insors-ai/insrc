@@ -309,6 +309,9 @@ export function inDaemonTarget(method: string, view: InDaemonRouteView): { reado
 	return undefined;
 }
 
+/** Served on the main thread, which owns their state and pushes it to every worker (Story 5d393a4b): the IDE's tool settings. */
+export const MAIN_THREAD_STATE_METHODS: ReadonlySet<string> = new Set(['tools.config.set']);
+
 /** These operations own process-local admission and transport lifetimes. */
 export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'db.listConnections','db.listDriverKinds','db.saveConnection','db.deleteConnection','db.testConnection',

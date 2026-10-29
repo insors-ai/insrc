@@ -248,7 +248,12 @@ async function main(): Promise<void> {
 			maintenance: maintenance?.status(),
 		}))
 		: undefined;
-	if (threadServices !== undefined) log.info('daemon threads enabled');
+	if (threadServices !== undefined) {
+		log.info('daemon threads enabled');
+		// tools.config.set is served here; each change reaches every worker (Story 5d393a4b).
+		const { onToolSettingsChange } = await import('./tools/config.js');
+		onToolSettingsChange(settings => threadServices.setToolSettings(settings));
+	}
 
 	// 3. Open DB
 	const db = await getDb();

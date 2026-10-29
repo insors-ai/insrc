@@ -58,6 +58,7 @@ export interface InvestigationRepositoryOptions {
  readonly onProgress?:((runId:string,sequence:number,blockId:string|null)=>void)|undefined;
 }
 interface Prepared {readonly manifest:RecoveryManifest;readonly sources:SubjectPreparationDeps;readonly modelLabel:string;readonly authorParty:'controller'|'daemon';readonly reviewerParty:'controller'|'daemon';readonly daemon:InvestigationDaemonAdapter|null;readonly controller:InvestigationControllerHost|null;}
+let providerTail:Promise<void>=Promise.resolve();
 const criterionText:Record<string,string>={adherence:'Check each approved task, acceptance check and design obligation against inspected selected changes.',conventions:'Check relevant project conventions and architectural contracts.',coverage:'Check meaningful passing tests and gaps for the selected behavior; do not equate builder reports with executed tests.',quality:'Check correctness, error paths, race conditions, security and maintainability of the selected changes.',
  'functional-coverage':'Check all declared functional obligations against inspected implementation and tests.',diagram:'Check relevant diagram source, linked content and consistency; distinguish source inspection from unavailable rendering.',ux:'Check relevant layout, states and interactions against the approved UX; disclose unavailable visual evidence.'};
 /** One repository composition over the existing canonical store and S1-S5. No
@@ -115,12 +116,19 @@ export class InvestigationRepository {
  }
  private admissionTail:Promise<void>=Promise.resolve();
  private async serializeAdmission<T>(work:()=>Promise<T>):Promise<T>{const prior=this.admissionTail;let release!:()=>void;this.admissionTail=new Promise<void>(resolve=>{release=resolve;});await prior;try{return await work();}finally{release();}}
- private providerTail:Promise<void>=Promise.resolve();
- private async admitProvider(signal:AbortSignal):Promise<()=>void>{let release!:()=>void;const prior=this.providerTail;this.providerTail=new Promise<void>(resolve=>{release=resolve;});await prior;if(signal.aborted){release();signal.throwIfAborted();}return release;}
+ private async admitProvider(signal:AbortSignal):Promise<()=>void>{
+  let release!:()=>void;const prior=providerTail,owned=new Promise<void>(resolve=>{release=resolve;});
+  // An aborted waiter releases its own place but cannot let later waiters pass
+  // the provider that still owns the earlier place in this process-wide lane.
+  providerTail=prior.then(()=>owned);let onAbort!:()=>void;
+  try{await Promise.race([prior,new Promise<never>((_,reject)=>{onAbort=()=>reject(signal.reason??new Error('Investigation admission cancelled'));signal.addEventListener('abort',onAbort,{once:true});if(signal.aborted)onAbort();})]);signal.throwIfAborted();return release;}
+  catch(cause){release();throw cause;}finally{signal.removeEventListener('abort',onAbort);}
+ }
  private async execution(d:ProductionReviewDescriptor,store:RecoveryStore,lease:NonNullable<ReturnType<RecoveryStore['status']>['owner']>,signal:AbortSignal):Promise<Awaited<ReturnType<ProductionReviewServiceOptions['execution']>>>{
   const p=this.required(d.runId),view=store.replay(),attemptId=randomUUID(),subject=view.basis.subject;
   const owner:{generation:number;attemptId:string}={generation:lease.generation,attemptId};
-  const assertCurrent=()=>{signal.throwIfAborted();this.options.assertProcessOwner();store.assertLease(store.replay(),lease.leaseId,lease.generation);};
+  const assertLease=()=>{this.options.assertProcessOwner();store.assertLease(store.replay(),lease.leaseId,lease.generation);};
+  const assertCurrent=()=>{signal.throwIfAborted();assertLease();};
   const evidence=new ProductionEvidenceAdapter({basis:view.basis,sources:p.sources,canonical:this.options.canonical,assertCurrent:async()=>assertCurrent()});
   const impact=await productionImpactAdapter({basis:view.basis,sources:p.sources,graph:this.options.graph??daemonReviewImpactGraph(this.options.repoPath),mode:d.start.sourceMode,attemptId,currentAttemptId:()=>owner.attemptId,signal,assertCurrent:async()=>assertCurrent()});
   const sourceRefs=subject.contracts.map(pin=>sourceReference({kind:'artifact',artifactId:pin.artifactId,start:1,end:200}));
@@ -137,7 +145,7 @@ export class InvestigationRepository {
   this.owners.set(d.runId,owner);
   const context:InvestigationContext={basis:view.basis,state:view.state,policy:view.manifest.policy,generation:lease.generation,authorParty:d.authorParty,reviewerParty:d.reviewerParty,role:'review',tier:'core',providerId:view.manifest.policy.budget.profile.providerId,
    backend:{provider,qualification:{providerId:view.manifest.policy.budget.profile.providerId,profileDigest:digestValue(view.manifest.policy.budget.profile),pinnedReads:true,readOnly:true,progressMode:'in-session-progress',cancellable:true},execute:async(t,tools,sig)=>{owner.attemptId=t.attemptId;return p.controller?p.controller.execute(t,tools,sig,runtime):p.daemon!.execute(t,tools,sig,runtime);}},
-   ports:store.ports(lease.generation,attemptId,lease.leaseId),validation:{attempt:{runId:d.runId,subjectDigest:d.subjectDigest,attemptId},receipts:view.receipts},schema:JSON.parse(JSON.stringify(InvestigationReplySchema)) as StructuredSchema,seed,now:()=>performance.now(),assertFresh:()=>this.assertFresh(d,view.manifest),assertOwner:generation=>{if(generation!==lease.generation)throw new RecoveryError('ownership-lost','Foreign generation');assertCurrent();},inspect:evidence.inspect,impact:impact.impact,changedEntity:impact.changedEntity,impactReceipts:impact.impactReceipts,observeUsage:()=>null,signal,
+   ports:store.ports(lease.generation,attemptId,lease.leaseId),validation:{attempt:{runId:d.runId,subjectDigest:d.subjectDigest,attemptId},receipts:view.receipts},schema:JSON.parse(JSON.stringify(InvestigationReplySchema)) as StructuredSchema,seed,now:()=>performance.now(),assertFresh:()=>this.assertFresh(d,view.manifest),assertOwner:generation=>{if(generation!==lease.generation)throw new RecoveryError('ownership-lost','Foreign generation');assertLease();},inspect:evidence.inspect,impact:impact.impact,changedEntity:impact.changedEntity,impactReceipts:impact.impactReceipts,observeUsage:()=>null,signal,
    onState:state=>{try{this.options.onProgress?.(d.runId,state.sequence,state.accepted.at(-1)?.progress.blockId??null);}catch{/* Delivery is not acceptance authority. */}}};
   return {turn,context,drain:async()=>{try{if(p.controller)await p.controller.drain(d.runId);else await p.daemon!.drain(d.runId);}finally{if(this.owners.get(d.runId)===owner)this.owners.delete(d.runId);}}};
  }

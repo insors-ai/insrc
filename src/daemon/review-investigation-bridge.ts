@@ -20,7 +20,7 @@ interface Entry {
  readonly binding:ScopedReviewBinding;readonly grant:ScopedReviewGrant;
  readonly resolve:(reply:InvestigationReplyV1)=>void;readonly reject:(cause:unknown)=>void;
  readonly timer:ReturnType<typeof setTimeout>;readonly onAbort:()=>void;
- revoked:boolean;busy:Promise<unknown>|null;reply:InvestigationReplyV1|null;
+ revoked:boolean;busy:Promise<unknown>|null;busyDigest:string|null;reply:InvestigationReplyV1|null;
 }
 /** Private capability broker: only four scoped operations, no general daemon dispatcher. */
 export class ScopedReviewBridge {
@@ -34,7 +34,7 @@ export class ScopedReviewBridge {
   let resolve!:(reply:InvestigationReplyV1)=>void,reject!:(cause:unknown)=>void;
   const done=new Promise<InvestigationReplyV1>((yes,no)=>{resolve=yes;reject=no;});void done.catch(()=>{});
   const onAbort=()=>{void this.revoke(binding.bindingId);},timer=setTimeout(onAbort,grant.ttlMs);timer.unref();
-  const entry:Entry={binding,grant,resolve,reject,timer,onAbort,revoked:false,busy:null,reply:null};
+  const entry:Entry={binding,grant,resolve,reject,timer,onAbort,revoked:false,busy:null,busyDigest:null,reply:null};
   this.entries.set(binding.bindingId,entry);this.runs.set(binding.runId,binding.bindingId);grant.signal.addEventListener('abort',onAbort,{once:true});
   if(grant.signal.aborted)onAbort();return {binding,done};
  }
@@ -51,7 +51,7 @@ export class ScopedReviewBridge {
   const entry=this.entries.get(command.bindingId);if(!entry)throw new ReviewIntegrationError('identity-conflict','Unknown scoped review capability');
   this.check(entry,peer);const b=entry.binding;
   if(command.repo!==b.repo||command.runId!==b.runId||command.subjectDigest!==b.subjectDigest||command.generation!==b.generation||command.attemptId!==b.attemptId||command.requestDigest!==b.requestDigest)throw new ReviewIntegrationError('identity-conflict','Scoped command binding mismatch');
-  if(entry.busy)throw new ReviewIntegrationError('identity-conflict','Scoped calls must be serial');
+  if(entry.busy){if(entry.busyDigest===digestValue(command))return entry.busy;throw new ReviewIntegrationError('identity-conflict','Different scoped calls must be serial');}
   if(entry.reply){if(command.operation==='reply'&&digestValue(command.reply)===digestValue(entry.reply))return {accepted:true};throw new ReviewIntegrationError('identity-conflict','Scoped session already replied');}
   const work=(async()=>{
    let result:unknown;
@@ -75,8 +75,8 @@ export class ScopedReviewBridge {
     }
    }
    this.check(entry,peer);return result;
-  })();entry.busy=work;
-  try{return await work;}finally{entry.busy=null;}
+  })();entry.busy=work;entry.busyDigest=digestValue(command);
+  try{return await work;}finally{entry.busy=null;entry.busyDigest=null;}
  }
  async revoke(bindingId:string){
   const entry=this.entries.get(bindingId);if(!entry)return;

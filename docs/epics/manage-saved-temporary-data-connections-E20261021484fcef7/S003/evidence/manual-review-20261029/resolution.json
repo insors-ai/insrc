@@ -29,5 +29,22 @@
     "A preliminary post-edit run correctly refused a build made stale by concurrent production edits; rebuilt and ran all t33 mapped files successfully.",
     "Historical manual review findings/logs retained; this file records their resolution.",
     "Original full-sweep gaps and automated chunking smoke remain pending; no acceptance claim for either."
-  ]
+  ],
+  "additionalValidationFinding": {
+    "cause": "Namespace wrapper assumed TAP without selecting it; Node26 child defaults to another reporter. Inner namespace case passed; outer summary assertion failed.",
+    "fix": "Explicit --test-reporter=tap on the namespace fixture child.",
+    "testFile": "src/daemon/db/__tests__/connection-reservations.test.ts",
+    "node22Focused": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    "node26Namespace": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    "firstDaemonTaskValidation": "failed; retained verbatim in validation-first.json",
+    "finalDaemonTaskValidation": "pending"
+  }
 }

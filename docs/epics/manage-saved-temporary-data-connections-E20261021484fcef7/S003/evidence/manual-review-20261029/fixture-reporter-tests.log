@@ -1,0 +1,325 @@
+TAP version 13
+# (node:48587) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [06:59:30] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:59:30] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [06:59:31] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 0
+# [06:59:31] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 0
+# [06:59:31] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 0
+# [06:59:31] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:59:31] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 0
+# [06:59:31] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 0
+# [06:59:31] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 0
+# [06:59:31] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 0
+# [06:59:31] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 1
+# [06:59:31] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-vsG7Bz/root"
+#     [35mcount[39m: 1
+# Subtest: CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+ok 1 - CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 159.994917
+  type: 'test'
+  ...
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t5CnYd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t5CnYd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t5CnYd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t5CnYd/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+ok 2 - CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 90.382541
+  type: 'test'
+  ...
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 1
+# [06:59:32] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VEHhLd/root"
+#     [35mcount[39m: 1
+# Subtest: CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+ok 3 - CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 118.403334
+  type: 'test'
+  ...
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rC8ggV/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rC8ggV/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rC8ggV/root"
+#     [35mcount[39m: 0
+# [06:59:32] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rC8ggV/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rC8ggV/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-rC8ggV/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+ok 4 - CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 87.444
+  type: 'test'
+  ...
+# [06:59:32] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t4sczj/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t4sczj/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-secrets] setting data-driver secret[39m
+#     [35mmodule[39m: "db-secrets"
+#     [35mref[39m: "db:7f962244994cb49fb5f20cc49fa2a7ca:same"
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] saved db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t4sczj/root"
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-t4sczj/insrc/repos/7f962244994cb49fb5f20cc49fa2a7ca/db-connections.json"
+# Subtest: CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+ok 5 - CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 6.787333
+  type: 'test'
+  ...
+# [06:59:32] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-N2YmqL/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+ok 6 - CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 5.697334
+  type: 'test'
+  ...
+# [06:59:32] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-OrMHyO/owners.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-OrMHyO/root"
+#     [35mcount[39m: 0
+# [06:59:32] [34mDEBUG[39m: [36m[db-config] saved db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-OrMHyO/root"
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-OrMHyO/insrc/repos/4d0b8c74bb8a0696874eaf04c7322dac/db-connections.json"
+# Subtest: CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+ok 7 - CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+  ---
+  duration_ms: 19.451584
+  type: 'test'
+  ...
+# Subtest: CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+ok 8 - CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+  ---
+  duration_ms: 916.11475
+  type: 'test'
+  ...
+# Subtest: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+ok 9 - CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+  ---
+  duration_ms: 3031.420084
+  type: 'test'
+  ...
+# Subtest: CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+ok 10 - CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+  ---
+  duration_ms: 2.072458
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3170.751208

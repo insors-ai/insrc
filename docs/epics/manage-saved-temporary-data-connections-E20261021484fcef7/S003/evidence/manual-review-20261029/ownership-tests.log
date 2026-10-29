@@ -1,0 +1,1071 @@
+TAP version 13
+# (node:19699) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 0
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 1
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-sM46Ib/root"
+#     [35mcount[39m: 1
+# Subtest: CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+ok 1 - CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 187.292375
+  type: 'test'
+  ...
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-KE7dHS/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-KE7dHS/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-KE7dHS/root"
+#     [35mcount[39m: 0
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-KE7dHS/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+ok 2 - CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 106.114167
+  type: 'test'
+  ...
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 0
+# [06:33:48] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 1
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6VDCp9/root"
+#     [35mcount[39m: 1
+# Subtest: CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+ok 3 - CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 171.659708
+  type: 'test'
+  ...
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-RKcryY/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-RKcryY/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-RKcryY/root"
+#     [35mcount[39m: 0
+# [06:33:48] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-RKcryY/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-RKcryY/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-RKcryY/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+ok 4 - CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 119.258458
+  type: 'test'
+  ...
+# [06:33:48] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6vA2VK/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6vA2VK/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-secrets] setting data-driver secret[39m
+#     [35mmodule[39m: "db-secrets"
+#     [35mref[39m: "db:a8c496d2fcb6f84f07fa07978f5dc07d:same"
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] saved db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6vA2VK/root"
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6vA2VK/insrc/repos/a8c496d2fcb6f84f07fa07978f5dc07d/db-connections.json"
+# Subtest: CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+ok 5 - CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 15.886291
+  type: 'test'
+  ...
+# [06:33:48] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-tzuwm9/race.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+ok 6 - CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 14.013791
+  type: 'test'
+  ...
+# [06:33:48] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-q3vuEM/owners.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-q3vuEM/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] saved db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-q3vuEM/root"
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-q3vuEM/insrc/repos/9117b4bbb2c6da12569b42894cff322f/db-connections.json"
+# Subtest: CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+ok 7 - CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+  ---
+  duration_ms: 35.348375
+  type: 'test'
+  ...
+# Subtest: CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+ok 8 - CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+  ---
+  duration_ms: 773.078667
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility
+ok 9 - CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility
+  ---
+  duration_ms: 11.337375
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-session-rpc-xpap1c/d.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback
+ok 10 - CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback
+  ---
+  duration_ms: 25.363375
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay
+ok 11 - CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay
+  ---
+  duration_ms: 0.987083
+  type: 'test'
+  ...
+# (node:19701) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-s51DXd/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-s51DXd/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-s51DXd/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-s51DXd/other"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-s51DXd/other"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-s51DXd/other"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots
+ok 12 - CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots
+  ---
+  duration_ms: 230.5915
+  type: 'test'
+  ...
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-CNwFeo/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-CNwFeo/root"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-CNwFeo/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy
+ok 13 - CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy
+  ---
+  duration_ms: 98.671208
+  type: 'test'
+  ...
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-uCc0kV/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-uCc0kV/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-uCc0kV/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-uCc0kV/other"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-uCc0kV/other"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-uCc0kV/other"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations
+ok 14 - CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations
+  ---
+  duration_ms: 228.495
+  type: 'test'
+  ...
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-lLTJyE/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-lLTJyE/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-lLTJyE/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-lLTJyE/other"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-lLTJyE/other"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-lLTJyE/other"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-REPLAY: cumulative config quota refuses create and update without partial state
+ok 15 - CM-S3-REPLAY: cumulative config quota refuses create and update without partial state
+  ---
+  duration_ms: 445.204459
+  type: 'test'
+  ...
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ImLaFc/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ImLaFc/root"
+#     [35mcount[39m: 0
+# [06:33:48] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ImLaFc/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state
+ok 16 - CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state
+  ---
+  duration_ms: 80.3845
+  type: 'test'
+  ...
+# (node:19702) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt
+ok 17 - CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt
+  ---
+  duration_ms: 7.948625
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions
+ok 18 - CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions
+  ---
+  duration_ms: 0.695541
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication
+ok 19 - CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication
+  ---
+  duration_ms: 0.521209
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: ticket and receipt quotas never evict live operation history
+ok 20 - CM-S3-REPLAY: ticket and receipt quotas never evict live operation history
+  ---
+  duration_ms: 1423.749208
+  type: 'test'
+  ...
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [06:33:49] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Bqp4Gc/root"
+#     [35mcount[39m: 0
+# [06:33:49] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Bqp4Gc/root"
+#     [35mcount[39m: 0
+# [06:33:49] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Bqp4Gc/root"
+#     [35mcount[39m: 0
+# [06:33:49] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Bqp4Gc/session.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume
+ok 21 - CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume
+  ---
+  duration_ms: 104.763625
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays
+ok 22 - CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays
+  ---
+  duration_ms: 14.84475
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes
+ok 23 - CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes
+  ---
+  duration_ms: 20.417916
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit
+ok 24 - CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit
+  ---
+  duration_ms: 7.369666
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control
+ok 25 - CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control
+  ---
+  duration_ms: 3.031125
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication
+ok 26 - CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication
+  ---
+  duration_ms: 3.310542
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-session-0juu1Q/owner.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease
+ok 27 - CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease
+  ---
+  duration_ms: 13.379708
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences
+ok 28 - CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences
+  ---
+  duration_ms: 3.607333
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal
+ok 29 - CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal
+  ---
+  duration_ms: 8.200834
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers
+ok 30 - CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers
+  ---
+  duration_ms: 2.891708
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change
+ok 31 - CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change
+  ---
+  duration_ms: 11.532458
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-session-4KwYyg/data.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience
+ok 32 - CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience
+  ---
+  duration_ms: 17.437459
+  type: 'test'
+  ...
+# (node:19704) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:33:47] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ucidDp/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ucidDp/a"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ucidDp/a"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+ok 33 - CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+  ---
+  duration_ms: 54.584417
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-21yJpd/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+ok 34 - CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+  ---
+  duration_ms: 11.685459
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VFxeqo/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+ok 35 - CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+  ---
+  duration_ms: 12.745416
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-1W99EK/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+ok 36 - CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+  ---
+  duration_ms: 12.096666
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VQ3R8l/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# [06:33:47] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VQ3R8l/a"
+#     [35mcount[39m: 0
+# [06:33:47] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VQ3R8l/a"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+ok 37 - CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+  ---
+  duration_ms: 14.137667
+  type: 'test'
+  ...
+# [06:33:47] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-lvBSFv/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+ok 38 - CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+  ---
+  duration_ms: 13.888542
+  type: 'test'
+  ...
+# Subtest: CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+ok 39 - CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+  ---
+  duration_ms: 823.320875
+  type: 'test'
+  ...
+# Subtest: CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set
+ok 40 - CM-S3-CACHE: warm exploration/context saved/A/B caches, revision/owner/expiry denial before persistent get/set
+  ---
+  duration_ms: 1682.997958
+  type: 'test'
+  ...
+# [06:33:46] [32mINFO[39m: [36m[ipc] listening on /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-stream-diZ8S7/d.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-STREAM: real socket done retains handler completion and late registered drains
+ok 41 - CM-S3-STREAM: real socket done retains handler completion and late registered drains
+  ---
+  duration_ms: 57.862375
+  type: 'test'
+  ...
+# [06:33:46] [32mINFO[39m: [36m[ipc] listening on /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-stream-6gjl2L/d.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-STREAM: real socket error retains handler completion and late registered drains
+ok 42 - CM-S3-STREAM: real socket error retains handler completion and late registered drains
+  ---
+  duration_ms: 6.560417
+  type: 'test'
+  ...
+# [06:33:46] [32mINFO[39m: [36m[ipc] listening on /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-stream-SjWoPo/d.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains
+ok 43 - CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains
+  ---
+  duration_ms: 29.114125
+  type: 'test'
+  ...
+# [06:33:46] [32mINFO[39m: [36m[ipc] listening on /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-stream-Fb0GpY/d.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains
+ok 44 - CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains
+  ---
+  duration_ms: 4.554666
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup
+ok 45 - CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup
+  ---
+  duration_ms: 2.581083
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup
+ok 46 - CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup
+  ---
+  duration_ms: 2.215833
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup
+ok 47 - CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup
+  ---
+  duration_ms: 1.20125
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery
+ok 48 - CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery
+  ---
+  duration_ms: 1.209458
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery
+ok 49 - CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery
+  ---
+  duration_ms: 2.645916
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery
+ok 50 - CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery
+  ---
+  duration_ms: 1.00425
+  type: 'test'
+  ...
+1..50
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2674.600709

@@ -1,0 +1,597 @@
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "postgres"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "cockroachdb"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mysql"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mariadb"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "sqlite"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mssql"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "oracle"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "clickhouse"
+    [35mfamily[39m: "rdbms"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "redis"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "valkey"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "keydb"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mongodb"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "cassandra"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "nats"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "dynamodb"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "etcd"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "memcached"
+    [35mfamily[39m: "kv"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "csv"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "tsv"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "jsonl"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "ndjson"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "json"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "parquet"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "arrow"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "feather"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "avro"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "bson"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "fixed-width"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "xlsx"
+    [35mfamily[39m: "file"
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+[07:03:56] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-AyjYuV/root"
+    [35mcount[39m: 1
+✔ CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports (129.515875ms)
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:56] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 2
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/b"
+    [35mcount[39m: 2
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 2
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 2
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 2
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 2
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 2
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-qC2jh7/a"
+    [35mcount[39m: 2
+✔ CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization (332.194834ms)
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/malformed"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/malformed"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/malformed"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/malformed"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/shape"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/shape"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/shape"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/shape"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EACCES"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EACCES"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EACCES"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EACCES"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EPERM"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EPERM"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EPERM"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EPERM"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EIO"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EIO"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EIO"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/EIO"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] saved db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/unmanaged"
+    [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-QCd6Jg/insrc/repos/07af0ba7791cc239778988b3b9252fce/db-connections.json"
+✔ CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect (326.82225ms)
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 0
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/root"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+    [35mmodule[39m: "db-config"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+[07:03:57] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+    [35mmodule[39m: "db-pool"
+    [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-80cf42/pinned"
+    [35mcount[39m: 1
+✔ CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family (220.750833ms)
+✔ CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction (6.036834ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2150.539792

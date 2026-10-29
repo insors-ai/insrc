@@ -46,5 +46,22 @@
     },
     "firstDaemonTaskValidation": "failed; retained verbatim in validation-first.json",
     "finalDaemonTaskValidation": "pending"
+  },
+  "savedCompatibilityFollowup": {
+    "secondDaemonTaskValidation": "failed; preserved in validation-second.json",
+    "cause": "Concurrent legacy save calls had asynchronous preflight before entering the root gate, so invocation order did not guarantee the expected final label.",
+    "fix": "Use the existing credential-stage fixture barrier to admit the first call under the root gate before starting the second. Preserve two receipt, secret-redaction, document-retention, and pinned-family assertions.",
+    "productionChange": false,
+    "node22": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    "node26": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    "finalTaskValidation": "pending"
   }
 }

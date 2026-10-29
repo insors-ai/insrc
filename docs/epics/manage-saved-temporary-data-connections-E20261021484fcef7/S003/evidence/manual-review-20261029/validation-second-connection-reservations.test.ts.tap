@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+ok 1 - CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 137.181167
+  type: 'test'
+  ...
+# Subtest: CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+ok 2 - CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 70.063541
+  type: 'test'
+  ...
+# Subtest: CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+ok 3 - CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 92.827083
+  type: 'test'
+  ...
+# Subtest: CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+ok 4 - CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 65.207208
+  type: 'test'
+  ...
+# Subtest: CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+ok 5 - CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 5.939583
+  type: 'test'
+  ...
+# Subtest: CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+ok 6 - CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 4.414333
+  type: 'test'
+  ...
+# Subtest: CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+ok 7 - CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+  ---
+  duration_ms: 9.4315
+  type: 'test'
+  ...
+# Subtest: CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+ok 8 - CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+  ---
+  duration_ms: 661.235209
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1048.960625
+# 
+# npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.

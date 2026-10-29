@@ -193,8 +193,19 @@ test('CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable regist
 test('CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family', async () => {
 	const env = await environment();
 	const f = await env.rootFixture('root');
+	const entered = deferred(), resume = deferred();
+	f.hooks.stage = async () => {
+		f.hooks.stage = undefined;
+		entered.resolve();
+		await resume.promise;
+	};
 	try {
-		const outcomes = await Promise.all([saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:first-secret-canary@host/db', label: 'First' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'}), saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:second-secret-canary@host/db', label: 'Second' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'})]);
+		const first = saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:first-secret-canary@host/db', label: 'First' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'});
+		// Establish gate admission order, rather than relying on asynchronous preflight completion order.
+		await entered.promise;
+		const second = saveConnectionRpc({ repoRoot: f.root, config: { id: 'fixture', kind: 'postgres', url: 'postgres://u:second-secret-canary@host/db', label: 'Second' } }, {connectionIdentity:'fixture-transport',daemonEpoch:'fixture-epoch'});
+		resume.resolve();
+		const outcomes = await Promise.all([first, second]);
 		for (const result of outcomes) {
 			assert.ok(!('error' in result), JSON.stringify(result));
 			assert.ok(!JSON.stringify(result).includes('secret-canary'));
@@ -215,6 +226,7 @@ test('CM-S1-B: legacy upsert is serialized through the same managed gate and pre
 		assert.equal(updated.label, 'Pinned edit');
 	}
 	finally {
+		resume.resolve();
 		await env.cleanup();
 	}
 });

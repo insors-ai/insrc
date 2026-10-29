@@ -1,0 +1,44 @@
+TAP version 13
+# Subtest: CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports
+ok 1 - CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports
+  ---
+  duration_ms: 107.281417
+  type: 'test'
+  ...
+# Subtest: CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization
+ok 2 - CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization
+  ---
+  duration_ms: 277.829084
+  type: 'test'
+  ...
+# Subtest: CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect
+ok 3 - CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect
+  ---
+  duration_ms: 327.017667
+  type: 'test'
+  ...
+# Subtest: CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family
+ok 4 - CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family
+  ---
+  duration_ms: 207.523958
+  type: 'test'
+  ...
+# Subtest: CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction
+ok 5 - CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction
+  ---
+  duration_ms: 4.952541
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 926.866875
+# 
+# npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.

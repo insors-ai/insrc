@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s4",
+    "createdAt": "2026-10-29T10:08:25.734Z",
+    "updatedAt": "2026-10-29T10:08:25.734Z",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicSlug": "manage-saved-temporary-data-connections"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "1df739847",
+        "ranAt": "2026-10-29T10:08:25.734Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-INPUT: extend src/shared/__tests__/connection-management.test.ts for exact cleanup/status decoders, wrong mode/target and unchanged receipt keys.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S4-INPUT: removal state and cleanup accept only a bounded exact remove ticket",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S4-INPUT: existing remove target validation and persisted outcome shape stay unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4002,
+            "titles": [
+              {
+                "title": "CM-S4-INPUT: removal state and cleanup accept only a bounded exact remove ticket",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-INPUT: existing remove target validation and persisted outcome shape stay unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: legacy document remains readable and v2 declarations preserve safe outcome boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

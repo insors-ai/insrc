@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create
+ok 1 - CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create
+  ---
+  duration_ms: 31835.465833
+  type: 'test'
+  ...
+# Subtest: CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views
+ok 2 - CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views
+  ---
+  duration_ms: 26380.112084
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31996.605375

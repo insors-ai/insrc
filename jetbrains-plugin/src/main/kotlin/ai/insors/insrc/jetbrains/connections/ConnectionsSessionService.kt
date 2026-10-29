@@ -11,29 +11,54 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Actual Project identity is supplied by the platform container, never a JSON owner hint. */
 @Service(Service.Level.PROJECT)
 class ConnectionsSessionService(private val project: Project) : Disposable {
-    private var owner = ConnectionsSessionOwner(alive = { !project.isDisposed })
+    private var owner = ConnectionsSessionOwner(alive = { !project.isDisposed && !serviceDisposed })
+    private var mutationOwner: ProjectMutationOwner? = null
+    private var mutationTiming = MutationTiming()
+    @Volatile private var serviceDisposed = false
+    @Synchronized fun mutations(): ConnectionMutationController {
+        if(serviceDisposed||project.isDisposed)throw MutationStateException("disposed")
+        return (mutationOwner ?: createProjectMutationOwner(owner,mutationTiming).also{mutationOwner=it}).controller
+    }
+    fun onMutationChange(listener:()->Unit):AutoCloseable {
+        val active=AtomicBoolean(true)
+        val subscription=mutations().onChange {
+            val app=ApplicationManager.getApplication()
+            val deliver=Runnable{if(active.get()&&!project.isDisposed&&!serviceDisposed)listener()}
+            if(app.isDispatchThread)deliver.run()else app.invokeLater(deliver)
+        }
+        return AutoCloseable{active.set(false);subscription.close()}
+    }
     val view: ConnectionOwnerView get() = owner.view
     fun setRegisteredRoots(roots: List<String>) = owner.setRegisteredRoots(roots)
     fun selectRoot(root: String): CompletionStage<ConnectionOwnerView> = owner.selectRoot(root)
     fun requestTemporary(root: String, identity: ConnectionOwnerView, method: String, params: JsonElement): ConnectionLaneCall = owner.requestTemporary(root, identity, method, params)
     fun requestSaved(root: String, method: String, params: JsonElement): ConnectionLaneCall = owner.requestSaved(root, method, params)
     /** UI subscribers run on EDT; disposed views remove only their subscription. */
-    fun onChange(listener: (ConnectionOwnerView) -> Unit): AutoCloseable = owner.onChange { view ->
-        val app = ApplicationManager.getApplication()
-        val deliver = Runnable { if (!project.isDisposed && view.generation == owner.view.generation) listener(view) }
-        if (app.isDispatchThread) deliver.run() else app.invokeLater(deliver)
+    fun onChange(listener: (ConnectionOwnerView) -> Unit): AutoCloseable {
+        val active=AtomicBoolean(true)
+        val subscription=owner.onChange { view ->
+            val app = ApplicationManager.getApplication()
+            val deliver = Runnable { if (active.get()&&!project.isDisposed && view.generation == owner.view.generation) listener(view) }
+            if (app.isDispatchThread) deliver.run() else app.invokeLater(deliver)
+        }
+        return AutoCloseable{active.set(false);subscription.close()}
     }
     /** Private controller erasure is synchronous; it must not wait for EDT delivery. */
     fun onTemporaryInvalidated(listener: () -> Unit): AutoCloseable = owner.onTemporaryInvalidated(listener)
-    override fun dispose() = owner.close()
-    fun whenDisposed(): CompletionStage<Void> = owner.whenDisposed()
+    override fun dispose() {
+        synchronized(this){if(serviceDisposed)return;serviceDisposed=true;mutationOwner?.revocation?.close();mutationOwner?.controller?.close()}
+        owner.close()
+    }
+    fun whenDisposed(): CompletionStage<Void> = CompletableFuture.allOf(owner.whenDisposed().toCompletableFuture(),mutationOwner?.controller?.whenDisposed()?.toCompletableFuture()?:CompletableFuture.completedFuture(null))
+    @Synchronized internal fun installMutationFixtureTiming(timing:MutationTiming){check(!serviceDisposed&&mutationOwner==null);mutationTiming=timing}
     /** Per-instance transport/clock seam, installable only before any root/session work. */
     internal fun installFixturePorts(ports: ConnectionOwnerPorts) {
-        check(owner.view.status == "idle"); owner.close(); owner = ConnectionsSessionOwner(ports) { !project.isDisposed }
+        check(!serviceDisposed&&mutationOwner==null&&owner.view.status == "idle"); owner.close(); owner = ConnectionsSessionOwner(ports) { !project.isDisposed && !serviceDisposed }
     }
 }
 
@@ -250,5 +275,6 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
             }catch(_:Exception){owned.forEach{it.close()};disposal.completeExceptionally(ConnectionOwnerException("teardown"))}
         },"insrc-project-connection-end").apply{isDaemon=true;start()}
     }
+    fun expireTemporary(){if(!disposed)invalidate("expired")}
     fun whenDisposed():CompletionStage<Void> = disposal.minimalCompletionStage()
 }

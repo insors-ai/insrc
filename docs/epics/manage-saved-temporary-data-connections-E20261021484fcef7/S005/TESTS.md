@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -195,3 +195,25 @@ Run at 2026-10-29T16:42:41.556Z on commit `7faf99e13`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-draft.test.ts` | 0 | 2 | 5.1 s |  |
+
+## t12
+
+Run at 2026-10-29T17:07:13.552Z on commit `710d847c1`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 7 | 3 s |  |

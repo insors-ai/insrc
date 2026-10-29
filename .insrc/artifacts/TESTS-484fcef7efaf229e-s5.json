@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T16:42:41.556Z",
+    "updatedAt": "2026-10-29T17:07:13.552Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -525,6 +525,96 @@
               },
               {
                 "title": "CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "710d847c1",
+        "ranAt": "2026-10-29T17:07:13.552Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2982,
+            "titles": [
+              {
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
                 "result": "pass"
               }
             ],

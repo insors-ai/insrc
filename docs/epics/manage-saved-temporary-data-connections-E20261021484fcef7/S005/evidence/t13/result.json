@@ -1,0 +1,43 @@
+{
+  "task": "t13",
+  "focusedTests": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "junitTests": {
+    "nativeMutation": 6,
+    "adjacentProjectOwner": 4
+  },
+  "reuseAnalysis": "../t12/reuse-analysis.json: fresh native inventory had protocol/draft/session ownership but no signed mutation recovery controller",
+  "realAuthority": "Actual platform Project services over AF_UNIX to IpcServer/ConnectionSessionRpc/SavedConnectionManagement/SavedTicketAuthority/ManagedRegistry/CredentialGenerations. Storage, enablement, keystore and drivers are fixture-owned; production admission unchanged.",
+  "privateState": "Transient private controller fields; Gson(controller)=={}; immutable request text retained only in project memory. Strict decoders correlate original key/mode/operation ID.",
+  "scopeLanes": "Saved uses unclaimed lane. Temporary status can resume only a live same-owner stamp; revocation clears inputs/tickets and leaves an ended-session marker. No fallback by dropping session fields.",
+  "postCommit": "Activation by committed revision, credential maintenance by original ticket status, or list refresh only. No repeated create/update; replacement draft cleared after known commit.",
+  "projectLoss": "Actual Project teardown erases old records; fresh actual Project reloads current Saved rows without a fabricated historical operation/outcome.",
+  "viewDisposal": "Queued EDT deliveries carry a subscription-active guard; closing view subscriptions preserves unknown records and project session.",
+  "limits": {
+    "records": 64,
+    "aggregateAttemptBytes": 16777216,
+    "automaticPolls": 5
+  },
+  "initialFailures": [
+    "attempt1-failed.tap: long fixture Unix socket path (108 bytes) exceeded macOS socket address limit; shorter owned prefix used",
+    "attempt2-failed.tap: assertion counted the legitimate Saving notification before view closure; corrected to assert no additional deliveries after close"
+  ],
+  "typecheck": "Node22 backend tsc --noEmit passed; JDK21 offline native compile/test passed",
+  "fullSweep": "deferred until all implementation tasks",
+  "releaseEnabled": false,
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt": "1b6d9d2a2b22d9534459352ff596e1fd01da1a46b2adc8e0c94c6c840a4e591f",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationGateway.kt": "e68cc54e10005be732587793cf1ed5a251efc2aacc9347d0e85efbcd2f136748",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt": "9d4e6e272382a01828f104a67e4305dd227f30f6eba2604e14fb9b2a7f65b7d0",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt": "c938d5748406335b1c7473603e5209e5ce7f7a9d8cbdcb762ccfc068f69b4616",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationBackend.kt": "453229e76411bf348b72e690e504e444733e0623a7e1d61b6873de53384b7c63",
+    "src/shared/__tests__/fixtures/connection-mutation-server.ts": "b311e6295db6c94125d07854ab19eed03d103495f241aee17fb37a50cb251ec5",
+    "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts": "db883fe7003cf532c78e41062130081849f4713878a5e42a728989961a27e72d"
+  }
+}

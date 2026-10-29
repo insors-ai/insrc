@@ -14,6 +14,22 @@ export function validateReviewMode(body: CodeReviewBody): string | null {
  return null;
 }
 
+/** Compatibility reader: pre-mode legacy records stay readable; new-mode records must be complete and supported. */
+export function reviewRecordGap(review:unknown):string|undefined{
+ const r=review as CodeReviewArtifact|undefined,b=r?.body;
+ if(!b||typeof b!=='object')return 'The code review has no readable body.';
+ if(b.groundingMode===undefined&&b.investigation===undefined)return undefined;
+ const modeError=validateReviewMode(b);if(modeError)return modeError;
+ if(b.groundingMode!=='investigation')return undefined;
+ try{
+  if(!Array.isArray(b.dimensions))return 'Investigation dimensions are missing.';
+  const known=['adherence','conventions','coverage','quality','functional-coverage','diagram','ux'];
+  const ids=b.dimensions.map(d=>d.dimension);
+  if(new Set(ids).size!==ids.length||ids.some(id=>!known.includes(id))||['adherence','conventions','coverage','quality'].some(id=>!ids.includes(id as ReviewDimension)))return 'Investigation criterion coverage is incomplete or unsupported.';
+  return validateArtifact(r!,ids)??undefined;
+ }catch{return 'Investigation record structure cannot be verified.';}
+}
+
 /** Count the finding severities across every dimension. */
 export function foldCounts(dimensions: readonly DimensionResult[]): { readonly high: number; readonly med: number; readonly low: number } {
 	let high = 0, med = 0, low = 0;

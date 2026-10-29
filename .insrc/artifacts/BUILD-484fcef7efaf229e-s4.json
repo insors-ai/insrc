@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:21:30.021Z",
+    "updatedAt": "2026-10-29T10:27:33.965Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": false
       }
     ],
-    "summary": "S004 has sc6 pure contracts and bounded cleanup ownership plus strict Saved pool retirement. Saved/temporary removal transactions and endpoint admission remain pending; release remains disabled.",
+    "summary": "S004 adds request/state helpers and strict private Saved/temporary resource retirement. Temporary pending retirement consumes existing shared session quota; transaction and endpoint removal admission remain pending and release is disabled.",
     "testRecord": {
       "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/TESTS.md"
     },
@@ -38,72 +42,100 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management-wire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-removal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/shared/connection-removal.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/removal-retirement.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/daemon/db/removal-retirement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-leases.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
       },
       {
         "target": {
           "file": "src/daemon/db/pool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:21:30.021Z"
+        "timestamp": "2026-10-29T10:27:33.965Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/session-cleanup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:27:33.965Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/session-resources.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:27:33.965Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/session-entries.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:27:33.965Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/session-resources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:27:33.965Z"
       }
     ],
-    "commit": "5d42177e7"
+    "commit": "52a8dff9a"
   }
 }

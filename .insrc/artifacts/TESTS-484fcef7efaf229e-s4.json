@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:21:30.021Z",
+    "updatedAt": "2026-10-29T10:27:33.965Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -315,6 +315,117 @@
               },
               {
                 "title": "CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "52a8dff9a",
+        "ranAt": "2026-10-29T10:27:33.965Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S4-RETIRE/TEMP: extend src/daemon/db/__tests__/session-resources.test.ts and src/daemon/db/__tests__/session-cleanup.test.ts for retained resource slots, cross-root pressure and expiry drains.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 3489,
+            "titles": [
+              {
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "fail"
+              },
+              {
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "fail"
+              },
+              {
+                "title": "CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": [
+              "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+              "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work"
+            ]
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1559,
+            "titles": [
+              {
+                "title": "CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
                 "result": "pass"
               }
             ],

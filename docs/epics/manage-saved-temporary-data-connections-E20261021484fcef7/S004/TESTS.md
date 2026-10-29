@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -81,3 +81,28 @@ Run at 2026-10-29T10:21:30.021Z on commit `5d42177e7`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 17 | 1.7 s |  |
+
+## t5
+
+Run at 2026-10-29T10:27:33.965Z on commit `52a8dff9a`. Tests check: **failed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-RETIRE/TEMP: extend src/daemon/db/__tests__/session-resources.test.ts and src/daemon/db/__tests__/session-cleanup.test.ts for retained resource slots, cross-root pressure and expiry drains.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+| pass | CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 1 | 4 | 3.5 s |  |
+| `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 9 | 1.6 s |  |
+
+**Failures outside the named cases**
+
+- `src/daemon/db/__tests__/session-cleanup.test.ts`: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+- `src/daemon/db/__tests__/session-cleanup.test.ts`: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work

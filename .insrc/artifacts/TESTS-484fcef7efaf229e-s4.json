@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:12:55.214Z",
+    "updatedAt": "2026-10-29T10:16:22.549Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -132,6 +132,69 @@
               },
               {
                 "title": "CM-S4-STATE: unrelated outcomes cannot assert removal and projections never copy unsafe fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "0ce46e23e",
+        "ranAt": "2026-10-29T10:16:22.549Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-RETIRE: proposed private retirement-owner tests for exact tokens, 64/65 root and 256/257 daemon capacity, cancellation and already-owned shutdown drains.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/removal-retirement.test.ts",
+                "title": "CM-S4-RETIRE: shared budget enforces 64 per root and 256 daemon-wide without eviction",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/removal-retirement.test.ts",
+                "title": "CM-S4-RETIRE: opaque tokens bind owner, operation and revision and only uncommitted reservations cancel",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/removal-retirement.test.ts",
+                "title": "CM-S4-RETIRE: failed close retains exact ownership and concurrent retries share one attempt",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/removal-retirement.test.ts",
+                "title": "CM-S4-RETIRE: shutdown drains already-owned resources at capacity and keeps failures for retry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/removal-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 509,
+            "titles": [
+              {
+                "title": "CM-S4-RETIRE: shared budget enforces 64 per root and 256 daemon-wide without eviction",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: opaque tokens bind owner, operation and revision and only uncommitted reservations cancel",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: failed close retains exact ownership and concurrent retries share one attempt",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RETIRE: shutdown drains already-owned resources at capacity and keeps failures for retry",
                 "result": "pass"
               }
             ],

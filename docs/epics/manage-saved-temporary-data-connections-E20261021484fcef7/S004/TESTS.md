@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -42,3 +42,22 @@ Run at 2026-10-29T10:12:55.214Z on commit `08f5e1719`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-removal.test.ts` | 0 | 4 | 0.3 s |  |
+
+## t3
+
+Run at 2026-10-29T10:16:22.549Z on commit `0ce46e23e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S4-RETIRE: proposed private retirement-owner tests for exact tokens, 64/65 root and 256/257 daemon capacity, cancellation and already-owned shutdown drains.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-RETIRE: shared budget enforces 64 per root and 256 daemon-wide without eviction | `src/daemon/db/__tests__/removal-retirement.test.ts` |
+| pass | CM-S4-RETIRE: opaque tokens bind owner, operation and revision and only uncommitted reservations cancel | `src/daemon/db/__tests__/removal-retirement.test.ts` |
+| pass | CM-S4-RETIRE: failed close retains exact ownership and concurrent retries share one attempt | `src/daemon/db/__tests__/removal-retirement.test.ts` |
+| pass | CM-S4-RETIRE: shutdown drains already-owned resources at capacity and keeps failures for retry | `src/daemon/db/__tests__/removal-retirement.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/removal-retirement.test.ts` | 0 | 4 | 0.5 s |  |

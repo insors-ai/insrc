@@ -20,7 +20,7 @@ function deferred<T = void>() {
 	});
 	return { promise, resolve, reject };
 }
-async function fixture(extra: Record<string, unknown> = {}) {
+async function fixture(extra: Record<string, unknown> = {}, options: { idleCloseMs?: number; build?: () => Promise<Driver> } = {}) {
 	const root = await mkdtemp(join(tmpdir(), 'cm-leases-'));
 	const original = PATHS.insrc;
 	Object.defineProperty(PATHS, 'insrc', { value: join(root, 'insrc'), configurable: true });
@@ -32,9 +32,9 @@ async function fixture(extra: Record<string, unknown> = {}) {
 	const raw = { id: 'fixture', kind: 'postgres', family: 'rdbms', config: { password: 'private-canary' }, describe: async () => ({ columns: [] }), listTables: async () => ({ tables: [], total: 0 }), close: async () => {
 			closes++;
 		}, ...extra } as unknown as Driver;
-	const pool = new DriverPool(root, { idleCloseMs: 15, factory: () => async () => {
+	const pool = new DriverPool(root, { idleCloseMs: options.idleCloseMs ?? 15, factory: () => async () => {
 			builds++;
-			return raw;
+			return options.build ? options.build() : raw;
 		} });
 	await pool.reload();
 	return { root, path, file, pool, raw, get builds() {
@@ -47,6 +47,89 @@ async function fixture(extra: Record<string, unknown> = {}) {
 			await rm(root, { recursive: true, force: true });
 		} };
 }
+test('CM-S4-INVALIDATE: removal detaches an unused revision synchronously without constructing it',async()=>{
+	const f=await fixture();
+	try {
+		const revision=f.pool.leaseState('fixture').revision;
+		const prepared=f.pool.prepareRemoval('fixture',revision,'unused-operation');
+		await assert.rejects(f.pool.lease('fixture'),{code:'busy'});
+		assert.throws(()=>f.pool.commitRemoval({}),{code:'conflict'});
+		const cleanup=f.pool.commitRemoval(prepared);
+		assert.deepEqual(f.pool.list(),[]);assert.deepEqual(f.pool.safeList(),[]);
+		await assert.rejects(f.pool.lease('fixture'),{code:'not-found'});
+		await assert.rejects(f.pool.acquire('fixture'),{code:'not-found'});
+		await cleanup.close();assert.equal(f.builds,0);
+		assert.equal(f.pool.removalCleanupPending('unused-operation',revision),false);
+	} finally { await f.cleanup(); }
+});
+test('CM-S4-RETIRE: failed and paused removal cleanup retains the old handle across same-ID recreation',async()=>{
+	let attempts=0,newCloses=0;
+	const started=deferred(),finish=deferred();
+	let f:Awaited<ReturnType<typeof fixture>>;
+	f=await fixture({close:async()=>{attempts++;if(attempts===1)throw new Error('private-close-canary');started.resolve();await finish.promise;}},
+		{idleCloseMs:60000,build:async()=>f.builds===1?f.raw:{...f.raw,close:async()=>{newCloses++;}}});
+	try {
+		await f.pool.withConnection('fixture',async()=>{});
+		const revision=f.pool.leaseState('fixture').revision;
+		const prepared=f.pool.prepareRemoval('fixture',revision,'remove-old');
+		await writeFile(f.path,JSON.stringify({connections:[]}));
+		const cleanup=f.pool.commitRemoval(prepared);
+		assert.deepEqual(f.pool.list(),[]);
+		await assert.rejects(cleanup.close(),error=>error instanceof Error&&'code' in error&&error.code==='recovery-required'&&!error.message.includes('private-close-canary'));
+		assert.equal(f.pool.removalCleanupPending('remove-old',revision),true);
+		const closing=cleanup.close();await started.promise;
+		await writeFile(f.path,JSON.stringify({connections:[{...f.file.connections[0],url:'postgres://u:other@new/db'}]}));
+		await f.pool.reload();await f.pool.withConnection('fixture',async()=>{});
+		assert.notEqual(f.pool.leaseState('fixture').revision,revision);
+		assert.equal(newCloses,0);finish.resolve();await closing;
+		await f.pool.retryRemovalCleanup('remove-old',revision);assert.equal(attempts,2);assert.equal(newCloses,0);
+		assert.equal(f.pool.removalCleanupPending('remove-old',revision),false);
+	} finally {finish.resolve();await f.cleanup();}
+	assert.equal(newCloses,1);
+});
+test('CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed',async()=>{
+	const started=deferred(),finish=deferred();let closes=0;
+	let f:Awaited<ReturnType<typeof fixture>>;
+	f=await fixture({close:async()=>{closes++;}},{idleCloseMs:60000,build:async()=>{started.resolve();await finish.promise;return f.raw;}});
+	try {
+		const acquiring=f.pool.acquire('fixture');void acquiring.catch(()=>{});await started.promise;
+		const revision=f.pool.leaseState('fixture').revision;
+		const cleanup=f.pool.commitRemoval(f.pool.prepareRemoval('fixture',revision,'late-operation'));
+		const closing=cleanup.close();assert.deepEqual(f.pool.list(),[]);
+		assert.equal(f.pool.removalCleanupPending('late-operation',revision),true);
+		finish.resolve();await assert.rejects(acquiring,{code:'conflict'});await closing;
+		assert.equal(closes,1);await cleanup.close();assert.equal(closes,1);
+	} finally {finish.resolve();await f.cleanup();}
+});
+test('CM-S4-RETIRE: cancellation preserves generation and unresolved preparation blocks reload and shutdown',async()=>{
+	const f=await fixture({}, {idleCloseMs:60000});
+	try {
+		await f.pool.withConnection('fixture',async()=>{});
+		const revision=f.pool.leaseState('fixture').revision;
+		assert.throws(()=>f.pool.prepareRemoval('fixture','stale','bad'),{code:'conflict'});
+		const prepared=f.pool.prepareRemoval('fixture',revision,'canceled-operation');
+		await assert.rejects(f.pool.reload(),{code:'busy'});
+		assert.equal(f.closes,0);f.pool.cancelRemoval(prepared);f.pool.cancelRemoval(prepared);
+		assert.equal(f.pool.leaseState('fixture').revision,revision);
+		await f.pool.withConnection('fixture',async()=>{});assert.equal(f.builds,1);
+		const unresolved=f.pool.prepareRemoval('fixture',revision,'uncertain-operation');
+		await assert.rejects(f.pool.closeAll(),{code:'busy'});assert.equal(f.closes,0);
+		f.pool.cancelRemoval(unresolved);
+	} finally {await f.cleanup();}
+});
+test('CM-S4-RETIRE: failed idle close retains its exact driver for later strict removal retry',async()=>{
+	const failed=deferred();let calls=0;
+	const f=await fixture({close:async()=>{calls++;if(calls===1){failed.resolve();throw new Error('private-idle-canary');}}});
+	try {
+		await f.pool.withConnection('fixture',async()=>{});
+		await new Promise<void>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('idle-close timeout')),5000);void failed.promise.then(()=>{clearTimeout(timer);resolve();});});
+		// A full turn lets the real idle-close catch/finally settle; no race is inferred from a delay.
+		await new Promise<void>(resolve=>setImmediate(resolve));
+		const revision=f.pool.leaseState('fixture').revision;
+		await f.pool.commitRemoval(f.pool.prepareRemoval('fixture',revision,'idle-operation')).close();
+		assert.equal(calls,2);
+	} finally {await f.cleanup();}
+});
 test('CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked', async () => {
 	const f = await fixture();
 	const pending = deferred();

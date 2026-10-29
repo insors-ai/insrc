@@ -1,0 +1,38 @@
+{
+  "task": "t9",
+  "focusedNodeBridge": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "junitTests": 4,
+  "nativePlatform": "Actual platform Project service lookup, a fresh heavy Project fixture and a distinct ProjectManager-created Project; actual closeAndDispose of the second Project ends only its owner",
+  "transport": "Actual AF_UNIX PersistentDaemonLane to Node22 IpcServer/ConnectionSessionRpc/TemporaryConnectionOverlay subprocess; gates and registered roots are fixture-only, no production release enabled",
+  "clock": "Controlled monotonic clocks and background timer callbacks; confirmed 30s heartbeat, same-epoch resume and exact 90s lease boundary; wall-clock/live UI acceptance remains assigned later",
+  "concurrency": "Pending RPC replies do not block admission/cancel; disposal preserves written=true from the lane after actual server observation",
+  "teardown": "Nonblocking service disposal, 1s best-effort end then up to3s owned lane/worker/scheduler drain; future signals errors rather than pretending drain completed",
+  "typecheck": "Node22 tsc --noEmit passed; JDK21 offline focused compile/test passed",
+  "initialFailures": [
+    "attempt1-failed.tap: reused disposed light-project service and masked nested fixture teardown failure",
+    "attempt2-failed.tap: nested heavy fixtures each tracked editor listeners, causing a fixture-level tracker leak; second Project now created/disposed through ProjectManager under one heavy fixture"
+  ],
+  "unchanged": [
+    "APP DaemonGatewayService",
+    "PluginLifecycle close-hook surface"
+  ],
+  "pending": [
+    "Swing UI/keyboard/live lifecycle proofs",
+    "Actual elapsed lease test in task28",
+    "Final all-task sweep and manual post-build review"
+  ],
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt": "57a35f40bb160fbf940dcbd8351dd931ff2f187f962d55be1cfa65dfb7ff774b",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt": "fa5bf0433ad4bb1271e8f1b59279e5b59330a41358948a2df756804aefff4716",
+    "src/shared/__tests__/connection-manager-kotlin-owner.test.ts": "0af65c786baf78b1e5cf6055932156f77c1a7b2666751a77bf712f88060911f2",
+    "src/shared/__tests__/fixtures/connection-project-server.ts": "eec29482ada04c0e61e8c851276cb40a43ca32da60aff81cfc82d4e073ac5f7d",
+    "src/shared/__tests__/fixtures/connection-junit.ts": "f49dde9fe7371b67fbab7c3c71cfda96d2ea6e15b022e0edc46a3891de0f44cf"
+  }
+}

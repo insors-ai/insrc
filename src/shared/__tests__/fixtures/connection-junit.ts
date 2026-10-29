@@ -11,7 +11,7 @@ export function runConnectionJUnit(className: string, expectedTests: number): vo
  try {
   const javaHome=process.platform==='darwin'?spawnSync('/usr/libexec/java_home',['-v','21'],{encoding:'utf8'}).stdout.trim():process.env['JAVA_HOME'];
   const result=spawnSync('./gradlew',['--offline','test','--tests',className,`-PinsrcFixtureReports=${reports}`,'--console=plain'],{
-   cwd:fileURLToPath(new URL('../../../../jetbrains-plugin/',import.meta.url)),env:{...process.env,...(javaHome?{JAVA_HOME:javaHome}:{})},encoding:'utf8',timeout:170000,maxBuffer:4*1024*1024,
+   cwd:fileURLToPath(new URL('../../../../jetbrains-plugin/',import.meta.url)),env:{...process.env,INSRC_FIXTURE_NODE:process.execPath,...(javaHome?{JAVA_HOME:javaHome}:{})},encoding:'utf8',timeout:170000,maxBuffer:4*1024*1024,
   });
   assert.equal(result.status,0,`Focused JUnit validation failed: ${result.stdout}\n${result.stderr}`);
   assert.match(result.stdout,/BUILD SUCCESSFUL/);

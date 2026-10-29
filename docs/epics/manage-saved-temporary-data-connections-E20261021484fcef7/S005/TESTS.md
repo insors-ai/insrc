@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -126,3 +126,22 @@ Run at 2026-10-29T15:42:56.912Z on commit `3fa48b8f5`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-model.test.ts` | 0 | 1 | 4.6 s |  |
+
+## t8
+
+Run at 2026-10-29T15:55:42.425Z on commit `863c1cc5a`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal | `vscode-plugin/src/connections/__tests__/session-owner.test.ts` |
+| pass | CM-S5-OWNER-TS: exact expiry erases temporary inputs and epoch restart never resumes or replays old authority | `vscode-plugin/src/connections/__tests__/session-owner.test.ts` |
+| pass | CM-S5-OWNER-TS: unavailable session features refuse without a claimed-lane Saved fallback | `vscode-plugin/src/connections/__tests__/session-owner.test.ts` |
+| pass | CM-S5-OWNER-TS: disposal deadline closes only owned lanes even when end reply is lost | `vscode-plugin/src/connections/__tests__/session-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/connections/__tests__/session-owner.test.ts` | 0 | 4 | 1.9 s |  |

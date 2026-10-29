@@ -1,0 +1,119 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { z } from 'zod';
+import { reviewBudgetDeclarationSchema } from './review-controller-budget-schema.js';
+
+export const PROBE_ATTEMPT_MS = 300_000;
+export const PROBE_CONTEXT_TOKENS = 128_000;
+export const PROBE_OBSERVATION_BYTES = 8 * 1024 * 1024;
+export const PROBE_RESPONSE_BYTES = 2 * 1024 * 1024;
+const text = z.string().min(1).max(4096);
+const digest = z.string().regex(/^[a-f0-9]{64}$/);
+const time = z.number().int().nonnegative().safe();
+const id = z.uuid();
+const mode = z.enum(['source-only', 'indexed-impact']);
+const file = z.object({ path: text, digest }).strict();
+
+export const probeIdentitySchema = z.object({
+  kind: z.enum(['claude', 'codex']), adapterVersion: text, binaryVersion: text,
+  binary: file, runtimeFiles: z.array(file).max(64),
+  profileDigest: digest, catalogDigest: digest, launchDigest: digest,
+}).strict();
+
+/** Only this input crosses IPC. Launch authority and observations are daemon-owned. */
+export const investigationProbeCommandSchema = z.discriminatedUnion('operation', [
+  z.object({ version: z.literal(1), operation: z.literal('start'), requestId: id,
+    repo: text, sourceMode: mode, reviewBudget: reviewBudgetDeclarationSchema }).strict(),
+  ...(['status', 'cancel', 'export'] as const).map(operation =>
+    z.object({ version: z.literal(1), operation: z.literal(operation), repo: text, probeId: id }).strict()),
+]);
+export type InvestigationProbeCommand = z.infer<typeof investigationProbeCommandSchema>;
+
+export const PROBE_REQUIRED_CHECKS = [
+  'effective-inventory', 'raw-filesystem', 'shell', 'network', 'approval', 'cross-run',
+  'builtin-tools', 'user-mcp', 'project-mcp', 'plugins', 'hooks', 'repository-instructions',
+  'durable-progress', 'cancellation-exit',
+] as const;
+export const probeObservationSchema = z.object({
+  check: z.enum(PROBE_REQUIRED_CHECKS),
+  verdict: z.enum(['observed-denied', 'observed-allowed', 'unverifiable']),
+  attemptId: id, launchDigest: digest, effectiveDigest: digest,
+  provenance: z.enum(['runtime-event', 'observer-attestation']),
+  observationDigest: digest, detail: text, at: time,
+}).strict();
+export type InvestigationProbeObservation = z.infer<typeof probeObservationSchema>;
+
+/** Same version-1 shape consumed by installed qualification; this schema grants no authority. */
+export const probeCandidateSchema = z.object({
+  version: z.literal(1), identity: probeIdentitySchema,
+  effective: z.object({ cwd: text, configFiles: z.array(file).min(1).max(64),
+    builtinTools: z.array(text).max(128), inheritedConfigSources: z.array(text).max(128),
+    mcpServers: z.array(text).max(128), plugins: z.array(text).max(128), hooks: z.array(text).max(128),
+    repositoryInstructions: z.array(text).max(128), credentialCopies: z.array(text).max(128),
+    auth: z.literal('existing-cli-oauth'), catalog: z.array(z.unknown()).max(16),
+  }).strict(),
+  trace: z.object({ effectiveDigest: digest, events: z.array(z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('denied'), capability: text }).strict(),
+    z.object({ kind: z.literal('block-ack'), sequence: z.number().int().positive() }).strict(),
+    z.object({ kind: z.literal('cancel-requested') }).strict(),
+    z.object({ kind: z.literal('process-exited'), cancelled: z.literal(true) }).strict(),
+  ])).max(256) }).strict(), validUntil: time,
+}).strict();
+
+export const probeUsageSchema = z.object({
+  modelCalls: time.nullable(), inputTokens: time.nullable(), outputTokens: time.nullable(),
+  latencyMs: time.nullable(),
+}).strict();
+export const probeStatusSchema = z.object({
+  version: z.literal(1), probeId: id, requestId: id, attemptId: id, repo: text, sourceMode: mode,
+  state: z.enum(['queued', 'running', 'cancelling', 'completed', 'unsupported', 'failed', 'cancelled', 'interrupted']),
+  identity: probeIdentitySchema.nullable(), startedAt: time.nullable(), endedAt: time.nullable(),
+  missingEvidence: z.array(text).max(64), observations: z.array(probeObservationSchema).max(64),
+  usage: probeUsageSchema,
+}).strict();
+export type InvestigationProbeStatus = z.infer<typeof probeStatusSchema>;
+
+export const probeExportSchema = z.object({
+  version: z.literal(1), kind: z.literal('review-investigation-probe-observations'),
+  origin: z.literal('unsigned-installed-observations'),
+  sourceCommit: z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/), sourceDigest: digest,
+  status: probeStatusSchema, candidate: probeCandidateSchema.optional(),
+}).strict().superRefine((value, ctx) => {
+  const checks = value.status.observations.map(o => o.check);
+  if (new Set(checks).size !== checks.length)
+    ctx.addIssue({ code: 'custom', message: 'Duplicate probe observation checks' });
+  for (const o of value.status.observations) {
+    if (o.attemptId !== value.status.attemptId ||
+      (value.status.identity && o.launchDigest !== value.status.identity.launchDigest))
+      ctx.addIssue({ code: 'custom', message: 'Observation belongs to a different invocation' });
+  }
+  if (value.candidate) {
+    if (value.status.state !== 'completed' || value.status.missingEvidence.length || !value.status.identity)
+      ctx.addIssue({ code: 'custom', message: 'Incomplete probe cannot export a candidate' });
+    if (JSON.stringify(value.candidate.identity) !== JSON.stringify(value.status.identity))
+      ctx.addIssue({ code: 'custom', message: 'Candidate belongs to a different installation' });
+    if (value.status.observations.some(o => o.effectiveDigest !== value.candidate!.trace.effectiveDigest))
+      ctx.addIssue({ code: 'custom', message: 'Observation belongs to a different effective configuration' });
+    for (const check of PROBE_REQUIRED_CHECKS) {
+      const expected = check === 'durable-progress' || check === 'cancellation-exit' ? 'observed-allowed' : 'observed-denied';
+      if (!value.status.observations.some(o => o.check === check && o.verdict === expected))
+        ctx.addIssue({ code: 'custom', message: `Missing supported observation: ${check}` });
+    }
+  }
+});
+export type InvestigationProbeExport = z.infer<typeof probeExportSchema>;
+
+export function parseInvestigationProbeCommand(raw: unknown): InvestigationProbeCommand {
+  const encoded = JSON.stringify(raw);
+  if (!encoded || Buffer.byteLength(encoded) > PROBE_RESPONSE_BYTES) throw new Error('Probe command exceeds bound');
+  return investigationProbeCommandSchema.parse(JSON.parse(encoded));
+}
+
+/** An inert public handle. The provider-private WeakMap, not these fields, is authority. */
+export interface InvestigationProbeGrant {
+  readonly version: 1;
+  readonly grantId: string;
+}
+export interface InvestigationProbeOptions {
+  readonly grant: InvestigationProbeGrant;
+  readonly signal: AbortSignal;
+}

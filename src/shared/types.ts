@@ -1,4 +1,5 @@
 import type { ReviewExecutionBudget, ReviewExecutionKind, ReviewProviderBudgetProfile } from './review-budget.js';
+import type { InvestigationProbeOptions, InvestigationProbeExport } from './review-investigation-probe.js';
 /**
  * Core LLM provider abstraction.
  * All agent logic operates against these interfaces —
@@ -241,6 +242,8 @@ export interface LLMProvider {
    * codex CLIs and Ollama have one (Epic 8315a11f s1).
    */
   runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>;
+  /** Fixture-only installed qualification probe; never confers production review authority. */
+  runInvestigationProbe?(opts: InvestigationProbeOptions): Promise<InvestigationProbeExport>;
   readonly capabilities: ProviderCapabilities;
 }
 

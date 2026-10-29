@@ -42,6 +42,10 @@ export type ReviewDimension = 'adherence' | 'conventions' | 'coverage' | 'qualit
 /** One finding a dimension raises. `severity` is the review `Severity` VERBATIM
  *  (reused, not redefined) so findings fold into one ReviewReport-shaped record. */
 export interface DimensionFinding {
+	/** Compact accepted-investigation identities; legacy findings omit these. */
+	readonly findingId?: string | undefined;
+	readonly evidenceIds?: readonly string[] | undefined;
+	readonly expectationRefs?: readonly string[] | undefined;
 	readonly dimension: ReviewDimension;
 	readonly severity:  Severity;
 	/** `file:line` inside the Story's changed set. */
@@ -223,15 +227,15 @@ export interface CodeReviewBody {
  readonly callEvents?: readonly import('../review-pipeline/call-events.js').ReviewCallEvent[] | undefined;
 	readonly epicHash:   string;
 	readonly storyId:    string;
-	/** How the review was grounded: `'full'` = the graph-grounded path (the four
-	 *  dimension judges over freshly-indexed symbol summaries); `'degraded'` = the
-	 *  diff-only fallback (s10), where the judges reason over the changed-file diff
-	 *  hunks rather than graph symbol summaries because the index could not be made
-	 *  fresh. Story s9 (the indexing-readiness gate) only ever writes `'full'`; s10
-	 *  (the diff-only degraded fallback) is the sole producer of `'degraded'`. A
-	 *  downstream completion gate distinguishes a full graph-grounded review from a
-	 *  degraded one by this field. */
-	readonly groundingMode: 'full' | 'degraded';
+	/** Legacy graph judges use full; their diff fallback uses degraded with a warn
+	 *  floor. Investigation uses accepted checkpoints and versioned linkage, with
+	 *  the same verdict policy for source-only and indexed-impact evidence. */
+	readonly groundingMode: 'full' | 'degraded' | 'investigation';
+	readonly investigation?: {
+		readonly version: 1; readonly sourceMode: 'source-only' | 'indexed-impact'; readonly operationId: string;
+		readonly runId: string; readonly subjectDigest: string; readonly policyDigest: string; readonly checkpointDigest: string;
+		readonly coverageRef: string; readonly coverageDigest: string;
+	} | undefined;
 	/** Why a `degraded` review fell back to the diff (ISSUE-1102dc71). Absent on a
 	 *  full review and on records written before this field. */
 	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
@@ -240,6 +244,7 @@ export interface CodeReviewBody {
 		readonly changedFiles: readonly string[];
 		/** Build content reviewed; absent on older records, which use timestamp checks. */
 		readonly buildFingerprint?: string | undefined;
+		readonly buildRevision?: number | undefined;
 		/** Optional on read: records written before ISSUE-b47dadc7 lack both. */
 		readonly changeSetAttribution?: ChangeSetAttribution | undefined;
 		readonly sharedWithExcluded?: readonly string[] | undefined;

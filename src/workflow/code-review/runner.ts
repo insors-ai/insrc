@@ -1,3 +1,4 @@
+import { foldCounts, foldVerdict, validateArtifact } from './record-validation.js';
 import { appendReviewRunEvent } from './run-events.js';
 import { ReviewBudgetError } from '../review-pipeline/budget.js';
 import { safeReviewFailure } from '../../shared/review-failure.js';
@@ -287,31 +288,6 @@ export async function runCodeReview(
 // Fold + build + validate + render
 // ---------------------------------------------------------------------------
 
-/** Count the finding severities across every dimension. */
-function foldCounts(dimensions: readonly DimensionResult[]): { readonly high: number; readonly med: number; readonly low: number } {
-	let high = 0, med = 0, low = 0;
-	for (const dim of dimensions) {
-		for (const f of dim.findings) {
-			if (f.severity === 'HIGH') high += 1;
-			else if (f.severity === 'MED') med += 1;
-			else if (f.severity === 'LOW') low += 1;
-		}
-	}
-	return { high, med, low };
-}
-
-/** The verdict fold — mirrors the artifact-review vocabulary VERBATIM: any HIGH
- *  → block, else any MED → warn, else pass (LOW neither warns nor blocks). When
- *  `capAtWarn` is set a would-be `'pass'` is promoted to `'warn'` — the cap NEVER
- *  lowers a `block`/`warn` (it only raises the floor for a clean fold). */
-function foldVerdict(
-	counts: { readonly high: number; readonly med: number; readonly low: number },
-	capAtWarn = false,
-): ReviewVerdict {
-	const verdict: ReviewVerdict = counts.high > 0 ? 'block' : counts.med > 0 ? 'warn' : 'pass';
-	return capAtWarn && verdict === 'pass' ? 'warn' : verdict;
-}
-
 /** Assemble the sc4 record. `meta` mirrors ArtifactMetaBase (so the storage +
  *  approval machinery is reused); `model` records the resolved high-tier label. */
 function buildArtifact(
@@ -355,37 +331,6 @@ function buildArtifact(
 		counts,
 	};
 	return { meta, body };
-}
-
-/** In-memory validation of the assembled record — the last gate before the
- *  write. Returns a reason string on failure, or null when the record is sound:
- *  a known kind, the expected dimensions in order, a verdict in the ReviewVerdict
- *  union, and counts consistent with a re-fold of the findings. */
-function validateArtifact(a: CodeReviewArtifact, expectedDims: readonly ReviewDimension[]): string | null {
-	const b = a.body;
-	if (b.kind !== 'code-review') return `body.kind is '${String(b.kind)}'`;
-	if (b.dimensions.length !== expectedDims.length) {
-		return `expected ${expectedDims.length} dimensions, got ${b.dimensions.length}`;
-	}
-	for (let i = 0; i < expectedDims.length; i += 1) {
-		if (b.dimensions[i]?.dimension !== expectedDims[i]) {
-			return `dimension[${i}] is '${String(b.dimensions[i]?.dimension)}', expected '${String(expectedDims[i])}'`;
-		}
-	}
-	if (b.verdict !== 'pass' && b.verdict !== 'warn' && b.verdict !== 'block') {
-		return `verdict '${String(b.verdict)}' is not in the ReviewVerdict union`;
-	}
-	const refold = foldCounts(b.dimensions);
-	if (refold.high !== b.counts.high || refold.med !== b.counts.med || refold.low !== b.counts.low) {
-		return `counts {${b.counts.high},${b.counts.med},${b.counts.low}} disagree with the folded severities {${refold.high},${refold.med},${refold.low}}`;
-	}
-	// A degraded record is warn-capped: its verdict must never be a bare 'pass'.
-	// Re-fold with the same cap so the check is consistent with what was built.
-	const expectedVerdict = foldVerdict(refold, b.groundingMode === 'degraded');
-	if (b.verdict !== expectedVerdict) {
-		return `verdict '${b.verdict}' disagrees with the counts (expected '${expectedVerdict}')`;
-	}
-	return null;
 }
 
 /** Emit an error frame and return the {ok:false} outcome — no write happens. */

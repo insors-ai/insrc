@@ -22,7 +22,7 @@ import { Router } from '../router.js';
 import type { RouterSessions } from '../router.js';
 import type { ThreadStatus } from '../status-board.js';
 import { serveRequests } from '../worker-requests.js';
-import type { MethodClass, SessionId } from '../channel.js';
+import type { LocalRequestEnvelope, MethodClass, SessionId } from '../channel.js';
 
 /** a.* methods are admin-class, x.* session-class. */
 const classOf = (m: string): MethodClass | undefined => m.startsWith('a.') ? 'admin' : m.startsWith('x.') ? 'session' : undefined;
@@ -51,6 +51,8 @@ function harness() {
 	const rpc = {
 		'a.order': async (p: unknown) => { await gate((p as { tag: string }).tag); return 'ok'; },
 		'x.order': async (p: unknown) => { await gate((p as { tag: string }).tag); return 'ok'; },
+		// Replies at once; its worker's completion message waits for the drain the test opens.
+		'x.drain': async (p: unknown, ctx?: { registerDrain?: (w: PromiseLike<unknown>) => void }) => { ctx?.registerDrain?.(gate(`drain ${(p as { tag: string }).tag}`)); return 'ok'; },
 	};
 	const stream = {
 		'a.stream': async (p: unknown, send: (m: { id: number; stream: string; data: unknown }) => void) => {
@@ -173,4 +175,24 @@ test("router thread view: a session worker's queued equals its FIFO length; deta
 		await tick(20);
 		assert.equal(h.states.has(721), false, 'no later publish re-adds a detached thread');
 	} finally { h.close(); }
+});
+
+test("router thread view: a request awaiting its ack stays busy past its reply until its worker's ack (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		h.worker({ threadId: 731, cls: 'session', session: { label: 'mcp', pid: 831 } });
+		let acks = 0;
+		let replied = false;
+		(h.router as unknown as { send(t: number, r: LocalRequestEnvelope, d: DeliverEnvelope, a?: () => void): () => void }).send(731, {
+			kind: 'request', requestId: 'd1', method: 'x.drain', params: { tag: 'd1' }, stream: false,
+			trustedContext: { connectionIdentity: 'socket', daemonEpoch: 'epoch' },
+		}, () => { replied = true; }, () => { acks++; });
+		await until(() => replied, 'the reply is delivered');
+		await tick(30);
+		assert.equal(h.states.get(731)?.busy, true, 'busy past its reply');
+		assert.equal(h.states.get(731)?.method, 'x.drain');
+		h.open('drain d1');
+		await until(() => acks === 1, 'acked');
+		assert.equal(h.states.get(731)?.busy, false, 'idle at the ack');
+	} finally { h.open('drain d1'); h.close(); }
 });

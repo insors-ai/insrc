@@ -117,14 +117,17 @@ interface Pending {
 	readonly method: string;
 	readonly stream: boolean;
 	readonly deliver: DeliverEnvelope;
+	/** The request awaits its worker's completion message (its ack, ISSUE-7c39e5cd): it stays pending until then. */
+	readonly onAck?: (() => void) | undefined;
 }
 
-/** A request in flight on a worker that exited, for the caller to fail. */
+/** A request in flight on a worker that exited, for the caller to fail and then `ack` (no ack can come from the worker now). */
 export interface OrphanedRequest {
 	readonly requestId: string;
 	readonly method: string;
 	readonly stream: boolean;
 	readonly deliver: DeliverEnvelope;
+	readonly ack: () => void;
 }
 
 interface Held {
@@ -200,7 +203,9 @@ export class Router {
 				this.publishSession(session);
 			}
 		}
-		for (const orphan of this.detach(threadId)) answer(orphan.requestId, orphan.stream, orphan.deliver);
+		for (const orphan of this.detach(threadId)) {
+			try { answer(orphan.requestId, orphan.stream, orphan.deliver); } finally { orphan.ack(); }
+		}
 	}
 
 	/** The forward the IpcServer uses. */
@@ -403,15 +408,24 @@ export class Router {
 			const pending = this.pending.get(response.requestId);
 			if (pending === undefined || pending.threadId !== threadId) return;
 			if (completion) {
-				if (pending.lifetime) { this.pending.delete(response.requestId); pending.lifetime.complete(); this.finished(threadId, response.requestId); }
+				if (pending.lifetime || pending.onAck) {
+					this.pending.delete(response.requestId);
+					pending.lifetime?.complete();
+					this.finished(threadId, response.requestId);
+					pending.onAck?.();
+				}
 				return;
 			}
-			if (response.kind === 'reply') { if (!pending.lifetime) this.pending.delete(response.requestId); this.finished(threadId, response.requestId); }
-			else {
+			// A request awaiting its ack stays pending, and in flight, past its reply or last frame.
+			const kept = pending.lifetime !== undefined || pending.onAck !== undefined;
+			if (response.kind === 'reply') {
+				if (!kept) this.pending.delete(response.requestId);
+				if (!pending.onAck) this.finished(threadId, response.requestId);
+			} else {
 				const stream = ((response as FrameEnvelope).frame as IpcStreamMessage).stream;
 				const terminal = stream === 'done' || stream === 'error';
-				if (!pending.lifetime && terminal) this.pending.delete(response.requestId);
-				if (terminal) this.finished(threadId, response.requestId);
+				if (!kept && terminal) this.pending.delete(response.requestId);
+				if (terminal && !pending.onAck) this.finished(threadId, response.requestId);
 			}
 			pending.deliver(response);
 		};
@@ -437,7 +451,7 @@ export class Router {
 			if (p.threadId !== threadId) continue;
 			this.pending.delete(requestId);
 			p.lifetime?.complete();
-			orphaned.push({ requestId, method: p.method, stream: p.stream, deliver: p.deliver });
+			orphaned.push({ requestId, method: p.method, stream: p.stream, deliver: p.deliver, ack: p.onAck ?? (() => {}) });
 		}
 		return orphaned;
 	}
@@ -500,16 +514,21 @@ export class Router {
 		if (target !== undefined && target.session !== undefined) this.publishThread(target.threadId);
 	}
 
-	private send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
+	/** `onAck`: the request ends only at its worker's completion message, or at an end after which none can come (ISSUE-7c39e5cd). */
+	private send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope, onAck?: () => void): () => void {
 		const port = this.ports.get(threadId)!;
-		this.pending.set(request.requestId, { threadId, method: request.method, stream: request.stream, deliver, ...(request.stream && request.lifetime ? { lifetime: request.lifetime } : {}) });
+		this.pending.set(request.requestId, {
+			threadId, method: request.method, stream: request.stream, deliver,
+			...(request.stream && request.lifetime ? { lifetime: request.lifetime } : {}),
+			...(onAck !== undefined ? { onAck } : {}),
+		});
 		this.began(threadId, request);
-		try { port.postMessage(wireRequest(request)); }
+		try { port.postMessage(wireRequest(request, onAck !== undefined ? { ack: true } : {})); }
 		catch {
 			this.pending.delete(request.requestId);
 			this.finished(threadId, request.requestId);
 			try { deliver({kind:'reply', requestId:request.requestId, error:'request channel unavailable'}); }
-			finally { request.lifetime?.complete(); }
+			finally { request.lifetime?.complete(); onAck?.(); }
 		}
 		return () => this.cancel(threadId, request);
 	}
@@ -546,8 +565,8 @@ export class Router {
 	private cancel(threadId: number, request: LocalRequestEnvelope): void {
 		if (!request.stream) return;
 		request.lifetime?.abort();
-		// Without a lifetime the stream ends here; with one, when its worker completes it.
-		if (!request.lifetime) { this.pending.delete(request.requestId); this.finished(threadId, request.requestId); }
+		// Without a lifetime the stream ends here; with one, or awaiting its ack, when its worker completes it.
+		if (!request.lifetime && this.pending.get(request.requestId)?.onAck === undefined) { this.pending.delete(request.requestId); this.finished(threadId, request.requestId); }
 		this.ports.get(threadId)?.postMessage({ kind: 'cancel', requestId: request.requestId } satisfies CancelEnvelope);
 	}
 }

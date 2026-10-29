@@ -301,3 +301,81 @@ test('router: a request cancelled while its worker is still starting never leave
 		assert.equal(h.pool.started.filter(k => k === 'mcp:1002').length - h.pool.ended.filter(k => k === 'mcp:1002').length, 0, 'the next request counted and ended normally');
 	} finally { h.close(); }
 });
+
+/**
+ * ISSUE-7c39e5cd: a request sent with an ack callback, over one fake worker whose port the test
+ * also writes to (to send stray completion messages). The handler registers a drain the test
+ * opens, so the worker's completion message comes only after it.
+ */
+function ackHarness() {
+	const gates = new Gates();
+	const registry = new TargetRegistry();
+	const router = new Router({ classOf, registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}) });
+	const channel = new MessageChannel();
+	const stop = serveRequests(channel.port2, directDispatch({
+		'x.drain': async (p, ctx) => { const tag = (p as { tag: string }).tag; ctx?.registerDrain?.(gates.get(`drain ${tag}`).wait); return tag; },
+	}));
+	router.attach(950, channel.port1);
+	const send = (id: string, params: unknown, onAck: () => void): unknown[] => {
+		const replies: unknown[] = [];
+		(router as unknown as { send(t: number, r: LocalRequestEnvelope, d: DeliverEnvelope, a?: () => void): () => void }).send(950, {
+			kind: 'request', requestId: id, method: 'x.drain', params, stream: false, trustedContext: { connectionIdentity: 'socket', daemonEpoch: 'epoch' },
+		}, e => { replies.push(e); }, onAck);
+		return replies;
+	};
+	const pending = (id: string): boolean => (router as unknown as { pending: Map<string, unknown> }).pending.has(id);
+	return { router, gates, worker: channel.port2, send, pending, close: () => { stop(); router.detach(950); channel.port1.close(); channel.port2.close(); } };
+}
+
+test('router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)', { timeout: 10_000 }, async () => {
+	const h = ackHarness();
+	try {
+		let acks = 0;
+		const replies = h.send('k1', { tag: 'k1' }, () => { acks++; });
+		await until(() => replies.length === 1, 'the reply is delivered at once');
+		assert.deepEqual(replies[0], { kind: 'reply', requestId: 'k1', result: 'k1' });
+		await tick(30);
+		assert.equal(acks, 0, 'no ack while the work it registered is still draining');
+		assert.equal(h.pending('k1'), true, 'still pending past its reply');
+		h.gates.open('drain k1');
+		await until(() => acks === 1, "the worker's completion message is the ack");
+		assert.equal(h.pending('k1'), false);
+		h.worker.postMessage({ kind: 'complete', requestId: 'k1' });
+		h.worker.postMessage({ kind: 'complete', requestId: 'k1' });
+		h.worker.postMessage({ kind: 'complete', requestId: 'nobody' });
+		await tick(30);
+		assert.equal(acks, 1, 'a duplicate or unknown completion is ignored');
+		assert.equal(replies.length, 1);
+	} finally { h.gates.open('drain k1'); h.close(); }
+});
+
+test("router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = ackHarness();
+	try {
+		let acks = 0;
+		// A function cannot be structured-cloned: the post throws.
+		const replies = h.send('k2', { tag: 'k2', f: () => 0 }, () => { acks++; });
+		assert.deepEqual(replies, [{ kind: 'reply', requestId: 'k2', error: 'request channel unavailable' }]);
+		assert.equal(acks, 1);
+		assert.equal(h.pending('k2'), false);
+		await tick(30);
+		assert.equal(acks, 1, 'once');
+	} finally { h.close(); }
+});
+
+test("router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = ackHarness();
+	try {
+		const order: string[] = [];
+		const replies: unknown[] = h.send('k3', { tag: 'k3' }, () => { order.push(`ack k3 after ${replies.length} replies`); });
+		await until(() => replies.length === 1, 'replied; awaiting its ack');
+		const sent: unknown[] = h.send('k4', { tag: 'k4' }, () => { order.push(`ack k4 after ${sent.length} replies`); });
+		await until(() => sent.length === 1, 'k4 replied too');
+		h.router.failWorker(950, 'it exited');
+		assert.deepEqual(order, ['ack k3 after 2 replies', 'ack k4 after 2 replies'], "each orphan acked once, after failWorker's answer");
+		assert.deepEqual(replies[1], { kind: 'reply', requestId: 'k3', error: 'session worker failed: it exited' });
+		assert.equal(h.pending('k3'), false);
+		const orphans = h.router.detach(950);
+		assert.deepEqual(orphans, [], 'nothing left');
+	} finally { h.gates.open('drain k3'); h.gates.open('drain k4'); h.close(); }
+});

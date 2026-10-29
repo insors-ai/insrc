@@ -164,9 +164,11 @@ export class Supervisor {
 		const thread = spec.cls ?? spec.name;
 		for (const r of router.detach(worker.threadId)) {
 			const error = `the daemon's ${thread} thread stopped while serving ${r.method}; retry`;
-			r.deliver(r.stream
-				? { kind: 'frame', requestId: r.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } } satisfies FrameEnvelope
-				: { kind: 'reply', requestId: r.requestId, error } satisfies ReplyEnvelope);
+			try {
+				r.deliver(r.stream
+					? { kind: 'frame', requestId: r.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } } satisfies FrameEnvelope
+					: { kind: 'reply', requestId: r.requestId, error } satisfies ReplyEnvelope);
+			} finally { r.ack(); }
 		}
 		const reclaimed = await worker.reclaimed;
 		worker.disconnect();

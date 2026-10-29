@@ -630,6 +630,10 @@
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	},
+	"src/daemon/threads/method-class.ts#SHARED_STATE_STEP_TOOLS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
 	"src/daemon/threads/session-worker.ts#board": {
 		"class": "shared-store",
 		"reason": "This worker's client of the status board, the cross-thread store every thread publishes its view to; the board itself lives on the main thread."

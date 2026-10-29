@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { buildSettingsCatalog } from '../config/settings-catalog.js';
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
-import type { AttachedClient, DaemonStatus } from '../shared/types.js';
+import type { AttachedClient, DaemonStatus, ThreadView } from '../shared/types.js';
 import { guideGetResult, guideListResult } from './guide-sections.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
@@ -100,6 +100,8 @@ export interface AdminWorkerDeps {
 	readonly status: () => Promise<DaemonStatus>;
 	readonly clients: () => Promise<readonly AttachedClient[]>;
 	readonly repoList: () => Promise<unknown>;
+	/** The worker threads from the status board (s4). */
+	readonly threads: () => Promise<readonly ThreadView[]>;
 }
 
 /** The admin worker's table: the ten admin methods. */
@@ -108,7 +110,12 @@ export function adminWorkerHandlers(deps: AdminWorkerDeps): RpcHandlers {
 		...sharedAdminHandlers(deps.shutdown),
 		'daemon.status': async () => deps.status(),
 		// Read-only: the clients the router published on the status board (k5).
-		'daemon.debug-status': async (): Promise<{ clients: AttachedClient[] }> => ({ clients: [...await deps.clients()] }),
+		// With the worker threads beside them once any is published (s4); clients unchanged.
+		'daemon.debug-status': async (): Promise<{ clients: AttachedClient[]; threads?: ThreadView[] }> => {
+			const clients = [...await deps.clients()];
+			const threads = [...await deps.threads()];
+			return threads.length > 0 ? { clients, threads } : { clients };
+		},
 		'repo.list': async () => deps.repoList(),
 	};
 }

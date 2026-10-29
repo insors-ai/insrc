@@ -16,7 +16,7 @@
  * for want of a publish.
  */
 
-import type { DaemonStatus, UnattributedUnwritableCount } from '../../shared/types.js';
+import type { DaemonStatus, ThreadView, UnattributedUnwritableCount } from '../../shared/types.js';
 import { buildDaemonStatus, queueStatusFromBoard } from '../status.js';
 import type { DaemonInfo } from './main-services.js';
 import type { RepoStatusSnapshot, StatusSnapshot, StoreStatusSnapshot } from './status-board.js';
@@ -37,6 +37,32 @@ export interface AdminStatusDeps {
 export interface AdminStatus {
 	daemonStatus(): Promise<DaemonStatus>;
 	repoList(): Promise<RepoStatusSnapshot[]>;
+	/** The worker threads as the board lists them now (s4); empty without daemon threads. */
+	threads(): Promise<ThreadView[]>;
+}
+
+/**
+ * The worker threads in one board snapshot (s4): what each is for and doing, how long its
+ * oldest request has run, and the detached runs it owns that still run. The document-summary
+ * worker serves no request, so it is busy while the summary lane is processing.
+ */
+export function threadViews(snap: StatusSnapshot, now: number): ThreadView[] {
+	const views: ThreadView[] = [];
+	for (const t of snap.threads) {
+		if (t.role === undefined || t.cls === 'router') continue;
+		const summary = t.role === 'document-summary';
+		const busy = summary ? snap.indexing.summary.processing : t.busy;
+		views.push({
+			threadId: t.threadId, role: t.role, cls: summary ? undefined : t.cls,
+			...(t.session !== undefined ? { session: { label: t.session.label, pid: t.session.pid } } : {}),
+			busy,
+			...(!summary && busy && t.method !== undefined ? { method: t.method } : {}),
+			...(!summary && busy && t.since !== undefined ? { elapsedMs: Math.max(0, now - t.since) } : {}),
+			queued: t.queued,
+			activeRuns: snap.runs.filter(r => r.ownerThreadId === t.threadId && r.status === 'running').length,
+		});
+	}
+	return views;
 }
 
 export function createAdminStatus(deps: AdminStatusDeps): AdminStatus {
@@ -87,7 +113,17 @@ export function createAdminStatus(deps: AdminStatusDeps): AdminStatus {
 				installedCommit: info.installedCommit,
 				lmdbFileSizeMb: info.lmdbFileSizeMb,
 			});
-			return info.maintenance !== undefined ? { ...status, maintenance: info.maintenance } : status;
+			const threads = threadViews(snap, now());
+			return {
+				...status,
+				...(info.maintenance !== undefined ? { maintenance: info.maintenance } : {}),
+				// Only with daemon threads, whose workers the router publishes (s4).
+				...(threads.length > 0 ? { threads } : {}),
+			};
+		},
+
+		async threads() {
+			return threadViews(await deps.snapshot(), now());
 		},
 	};
 }

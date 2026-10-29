@@ -1,4 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { validateRecoveryUsage } from './recovery-usage.js';
+import type { RecoveryUsageWriter } from './recovery-usage.js';
+import type { ReviewUsageObservationV1 } from './types.js';
 import { foldRecoveryLifecycle, recoveryProjection, recoveryCompatibility } from './recovery-lifecycle.js';
 import { randomUUID } from 'node:crypto';
 import { RecoveryJournal } from './recovery-journal.js';
@@ -16,6 +19,7 @@ export interface RecoveryStoreOptions extends RecoveryJournalOptions {
  readonly readEvidence: ReviewRuntimePortsV1['readEvidence'];
  readonly controlFold?: RecoveryControlFold | undefined;
  readonly processEpoch: string;
+ readonly usageWriter?: RecoveryUsageWriter | undefined;
  readonly wallNow?: (()=>number) | undefined;
 }
 export class RecoveryStore {
@@ -30,7 +34,7 @@ export class RecoveryStore {
  private wallSeen=0;
  private now(view:RecoveryView):number{const now=(this.options.wallNow??Date.now)();if(!Number.isSafeInteger(now)||now<view.lifecycle.lastWallMs||now<this.wallSeen)throw new RecoveryError('ownership-lost','Owner clock regressed.');this.wallSeen=now;return now;}
  assertLease(view:RecoveryView,leaseId:string,generation:number):void{this.journal.guard();const o=view.lifecycle.owner;if(view.lifecycle.processEpoch!==this.options.processEpoch||!o||o.leaseId!==leaseId||o.generation!==generation||Date.parse(o.expiresAt)<=this.now(view)||['completed','cancelled','stale'].includes(view.lifecycle.state))throw new RecoveryError('ownership-lost','Run lease is stale.');}
- private control(view:RecoveryView,kind:'lease'|'release'|'state'|'attempt-issued'|'attempt-settled'|'extension',generation:number,payload:Record<string,unknown>):RecoveryView{
+ private control(view:RecoveryView,kind:'lease'|'release'|'state'|'attempt-issued'|'attempt-settled'|'extension'|'usage-pending'|'usage-recorded',generation:number,payload:Record<string,unknown>):RecoveryView{
   const staged=this.journal.stage(payload),m=view.manifest;
   const candidate={version:1 as const,runId:m.runId,subjectDigest:m.subjectDigest,policyDigest:m.policyDigest,generation,kind,payloadRef:staged.reference,eventId:randomUUID(),ordinal:view.eventOrdinal+1,previousDigest:view.eventDigest,digest:'candidate'};
   foldRecoveryLifecycle(view,candidate,payload);this.journal.append(eventInput(candidate));return this.replay();
@@ -47,6 +51,25 @@ export class RecoveryStore {
  async issueAttempt(leaseId:string,generation:number,turn:InvestigationTurnV1,reservedMs:number){return this.journal.exclusive(()=>{const v=this.replay();this.assertLease(v,leaseId,generation);if(turn.runId!==v.manifest.runId||turn.subjectDigest!==v.manifest.subjectDigest||turn.policyDigest!==v.manifest.policyDigest||turn.generation!==generation||reservedMs>turn.limits.attemptMs)throw new RecoveryError('invalid-input','Foreign attempt request.');return this.control(v,'attempt-issued',generation,{leaseId,wallMs:this.now(v),attemptId:turn.attemptId,requestDigest:turn.requestDigest,reservedMs,priorAttemptId:v.accounting.attempts.at(-1)?.attemptId??null});});}
  async settleAttempt(leaseId:string,generation:number,attemptId:string,state:'accepted'|'failed'|'cancelled',elapsedMs:number){return this.journal.exclusive(()=>{const v=this.replay();this.assertLease(v,leaseId,generation);return this.control(v,'attempt-settled',generation,{leaseId,wallMs:this.now(v),attemptId,state,elapsedMs});});}
  async extendAllowance(leaseId:string,generation:number,activeLimitMs:number,attemptLimit:number,reason:string){return this.journal.exclusive(()=>{const v=this.replay();this.assertLease(v,leaseId,generation);return this.control(v,'extension',generation,{leaseId,wallMs:this.now(v),activeLimitMs,attemptLimit,reason});});}
+ async recordUsage(observation:ReviewUsageObservationV1){
+  await this.journal.exclusive(()=>{const v=this.replay(),value=validateRecoveryUsage(v,observation),old=v.state.usage.find(u=>u.observation.observationId===value.observationId);if(old){if(ledgerDigest(old.observation)!==ledgerDigest(value))throw new RecoveryError('invalid-input','Conflicting usage observation.');return;}this.control(v,'usage-pending',v.lifecycle.generation,{accountingOnly:true,wallMs:this.now(v),observation:value});});
+  await this.drainUsage();const item=this.replay().state.usage.find(u=>u.observation.observationId===observation.observationId)!;return {state:item.state,receiptRef:item.receiptRef};
+ }
+ private delivering=false;
+ async drainUsage():Promise<void>{
+  const writer=this.options.usageWriter;if(!writer||writer.idempotent!==true||this.delivering)return;this.delivering=true;
+  try{for(const item of this.replay().state.usage.filter(u=>u.state==='pending')){
+   let timer:ReturnType<typeof setTimeout>|undefined;
+   try{
+    const receipt=await Promise.race([writer.write(item.observation,`${this.journal.runId}/${item.observation.observationId}`),new Promise<null>(resolve=>{timer=setTimeout(()=>resolve(null),1000);})]);
+    if(typeof receipt!=='string'||!receipt)continue;
+    await this.journal.exclusive(()=>{const v=this.replay(),current=v.state.usage.find(u=>u.observation.observationId===item.observation.observationId)!;
+     if(current.state==='recorded'){if(current.receiptRef!==receipt)throw new RecoveryError('invalid-input','Usage writer changed receipt.');return;}
+     this.control(v,'usage-recorded',v.lifecycle.generation,{accountingOnly:true,wallMs:this.now(v),observationId:item.observation.observationId,receiptRef:receipt});
+    });
+   }catch{/* Durable pending record remains authoritative; same writer key resolves lost acknowledgments. */}finally{if(timer)clearTimeout(timer);}
+  }}finally{this.delivering=false;}
+ }
  status(){return recoveryProjection(this.replay());}
  async compatibility(current:Pick<RecoveryManifest,'subjectDigest'|'policyDigest'|'compatibility'>,assertFresh:()=>Promise<void>){const view=this.replay();let fresh=true;try{await assertFresh();}catch{fresh=false;}return recoveryCompatibility(view,current,fresh);}
  /** All closures are daemon-owned. No mutable store or authority token is handed to the model. */
@@ -69,7 +92,7 @@ export class RecoveryStore {
     this.journal.append(eventInput(event));const accepted=this.replay().state.accepted.at(-1)!.receipt;
     assert();return {sequence:accepted.sequence,checkpointDigest:accepted.checkpointDigest};
    }),
-   recordAttemptUsage:async()=>{throw new RecoveryError('unsupported','Durable usage adapter not composed.');}
+   recordAttemptUsage:async observation=>{this.journal.guard();return this.recordUsage(observation);}
   };
  }
 }

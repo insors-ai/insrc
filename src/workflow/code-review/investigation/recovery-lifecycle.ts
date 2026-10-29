@@ -1,10 +1,12 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { foldRecoveryUsage } from './recovery-usage.js';
 import { foldRecoveryAttempt, accountRecovery } from './recovery-attempts.js';
 import { RecoveryError, recoveryRecord, recoveryInteger, recoveryId, recoveryValue } from './recovery-types.js';
 import type { ReviewRecoveryV1, ResumeCompatibilityV1, RecoveryManifest, RecoveryEvent } from './recovery-types.js';
 import type { RecoveryView } from './recovery-replay.js';
 import { ledgerEqual } from './ledger-identity.js';
 export function foldRecoveryLifecycle(view:RecoveryView,event:RecoveryEvent,raw:unknown):RecoveryView {
+ if(['usage-pending','usage-recorded'].includes(event.kind))return foldRecoveryUsage(view,event,raw);
  if(['attempt-issued','attempt-settled','extension'].includes(event.kind))return foldRecoveryAttempt(view,event,raw);
  const p=recoveryRecord(raw),old=view.lifecycle;
  const wall=p['wallMs'];recoveryInteger(wall);

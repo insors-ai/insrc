@@ -1,0 +1,402 @@
+{
+  "version": 1,
+  "taskId": "t23",
+  "test": "DIFF-S003-RETRY",
+  "recordedAt": "2026-10-27T18:29:31.957411+00:00",
+  "status": "incomplete-unrecoverable-handle",
+  "reportedResult": "fail",
+  "activation": {
+    "userConfirmed": true,
+    "installedCommit": "c29dc673aa742ff564da78d2786d9a7ea3db92ea",
+    "daemonPid": 10213,
+    "runtimeNode": "26.5.1",
+    "correctedFingerprintModuleSha256": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c"
+  },
+  "attempt": {
+    "surface": "insrc_code_review_step",
+    "phase": "start",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s3",
+    "transportTimeoutSeconds": 300,
+    "continuationStateReceived": false,
+    "reviewHandleReceived": false,
+    "groundingMode": "full",
+    "requiredDegradedSmokeCompleted": false
+  },
+  "rejoinAttempts": [
+    {
+      "startedAt": "2026-10-27T18:12:06.488Z",
+      "finishedAt": "2026-10-27T18:12:21.179Z",
+      "error": "This target has an active independent review of different inputs",
+      "reason": "review-conflict"
+    },
+    {
+      "startedAt": "2026-10-27T18:15:10.857Z",
+      "finishedAt": "2026-10-27T18:15:24.946Z",
+      "error": "This target has an active independent review of different inputs",
+      "reason": "review-conflict"
+    }
+  ],
+  "headChange": {
+    "original": "c29dc673aa742ff564da78d2786d9a7ea3db92ea",
+    "current": "c9391517c2eb83aa176e7584cc364c7329b0d7cc",
+    "committedAt": "2026-10-27T23:45:08+05:30",
+    "effect": "Canonical fingerprint binds full HEAD; old operation cannot approve current inputs."
+  },
+  "preparedPlans": [
+    {
+      "loggedAtUnixMs": 1793124618947,
+      "phase": "prepared",
+      "epicHash": "484fcef7efaf229e",
+      "storyId": "s3",
+      "dimension": "adherence",
+      "reviewId": "3932cb2e-cc6e-440a-919b-402f541fab2c",
+      "single": false,
+      "limitChars": 384000,
+      "chunks": [
+        {
+          "id": "c1",
+          "atoms": 246,
+          "chars": 375973
+        },
+        {
+          "id": "c2",
+          "atoms": 85,
+          "chars": 375998
+        },
+        {
+          "id": "c3",
+          "atoms": 77,
+          "chars": 376184
+        },
+        {
+          "id": "c4",
+          "atoms": 117,
+          "chars": 376000
+        },
+        {
+          "id": "c5",
+          "atoms": 110,
+          "chars": 376276
+        },
+        {
+          "id": "c6",
+          "atoms": 74,
+          "chars": 376265
+        },
+        {
+          "id": "c7",
+          "atoms": 79,
+          "chars": 375951
+        },
+        {
+          "id": "c8",
+          "atoms": 93,
+          "chars": 375990
+        },
+        {
+          "id": "c9",
+          "atoms": 286,
+          "chars": 375922
+        },
+        {
+          "id": "c10",
+          "atoms": 115,
+          "chars": 375975
+        },
+        {
+          "id": "c11",
+          "atoms": 94,
+          "chars": 376139
+        },
+        {
+          "id": "c12",
+          "atoms": 139,
+          "chars": 376291
+        },
+        {
+          "id": "c13",
+          "atoms": 95,
+          "chars": 376392
+        },
+        {
+          "id": "c14",
+          "atoms": 105,
+          "chars": 376029
+        },
+        {
+          "id": "c15",
+          "atoms": 83,
+          "chars": 375997
+        },
+        {
+          "id": "c16",
+          "atoms": 51,
+          "chars": 376198
+        },
+        {
+          "id": "c17",
+          "atoms": 73,
+          "chars": 375979
+        },
+        {
+          "id": "c18",
+          "atoms": 68,
+          "chars": 375982
+        },
+        {
+          "id": "c19",
+          "atoms": 249,
+          "chars": 375998
+        },
+        {
+          "id": "c20",
+          "atoms": 332,
+          "chars": 375985
+        },
+        {
+          "id": "c21",
+          "atoms": 215,
+          "chars": 375942
+        },
+        {
+          "id": "c22",
+          "atoms": 225,
+          "chars": 375970
+        },
+        {
+          "id": "c23",
+          "atoms": 263,
+          "chars": 376037
+        },
+        {
+          "id": "c24",
+          "atoms": 139,
+          "chars": 376235
+        },
+        {
+          "id": "c25",
+          "atoms": 71,
+          "chars": 375965
+        },
+        {
+          "id": "c26",
+          "atoms": 59,
+          "chars": 363617
+        }
+      ]
+    },
+    {
+      "loggedAtUnixMs": 1793124634522,
+      "phase": "prepared",
+      "epicHash": "484fcef7efaf229e",
+      "storyId": "s3",
+      "dimension": "conventions",
+      "reviewId": "2c1f02af-d0a8-408a-8608-b0b5c4b793be",
+      "single": false,
+      "limitChars": 384000,
+      "chunks": [
+        {
+          "id": "c1",
+          "atoms": 409,
+          "chars": 375937
+        },
+        {
+          "id": "c2",
+          "atoms": 472,
+          "chars": 375993
+        },
+        {
+          "id": "c3",
+          "atoms": 488,
+          "chars": 376288
+        },
+        {
+          "id": "c4",
+          "atoms": 352,
+          "chars": 375958
+        },
+        {
+          "id": "c5",
+          "atoms": 401,
+          "chars": 376082
+        },
+        {
+          "id": "c6",
+          "atoms": 654,
+          "chars": 375959
+        },
+        {
+          "id": "c7",
+          "atoms": 556,
+          "chars": 375944
+        },
+        {
+          "id": "c8",
+          "atoms": 211,
+          "chars": 375952
+        }
+      ]
+    },
+    {
+      "loggedAtUnixMs": 1793124640248,
+      "phase": "prepared",
+      "epicHash": "484fcef7efaf229e",
+      "storyId": "s3",
+      "dimension": "coverage",
+      "reviewId": "c39c28cb-8253-4e18-8412-792868d44e0d",
+      "single": false,
+      "limitChars": 384000,
+      "chunks": [
+        {
+          "id": "c1",
+          "atoms": 465,
+          "chars": 376281
+        },
+        {
+          "id": "c2",
+          "atoms": 567,
+          "chars": 375922
+        },
+        {
+          "id": "c3",
+          "atoms": 621,
+          "chars": 375999
+        },
+        {
+          "id": "c4",
+          "atoms": 380,
+          "chars": 373478
+        }
+      ]
+    },
+    {
+      "loggedAtUnixMs": 1793124655766,
+      "phase": "prepared",
+      "epicHash": "484fcef7efaf229e",
+      "storyId": "s3",
+      "dimension": "quality",
+      "reviewId": "5351072a-1628-4b7c-b0bd-415201e411bf",
+      "single": false,
+      "limitChars": 384000,
+      "chunks": [
+        {
+          "id": "c1",
+          "atoms": 410,
+          "chars": 375982
+        },
+        {
+          "id": "c2",
+          "atoms": 477,
+          "chars": 375977
+        },
+        {
+          "id": "c3",
+          "atoms": 503,
+          "chars": 375949
+        },
+        {
+          "id": "c4",
+          "atoms": 372,
+          "chars": 376176
+        },
+        {
+          "id": "c5",
+          "atoms": 437,
+          "chars": 376284
+        },
+        {
+          "id": "c6",
+          "atoms": 678,
+          "chars": 376048
+        },
+        {
+          "id": "c7",
+          "atoms": 526,
+          "chars": 375998
+        },
+        {
+          "id": "c8",
+          "atoms": 140,
+          "chars": 322574
+        }
+      ]
+    },
+    {
+      "loggedAtUnixMs": 1793124671969,
+      "phase": "prepared",
+      "epicHash": "484fcef7efaf229e",
+      "storyId": "s3",
+      "dimension": "functional-coverage",
+      "reviewId": "a02fbf27-5034-46a5-b2fb-da15e073b1ad",
+      "single": false,
+      "limitChars": 384000,
+      "chunks": [
+        {
+          "id": "c1",
+          "atoms": 410,
+          "chars": 375998
+        },
+        {
+          "id": "c2",
+          "atoms": 477,
+          "chars": 375978
+        },
+        {
+          "id": "c3",
+          "atoms": 503,
+          "chars": 376000
+        },
+        {
+          "id": "c4",
+          "atoms": 377,
+          "chars": 376179
+        },
+        {
+          "id": "c5",
+          "atoms": 434,
+          "chars": 376179
+        },
+        {
+          "id": "c6",
+          "atoms": 676,
+          "chars": 375960
+        },
+        {
+          "id": "c7",
+          "atoms": 526,
+          "chars": 375971
+        },
+        {
+          "id": "c8",
+          "atoms": 140,
+          "chars": 322214
+        }
+      ]
+    },
+    {
+      "loggedAtUnixMs": 1793124671970,
+      "phase": "prepared",
+      "epicHash": "484fcef7efaf229e",
+      "storyId": "s3",
+      "dimension": "diagram",
+      "reviewId": "3e98756f-2605-462e-ab97-817a7e190424",
+      "single": true,
+      "limitChars": 384000,
+      "chunks": []
+    }
+  ],
+  "recovery": {
+    "handleRequiredForStatusAndCancel": true,
+    "publicLookupByTargetAvailable": false,
+    "activeOwnerObserved": true,
+    "subprocessesTerminated": false,
+    "daemonRestartedByAgent": false,
+    "globalConfigurationChanged": false,
+    "reason": "Start request timed out before a handle was returned. Different current inputs are refused while the prior owner is active. Exact current subprocess ownership could not be established; no signal sent."
+  },
+  "completedReview": false,
+  "independentChunkingStoryReviewStarted": false,
+  "releaseGatesChanged": false,
+  "historicalS003EvidenceChanged": false
+}

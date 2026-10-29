@@ -2,7 +2,7 @@
   "version": 1,
   "taskId": "t23",
   "test": "DIFF-S003-RETRY",
-  "status": "pending-corrected-runtime",
+  "status": "pending-stale-owner-recovery",
   "attemptPerformed": true,
   "reportedResult": "fail",
   "target": {
@@ -28,7 +28,7 @@
   "requiredAuthorization": null,
   "planPath": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/PLAN.md",
   "planConstraint": "No automatic daemon restart or release changes; if activation unavailable preserve pending proof honestly, never script a fake review success.",
-  "independentCodeReviewStatus": "not-run; pending corrected runtime to avoid the same admission defect",
+  "independentCodeReviewStatus": "not-run; stale S003 owner still active; no parallel LLM reviews started",
   "globalConfigurationChanged": false,
   "releaseGatesChanged": false,
   "historicalS003EvidenceChanged": false,
@@ -43,13 +43,13 @@
       "storeFailure": null
     }
   },
-  "runtimeRetryEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-first-runtime-retry.json",
+  "runtimeRetryEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-second-runtime-retry.json",
   "activationConfirmedByUser": true,
-  "installedCommitAtAttempt": "841891ec449d3612c8269b112a9e4d5d3d0b405b",
-  "requiredAction": "User updates/restarts daemon after the validated path-order correction is committed and pushed; then rerun S003 and the independent code review.",
+  "installedCommitAtAttempt": "c29dc673aa742ff564da78d2786d9a7ea3db92ea",
+  "requiredAction": "Clear the stale daemon-owned review, preserve stable HEAD, then retry through bounded control start with explicit degraded grounding and retain its handle. Independent Story code review remains pending.",
   "requiredCorrectedSourceSha256": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
   "localPreparationEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-order-fixed-local.json",
-  "updatedAt": "2026-10-27T17:43:48.131972+00:00",
+  "updatedAt": "2026-10-27T18:29:31.957411+00:00",
   "validatedCorrection": {
     "commit": "fd6b5fcc9",
     "taskId": "t12",

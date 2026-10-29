@@ -1,0 +1,24 @@
+<!-- insrc:artifact TESTS-484fcef7efaf229e-s5 -->
+
+# Tests: 484fcef7efaf229e s5
+
+What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
+
+**Totals:** 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+## t1
+
+Run at 2026-10-29T14:41:37.350Z on commit `e4b30504f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index | `src/shared/__tests__/connection-manager-corpus.test.ts` |
+| pass | CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift | `src/shared/__tests__/connection-manager-corpus.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-corpus.test.ts` | 0 | 2 | 10.2 s |  |

@@ -1,0 +1,16 @@
+{
+  "receivedAt": "2026-10-28T12:54:06.721Z",
+  "target": {
+    "repo": "/Users/subhagho/work/projects/insors/insrc",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s3"
+  },
+  "groundingMode": "degraded",
+  "result": {
+    "reviewHandle": "60310287-4723-419d-aea7-51fa17c7c753.de65bb89-fabc-4d55-b7fe-9be788317b05",
+    "daemonEpoch": "60310287-4723-419d-aea7-51fa17c7c753",
+    "status": "failed",
+    "error": "review stage : the call failed twice (transient): claude exited with 1. You've hit your session limit · resets 9:30pm (Asia/Calcutta) stderr= stdout={\"duration_api_ms\":0,\"stop_reason\":\"stop_sequence\",\"session_id\":\"eea20103-0c96-4e49-b991-7632187d3001\",\"total_cost_usd\":0,\"usage\":{\"output_tokens_details\":{\"thinking_tokens\":0},\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":0,\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":0,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"\",\"iterations\":[],\"speed\":\"standard\",\"fallback_credit\":null},\"modelUsage\":{},\"permission_denials\":[],\"terminal_reason\":\"api_error\",\"fast_mode_state\":\"off\",\"fast_mode_disabled_reason\":\"sdk_opt_in_required\",\"subagent_stats\":{\"spawned\":0,\"requested\":{\"background\":0,\"foreground\":0,\"unset\":0},\"started_in_background\":0,\"max_depth\":0,\"spawned_by_subagents\":0,\"completed\":0,\"failed\":0,\"killed\":{\"parent\":0,\"user\":0,\"system\":0},\"refused\":{\"depth_limit\":0,\"concurrency_limit\":0,\"budget\":0},\"by_type\":{}},\"safety_stops\":0,\"is_error\":true,\"num_turns\":1,\"subtype\":\"success\",\"api_error_status\":429,\"api_error_origin\":\"first_party\",\"api_error\":\"usage_limit_reached\",\"result\":\"You've hit your session limit · resets 9:30pm (Asia/Calcutta)\",\"type\":\"result\",\"duration_ms\":462,\"uuid\":\"b7e1ddf1-c8d3-464b-b9f9-4c60f56a1e6b\",\"queued_turn_count\":0,\"result_index\":0}\n. No review was recorded.",
+    "reason": "review-failed"
+  }
+}

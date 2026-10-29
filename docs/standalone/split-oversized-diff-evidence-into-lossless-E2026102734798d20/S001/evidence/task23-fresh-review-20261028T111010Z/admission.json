@@ -1,0 +1,16 @@
+{
+  "requestedAt": "2026-10-28T11:10:20.075Z",
+  "target": {
+    "repo": "/Users/subhagho/work/projects/insors/insrc",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s3"
+  },
+  "groundingMode": "degraded",
+  "head": "39dbb0d761175018fe86fc215bf1eade1c01b05c",
+  "daemon": {
+    "installedCommit": "c29dc673aa742ff564da78d2786d9a7ea3db92ea",
+    "uptime": 24357
+  },
+  "independentReviewComplete": false,
+  "task23Complete": false
+}

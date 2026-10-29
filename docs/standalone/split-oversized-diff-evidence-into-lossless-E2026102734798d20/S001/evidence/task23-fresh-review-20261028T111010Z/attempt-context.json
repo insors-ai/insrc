@@ -1,0 +1,8 @@
+{
+  "authorizedBy": "User: go ahead",
+  "previousAttemptEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-fresh-review-20261028/terminal.json",
+  "previousFailure": "Claude CLI session usage limit; no review recorded",
+  "newReviewRequested": true,
+  "automaticDaemonRestart": false,
+  "modelRoutingChanged": false
+}

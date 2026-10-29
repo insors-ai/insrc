@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "5d393a4b122cf64a",
+    "storyId": "S001",
+    "createdAt": "2026-10-29T12:03:40.473Z",
+    "updatedAt": "2026-10-29T13:02:53.983Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T11:39:36.587Z",
+    "epicSlug": "classify-module-scope-mutable-state-reachable"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/classify-module-scope-mutable-state-reachable-E202610295d393a4b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/module-state-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/method-class.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/module-state-moves.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/main-services.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/worker-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/config.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/live-runs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/analyze-run-owner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/session-routing.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/session-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/status-board.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:02:53.983Z"
+      }
+    ],
+    "commit": "7a68f9c3d",
+    "summary": "Module-state inventory for the threaded daemon: a test-side compiler scanner lists the 290 module-scope mutable declarations a session worker loads; a reviewed fixture classifies each (per-thread, shared-store, or one-owner with its thread) with a reason; a guard test over the repo fails on any new, stale or invalid entry (it already caught one during t6). Seven values needed a single copy; per the user's decision all four problems were moved inline: models.* and codeReview.* (plus step.call for insrc_code_review_step) run on the shared-state worker; tools.config.set is served on main, which pushes tool settings to every worker; analyze.run.status/purge are routed to the thread running the run via the status board, fixing a status served elsewhere that rewrote a running analysis as abandoned. Manual code review; no daemon code review. Code review (manual): no HIGH/MED findings; LOW notes: tools.config.set on main now builds main's lazy handler runtime at the IDE's connect; a tool loop starting between a settings change and its push reads the previous settings; two threads running the same analyze run id keep only the latest owner on the board; code review and model checks now share the shared-state worker with chat, todos and understanding. Full sweep: 6961 tests, 15 failed, none from this Story: 6 timing/perf checks that pass alone, the known SIGTERM boot flake, the pre-existing file-tools test, and the other session's CM-S1/CM-S3/CM-S4 connection-management checks (session-probe fails identically with this Story's t6 reverted in an isolated worktree)."
+  }
+}

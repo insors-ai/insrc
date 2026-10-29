@@ -29,14 +29,15 @@ import type { MessagePort } from 'node:worker_threads';
 
 import { getLogger } from '../../shared/logger.js';
 import { holdsMaintenanceLock } from '../../shared/locks/maintenance-lock.js';
-import type { IpcStreamMessage } from '../../shared/types.js';
+import type { IpcStreamMessage, ThreadRole } from '../../shared/types.js';
 import type { RequestLifetime } from '../request-context.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope, SessionId } from './channel.js';
 import { FIFO_EXEMPT_METHODS, MAIN_DAEMON_CONNECTION_METHODS, SHARED_STATE_METHODS } from './method-class.js';
 import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
-import type { TargetRegistry } from './registry.js';
+import type { TargetRegistry, ThreadTarget } from './registry.js';
+import type { StatusBoard } from './status-board.js';
 
 const log = getLogger('router');
 
@@ -54,6 +55,20 @@ export interface RouterOptions {
 	/** Told of every request as it arrives; the call it returns is made when the request ends (idle detection). */
 	readonly onRequest?: ((method: string, cls: MethodClass | undefined) => () => void) | undefined;	/** The session pool, once session work is routed (s3): a session's worker, and its requests' activity. */
 	readonly sessions?: RouterSessions | undefined;
+	/**
+	 * Where the router publishes what each worker thread it sends requests to is doing (s4): busy
+	 * while a request it sent there is in flight, with the oldest one's method and start. Absent
+	 * without daemon threads.
+	 */
+	readonly board?: Pick<StatusBoard, 'publish' | 'forget'> | undefined;
+}
+
+/** What a registered target's thread is for. */
+function roleOf(target: ThreadTarget): ThreadRole {
+	if (target.cls === 'admin') return 'admin';
+	if (target.cls === 'indexing') return 'code-indexing';
+	if (target.shared === true) return 'shared-state';
+	return target.unattributed === true || target.session === undefined ? 'unattributed' : 'session';
 }
 
 /** The session pool as the router uses it (s3, sc6). */
@@ -137,6 +152,8 @@ export class Router {
 	private readonly pending = new Map<string, Pending>();
 	private readonly held = new Set<Held>();
 	private readonly fifos = new Map<string, Fifo>();
+	/** Per worker thread, the requests sent to it and not yet ended, oldest first (s4's thread view). */
+	private readonly inFlight = new Map<number, Map<string, { readonly method: string; readonly since: number }>>();
 	private sessions: RouterSessions | undefined;
 	/** The thread that owns a detached run (the status board), for workflow.run.abort. */
 	private runOwner: ((runId: string) => number | undefined) | undefined;
@@ -180,6 +197,7 @@ export class Router {
 					finally { item.request.lifetime?.complete(); }
 				}
 				this.sessions?.setQueued(session, fifo.waiting.length);
+				this.publishSession(session);
 			}
 		}
 		for (const orphan of this.detach(threadId)) answer(orphan.requestId, orphan.stream, orphan.deliver);
@@ -328,11 +346,11 @@ export class Router {
 			},
 		};
 		if (f.running === undefined) { f.running = item; item.run(); }
-		else { f.waiting.push(item); this.sessions!.setQueued(session, f.waiting.length); }
+		else { f.waiting.push(item); this.sessions!.setQueued(session, f.waiting.length); this.publishSession(session); }
 		return () => {
 			if (!item.started) {
 				const at = f.waiting.indexOf(item);
-				if (at >= 0) { f.waiting.splice(at, 1); this.sessions!.setQueued(session, f.waiting.length); }
+				if (at >= 0) { f.waiting.splice(at, 1); this.sessions!.setQueued(session, f.waiting.length); this.publishSession(session); }
 				item.drop();
 				return;
 			}
@@ -347,6 +365,7 @@ export class Router {
 		if (fifo === undefined || fifo.running !== item) return;
 		fifo.running = fifo.waiting.shift();
 		this.sessions!.setQueued(fifo.session, fifo.waiting.length);
+		this.publishSession(fifo.session);
 		if (fifo.running !== undefined) fifo.running.run();
 		else this.fifos.delete(key);
 	}
@@ -384,19 +403,22 @@ export class Router {
 			const pending = this.pending.get(response.requestId);
 			if (pending === undefined || pending.threadId !== threadId) return;
 			if (completion) {
-				if (pending.lifetime) { this.pending.delete(response.requestId); pending.lifetime.complete(); }
+				if (pending.lifetime) { this.pending.delete(response.requestId); pending.lifetime.complete(); this.finished(threadId, response.requestId); }
 				return;
 			}
-			if (response.kind === 'reply') { if (!pending.lifetime) this.pending.delete(response.requestId); }
+			if (response.kind === 'reply') { if (!pending.lifetime) this.pending.delete(response.requestId); this.finished(threadId, response.requestId); }
 			else {
 				const stream = ((response as FrameEnvelope).frame as IpcStreamMessage).stream;
-				if (!pending.lifetime && (stream === 'done' || stream === 'error')) this.pending.delete(response.requestId);
+				const terminal = stream === 'done' || stream === 'error';
+				if (!pending.lifetime && terminal) this.pending.delete(response.requestId);
+				if (terminal) this.finished(threadId, response.requestId);
 			}
 			pending.deliver(response);
 		};
 		this.ports.set(threadId, port);
 		this.listeners.set(threadId, onMessage);
 		port.on('message', onMessage);
+		this.publishThread(threadId);
 		this.targetsChanged();
 	}
 
@@ -407,6 +429,9 @@ export class Router {
 		if (port !== undefined && listener !== undefined) port.off('message', listener);
 		this.ports.delete(threadId);
 		this.listeners.delete(threadId);
+		// Gone from the thread view; with its port gone nothing publishes it again.
+		this.inFlight.delete(threadId);
+		this.opts.board?.forget(threadId);
 		const orphaned: OrphanedRequest[] = [];
 		for (const [requestId, p] of this.pending) {
 			if (p.threadId !== threadId) continue;
@@ -438,12 +463,51 @@ export class Router {
 		}
 	}
 
+	/** A request was sent to `threadId`: it is busy with it from now. */
+	private began(threadId: number, request: LocalRequestEnvelope): void {
+		let requests = this.inFlight.get(threadId);
+		if (requests === undefined) { requests = new Map(); this.inFlight.set(threadId, requests); }
+		requests.set(request.requestId, { method: request.method, since: Date.now() });
+		this.publishThread(threadId);
+	}
+
+	/** A request sent to `threadId` ended (its reply, last frame, completion or cancel). */
+	private finished(threadId: number, requestId: string): void {
+		if (this.inFlight.get(threadId)?.delete(requestId) === true) this.publishThread(threadId);
+	}
+
+	/** Publish an attached, registered worker thread's view: busy with its oldest request in flight, and its session's queue. */
+	private publishThread(threadId: number): void {
+		const board = this.opts.board;
+		if (board === undefined || !this.ports.has(threadId)) return;
+		const target = this.opts.registry.targets().find(t => t.threadId === threadId);
+		if (target === undefined) return;
+		const role = roleOf(target);
+		const oldest = this.inFlight.get(threadId)?.values().next().value;
+		const session = role === 'session' ? target.session : undefined;
+		board.publish({
+			threadId, cls: target.cls, role,
+			...(session !== undefined ? { session } : {}),
+			busy: oldest !== undefined,
+			...(oldest !== undefined ? { method: oldest.method, since: oldest.since } : {}),
+			queued: session !== undefined ? this.fifos.get(`${session.label}:${session.pid}`)?.waiting.length ?? 0 : 0,
+		});
+	}
+
+	/** A session's queue changed: republish its worker's view. */
+	private publishSession(session: SessionId): void {
+		const target = this.opts.registry.targetFor('session', session);
+		if (target !== undefined && target.session !== undefined) this.publishThread(target.threadId);
+	}
+
 	private send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		const port = this.ports.get(threadId)!;
 		this.pending.set(request.requestId, { threadId, method: request.method, stream: request.stream, deliver, ...(request.stream && request.lifetime ? { lifetime: request.lifetime } : {}) });
+		this.began(threadId, request);
 		try { port.postMessage(wireRequest(request)); }
 		catch {
 			this.pending.delete(request.requestId);
+			this.finished(threadId, request.requestId);
 			try { deliver({kind:'reply', requestId:request.requestId, error:'request channel unavailable'}); }
 			finally { request.lifetime?.complete(); }
 		}
@@ -482,7 +546,8 @@ export class Router {
 	private cancel(threadId: number, request: LocalRequestEnvelope): void {
 		if (!request.stream) return;
 		request.lifetime?.abort();
-		if (!request.lifetime) this.pending.delete(request.requestId);
+		// Without a lifetime the stream ends here; with one, when its worker completes it.
+		if (!request.lifetime) { this.pending.delete(request.requestId); this.finished(threadId, request.requestId); }
 		this.ports.get(threadId)?.postMessage({ kind: 'cancel', requestId: request.requestId } satisfies CancelEnvelope);
 	}
 }

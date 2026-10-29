@@ -283,6 +283,8 @@ async function main(): Promise<void> {
 			// Test hooks (INSRC_TEST_HOOKS=1) are session work, served on a session worker.
 			classOf: method => process.env['INSRC_TEST_HOOKS'] === '1' && method.startsWith('test.') ? 'session' : methodClasses.classOf(method),
 			registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver),
+			// What each worker thread is serving, for daemon.status's threads list (s4).
+			board: threadServices.board,
 			// Every request is activity for idle maintenance (admin polls and subscriptions excepted).
 			onRequest: (method, cls) => maintenance?.requestArrived(method, cls) ?? (() => {}),
 		})

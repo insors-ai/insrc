@@ -13555,7 +13555,7 @@
       ],
       "siteCount": 67,
       "sitesDigest": "af62d2d3d29a1f676cb8b51f3500640dfd1588bbcdbcf5db0d844af159746f5c",
-      "sourceDigest": "82e6f43d4d0f9d4ca27f12b6a96333cb3b3c4496d29ae69bbf3903fea834a167",
+      "sourceDigest": "e40453ef1b0296389d1448d2ec603905294614afacbea3d7855b9af510c04dfd",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -15915,6 +15915,10 @@
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "sites": [
         [
+          "serialization",
+          "board.publish"
+        ],
+        [
           "diagnostic",
           "getLogger"
         ],
@@ -15963,9 +15967,9 @@
           "this.send"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "2f107b5cd66b1f4370db6e995316b1e8b6830cc71adc00868e441bae7df863c0",
-      "sourceDigest": "d3ec63f4da2394478fbb047b719d0c63a5cc668827cfb29949f78c7b4b826928",
+      "siteCount": 13,
+      "sitesDigest": "dd8824b22f3295067d2d78ebd6376c5cea895cf0b974782869dc5574d206e17f",
+      "sourceDigest": "8d4a434e43daffdd76ddc5cffb03835b9f5263866dda742dfd43c40dbea3c7ce",
       "boundaries": [
         "diagnostic",
         "serialization"

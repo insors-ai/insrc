@@ -62,12 +62,13 @@ import { readInstalledCommit } from './installed-commit.js';
 import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
 import type { SessionPool } from './threads/session-pool.js';
 import { startSessionRouting } from './threads/session-routing.js';
+import { lazyForward } from './threads/lazy-runtime.js';
 import { setRunBoard } from './workflow-run-registry.js';
 import { MaintenanceController } from './threads/maintenance.js';
 import { inDaemonTarget, methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
 import { IndexingPortClient } from './threads/indexing-port.js';
-import type { RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
+import type { HandlerRuntime, RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
 import type { ForwardRequest } from './server.js';
 import { Supervisor } from './threads/supervisor.js';
 import { startIndexingWorkers } from './threads/indexing-workers.js';
@@ -448,28 +449,35 @@ async function main(): Promise<void> {
 			}));
 		} catch { log.warn({ repo: registered.path }, 'connection management disabled: maintenance or recovery required'); }
 	}
-	const { rpcHandlers, streamHandlers, understandingRoutes } = buildHandlerRuntime({
-		db, configStore, queue, indexer, startedAt,
-		shutdown: reason => shutdown(reason),
-		attachedClients: () => server.attachedClients(),
-		understandingService: () => understandingService,
-		// With daemon threads the session purge reaches the chat pool and todos bus through a nested call (s3).
-		...(router !== undefined ? { nestedCall: (method: string, params: unknown) => inDaemon.request(method, params) } : {}),
-	});
-	// A step handler's nested call goes to the worker inDaemonTarget names (an admin or indexing
-	// method to its class's worker; a shared-state method to the shared-state worker once session
-	// work is routed); anything else runs here, as before.
-	const inDaemon = createInDaemonClient(rpcHandlers, streamHandlers, {
-		inDaemonOnly: inDaemonOnlyHandlers(),
-		...(router !== undefined ? { route: {
-			targetOf: (method: string) => inDaemonTarget(method, { routed, onSharedWorker: false }),
-			request: (cls: MethodClass, method: string, params: unknown, opts?: { readonly shared?: true | undefined }) => router.request(cls, method, params, opts),
-		} } : {}),
-	});
-	installStepDaemonClient(inDaemon);
+	// Built at boot without daemon threads; with them, only when the first request that must stay
+	// on this thread arrives (s4), so a daemon that never sees one never loads it here.
+	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
+	const buildRuntime = (): ForwardRequest => {
+		const runtime = buildHandlerRuntime({
+			db, configStore, queue, indexer, startedAt,
+			shutdown: reason => shutdown(reason),
+			attachedClients: () => server.attachedClients(),
+			understandingService: () => understandingService,
+			// With daemon threads the session purge reaches the chat pool and todos bus through a nested call (s3).
+			...(router !== undefined ? { nestedCall: (method: string, params: unknown) => inDaemon.request(method, params) } : {}),
+		});
+		// A step handler's nested call goes to the worker inDaemonTarget names (an admin or indexing
+		// method to its class's worker; a shared-state method to the shared-state worker once session
+		// work is routed); anything else runs here, as before.
+		const inDaemon = createInDaemonClient(runtime.rpcHandlers, runtime.streamHandlers, {
+			inDaemonOnly: inDaemonOnlyHandlers(),
+			...(router !== undefined ? { route: {
+				targetOf: (method: string) => inDaemonTarget(method, { routed, onSharedWorker: false }),
+				request: (cls: MethodClass, method: string, params: unknown, opts?: { readonly shared?: true | undefined }) => router.request(cls, method, params, opts),
+			} } : {}),
+		});
+		installStepDaemonClient(inDaemon);
+		understandingRoutes = runtime.understandingRoutes;
+		return directDispatch(runtime.rpcHandlers, runtime.streamHandlers);
+	};
 	// With daemon threads, the router is the server's forward (Epic 86197ac6
 	// s2): routed classes go to their workers, everything else runs here.
-	const local = directDispatch(rpcHandlers, streamHandlers);
+	const local = router !== undefined ? lazyForward(buildRuntime).forward : buildRuntime();
 	localForward = local;
 	const server = new IpcServer(connectionSessionRuntime.forward(router?.forward ?? local));
 	server.onConnectionClose(context => connectionSessionRuntime.disconnect(context));
@@ -561,7 +569,7 @@ async function main(): Promise<void> {
 			connectionSessionRuntime.stopAdmission();
 			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
-			understandingRoutes.stop();
+			understandingRoutes?.stop();
 			clearInterval(pruneTimer);
 			clearInterval(readerCheckTimer);
 			stopTodosRetention();

@@ -13555,7 +13555,7 @@
       ],
       "siteCount": 67,
       "sitesDigest": "af62d2d3d29a1f676cb8b51f3500640dfd1588bbcdbcf5db0d844af159746f5c",
-      "sourceDigest": "6fa770c3b568095ebca1902fb5dbb52ebf5fbae24d4b495fa6a9da8d31397f37",
+      "sourceDigest": "82e6f43d4d0f9d4ca27f12b6a96333cb3b3c4496d29ae69bbf3903fea834a167",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -15750,6 +15750,30 @@
       "boundaries": [
         "diagnostic",
         "unresolved-call"
+      ]
+    },
+    "src/daemon/threads/lazy-runtime.ts": {
+      "classification": "routing-background-boundary",
+      "rationale": "Thread infrastructure (Epic 86197ac6 s4): builds the main thread's handler runtime on the first request the router keeps local (connection-scoped requests, which must stay on the main daemon) and forwards to it unchanged; a failed build answers that one request with its error. It holds no session state itself; its only boundary sites are diagnostic logs.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "diagnostic",
+          "log.error"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "fffb1385f804705cfd0aecfed3e73256ce69768fcd908cc742cd5f2022fee94b",
+      "sourceDigest": "f33fd73e1d6c41d90c3c486d0b636964c126e24d781d04a333a4527650383558",
+      "boundaries": [
+        "diagnostic"
       ]
     },
     "src/daemon/threads/main-services.ts": {

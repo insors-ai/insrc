@@ -40,7 +40,7 @@ const obj=<T extends Record<string,TSchema>>(properties:T)=>Type.Object(properti
 const text=Type.String({minLength:1,maxLength:4096});
 const id=Type.String({minLength:1,maxLength:128,pattern:'^[a-zA-Z0-9][a-zA-Z0-9_-]*$'});
 const digest=Type.String({pattern:'^[a-f0-9]{64}$'});
-const oid=Type.String({pattern:'^[a-f0-9]{40}$'});
+const oid=Type.String({pattern:'^(?:[a-f0-9]{40}|[a-f0-9]{64})$'});
 const n=Type.Integer({minimum:0,maximum:Number.MAX_SAFE_INTEGER});
 const refs=Type.Array(text,{maxItems:10000,uniqueItems:true});
 const choices=<const T extends string>(values:readonly T[])=>Type.Union(values.map(v=>Type.Literal(v)));

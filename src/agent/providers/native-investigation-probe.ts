@@ -47,6 +47,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
     const check = (requireActive = true) => {
       if (requireActive) signal.throwIfAborted(); context.assertCurrent();
       if (fixture.cwd !== context.cwd || fixture.turn.attemptId !== context.attemptId || fixture.tools.seed['probeOnly'] !== true ||
+        fixture.tools.impact.mode !== context.sourceMode ||
         fixture.binding.runId !== `probe-${context.probeId}` || input.adapter.kind !== context.identity.kind || input.adapter.version !== context.identity.adapterVersion ||
         realpathSync(input.binaryPath) !== context.identity.binary.path || digestValue(input.profile) !== context.identity.profileDigest ||
         scopedReviewCatalogDigest(indexed) !== context.identity.catalogDigest) throw Error('Probe invocation identity mismatch');
@@ -91,8 +92,8 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
     const observations: InvestigationProbeObservation[] = [];
     if (state.sequence >= 2) observations.push({ ...provenance, check: 'durable-progress', verdict: 'observed-allowed',
       observationDigest: digestValue(state.accepted), detail: 'Two synthetic scoped block ACKs durably accepted' });
-    if (processStarted && cancellationRequested && result.aborted && !result.spawnError) observations.push({ ...provenance,
-      check: 'cancellation-exit', verdict: 'observed-allowed', observationDigest: digestValue({ aborted: result.aborted, durationMs: result.durationMs }),
+    if (processStarted && cancellationRequested && result.aborted && result.exitSignal === 'SIGKILL' && !result.spawnError) observations.push({ ...provenance,
+      check: 'cancellation-exit', verdict: 'observed-allowed', observationDigest: digestValue({ aborted: result.aborted, exitSignal: result.exitSignal, durationMs: result.durationMs }),
       detail: 'Host cancellation followed by actual process-group exit' });
     if (!rawOverflow && !result.outputLimitExceeded && !result.observerFailed && !fixture.error())
       observations.push(...(input.collect?.(result, { ...provenance, binaryVersion: context.identity.binaryVersion }) ?? []));

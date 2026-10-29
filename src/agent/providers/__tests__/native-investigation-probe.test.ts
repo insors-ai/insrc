@@ -2,13 +2,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, writeFileSync, readFileSync, chmodSync, existsSync, rmSync, realpathSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, chmodSync, existsSync, rmSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CliProvider } from '../cli-provider.js';
 import { issueInvestigationProbeGrant } from '../investigation-probe-grant.js';
 import { investigationFileDigest, inspectQualifiedInvestigationBinding } from '../investigation-session.js';
 import { claudeInvestigationAdapter } from '../claude-investigation-session.js';
+import { codexInvestigationAdapter } from '../codex-investigation-session.js';
+import { installedInvestigationImages } from '../native-investigation-installation.js';
 import { nativeReviewMcpConfiguration } from '../native-investigation-session.js';
 import { createInvestigationProbeFixture } from '../../../daemon/review-investigation-probe-fixtures.js';
 import { createInvestigationPolicy, admitInvestigationRequest } from '../../../workflow/code-review/investigation/continuation-policy.js';
@@ -24,7 +26,8 @@ import {createConnection} from 'node:net';
 appendFileSync(new URL('./calls.txt',import.meta.url),'called\\n');
 let input='';for await(const c of process.stdin)input+=c;
 const {turn}=JSON.parse(input.split('\\n').at(-1));
-writeFileSync(new URL('./observed.json',import.meta.url),JSON.stringify({args:process.argv.slice(2),home:process.env.HOME,hasApiKey:process.env.ANTHROPIC_API_KEY!==undefined,hasNodeOptions:process.env.NODE_OPTIONS!==undefined}));
+const argv=process.argv.slice(2),schemaPath=argv[argv.indexOf('--output-schema')+1];
+writeFileSync(new URL('./observed.json',import.meta.url),JSON.stringify({args:argv,home:process.env.HOME,codexHome:process.env.CODEX_HOME,schema:argv.includes('--output-schema')?JSON.parse(readFileSync(schemaPath,'utf8')):null,hasApiKey:process.env.ANTHROPIC_API_KEY!==undefined,hasNodeOptions:process.env.NODE_OPTIONS!==undefined}));
 if(existsSync(new URL('./early-exit',import.meta.url))){process.stdout.write(JSON.stringify({type:'result',result:'I denied everything',structured_output:{tools:[],hooks:[],plugins:[]}}));process.exit(0);}
 const config=JSON.parse(readFileSync(process.cwd()+'/investigation-binding-'+process.env.INSRC_REVIEW_NATIVE_BINDING_ID+'.json','utf8'));
 const {expiresAt,...binding}=config.binding;
@@ -33,10 +36,18 @@ for(let i=0;i<2;i++)await call({runId:turn.runId,subjectDigest:turn.subjectDiges
 setInterval(()=>{},1000);
 `;
 
-async function fixture() {
-  const repo = mkdtempSync(join(tmpdir(), 'native-probe-test-')), binary = join(repo, 'fake-claude.mjs');
+async function fixture(kind: 'claude' | 'codex' = 'claude') {
+  const repo = mkdtempSync(join(tmpdir(), 'native-probe-test-'));
+  if (kind === 'codex') {
+    mkdirSync(join(repo, 'bin'));
+    writeFileSync(join(repo, 'package.json'), JSON.stringify({ name: '@openai/codex', type: 'module' }));
+    const triple = process.platform === 'linux' ? `${process.arch === 'x64' ? 'x86_64' : 'aarch64'}-unknown-linux-musl` : `${process.arch === 'x64' ? 'x86_64' : 'aarch64'}-apple-darwin`;
+    const vendor = join(repo, 'vendor', triple, 'bin'); mkdirSync(vendor, { recursive: true });
+    writeFileSync(join(vendor, 'codex'), 'explicitly non-executed runtime fixture', { mode: 0o700 });
+  }
+  const binary = kind === 'codex' ? join(repo, 'bin', 'codex.js') : join(repo, 'fake-claude.mjs');
   writeFileSync(binary, `#!${process.execPath}\n${actor}`); chmodSync(binary, 0o700);
-  const provider = new CliProvider({ kind: 'claude', binPath: binary });
+  const provider = new CliProvider({ kind, binPath: binary });
   const f = continuationFixture(), policy = createInvestigationPolicy(provider), probeId = randomUUID(), attemptId = randomUUID();
   const budget = { policy: policy.budget, admitted: admitInvestigationRequest(policy, { turn: f.turn, seed: f.context.seed }, InvestigationReplySchema),
     outputAllowanceTokens: policy.budget.profile.completionReserveTokens, reviewId: probeId, callId: attemptId, stage: 'probe', role: 'probe', attempt: 1 };
@@ -45,10 +56,11 @@ async function fixture() {
     sourceMode: 'source-only', budget, signal: abort.signal, assertCurrent: () => {} });
   const command = nativeReviewMcpConfiguration(probe.cwd, false).mcpServers['insrc-scoped-review'];
   const file = (path: string) => ({ path: realpathSync(path), digest: investigationFileDigest(realpathSync(path)) });
-  const profile = provider.getReviewBudgetProfile('reviewer-session'), args = claudeInvestigationAdapter.args(InvestigationReplySchema, [], probe.cwd, false);
-  const identity = { kind: 'claude' as const, adapterVersion: claudeInvestigationAdapter.version, binaryVersion: 'explicitly-nonqualifying-fixture',
-    binary: file(binary), runtimeFiles: [file(command.command), file(command.args.find(p => p.endsWith('insrc-review-bridge.ts'))!)],
-    profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(false), launchDigest: claudeInvestigationAdapter.launchDigest(args, probe.cwd, InvestigationReplySchema) };
+  const adapter = kind === 'claude' ? claudeInvestigationAdapter : codexInvestigationAdapter;
+  const profile = provider.getReviewBudgetProfile('reviewer-session'), args = adapter.args(InvestigationReplySchema, [], probe.cwd, false);
+  const identity = { kind, adapterVersion: adapter.version, binaryVersion: 'explicitly-nonqualifying-fixture',
+    binary: file(binary), runtimeFiles: [...installedInvestigationImages(kind, binary, probe.cwd).filter(pin => pin.path !== binary), file(command.command), file(command.args.find(p => p.endsWith('insrc-review-bridge.ts'))!)],
+    profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(false), launchDigest: adapter.launchDigest(args, probe.cwd, InvestigationReplySchema) };
   const context = { origin: 'installed-probe' as const, probeId, attemptId, repo, cwd: probe.cwd, sourceMode: 'source-only' as const,
     identity, budget, deadlineAt: Date.now() + 30_000, assertCurrent: () => {}, observe: async () => {},
     runtime: { requestId: randomUUID(), sourceCommit: 'a'.repeat(40), sourceDigest: 'b'.repeat(64), fixture: probe } };
@@ -67,6 +79,7 @@ test('Trusted probe executes once with exact pinned launch, inclusive budget and
     assert.equal(result.status.usage.modelCalls, null, 'subprocess count is not actual model-call telemetry');
     assert.ok(result.status.missingEvidence.includes('effective-inventory'));
     assert.equal(existsSync(f.probe.bindingPath), false);
+    assert.equal(JSON.parse(readFileSync(join(f.probe.root, 'native-output.json'), 'utf8')).exitSignal, 'SIGKILL');
     await assert.rejects(() => f.provider.runInvestigationProbe({ grant, signal: f.abort.signal }), /consumed/);
   } finally { await f.close(); }
   const large = await fixture();
@@ -76,6 +89,30 @@ test('Trusted probe executes once with exact pinned launch, inclusive budget and
     await assert.rejects(() => large.provider.runInvestigationProbe({ grant, signal: large.abort.signal }));
     assert.equal(existsSync(join(large.repo, 'calls.txt')), false, 'inclusive admission refuses before launch');
   } finally { await large.close(); }
+});
+
+test('Codex probe preserves strict schema cleanup and actual process drain', async () => {
+  const f = await fixture('codex');
+  try {
+    const result = await f.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant(f.context), signal: f.abort.signal });
+    const observed = JSON.parse(readFileSync(join(f.repo, 'bin', 'observed.json'), 'utf8'));
+    assert.equal(observed.args.includes('--ignore-user-config'), true);
+    assert.equal(observed.args.includes('--strict-config'), true);
+    assert.equal(observed.schema.additionalProperties, false);
+    assert.equal(observed.codexHome, process.env['CODEX_HOME']);
+    assert.equal(result.status.state, 'unsupported');
+    assert.equal(result.candidate, undefined);
+    assert.ok(result.status.observations.some(o => o.check === 'cancellation-exit' && o.verdict === 'observed-allowed'));
+    assert.equal(existsSync(join(f.probe.cwd, 'investigation-schema.json')), false);
+    assert.equal(existsSync(f.probe.bindingPath), false);
+    assert.equal(readFileSync(join(f.repo, 'bin', 'calls.txt'), 'utf8'), 'called\n');
+  } finally { await f.close(); }
+  const missing = await fixture('codex');
+  try {
+    const identity = { ...missing.context.identity, runtimeFiles: missing.context.identity.runtimeFiles.filter(pin => !pin.path.includes('/vendor/')) };
+    await assert.rejects(() => missing.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant({ ...missing.context, identity }), signal: missing.abort.signal }), /absent or stale/);
+    assert.equal(existsSync(join(missing.repo, 'bin', 'calls.txt')), false);
+  } finally { await missing.close(); }
 });
 
 test('Claude probe retains OAuth without credential copies and never fabricates cancellation proof', async () => {

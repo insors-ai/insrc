@@ -22,6 +22,7 @@
 import { spawn } from 'node:child_process';
 
 export interface ProcessGroupResult {
+  readonly exitSignal?: NodeJS.Signals | undefined;
   /** Optional bounded-capture/observer failures; partial output is diagnostic only. */
   readonly outputLimitExceeded?: boolean | undefined;
   readonly observerFailed?: boolean | undefined;
@@ -89,7 +90,7 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 		let aborted = false;
 		let settled = false;
     let capturedBytes = 0, outputLimitExceeded = false, observerFailed = false;
-		const finish = (exitCode: number, spawnError?: string): void => {
+		const finish = (exitCode: number, spawnError?: string, exitSignal?: NodeJS.Signals): void => {
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
@@ -97,6 +98,7 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 			opts.signal?.removeEventListener('abort', onAbort);
 			resolve({
 				stdout, stderr, exitCode, timedOut, durationMs: Date.now() - start,
+        ...(exitSignal !== undefined ? { exitSignal } : {}),
         ...(outputLimitExceeded ? { outputLimitExceeded } : {}),
         ...(observerFailed ? { observerFailed } : {}),
 				...(stalled ? { stalled } : {}),
@@ -145,7 +147,7 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 		child.stdin.on('error', () => { /* the child closed stdin early (EPIPE); its exit is reported below */ });
 		child.on('exit', () => { if (child.pid !== undefined) killProcessGroup(child.pid); });
 		child.on('error', err => finish(-1, err.message));
-		child.on('close', code => finish(code ?? -1));
+		child.on('close', (code, signal) => finish(code ?? -1, undefined, signal ?? undefined));
 		child.stdin.end(opts.stdin ?? '');
 	});
 }

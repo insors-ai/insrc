@@ -113,6 +113,9 @@ tasks.test {
     // fixture-based integration tests (added in t4) run under the platform-test
     // classpath the IntelliJ Platform Gradle plugin wires in.
     useJUnitPlatform()
+    // Explicit tracked input: cached Gradle configurations must not retain a
+    // previous invocation's temporary parity directory from process environment.
+    systemProperty("insrc.parity.dir", providers.gradleProperty("insrcParityDir").orElse("").get())
     // Node fixture bridges may run concurrently: keep each invocation's evidence private.
     providers.gradleProperty("insrcFixtureReports").orNull?.let {
         reports.junitXml.outputLocation.set(file(it))

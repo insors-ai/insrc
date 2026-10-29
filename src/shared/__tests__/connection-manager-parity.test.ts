@@ -22,8 +22,8 @@ test('CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and dive
     }
     const decoders:Record<string,(value:unknown)=>unknown>={capabilities:decodeManagementCapabilities,list:value=>decodeSafeConnectionList(value,'/fixture/repo-a'),read:decodeSafeConnection,ticket:decodeOperationTicket,outcome:decodeMutationOutcome,status:decodeOperationStatus,test:decodeDraftTestResult,removal:decodeRemovalState};
     const wire=corpus.wire.map(item=>{let accepted=false;try{decoders[item.kind]!(item.input);accepted=true;}catch{}assert.equal(accepted,item.valid,item.id);return{id:item.id,accepted};});
-    runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest',2,{INSRC_PARITY_DIR:dir});
-    runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest',6,{INSRC_PARITY_DIR:dir});
+    runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest',2,dir);
+    runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest',6,dir);
     const native=JSON.parse(readFileSync(join(dir,'model.json'),'utf8'));
     assert.deepEqual(native,JSON.parse(JSON.stringify(actual)),'Full native and TypeScript projections/effects differ');
     assert.deepEqual(JSON.parse(readFileSync(join(dir,'wire.json'),'utf8')),wire);
@@ -51,5 +51,12 @@ test('CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provide
   const version=/^pluginVersion\s*=\s*(\S+)/m.exec(readFileSync('jetbrains-plugin/gradle.properties','utf8'))![1]!;
   const jar=spawnSync('/usr/bin/unzip',['-Z1',`jetbrains-plugin/build/libs/insrc-jetbrains-${version}.jar`],{encoding:'utf8'});
   assert.equal(jar.status,0);assert.match(jar.stdout,/connections\/ConnectionsManagerPanel.class/);
-  assert.ok(!jar.stdout.split('\n').some(entry=>/\.(ts|js)$/.test(entry)||/^(org\/duckdb|lmdb|src\/daemon|src\/agent\/providers)\//.test(entry)));
+  // Existing insrc-review JavaScript assets belong to document review. Only the
+  // connection manager is native-only; backend implementations cannot ship here.
+  assert.ok(!jar.stdout.split('\n').some(entry=>/\.ts$/.test(entry)||/^(org\/duckdb|lmdb|src\/(daemon|db|agent\/providers))\//.test(entry)));
+});
+
+test('CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets', {timeout:360000}, () => {
+  runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest',6);
+  runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest',4);
 });

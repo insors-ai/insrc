@@ -36,7 +36,7 @@ class ConnectionProtocolTest {
         }
         assertEquals(2, ConnectionProtocol.capabilities(example("capabilities")).version)
         assertEquals(2, ConnectionProtocol.list(example("list"), key.repoRoot).size)
-        System.getenv("INSRC_PARITY_DIR")?.let { java.nio.file.Files.writeString(java.nio.file.Path.of(it,"wire.json"),actual.toString()) }
+        System.getProperty("insrc.parity.dir")?.takeIf { it.isNotBlank() }?.let { java.nio.file.Files.writeString(java.nio.file.Path.of(it,"wire.json"),actual.toString()) }
     }
 
     @Test fun `all actual daemon descriptors supported and unknown schema stays disabled`() {

@@ -53,7 +53,7 @@ class ConnectionsManagerModelTest {
                 actual.add(JsonObject().apply { addProperty("scenario",id);add("projection",projected);add("effects",gson.toJsonTree(result.effects)) })
             }
         }
-        System.getenv("INSRC_PARITY_DIR")?.let { java.nio.file.Files.writeString(java.nio.file.Path.of(it,"model.json"),actual.toString()) }
+        System.getProperty("insrc.parity.dir")?.takeIf { it.isNotBlank() }?.let { java.nio.file.Files.writeString(java.nio.file.Path.of(it,"model.json"),actual.toString()) }
     }
     @Test fun `root snapshots rows and public projections are defensive and pure`() {
         val roots=mutableListOf("/fixture/repo-a")

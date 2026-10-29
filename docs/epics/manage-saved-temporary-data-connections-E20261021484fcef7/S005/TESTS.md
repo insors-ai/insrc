@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -22,3 +22,22 @@ Run at 2026-10-29T14:41:37.350Z on commit `e4b30504f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-corpus.test.ts` | 0 | 2 | 10.2 s |  |
+
+## t2
+
+Run at 2026-10-29T14:54:33.596Z on commit `3af052d7d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal | `src/shared/__tests__/connection-manager-wire.test.ts` |
+| pass | CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters | `src/shared/__tests__/connection-manager-wire.test.ts` |
+| pass | CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use | `src/shared/__tests__/connection-manager-wire.test.ts` |
+| pass | CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy | `src/shared/__tests__/connection-manager-wire.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-wire.test.ts` | 0 | 4 | 1.3 s |  |

@@ -1475,5 +1475,1802 @@
       "fixtureEvidenceOnly": true,
       "requiredEvidence": "implemented-consumer-tests"
     }
-  ]
+  ],
+  "driverDescriptors": [
+    {
+      "kind": "arrow",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "arrow"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "avro",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "avro"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "bson",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "bson"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "cassandra",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "cassandra"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "contactPoints": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^@/?#\\s]+$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "localDataCenter": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "keyspace": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "clickhouse",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "clickhouse"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "cockroachdb",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "cockroachdb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "csv",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "csv"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "delimiter": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2,
+                "pattern": "^[^'\"\\\\]*$"
+              },
+              "header": {
+                "type": "boolean"
+              },
+              "quote": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1,
+                    "pattern": "^[^\\\\]*$"
+                  },
+                  {
+                    "const": false
+                  }
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "dynamodb",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "dynamodb"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "region": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "profile": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "endpoint": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.endpoint"
+      ]
+    },
+    {
+      "kind": "etcd",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "etcd"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "user": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.hosts",
+        "options.password"
+      ]
+    },
+    {
+      "kind": "feather",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "feather"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "fixed-width",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "fixed-width"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 512,
+                      "pattern": "^[^\\u0000-\\u001f]*$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "length": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "type": {
+                      "enum": [
+                        "string",
+                        "integer",
+                        "number",
+                        "boolean"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "start",
+                    "length",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "encoding": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "trim": {
+                "type": "boolean"
+              },
+              "skipFirstLine": {
+                "type": "boolean"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "json",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "json"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "jsonl",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "jsonl"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "keydb",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "keydb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "mariadb",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mariadb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "memcached",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "kind": {
+            "const": "memcached"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "servers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "user": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.servers",
+        "options.password"
+      ]
+    },
+    {
+      "kind": "mongodb",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mongodb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "mssql",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mssql"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "mysql",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mysql"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "nats",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "nats"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "servers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "bucket": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.servers"
+      ]
+    },
+    {
+      "kind": "ndjson",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "ndjson"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "oracle",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "oracle"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "parquet",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "parquet"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "postgres",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "postgres"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "redis",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "redis"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "sqlite",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "sqlite"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "tsv",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "tsv"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "delimiter": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2,
+                "pattern": "^[^'\"\\\\]*$"
+              },
+              "header": {
+                "type": "boolean"
+              },
+              "quote": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1,
+                    "pattern": "^[^\\\\]*$"
+                  },
+                  {
+                    "const": false
+                  }
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "valkey",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "valkey"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "xlsx",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "xlsx"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    }
+  ],
+  "draftTestMessages": {
+    "failed": "Connection test failed.",
+    "timeout": "Connection test timed out. Retry when cleanup completes.",
+    "canceled": "Connection test canceled.",
+    "resource-limit": "Connection test exceeded the memory limit. Use a smaller input or a saved connection.",
+    "unsupported-temporary": "This input cannot be tested without persistent storage. Use a saved connection."
+  }
 }

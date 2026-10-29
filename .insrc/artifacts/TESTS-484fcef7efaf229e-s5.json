@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T14:41:37.350Z",
+    "updatedAt": "2026-10-29T14:54:33.596Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -48,6 +48,69 @@
               },
               {
                 "title": "CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "3af052d7d",
+        "ranAt": "2026-10-29T14:54:33.596Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1261,
+            "titles": [
+              {
+                "title": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy",
                 "result": "pass"
               }
             ],

@@ -113,6 +113,10 @@ tasks.test {
     // fixture-based integration tests (added in t4) run under the platform-test
     // classpath the IntelliJ Platform Gradle plugin wires in.
     useJUnitPlatform()
+    // Node fixture bridges may run concurrently: keep each invocation's evidence private.
+    providers.gradleProperty("insrcFixtureReports").orNull?.let {
+        reports.junitXml.outputLocation.set(file(it))
+    }
 }
 
 // S005: Node and JUnit consume the same versioned JSON corpus, never mirrored source.

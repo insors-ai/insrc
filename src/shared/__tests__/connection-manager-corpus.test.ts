@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { connectionCorpusDirectory, loadConnectionCorpus, verifyConnectionCorpus } from './fixtures/connection-corpus.js';
+import { runConnectionJUnit } from './fixtures/connection-junit.js';
 
 test('CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index', () => {
  const corpus = loadConnectionCorpus();
@@ -34,14 +33,5 @@ test('CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malforme
 });
 
 test('CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift', { timeout: 180000 }, () => {
- const javaHome = process.platform === 'darwin'
-  ? spawnSync('/usr/libexec/java_home', ['-v', '21'], { encoding: 'utf8' }).stdout.trim()
-  : process.env['JAVA_HOME'];
- const result = spawnSync('./gradlew', ['--offline', 'test', '--tests', 'ai.insors.insrc.jetbrains.connections.ConnectionCorpusTest', '--console=plain'], {
-  cwd: fileURLToPath(new URL('../../../jetbrains-plugin/', import.meta.url)),
-  env: { ...process.env, ...(javaHome ? { JAVA_HOME: javaHome } : {}) },
-  encoding: 'utf8', timeout: 170000, maxBuffer: 4 * 1024 * 1024,
- });
- assert.equal(result.status, 0, `Focused JUnit fixture check failed: ${result.stdout}\n${result.stderr}`);
- assert.match(result.stdout, /BUILD SUCCESSFUL/);
+ runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionCorpusTest',2);
 });

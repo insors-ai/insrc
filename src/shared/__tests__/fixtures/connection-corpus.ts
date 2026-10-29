@@ -9,6 +9,7 @@ export interface ConnectionCorpus {
  version: 1; protocolVersion: 2; releaseEnabled: false; fixturesAreAcceptance: false;
  identity: { key: { repoRoot: string; scope: string; id: string }; revision: string; operationId: string; daemonEpoch: string };
  wire: CorpusWireCase[]; transcripts: CorpusTranscript[]; removalSnapshots: unknown[];
+ driverDescriptors: unknown[]; draftTestMessages: Record<string,string>;
  coverage: { subject: string; requirement: string; acceptance: 'pending'; fixtureEvidenceOnly: true; requiredEvidence: string }[];
 }
 

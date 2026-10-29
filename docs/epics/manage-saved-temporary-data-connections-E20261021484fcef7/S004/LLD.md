@@ -422,3 +422,21 @@ Add an sc6 removal command/result envelope which accepts the existing signed tic
 - **[[c9]]** `step-output` `s3`
 - **[[c10]]** `prior-artifact` `DEF-484fcef7efaf229e`
 - **[[c11]]** `doc` `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/summary.json`
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 10 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T08:39:31.834Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

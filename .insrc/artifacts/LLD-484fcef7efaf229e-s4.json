@@ -24,7 +24,144 @@
     "hldBaseRunId": "wf-1792569414548-dvzndd",
     "hldEffectiveHash": "dc1a3f91a768c5e20e9788e76390b96ae43e65586f3afa87762c1a5834745047",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S004's acceptance criteria (ac1: safe revision-checked removal preserving source data and owned-credential/resource cleanup; ac2: busy/stale retention, idempotent reconciliation, no post-removal resolution) are the ones actually assigned to S004 in the Epic DEF, and the LLD's contract/error-path/test sections cover both without building S005's client layout.",
+          "evidence": "docs/epics/.../DEF.md:127-128 states S004 ac1/ac2 exactly as the LLD restates them in §1 Summary and §7 acceptance mapping; DEF.md:142-143 (S005 ac1/ac2) are UI/Settings criteria the LLD explicitly defers ('Client layout belongs to S005 ... S004 does not implement either client'). [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md]",
+          "action": "Read DEF.md S004/S005 acceptance criteria and compared against LLD Summary/§7 acceptance mapping table.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's repeated claim that saved/temporary services and the RPC layer currently contain explicit rejection branches for mode:'remove' (to be removed by S004) is true of the code today.",
+          "evidence": "session-ledger.ts:37,51,68 reject mode==='remove' in issue/inspect/mutate; management.ts:200 rejects `request.mode === 'remove'`; connection-management-rpc.ts:148 rejects `request.mode === 'remove'` at the RPC layer too. [files: src/daemon/db/session-ledger.ts, src/daemon/db/management.ts, src/daemon/connection-management-rpc.ts]",
+          "action": "Read session-ledger.ts and management.ts in full; grepped + read connection-management-rpc.ts around the mode check and the capability feature list.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's claim that the current pool's `closeEntry` suppresses close errors and cannot be used as cleanup-success evidence is true.",
+          "evidence": "pool.ts:250-258 `closeEntry` wraps `entry.driver.close()` in try/catch and only `log.warn(...)` on failure, never rethrows or signals failure to the caller. [files: src/daemon/db/pool.ts]",
+          "action": "Read pool.ts closeEntry implementation in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DriverPool.prepareRemoval/commitRemoval/cancelRemoval (§2.6) and TemporaryConnectionOverlay.prepareRemoval/commitRemoval (§2.5) are genuinely new — they do not exist on the current classes — while the design's 'reused unchanged' surfaces (read/list/resolver/close on the overlay; beginMutation/leaseState on the pool) do already exist with matching shape.",
+          "evidence": "pool.ts's DriverPool class (full file read) has no prepareRemoval/commitRemoval/cancelRemoval members; session-entries.ts's TemporaryConnectionOverlay class has no prepareRemoval/commitRemoval, but does have read(id), list(), resolver(access,authority), close() matching the LLD's unchanged signatures exactly. [files: src/daemon/db/pool.ts, src/daemon/db/session-entries.ts]",
+          "action": "Read pool.ts and session-entries.ts in full and diffed member lists against the LLD's §2.5/§2.6 interfaces.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'remove' mode/outcome vocabulary the design relies on (OperationTicket.mode, MutationRequest.mode, CommittedOutcome.registration:'removed', activation:'not-applicable', LeaseState.barrier:'remove') already exists in the shared wire types and lease gate, so S004 is reusing an already-declared shape rather than inventing a new wire mode, matching the design's explicit 'no new shared remove-ticket or wire mode is introduced' claim.",
+          "evidence": "connection-management.ts:46 `mode: 'create'|'update'|'remove'`; :59 `registration: 'persisted'|'session-added'|'removed'`; :60 `activation: 'active'|'pending'|'failed'|'not-applicable'`; :91 `barrier: 'none'|'update'|'remove'`; lease-gate.ts:71-81 `beginMutation` already sets `s.barrier = mode === 'remove' ? 'remove' : 'update'`. [files: src/shared/connection-management.ts, src/daemon/db/lease-gate.ts]",
+          "action": "Read shared/connection-management.ts and lease-gate.ts in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The call sites the design names for each data-model change (§3.1-3.4: shared/connection-management.ts, daemon/db/management.ts, daemon/db/managed-store.ts, daemon/db/secrets.ts, daemon/db/session-entries.ts, daemon/db/session-ledger.ts, daemon/connection-session-rpc.ts, daemon/connection-management-rpc.ts, daemon/db/pool.ts, daemon/db/lease-gate.ts) are real files that actually contain the described contracts (CommittedOutcome/receipt shapes, SessionOperationLedger, SavedConnectionManagement, DriverPool, RevisionLeaseGate).",
+          "evidence": "All ten cited files were confirmed to exist and, where read, to contain exactly the named classes/types (SessionOperationLedger in session-ledger.ts, SavedConnectionManagement in management.ts, DriverPool in pool.ts, RevisionLeaseGate in lease-gate.ts, CommittedOutcome/OperationTicket in connection-management.ts). [files: src/daemon/db/session-ledger.ts, src/daemon/db/management.ts, src/daemon/db/pool.ts, src/daemon/db/lease-gate.ts, src/shared/connection-management.ts]",
+          "action": "Read each cited file's relevant symbol directly.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's claim that no new persisted CommittedOutcome keys are needed (removal reuses the already-declared 'removed'/'not-applicable' values) is accurate, and the saved-registry envelope validator already treats 'removed' as a legitimate persisted registration value, so adding remove support does not require a migration of stored saved-connection JSON.",
+          "evidence": "management.ts:128 `validateSnapshot` already accepts `!['persisted','removed'].includes(outcome.registration)` and `!['active','pending','failed','not-applicable'].includes(outcome.activation)` as the failure condition, i.e. both values are already part of the validated persisted shape today. [files: src/daemon/db/management.ts]",
+          "action": "Read SavedConnectionManagement.validateSnapshot in management.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S004's declared ownership of sc6 and its 'Consumes' list (sc1, sc2, sc3, sc5) match the HLD's story-ownership table, and the adjacent-scope summaries for s1/s3 (own sc1/sc2/sc3/sc8 and sc5 respectively) match the HLD so S004 is not redesigning another story's owned contract.",
+          "evidence": "HLD.md:221-224 'Story S004 ... Owns: sc6 ... Depends on: sc1, sc2, sc3, sc5' exactly matches LLD §1 'Owns: sc6 / Consumes: sc1,sc2,sc3,sc5'; HLD.md:203 'Story S001 ... Owns: sc1, sc2, sc3, sc8' and HLD.md:216 'Story S003 ... Owns: sc5' match the LLD's adjacent-scope table. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "Grepped HLD.md for sc1-sc6/story ownership and read the matching lines.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'Postcommit SDK/file resource close fails' error path's detection claim — that the current pool close helper swallows the error rather than surfacing it, so a new strict retirement port must await and retain the handle itself — is an accurate description of current behavior, meaning the proposed error handling is addressing a real gap rather than a fabricated one.",
+          "evidence": "pool.ts closeEntry (lines 237-267) never rethrows a failed `driver.close()`; it only logs a warning, confirming the stated current behavior that this cannot be used as cleanup-success evidence. [files: src/daemon/db/pool.ts]",
+          "action": "Already read in current-behaviour check above; re-applied to the error-paths claim.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's acceptance-mapping table (§7) maps S004's ac1 and ac2 — as actually defined in the Epic DEF — to the named CM-S4-* test subjects, and those two criteria are the complete set the HLD assigned to S004 (no criterion is left unmapped).",
+          "evidence": "DEF.md:127-128 defines exactly S004/ac1 and S004/ac2 (no ac3); HLD.md:67-68 names the same two criteria under 'owner s4'; LLD §7 acceptance mapping table has rows for both `ac1` and `ac2`, each citing multiple CM-S4-* tests whose subjects (confirm/busy/replay/source-preservation/affinity) correspond to the DEF's required results. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "Compared DEF.md and HLD.md S004 acceptance-criteria lines against the LLD's §7 acceptance-mapping table.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-29T08:39:31.834Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

@@ -222,6 +222,12 @@
             "default": 600000,
             "markdownDescription": "ms maintenance waits for running requests to finish before it gives up for this time",
             "scope": "machine"
+          },
+          "insrc.daemon.threads.sessionIdleMs": {
+            "type": "number",
+            "default": 900000,
+            "markdownDescription": "ms a client session's worker thread may sit idle before it is released (Epic 86197ac6 s3); its step state outlives the release",
+            "scope": "machine"
           }
         }
       },
@@ -271,7 +277,7 @@
           "insrc.codeReview.daemonReviewIdleMs": {
             "type": "number",
             "default": 1200000,
-            "markdownDescription": "max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)",
+            "markdownDescription": "max ms a daemon code review may go without owner progress; independent of the chunk-derived total budget (legacy streams clamp to their ceiling)",
             "scope": "machine"
           },
           "insrc.designReview.premises.issue": {

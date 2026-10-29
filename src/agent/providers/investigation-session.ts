@@ -3,7 +3,7 @@ import { createHash,randomUUID } from 'node:crypto';
 import { constants,openSync,closeSync,fstatSync,readSync,lstatSync,realpathSync } from 'node:fs';
 import { relative,isAbsolute } from 'node:path';
 import type { QualifiedInvestigationSessionBinding } from '../../shared/types.js';
-import type { InvestigationTools,InvestigationTurnV1 } from '../../workflow/code-review/investigation/continuation-types.js';
+import type { InvestigationTools,InvestigationTurnV1,InvestigationState } from '../../workflow/code-review/investigation/continuation-types.js';
 import { digestValue,snapshotValue,freezeValue } from '../../workflow/code-review/investigation/identity.js';
 import { scopedReviewCatalogDigest } from '../../shared/review-investigation-catalog.js';
 
@@ -46,7 +46,20 @@ export interface NativeInvestigationQualification {
  readonly identity:NativeAdapterIdentity;readonly effective:EffectiveInvestigationIsolation;readonly validUntil:number;
 }
 const qualifications=new WeakMap<NativeInvestigationQualification,{authority:NativeIsolationEvidenceAuthority;repo:string;indexed:boolean}>();
-const bindings=new WeakMap<QualifiedInvestigationSessionBinding,{qualification:NativeInvestigationQualification;turn:InvestigationTurnV1;repo:string}>();
+export interface NativeInvestigationRuntime {
+ readonly processEpoch:string;readonly assertProcessOwner:()=>void;readonly assertCurrent:()=>void;
+ readonly state:()=>InvestigationState;
+}
+const bindings=new WeakMap<QualifiedInvestigationSessionBinding,{qualification:NativeInvestigationQualification;turn:InvestigationTurnV1;repo:string;runtime:NativeInvestigationRuntime|undefined}>();
+const invocations=new WeakMap<QualifiedInvestigationSessionBinding,Promise<unknown>>();
+export function trackInvestigationInvocation<T>(binding:QualifiedInvestigationSessionBinding,invoke:()=>Promise<T>):Promise<T>{
+ if(!bindings.has(binding))return Promise.reject(new InvestigationQualificationError('Untrusted investigation session binding'));
+ if(invocations.has(binding))return Promise.reject(new InvestigationQualificationError('Investigation binding already has an invocation'));
+ const work=Promise.resolve().then(invoke);invocations.set(binding,work);
+ void work.then(()=>{if(invocations.get(binding)===work)invocations.delete(binding);},()=>{if(invocations.get(binding)===work)invocations.delete(binding);});return work;
+}
+/** Host cancellation must await actual CLI/bridge teardown, not only S3's aborted wait. */
+export async function drainInvestigationInvocation(binding:QualifiedInvestigationSessionBinding):Promise<void>{try{await invocations.get(binding);}catch{/* The owning turn reports the invocation error. */}}
 /** Hash the current real installed bytes without following a replacement final symlink or dumping content. */
 export function investigationFileDigest(path:string):string{
  const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW);try{
@@ -83,7 +96,7 @@ export async function qualifyInvestigationAdapter(reference:string,expected:Nati
  }else if(authority.origin!=='scripted-fixture')refuse('Unknown qualification evidence origin');
  const q=freezeValue({version:1 as const,origin:authority.origin,reference,evidenceDigest,identity,effective,validUntil:evidence.validUntil});checkFiles(q,repo);qualifications.set(q,{authority,repo,indexed});return q;
 }
-export function createQualifiedInvestigationBinding(q:NativeInvestigationQualification,turn:InvestigationTurnV1,tools:InvestigationTools):QualifiedInvestigationSessionBinding{
+export function createQualifiedInvestigationBinding(q:NativeInvestigationQualification,turn:InvestigationTurnV1,tools:InvestigationTools,runtime?:NativeInvestigationRuntime):QualifiedInvestigationSessionBinding{
  const trusted=qualifications.get(q);if(!trusted)refuse('Qualification was not issued by the daemon verifier');
  if(q.validUntil<=Date.now())refuse('Qualification expired');checkFiles(q,trusted.repo);
  if((tools.impact.mode==='indexed-impact')!==trusted.indexed)refuse('Binding source mode differs from qualification');
@@ -91,7 +104,15 @@ export function createQualifiedInvestigationBinding(q:NativeInvestigationQualifi
  if(scope?.subjectDigest!==turn.subjectDigest||digestValue(tools.execution.budget.policy.profile)!==q.identity.profileDigest)refuse('Binding subject/provider profile differs from qualified turn');
  const binding=Object.freeze({version:1 as const,bindingId:randomUUID(),adapterVersion:q.identity.adapterVersion,profileDigest:q.identity.profileDigest,catalogDigest:q.identity.catalogDigest,
   tools:Object.freeze({...tools,impact:Object.freeze({...tools.impact}),seed:freezeValue(snapshotValue(tools.seed))}),qualificationRef:q.reference});
- bindings.set(binding,{qualification:q,turn:freezeValue(snapshotValue(turn)),repo:trusted.repo});return binding;
+ if(runtime){runtime.assertProcessOwner();runtime.assertCurrent();if(runtime.state().ledger.runId!==turn.runId||runtime.state().ledger.subjectDigest!==turn.subjectDigest)refuse('Native runtime belongs to another run');}
+ bindings.set(binding,{qualification:q,turn:freezeValue(snapshotValue(turn)),repo:trusted.repo,runtime});return binding;
+}
+/** Metadata lookup is not invocation authority; inspectQualifiedInvestigationBinding still verifies installed proof/bytes. */
+export function investigationBindingIdentity(binding:QualifiedInvestigationSessionBinding):NativeAdapterIdentity{
+ const trusted=bindings.get(binding);if(!trusted)refuse('Untrusted investigation session binding');return trusted.qualification.identity;
+}
+export function investigationBindingDirectory(binding:QualifiedInvestigationSessionBinding):string{
+ const trusted=bindings.get(binding);if(!trusted)refuse('Untrusted investigation session binding');return trusted.qualification.effective.cwd;
 }
 /** Default is production: serialized lookalikes and scripted evidence both refuse before any CLI launch. */
 export async function inspectQualifiedInvestigationBinding(binding:QualifiedInvestigationSessionBinding,identity:NativeAdapterIdentity,requireInstalled=true){
@@ -99,5 +120,5 @@ export async function inspectQualifiedInvestigationBinding(binding:QualifiedInve
  if(requireInstalled&&q.origin!=='installed-probe')refuse('Scripted fixtures do not certify an installed binary');
  if(q.validUntil<=Date.now()||digestValue(q.identity)!==digestValue(identity))refuse('Qualification expired or native invocation identity changed');
  if(q.origin==='installed-probe'){if(!record.authority.verifyInstalled)refuse('Installed authority unavailable');await record.authority.verifyInstalled(q.reference,q.evidenceDigest);}
- checkFiles(q,trusted.repo);return {qualification:q,turn:trusted.turn,repo:trusted.repo};
+ checkFiles(q,trusted.repo);return {qualification:q,turn:trusted.turn,repo:trusted.repo,runtime:trusted.runtime};
 }

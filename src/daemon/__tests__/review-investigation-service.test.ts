@@ -32,7 +32,7 @@ function fixture(){
   prepare:async(_start,runId)=>{prepared++;const basis=buildLedgerBasis({...catalogFixture(),subject:f.basis.subject,runId});return {manifest:{...f.manifest,runId,basis,initial:{...f.manifest.initial,ledger:initializeReviewLedger(basis)}},authorParty:'controller',reviewerParty:'daemon'};},
   recoveryOptions:()=>({...f.options,processEpoch:'epoch-1'}),assertFresh:async()=>{if(!fresh)throw Error('canonical pins stale');},assertQualified:async()=>{if(!qualified)throw Error('backend unqualified');},
   admitProvider:async signal=>{await wait;signal.throwIfAborted();admitted++;return ()=>{admitted--;};},
-  execution:async(_descriptor,store,lease,signal)=>{executions++;const view=store.replay();return {turn:{...f.turn,runId:view.manifest.runId,generation:lease.generation},context:{...f.context,basis:view.basis,state:view.state,generation:lease.generation,signal,
+  execution:async(_descriptor,store,lease,signal)=>{executions++;const view=store.replay();return {drain:async()=>{},turn:{...f.turn,runId:view.manifest.runId,generation:lease.generation},context:{...f.context,basis:view.basis,state:view.state,generation:lease.generation,signal,
    backend:{...f.context.backend,execute:async(turn,tools)=>{
     if(!view.state.accepted.length)await tools.progress(progressFor(turn,'block-1',0));
     f.setClock(executions*20);const now=store.replay().state;return finalReply(turn,now.accepted.map(a=>a.receipt.progressId),now.sequence);
@@ -94,4 +94,13 @@ test('Service lease budget and frozen publication composition survive restart',a
   const restart=new ProductionReviewService({...published.options,processEpoch:'epoch-2',recoveryOptions:()=>({...published.options.recoveryOptions(descriptor.runId),processEpoch:'epoch-2'})});
   assert.deepEqual(await restart.complete(descriptor.runId,null,deps),first);assert.equal((await canonical.history.log(first.artifactId)).length,1);
  }finally{published.cleanup();}
+ const draining=fixture();try{
+  draining.setQualified(true);let release!:()=>void,entered!:()=>void;
+  const hold=new Promise<void>(resolve=>{release=resolve;}),waiting=new Promise<void>(resolve=>{entered=resolve;});
+  const service=new ProductionReviewService({...draining.options,execution:async(...args)=>({...await draining.options.execution(...args),drain:async()=>{entered();await hold;}})});
+  const {descriptor,store}=await service.start(draining.start),run=service.resume(descriptor.runId);await waiting;
+  assert.ok(store.status().owner);assert.equal(draining.counts().admitted,1);
+  const cancelled=service.cancel(descriptor.runId);await Promise.resolve();assert.ok(store.status().owner);assert.equal(draining.counts().admitted,1);
+  release();await run;await cancelled;assert.equal(store.status().state,'cancelled');assert.equal(draining.counts().admitted,0);
+ }finally{draining.cleanup();}
 });

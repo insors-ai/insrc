@@ -29,7 +29,7 @@ export interface ProductionReviewServiceOptions {
  readonly assertQualified:(descriptor:ProductionReviewDescriptor)=>Promise<void>;
  /** Serial daemon provider admission. Waiting does not hold a recovery lease. */
  readonly admitProvider:(signal:AbortSignal)=>Promise<()=>void>;
- readonly execution:(descriptor:ProductionReviewDescriptor,store:RecoveryStore,lease:Lease,signal:AbortSignal)=>Promise<{turn:InvestigationTurnV1;context:InvestigationContext}>;
+ readonly execution:(descriptor:ProductionReviewDescriptor,store:RecoveryStore,lease:Lease,signal:AbortSignal)=>Promise<{turn:InvestigationTurnV1;context:InvestigationContext;drain:()=>Promise<void>}>;
 }
 export class ProductionReviewService {
  readonly descriptors:ProductionDescriptorStore;
@@ -74,16 +74,19 @@ export class ProductionReviewService {
  private async execute(runId:string,abort:AbortController){
   const signal=abort.signal;
   const {descriptor,store}=await this.open(runId);await this.options.assertQualified(descriptor);
-  const releaseProvider=await this.options.admitProvider(signal);let lease:Lease|undefined,timer:ReturnType<typeof setInterval>|undefined,renewal:Promise<unknown>|undefined;
+  const releaseProvider=await this.options.admitProvider(signal);let lease:Lease|undefined,timer:ReturnType<typeof setInterval>|undefined,renewal:Promise<unknown>|undefined,execution:Awaited<ReturnType<ProductionReviewServiceOptions['execution']>>|undefined;
   try{
    signal.throwIfAborted();await this.guard();await this.recover(descriptor,store);
    if(store.replay().publication)throw new ReviewIntegrationError('identity-conflict','Frozen publication requires reconciliation, not another model turn');
    lease=await store.claim(300000);const owner=lease;
    timer=setInterval(()=>{if(renewal)return;renewal=store.renew(owner.leaseId,owner.generation,300000).catch(()=>abort.abort()).finally(()=>{renewal=undefined;});},30000);timer.unref();
-   const execution=await this.options.execution(descriptor,store,lease,signal);
+   execution=await this.options.execution(descriptor,store,lease,signal);
    if(execution.context.authorParty!==descriptor.authorParty||execution.context.reviewerParty!==descriptor.reviewerParty||execution.context.policy.digest!==descriptor.policyDigest)throw Error('Execution identity differs from admitted descriptor');
    return await runRecoveredContinuation(store,lease,execution.turn,{...execution.context,signal});
   }finally{
+   // sc3 observes abort immediately; a native provider may still be tearing down its process group.
+   // Keep the owner/provider slot until the trusted execution adapter confirms teardown.
+   if(execution)await execution.drain();
    if(timer)clearInterval(timer);
    if(renewal)await renewal;
    try{if(lease){const v=store.replay();if(v.lifecycle.owner?.leaseId===lease.leaseId&&!v.publication&&!['completed','cancelled','stale'].includes(v.lifecycle.state))await store.release(lease.leaseId,lease.generation,'paused');}}

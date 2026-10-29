@@ -44,7 +44,7 @@ test('Effective native isolation qualification rejects inherited tools and unpro
   await assert.rejects(()=>qualify({...evidence,trace:{...evidence.trace,events:evidence.trace.events.filter(e=>e.kind!=='denied'||e.capability!=='hooks')}}),/Missing independent/);
   await assert.rejects(()=>qualify({...evidence,trace:{...evidence.trace,events:evidence.trace.events.filter(e=>e.kind!=='process-exited')}}),/cancellation not proven/);
   await assert.rejects(()=>qualify({...evidence,validUntil:Date.now()-1}),/expired/);
-  const provider=new CliProvider({kind:'claude',binPath:bin});await assert.rejects(()=>provider.runReviewSession('do not run',{type:'object'},{cwd:repo,deadlineMs:1000,investigationBinding:binding}),/fallback is forbidden/);assert.equal(existsSync(called),false);
+  const provider=new CliProvider({kind:'claude',binPath:bin});await assert.rejects(()=>provider.runReviewSession('do not run',{type:'object'},{cwd:repo,deadlineMs:1000,investigationBinding:binding}),/fixtures do not certify/);assert.equal(existsSync(called),false);
   await assert.rejects(()=>new OllamaProvider('fixture','http://127.0.0.1:1').runReviewSession('do not call',{type:'object'},{cwd:repo,deadlineMs:1000,investigationBinding:binding}),/no qualified native/);
   writeFileSync(config,'changed');await assert.rejects(()=>inspectQualifiedInvestigationBinding(binding,identity,false),/changed/);writeFileSync(config,'{"mcpServers":{}}');
   writeFileSync(bin,'changed');await assert.rejects(()=>inspectQualifiedInvestigationBinding(binding,identity,false),/changed/);

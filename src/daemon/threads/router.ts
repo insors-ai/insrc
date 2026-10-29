@@ -339,7 +339,11 @@ export class Router {
 		};
 	}
 
-	/** Through the session's FIFO: sent once the session's previous request has ended. */
+	/**
+	 * Through the session's FIFO: sent once the session's previous request has ended, which is only at
+	 * its worker's ack or an end after which none can come (ISSUE-7c39e5cd). A reply, a last frame or a
+	 * closed socket does not end it: the worker may still be running it.
+	 */
 	private enqueue(session: SessionId, request: LocalRequestEnvelope, deliver: DeliverEnvelope, send: (d: DeliverEnvelope, onAck?: () => void) => () => void, dropped: () => void): () => void {
 		const key = `${session.label}:${session.pid}`;
 		let fifo = this.fifos.get(key);
@@ -349,9 +353,7 @@ export class Router {
 			request, deliver, started: false,
 			run: () => {
 				item.started = true;
-				item.cancel = send(envelope => {
-					try { deliver(envelope); } finally { if (isTerminal(envelope)) this.next(key, item); }
-				});
+				item.cancel = send(deliver, () => this.next(key, item));
 			},
 			drop: () => {
 				request.lifetime?.abort();
@@ -368,8 +370,8 @@ export class Router {
 				item.drop();
 				return;
 			}
+			// Cancelled on its worker; the queue moves on at the worker's ack.
 			item.cancel?.();
-			this.next(key, item);
 		};
 	}
 

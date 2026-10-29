@@ -175,7 +175,7 @@ test("router: one session's three requests reach its worker in arrival order; a 
 		await three.done;
 		assert.deepEqual(h.log, ['mcp:1001 start one', 'mcp:1001 end one', 'mcp:1001 start two', 'mcp:1001 end two', 'mcp:1001 start three', 'mcp:1001 end three']);
 		assert.deepEqual(h.pool.started, ['mcp:1001', 'mcp:1001', 'mcp:1001'], 'each started on the pool\'s worker');
-		assert.equal(h.pool.ended.length, 3);
+		await until(() => h.pool.ended.length === 3, 'each ended for the pool at its ack');
 	} finally { h.close(); }
 });
 
@@ -228,24 +228,27 @@ test('router: connection-scoped requests stay local; unattributed requests inter
 	} finally { h.close(); }
 });
 
-test('router: a running stream cancelled by its socket ends for the pool (no lifetime, and once its lifetime completes)', { timeout: 10_000 }, async () => {
+test("router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
 	const h = harness();
 	try {
 		const bare = h.ask('s1', 'x.stream', { tag: 'bare' }, { session: A, stream: true });
 		await until(() => h.log.includes('mcp:1001 start bare'), 'the bare stream runs');
 		assert.deepEqual(h.pool.started, ['mcp:1001']);
-		bare.cancel();
-		assert.deepEqual(h.pool.ended, ['mcp:1001'], 'a cancelled stream with no lifetime ends at its cancel');
 		const lifetime = new RequestLifetime();
 		const tracked = h.ask('s2', 'x.stream', { tag: 'tracked' }, { session: A, stream: true, lifetime });
-		await until(() => h.log.includes('mcp:1001 start tracked'), 'the next request ran once the cancelled one ended');
-		assert.deepEqual(h.pool.started, ['mcp:1001', 'mcp:1001']);
+		bare.cancel();
+		await tick(30);
+		assert.ok(!h.log.includes('mcp:1001 start tracked'), 'the next request waits: the cancelled stream still runs on the worker');
+		assert.deepEqual(h.pool.ended, [], 'and the worker stays busy');
+		h.gates.open('bare');
+		await until(() => h.log.includes('mcp:1001 start tracked'), 'the next request runs once the worker acked the cancelled one');
+		assert.deepEqual(h.pool.ended, ['mcp:1001'], 'the cancelled stream ended for the pool at its ack');
 		tracked.cancel();
 		await tick(30);
 		assert.deepEqual(h.pool.ended, ['mcp:1001'], 'a cancelled stream with a lifetime is busy while its handler still runs on the worker');
 		h.gates.open('tracked');
 		await lifetime.completed;
-		await until(() => h.pool.ended.length === 2, 'and ends once its worker completed it');
+		await until(() => h.pool.ended.length === 2, 'and ends once its worker acked it');
 		assert.ok(!tracked.replies.some(r => ['done', 'error'].includes(((r as { frame?: { stream?: string } }).frame?.stream) ?? '')), 'no last frame was needed');
 	} finally { h.gates.open('bare'); h.gates.open('tracked'); h.close(); }
 });
@@ -305,7 +308,7 @@ test('router: a request cancelled while its worker is still starting never leave
 		const next = h.ask('c2', 'x.order', { tag: 'warm' }, { session: B });
 		h.gates.open('warm');
 		await next.done;
-		assert.equal(h.pool.started.filter(k => k === 'mcp:1002').length - h.pool.ended.filter(k => k === 'mcp:1002').length, 0, 'the next request counted and ended normally');
+		await until(() => h.pool.started.filter(k => k === 'mcp:1002').length - h.pool.ended.filter(k => k === 'mcp:1002').length === 0, 'the next request counted and ended normally, at its ack');
 	} finally { h.close(); }
 });
 
@@ -473,4 +476,101 @@ test("router: a shared-state request sent with an ack waits for the shared-state
 		await until(() => acks.includes('s2'), 's2 acked');
 		assert.ok(h.log.includes('shared drained s2'));
 	} finally { h.gates.open('drain s1'); h.gates.open('drain s2'); h.close(); }
+});
+
+test('router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)', { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const first = h.ask('u1', 'x.order', { tag: 'u1' }, { session: A, lifetime: new RequestLifetime() });
+		const second = h.ask('u2', 'x.order', { tag: 'u2' }, { session: A });
+		await until(() => h.log.includes('mcp:1001 start u1'), 'the first runs');
+		first.cancel();
+		await tick(30);
+		assert.deepEqual(h.log, ['mcp:1001 start u1'], 'its socket closed, but it still runs on the worker: the second waits');
+		h.gates.open('u1');
+		await until(() => h.log.includes('mcp:1001 start u2'), 'the second runs after the worker acked the first');
+		assert.deepEqual(h.log.slice(0, 3), ['mcp:1001 start u1', 'mcp:1001 end u1', 'mcp:1001 start u2'], 'never overlapping');
+		h.gates.open('u2');
+		await second.done;
+	} finally { h.gates.open('u1'); h.gates.open('u2'); h.close(); }
+});
+
+test("router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const first = h.ask('d1', 'x.drain', { tag: 'd1' }, { session: A, trusted: TRUSTED, lifetime: new RequestLifetime() });
+		const second = h.ask('d2', 'x.order', { tag: 'd2' }, { session: A });
+		await first.done;
+		assert.deepEqual(first.replies, [{ kind: 'reply', requestId: 'd1', result: 'd1' }], 'replied at once');
+		await tick(30);
+		assert.ok(!h.log.includes('mcp:1001 start d2'), 'the next waits while the work it registered drains');
+		h.gates.open('drain d1');
+		await until(() => h.log.includes('mcp:1001 start d2'), 'the next runs after the ack');
+		assert.ok(h.log.indexOf('mcp:1001 drained d1') < h.log.indexOf('mcp:1001 start d2'), 'the drained work came first');
+		h.gates.open('d2');
+		await second.done;
+	} finally { h.gates.open('drain d1'); h.gates.open('d2'); h.close(); }
+});
+
+test("router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		const running = h.ask('w1', 'x.order', { tag: 'w1' }, { session: A });
+		const shared = h.ask('w2', 'chat.list', {}, { session: A });
+		await until(() => h.log.includes('mcp:1001 start w1'), 'the first runs');
+		await tick(20);
+		assert.ok(!h.log.includes('shared chat.list'), 'the shared-state request waits in the queue');
+		const id = (h.router as unknown as { pending: Map<string, { threadId: number }> }).pending.get('w1')!.threadId;
+		h.router.failWorker(id, 'it exited', A);
+		await running.done;
+		assert.deepEqual(running.replies, [{ kind: 'reply', requestId: 'w1', error: 'session worker failed: it exited' }]);
+		await shared.done;
+		assert.ok(h.log.includes('shared chat.list'), 'the queue moved on: the next request ran on the shared-state worker');
+	} finally { h.gates.open('w1'); h.close(); }
+});
+
+test("router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		// Unattributed: no FIFO, and the pool ends it at its reply although its drained work is still open.
+		const loose = h.ask('n1', 'x.drain', { tag: 'n1' }, { trusted: TRUSTED, lifetime: new RequestLifetime() });
+		await loose.done;
+		await until(() => h.pool.ended.includes('unattributed'), 'ended for the pool at its reply');
+		assert.ok(!h.log.includes('unattributed drained n1'), 'while its registered work still drains');
+		// FIFO-exempt: answered while the session's queue is held by a request awaiting its ack.
+		const held = h.ask('e1', 'x.drain', { tag: 'e1' }, { session: A, trusted: TRUSTED, lifetime: new RequestLifetime() });
+		await held.done;
+		const exempt = h.ask('e2', 'chat.cancel', {}, { session: A });
+		await exempt.done;
+		assert.ok(h.log.includes('shared chat.cancel'), 'the exempt request (a shared-state one) ran while the queue waited for an ack');
+		assert.ok(!h.log.includes('mcp:1001 drained e1'), 'the queue was still held');
+	} finally { h.gates.open('drain n1'); h.gates.open('drain e1'); h.close(); }
+});
+
+// Last in this file: it turns the maintenance lock on for the process.
+test("router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)", { timeout: 10_000 }, async () => {
+	const { createLockBlock, installLockManager, LockManager } = await import('../../../shared/locks/lock-manager.js');
+	const { enableMaintenanceLock, MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
+	const block = createLockBlock();
+	installLockManager(block);
+	const maintainer = new LockManager(block, { threadId: 9301 });
+	enableMaintenanceLock();
+	let granted!: () => void;
+	let unlock!: () => void;
+	const grantedP = new Promise<void>(r => { granted = r; });
+	const held = new Promise<void>(r => { unlock = r; });
+	const exclusive = maintainer.request(MAINTENANCE_LOCK, { mode: 'exclusive' }, async () => { granted(); await held; });
+	await grantedP;
+	const h = harness();
+	try {
+		const refused = h.ask('m1', 'x.order', { tag: 'm1' }, { session: A, lifetime: new RequestLifetime() });
+		const next = h.ask('m2', 'x.order', { tag: 'm2' }, { session: A, lifetime: new RequestLifetime() });
+		await refused.done;
+		const reply = refused.replies[0] as { error?: string };
+		assert.ok(typeof reply.error === 'string' && reply.error.length > 0, `refused under maintenance: ${JSON.stringify(reply)}`);
+		assert.ok(!h.log.includes('mcp:1001 start m1'), 'its handler never ran');
+		await next.done;
+		assert.equal(typeof (next.replies[0] as { error?: string }).error, 'string', "the queue moved on to the next request at the refused one's ack (refused too, the lock is still held)");
+		await until(() => h.pool.ended.length === 2, 'both ended for the pool at their acks');
+	} finally { unlock(); await exclusive; h.close(); }
 });

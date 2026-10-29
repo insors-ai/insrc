@@ -45,3 +45,21 @@ test('a nonterminal stream frame that cannot be cloned ends the stream with one 
 		port2.close();
 	}
 });
+
+test("the test.servingThread hook acks a request that asks for its completion message, since it answers it itself (ISSUE-7c39e5cd)", async () => {
+	const before = process.env['INSRC_TEST_HOOKS'];
+	process.env['INSRC_TEST_HOOKS'] = '1';
+	const { port1, port2 } = new MessageChannel();
+	const stop = serveRequests(port2, directDispatch({}));
+	try {
+		const got: { kind: string; requestId: string }[] = [];
+		port1.on('message', m => { got.push(m as { kind: string; requestId: string }); });
+		port1.postMessage({ kind: 'request', requestId: 'h1', method: 'test.servingThread', params: null, stream: false, trackCompletion: true } satisfies RequestEnvelope);
+		port1.postMessage({ kind: 'request', requestId: 'h2', method: 'test.servingThread', params: null, stream: false } satisfies RequestEnvelope);
+		await tick();
+		assert.deepEqual(got.map(m => `${m.kind} ${m.requestId}`), ['reply h1', 'complete h1', 'reply h2'], 'acked only when asked');
+	} finally {
+		stop(); port1.close(); port2.close();
+		if (before === undefined) delete process.env['INSRC_TEST_HOOKS']; else process.env['INSRC_TEST_HOOKS'] = before;
+	}
+});

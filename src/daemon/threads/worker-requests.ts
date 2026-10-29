@@ -58,6 +58,8 @@ export function serveRequests(port: Port, unheld: ForwardRequest, opts: ServeReq
 		const { requestId, method } = msg;
 		if (testHooks && method === SERVING_THREAD_METHOD) {
 			port.postMessage({ kind: 'reply', requestId, result: { threadId } } satisfies ReplyEnvelope);
+			// Answered here, so done here: a session-queued request waits for this ack (ISSUE-7c39e5cd).
+			if (msg.trackCompletion === true) port.postMessage({ kind: 'complete', requestId } satisfies CompletionEnvelope);
 			return;
 		}
 		if (testHooks && method === TEST_EXIT_METHOD) {

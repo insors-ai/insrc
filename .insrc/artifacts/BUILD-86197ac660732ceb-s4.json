@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s4",
+    "createdAt": "2026-10-29T08:13:45.184Z",
+    "updatedAt": "2026-10-29T08:13:45.184Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "With daemon threads enabled, the main thread no longer builds its handler runtime at boot: lazyForward (src/daemon/threads/lazy-runtime.ts) builds buildHandlerRuntime, the in-daemon client and installStepDaemonClient on the first request the router keeps local, logs 'handler runtime built on the main thread', answers a failed build with its error and retries on the next request; shutdown stops understanding routes only if built. With threads disabled the runtime is built at boot as before. The daemon-level proof that routed requests leave it unbuilt is t6.",
+    "testRecord": {
+      "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:13:45.184Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:13:45.184Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:13:45.184Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/lazy-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:13:45.184Z"
+      }
+    ],
+    "commit": "804daf0bc"
+  }
+}

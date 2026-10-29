@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s4",
+    "createdAt": "2026-10-29T08:13:45.184Z",
+    "updatedAt": "2026-10-29T08:13:45.184Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t5",
+        "commit": "804daf0bc",
+        "ranAt": "2026-10-29T08:13:45.184Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts",
+                "title": "lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts",
+                "title": "lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 502,
+            "titles": [
+              {
+                "title": "lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again",
+                "result": "pass"
+              },
+              {
+                "title": "lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T08:49:45.478Z",
+    "updatedAt": "2026-10-29T08:57:00.353Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
@@ -26,9 +26,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "threadViews (src/daemon/threads/admin-status.ts) builds ThreadView[] from one board snapshot: role, cls (none for the document-summary worker), session, busy (the summary lane's processing for document-summary), oldest method and elapsedMs while busy, queued, and running detached runs owned by that thread. daemon.status and daemon.debug-status add threads only when at least one thread is published, so without daemon threads both answer exactly as before (the admin worker's recorded-response parity test still passes).",
+    "summary": "Supervisor.track and allowRestart (replace() now uses allowRestart); SessionPool hands each created worker to onCreated (via the start dep's onCreated) and asks restarted before the shared-state worker's restart after an exit; startSessionRouting wires both to the supervisor; the document-summary worker is published (role document-summary) on start and forgotten on exit. Also fixes an s3 gap the tracking exposed: maintenance now asks the session pool's workers to close their graph handles before compacting (they were never asked; the threads-boot maintenance test failed once they were counted and passes with the fix).",
     "testRecord": {
       "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S004/TESTS.md"
     },
@@ -38,100 +42,149 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/lazy-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/AMD-86197ac660732ceb-2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/registry-board.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/router-thread-view.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/router.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/admin-handlers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/admin-status.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/admin-status.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/admin-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T08:49:45.478Z"
+        "timestamp": "2026-10-29T08:57:00.353Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/session-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:57:00.353Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/session-pool.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:57:00.353Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/supervisor-track.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:57:00.353Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/indexing-workers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:57:00.353Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/session-pool.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:57:00.353Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/session-routing.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:57:00.353Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/supervisor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T08:57:00.353Z"
       }
     ],
-    "commit": "b9477bb83"
+    "commit": "0dc785949"
   }
 }

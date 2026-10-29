@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t5
 
@@ -99,3 +99,39 @@ Run at 2026-10-29T08:49:45.478Z on commit `b9477bb83`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/admin-status.test.ts` | 0 | 4 | 0.7 s |  |
+
+## t4
+
+Run at 2026-10-29T08:57:00.353Z on commit `0dc785949`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: supervisor: a tracked worker is terminated by terminateAll and its error is logged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | supervisor: a tracked worker is terminated by terminateAll and its error is logged | `src/daemon/threads/__tests__/supervisor-track.test.ts` |
+
+**unit: supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown | `src/daemon/threads/__tests__/supervisor-track.test.ts` |
+
+**unit: session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError | `src/daemon/threads/__tests__/session-pool.test.ts` |
+
+**integration: session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking | `src/daemon/threads/__tests__/session-failure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 5 | 5.4 s |  |
+| `src/daemon/threads/__tests__/session-pool.test.ts` | 0 | 8 | 0.4 s |  |
+| `src/daemon/threads/__tests__/supervisor-track.test.ts` | 0 | 2 | 0.4 s |  |

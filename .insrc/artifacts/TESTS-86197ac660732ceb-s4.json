@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s4",
     "createdAt": "2026-10-29T08:13:45.184Z",
-    "updatedAt": "2026-10-29T08:49:45.478Z",
+    "updatedAt": "2026-10-29T08:57:00.353Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -268,6 +268,155 @@
               },
               {
                 "title": "admin handlers: daemon.debug-status keeps clients as before and adds threads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "0dc785949",
+        "ranAt": "2026-10-29T08:57:00.353Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "supervisor: a tracked worker is terminated by terminateAll and its error is logged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor-track.test.ts",
+                "title": "supervisor: a tracked worker is terminated by terminateAll and its error is logged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor-track.test.ts",
+                "title": "supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5396,
+            "titles": [
+              {
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              },
+              {
+                "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              },
+              {
+                "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+                "result": "pass"
+              },
+              {
+                "title": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+                "result": "pass"
+              },
+              {
+                "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 378,
+            "titles": [
+              {
+                "title": "session pool: concurrent workerFor calls for one session start one worker",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a worker that exits is unregistered and disconnected from its main-thread services",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: close waits for a start under way, releases that worker too, and refuses any later start",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/supervisor-track.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 371,
+            "titles": [
+              {
+                "title": "supervisor: a tracked worker is terminated by terminateAll and its error is logged",
+                "result": "pass"
+              },
+              {
+                "title": "supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown",
                 "result": "pass"
               }
             ],

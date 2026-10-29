@@ -1,0 +1,761 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793269677017-7ohwmg",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T10:35:22.517Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 443570,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "hldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "a87abac31881aea6f1c82c0655c32a3afcc0739ea91ec0a5739daf1565b617e3",
+        "at": "2026-10-29T10:35:47.986Z",
+        "by": {
+          "id": "controller:codex",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "warn",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 14
+        },
+        "at": "2026-10-29T10:39:16.486Z",
+        "report": {
+          "entityId": "LLD-c32aa60534232f36-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-5e5b29679f181ea46de4e181ad92006b"
+        }
+      }
+    },
+    "questionResolutions": {
+      "q3bc6bf0c": {
+        "question": "oq1: Approve the localized sc4 withPublicationFence amendment and deliver that sc4-owned prerequisite (durable frozen intent, completion-requested takeover and owner-fenced publication) before s5 PLAN/build. Do not silently implement sc4 private state in s5.",
+        "status": "resolved",
+        "choice": "Approve the sc4 publication-fence amendment and implement the sc4-owned prerequisite before S5 PLAN/build.",
+        "rationale": "User explicitly approved the LLD and amendment and authorized addressing the prerequisite before S5 planning. AMD-c32aa60534232f36-1 is now approved; implementation will be separately tracked under sc4 ownership.",
+        "resolvedAt": "2026-10-29T10:44:41.025Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Decide whether accepted review work is complete, then publish one canonical code-review record linked to its exact subject and coverage checkpoint. Missing evidence, conflicting requirements, stale source and a non-independent reviewer prevent publication. Publication is recoverable after interruption and preserves the existing verdict and human approval rules.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a daemon-owned durable investigation state machine with provider-independent accepted state. Seed each run with sc1's approved tasks/checks, artifact references and explicit commit packets, not embedded source partitions. Source-only and indexed-impact runs use identical packets, obligations, reviewer policy and completion checks; only the indexed capability in sc3 differs. Substantive judgments remain the independent agent's job; deterministic guards validate identity, evidence provenance, coverage and publication, not semantic correctness. Reuse existing LLMProvider/CliProvider read-only execution, budget admission, source freshness, ownership and canonical artifact lifecycle; introduce the investigation protocol and durable accepted-state store behind the existing code-review entrypoints. Checkpoint cadence is per reviewed commit-packet block, independently of continuation boundaries and run time limits; multiple block checkpoints may be accepted within one managed reviewer session.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "ReviewCompletionV1",
+          "ownedByStory": "s5",
+          "consumedByStories": [
+            "s6"
+          ],
+          "purpose": "Validate accountable coverage and source applicability before one canonical CR publication. Required unverified work blocks successful completion; findings retain existing severity/confidence and human override policy.",
+          "interfaceSketch": "interface CompletionAssessmentV1 {\n readonly runId: string; readonly subjectDigest: string; readonly checkpointDigest: string;\n readonly outcome: 'publishable' | 'incomplete' | 'stale' | 'conflict';\n readonly unresolvedRows: readonly string[]; readonly reasons: readonly string[];\n readonly requiredCriteria: readonly string[];\n}\ninterface ReviewCompletionReceiptV1 {\n readonly receiptId: string; readonly runId: string; readonly subjectDigest: string;\n readonly terminalCheckpointDigest: string; readonly artifactId: string; readonly artifactRevision: number;\n readonly verdict: 'pass' | 'warn' | 'block'; readonly coverageRef: string;\n}",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ImmutableReviewSubjectV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "The only authority for changed scope. Exact selected commit packets identify relevant parent-relative blocks; frozen context can include other source only as context. No HEAD/working-tree diff fallback.",
+          "interfaceSketch": "interface ReviewSubjectV1 {\n readonly version: 1; readonly subjectId: string; readonly subjectDigest: string;\n readonly repoId: string; readonly rootArtifactId: string; readonly storyId: string;\n readonly build: { readonly artifactId: string; readonly revision: number; readonly sourceCommit: string };\n readonly contracts: readonly { readonly artifactId: string; readonly path: string; readonly revision: number; readonly contentDigest: string }[];\n readonly taskBasis: 'approved-plan' | 'approved-upstream';\n readonly tasks: readonly { readonly id: string; readonly description: string; readonly acceptanceChecks: readonly { readonly id: string; readonly text: string }[] }[];\n readonly packets: readonly CommitPacketV1[]; readonly contextTree: string;\n readonly ambiguities: readonly string[];\n}\ninterface CommitPacketV1 {\n readonly packetId: string; readonly commitId: string; readonly parentId: string;\n readonly attribution: { readonly basis: string; readonly evidenceRefs: readonly string[] };\n readonly blocks: readonly { readonly blockId: string; readonly oldPath: string | null; readonly newPath: string | null; readonly oldBlob: string | null; readonly newBlob: string | null; readonly oldLines: readonly [number, number] | null; readonly newLines: readonly [number, number] | null; readonly kind: 'text' | 'binary' | 'rename' | 'mode' | 'delete' | 'add'; readonly attributionRefs: readonly string[] }[];\n}",
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "EvidenceCoverageV1",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Run-scoped evidence and many-to-many coverage bindings. Each approved obligation, packet block/non-text change and applicable criterion has a required row; findings and unresolved work cannot disappear.",
+          "interfaceSketch": "interface EvidenceV1 {\n readonly evidenceId: string; readonly subjectDigest: string;\n readonly kind: 'changed-block' | 'context-source' | 'artifact' | 'test-result' | 'caller-impact';\n readonly source: { readonly path: string; readonly revision: string; readonly digest: string; readonly lines: readonly [number, number] | null };\n readonly role: 'changed-scope' | 'context-only'; readonly inspectedByAttempt: string;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n readonly contentRef: string;\n}\ninterface CoverageV1 {\n readonly rowId: string; readonly subjectDigest: string; readonly requirementRef: string;\n readonly category: 'task' | 'acceptance' | 'design' | 'change' | 'criterion' | 'impact';\n readonly disposition: 'pending' | 'satisfied' | 'finding' | 'unverified' | 'not-applicable';\n readonly evidenceIds: readonly string[]; readonly findingIds: readonly string[];\n readonly rationale: string; readonly assessedByAttempt: string | null;\n}\ninterface ReviewLedgerV1 {\n readonly runId: string; readonly subjectDigest: string;\n readonly evidence: readonly EvidenceV1[]; readonly coverage: readonly CoverageV1[];\n readonly findings: readonly { readonly findingId: string; readonly criterion: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly confidence: 'breach' | 'observation'; readonly evidenceIds: readonly string[]; readonly expectationRefs: readonly string[]; readonly message: string }[];\n}",
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "InvestigationContinuationV1",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "One bounded independent read-only investigation protocol for both entrypoints/modes. Provider sessions execute requests but never own scope, accepted coverage or completion. Accept incremental per-block progress and durable acknowledgments inside one managed continuation; final replies reference accepted block receipts. Domain protocol only; s6 owns external MCP registration. Legacy sibling 8315a11f/S005 sc7 remains separate.",
+          "interfaceSketch": "interface InvestigationTurnV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly attemptId: string; readonly requestDigest: string; readonly policyDigest: string;\n readonly assignment: readonly string[]; readonly navigationRefs: readonly string[];\n readonly unresolvedRefs: readonly string[]; readonly priorAcceptedCheckpoint: string;\n readonly limits: { readonly attemptMs: number; readonly activeMsRemaining: number; readonly continuationsRemaining: number; readonly inclusiveTokenLimit: number };\n}\ninterface InvestigationReplyV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly acceptedBlockReceiptIds: readonly string[]; readonly lastAcceptedSequence: number;\n readonly inspectedEvidenceIds: readonly string[]; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings'];\n readonly next: { readonly kind: 'continue' | 'request-completion' | 'pause'; readonly remainingWork: readonly string[]; readonly reason: string };\n}\ninterface ImpactCapabilityV1 {\n readonly mode: 'source-only' | 'indexed-impact';\n readonly index: { readonly revision: string; readonly freshness: 'compatible' | 'stale' | 'unknown'; readonly completeness: 'partial' | 'unknown' } | null;\n readonly queryChangedEntityCallers: ((entityRef: string) => Promise<readonly EvidenceV1[]>) | null;\n}\ninterface ReviewBlockProgressV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly progressId: string; readonly expectedSequence: number; readonly blockId: string;\n readonly disposition: 'reviewed' | 'needs-followup' | 'unverified';\n readonly evidenceIds: readonly string[]; readonly notes: string; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings']; readonly outstandingWork: readonly string[];\n}\ninterface BlockCheckpointReceiptV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly progressId: string; readonly blockId: string; readonly sequence: number; readonly checkpointDigest: string;\n}",
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "DurableReviewRecoveryV1",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6"
+          ],
+          "purpose": "Daemon-owned acceptance journal, reconstructible checkpoints and exclusive generation/lease fencing; accepted replies are idempotent, uncertain provider outcomes remain explicit. Checkpoint per reviewed block, not only after a whole provider request or at the run time limit.",
+          "interfaceSketch": "interface ReviewRecoveryV1 {\n readonly schemaVersion: 1; readonly runId: string; readonly subjectDigest: string; readonly policyDigest: string;\n readonly state: 'prepared' | 'running' | 'paused' | 'completion-requested' | 'completed' | 'cancelled' | 'stale';\n readonly journalSequence: number; readonly acceptedCheckpointDigest: string;\n readonly owner: { readonly leaseId: string; readonly generation: number; readonly expiresAt: string } | null;\n readonly attempts: readonly { readonly attemptId: string; readonly requestDigest: string; readonly state: 'issued' | 'partially-accepted' | 'accepted' | 'failed' | 'uncertain' | 'cancelled'; readonly acceptedSequence: number | null; readonly usageReceipt: string | null }[];\n readonly activeMsConsumed: number; readonly continuationsConsumed: number;\n readonly blockCheckpoints: readonly { readonly blockId: string; readonly progressId: string; readonly sequence: number; readonly checkpointDigest: string }[];\n readonly outstandingWork: readonly string[]; readonly completionReceipt: string | null;\n}\ninterface ResumeCompatibilityV1 {\n readonly kind: 'compatible' | 'stale' | 'unsupported';\n readonly invalidatedEvidenceIds: readonly string[]; readonly reasons: readonly string[];\n readonly extensionRequired: boolean;\n}",
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "ReviewRuntimePortsV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Foundational type-level ports avoid making the investigation Story depend backwards on recovery. s4 implements durable storage, s3 uses the port, and s6 composes production adapters. Usage observations flow to existing usage contracts with a durable pending outbox when a writer is unavailable.",
+          "interfaceSketch": "interface ReviewRuntimePortsV1 {\n readonly readEvidence: (subjectId: string, reference: string) => Promise<ReviewReadReceiptV1>;\n readonly stageImmutableValue: (runId: string, value: Readonly<Record<string, unknown>> | string) => Promise<{ readonly reference: string; readonly digest: string }>;\n readonly appendTransition: (runId: string, generation: number, expectedSequence: number, transitionRef: string) => Promise<{ readonly sequence: number; readonly checkpointDigest: string }>;\n readonly recordAttemptUsage: (observation: ReviewUsageObservationV1) => Promise<{ readonly state: 'recorded' | 'pending' | 'unavailable'; readonly receiptRef: string | null }>;\n}\ninterface ReviewUsageObservationV1 {\n readonly runId: string; readonly attemptId: string; readonly observationId: string;\n readonly activity: 'code-review'; readonly chargedArtifactId: string; readonly subjectArtifactId: string;\n readonly providerRequestId: string | null; readonly quality: 'reported' | 'estimated' | 'unavailable';\n readonly providerId: string; readonly modelId: string | null;\n readonly granularity: 'model-call' | 'invocation-total' | 'cumulative-snapshot';\n readonly counters: { readonly inputUncachedTokens: number | null; readonly cacheReadTokens: number | null; readonly cacheWriteTokens: number | null; readonly outputTokens: number | null; readonly reasoningTokens: number | null };\n readonly nativeObservationRef: string | null;\n readonly allowanceTokens: number; readonly elapsedActiveMs: number;\n}\ninterface ReviewReadReceiptV1 {\n readonly reference: string; readonly sourceDigest: string; readonly contentRef: string; readonly text: string | null;\n readonly lines: readonly [number, number] | null;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n}",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc6"
+        ],
+        "internal": "Own completion coverage/freshness/party validation, canonical CR adaptation and idempotent terminal publication receipts. Reuse existing lifecycle and severity/confidence policy. Do not let a completion request, missing evidence or a failed run masquerade as a completed verdict."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "Own subject preparation, attribution ambiguity detection, exact Git commit/blob/block navigation and frozen context binding. Define foundational runtime-port types only; do not implement task investigation, a recovery store or new accounting storage. No generic HEAD/working-tree diff may select scope."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1",
+            "sc6"
+          ],
+          "internal": "Own required-row enumeration, evidence identity/provenance and coverage relationships/dispositions. Reuse subject inputs and runtime ports. Keep ledger validation helpers private; do not execute reviewer turns or publish CRs."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc6"
+          ],
+          "internal": "Own independent read-only task-directed continuation behavior, on-demand source navigation, optional indexed caller/impact enrichment, budget admission, bounded retry/pause and attempt usage emission through foundational ports. In-memory ports are test scaffolding while production selection remains disabled until s4/s6; no durable storage implementation or terminal approval logic. Publish and acknowledge incremental block progress within continuations, with partial cross-block assessments recorded rather than lost. Domain progress contracts only; no competing MCP phase/schema ownership. External registration belongs to s6."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Own durable implementation of foundational acceptance/usage-outbox ports, append/replay/checkpoint integrity, lease/generation fencing, uncertain attempts and compatibility/time recovery. Do not alter review criteria or introduce a usage warehouse. Its recovery implementation is composed by downstream s6 rather than consumed backwards by s3. Persist/replay block-level evidence and assessment receipts independently of final provider-call completion."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own production composition, equivalent MCP/daemon/controller start/status/resume/cancel adapters, status/usage presentation fields, explicit engine rollout/rollback, legacy compatibility and evaluation fixtures. No client opens stores directly; no client-specific board UI or design-review replacement. Sole new-engine MCP adapter/schema owner; reconcile 8315a11f/S005 legacy sc7 as specified in the architecture and record code-only supersession before opt-in. Verify routing partitions across both installation orders."
+        }
+      ],
+      "rolloutPhase": "E — complete and publish one canonical review",
+      "nonFunctional": {
+        "performance": "No eager whole-source or whole-contract repetition and no mandatory call-per-clause. Bounded read ranges and explicit evidence references prevent unbounded request growth.128K inclusive estimated admission and five-minute continuation cap; default120active-minute/24continuation limits pause with durable progress and explicit extension rather than claim success. Use deterministic/mock providers for routine tests; measure authorized live comparisons against recorded baselines before claiming savings. Block checkpoint acceptance is independent of run duration:120minutes is a pause ceiling, never a save interval. Grouping several block assessments in one session remains allowed.",
+        "security": "Daemon owns runtime state and DB access; cloud access remains LLMProvider/CliProvider only. Independent reviewer identity is checked at start and publication. Source reads are pinned and read-only; untrusted repository text is data, not tool/policy authority. Trusted evidence reads cannot escape the declared snapshot/approved-artifact view, graph queries bind to the registered source repo and declared dependency closure, and native adapters that cannot meet pinning/read-only capability refuse explicitly. Private runtime state uses restrictive access; metadata diagnostics contain no raw prompts/evidence.",
+        "observability": "Expose run/subject/engine/policy IDs, owner generation, attempt lifecycle, required/covered/unverified rows, pause/stale causes and resume compatibility. Show managed attempt count/active time, observed usage quality and unknown/pending observations distinctly from reservations and estimates. Emit status/heartbeats without replaying accepted work; transport disconnect is not a review verdict. Keep human-readable review reports only in /tmp. Surface latest accepted block/progress receipt and outstanding block IDs so clients can distinguish durable block progress from provider-session liveness.",
+        "durability": "Journal-committed acceptance precedes acknowledgment; snapshots/checkpoints are reconstructible and verified against immutable evidence/answer blobs. Detect torn tails and corruption, fence concurrent owners and late replies, preserve uncertain provider outcomes and idempotent completion/usage receipts. Pauses do not erase consumed execution time. Legacy runs are explicitly non-resumable; runtime data remains outside artifact JSON and excluded from changed scope. Every reviewed block is journal-committed before its durable acknowledgment and cursor advancement, even while a native session continues. Accepted block state survives an uncertain or failed enclosing attempt; only unfinished/unacknowledged work is resumed."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "CompletionAssessmentV1",
+          "signature": "interface CompletionAssessmentV1 { readonly runId: string; readonly subjectDigest: string; readonly checkpointDigest: string; readonly outcome: 'publishable' | 'incomplete' | 'stale' | 'conflict'; readonly unresolvedRows: readonly string[]; readonly reasons: readonly string[]; readonly requiredCriteria: readonly string[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "CompletionAssessmentV1",
+            "meaning": "Deterministic assessment of an immutable accepted checkpoint, not a review verdict or human approval."
+          },
+          "errors": [
+            {
+              "type": "RecoveryError",
+              "condition": "Corrupt, unsupported or foreign recovery state; ownership lost."
+            }
+          ],
+          "preconditions": [
+            "Trusted daemon supplies current registered repo, approved BUILD/contract pins, independent party records and replayed sc4 state.",
+            "No issued/partially-accepted attempt remains active; uncertain/failed enclosing attempts may retain accepted blocks but cannot themselves certify completion."
+          ],
+          "postconditions": [
+            "Every required task, acceptance, design, change, criterion and applicable impact row has an explicit validated disposition.",
+            "Pending or unverified required rows, outstanding work and unfinished selected blocks produce incomplete; conflicts remain for human resolution; freshness mismatch produces stale."
+          ]
+        },
+        {
+          "name": "ReviewCompletionReceiptV1",
+          "signature": "interface ReviewCompletionReceiptV1 { readonly receiptId: string; readonly runId: string; readonly subjectDigest: string; readonly terminalCheckpointDigest: string; readonly artifactId: string; readonly artifactRevision: number; readonly verdict: 'pass' | 'warn' | 'block'; readonly coverageRef: string; }",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewCompletionReceiptV1",
+            "meaning": "Verified canonical CR identity/revision and durable accepted coverage link, emitted only after canonical persistence is confirmed."
+          },
+          "errors": [
+            {
+              "type": "RecoveryError",
+              "condition": "Completion not publishable, stale pins, publication intent conflict, ownership loss or uncertain canonical write."
+            }
+          ],
+          "preconditions": [
+            "Assessment remains publishable at the frozen checkpoint and immediately before canonical CAS.",
+            "sc4 prerequisite provides durable frozen intent, owner-fenced publication and completion-requested lease recovery; not supplied by s5 private-event writes."
+          ],
+          "postconditions": [
+            "One operation identity maps to one canonical revision; identical replay returns original receipt and does not invoke judges or append another revision.",
+            "Human BUILD approval and override remain separate actions; completed block/warn CR is distinct from incomplete execution."
+          ]
+        },
+        {
+          "name": "RecoveryStore",
+          "signature": "class RecoveryStore { requestCompletion(leaseId: string, generation: number): Promise<RecoveryView>; recordCompletion(leaseId: string, generation: number, receipt: string): Promise<RecoveryView>; }",
+          "parameters": [],
+          "returns": {
+            "type": "RecoveryView",
+            "meaning": "Consumed existing sc4 transition/receipt boundary; exact inherited types remain unchanged."
+          },
+          "errors": [
+            {
+              "type": "RecoveryError",
+              "condition": "Stale owner, conflicting terminal receipt or unsupported recovery."
+            }
+          ],
+          "preconditions": [
+            "Consume only sc4 public capabilities; do not author its private event envelopes."
+          ],
+          "postconditions": [
+            "Only sc4 owns run-state journal and fencing. sc5 owns eligibility and canonical adaptation."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CompletionAssessmentV1",
+        "change": "new",
+        "details": "Proposed new files: src/workflow/code-review/investigation/completion-types.ts defines exact sc5 types and typed completion errors; src/workflow/code-review/investigation/completion-assessment.ts evaluates one replayed immutable checkpoint. Consume validateReviewLedger and trusted receipt closure. Enumerate required criteria from basis, never reviewer-selected subset; verify exact required row universe and all selected packet/non-text blocks have latest accepted disposition reviewed, with no retained follow-up/outstanding work. Valid findings remain accountable dispositions and can yield a completed blocking verdict. Satisfaction/not-applicable still require sc2 evidence/applicability checks. A requirement marked finding is accountable only if its linked evidence and finding references validate. Changes absent from PLAN remain required change rows and must be independently judged, never silently dropped. Conflicts between approved expectations are supplied as trusted unresolved contract-decision references or evidence-linked reviewer conflicts and return conflict; do not derive semantic contradictions from string matching or silently rewrite expectations. Evidence-scoped unavailable/partial records cannot support a stronger disposition than sc2 permits. Unknown party or same author/reviewer is conflict; re-read canonical BUILD authorPartyOf and authenticated review party, not model-supplied labels. [c1,c2,c3]",
+        "callSites": [
+          "src/workflow/code-review/investigation/ledger.ts",
+          "src/workflow/code-review/investigation/recovery-store.ts"
+        ]
+      },
+      {
+        "entity": "Frozen publication intent",
+        "change": "new",
+        "details": "Proposed new file: src/workflow/code-review/investigation/completion-publication.ts builds/stages an immutable intent containing version, deterministic operationId, run/subject/policy/checkpoint digests, coverageRef and coverage digest, candidate CR content digest, canonical CR id, expected prior revision or explicit absent state, pinned BUILD revision/fingerprint and verified author/reviewer provenance. Operation identity binds run+subject+checkpoint+canonical target; timestamps and model usage are descriptive metadata and cannot create a second logical publication. sc4 owns durable intent acceptance and checkpoint freeze in its runtime namespace; staged-but-unaccepted intent is not authority. Accepted intent cardinality per run is zero or one; it references exactly one immutable coverage snapshot and canonical target revision, while distinct legitimate review runs may create later canonical CR revisions through existing lifecycle rules. One coverage snapshot retains the sc2 ledger, basis and trusted receipt references; runtime data stays out of artifact JSON. Artifact JSON carries compact investigation linkage only. [c1,c2,c4]",
+        "callSites": [
+          "src/workflow/code-review/investigation/recovery-store.ts",
+          "src/workflow/code-review/types.ts"
+        ]
+      },
+      {
+        "entity": "Canonical CodeReviewArtifact investigation linkage",
+        "change": "field-add",
+        "details": "Proposed new file: src/workflow/code-review/investigation/completion-artifact.ts adapts accepted findings to existing DimensionResult and CodeReviewArtifact, preserving criterion/dimension order, severity, confidence, expectation/evidence identities and all findings. Reuse or extract existing runner fold/build/validate helpers without invoking runCodeReview's judge execution. Add optional body.investigation metadata with version, operationId, runId, subjectDigest, policyDigest, checkpointDigest, coverageRef and coverageDigest; old records omit it and remain readable. Keep existing reviewedBy party, BUILD fingerprint and canonical lifecycle content identity. Findings map into their pinned criteria; unknown criterion or unmappable location is a conflict, never silently discarded. Prefer evidence source path/range as finding location and retain structured evidence/expectation refs in additive metadata. Preserve current severity fold exactly: any HIGH block, else MED warn, else pass; confidence remains explicit and existing human approval policy is unchanged. Extend CodeReviewBody.groundingMode with the explicit value investigation for both new-engine modes, and add investigation.sourceMode (source-only or indexed-impact). Do not label new source-only runs degraded or new indexed runs graph-full: legacy full/degraded semantics and warn cap remain unchanged for legacy records. The new investigation mode uses the existing severity fold without a source-mode verdict floor; optional caller discovery is the only mode difference. Update canonical validators, rendering and completion-evidence readers to recognize the versioned mode; enum-strict older readers require s6 capability gating and are not claimed automatically compatible. Unsupported new-mode readers refuse rather than reinterpret the record. [c2,c3,c4]",
+        "schemaDiff": "CodeReviewBody.groundingMode: 'full' | 'degraded' | 'investigation'; CodeReviewBody.investigation?: { readonly version: 1; readonly sourceMode: 'source-only' | 'indexed-impact'; readonly operationId: string; readonly runId: string; readonly subjectDigest: string; readonly policyDigest: string; readonly checkpointDigest: string; readonly coverageRef: string; readonly coverageDigest: string; } | undefined;",
+        "callSites": [
+          "src/workflow/code-review/types.ts",
+          "src/workflow/code-review/runner.ts"
+        ]
+      },
+      {
+        "entity": "Canonical publication protocol",
+        "change": "new",
+        "details": "Proposed new file: src/workflow/code-review/investigation/completion-publisher.ts consumes the sc4 publication fence and existing ArtifactStore/History/LifecycleService instance owned by the daemon. Build one immutable candidate and coverage snapshot; assess; accept frozen intent through sc4; then under its owner fence enter the canonical artifact queue. Use ArtifactStore.updateAndLog (or lifecycle-equivalent guarded content mutation) to compare current head revision/absence against frozen expected revision, and recheck scope/freshness/party/current owner immediately before mutation. Same operationId plus exact subject/checkpoint/content digest returns existing canonical revision without write. Any mismatching current record/revision is conflict; never overwrite to hide another run or a human-edited record. A lifecycle write and a run journal receipt are two recoverable commits, not one atomic cross-store transaction. After canonical write read back and validate the exact persisted head, then stage immutable ReviewCompletionReceiptV1 and call sc4.recordCompletion. On lost ACK, reconcile by frozen operation identity and canonical content/history; if canonical head has moved incompatibly, report conflict rather than regenerate. Rendered CR document is a regenerable canonical view, never the authority for success; temporary review reports remain /tmp. No direct filesystem artifact overwrite and no automatic approval/tracker message. [c2,c4]",
+        "callSites": [
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/workflow/code-review/investigation/recovery-store.ts"
+        ]
+      },
+      {
+        "entity": "sc4 prerequisite back-flow",
+        "change": "invariant-change",
+        "details": "The current sc4 implementation rejects lease claims for completion-requested state and has no accepted publication-intent binding. This is owned by s4, not s5. Before s5 PLAN/build, approve and implement the localized sc4-owned HLD amendment: expose an owner-fenced publication operation which durably binds exactly one intentRef and expected checkpoint, freezes further progress, permits restart/takeover while preserving frozen intent, and supplies a current-owner assertion inside the canonical commit callback. Same intent replay is idempotent; changed intent is conflict; a cancelled/stale/completed run cannot acquire new publication authority. Its critical section pins generation against concurrent takeover for a bounded canonical write, with freshness/owner checks immediately before CAS; journal receipt after write stays separately recoverable. sc5 consumes that capability and must not implement sc4 reducer/lease changes as its own task. Open question oq1 blocks PLAN until prerequisite ownership and approval are resolved. [c1,c4] Formal pending proposal: .insrc/artifacts/AMD-c32aa60534232f36-1.json. This is a prerequisite amendment request, not an implemented capability.",
+        "callSites": [
+          "src/workflow/code-review/investigation/recovery-store.ts",
+          "src/workflow/code-review/investigation/recovery-lifecycle.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "Own exact assessment/receipt types, accountable completion checks and canonical CR adapter/publisher; no model judging or autoapproval."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Revalidate exact selected packets, frozen context and approved contract/BUILD pins at assessment and canonical CAS; no generic HEAD diff."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Use validated ledger universe and trusted provenance; do not weaken evidence, findings or applicability rules."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "A request-completion reply is a trigger only. All final findings/deltas must already be block-checkpoint accepted; no new final reply coverage accepted here."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Use replay, lease/fence, frozen publication intent and terminal receipt. Explicit prerequisite back-flow for missing capability; do not privately implement or forge its state events."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Stage immutable intent/coverage/receipt values through existing runtime ports. Usage observation quality/pending status preserved without making usage availability a false proof of review coverage."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Required coverage/evidence or selected block assessment missing.",
+          "detection": "Revalidate ledger and enumerate required rows, latest block dispositions and outstanding work against pinned basis.",
+          "response": "Return incomplete with unresolved row IDs/reasons; no canonical CR or terminal success.",
+          "userImpact": "Remaining review work stays visible.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Conflicting expectations or non-independent/unknown reviewer.",
+          "detection": "Compare trusted contract-decision conflicts and canonical authorPartyOf against authenticated reviewer party; refuse unknown/same party.",
+          "response": "Return conflict for human decision; never silently weaken approved requirements or label same-party result independent.",
+          "userImpact": "Human resolves conflicting requirements or chooses independent reviewer.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Pinned source/BUILD/contract changed before publication.",
+          "detection": "assertReviewSubjectFresh plus exact BUILD fingerprint/revision, policy/tool compatibility check at assessment and inside canonical CAS.",
+          "response": "Return stale without publishing for the new revision; preserve accepted evidence for diagnosis.",
+          "userImpact": "Further review required for changed scope.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Crash or lost ACK between intent, canonical write and terminal receipt.",
+          "detection": "Read frozen sc4 intent, terminal receipt and canonical operationId/content digest under owner fence.",
+          "response": "Reconcile the same canonical revision; if absent apply expected-revision CAS once; if conflicting preserve conflict. No model rerun or new logical publication.",
+          "userImpact": "Resume publication without paying for accepted reasoning again.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Concurrent completion or canonical CR changed by another run/person.",
+          "detection": "sc4 generation fence and ArtifactStore queue compare expected prior revision plus frozen operation identity.",
+          "response": "Identical operation returns original receipt; mismatching head or intent returns conflict, no overwrite.",
+          "userImpact": "No silent loss of newer review or human edits.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing sc4 prerequisite or unsupported canonical reader capability.",
+          "detection": "Check frozen-intent/publication-fence support and versioned investigation metadata/grounding support before admission.",
+          "response": "Explicit unsupported/conflict; do not implement private sc4 events or pretend legacy records prove new coverage.",
+          "userImpact": "Prerequisite must be approved and delivered before s5 build/rollout.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Canonical JSON succeeds but rendered document fails.",
+          "detection": "Verified head and operation identity exist while deterministic render reports IO failure.",
+          "response": "Retain canonical identity and regenerate document idempotently; report rendering limitation, never publish duplicate revision.",
+          "userImpact": "Review result survives; view repair pending.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "All coverage accounted for with HIGH/MED findings.",
+          "expected": "Publish a completed block/warn CR under existing severity policy; do not confuse findings with incomplete execution."
+        },
+        {
+          "input": "Parent provider attempt failed after accepted blocks.",
+          "expected": "Accepted block assessments remain eligible if all required coverage/provenance is valid and no attempt remains active; failure itself grants no coverage."
+        },
+        {
+          "input": "Empty or stale index caller results.",
+          "expected": "Applicable unresolved impact rows prevent completion; absence is not proof of no impact."
+        },
+        {
+          "input": "Pending/unavailable token usage with otherwise complete review.",
+          "expected": "Preserve usage quality/delivery state; do not invent tokens or treat missing usage as review evidence."
+        },
+        {
+          "input": "Source-only vs indexed mode on identical accepted evidence.",
+          "expected": "Same coverage and verdict rules; only optional impact discovery differs. Legacy grounding labels must not create an artificial mode-specific verdict floor."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Reuse sc2 provenance, per-block acceptance and current-owner recovery state; request-completion alone cannot create findings or coverage. Context discovery bundle c1.",
+          "source": "c1"
+        },
+        {
+          "text": "Canonical review severity fold and independent party/lifecycle semantics remain distinct from design-review computeVerdict. Context discovery bundle c2.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict through tsx; extend investigation recovery fixtures and backend canonical artifact lifecycle tests; no live LLM required.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove deterministic fail-closed completion without model execution.",
+          "subjects": [
+            "Required coverage and latest selected-block completeness",
+            "Trusted evidence, conflict and party validation",
+            "Canonical severity/confidence and dimension adaptation",
+            "Versioned investigation linkage and mode parity"
+          ],
+          "fixturesNeeded": [
+            "complete and incomplete sc2 ledgers",
+            "known/unknown/same-party records",
+            "source-only and indexed inputs with identical accepted state"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove recoverable one-revision publication through real lifecycle/journal boundaries.",
+          "subjects": [
+            "Frozen intent and expected-revision canonical CAS",
+            "Lost ACK and crash reconciliation around canonical commit and terminal receipt",
+            "Concurrent completion, stale owner and edited canonical head refusal",
+            "Freshness recheck between assessment and publication",
+            "Regenerable rendered document and terminal receipt replay"
+          ],
+          "fixturesNeeded": [
+            "sc4-owned prerequisite publication-fence adapter",
+            "real temporary ArtifactStore/History/LifecycleService",
+            "bounded child-process/fault hooks at intent/CR/receipt boundaries",
+            "legacy canonical review fixtures"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Keep new completion compatible with shared types and existing human gates.",
+          "subjects": [
+            "Exact sc5 assessment and receipt shapes",
+            "Legacy CR readers, independent approval and override semantics",
+            "No judge rerun, autoapproval or production registration"
+          ],
+          "fixturesNeeded": [
+            "existing code-review and completion-evidence fixtures",
+            "explicit unsupported capability adapter"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Each missing/pending/unverified task/check/design/change/criterion/impact row or unfinished block returns incomplete with no canonical write.",
+            "Valid evidence-backed findings remain accountable and publish completed WARN/BLOCK."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Unsupported satisfied/not-applicable claims fail sc2 validation.",
+            "Unplanned packet blocks remain required; conflicting requirements and unknown/same party return conflict without weakening catalog."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Crash before/after canonical commit and receipt saves yields exactly one operation/revision and same terminal receipt on retry.",
+            "Concurrent requests, conflicting intent and newer/human-edited canonical head cannot duplicate or overwrite result.",
+            "Identical source-only/indexed accepted state yields same verdict under versioned new-engine grounding; partial/failed execution produces no passing CR."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Change source/contract/BUILD/policy after assessment and before CAS; refuse publication as stale and retain reason.",
+            "Lost owner/fence refuses canonical mutation; completed receipt replay remains read-only."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Discovery c1: sc4 persists accepted block state and simple completion-requested/completed transitions but cannot yet recover the frozen publication intent. Discovery c2: canonical runner executes judges then uses lifecycle-backed persistence, with legacy full/degraded labels and severity fold.",
+      "stateAfter": "sc5 assessment and versioned canonical adapter consume accepted coverage and an sc4-owned frozen-publication boundary. New engine remains unselected until s6 qualifies readers and transports; existing reviews retain behavior.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Resolve oq1 and approve the localized sc4 amendment; deliver its recovery prerequisite under sc4 ownership before s5 PLAN/build. No s5 private recovery event implementation.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add sc5 assessment/receipt types and pure validation plus versioned investigation metadata and explicit investigation grounding mode to canonical CR readers/validators. Existing full/degraded records retain original semantics.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add canonical expected-revision publication adapter using the daemon's existing lifecycle instance and sc4 fence; verify deterministic crash/CAS/mode/approval fixtures without activating production engine.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "s6 enables only after all consumers support the new canonical mode/version. Rollback routing preserves canonical records/history and frozen intents; older binaries must refuse unsupported new-mode publication rather than rewrite it as a legacy review.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Existing CR fields, verdict vocabulary, party and human override semantics preserved. New investigation records add compact versioned linkage and require an explicit canonical groundingMode extension for equal source/index verdict treatment; older enum-strict readers are NOT automatically compatible. Reader validation/rendering changes are scoped to canonical CR and must be capability-gated by s6. No conversion of legacy partial logs into resumable coverage, no default routing change or artifact backfill.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Frozen completion intent and canonical compare-and-set",
+        "oneLineSummary": "Assess accepted coverage, freeze one publication intent, and reconcile canonical CR by deterministic identity.",
+        "approach": "Use sc2/sc4 replay for deterministic assessment, stage immutable coverage and candidate CR, persist an owner-fenced sc4 publication intent, then write through the existing ArtifactStore queue with expected-revision and operation-identity checks. Complete sc4 receipt only after verifying canonical content. A restart reuses the same frozen intent and canonical revision rather than running judges again. Requires a localized sc4 recovery prerequisite; s5 consumes it, never writes private sc4 events.",
+        "pros": [
+          "Smallest design preserving accepted work and existing canonical lifecycle.",
+          "Lost artifact-write or terminal-receipt ACK is reconciled by identity rather than republishing."
+        ],
+        "cons": [
+          "Requires explicit sc4 back-flow for completion-requested takeover and frozen intent/fenced publication boundary.",
+          "Two stores require a recoverable intent protocol rather than pretending to share an atomic transaction."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Durable canonical publication outbox",
+        "oneLineSummary": "Queue frozen completion payloads for a separate daemon publication worker.",
+        "approach": "Perform the same coverage/freshness/party assessment and store a frozen sc4 intent, then hand it to a dedicated worker which serially applies canonical artifact CAS and records receipt. Worker revalidates freshness and ownership before writes, with the same sc4 recovery prerequisite.",
+        "pros": [
+          "Separates publication scheduling from reviewer lifetime.",
+          "Explicit retry queue for transient storage failures."
+        ],
+        "cons": [
+          "Adds a new scheduler and worker lifecycle without a Story requirement.",
+          "Still needs frozen intent, generation fencing and canonical idempotency; does not remove the hard boundary."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Dedicated publication worker unnecessary for one bounded canonical write and still requires the same recovery protocol."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "oq1: Approve the localized sc4 withPublicationFence amendment and deliver that sc4-owned prerequisite (durable frozen intent, completion-requested takeover and owner-fenced publication) before s5 PLAN/build. Do not silently implement sc4 private state in s5."
+    ],
+    "sequenceDefinition": {
+      "narrative": "Completion is assessed before a single frozen publication intent is accepted. The canonical CR and terminal receipt are separate recoverable writes; after interruption the same intent reconciles the same revision without rerunning reviewers.",
+      "participants": [
+        {
+          "id": "s5",
+          "label": "sc5 completion",
+          "description": "Validates accountable coverage and adapts accepted findings."
+        },
+        {
+          "id": "s4",
+          "label": "sc4 publication fence",
+          "description": "Prerequisite amendment: freezes intent and preserves ownership across recovery."
+        },
+        {
+          "id": "artifact",
+          "label": "Canonical ArtifactStore",
+          "description": "Existing daemon-owned lifecycle queue and revision history."
+        },
+        {
+          "id": "view",
+          "label": "Rendered CR view",
+          "description": "Regenerable summary of canonical JSON."
+        }
+      ],
+      "messages": [
+        {
+          "from": "s5",
+          "to": "s4",
+          "label": "Read verified accepted checkpoint",
+          "description": "Ledger, receipt closure and frozen subject are authority."
+        },
+        {
+          "from": "s5",
+          "to": "s5",
+          "label": "Check coverage, freshness and independent party",
+          "kind": "recurse",
+          "description": "Incomplete, stale or conflicting assessment stops publication."
+        },
+        {
+          "from": "s5",
+          "to": "s4",
+          "label": "Accept immutable intent under publication fence",
+          "description": "sc4-owned prerequisite binds expected checkpoint and candidate/coverage references."
+        },
+        {
+          "from": "s4",
+          "to": "s5",
+          "label": "Return frozen intent and owner assertion",
+          "kind": "return",
+          "description": "Identical retry returns original intent; concurrent generation cannot advance."
+        },
+        {
+          "from": "s5",
+          "to": "artifact",
+          "label": "Recheck pins and compare-and-set canonical revision",
+          "description": "Expected revision or same-operation exact replay; mismatching head is conflict."
+        },
+        {
+          "from": "artifact",
+          "to": "s5",
+          "label": "Verified canonical artifact ID and revision",
+          "kind": "return",
+          "description": "Lost ACK is reconciled by operation identity, not another write."
+        },
+        {
+          "from": "s5",
+          "to": "view",
+          "label": "Regenerate canonical view",
+          "description": "Render failure does not create a second artifact revision."
+        },
+        {
+          "from": "s5",
+          "to": "s4",
+          "label": "Persist completion receipt",
+          "description": "Receipt binds canonical revision, terminal checkpoint and coverage snapshot."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S005/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/recovery-store.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/runner.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/party.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/HLD.md"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    }
+  ]
+}

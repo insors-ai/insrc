@@ -1,4 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { accountRecovery } from './recovery-attempts.js';
+import type { RecoveryAccounting } from './recovery-attempts.js';
 import { appendImpactRequirements, validateLedgerBasis } from './ledger-catalog.js';
 import { applyReviewLedgerDelta, initializeReviewLedger, validateReviewLedger } from './ledger.js';
 import { evidenceFromReceipt } from './ledger-evidence.js';
@@ -9,7 +11,7 @@ import type { BlockProgressTransitionV1, InvestigationState } from './continuati
 import type { LedgerBasis, TrustedInspectionReceipt } from './ledger-types.js';
 import type { RecoveryJournal } from './recovery-journal.js';
 export interface RecoveryView {
- readonly manifest: RecoveryManifest; readonly basis: LedgerBasis; readonly state: InvestigationState;
+ readonly accounting: RecoveryAccounting; readonly manifest: RecoveryManifest; readonly basis: LedgerBasis; readonly state: InvestigationState;
  readonly receipts: readonly TrustedInspectionReceipt[]; readonly outstandingWork: readonly string[];
  readonly eventOrdinal: number; readonly eventDigest: string;
  readonly lifecycle: { readonly state: import('./recovery-types.js').ReviewRecoveryV1['state']; readonly owner: import('./recovery-types.js').ReviewRecoveryV1['owner']; readonly generation: number; readonly lastWallMs: number; readonly completionReceipt: string | null; readonly processEpoch: string | null }; 
@@ -31,6 +33,7 @@ export function applyRecoveryBlock(view: RecoveryView,t: BlockProgressTransition
   ||view.state.accepted.some(a=>a.progress.progressId===p.progressId)||!p.notes?.trim()||p.notes.length>16000
   ||!['reviewed','needs-followup','unverified'].includes(p.disposition))throw new RecoveryError('corrupt','Invalid accepted progress binding.');
  recoveryId(p.progressId);recoveryId(p.attemptId);
+ const issued=view.accounting.attempts.find(a=>a.attemptId===p.attemptId);if(!issued||issued.generation!==p.generation||!['issued','partially-accepted'].includes(issued.state))throw new RecoveryError('corrupt','Progress is not from an issued live attempt.');
  const basis=read(t.basisRef) as LedgerBasis;validateLedgerBasis(basis);
  if(!basis.subject.packets.flatMap(packet=>packet.blocks).some(b=>b.blockId===p.blockId))throw new RecoveryError('corrupt','Foreign packet block.');
  const additions=basis.requirements.filter(r=>!view.basis.requirements.some(old=>old.category===r.category&&old.requirementRef===r.requirementRef));
@@ -51,7 +54,7 @@ export function applyRecoveryBlock(view: RecoveryView,t: BlockProgressTransition
  const unresolved=basis.requirements.filter(r=>{const row=ledger.coverage.find(c=>c.category===r.category&&c.requirementRef===r.requirementRef);return !row||['pending','unverified'].includes(row.disposition);}).map(r=>r.requirementRef);
  const isUnresolved=(ref:string)=>!basis.requirements.some(r=>r.requirementRef===ref)||unresolved.includes(ref);
  const outstandingWork=[...new Set([...view.outstandingWork.filter(isUnresolved),...p.outstandingWork,...unresolved])];
- return recoveryValue({...view,basis,receipts,outstandingWork,eventOrdinal:event.ordinal,eventDigest:event.digest,state:{...view.state,ledger,sequence,checkpoint,accepted:[...view.state.accepted,{payloadDigest:t.payloadDigest,progress:p,receipt}],uncertainProgressId:null}});
+ return recoveryValue({...view,accounting:{...view.accounting,attempts:view.accounting.attempts.map(a=>a===issued?{...a,state:'partially-accepted' as const,acceptedSequence:sequence}:a)},basis,receipts,outstandingWork,eventOrdinal:event.ordinal,eventDigest:event.digest,state:{...view.state,ledger,sequence,checkpoint,accepted:[...view.state.accepted,{payloadDigest:t.payloadDigest,progress:p,receipt}],uncertainProgressId:null}});
 }
 export type RecoveryControlFold=(view:RecoveryView,event:RecoveryEvent,payload:unknown)=>RecoveryView;
 /** Snapshots are optional caches. Always verify the complete authoritative prefix and referenced closure. */
@@ -59,7 +62,7 @@ export function replayRecovery(journal:RecoveryJournal,repairTail=false,control?
  const events=journal.events(repairTail),first=events[0];
  if(!first||first.kind!=='state'||first.eventId!=='prepared'||first.generation!==0)throw new RecoveryError('unsupported','No resumable investigation manifest.');
  const manifest=validateRecoveryManifest(journal.read(first.payloadRef) as RecoveryManifest);
- let view:RecoveryView={manifest,basis:manifest.basis,state:manifest.initial,receipts:manifest.receipts,outstandingWork:manifest.basis.requirements.map(r=>r.requirementRef),eventOrdinal:1,eventDigest:first.digest,lifecycle:{state:'prepared',owner:null,generation:0,lastWallMs:0,completionReceipt:null,processEpoch:null}};
+ let view:RecoveryView={accounting:{attempts:[],activeLimitMs:manifest.policy.activeLimitMs,attemptLimit:manifest.policy.attemptLimit},manifest,basis:manifest.basis,state:manifest.initial,receipts:manifest.receipts,outstandingWork:manifest.basis.requirements.map(r=>r.requirementRef),eventOrdinal:1,eventDigest:first.digest,lifecycle:{state:'prepared',owner:null,generation:0,lastWallMs:0,completionReceipt:null,processEpoch:null}};
  for(const event of events){
   if(event.runId!==manifest.runId||event.subjectDigest!==manifest.subjectDigest||event.policyDigest!==manifest.policyDigest)throw new RecoveryError('corrupt','Event changed subject or policy binding.');
   if(event===first)continue;

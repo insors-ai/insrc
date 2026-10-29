@@ -1,9 +1,11 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { foldRecoveryAttempt, accountRecovery } from './recovery-attempts.js';
 import { RecoveryError, recoveryRecord, recoveryInteger, recoveryId, recoveryValue } from './recovery-types.js';
 import type { ReviewRecoveryV1, ResumeCompatibilityV1, RecoveryManifest, RecoveryEvent } from './recovery-types.js';
 import type { RecoveryView } from './recovery-replay.js';
 import { ledgerEqual } from './ledger-identity.js';
 export function foldRecoveryLifecycle(view:RecoveryView,event:RecoveryEvent,raw:unknown):RecoveryView {
+ if(['attempt-issued','attempt-settled','extension'].includes(event.kind))return foldRecoveryAttempt(view,event,raw);
  const p=recoveryRecord(raw),old=view.lifecycle;
  const wall=p['wallMs'];recoveryInteger(wall);
  if(wall<old.lastWallMs)throw new RecoveryError('corrupt','Owner clock regressed.');
@@ -28,11 +30,12 @@ export function foldRecoveryLifecycle(view:RecoveryView,event:RecoveryEvent,raw:
    else throw new RecoveryError('corrupt','Invalid lifecycle transition.');
   }else throw new RecoveryError('unsupported','Unsupported recovery control event.');
  }
- return recoveryValue({...view,lifecycle,eventOrdinal:event.ordinal,eventDigest:event.digest});
+ const accounting=lifecycle.generation!==old.generation?{...view.accounting,attempts:view.accounting.attempts.map(a=>['issued','partially-accepted'].includes(a.state)?{...a,state:'uncertain' as const}:a)}:view.accounting;
+ return accountRecovery({...view,lifecycle,eventOrdinal:event.ordinal,eventDigest:event.digest},accounting);
 }
 export function recoveryProjection(view:RecoveryView):ReviewRecoveryV1{
  return recoveryValue({schemaVersion:1,runId:view.manifest.runId,subjectDigest:view.manifest.subjectDigest,policyDigest:view.manifest.policyDigest,
-  state:view.lifecycle.state,journalSequence:view.state.sequence,acceptedCheckpointDigest:view.state.checkpoint,owner:view.lifecycle.owner,attempts:[],activeMsConsumed:view.state.consumedActiveMs,continuationsConsumed:view.state.attempts,
+  state:view.lifecycle.state,journalSequence:view.state.sequence,acceptedCheckpointDigest:view.state.checkpoint,owner:view.lifecycle.owner,attempts:view.accounting.attempts.map(a=>({attemptId:a.attemptId,requestDigest:a.requestDigest,state:a.state,acceptedSequence:a.acceptedSequence,usageReceipt:a.usageReceipt})),activeMsConsumed:view.state.consumedActiveMs,continuationsConsumed:view.state.attempts,
   blockCheckpoints:view.state.accepted.map(a=>({blockId:a.receipt.blockId,progressId:a.receipt.progressId,sequence:a.receipt.sequence,checkpointDigest:a.receipt.checkpointDigest})),outstandingWork:view.outstandingWork,completionReceipt:view.lifecycle.completionReceipt});
 }
 export function recoveryCompatibility(view:RecoveryView,current:Pick<RecoveryManifest,'subjectDigest'|'policyDigest'|'compatibility'>,fresh:boolean):ResumeCompatibilityV1{
@@ -40,5 +43,5 @@ export function recoveryCompatibility(view:RecoveryView,current:Pick<RecoveryMan
  if(!fresh||current.subjectDigest!==view.manifest.subjectDigest)reasons.push('Pinned source or approved contracts changed.');
  if(current.policyDigest!==view.manifest.policyDigest)reasons.push('Review policy changed.');
  if(!ledgerEqual(current.compatibility,view.manifest.compatibility))reasons.push('Engine, evidence, provider or tool compatibility changed.');
- return recoveryValue({kind:reasons.length?'stale':'compatible',invalidatedEvidenceIds:reasons.length?view.state.ledger.evidence.map(e=>e.evidenceId):[],reasons,extensionRequired:view.state.consumedActiveMs>=view.manifest.policy.activeLimitMs||view.state.attempts>=view.manifest.policy.attemptLimit});
+ return recoveryValue({kind:reasons.length?'stale':'compatible',invalidatedEvidenceIds:reasons.length?view.state.ledger.evidence.map(e=>e.evidenceId):[],reasons,extensionRequired:view.state.consumedActiveMs>=view.accounting.activeLimitMs||view.state.attempts>=view.accounting.attemptLimit});
 }

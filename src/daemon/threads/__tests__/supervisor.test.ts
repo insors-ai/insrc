@@ -47,7 +47,7 @@ import type { Worker } from 'node:worker_threads';
 const DOCS = 30;
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-supervisor-repo-')));
 const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
-const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(['admin', 'indexing']), local: directDispatch({}) });
+const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(['admin', 'indexing']), local: directDispatch({}), board: services.board });
 const shutdowns: string[] = [];
 const supervisor = new Supervisor({ services, router, shutdown: reason => { shutdowns.push(reason); } });
 let indexing: ReturnType<typeof startIndexingWorkers>;
@@ -90,7 +90,7 @@ before(async () => {
 	writeFileSync(join(REPO, 'src', 'a.ts'), 'export function alpha(): number { return 1; }\n');
 	await addRepo(db, { path: REPO, name: 'fixture', addedAt: new Date().toISOString(), status: 'pending' });
 
-	indexing = startIndexingWorkers(supervisor, services.indexingBlock);
+	indexing = startIndexingWorkers(supervisor, services.indexingBlock, services.board);
 	await indexing.ready;
 	await supervisor.start({ name: 'admin', cls: 'admin', script: 'admin-worker' });
 	watchSummaries();
@@ -105,6 +105,13 @@ after(async () => {
 });
 
 test('admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving', { timeout: 120_000 }, async () => {
+	// s4: each is on the status board's thread list under its role, and its replacement takes its place there.
+	const listed = (role: string) => services.board.snapshot().threads.filter(t => t.role === role).map(t => t.threadId);
+	const replacedOnBoard = (role: string, name: string, old: number) =>
+		until(() => !listed(role).includes(old) && listed(role).length === 1 && listed(role)[0] === threadOf(name), `the ${role} replacement listed, the old one gone`);
+	assert.deepEqual(listed('admin'), [threadOf('admin')]);
+	assert.deepEqual(listed('code-indexing'), [threadOf(CODE_INDEXING_WORKER)]);
+	assert.deepEqual(listed('document-summary'), [threadOf(SUMMARY_WORKER)]);
 	// The admin worker.
 	const admin = threadOf('admin')!;
 	const adminDeath = router.request('admin', TEST_EXIT_METHOD, null);
@@ -114,6 +121,7 @@ test('admin, code-indexing and summary workers killed in turn: in-flight request
 	const status = await ask('daemon.status');
 	assert.equal(status.error, undefined, 'daemon.status was answered, by the replacement');
 	assert.ok(threadOf('admin') !== undefined && threadOf('admin') !== admin, 'a new admin worker');
+	await replacedOnBoard('admin', 'admin', admin);
 
 	// The code-indexing worker.
 	const code = threadOf(CODE_INDEXING_WORKER)!;
@@ -123,6 +131,7 @@ test('admin, code-indexing and summary workers killed in turn: in-flight request
 	const stats = await ask('repo.stats', { repoPath: REPO });
 	assert.equal(stats.error, undefined, 'repo.stats waited for the new code-indexing worker');
 	assert.ok(threadOf(CODE_INDEXING_WORKER) !== undefined && threadOf(CODE_INDEXING_WORKER) !== code, 'a new code-indexing worker');
+	await replacedOnBoard('code-indexing', CODE_INDEXING_WORKER, code);
 	// The new code-indexing worker reached the summary worker over a new channel: a reindex is summarised.
 	await until(() => services.board.snapshot().indexing.idle, 'the restarted indexer idle');
 	const before = summarised.length;
@@ -136,6 +145,7 @@ test('admin, code-indexing and summary workers killed in turn: in-flight request
 	await until(() => summarised.length >= midSweep + 3, 'the next sweep under way');
 	pushToWorker(summary.port, TEST_EXIT_METHOD, null);
 	await until(() => threadOf(SUMMARY_WORKER) !== undefined && threadOf(SUMMARY_WORKER) !== summary.threadId, 'a new summary worker');
+	await replacedOnBoard('document-summary', SUMMARY_WORKER, summary.threadId);
 	watchSummaries();
 	assert.equal((await ask('repo.stats', {})).error, undefined, 'the code-indexing worker answered while the summary worker was replaced');
 	// The interrupted job failed and the lane went on: the lanes go idle, and the next sweep runs on the new worker.

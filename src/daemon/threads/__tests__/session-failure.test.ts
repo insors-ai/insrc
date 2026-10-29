@@ -37,7 +37,7 @@ import type { SessionPool } from '../session-pool.js';
 
 const classOf = (m: string): MethodClass | undefined => m.startsWith('test.') ? 'session' : methodClasses.classOf(m);
 const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
-const router = new Router({ classOf, registry: services.registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}) });
+const router = new Router({ classOf, registry: services.registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}), board: services.board });
 let pool: SessionPool | undefined;
 // The session pool's workers are supervised for errors and shutdown (s4).
 const supervisor = new Supervisor({ services, router, shutdown: () => {} });
@@ -148,6 +148,31 @@ test("session failure: session workers are still recreated on demand with s3's f
 	const second = threadOf(await ask('test.servingThread', null, F).done);
 	assert.notEqual(second, first, "the session's next request runs on a new worker");
 	assert.equal(supervisor.createdCount(), tracked + 1, 'and the new worker is tracked too');
+});
+
+test('s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)', { timeout: 60_000 }, async () => {
+	const listed = (role: string) => services.board.snapshot().threads.filter(t => t.role === role).map(t => t.threadId);
+	const G: SessionId = { label: 'mcp', pid: 9501 };
+	const H: SessionId = { label: 'mcp', pid: 9502 };
+	const g = threadOf(await ask('test.servingThread', null, G).done);
+	const h = threadOf(await ask('test.servingThread', null, H).done);
+	assert.ok(listed('session').includes(g) && listed('session').includes(h), 'both session threads are listed');
+	assert.deepEqual(services.board.snapshot().threads.find(t => t.threadId === g)?.session, G);
+	assert.match((await ask('test.order', { tag: 'crash', ms: 60_000, exitAfterMs: 100 }, G).done).error ?? '', /^session worker failed: /, 'its in-flight request fails');
+	await until(() => !listed('session').includes(g), "the exited session's thread leaves threads");
+	assert.equal(threadOf(await ask('test.servingThread', null, H).done), h, 'the other session keeps answering on its worker');
+	const g2 = threadOf(await ask('test.servingThread', null, G).done);
+	assert.notEqual(g2, g);
+	assert.ok(listed('session').includes(g2), "the session's next request's new worker is listed");
+
+	// The shared-state worker.
+	assert.deepEqual((await ask('chat.list', {}, H).done).result, { sessions: [] });
+	const shared = listed('shared-state');
+	assert.equal(shared.length, 1, 'the shared-state thread is listed');
+	await router.request('session', 'test.exit', null, { shared: true }).catch(() => {});
+	await until(() => !listed('shared-state').includes(shared[0]!), 'the exited shared-state thread leaves threads');
+	assert.deepEqual((await ask('chat.list', {}, H).done).result, { sessions: [] }, 'the next chat.list is answered');
+	await until(() => listed('shared-state').length === 1 && listed('shared-state')[0] !== shared[0], 'by a new shared-state thread, listed');
 });
 
 // Last: it closes the pool.

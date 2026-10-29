@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -315,3 +315,13 @@ Run at 2026-10-29T11:51:40.651Z on commit `bf60275a8`. Tests check: **passed**. 
 | `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 16 | 6.2 s |  |
 | `src/daemon/db/__tests__/session-entries.test.ts` | 0 | 9 | 5.2 s |  |
 | `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 10 | 1.8 s |  |
+
+## t17
+
+Run at 2026-10-29T11:57:57.836Z on commit `fceafd0ec`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: CM-S4-SOURCE: extend src/daemon/db/__tests__/session-service-isolation.test.ts and existing disposable service fixtures for real PostgreSQL/Redis data preservation and actual connection closure; unavailable prerequisites remain pending.**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Commit fceafd0ec; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/result.json and full-relevant-pass.tap: Node22 actual PostgreSQL 17.10 + Redis 7.4, 2 tests pass, zero fail/skip/TODO. Both-scope SQL/KV remove, real SDK close failure/retry, live observer drain, source preservation and same-ID recreation. Original startup/joined-attempt failures retained. SQL Server, foundation/provider and client prerequisites remain pending; shipped gates unchanged.

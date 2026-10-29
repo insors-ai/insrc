@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:51:40.651Z",
+    "updatedAt": "2026-10-29T11:57:57.836Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -74,6 +74,10 @@
       {
         "id": "t16",
         "passed": true
+      },
+      {
+        "id": "t17",
+        "passed": true
       }
     ],
     "summary": "S004 has internal Saved removal/recovery/state and private temporary removal receipts, overlay commit and owner-scoped cleanup state/retry. Public adapters and release admission remain unfinished and disabled.",
@@ -86,282 +90,331 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management-wire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-removal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/shared/connection-removal.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/removal-retirement.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/removal-retirement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-leases.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/pool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-cleanup.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-resources.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-entries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-resources.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5-first-validation.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/daemon-first-reporter-failure.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/local-sandbox-refusal.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/node22-relevant-pass.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/resolution.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/credential-generations.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/secrets.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/saved-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/saved-removal-restart.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-ledger.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-ledger.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-entries.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/session-owner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/session-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/connection-management-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/connection-session-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/draft-preparation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/probe-disposal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
       },
       {
         "target": {
           "file": "src/daemon/db/draft-test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T11:51:40.651Z"
+        "timestamp": "2026-10-29T11:57:57.836Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/first-redis-startup-failure.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:57:57.836Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/full-relevant-pass.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:57:57.836Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/joined-cleanup-assertion-failure.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:57:57.836Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/removal-live-pass.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:57:57.836Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/result.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:57:57.836Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-services.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:57:57.836Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/session-service-isolation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:57:57.836Z"
       }
     ],
-    "commit": "835667f4d"
+    "commit": "fceafd0ec"
   }
 }

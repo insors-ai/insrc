@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:51:40.651Z",
+    "updatedAt": "2026-10-29T11:57:57.836Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1655,6 +1655,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "fceafd0ec",
+        "ranAt": "2026-10-29T11:57:57.836Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-SOURCE: extend src/daemon/db/__tests__/session-service-isolation.test.ts and existing disposable service fixtures for real PostgreSQL/Redis data preservation and actual connection closure; unavailable prerequisites remain pending.",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Commit fceafd0ec; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t17/result.json and full-relevant-pass.tap: Node22 actual PostgreSQL 17.10 + Redis 7.4, 2 tests pass, zero fail/skip/TODO. Both-scope SQL/KV remove, real SDK close failure/retry, live observer drain, source preservation and same-ID recreation. Original startup/joined-attempt failures retained. SQL Server, foundation/provider and client prerequisites remain pending; shipped gates unchanged."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

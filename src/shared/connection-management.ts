@@ -62,6 +62,16 @@ export interface CommittedOutcome {
 export type MutationOutcome = { readonly status: 'committed'; readonly value: CommittedOutcome }
  | { readonly status: 'rejected'; readonly code: ManagementErrorCode; readonly message: string };
 export interface OperationStatusRequest { readonly ticket: OperationTicket }
+/** sc6 projections only; these fields never extend persisted sc2 receipts. */
+export interface RemovalState {
+ readonly key: ConnectionKey; readonly operationId: string;
+ readonly state: 'confirming' | 'removing' | 'busy' | 'conflict' | 'unknown' | 'removed-cleanup-pending' | 'removed';
+ readonly safeMessage?: string | undefined;
+ readonly credentialCleanup?: 'complete' | 'pending' | undefined;
+ readonly resourceCleanup?: 'complete' | 'pending' | undefined;
+}
+export type RemovalStateRequest = OperationStatusRequest;
+export type RemovalCleanupRetry = RemovalStateRequest;
 export type OperationStatus = { readonly status: 'committed'; readonly value: CommittedOutcome }
  | { readonly status: 'pending' | 'not-seen' | 'reconciliation-required' };
 export interface ActivationRetry { readonly key: ConnectionKey; readonly committedRevision: string }

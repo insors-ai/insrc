@@ -6,12 +6,49 @@ import ts from 'typescript';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseMutationRequest, parseOperationTicket, ManagementInputError, rejectManagementInput } from '../connection-management-wire.js';
-import type { MutationRequest, ManagementCapabilities, ManagementEnvelope, MemoryRowSource, SafeConnection } from '../connection-management.js';
+import { parseMutationRequest, parseOperationTicket, parseRemovalStateRequest, parseRemovalCleanupRetry, ManagementInputError, rejectManagementInput } from '../connection-management-wire.js';
+import type { MutationRequest, ManagementCapabilities, ManagementEnvelope, MemoryRowSource, SafeConnection, RemovalState, CommittedOutcome } from '../connection-management.js';
 import type { ConnectionsFile } from '../db-driver.js';
 
 export const ticket = { operationId:randomUUID(), lookupRoot:'/registered/root', scope:'saved' as const, connectionId:'fixture', mode:'create' as const, issuedAt:'2026-10-24T00:00:00.000Z', expiresAt:'2026-11-23T00:00:00.000Z', signature:'synthetic-signature' };
 const request: MutationRequest = { ticket, operationId:ticket.operationId, key:{repoRoot:ticket.lookupRoot,scope:ticket.scope,id:ticket.connectionId},mode:'create',publicPatch:{kind:'postgres',label:'fixture'},credentials:{url:{action:'replace',value:'synthetic'}} };
+
+test('CM-S4-INPUT: removal state and cleanup accept only a bounded exact remove ticket', () => {
+ const remove = {...ticket,mode:'remove' as const};
+ for (const parse of [parseRemovalStateRequest,parseRemovalCleanupRetry]) {
+  assert.deepEqual(parse({ticket:remove}),{ticket:remove});
+  assert.deepEqual(parse({ticket:{...remove,scope:'temporary'}}),{ticket:{...remove,scope:'temporary'}});
+  for (const bad of [null,[],{}, {ticket}, {ticket:{...remove,mode:'update'}},
+   {ticket:remove,key:request.key}, {ticket:remove,expectedRevision:'new'}, {ticket:remove,credentials:{}},
+   {ticket:{...remove,sourcePath:'secret-canary'}}, {ticket:{...remove,connectionId:'x'.repeat(16385)}},
+   {ticket:{...remove,expiresAt:remove.issuedAt}}, {ticket:remove,[Symbol('hidden')]:'secret-canary'},
+   {ticket:{...remove,[Symbol('hidden')]:'secret-canary'}}, Object.create({ticket:remove})]) {
+   assert.throws(()=>parse(bad),(e:unknown)=>e instanceof ManagementInputError && !e.message.includes('secret-canary'));
+  }
+  let getterCalls=0;
+  const accessor=Object.defineProperty({},'ticket',{enumerable:true,get:()=>{getterCalls++;return remove;}});
+  const ticketAccessor=Object.defineProperty({...remove},'signature',{enumerable:true,get:()=>{getterCalls++;return 'secret-canary';}});
+  assert.throws(()=>parse(accessor),ManagementInputError);
+  assert.throws(()=>parse({ticket:ticketAccessor}),ManagementInputError);
+  assert.equal(getterCalls,0);
+ }
+});
+
+test('CM-S4-INPUT: existing remove target validation and persisted outcome shape stay unchanged', () => {
+ const remove={...ticket,mode:'remove' as const};
+ const mutation:MutationRequest={ticket:remove,operationId:remove.operationId,key:request.key,mode:'remove',expectedRevision:'r1'};
+ assert.deepEqual(parseMutationRequest(mutation),mutation);
+ for(const bad of [{...mutation,key:{...request.key,id:'other'}},{...mutation,key:{...request.key,scope:'temporary'}},
+  {...mutation,key:{...request.key,repoRoot:'/other'}},{...mutation,expectedRevision:undefined},
+  {...mutation,publicPatch:{}},{...mutation,credentials:{}}]) assert.throws(()=>parseMutationRequest(bad),ManagementInputError);
+ const outcome:CommittedOutcome={operationId:remove.operationId,revision:'receipt-revision',registration:'removed',activation:'not-applicable',credentialCleanup:'pending'};
+ const state:RemovalState={key:request.key,operationId:remove.operationId,state:'removed-cleanup-pending',credentialCleanup:'pending',resourceCleanup:'complete'};
+ assert.equal(state.resourceCleanup,'complete');
+ assert.deepEqual(Object.keys(outcome).sort(),['activation','credentialCleanup','operationId','registration','revision']);
+ // @ts-expect-error Runtime cleanup is sc6 state, never a persisted sc2 outcome key.
+ const invalid:CommittedOutcome={...outcome,resourceCleanup:'pending'};
+ void invalid;
+});
 
 test('CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values', () => {
  assert.deepEqual(parseMutationRequest(request),request);

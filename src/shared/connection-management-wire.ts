@@ -1,5 +1,5 @@
 /** Structural wire validation only. Signature, registry rights and driver fields are daemon gates. */
-import type { ConnectionKey, CredentialPatch, MutationRequest, OperationTicket, DraftTestRequest, DraftTestResult, TestCancellation, SessionOpen, SessionResume, SessionDataAttach, SessionDelegate } from './connection-management.js';
+import type { ConnectionKey, CredentialPatch, MutationRequest, OperationTicket, DraftTestRequest, DraftTestResult, TestCancellation, SessionOpen, SessionResume, SessionDataAttach, SessionDelegate, RemovalStateRequest } from './connection-management.js';
 
 export class ManagementInputError extends Error {
  readonly code: 'invalid-input' | 'operation-mismatch';
@@ -137,6 +137,20 @@ export function parseOperationTicket(value: unknown): OperationTicket {
  if (Date.parse(o['expiresAt'] as string) <= Date.parse(o['issuedAt'] as string)) throw new ManagementInputError();
  return value as OperationTicket;
 }
+/** Shared ticket-only sc6 request. Authentication/expiry and owner/root gates stay daemon-side. */
+export function parseRemovalStateRequest(value: unknown): RemovalStateRequest {
+ const o = object(value);
+ const dataOnly = (record: Record<string, unknown>): void => {
+  if (Object.getOwnPropertySymbols(record).length || Object.values(Object.getOwnPropertyDescriptors(record)).some(d => !d.enumerable || !Object.hasOwn(d,'value'))) throw new ManagementInputError();
+ };
+ dataOnly(o); keys(o,['ticket']);
+ const rawTicket = object(o['ticket']); dataOnly(rawTicket);
+ const ticket = parseOperationTicket(rawTicket);
+ if (ticket.mode !== 'remove') throw new ManagementInputError('operation-mismatch');
+ assertDraftTestJson(o);
+ return { ticket };
+}
+export const parseRemovalCleanupRetry = parseRemovalStateRequest;
 export function parseCredentialPatch(value: unknown): CredentialPatch {
  const o = object(value);
  if (o['action'] === 'replace') { keys(o, ['action','value']); if (typeof o['value'] !== 'string') throw new ManagementInputError(); }

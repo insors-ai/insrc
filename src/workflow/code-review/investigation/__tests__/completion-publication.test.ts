@@ -1,19 +1,11 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { completedInvestigationFixture } from './completion-fixtures.js';
+import { publicationFixture } from './completion-fixtures.js';
 import { prepareCompletionPublication,readCompletionPublication,withCompletionPublication } from '../completion-publication.js';
 import { RecoveryStore } from '../recovery-store.js';
 import { ledgerDigest } from '../ledger-identity.js';
-import type { PrepareCompletionInput } from '../completion-publication.js';
 
-export async function publicationFixture(){
- const f=await completedInvestigationFixture();
- const input:PrepareCompletionInput={context:f.context,repoPath:f.repo,epicHash:'c32aa60534232f36',storyId:'s1',
-  buildRecord:{meta:{revision:1},body:{commit:f.basis.subject.build.sourceCommit}},createdAt:'2026-10-29T12:00:00Z',model:'fixture',
-  sourceMode:'source-only',expectedRevision:null,expectedHeadDigest:null};
- return {...f,input};
-}
 test('Immutable publication intent binds candidate coverage target and expected revision',async()=>{
  const f=await publicationFixture();try{
   const p=await prepareCompletionPublication(f.store,f.leaseId,1,f.input);

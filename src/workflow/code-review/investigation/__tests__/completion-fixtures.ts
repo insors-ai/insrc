@@ -31,3 +31,12 @@ export async function completedInvestigationFixture() {
   return {...f, leaseId, context, view:f.store.replay()};
  } catch(error) { f.cleanup(); throw error; }
 }
+
+import type { PrepareCompletionInput } from '../completion-publication.js';
+export async function publicationFixture(){
+ const f=await completedInvestigationFixture();
+ const input:PrepareCompletionInput={context:f.context,repoPath:f.repo,epicHash:'c32aa60534232f36',storyId:'s1',
+  buildRecord:{meta:{revision:1},body:{commit:f.basis.subject.build.sourceCommit}},createdAt:'2026-10-29T12:00:00Z',model:'fixture',
+  sourceMode:'source-only',expectedRevision:null,expectedHeadDigest:null};
+ return {...f,input};
+}

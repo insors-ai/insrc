@@ -107,13 +107,16 @@ after(async () => {
 test("ac1: session B is answered on its own thread while session A's worker spins", { timeout: 60_000 }, async () => {
 	const A = { label: 'mcp', pid: 7001 };
 	const B = { label: 'mcp', pid: 7002 };
-	const spinning = once('test.spin', { ms: 4_000 }, A);
+	let aEnded = false;
+	const spinning = once('test.spin', { ms: 5_000 }, A).then(r => { aEnded = true; return r; });
 	await new Promise(r => setTimeout(r, 500));   // A's worker is now spinning its CPU
 	const t0 = Date.now();
 	const b = await once('test.servingThread', null, B);
 	const elapsed = Date.now() - t0;
+	const bBeforeA = !aEnded;
 	const a = await spinning;
-	assert.ok(elapsed < 2_000, `B answered in ${elapsed} ms, while A's worker still spun`);
+	// The LLD's ac1: B is answered before A's spin ends (B's first request also starts its worker, so no fixed bound).
+	assert.ok(bBeforeA, `B answered in ${elapsed} ms, after A's 5 s spin had ended`);
 	assert.ok(threadOf(b) > 0 && threadOf(a) > 0, 'both on worker threads');
 	assert.notEqual(threadOf(b), threadOf(a), 'on different threads');
 });

@@ -39,3 +39,19 @@ test('Grouped continuation execution, bounded retries and cancellation',async()=
  }}});assert.equal(paused.next.kind,'pause');assert.equal(paused.next.reason,'cancelled');assert.equal(paused.lastAcceptedSequence,1);assert.equal(cancel.states.at(-1)?.consumedActiveMs,1000);
  const bounded=twoBlockFixture();let failures=0;const failed=await runInvestigationContinuation(bounded.turn,{...bounded.context,backend:{...bounded.context.backend,execute:async()=>{failures++;throw new InvestigationTransientError();}}});assert.equal(failures,2);assert.equal(failed.next.kind,'pause');
 });
+
+test('Continuation mode, deadline and final-reply refusals',async()=>{
+ const yieldOnce=twoBlockFixture();
+ const accepted=await runInvestigationContinuation(yieldOnce.turn,{...yieldOnce.context,backend:{...yieldOnce.context.backend,qualification:{...yieldOnce.context.backend.qualification,progressMode:'block-yield'},execute:async(turn,tools)=>{const r=await tools.progress(progressFor(turn,'block-1',0));return finalReply(turn,[r.progressId],1);}}});assert.equal(accepted.lastAcceptedSequence,1);
+ const yieldTwice=twoBlockFixture();
+ const bounded=await runInvestigationContinuation(yieldTwice.turn,{...yieldTwice.context,backend:{...yieldTwice.context.backend,qualification:{...yieldTwice.context.backend.qualification,progressMode:'block-yield'},execute:async(turn,tools)=>{await tools.progress(progressFor(turn,'block-1',0));await tools.progress(progressFor(turn,'block-2',1));throw Error('unreachable');}}});assert.equal(bounded.next.kind,'pause');assert.equal(bounded.next.reason,'unsupported-backend');assert.equal(bounded.lastAcceptedSequence,1);
+ const unsupported=twoBlockFixture();let dispatches=0;
+ await assert.rejects(()=>runInvestigationContinuation(unsupported.turn,{...unsupported.context,backend:{...unsupported.context.backend,qualification:{...unsupported.context.backend.qualification,readOnly:false},execute:async()=>{dispatches++;throw Error('unreachable');}}}),{code:'unsupported-backend'});assert.equal(dispatches,0);
+ const expired=twoBlockFixture(),short={...expired.turn,limits:{...expired.turn.limits,attemptMs:30}};
+ const timed=await runInvestigationContinuation({...short,requestDigest:investigationRequestDigest(short,expired.context.seed)},{...expired.context,now:()=>performance.now(),backend:{...expired.context.backend,execute:async()=>new Promise(()=>{})}});assert.equal(timed.next.kind,'pause');assert.equal(timed.next.reason,'budget-refused');assert.ok(expired.states.at(-1)!.consumedActiveMs>0);
+ for(const property of ['coverageUpdates','findings','next'] as const){
+  const f=twoBlockFixture();let calls=0;
+  const bad=await runInvestigationContinuation(f.turn,{...f.context,backend:{...f.context.backend,execute:async turn=>{calls++;return {...finalReply(turn,[],0),[property]:property==='next'?{kind:'approved',remainingWork:[],reason:'forged completion'}:[{}]} as InvestigationReplyV1;}}});
+  assert.equal(bad.next.kind,'pause');assert.equal(bad.next.reason,'invalid-progress');assert.equal(calls,1);
+ }
+});

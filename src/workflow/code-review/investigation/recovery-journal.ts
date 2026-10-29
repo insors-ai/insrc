@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { constants, openSync, closeSync, fsyncSync, fstatSync, readFileSync, writeFileSync, writeSync, mkdirSync, lstatSync, realpathSync, linkSync, unlinkSync, ftruncateSync } from 'node:fs';
+import { constants, openSync, closeSync, fsyncSync, fstatSync, readFileSync, writeFileSync, writeSync, mkdirSync, lstatSync, readdirSync, realpathSync, linkSync, unlinkSync, ftruncateSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { canonicalJson } from '../../../design/corpus/canonical.js';
@@ -42,6 +42,10 @@ export class RecoveryJournal {
    if (index >= 2 && (s.mode & 0o077) !== 0) throw new RecoveryError('invalid-input','Recovery directory is not private.');
   }
   this.directory = join(realpathSync(repo), RECOVERY_NAMESPACE, runId);
+  // A process can die after link() but before unlink(temp). Remove only known installation temporaries; immutable blobs remain.
+  const blobs=join(this.directory,'blobs');
+  for(const name of readdirSync(blobs)){if(!/^temp-[a-f0-9-]{36}$/.test(name))continue;const temporary=join(blobs,name);if(!lstatSync(temporary).isFile()||lstatSync(temporary).isSymbolicLink())throw new RecoveryError('corrupt','Unsafe installation temporary.');options.assertProcessOwner();unlinkSync(temporary);}
+  syncDirectory(blobs);
   this.queue = queues.get(this.directory) ?? { tail: Promise.resolve() }; queues.set(this.directory,this.queue);
  }
  async exclusive<T>(operation: () => T | Promise<T>): Promise<T> {

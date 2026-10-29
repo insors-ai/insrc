@@ -9,7 +9,7 @@ import type { RecoveryJournalOptions } from './recovery-journal.js';
 import { replayRecovery, applyRecoveryBlock, validateRecoveryManifest } from './recovery-replay.js';
 import type { RecoveryView, RecoveryControlFold } from './recovery-replay.js';
 import { RecoveryError, recoveryValue } from './recovery-types.js';
-import type { RecoveryManifest } from './recovery-types.js';
+import type { RecoveryCompatibility, RecoveryManifest } from './recovery-types.js';
 import type { ReviewRuntimePortsV1 } from './types.js';
 import type { InvestigationTurnV1, BlockProgressTransitionV1 } from './continuation-types.js';
 import { ledgerDigest } from './ledger-identity.js';
@@ -19,6 +19,7 @@ export interface RecoveryStoreOptions extends RecoveryJournalOptions {
  readonly readEvidence: ReviewRuntimePortsV1['readEvidence'];
  readonly controlFold?: RecoveryControlFold | undefined;
  readonly processEpoch: string;
+ readonly currentCompatibility: RecoveryCompatibility;
  readonly usageWriter?: RecoveryUsageWriter | undefined;
  readonly wallNow?: (()=>number) | undefined;
 }

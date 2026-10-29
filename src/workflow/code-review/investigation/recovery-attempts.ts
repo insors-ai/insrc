@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { performance } from 'node:perf_hooks';
-import { RecoveryError, recoveryId, recoveryDigest, recoveryInteger, recoveryRecord, recoveryValue } from './recovery-types.js';
+import { RecoveryError, recoveryId, recoveryLabel, recoveryDigest, recoveryInteger, recoveryRecord, recoveryValue } from './recovery-types.js';
 import type { RecoveryEvent } from './recovery-types.js';
 import type { RecoveryView } from './recovery-replay.js';
 import type { InvestigationBackend } from './continuation-types.js';
@@ -25,14 +25,14 @@ export function foldRecoveryAttempt(view:RecoveryView,event:RecoveryEvent,raw:un
  if(!owner||owner.leaseId!==p['leaseId']||owner.generation!==event.generation||wall<view.lifecycle.lastWallMs||Date.parse(owner.expiresAt)<=wall)throw new RecoveryError('corrupt','Foreign attempt owner.');
  let accounting=view.accounting;
  if(event.kind==='attempt-issued'){
-  const attemptId=p['attemptId'],requestDigest=p['requestDigest'],reservedMs=p['reservedMs'];recoveryId(attemptId);recoveryDigest(requestDigest);recoveryInteger(reservedMs,1);
+  const attemptId=p['attemptId'],requestDigest=p['requestDigest'],reservedMs=p['reservedMs'];recoveryLabel(attemptId);recoveryDigest(requestDigest);recoveryInteger(reservedMs,1);
   if(view.lifecycle.state!=='running'||accounting.attempts.some(a=>a.attemptId===attemptId)||accounting.attempts.some(a=>a.state==='issued'||a.state==='partially-accepted')
    ||reservedMs>Math.min(300000,view.manifest.policy.providerLimitMs)||view.state.consumedActiveMs+reservedMs>accounting.activeLimitMs||accounting.attempts.length>=accounting.attemptLimit)throw new RecoveryError('budget-exhausted','Attempt reservation refused.');
   const priorAttemptId=accounting.attempts.at(-1)?.attemptId??null;
   if(p['priorAttemptId']!==priorAttemptId)throw new RecoveryError('corrupt','Missing retry provenance.');
   accounting={...accounting,attempts:[...accounting.attempts,{attemptId,requestDigest,generation:event.generation,state:'issued',reservedMs,elapsedMs:null,priorAttemptId,acceptedSequence:null,usageReceipt:null}]};
  }else if(event.kind==='attempt-settled'){
-  const attemptId=p['attemptId'],elapsedMs=p['elapsedMs'],state=p['state'];recoveryId(attemptId);recoveryInteger(elapsedMs);
+  const attemptId=p['attemptId'],elapsedMs=p['elapsedMs'],state=p['state'];recoveryLabel(attemptId);recoveryInteger(elapsedMs);
   const old=accounting.attempts.find(a=>a.attemptId===attemptId);
   if(!old||old.generation!==event.generation||!['issued','partially-accepted'].includes(old.state)||!['accepted','failed','cancelled'].includes(String(state))||elapsedMs>old.reservedMs)throw new RecoveryError('corrupt','Invalid attempt settlement.');
   accounting={...accounting,attempts:accounting.attempts.map(a=>a===old?{...a,state:state as RecoveryAttempt['state'],elapsedMs}:a)};

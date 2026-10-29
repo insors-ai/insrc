@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { validateAttribution } from '../../usage/attribution.js';
-import { RecoveryError, recoveryId, recoveryInteger, recoveryRecord, recoveryValue } from './recovery-types.js';
+import { RecoveryError, recoveryId, recoveryLabel, recoveryInteger, recoveryRecord, recoveryValue } from './recovery-types.js';
 import { ledgerEqual } from './ledger-identity.js';
 import type { RecoveryEvent } from './recovery-types.js';
 import type { RecoveryView } from './recovery-replay.js';
@@ -12,7 +12,7 @@ export interface RecoveryUsageWriter {
 }
 const counterKeys=['inputUncachedTokens','cacheReadTokens','cacheWriteTokens','outputTokens','reasoningTokens'].sort().join(',');
 export function validateRecoveryUsage(view:RecoveryView,raw:ReviewUsageObservationV1):ReviewUsageObservationV1{
- const v=recoveryValue(raw),build=view.manifest.basis.subject.build.artifactId;recoveryId(v.observationId);
+ const v=recoveryValue(raw),build=view.manifest.basis.subject.build.artifactId;recoveryLabel(v.observationId);
  if(v.runId!==view.manifest.runId||!view.accounting.attempts.some(a=>a.attemptId===v.attemptId)||v.activity!=='code-review'||v.chargedArtifactId!==build||v.subjectArtifactId!==build
   ||validateAttribution({activity:v.activity,chargedArtifactId:build,subjectArtifactId:build,storyBuildId:build}).length
   ||!['reported','estimated','unavailable'].includes(v.quality)||!['model-call','invocation-total','cumulative-snapshot'].includes(v.granularity)
@@ -35,7 +35,7 @@ export function foldRecoveryUsage(view:RecoveryView,event:RecoveryEvent,raw:unkn
   if(old){if(!ledgerEqual(old.observation,observation))throw new RecoveryError('corrupt','Conflicting usage identity.');}
   else usage.push({observation,state:'pending',receiptRef:null});
  }else if(event.kind==='usage-recorded'){
-  const id=p['observationId'],receipt=p['receiptRef'];recoveryId(id);
+  const id=p['observationId'],receipt=p['receiptRef'];recoveryLabel(id);
   if(typeof receipt!=='string'||!receipt)throw new RecoveryError('corrupt','Missing usage receipt.');
   const old=usage.find(u=>u.observation.observationId===id);if(!old||old.state==='recorded'&&old.receiptRef!==receipt)throw new RecoveryError('corrupt','Conflicting usage receipt.');
   usage=usage.map(u=>u===old?{...u,state:'recorded',receiptRef:receipt}:u);

@@ -5,7 +5,7 @@ import { appendImpactRequirements, validateLedgerBasis } from './ledger-catalog.
 import { applyReviewLedgerDelta, initializeReviewLedger, validateReviewLedger } from './ledger.js';
 import { evidenceFromReceipt } from './ledger-evidence.js';
 import { ledgerDigest, ledgerEqual } from './ledger-identity.js';
-import { RecoveryError, recoveryValue, recoveryId, recoveryDigest, recoveryVersion } from './recovery-types.js';
+import { RecoveryError, recoveryValue, recoveryId, recoveryLabel, recoveryDigest, recoveryVersion } from './recovery-types.js';
 import type { RecoveryManifest, RecoveryEvent } from './recovery-types.js';
 import type { BlockProgressTransitionV1, InvestigationState } from './continuation-types.js';
 import type { LedgerBasis, TrustedInspectionReceipt } from './ledger-types.js';
@@ -32,7 +32,7 @@ export function applyRecoveryBlock(view: RecoveryView,t: BlockProgressTransition
   ||t.payloadDigest!==ledgerDigest(p)||t.predecessorCheckpoint!==view.state.checkpoint||p.expectedSequence!==view.state.sequence
   ||view.state.accepted.some(a=>a.progress.progressId===p.progressId)||!p.notes?.trim()||p.notes.length>16000
   ||!['reviewed','needs-followup','unverified'].includes(p.disposition))throw new RecoveryError('corrupt','Invalid accepted progress binding.');
- recoveryId(p.progressId);recoveryId(p.attemptId);
+ recoveryLabel(p.progressId);recoveryLabel(p.attemptId);
  const issued=view.accounting.attempts.find(a=>a.attemptId===p.attemptId);if(!issued||issued.generation!==p.generation||!['issued','partially-accepted'].includes(issued.state))throw new RecoveryError('corrupt','Progress is not from an issued live attempt.');
  const basis=read(t.basisRef) as LedgerBasis;validateLedgerBasis(basis);
  if(!basis.subject.packets.flatMap(packet=>packet.blocks).some(b=>b.blockId===p.blockId))throw new RecoveryError('corrupt','Foreign packet block.');

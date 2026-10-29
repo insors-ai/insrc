@@ -63,3 +63,8 @@ export function recoveryRecord(value: unknown): Record<string, unknown> {
 export function recoveryVersion(value: unknown): asserts value is 1 {
  if (value !== 1) throw new RecoveryError('unsupported', 'Unsupported recovery version.');
 }
+
+/** Opaque protocol identity; unlike run IDs, this is never a filesystem component. */
+export function recoveryLabel(value:unknown):asserts value is string {
+ if(typeof value!=="string"||!value.trim()||value.length>512||value.includes("\0"))throw new RecoveryError("invalid-input","Invalid recovery record identity.");
+}

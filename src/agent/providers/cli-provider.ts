@@ -63,6 +63,7 @@ import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structure
 import { ModelResponseShapeError } from './model-call-error.js';
 import { InvestigationQualificationError } from './investigation-session.js';
 import { runClaudeInvestigationSession } from './claude-investigation-session.js';
+import { runCodexInvestigationSession } from './codex-investigation-session.js';
 
 const log = getLogger('cli-provider');
 
@@ -457,10 +458,12 @@ export class CliProvider implements LLMProvider {
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
 		if (opts.investigationBinding !== undefined) {
-			if (this.kind !== 'claude') throw new InvestigationQualificationError('Native investigation adapter is not installed; broad review fallback is forbidden.');
-			return await runClaudeInvestigationSession({binding:opts.investigationBinding,prompt,schema,opts,binaryPath:resolveBin(this.binPath),modelArgs:this.modelArgs(),profile:this.getReviewBudgetProfile('reviewer-session'),
+			if (this.kind === 'claude') return await runClaudeInvestigationSession({binding:opts.investigationBinding,prompt,schema,opts,binaryPath:resolveBin(this.binPath),modelArgs:this.modelArgs(),profile:this.getReviewBudgetProfile('reviewer-session'),
 				invoke:async(args,text,execution)=>{const {envelope}=await this.runClaude(args,text,{cwd:execution.cwd,qualifiedBinPath:execution.binaryPath,timeoutMs:execution.timeoutMs,stallMs:execution.stallMs,signal:execution.signal,env:execution.env,nativeInvestigation:true,reviewScoped:true});
 					if(envelope.is_error||envelope.structured_output===undefined)throw new InvestigationQualificationError('Claude investigation returned no accepted structured output');return envelope.structured_output;}}) as T;
+			return await runCodexInvestigationSession({binding:opts.investigationBinding,prompt,schema,opts,binaryPath:resolveBin(this.binPath),modelArgs:this.modelArgs(),profile:this.getReviewBudgetProfile('reviewer-session'),
+				invoke:async(args,text,execution)=>{const {agentText}=await this.runCodex(args,text,{cwd:execution.cwd,qualifiedBinPath:execution.binaryPath,timeoutMs:execution.timeoutMs,stallMs:execution.stallMs,signal:execution.signal,env:execution.env,nativeInvestigation:true,reviewScoped:true});
+					if(agentText===undefined)throw new ModelResponseShapeError('review-answer-invalid');let parsed:unknown;try{parsed=JSON.parse(agentText);}catch{throw new ModelResponseShapeError('review-answer-invalid');}return codexReply(schema,parsed,'Codex investigation reply');}}) as T;
 		}
 		const startedAt = Date.now();
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
@@ -609,7 +612,7 @@ export class CliProvider implements LLMProvider {
 		const stall = exec?.stallMs !== undefined
 			? { ms: exec.stallMs, started: () => false, silence: true }
 			: exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
-		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal);
+		const out = await runSubprocess(exec?.qualifiedBinPath??this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal,exec?.env);
 		if (out.stalled === true) {
 			throw new CliStallError('codex', stall?.ms ?? this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
 		}

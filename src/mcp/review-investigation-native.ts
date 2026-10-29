@@ -36,12 +36,14 @@ export async function startNativeReviewBroker(cwd:string,binding:ScopedReviewBin
    }catch{socket.end(`${JSON.stringify({ok:false,error:'Scoped review operation refused.'})}\n`);}})();
   });
  });
+ let createdBinding=false;
  try{
   await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(socketPath,()=>{server.removeListener('error',reject);resolve();});});chmodSync(socketPath,0o600);
   const config:NativeReviewBridgeConfig={version:1,socket:socketPath,binding},fd=openSync(bindingPath,constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);
+  createdBinding=true;
   try{writeFileSync(fd,JSON.stringify(config));}finally{closeSync(fd);}
   return {bindingPath,close:async()=>{for(const c of clients)c.destroy();await new Promise<void>(resolve=>server.close(()=>resolve()));try{unlinkSync(bindingPath);}catch{/* Private runtime can be retained after a crash. */}}};
- }catch(cause){for(const c of clients)c.destroy();await new Promise<void>(resolve=>server.close(()=>resolve()));throw cause;}
+ }catch(cause){for(const c of clients)c.destroy();await new Promise<void>(resolve=>server.close(()=>resolve()));if(createdBinding)try{unlinkSync(bindingPath);}catch{/* Private failed temporary is never acceptance authority. */}throw cause;}
 }
 export function forwardNativeReviewCommand(config:NativeReviewBridgeConfig,command:unknown):Promise<unknown>{
  return new Promise((resolve,reject)=>{

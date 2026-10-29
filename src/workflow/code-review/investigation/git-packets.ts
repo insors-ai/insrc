@@ -1,4 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { isInvestigationRuntimePath } from '../../../shared/review-runtime-paths.js';
 import { TextDecoder } from 'node:util';
 import { runGitBinary, decodeObject, SourceReaderError } from '../../../design/corpus/sources/git-reader.js';
 import type { BinaryGitRunner } from '../../../design/corpus/sources/git-reader.js';
@@ -94,6 +95,8 @@ export async function readCommitPacket(reader: ReviewGitReader, commitId: string
  const files = rawChanges(await reader.command(['diff-tree', '--no-commit-id', '--raw', '-z', '-r', '--no-abbrev', '--ignore-submodules=none', '-M', parentId, commitId, '--']), commitId.length);
  const blocks: ReviewBlock[] = [];
  for (const file of files) {
+  const runtime=[file.oldPath,file.newPath].filter((path):path is string=>path!==null).map(isInvestigationRuntimePath);
+  if(runtime.some(Boolean)){if(runtime.some(value=>!value))throw new SubjectPreparationError('unsupported-change','Rename crosses private runtime boundary.');continue;}
   for (const oid of new Set([file.oldBlob, file.newBlob])) if (oid) await reader.object(oid, 'blob');
   const base = { oldPath: file.oldPath, newPath: file.newPath, oldBlob: file.oldBlob, newBlob: file.newBlob };
   const add = (kind: ReviewBlock['kind'], oldLines: ReviewBlock['oldLines'], newLines: ReviewBlock['newLines'], material: string): void => {

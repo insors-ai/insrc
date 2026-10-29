@@ -1,4 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { isInvestigationRuntimePath } from '../../../shared/review-runtime-paths.js';
 import { TextDecoder } from 'node:util';
 import { hashBytes } from '../../../design/corpus/canonical.js';
 import { treeEntry } from '../../../design/corpus/sources/git-reader.js';
@@ -30,7 +31,7 @@ function parseReference(value: string): ReviewSourceReference {
  return r as unknown as ReviewSourceReference;
 }
 async function contextBlob(reader: ReviewGitReader, subject: ReviewSubjectV1, path: string): Promise<string> {
- assertRepoPath(path); const segments = path.split('/');
+ assertRepoPath(path); if(isInvestigationRuntimePath(path))throw new SubjectPreparationError('invalid-input','Private review runtime is not source context.'); const segments = path.split('/');
  if (segments.length > 64) throw new SubjectPreparationError('resource-limit', 'Context path is too deep.');
  let tree = subject.contextTree;
  for (const [index, name] of segments.entries()) {

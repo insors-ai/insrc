@@ -25,3 +25,6 @@ __pycache__/
 .insrc/config.json
 # the write journal is a local crash-recovery file, never committed
 .insrc/journal/
+
+# Private per-block review recovery (never workflow artifacts or source)
+.insrc/review-runs/investigation-v1/

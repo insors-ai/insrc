@@ -39,7 +39,7 @@ export interface RecoveryEvent {
  readonly runId: string; readonly subjectDigest: string; readonly policyDigest: string;
  readonly generation: number; readonly kind: RecoveryEventKind; readonly payloadRef: string; readonly digest: string;
 }
-export const RECOVERY_NAMESPACE = '.insrc/review-runs/investigation-v1';
+export { INVESTIGATION_RUNTIME_PATH as RECOVERY_NAMESPACE } from '../../../shared/review-runtime-paths.js';
 export const RECOVERY_LIMITS = Object.freeze({ valueBytes: 1024 * 1024, journalBytes: 64 * 1024 * 1024, events: 100000 });
 export function recoveryId(value: unknown): asserts value is string {
  if (typeof value !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value))

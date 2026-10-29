@@ -92,7 +92,7 @@ test('the method-class module loads on a worker without importing a handler modu
 	assert.ok(imports.length > 0 && imports.every(m => m[1] !== undefined), `only type imports: ${imports.map(m => m[0]).join(' | ')}`);
 	assert.doesNotMatch(src, /import\(/, 'no dynamic import');
 
-	const worker = new Worker(join(HERE, 'helpers', 'method-class-worker.ts'));
+	const worker = new Worker(join(HERE, 'helpers', 'method-class-worker-bootstrap.mjs'));
 	const reply = await new Promise<unknown>((resolve, reject) => { worker.once('message', resolve); worker.once('error', reject); });
 	await worker.terminate();
 	assert.deepEqual(reply, { status: 'admin', reindex: 'indexing', step: 'session', entries: methodClasses.entries().length });

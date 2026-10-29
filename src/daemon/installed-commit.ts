@@ -48,3 +48,13 @@ export function readInstalledCommit(root: string = DAEMON_ROOT, deps: { exec?: E
     return ''; // non-git/missing root, git ENOENT, or non-zero exit → undeterminable
   }
 }
+
+/** Read-only integrity check of this daemon installation (not a project Git
+ * operation). Untracked source or a failed comparison cannot qualify a build. */
+export function installedSourceMatches(root:string,commit:string,paths:readonly string[],deps:{exec?:ExecFn}={}):boolean{
+ const exec=deps.exec??((cmd,args)=>execFileSync(cmd,args as string[],{encoding:'utf8',timeout:10000,maxBuffer:1024*1024}));
+ try{
+  if(exec('git',['-C',root,'ls-files','--others','--exclude-standard','--',...paths]).trim())return false;
+  exec('git',['-C',root,'diff','--quiet',commit,'--',...paths]);return true;
+ }catch{return false;}
+}

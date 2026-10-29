@@ -157,3 +157,33 @@ call counts are diagnostic fixture metrics. Unknown real model calls, tokens,
 cloud latency, recall, default quality and savings stay null. There is no live
 model invocation or automatic default-selection decision in this evaluator.
 Even a passing comparison requires all adoption/qualification/approval gates.
+
+## Installation and verification matrix
+
+The S6 matrix covers the following partitions with deterministic fixtures:
+
+| Partition | Verification |
+| --- | --- |
+| Daemon/controller × source/indexed × planned/planless | Shared canonical subject, evidence, checkpoint, status and publication path |
+| New/legacy capability and schema mismatch | Explicit refusal, no legacy or HEAD fallback |
+| Scope attribution and index gaps | Approved parent/block proofs; missing/partial caller mapping remains required work |
+| Native Claude/Codex | Private MCP catalogue, multiple ACKs, cancellation/stall/final-reply checks; fixtures do not certify installed binaries |
+| Concurrent/repeated requests | One process-wide provider lane, coalesced resumes, idempotent start/checkpoint replay |
+| Crash/reconnect | SIGKILL after ACK and canonical head; retained progress and frozen publication recovery without duplicate judgment |
+| Rollback and predecessor installation order | Active attempt drain, preserved status/cancel/usage, unchanged legacy/design routes and stale-state refusal |
+| Comparison evidence | Independent canonical oracle approval, all cases/defects/coverage retained, unknown real usage and savings null |
+
+Installed metadata was inspected on 2026-10-29: Claude Code `2.1.310` and Codex
+CLI `0.164.0`. Neither is certified for investigation by this inspection.
+Independent installed-probe evidence is absent and
+`AMD-8315a11f29fd2812-1` remains pending, so opt-in stays closed and legacy stays
+the default. A Codex npm launcher certificate must additionally pin the selected
+Node interpreter, package metadata and resolved native Rust executable; a
+launcher-only fingerprint is refused. Unknown script layouts remain unsupported.
+
+Focused test logs, the production build log and machine-specific installed
+image diagnostics are retained in `/tmp` and referenced by the S6 BUILD/TESTS
+records. The approved sequence companion remains accurate: qualification and
+runtime-image checks remain inside its daemon-service/reviewer boundary.
+The final independent code review follows the last task validation so it binds
+the completed BUILD; BUILD completion still requires an explicit human approval.

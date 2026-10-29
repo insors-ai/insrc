@@ -1,6 +1,7 @@
+import {inspectInstalledInvestigation,assertInstalledImagesPinned} from '../agent/providers/native-investigation-installation.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { z } from 'zod';
-import { execFileSync } from 'node:child_process';
+import { installedSourceMatches } from './installed-commit.js';
 import { checkIntegrity } from '../workflow/artifact-core/lifecycle.js';
 import { decodeArtifactHead } from '../workflow/artifact-core/decode.js';
 import { constants,openSync,closeSync,readFileSync,fstatSync,readdirSync,realpathSync } from 'node:fs';
@@ -52,7 +53,7 @@ export function investigationSourceDigest(root=fileURLToPath(new URL('../../',im
  const walk=(path:string)=>{for(const e of readdirSync(join(root,path),{withFileTypes:true})){const file=`${path}/${e.name}`;if(e.isSymbolicLink())refuse('Engine source manifest contains a symlink');if(e.isDirectory()){if(e.name!=='__tests__')walk(file);}else if(e.isFile()&&e.name.endsWith('.ts'))files.push(file);}};
  for(const path of ['src/workflow/code-review/investigation','src/workflow/review-pipeline','src/workflow/artifact-core'])walk(path);
  for(const path of ['src/daemon','src/shared','src/agent/providers'])for(const e of readdirSync(join(root,path),{withFileTypes:true}))if(e.isFile()&&e.name.endsWith('.ts')&&(e.name.includes('investigation')||e.name.includes('review')||e.name==='cli-provider.ts'))files.push(`${path}/${e.name}`);
- files.push('package-lock.json','src/prompts/steering-block.md','src/daemon/handler-runtime.ts','src/daemon/steps/code-review-step/handler.ts','src/daemon/threads/method-class.ts','src/mcp/server.ts','src/mcp/review-investigation-bridge.ts','src/mcp/review-investigation-native.ts','src/bin/insrc-review-bridge.ts','src/analyze/context/role-router.ts');
+ files.push('package-lock.json','src/prompts/steering-block.md','src/daemon/installed-commit.ts','src/daemon/handler-runtime.ts','src/daemon/steps/code-review-step/handler.ts','src/daemon/threads/method-class.ts','src/mcp/server.ts','src/mcp/review-investigation-bridge.ts','src/mcp/review-investigation-native.ts','src/bin/insrc-review-bridge.ts','src/analyze/context/role-router.ts');
  return digestValue([...new Set(files)].sort().map(path=>({path,digest:investigationFileDigest(join(root,path))})));
 }
 export function readInvestigationSelection(){
@@ -78,7 +79,7 @@ export class InvestigationAdoptionPolicy {
  async evidence(mode:'source-only'|'indexed-impact'){
   this.assertSelected();const selection=(this.deps.selection??readInvestigationSelection)();if(typeof selection.readiness!=='string'||typeof selection.reconciliation!=='string')refuse('Version-pinned readiness and reconciliation approvals are required');
   const readiness=readinessSchema.parse(issueData(await readApprovedEvidence(this.deps.work,selection.readiness)));
-  if(!this.deps.sourceDigest){const root=fileURLToPath(new URL('../../',import.meta.url));try{const untracked=execFileSync('git',['ls-files','--others','--exclude-standard','--','src/daemon','src/shared','src/agent/providers','src/workflow/code-review/investigation','src/workflow/review-pipeline','src/workflow/artifact-core','src/mcp'],{cwd:root,encoding:'utf8',timeout:10000});if(untracked.trim())refuse('Engine source contains uncommitted new files');execFileSync('git',['diff','--quiet',readiness.sourceCommit,'--','src/workflow/code-review/investigation','src/workflow/review-pipeline','src/workflow/artifact-core','src/daemon','src/shared','src/agent/providers','src/mcp','src/bin/insrc-review-bridge.ts','src/analyze/context/role-router.ts','package-lock.json'],{cwd:root,stdio:'ignore',timeout:10000});}catch{refuse('Evaluated source commit does not match the running checkout');}}
+  if(!this.deps.sourceDigest&&!installedSourceMatches(fileURLToPath(new URL('../../',import.meta.url)),readiness.sourceCommit,['src/workflow/code-review/investigation','src/workflow/review-pipeline','src/workflow/artifact-core','src/daemon','src/shared','src/agent/providers','src/mcp','src/bin/insrc-review-bridge.ts','src/analyze/context/role-router.ts','src/prompts/steering-block.md','package-lock.json']))refuse('Evaluated source commit does not match the running checkout');
   if(readiness.sourceDigest!==(this.deps.sourceDigest??investigationSourceDigest)())refuse('Running engine source differs from evaluated source');
   const reconciliation=await readApprovedEvidence(this.deps.work,selection.reconciliation),id=/^approved:(.+)@/.exec(selection.reconciliation)![1]!,key=ArtifactIds.parse(id);
   const amendment=reconciliation.head.body['amendment'] as Record<string,unknown>|undefined;
@@ -102,7 +103,8 @@ export class InvestigationAdoptionPolicy {
   const cwd=pins.evidence.effective.cwd,schema=JSON.parse(JSON.stringify(InvestigationReplySchema)) as StructuredSchema,modelArgs=['--model',resolution.model,...(resolution.effort?(kind==='claude'?['--effort',resolution.effort]:['-c',`model_reasoning_effort=${resolution.effort}`]):[])];
   const args=kind==='claude'?claudeInvestigationArgs(schema,modelArgs,cwd,mode==='indexed-impact'):codexInvestigationArgs(schema,modelArgs,cwd,mode==='indexed-impact');
   let binary:string|undefined;for(const dir of (process.env['PATH']??'').split(delimiter))try{binary=realpathSync(join(dir,kind));break;}catch{/* Continue installed PATH lookup. */}if(!binary)refuse('Qualified CLI is not installed on daemon PATH');
-  const expected:NativeAdapterIdentity={...pins.evidence.identity,kind,adapterVersion:kind==='claude'?CLAUDE_INVESTIGATION_ADAPTER:CODEX_INVESTIGATION_ADAPTER,binary:{path:binary,digest:investigationFileDigest(binary)},profileDigest:digestValue(profile),catalogDigest:scopedReviewCatalogDigest(mode==='indexed-impact'),launchDigest:kind==='claude'?claudeInvestigationLaunchDigest(args,cwd):codexInvestigationLaunchDigest(args,cwd,schema)};
+  const installed=inspectInstalledInvestigation(kind,binary,cwd);assertInstalledImagesPinned(pins.evidence.identity,installed.images);
+  const expected:NativeAdapterIdentity={...pins.evidence.identity,binaryVersion:installed.version,kind,adapterVersion:kind==='claude'?CLAUDE_INVESTIGATION_ADAPTER:CODEX_INVESTIGATION_ADAPTER,binary:{path:binary,digest:investigationFileDigest(binary)},profileDigest:digestValue(profile),catalogDigest:scopedReviewCatalogDigest(mode==='indexed-impact'),launchDigest:kind==='claude'?claudeInvestigationLaunchDigest(args,cwd):codexInvestigationLaunchDigest(args,cwd,schema)};
   let qualification:NativeInvestigationQualification;
   const assertQualified=async()=>{const current=await this.evidence(mode);qualification=await qualifyInvestigationAdapter(current.readiness.backendRefs[mode],expected,repo,mode==='indexed-impact',{origin:'installed-probe',read:async()=>current.evidence,verifyInstalled:async(reference,digest)=>{if(reference!==current.readiness.backendRefs[mode]||digest!==digestValue(current.evidence))refuse('Probe authority binding changed');(this.deps.verifyProbe??verifyInstalledProbeSignature)(current.evidence,current.report.signature);}},[expected.adapterVersion]);};
   await assertQualified();const bindings=new Map<string,QualifiedInvestigationSessionBinding>();

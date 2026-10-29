@@ -3,11 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdtemp,mkdir,readFile,readdir,rm} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 test('CM-S2-A9: composed daemon and child logs contain no source credential or data canaries',async()=>{
- const directory=await mkdtemp(join(tmpdir(),'cm-composed-logs-')),fixtureHome=join(directory,'home'),fixtureTmp=join(directory,'scratch');await mkdir(fixtureHome);await mkdir(fixtureTmp);
+ const directory=await mkdtemp(join('/private/tmp','cm-composed-logs-')),fixtureHome=join(directory,'home'),fixtureTmp=join(directory,'scratch');await mkdir(fixtureHome);await mkdir(fixtureTmp);
  const child=spawn(process.execPath,['--import','tsx','--test',fileURLToPath(new URL('./actual-probe-acceptance.test.ts',import.meta.url))],{env:{...process.env,NODE_TEST_CONTEXT:undefined,HOME:fixtureHome,TMPDIR:fixtureTmp,INSRC_MODE:'cli',INSRC_LOG_LEVEL:'trace',TSX_DISABLE_CACHE:'1'},stdio:['ignore','pipe','pipe']});
  let output='';child.stdout.on('data',data=>{output+=data;});child.stderr.on('data',data=>{output+=data;});
  const timer=setTimeout(()=>child.kill('SIGKILL'),30000);

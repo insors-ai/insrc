@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -345,3 +345,25 @@ the gate ran no test: every named test of this Task was reported by the builder
 **live: CM-S4-AFFINITY: production analysis/tool/probe owner-affinity acceptance in single-thread and threads-enabled modes, or explicit pre-use refusal; unsupported architecture remains pending.**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: Commit 99b3e402c; S004/evidence/t19/result.json, production-refusal-pass.tap and analyzer-result.json. Node22 real single-thread and threads-enabled daemons: 2 tests pass, no skips. Both modes advertise no sc6 and refuse removal/private analysis/step/tool/edit-probe admission before use. This is refusal proof only: positive all-consumer Saved worker lease identity explicitly remains pending and release-blocking. Existing main/session callback/iterator/constructor/probe positive evidence stays scoped to t15/t16. No architecture or shipped gate changes; original 115-byte socket-path startup failure retained.
+
+## t20
+
+Run at 2026-10-29T12:26:21.038Z on commit `3a72a8808`. Tests check: **failed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-PRIVACY/NO-PERSIST: extend src/daemon/db/__tests__/session-driver-logs.test.ts and src/daemon/db/__tests__/composed-probe-logs.test.ts with fixed SDK/journal canaries and poisoned persistence ports.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-PRIVACY/NO-PERSIST: source and compiled removal replies and rotating logs hide SDK journal and capability canaries | `src/daemon/db/__tests__/session-driver-logs.test.ts` |
+| pass | CM-S4-PRIVACY/NO-PERSIST: composed removal keeps temporary persistence poisoned and owner loss unrecoverable | `src/daemon/db/__tests__/composed-probe-logs.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/composed-probe-logs.test.ts` | 1 | 2 | 2.9 s |  |
+| `src/daemon/db/__tests__/session-driver-logs.test.ts` | 0 | 4 | 8.7 s |  |
+
+**Failures outside the named cases**
+
+- `src/daemon/db/__tests__/composed-probe-logs.test.ts`: CM-S2-A9: composed daemon and child logs contain no source credential or data canaries

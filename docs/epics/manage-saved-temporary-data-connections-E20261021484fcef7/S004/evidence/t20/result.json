@@ -31,7 +31,26 @@
     "src/daemon/db/__tests__/fixtures/removal-privacy-child.ts": "7094e5bce67dc6511885d5b19796de9429ab75baa6409c2e9a689f98374b890d",
     "src/daemon/db/__tests__/fixtures/removal-privacy-run.ts": "75e38e6d55457e63f6ae2fc5885abfce90613dc1638d94373c99730dd8280d95",
     "src/daemon/db/__tests__/session-driver-logs.test.ts": "deb660591b7705b12d7f6095efedc9431172dcbe38458ced9ce38099b786ebf1",
-    "src/daemon/db/__tests__/composed-probe-logs.test.ts": "4aeb0016db26e2a71a0ec7d79cf3bd2b0bf6001606cf6905b8ed3a8fe07f11ec"
+    "src/daemon/db/__tests__/composed-probe-logs.test.ts": "9b64c109b4bb1dd0ddb2c55b39a582227dc2e0caab732f84312e0b141c1adeda"
   },
-  "tapHash": "254355a08e1cda33532f28737fa2e64a299dfa4b690d445befefa249c4008dfa"
+  "tapHash": "254355a08e1cda33532f28737fa2e64a299dfa4b690d445befefa249c4008dfa",
+  "initialLocalRun": "privacy-source-compiled-pass.tap: 6/6 pass under Node22 before socket fixture correction.",
+  "daemonFirstValidation": {
+    "result": "fail",
+    "evidence": [
+      "first-daemon-validation-failure.json",
+      "first-daemon-composed-socket-failure.tap"
+    ],
+    "cause": "Both named S004 cases passed; the pre-existing CM-S2-A9 composed sibling failed listen EINVAL because nested temp-root socket path was too long under daemon runtime.",
+    "resolution": "Keep composed log fixture under short test-owned /private/tmp root; no product logic or coverage weakened."
+  },
+  "latestLocalRun": {
+    "file": "privacy-path-fix-pass.tap",
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "latestTapHash": "d96bc9e781c96ffe5f8fc392d61eb70a7412031b24876ccb6628ab5b78c167b6"
 }

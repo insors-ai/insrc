@@ -1,0 +1,120 @@
+{
+  "next": "done",
+  "verdict": {
+    "checks": [
+      {
+        "check": "No raw endpoint/options/source contents/credentials/refs/session capabilities enter wire replies, logs, prompts, receipts, telemetry, checkpoints or artifacts.",
+        "satisfied": true,
+        "evidence": "removal-privacy-child.ts seeds 8 distinct canaries (endpoint/password/options/rows/secretRef/capability/sdk/journal) into a privateFailure error injected on SDK close, keychain, and fs read/write. Every manage()/call() reply is routed through safe(), which asserts the JSON text of each reply is <16384 bytes, contains none of the canaries, and never contains 'db:v2:'; it also pins any safeMessage to one of 3 fixed strings. The final wire check (`wire.includes(opened.sessionHandle)`/`capability`) confirms no session handle/capability leaks. The saved-scope half of the fixture additionally asserts the persisted receipt's keys are exactly ['cleanupRefs','outcome','requestMac','ticket'] with no canary inside. Both files' CM-S4-PRIVACY/NO-PERSIST subtests passed (ok 4 in session-driver-logs.test.ts TAP; ok 2 in composed-probe-logs.test.ts TAP)."
+      },
+      {
+        "check": "Temporary discard/state/retry performs zero registry/keychain/persistent-cache access; owner loss cannot recover temporary state.",
+        "satisfied": true,
+        "evidence": "removal-privacy-child.ts mocks fsPromises.readFile/writeFile and the keystore getKey/setKey/deleteKey to throw and count calls, then drives the full remove/removalState/retryRemovalCleanup/status/session.end sequence on the temporary scope and asserts files===0 and keychain===0 before/after; it also asserts the on-disk state and root trees are byte-for-byte unchanged (tree() hash comparison). After `session.end`, the same ticket returns `session-expired`, and a brand-new session opened under a different connectionIdentity/epoch returns `invalid-input` for the same ticket, proving owner loss cannot recover the temporary removal state. The proof line `{\"files\":0,\"keychain\":0,\"closes\":2,...}` is emitted and asserted by removal-privacy-run.ts for both source and compiled modes."
+      },
+      {
+        "check": "Errors are bounded fixed safe messages, including underlying SDK close and journal failures.",
+        "satisfied": true,
+        "evidence": "The injected privateFailure throws on the first simulated driver close (closes counter, asserted ===2 total) and on keychain deleteKey during saved-scope credential-journal cleanup (fail=true). Every reply touching these paths goes through safe(), which asserts message/safeMessage equals one of 3 fixed strings ('The removal outcome is unknown...', 'The registration was removed. Application-owned cleanup is pending.', 'The registration was removed. Source data was preserved.', or 'Invalid connection request.') — never the raw canary-laden error. The saved-scope retryRemovalCleanup path is driven through a real pending->removed transition under journal failure with the same bounded-message check."
+      }
+    ],
+    "passed": false,
+    "reason": "Both named tests ('...hide SDK journal and capability canaries' and '...composed removal keeps temporary persistence poisoned and owner loss unrecoverable') pass and genuinely exercise the canary/poisoned-port privacy and no-persist contract via the new removal-privacy-child.ts/run.ts fixtures; all three acceptance checks are satisfied by code inspection plus the passing TAP output for those two cases. The daemon's file-level FAIL on composed-probe-logs.test.ts comes solely from the pre-existing, unrelated 'CM-S2-A9' sibling test failing on 'listen EINVAL' (a long tmp-socket-path limit documented as already-present in t19's evidence note, 'original 115-byte socket-path startup failure retained'); it is not one of this Task's named tests and this Task did not touch that test's code, so it does not bear on t20's own checks, though the daemon's overall exit-code-1 verdict will still fail the Task per the harness rule. — but the daemon's checks failed: tests.",
+    "scopeRespected": true,
+    "taskId": "t20",
+    "testsPassed": false,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 5661,
+        "outputTail": "\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n"
+      },
+      "tests": {
+        "ok": false,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-7IATKn/report.tap src/daemon/db/__tests__/composed-probe-logs.test.ts\nnpx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-mNgNMX/report.tap src/daemon/db/__tests__/session-driver-logs.test.ts",
+        "exitCode": 1,
+        "timedOut": false,
+        "durationMs": 11629,
+        "outputTail": "TAP version 13\n# Subtest: CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain\nok 1 - CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain\n  ---\n  duration_ms: 2756.261125\n  type: 'test'\n  ...\n# Subtest: CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources\nok 2 - CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources\n  ---\n  duration_ms: 4193.059625\n  type: 'test'\n  ...\n# Subtest: CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules\nok 3 - CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules\n  ---\n  duration_ms: 5.971667\n  type: 'test'\n  ...\n# Subtest: CM-S4-PRIVACY/NO-PERSIST: source and compiled removal replies and rotating logs hide SDK journal and capability canaries\nok 4 - CM-S4-PRIVACY/NO-PERSIST: source and compiled removal replies and rotating logs hide SDK journal and capability canaries\n  ---\n  duration_ms: 1446.205083\n  type: 'test'\n  ...\n# {\"proof\":\"removal-privacy-ok\",\"mode\":\"source\",\"files\":0,\"keychain\":0,\"closes\":2,\"replies\":13}\n# {\"proof\":\"removal-privacy-ok\",\"mode\":\"compiled\",\"files\":0,\"keychain\":0,\"closes\":2,\"replies\":13}\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 8404.040459\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-7IATKn/report.tap src/daemon/db/__tests__/composed-probe-logs.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 2907,
+            "titles": [
+              {
+                "title": "CM-S2-A9: composed daemon and child logs contain no source credential or data canaries",
+                "depth": 0,
+                "result": "fail"
+              },
+              {
+                "title": "CM-S4-PRIVACY/NO-PERSIST: composed removal keeps temporary persistence poisoned and owner loss unrecoverable",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_daemon_db___tests___composed-probe-logs.test.ts.1793276772314.2282.tap"
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-mNgNMX/report.tap src/daemon/db/__tests__/session-driver-logs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8722,
+            "titles": [
+              {
+                "title": "CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-PRIVACY/NO-PERSIST: source and compiled removal replies and rotating logs hide SDK journal and capability canaries",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_daemon_db___tests___session-driver-logs.test.ts.1793276781037.2282.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "CM-S4-PRIVACY/NO-PERSIST: extend src/daemon/db/__tests__/session-driver-logs.test.ts and src/daemon/db/__tests__/composed-probe-logs.test.ts with fixed SDK/journal canaries and poisoned persistence ports.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+                "title": "CM-S4-PRIVACY/NO-PERSIST: source and compiled removal replies and rotating logs hide SDK journal and capability canaries",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/composed-probe-logs.test.ts",
+                "title": "CM-S4-PRIVACY/NO-PERSIST: composed removal keeps temporary persistence poisoned and owner loss unrecoverable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/TESTS.md"
+    }
+  },
+  "passed": false
+}

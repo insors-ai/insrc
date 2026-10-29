@@ -15646,7 +15646,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "199a8adefe4877200ac64a73c13616cd893053255e4b0d200e3962e955667cca",
-      "sourceDigest": "dbdf815f07c24b3f2427efd26618b4bc7334960a2aa3a89945d59def0dfb25c5",
+      "sourceDigest": "dea2abbce132cca15ea25ffa12ed4cec2e56e71821a8c04f5c4bf97ea9d74ab8",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -15974,7 +15974,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "dd8824b22f3295067d2d78ebd6376c5cea895cf0b974782869dc5574d206e17f",
-      "sourceDigest": "8d4a434e43daffdd76ddc5cffb03835b9f5263866dda742dfd43c40dbea3c7ce",
+      "sourceDigest": "0f14ceb981242dddbc678f81d9aca145da8c947a2a215ef4a846fe83a592a10c",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -16391,7 +16391,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "2c12bdb43949852a088947d22aa9505d1ed114184651c5f4127e2466e650d1a2",
-      "sourceDigest": "9eee34039e35a2e960c920f7832006542b84528352b13817d05ceb23647313af",
+      "sourceDigest": "aac4b27b28e2660c1402946c29cc95fb33116a6fcb221d0bdd1488dd0069066f",
       "boundaries": [
         "diagnostic"
       ]
@@ -16457,11 +16457,15 @@
         [
           "serialization",
           "port.postMessage"
+        ],
+        [
+          "serialization",
+          "port.postMessage"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "2a8ac5652daacda2c12bd121c6c9bb2e85c94646cf07989d97b09feb534be8fc",
-      "sourceDigest": "745e8951329eb83143297bfc06de051390f2558ab67d035b1606074f65195fd0",
+      "siteCount": 7,
+      "sitesDigest": "cf1e1ee8155b15993379f9d76432f5ca1dacedfbc616d8dcdd459c998b91e38d",
+      "sourceDigest": "a630d272237f20e3cad25f26089ab3a5dd203cb9acd81f89c1625243c085f1bf",
       "boundaries": [
         "diagnostic",
         "serialization"

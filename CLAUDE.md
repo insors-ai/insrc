@@ -2,9 +2,9 @@
 
 Standalone backend for the insrc code-knowledge system. Split from
 [`insors-ai/insrc-ide`](https://github.com/insors-ai/insrc-ide) on
-2026-07-14. The IDE fork clones this repo into `~/.insrc/daemon/`
-and spawns the compiled entry — the IPC contract is the only surface
-the IDE consumes.
+2026-07-14. The insrc-ide fork is deprecated (user clarification,
+2026-10-29). Current IDE clients are `vscode-plugin/` and `jetbrains-plugin/`
+in this repository; both consume the daemon through IPC.
 
 ## Project principles
 
@@ -24,12 +24,11 @@ the IDE consumes.
 - `insrc` interactive CLI — a full-screen ink (React) TUI with Daemon /
   Repos / Workflows / Setup panes (replaced the old commander subcommands)
 
-The IDE fork owns: the VSCode workbench + `src/vs/workbench/contrib/insrc/`
-IDE contributions (sidebar panes, service impls, RPC clients) +
-`src/vs/platform/insrc/electron-main/insrcDaemonInstaller.ts` which
-clones + builds this repo into `~/.insrc/daemon/`. IPC method names,
-socket path (`~/.insrc/daemon.sock`), and payload shapes stay in
-lock-step across the two repos via mirrored types.
+The live IDE clients are the standalone VS Code extension (`vscode-plugin/`)
+and JetBrains plugin (`jetbrains-plugin/`). Keep their daemon IPC method names
+and payload shapes aligned with this backend. Do not add work, compatibility
+requirements or release gates for the deprecated insrc-ide fork.
+
 
 ## Tech stack
 

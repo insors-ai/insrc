@@ -28,19 +28,31 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "pass",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "S005's deliverables (including treating the insrc-ide fork as a required, in-scope client requiring parity, mirrored type-sync manifests, direct edits to its main-process/renderer files, and 'both-client execution is mandatory before release') are not a non-goal that should not be built.",
-          "evidence": "The HLD (docs/epics/.../HLD.md §Framework summary and the 'External IDE integration findings' block) explicitly mandates this: 'External IDE integration discovery is completed at HLD level... S005 owns implementation and end-to-end execution against those identified surfaces; it does not defer contract discovery. Backend-only success does not satisfy S005.' The LLD's §3.1,3.2,3.3,3.4,3.7,3.8, Migration steps 3-4, and the 'live'/'smoke' test levels (CM-S5-UI, CM-S5-SOURCE, CM-S5-GATE) all build out concrete edits inside /Users/subhagho/work/projects/insors/insrc-ide/.... This directly contradicts the standing project-level instruction already on record: the user said on 2026-10-08 'ignore the insrc-ide fork, that's dead' and that it must not be treated as 'a consumer to keep compatible' in designs — the live IDE surfaces are vscode-plugin/ and jetbrains-plugin/ inside this same repo. The HLD itself already committed this scope (so the problem predates this LLD), but the LLD compounds it with ~6 concrete 'new'/'invariant-change' sections of IDE-fork work and a release gate that blocks on it, which is building work the project owner has directed to stop building. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
-          "action": "Flag to the user before approval: confirm whether the IDE-fork integration scope in HLD §Framework/External-IDE-integration and this LLD's §3.1/3.2/3.3/3.4/3.7/3.8 + migration + release-gate should be dropped or carved into a separate, explicitly-scoped exception given the standing 'ignore insrc-ide' instruction, or whether that instruction has since been superseded for this epic.",
+          "severity": "LOW",
+          "premise": "The design's contract/state/test sections (§§2-3,7) jointly cover every PRD requirement CM01 (discover/list) through CM08 (discard/delete).",
+          "evidence": "docs/connection-management-prd.html lines 51-58 define CM01-CM08. LLD §3.3 ConnectionListState covers CM01/CM06/CM07 (distinct list states, scope filter, counts); §3.4/§2.1 cover CM02/CM03 (driver choice, Keep/Replace/Clear, duplicate-ID handling); §3.5 DraftTestRequest covers CM04; §3.6 OperationTicket covers CM05 (save/activation/refresh reported separately); §3.7 RemovalState covers CM08 (busy/conflict/cleanup-pending). The acceptance-mapping table (§7) ties each ac to concrete test subjects covering these same behaviours. [files: docs/connection-management-prd.html, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
+          "action": "none — PRD coverage is comprehensive and traceable to concrete sections.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The deprecated insrc-ide fork is correctly excluded as a non-goal and this exclusion is a documented, authorized scope correction rather than an undocumented deviation from the HLD.",
+          "evidence": "CLIENT-SCOPE-UPDATE.json records: \"authority\": \"User instruction in current conversation, 2026-10-29\", statement \"insrc-ide is deprecated, only VS Code + JetBrains\", and explicitly notes \"No typed HLD amendment shape supports replacing a client target, so no unrelated amendment type is fabricated.\" HLD.md line 5 itself carries a superseding banner pointing to this correction. The LLD's §3.1/§8 and acceptance-mapping (ac1/ac3) are consistent with this corrected two-client scope even though the HLD's underlying ac1/ac3 prose (lines 71,73) still literally says \"external IDE\"/\"mirrored external IDE contracts\" — that residual HLD text is explicitly superseded, not silently ignored. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/CLIENT-SCOPE-UPDATE.json, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "none — the exclusion is properly authorized and traceable; no fork-related work is designed.",
+          "fixability": "manual",
+          "outcome": "holds"
         },
         {
           "claimId": "current-behaviour.1",
@@ -48,9 +60,21 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design's claim (§3.3, c3) that the IDE's current `insrcDbConnectionsServiceImpl.ts` 'catches every exception to return []' for list/listDriverKinds, and that the v2 manager must not call this swallowed-error path, accurately describes current code.",
-          "evidence": "Read insrcDbConnectionsServiceImpl.ts:33-45: `list()` wraps the daemon RPC in try/catch and on any exception logs a warning and `return [];` — matching the design's and the HLD's own citation ('insrcDbConnectionsServiceImpl.ts:34 calls db.listConnections and catches every exception to return []') verbatim. [files: /Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts]",
-          "action": "No action; claim confirmed against source.",
+          "premise": "\"Analyzer and source confirm no connection manager in current VSCode extension\" (§8 State before) is true of vscode-plugin/src/extension.ts today.",
+          "evidence": "Grep for connection|Connection across vscode-plugin/src/extension.ts returned no matches, and no vscode-plugin/src/connections directory exists (Glob empty). [files: vscode-plugin/src/extension.ts]",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "\"JetBrains has native application Settings, APP-scoped stateless DaemonGatewayService and one-shot UnixSocketDaemonRpc\" (§8) is true today.",
+          "evidence": "DaemonGatewayService.kt is annotated @Service(Service.Level.APP), holds no per-window state (every method takes projectRootPath explicitly, as its own doc comment states: \"there is no per-window gateway state\"). UnixSocketDaemonRpc.kt exposes a synchronous `call(method, params): DaemonResult` with no persistent/multiplexed session API. [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt]",
+          "action": "none.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -60,9 +84,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "§2.2's `removalConfirmation(key, expectedRevision): RemovalConfirmation` is reused from S004/sc6 with the stated shape (Delete-vs-Discard, source-preservation guarantee, ManagementInputError on malformed input).",
-          "evidence": "src/shared/connection-removal.ts:12-20 defines exactly `removalConfirmation(key: ConnectionKey, expectedRevision: string): RemovalConfirmation`, throwing `ManagementInputError` on malformed input, returning `action:'Delete'|'Discard'` keyed on scope and a message guaranteeing 'Source files, databases, tables and remote data will be preserved' — matching the LLD's contract and prose exactly. [files: src/shared/connection-removal.ts]",
-          "action": "No action; reused contract confirmed to exist with the stated shape.",
+          "premise": "Modules the design labels 'new' (src/shared/connection-manager/{model,controller,wire}.ts and jetbrains-plugin .../connections/*) do not already exist.",
+          "evidence": "Glob for src/shared/connection-manager/** and jetbrains-plugin/.../jetbrains/connections/** both returned no files.",
+          "action": "none — new designation is accurate, not a disguised duplicate.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -72,9 +96,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "§3.7's session open/resume/heartbeat/delegate/end client-protocol semantics (30s heartbeat, 90s expiry, same-epoch resume) are properly treated as consuming an already-built sc5 daemon contract (owned by s3), not mislabeled as newly-invented policy.",
-          "evidence": "src/daemon/connection-session-rpc.ts already fully implements session open/resume/attach/delegate/heartbeat/end with epoch checks, and src/daemon/db/session-owner.ts defines `CONNECTION_SESSION_HEARTBEAT_MS = 30_000` and `CONNECTION_SESSION_LEASE_MS = 90_000`. The LLD's §5 contracts table marks sc5 as 'consumes', and §3.7's 'new' label applies to the client-side extension of ipc-client.ts (persistent multiplexing), not to the already-implemented daemon heartbeat/expiry numbers it restates. [files: src/daemon/connection-session-rpc.ts, src/daemon/db/session-owner.ts]",
-          "action": "No action; the 30s/90s figures are an accurate restatement of an existing, s3-owned contract, not duplicated invention.",
+          "premise": "Modules the design labels 'reused' (src/shared/ipc-client.ts, connection-management.ts, connection-removal.ts, DaemonGatewayService.kt, UnixSocketDaemonRpc.kt) exist with the shape the design assumes.",
+          "evidence": "All five files exist. ipc-client.ts exports a thin `IpcClient` interface (`rpc`, `status`, `reachability`, `update`, `updateOutcome`) built via `createIpcClient`, matching the design's 'thin shared one-shot IPC' description it proposes to extend rather than replace. [files: src/shared/ipc-client.ts, src/shared/connection-management.ts, src/shared/connection-removal.ts]",
+          "action": "none.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -83,12 +107,24 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "§3.1 names `vscode-plugin/src/panels/types.ts` as a call site for the new `ConnectionManagerState` type/model wiring.",
-          "evidence": "Reading the file shows it is the sc9 WebviewPanelHost contract for a different epic/Story (E20260922401ae5fb:S004, the Detailed-Status/Repo-Configuration panel host) — its exports are `WebviewPanelHost`, `DaemonDataGateway`, `WorkflowChainView`, `RepoRef`, `PanelHandle`, etc., with no existing hook, import, or placeholder for connection management. Naming it as a call site for `ConnectionManagerState` without any supporting extension point in that file risks the builder bolting unrelated connection-manager state into an unrelated panel-host types module shared by other Stories. [files: vscode-plugin/src/panels/types.ts]",
-          "action": "Correct the call-site list: either name the actual file(s) that will host the new connection-manager webview/panel wiring (e.g. a new panels/connectionManager types module, or extension.ts's own command/panel registration) or explain concretely how this type is meant to extend panels/types.ts's existing sc9 surface.",
+          "severity": "LOW",
+          "premise": "§2.2 `removalConfirmation(key: ConnectionKey, expectedRevision: string): RemovalConfirmation` matches the real exported signature.",
+          "evidence": "src/shared/connection-removal.ts line 12: `export function removalConfirmation(key: ConnectionKey, expectedRevision: string): RemovalConfirmation`. [files: src/shared/connection-removal.ts]",
+          "action": "none.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§3.4's SafeConnection claims (presence booleans never become values; declaredFamily/registeredFamily/effectiveFamily distinction; pinned family) match the real interface.",
+          "evidence": "src/shared/connection-management.ts lines 29-36 define SafeConnection with `credentialPresence: Readonly<Record<string, boolean>>`, `declaredFamily?`, `registeredFamily?`, `effectiveFamily`, and `readOnly?` — exactly the fields the design's invariant-change section relies on. [files: src/shared/connection-management.ts]",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.1",
@@ -96,9 +132,21 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "§3.3/3.4/3.5's 'Wire unchanged'/'No wire/persistent-schema change' claims for SafeConnection, DraftTestRequest and OperationTicket, and the Migration section's 'no registry migration... no data rewrite' claim, match the actual sc1/sc2/sc4 interfaces and the registry's storage approach.",
-          "evidence": "HLD §5.1/5.2/5.4 define `SafeConnection`, `OperationTicket`, `DraftTestRequest` exactly as the LLD's local echoes describe them, and HLD §3 Architecture shape states persistence adds 'optional versioned management metadata to the same JSON document for revisions and bounded operation receipts; do not add another persistent connection registry' — consistent with the LLD's no-rewrite, no-new-registry migration claim. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
-          "action": "No action; claims consistent with the approved HLD contracts.",
+          "premise": "§3.6/§3.7 claim no wire/schema change to OperationTicket/RemovalState/OperationStatus; the states enumerated (confirming/removing/busy/conflict/unknown/removed-cleanup-pending/removed, committed/pending/not-seen/reconciliation-required) are the real, already-shipped shapes, not new fields the design silently introduces.",
+          "evidence": "src/shared/connection-management.ts lines 44-76 show OperationTicket, RemovalState (state union exactly matching §3.7's prose) and OperationStatus (committed/pending/not-seen/reconciliation-required) already defined with these exact members from the S001-S004 stories. [files: src/shared/connection-management.ts]",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§8 'no data rewrite, no registry-schema migration' is consistent with what the design actually changes (client-only controllers/UI consuming existing v2 methods).",
+          "evidence": "All backend-owned shapes referenced (SafeConnection, OperationTicket, RemovalState, ManagementCapabilities) are read, not altered, by the new client code in §§3.2-3.9; no new RPC method or persisted field is introduced, consistent with 'Backend wire unchanged' in §8 Backward compat. [files: src/shared/connection-management.ts]",
+          "action": "none.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -108,9 +156,21 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "§3.7 (session client ownership) and §3.8 (privileged IDE transport isolation), both labeled 'new', stay within client-side transport adaptation and consumption of sc5 (owned by s3) and sc8 (owned by s1) rather than redesigning those Stories' daemon-owned semantics.",
-          "evidence": "§3.8 states explicitly 'This is client transport adaptation of sc5, not new daemon authorization,' and §5's contracts table marks sc5 and sc8 as 'consumes' with language restricted to client lane/channel wiring ('Workbench memory-only control owner, per-root delegated UI/data sockets...'; 'Consume unsupported/resource-limit messages without local conversion/cache/spill fallback; file runtime remains daemon-owned'). The Adjacent Scope note in the same LLD correctly attributes sc5's open/resume/heartbeat/end design to s3 and sc8's conversion/cache/DuckDB lifecycle to s1, and §3.7/3.8's content does not redefine either. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
-          "action": "No action on Story-to-Story ownership; the only boundary-adjacent problem found is the IDE-fork scope conflict already raised under coverage-of-intent.",
+          "premise": "The 'Adjacent scope' table (s1→sc1/sc2/sc3/sc8, s2→sc4, s3→sc5, s4→sc6) matches the HLD's own ownership assignment, so S005 is not silently redesigning another story's contract.",
+          "evidence": "HLD.md lines 205,211,218,225,232-233 assign exactly: s1 Owns sc1,sc2,sc3,sc8; s2 Owns sc4; s3 Owns sc5; s4 Owns sc6; s5 Owns sc7 and Depends on sc1-sc6. This is byte-for-byte consistent with the LLD's HLD-context block. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "§3.8's client-side session-owner description (30s heartbeat / 90s lease, epoch-bound resume) consumes S003's sc5 protocol rather than re-specifying it.",
+          "evidence": "S003/LLD.md lines 63 and 71 define sc5 itself: 'fixed private RPC family db.connections.v2.session.open/resume/attach/heartbeat/end...Open/resume returns heartbeatMs30000/leaseMs90000...resume atomically increments generation and detaches the old control transport' — the exact numbers and semantics S005 §3.8 describes as something it calls into, not something it redefines. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/LLD.md]",
+          "action": "none — S005 is a client of sc5, not a re-owner of it.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -120,9 +180,21 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The error-paths table's detection/response pairs for 'upgrade-required' and 'session-expired'/lease-loss map onto real, already-implemented daemon error codes and throw sites, so they are genuinely detectable as described.",
-          "evidence": "HLD §5.2 defines `ManagementErrorCode` including exactly `'session-expired'|'upgrade-required'|...`, and src/daemon/connection-session-rpc.ts's `fail()` helper and `#context()` guard throw `fail('session-expired')` on missing/aborted/epoch-mismatched context and `fail('upgrade-required')` on an unsupported/disabled method — matching the LLD's described detection points ('Required version/features unavailable...' / 'session-expired response, failed same-epoch resume or capabilities epoch differs'). [files: src/daemon/connection-session-rpc.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
-          "action": "No action; the cited error codes and detection points exist in the current daemon code.",
+          "premise": "The 'Unavailable or mixed capability/version/release evidence' error case (unknown-method → upgrade-required, no legacy mutation fallback) matches the real S001-defined capabilities contract.",
+          "evidence": "S001/LLD.md lines 182-191 define `ManagementCapabilities { version: 2; daemonEpoch; features; receiptRetentionDays: 30 }` and state 'Older daemons may return unknown-method; clients treat that as upgrade-required, never unsafe mutation fallback' — exactly the detection/response the S005 error-paths section describes. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/LLD.md]",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'Busy/stale removal or concurrent edit' and 'committed removed-cleanup-pending' error cases (§6) are grounded in S004's actual removal-state/cleanup-phase contract, not an invented simplification.",
+          "evidence": "S004/S005-HANDOFF.html §States and reconciliation table lists the identical state set (confirming/removing/busy/conflict/unknown/removed-cleanup-pending/removed) with the same semantics ('busy...retry after work drains'; 'removed-cleanup-pending...retain an operation-level retry entry'; 'ticket-only' retry) that the LLD's §3.7/§6 restate. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/S005-HANDOFF.html]",
+          "action": "none.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,21 +204,33 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The Acceptance mapping table (§7) covers every element of the HLD's own S005/ac1, ac2, ac3 acceptance definitions with a named test subject.",
-          "evidence": "HLD's 'Planned acceptance-to-test mapping' defines S005/ac1 (Settings/manage action, retained repo, multi-root selection, descriptor-driven choices, palette/editor route equivalence in extension+IDE), ac2 (counts/states, reveal, dirty discard/cancel, legacy lookup preservation) and ac3 (keyboard/themes, masked replacements, upgrade gate, mirrored IDE contracts, both-client mandatory). The LLD's mapping assigns ac1→{ENTRY,FORM,WIRE,SYNC,BUILD}, ac2→{STATE,DIRTY,TEST,OWNER,WINDOW,OUTCOME,REMOVE,LIFETIME}, ac3→{UI,COMPAT,PRIVACY,TRANSPORT,SOURCE,SWEEP,GATE}, and each named subject's own description (§7 Test levels) textually covers the corresponding ac items (e.g. CM-S5-ENTRY covers 'Settings query/command link, palette and existing editor/pane actions route same selected state'; CM-S5-GATE covers the both-client/production-gate mandate). [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
-          "action": "No action; mapping is complete against the upstream acceptance criteria.",
+          "premise": "Every test-subject ID cited in the acceptance-mapping table (§7, ac1/ac2/ac3 → CM-S5-ENTRY/FORM/WIRE/.../GATE) is actually defined as a named subject earlier in the same Test strategy section, so the mapping is not dangling.",
+          "evidence": "All 20 subject IDs referenced in the ac1/ac2/ac3 rows (lines 278-280) — CM-S5-ENTRY, FORM, WIRE, SYNC, BUILD, STATE, DIRTY, TEST, OWNER, WINDOW, OUTCOME, REMOVE, LIFETIME, UI, COMPAT, PRIVACY, TRANSPORT, SOURCE, SWEEP, GATE — are each defined with Subjects/Fixtures in the unit/contract/integration/live/smoke test-level lists directly above the mapping table in the same document. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md]",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The ac1/ac2/ac3 definitions the mapping targets are the HLD's actual S005 acceptance criteria, and the mapping's effective narrowing to a two-client scope is covered by the same documented scope correction checked under coverage-of-intent, not a silent drop of HLD-required coverage.",
+          "evidence": "HLD.md lines 71-73 define S005/ac1-ac3 (including 'external IDE'/'mirrored external IDE contracts' language); the LLD's CLIENT-SCOPE-UPDATE.json and HLD.md's own superseding banner (line 5) establish that this fork-specific wording is explicitly retired by user authority, so the LLD's two-client-only test mapping is a faithful, authorized interpretation of ac1-ac3 rather than an unexplained coverage gap. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/CLIENT-SCOPE-UPDATE.json]",
+          "action": "none — flagged here only to record that the apparent ac1/ac3 wording mismatch is resolved by the same authorized scope correction, not an independent gap.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 1,
-        "med": 1,
-        "low": 7,
+        "high": 0,
+        "med": 0,
+        "low": 16,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-29T13:44:41.987Z",
+      "reviewedAt": "2026-10-29T14:06:32.143Z",
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
     }
@@ -154,7 +238,7 @@
   "body": {
     "summary": {
       "audience": "product",
-      "prose": "Add a Settings-discoverable connection manager to the standalone VS Code extension and upgrade the IDE fork’s Data Sources editor to the same behavior. Users explicitly choose a registered repository and Saved or Temporary scope, filter by lifetime, edit safe driver-specific fields, test drafts, and Delete or Discard with truthful recovery states. Workbench-owned temporary connections survive closing the manager; incomplete backend release evidence continues to block production admission."
+      "prose": "Add a Settings-discoverable connection manager to the VS Code extension and JetBrains plugin. Both live clients offer explicit registered-repository and lifetime scope selection, safe driver forms, draft testing, truthful recovery and confirmed Delete/Discard. Temporary state belongs to a VS Code workbench or JetBrains project lifetime, independently of the manager panel. The deprecated insrc-ide fork is out of scope; the user-confirmed scope correction supersedes historical fork references in the retained HLD context. [[c11]]"
     },
     "hldContextSlice": {
       "frameworkSummary": "Choose a daemon-owned application service over the existing repository JSON registry and driver implementations. Separate saved commit, runtime activation and client refresh; use immutable credential generations and atomic JSON replacement rather than pretending the filesystem and keychain share a transaction. Temporary configurations remain in daemon memory under a workbench lease. All descriptions below are proposed architecture, not assertions of current implementation.",
@@ -392,32 +476,42 @@
     },
     "dataModelChanges": [
       {
+        "entity": "Current client delivery scope",
+        "change": "invariant-change",
+        "details": "User explicitly corrected delivery scope: only vscode-plugin/ and jetbrains-plugin/. docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/CLIENT-SCOPE-UPDATE.html supersedes deprecated-fork prose in historical DEF/HLD and earlier S004 handoff. The unchanged hldContextSlice below is archival input, not authorization to build the fork. No external checkout edits, TypeScript source mirror or fork release gate. Backend sc1–sc6/sc8 wire and approved build outcomes unchanged. [[c11]]",
+        "callSites": [
+          "vscode-plugin/src/extension.ts",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt"
+        ]
+      },
+      {
         "entity": "ConnectionManagerState",
         "change": "new",
         "callSites": [
           "vscode-plugin/src/extension.ts",
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts"
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt"
         ],
-        "details": "Proposed pure core in src/shared/connection-manager/{model,controller,wire}.ts (new files, no daemon/storage/provider imports). Mirror only this reviewed pure module closure into IDE common/connectionManagement via deterministic sync manifest with source/destination hashes and divergence refusal; no separate package/runtime dependency. Both renderers consume the same reducer/events/effect descriptors; injected adapters execute effects. One workbench controller owns 0..many per-root manager views; each view has 0..1selected key, 0..1draft and monotonically increasing view generation. UI selection never grants backend authority. Keep selected repo/filter in workbench memory; reject stale list/read responses on root+view-generation+epoch mismatch. Do not persist temporary state in webview getState/setState, memento, Settings, logs or telemetry. Persistence of non-sensitive preferences is unnecessary for this scope. The extension manager owns proposed vscode-plugin/src/connections/{types,host,wiring,renderer}.ts modules. Existing vscode-plugin/src/panels/types.ts remains unchanged: it is a reference for injection patterns only, not a connection-state extension point."
+        "details": "Implement the sc7 state contract in a pure TypeScript core at proposed src/shared/connection-manager/model.ts, src/shared/connection-manager/controller.ts and src/shared/connection-manager/wire.ts, with a native Kotlin counterpart under proposed jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/. Do not copy or execute TypeScript inside JetBrains. Maintain one language-neutral JSON fixture corpus for wire shapes and event/effect transcripts, with a version and digest checked by Node and JUnit consumers. Both reducers must pass identical state/effect expectations. One workbench/project controller owns 0..many root views, each with0..1selected key/draft and a monotonic view generation. Credentials and operation attempts are memory-only; capabilities live only in privileged transport owners and never renderer state. No webview setState, memento, Settings, PersistentStateComponent, artifacts or telemetry for temporary configuration/attempts. Proposed dedicated vscode-plugin/src/connections/types.ts, host.ts, wiring.ts and renderer.ts modules integrate via extension.ts; unrelated panels/types.ts stays unchanged. [[c1]][[c12]]"
       },
       {
         "entity": "ConnectionListState",
         "change": "new",
         "callSites": [
           "vscode-plugin/package.json",
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/insrcConfiguration.ts"
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+          "jetbrains-plugin/src/main/resources/META-INF/plugin.xml"
         ],
-        "details": "Settings keyword group 'insrc connections' exposes a command link Manage Connections; it is discovery text, not a writable URL/options/scope setting. Standalone extension adds insrc.openDataSources and legacy add/edit/remove/test aliases only where absent, all to one manager route. Existing IDE command/editor IDs retained. No-repository shows register guidance; multiple registered workspace roots require explicit selection, none inferred. A retained selected root wins over active editor; if registration is removed, invalidate selection. Successful zero rows => empty-registry; nonempty total but zero filtered => empty-filter; failed read/offline/upgrade states distinct, retry only re-reads. Preserve last-good rows as visibly stale non-actionable context on error, never count as authoritative. All/Saved/Temporary counts computed before filter for selected root; search then filter matching count is explicit. Add reveals committed row by switching to matching scope or All and selecting exact new key/revision; does not fake a successful refresh."
+        "details": "Both native Settings surfaces expose insrc connections / Manage Connections. VS Code adds insrc.openDataSources and add/edit/test/remove routing through one manager host; preserve any registered live extension command IDs and avoid duplicate registration. JetBrains adds a Connections child applicationConfigurable plus a Manage Connections AnAction in plugin.xml; action context supplies a trusted Project object. Since application Settings has no unique project, its link explicitly chooses one live open project before obtaining that project service; never infer a workbench from a string path. No open project => no-repository guidance and no temporary session; closing Settings does not dispose the project owner. Within the chosen project/workbench explicitly select a registered daemon root and retain it independently of active editor. Multiple roots require a picker; no default to arbitrary project root. Successful empty registry, empty filter, read-error, offline, no-repository and upgrade-required differ. Rows/counts use successful full-key snapshots, last-good rows visibly stale and non-actionable on failure. Scope counts precede search, matching count follows scope+search. Add reveals new committed row by adjusting filter after successful refresh. [[c5]][[c12]]"
       },
       {
         "entity": "SafeConnection",
         "change": "invariant-change",
         "callSites": [
           "src/shared/connection-management.ts",
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts",
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts"
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
         ],
-        "details": "Wire unchanged. Add separate v2 methods and result decoders to IDE service/types; preserve legacy list/save/test/remove signatures for unrelated callers, but v2 manager never calls swallowed-error list or legacy upsert/delete. Validate capabilities, descriptors, lists, safe read, signed-ticket target, mutation/status/test/removal replies as exact discriminated structures with size/depth bounds. Validate descriptors with supported schema subset; unknown required input/schema kind => driver unavailable/read-only with safe guidance, never infer endpoint format or accept arbitrary options. Every daemon descriptor offered with unsupported/read-only explanation if not editable. Fixed edit ID/kind/scope/family; pinned legacy family and unknown private fields stay server-side. Credential Keep default on existing slots, Replace masked blank new value, Clear explicit confirmation; do not round-trip presence booleans as secret values."
+        "details": "Wire shapes unchanged. TypeScript consumes shared backend wire types; Kotlin adds exact typed v2 DTOs/decoders in proposed connections/ConnectionProtocol.kt and a separate manager gateway. Preserve the application-scoped DaemonGatewayService and its unrelated legacy methods/stateless behavior; do not add current project/session/capability fields to it. Strictly validate all capability, descriptor, safe read/list, ticket, outcome/status, draft-test and removal replies before use. Unknown schemas/required fields are actionable unsupported/read-only, not guessed inputs or raw JSON editing. Driver choice is authoritative descriptors for every registered kind. Edit fixes ID/kind/scope/family; pinned family and unknown private fields stay daemon-owned. Keep existing secrets by default, Replace via blank masked input, Clear explicit; presence booleans never become values. No error-to-empty fallback. [[c1]][[c12]]"
       },
       {
         "entity": "DraftTestRequest",
@@ -425,7 +519,7 @@
         "callSites": [
           "src/shared/connection-management.ts",
           "vscode-plugin/src/extension.ts",
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbConnectionCommands.ts"
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt"
         ],
         "details": "Wire unchanged. Host holds effective UI draft only in memory and increments draftRevision on every field/credential edit. Test and Save share one draft serializer; Test is optional, never saves, emits requestId/revision/key/expectedRevision/publicPatch/credential intent. Only one in-flight probe per transport; cancellation on edit, root/scope/selection switch and close. Display result only when requestId,draftRevision,repoRoot,epoch plus locally captured full key/view-generation all match. Ignore late results and retain safe elapsed duration. Preserve the source controller till daemon drain completes even if panel closes; timeout/cancel response is not proof of cleanup. Raw SDK/transport exceptions replaced with fixed local messages."
       },
@@ -436,7 +530,7 @@
           "src/shared/connection-management.ts",
           "src/shared/connection-removal.ts"
         ],
-        "details": "No wire/persistent-schema change. Each manager view has at most one active mutation and one memory-only immutable attempted request (including credential intent), paired with signed ticket. Freeze exact draft before ticket/mutate; disable duplicate submit. Lost delivery => unknown, retain draft and same operation, never reset to editable form and create a new ID. Status pending continues bounded/backoff polling with explicit retry; not-seen permits only identical same-ticket replay after explicit action; expired/unreceipted => reconciliation-required, no replay. Saved disconnect/reconnect may reconcile same ticket on an unclaimed Saved lane; temporary reconnect resumes only matching live owner/epoch and current root delegation. Committed response clears sensitive draft, reports saved/session-added independently from activation and refresh; retry activation by committed revision or list refresh only, never repeat mutation. Closing dirty draft uses Discard/Cancel; unknown mutation close may hide the view but workbench retains its reconciliation record and reopens it before new target mutation. No disk recovery store; after workbench loss Saved requires authoritative reload/status only when ticket still in memory, otherwise describe uncertain last operation without inventing outcome."
+        "details": "No wire/persistent-schema change. Each manager view has at most one active mutation and one memory-only immutable attempted request (including credential intent), paired with signed ticket. Freeze exact draft before ticket/mutate; disable duplicate submit. Lost delivery => unknown, retain draft and same operation, never reset to editable form and create a new ID. Status pending continues bounded/backoff polling with explicit retry; not-seen permits only identical same-ticket replay after explicit action; expired/unreceipted => reconciliation-required, no replay. Saved disconnect/reconnect may reconcile same ticket on an unclaimed Saved lane; temporary reconnect resumes only matching live owner/epoch and current root delegation. Committed response clears sensitive draft, reports saved/session-added independently from activation and refresh; retry activation by committed revision or list refresh only, never repeat mutation. Closing dirty draft uses Discard/Cancel; unknown mutation close may hide the view but workbench retains its reconciliation record and reopens it before new target mutation. No disk recovery store; after workbench/project loss, if no ticket remains, authoritative reload reports current registration state only; it cannot identify or claim the historical outcome and must never auto-replay. No durable retry payload or last-operation secret is created."
       },
       {
         "entity": "RemovalState",
@@ -453,19 +547,24 @@
         "callSites": [
           "src/shared/ipc-client.ts",
           "vscode-plugin/src/extension.ts",
-          "src/daemon/connection-session-rpc.ts",
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/electron-sandbox/daemonServiceImpl.ts"
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/platform/InsrcProjectOpenActivity.kt"
         ],
-        "details": "One workbench lifetime owns one memory-only session and dedicated multiplexed control socket, initially opened with selected registered root. Heartbeat every30s while workbench live; end on actual disposal, not manager close/root switch. Extend existing thin src/shared/ipc-client.ts socket code with persistent request-ID multiplexing and sanitized disconnect outcome, preserving one-shot exports unchanged; no independent socket implementation in extension. Control lane carries only session open/resume/delegate/heartbeat/end plus permitted metadata; per-root workbench-ui delegated data sockets carry temporary management and scoped analysis/tool/probe calls. Saved actions use separate unclaimed sockets. Root switching delegates existing owner to new registered root, never creates a new owner or discards previous overlay. Same-root data channels may carry concurrent bound requests but no raw capabilities reach renderer. On disconnect stop dependent effects, resume old in-memory owner within90s and same epoch then re-delegate/attach current generation; expired/new epoch clears temporary UI/attempt records, cancels drafts/tests, displays lifetime loss, no silent recreation. Temporary copy shown before Add: survives panelclose/root switch; ends on workbench end,90s lease loss or daemonrestart. No guessed heartbeat extends a daemon deadline."
+        "details": "One VS Code extension-host workbench or JetBrains Project owns one memory-only session controller and dedicated persistent control socket, initially opened for an explicitly selected registered root. Heartbeat30s and same-epoch resume within the authoritative90s lease; end on real workbench/project service disposal, not Settings/manager/toolwindow close or root switch. Existing src/shared/ipc-client.ts owns the TypeScript socket implementation: extend its shared boundary with bounded multiplexing while preserving one-shot exports. Kotlin extends the existing UnixSocketDaemonRpc.kt transport boundary with a separate persistent lane object; old call() behavior remains unclaimed and stateless. New project @Service(PROJECT) ConnectionsSessionService (proposed connections/ConnectionsSessionService.kt) implements Disposable; no session state on APP DaemonGatewayService or PluginLifecycle singleton. Per-root workbench-ui delegated data lanes carry temporary management and session-bound analysis/tool/probe operations, separate from unclaimed Saved lanes. RootA→B→A delegates same owner, retains overlays. JSON IDs/project paths are selection hints only; ownership is the actual host Project/service or extension workbench instance. No control/data lane downgrade by dropping fields. On reconnect stop effects, resume exact owner+epoch, re-delegate/attach current generation; lease/epoch loss clears temporary inputs/attempts, invalidates view generations, cancels probes and never recreates implicitly. Before-add copy states panel/root switching survival and workbench/project end,lease loss,daemon restart expiry. [[c1]][[c12]]"
       },
       {
-        "entity": "Privileged IDE transport isolation",
+        "entity": "JetBrains native manager and project isolation",
         "change": "new",
         "callSites": [
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts",
-          "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts"
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt",
+          "jetbrains-plugin/src/main/resources/META-INF/plugin.xml",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/platform/InsrcProjectOpenActivity.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogEditorSurface.kt"
         ],
-        "details": "Current IDE generic daemon service funnels renderer RPCs through a global main-process socket, so it cannot host workbench-bound sc5 claims. S005 client integration adds a window-scoped management channel in /Users/subhagho/work/projects/insors/insrc-ide/src/vs/code/electron-main/app.ts and /Users/subhagho/work/projects/insors/insrc-ide/src/vs/platform/insrc/electron-main/insrcDaemonMainService.ts, using trusted Electron IPC caller/window identity from server context, never JSON windowId or labels. Main owns 1control+0..many root-data sockets per trusted window and a separate Saved lane; exact allowlisted management/session/scoped execution methods, request IDs and result events routed only to owner. Browser/electron-sandbox daemonServiceImpl exposes typed intent API with no capability serialization to browser/editor state; lifecycle disposal tied to window lifecycle. Existing global generic channel remains unclaimed Saved/legacy traffic. Two renderer pending RPC maps cannot consume each other's reply IDs; collision tests mandatory. This is client transport adaptation of sc5, not new daemon authorization. If trusted caller identity cannot be established at build, block external integration and raise amendment/question; never use payload identity. External edits require tracked commits and authorized filesystem access before execution."
+        "details": "Add proposed connections/ConnectionsManagerModel.kt, ConnectionsManagerGateway.kt, ConnectionsManagerPanel.kt, ConnectionsConfigurable.kt, ConnectionsSessionService.kt and actions/ManageConnectionsAction.kt. Settings child and action registration live in plugin.xml. Native Swing uses JBUI/JBColor/theme tokens, labelled JBTextField/JBPasswordField and focus/error status; no JBCef/JS bridge is needed. Existing settings/InsrcSettingsConfigurable.kt remains the global config editor; connection mutations are immediate explicit daemon operations in a dedicated manager surface, never Settings Apply/reset. Opening via application Settings explicitly chooses an open Project, then that project service and registered root; project action supplies its actual Project object. All sockets/heartbeat/descriptor reads/mutation/status/probes run on bounded background executor, never EDT; publish UI updates on EDT only if view generation and project disposal checks still hold. Project service disposal cancels admission, sends best-effort end, cancels outstanding requests, closes owned channels and joins bounded cleanup off EDT; daemon90s lease is crash fallback. Two open projects with same root/IDs have different control/data sockets and no shared capabilities/reply maps; duplicate request IDs on separate channels cannot cross. Closing one Settings/manager instance disposes only its view/subscriptions/probes, not project controller. InsrcProjectOpenActivity and existing project Disposer patterns are reuse references, not nonexistent close hooks on PluginLifecycle. Existing application-wide gateway stays unchanged and Saved/unclaimed. [[c12]]"
       }
     ],
     "interactionWithShared": [
@@ -555,10 +654,10 @@
           "recoverable": true
         },
         {
-          "scenario": "Cross-window/spoofed or stale privileged request",
-          "detection": "Main-process IPC context owner differs, unknown lane, wrong root/generation or forbidden method; IDs correlated within owner lane.",
-          "response": "Refuse before socket send/lookup, route fixed failure only to caller. No JSON window ID authorization, no global broadcast of sensitive results or capabilities.",
-          "userImpact": "Other workbenches retain isolation.",
+          "scenario": "Cross-project or stale manager effect",
+          "detection": "Actual project service/workbench owner, root lane and view/epoch tuple differ, or owner disposed.",
+          "response": "Refuse before socket send and publish no reply to another owner. Never route from caller-supplied project/window IDs; actual host object selects service.",
+          "userImpact": "Other projects/workbenches retain isolation.",
           "recoverable": false
         },
         {
@@ -569,10 +668,10 @@
           "recoverable": true
         },
         {
-          "scenario": "External checkout drift or missing trusted caller integration",
-          "detection": "Pinned source/commit/sync manifest check fails or IPC ownership test cannot bind to trusted Electron identity.",
-          "response": "Stop only cross-repo integration task; report explicit dependency/amendment instead of guessing caller identity or stamping both-client acceptance.",
-          "userImpact": "Release remains gated; approved backend work unaffected.",
+          "scenario": "Cross-language contract/fixture drift",
+          "detection": "Node/JUnit fixture version/digest or expected state/effect transcript differs; Kotlin wire DTOs reject current shapes.",
+          "response": "Fail integration/parity checks and keep release gated; fix consumer before acceptance, without copying TypeScript or introducing deprecated-fork work.",
+          "userImpact": "Explicit incomplete client acceptance; backend ownership unchanged.",
           "recoverable": true
         }
       ],
@@ -599,7 +698,7 @@
         },
         {
           "input": "Manager closed then reopened, root A→B→A, or second window",
-          "expected": "Same workbench owner retains overlays A andB; other window independent session/control/data sockets. No parent shared socket capability. No end on panelclose."
+          "expected": "Same VSCode workbench/JetBrains Project owner retains overlays across root switches and manager close/reopen; other projects/workbenches have separate session channels. No end on view close."
         },
         {
           "input": "Temporary resource-limit/unsupported file type",
@@ -620,8 +719,8 @@
           "source": "c2"
         },
         {
-          "text": "Existing IDE editor identity and action IDs preserved; v2 uses a separate typed service surface instead of changing legacy array projections. Grounded by s1 external source supplement.",
-          "source": "c3"
+          "text": "Existing JetBrains application-wide DaemonGatewayService remains stateless for explicit-root legacy callers; new session state is project-scoped. Analyzer located APP annotation and source confirms delegation to one-shot transport.",
+          "source": "c12"
         },
         {
           "text": "S004 source-preservation, exact ticket/revision retry and independent cleanup phases remain unchanged. Grounded by s1 removal usage and handoff.",
@@ -634,7 +733,7 @@
       ]
     },
     "testStrategy": {
-      "testFramework": "Extend existing node:test + node:assert/strict injectable extension cores and fake webview/command ports, as found by s1 source/test inspection; Node22+tsx for backend/shared and extension tests. IDE uses its existing workbench browser test runner and actual Electron IPC integration harness; discover exact invocation from that checkout before build. Include explicit extension test paths: backend src/** glob alone excludes vscode-plugin. No fabricated browser/native acceptance.",
+      "testFramework": "Existing node:test + node:assert/strict with Node22+tsx for shared/backend/extension; JetBrains JUnit5 + IntelliJ Platform test framework from jetbrains-plugin/build.gradle.kts, JDK21 and committed ./gradlew. Extend actual Settings/DaemonGateway/UnixSocketDaemonRpc tests. Include explicit vscode-plugin test paths; backend glob alone omits extension/Kotlin tests. Native UI acceptance must run in both live clients. [[c12]]",
       "testLevels": [
         {
           "level": "unit",
@@ -655,7 +754,7 @@
           "purpose": "Exact decoded consumer contract and cross-repo parity",
           "subjects": [
             "CM-S5-WIRE: capabilities, descriptors, safe lists/reads, tickets, outcomes/status, test/removal replies strict/size-bounded; old/missing/malformed fails closed",
-            "CM-S5-SYNC: deterministic shared module closure copy, hash parity and source/destination drift negative controls; no daemon/storage/provider in client bundles",
+            "CM-S5-SYNC: one versioned/digested JSON wire+state/effect transcript corpus executed by TypeScript and Kotlin, divergent-field/transition negative controls; both bundles exclude daemon/storage/provider code.",
             "CM-S5-COMPAT: old daemon/new client upgrade UI; no legacy mutation fallback, legacy unrelated projections retained, pinned family retained"
           ],
           "fixturesNeeded": [
@@ -668,15 +767,15 @@
           "purpose": "Actual sockets/workbench and privileged host boundary",
           "subjects": [
             "CM-S5-TRANSPORT: persistent request multiplexing, disconnect pre/postwrite, timeout/abort, request ID collisions, finite buffers, exactly-once disposal and no raw error leak",
-            "CM-S5-OWNER: one control owner per workbench;30sheartbeat,90sexpiry,sameepochresume,new epoch invalidation; rootA→B→A,close/reopen and no capability persistence",
-            "CM-S5-WINDOW: two real trusted IPC window identities, overlapping request IDs, forged JSON IDs, wrong-root/method/generation refusal, owner-only response delivery and disposal",
+            "CM-S5-OWNER: one owner per extension workbench or JetBrains Project;30sheartbeat,90sexpiry,sameepochresume/new epoch,root switches/close-reopen; no session end on Configurable disposal, no persistent capabilities.",
+            "CM-S5-WINDOW: two actual project-scoped services/workbench hosts, same roots/IDs and overlapping RPC IDs, forged owner hints and disposed/stale-view refusal; owner-only delivery and independent project disposal.",
             "CM-S5-OUTCOME: known commit vs activation/refresh failure; lostreply same-ticket recovery, expiry, no changedpayload/new operation retry; row/card independent cleanup phases",
             "CM-S5-REMOVE: exact root/scope/ID confirmation, zero-effect Cancel, busy/conflict retention, unknown status, ticket-only retry and same-ID recreation safety",
-            "CM-S5-ENTRY: Settings query/command link, palette and existing editor/pane actions route same selected state in each client; no-repo/multiroot cases"
+            "CM-S5-ENTRY: VSCode Settings/command and JetBrains native Settings/AnAction route each project/workbench to the same guarded manager; explicit project chooser for application Settings, no-project/multiroot/retained-root cases."
           ],
           "fixturesNeeded": [
             "Isolated real daemon IPC fixture with private feature evidence only; production gates unchanged",
-            "Extension host fake/adaptor plus actual IDE main/window lifecycle and scoped socket channels",
+            "Extension host fake/adaptor plus actual JetBrains project service lifecycle and scoped socket channels",
             "Actual S004 receipt/state and S002 probe services, fault-controlled delivery"
           ]
         },
@@ -684,13 +783,13 @@
           "level": "live",
           "purpose": "Both actual client renderers and supported service/file flows",
           "subjects": [
-            "CM-S5-UI: extension and IDE screenshots with native light/dark/highcontrast tokens, labelled controls, focus/live regions and keyboard-only add/edit/test/Delete/Discard flows",
+            "CM-S5-UI: actual VSCode extension and JetBrains native manager in light/dark/highcontrast, labels, focus/live status and keyboard-only add/edit/test/Delete/Discard flows.",
             "CM-S5-LIFETIME: before-add temporary copy in both clients, panelclose/root switch retention, workbench disposal/reconnect/expiry/restart loss; no inferred lifecycle success from backend snapshots",
             "CM-S5-SOURCE: both clients supported SQL/KV/file Test/Save/discard/delete leave seeded source rows/bytes unchanged; SQL Server unavailable remains pending",
             "CM-S5-PRIVACY: synthetic endpoint/secret/config/capability canaries absent from Settings,memento,webview state,logs,telemetry,artifacts and other-window events; temporary actions cause zero persistence"
           ],
           "fixturesNeeded": [
-            "Running standalone extension host and separate IDE build, real UI automation and keyboard evidence",
+            "Running standalone extension host and JetBrains sandbox IDE, real UI automation and keyboard evidence",
             "Disposable PostgreSQL/Redis and native/converted files; no production data",
             "Collect only safe screenshots, never secret field content/capabilities"
           ]
@@ -699,12 +798,12 @@
           "level": "smoke",
           "purpose": "Final build and evidence after all planned implementation, with honest release gate",
           "subjects": [
-            "CM-S5-BUILD: fresh Node22 backend and extension typecheck/bundle plus IDE targeted typecheck/build, current mirrored contracts; packaged runtime smoke",
-            "CM-S5-SWEEP: per-task relevant tests, then final frozen full backend+extension+IDE relevant suites with exact logs/counts, no live gates forced and no historical failures relabeled",
+            "CM-S5-BUILD: fresh Node22 backend and extension typecheck/bundle; JDK21 ./gradlew test build and applicable verifyPlugin checks; packaged runtime smoke for both live clients.",
+            "CM-S5-SWEEP: per-task relevant Node/JUnit tests, then final frozen backend+explicit extension+JetBrains suites with exact logs/counts; no forced live gates or historical failure relabeling.",
             "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates"
           ],
           "fixturesNeeded": [
-            "Two-repo commit/test manifests, original raw failures/skips/TODO retained",
+            "One repository commit plus Node/JUnit/IDE test manifests, original raw failures/skips/TODO retained",
             "Manual review per user direction for implementation; mandatory LLD review before approval, no automated post-build CR"
           ]
         }
@@ -748,22 +847,22 @@
       ]
     },
     "migration": {
-      "stateBefore": "S1 backend analyzer locates v2types/session/removal helpers; source supplement confirms extension has injectable panels/commands but no current connection manager. IDE still uses legacy Data Sources input/pane, generic globally shared main socket and service list errors→[]. S004 completion approved with explicit failed-sweep/manual-review exceptions; release gates remain disabled.",
-      "stateAfter": "Both VSCode clients have Settings/palette/editor routing into common sc7 state semantics, safe descriptor forms, explicit registered root and scope, full-key counts, memory-only workbench session transport, generation-safe Test, signed same-operation recovery and S004 removal presentation. Separate privileged per-window transport verified; backend schemas, credentials/registry ownership and release requirements unchanged.",
+      "stateBefore": "Analyzer and source confirm no connection manager in current VSCode extension; JetBrains has native application Settings, APP-scoped stateless DaemonGatewayService and one-shot UnixSocketDaemonRpc. S004 backend contracts are built but release prerequisites remain pending. User explicitly deprecated insrc-ide and selected VSCode+JetBrains. [[c11]][[c12]]",
+      "stateAfter": "Both live plugins implement native sc7 manager behavior using TypeScript/Kotlin controllers and shared JSON scenarios. Session owners are extension workbench and JetBrains Project, independent of views. Backend schemas/ownership and historical failures unchanged; deprecated fork is excluded.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Freeze both checkout commits and current integration files; pin generated consumer module closure and verify uncommitted source drift. Track external edits under this S005 ledger and obtain filesystem access through normal escalation before writes. No external edits during design.",
+          "action": "Record user scope correction and source manifests for vscode-plugin/ and jetbrains-plugin/ in this repository. Preserve approved upstream JSON bodies as history; scope correction supersedes fork requirements.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Add pure sc7 types/model/reply decoders and extend existing thin shared client with persistent multiplexed sockets, preserving one-shot exports. Test independently with real isolated socket server and bounded faults.",
+          "action": "Add canonical wire/state/effect JSON fixtures and native TypeScript/Kotlin models/decoders; extend existing TypeScript and Kotlin transport boundaries with persistent multiplexing while preserving one-shot APIs.",
           "rollbackable": true
         },
         {
           "order": 3,
-          "action": "Add workbench-memory session owner and scope-aware client effects in extension; add trusted window-scoped privileged IDE lanes and mechanically synchronize reviewed pure core. Verify two-workbench/root isolation before enabling any temporary UI.",
+          "action": "Add extension workbench owner and JetBrains project-level Disposable session service with explicit root-data and Saved lanes; prove two-owner isolation and view-independent lifecycle before temporary UI.",
           "rollbackable": true,
           "prerequisiteFlags": [
             "Private current contract/lifecycle fixtures pass; no shipped positive evidence"
@@ -771,43 +870,43 @@
         },
         {
           "order": 4,
-          "action": "Wire extension Settings/commands/webview and migrate IDE pane/actions/service/types/native Settings to v2-only manager path. Keep old IDs/legacy unrelated signatures. Add theme/keyboard UI, descriptors, dirty/reconciliation states and exact Delete/Discard.",
+          "action": "Wire VSCode Settings/commands/dedicated webview and JetBrains ConnectionsConfigurable/ManageConnectionsAction/native panel via plugin.xml, keeping global config Apply/reset separate from immediate connection operations.",
           "rollbackable": true
         },
         {
           "order": 5,
-          "action": "Execute focused tests per task, then both-client native interaction, service/file/privacy/lifecycle evidence and final frozen builds/sweeps after implementation. Review manually per user direction, retain original failed/skipped results. Submit consumer proof without clearing external backend prerequisites.",
+          "action": "Run focused tests per implementation task, actual both-client native UI/service/file/privacy/lifecycle evidence, then frozen Node/backend+extension and Gradle suites. Manual post-build review per user instruction; retain original failures/skips.",
           "rollbackable": true
         },
         {
           "order": 6,
-          "action": "Release manager mutations/temporary visibility only when genuine current S001/provider/worker-affinity/SQLServer and both-client evidence is independently accepted. Otherwise ship explicit upgrade/unsupported gate; never activate using fixture hashes or accepted historical test exceptions.",
+          "action": "Keep mutation/temporary production admission gated until real current S001/provider/worker-affinity/SQLServer and live VSCode+JetBrains acceptance is approved. No deprecated-fork dependency, no fixture-only activation.",
           "rollbackable": true
         },
         {
           "order": 7,
-          "action": "User-confirmed Saved changes/deletes are intentional data mutations and cannot be undone by rolling back UI. UI rollback first disables new mutation admission, preserves reconciliation/cleanup/end controls for live owners, cancels probes and drains/end sessions on workbench disposal. Never downgrade backend to binaries that discard receipt metadata or secret refs.",
+          "action": "User Saved changes/deletes cannot be undone by UI rollback. Disable new admission first, keep reconciliation/cleanup available while live; end owners on actual workbench/project disposal, never downgrade backend receipt/secret compatibility.",
           "rollbackable": false
         }
       ],
-      "backwardCompat": "Backend wire contracts unchanged; IDE mirrored v2 declarations are additive, legacy arrays/results stay separate. Existing editor and action IDs preserved. Extension new aliases route same manager. Older daemon => explicit upgrade-required, no legacy upsert/remove fallback for manager. No registry migration, directory lookup redirection, persisted temporary form/session state or implicit family normalization.",
+      "backwardCompat": "Backend wire unchanged; existing shared IpcClient and Kotlin one-shot DaemonGateway legacy methods remain compatible and unclaimed. New manager uses strict v2 only, old daemon gives upgrade-required with no unsafe fallback. Application-wide Kotlin gateway gains no mutable session state; no new disk recovery store or registry migration. Deprecated insrc-ide carries no compatibility obligation. [[c11]][[c12]]",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Shared pure manager state with native host adapters",
-        "oneLineSummary": "One transport-free sc7 transition core, two host-specific renderers and lifecycle adapters.",
-        "approach": "Use a pure TypeScript state/projection core and strict v2 reply decoders shared by the extension and mechanically synchronized into the IDE fork with a pinned manifest. Extension reuses its injectable webview host conventions; IDE preserves DbDriversInput/pane and service/action identities. Each workbench owns a memory-only control connection independently of panel lifetime; scope-specific data and Saved lanes remain explicit. No new backend ownership or persistent client connection store.",
+        "name": "Native TypeScript and Kotlin controllers with one scenario contract",
+        "oneLineSummary": "One language-neutral sc7 contract and transcript corpus; native host controllers and renderers.",
+        "approach": "Implement the sc7 TypeScript controller in the extension and a Kotlin controller in JetBrains. Validate exact protocol/state/effect parity using one checked-in JSON scenario corpus, including all race,unknown-outcome and lifecycle cases. Reuse injectable extension cores and existing native JetBrains Swing/JUnit patterns. Project/workbench-owned persistent session lanes are independent of views; no shared JS runtime or deprecated fork.",
         "pros": [
-          "Smallest model that shares risky state/recovery semantics while respecting two existing host architectures",
-          "Core transcript fixtures and synchronized hashes detect client drift",
-          "Native focus/theme/disposal adapters stay idiomatic"
+          "Native theme/accessibility/lifecycle support in both live clients",
+          "No new JS bridge/runtime in Kotlin",
+          "Shared fixtures make cross-language safety drift testable"
         ],
         "cons": [
-          "Two renderers require independent visual/keyboard evidence",
-          "Cross-repo sync and privileged IPC lifecycle must be tested"
+          "Two implementations require bidirectional fixture and native UI acceptance",
+          "Kotlin persistent socket/session adapter is new client work"
         ],
         "costEstimate": "L",
         "alternativeId": "a1",
@@ -816,37 +915,37 @@
           {
             "constraintId": "ac1",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "ac2",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "ac3",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "sc1",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "sc2",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "sc3",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "sc4",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "sc5",
@@ -856,7 +955,7 @@
           {
             "constraintId": "sc6",
             "verdict": "satisfies",
-            "notes": "Shared validated protocol/state plus independently verified native integration fulfills the obligation without backend redesign."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           },
           {
             "constraintId": "sc7",
@@ -891,23 +990,23 @@
           {
             "constraintId": "k5",
             "verdict": "satisfies",
-            "notes": "Additive v2 contract, retained legacy IDs and explicit synchronized parity."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           }
         ],
-        "rationale": "Meets ac1–ac3 and sc1–sc7 with shared safety/recovery semantics and existing host patterns. Separate renderers and real socket/privileged routing tests remain mandatory."
+        "rationale": "Meets ac1–ac3 and sc1–sc8/k1–k5 with native controls and one explicit behavioral contract, without an embedded web runtime."
       },
       {
         "id": "a2",
-        "name": "Independent client controllers with common protocol fixtures",
-        "oneLineSummary": "Each client owns its sc7 controller and renderer, checked against common contract scenarios.",
-        "approach": "Implement the same public sc7 state model separately inside the extension and IDE workbench, preserving host conventions and existing commands. Both validate exact backend contracts and run the same scenario fixtures; each implements memory-only session control, dirty guards, same-ticket recovery and safe outcome presentation independently.",
+        "name": "Common web manager rendered in extension and JetBrains JBCef",
+        "oneLineSummary": "Reuse TypeScript state and HTML UI through two native wrappers.",
+        "approach": "Reuse the TypeScript controller and HTML manager inside extension webview and a JetBrains JBCef surface, with a strictly validated native bridge to project-scoped session lanes. Current JBCef artifact preview demonstrates availability, but a new sensitive-management bridge and equivalent accessibility would need full acceptance.",
         "pros": [
-          "No cross-repo source synchronization mechanism",
-          "Host-specific controllers integrate directly with current ownership patterns"
+          "One executable controller and form renderer",
+          "Identical layout and transcripts"
         ],
         "cons": [
-          "Duplicates subtle unknown-outcome and lease/session recovery logic",
-          "Greater review/test burden to keep long-term behavior equivalent"
+          "Adds sensitive JS/native bridge and browser lifecycle in Kotlin",
+          "Heavier accessibility/theme and packaging work than native existing Settings patterns"
         ],
         "costEstimate": "L",
         "alternativeId": "a2",
@@ -991,11 +1090,11 @@
           {
             "constraintId": "k5",
             "verdict": "satisfies",
-            "notes": "Additive v2 contract, retained legacy IDs and explicit synchronized parity."
+            "notes": "Native TypeScript/Kotlin consumers share exact wire and behavior fixture expectations; independent host UI/lifecycle tests remain mandatory."
           }
         ],
-        "rationale": "Also fulfills every acceptance/contract, but duplicates subtle operation reconciliation, dirty and session-state rules with no user benefit.",
-        "reasonRejected": "Also fulfills every acceptance/contract, but duplicates subtle operation reconciliation, dirty and session-state rules with no user benefit."
+        "rationale": "Viable with all controls but larger trust and lifecycle surface than native Kotlin; no user need justifies it.",
+        "reasonRejected": "Native Swing is already used for live Settings; sharing behavior fixtures meets parity without adding a sensitive browser bridge."
       }
     ],
     "chosenAlternative": "a1",
@@ -1003,7 +1102,7 @@
     "uxDefinition": {
       "type": "AdaptiveCard",
       "version": "1.5",
-      "narrative": "Two-pane manager shared across standalone VSCode extension and IDE editor: repository/scope filters and authoritative rows on the left, descriptor-driven draft on the right. Separate recovery examples show that busy, unknown and committed cleanup are different outcomes; this generated mock is illustrative and submits no real credentials or mutations.",
+      "narrative": "Shared layout/state schematic for VSCode extension and native JetBrains Connections manager. Both use the same scoped rows, safe draft and truthful recovery; JetBrains application Settings explicitly selects an open project before a project-owned manager. This is design preview only.",
       "body": [
         {
           "type": "TextBlock",
@@ -1276,7 +1375,7 @@
     },
     "sequenceDefinition": {
       "id": "s005-lifecycle-and-recovery",
-      "narrative": "Opening and switching roots attaches scoped lanes to the same workbench owner. A lost mutation response reconciles the original operation; closing the panel does not end the temporary session.",
+      "narrative": "Both live clients keep session ownership above manager views: extension workbench or JetBrains Project. A lost reply reconciles the original operation; closing Settings/manager does not end temporary state.",
       "participants": [
         {
           "id": "ui",
@@ -1290,8 +1389,8 @@
         },
         {
           "id": "host",
-          "label": "Privileged workbench lane owner",
-          "description": "Per-window control/data/Saved lanes; trusted caller identity."
+          "label": "Workbench/project lane owner",
+          "description": "Actual extension workbench or JetBrains Project owns private capabilities and separate control/data/Saved lanes."
         },
         {
           "id": "daemon",
@@ -1358,10 +1457,17 @@
         },
         {
           "from": "daemon",
-          "to": "core",
+          "to": "host",
           "label": "Committed truth with independent phases",
           "description": "Render registration, activation/refresh and owned cleanup separately.",
           "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "core",
+          "label": "Publish validated safe outcome for current view generation",
+          "description": "No direct daemon-to-renderer capability path; Kotlin updates Swing only on EDT and after disposal/generation checks.",
+          "kind": "return"
         },
         {
           "from": "ui",
@@ -1373,82 +1479,82 @@
         {
           "from": "host",
           "to": "daemon",
-          "label": "Heartbeat while workbench live; end on workbench disposal",
+          "label": "Heartbeat while owner lives; end on workbench/project disposal",
           "description": "30sheartbeat; daemon90sdeadline/epoch authoritative. End does not occur on panelclose.",
           "kind": "call"
         }
       ]
     },
     "componentDependencyDefinition": {
-      "id": "s005-client-boundaries",
-      "narrative": "Both native renderers consume one pure state/decoder core and use host-specific privileged transport adapters. Only adapters reach daemon IPC; no client imports daemon storage, providers or runtime drivers.",
+      "id": "s005-live-client-boundaries",
+      "narrative": "Native TypeScript and Kotlin consumers share protocol/scenario fixtures, not executable source. Only each workbench/project transport adapter reaches existing daemon owners. Deprecated insrc-ide is excluded.",
       "components": [
         {
-          "id": "extension",
-          "label": "Standalone extension renderer",
+          "id": "vscode",
+          "label": "VSCode manager",
           "path": "vscode-plugin/src/extension.ts",
-          "description": "New manager webview/commands using existing injectable host patterns."
+          "description": "Dedicated webview/commands wired through extension host."
         },
         {
-          "id": "ide",
-          "label": "IDE Data Sources renderer",
-          "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts",
-          "description": "Preserves editor/palette identities, replaces legacy manager path."
+          "id": "jb",
+          "label": "JetBrains manager",
+          "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+          "description": "New native Connections surface linked from existing application Settings; actual Project selects service."
         },
         {
-          "id": "core",
-          "label": "Pure sc7 core",
-          "description": "Proposed shared manager model/controller/strict decoders, synchronized to fork with hash checks."
+          "id": "fixtures",
+          "label": "Common wire/sc7 scenarios",
+          "description": "Proposed language-neutral versioned JSON corpus drives Node and JUnit parity."
         },
         {
-          "id": "extHost",
-          "label": "Extension workbench adapter",
+          "id": "vhost",
+          "label": "Workbench socket owner",
           "path": "src/shared/ipc-client.ts",
-          "description": "Existing thin client extended with persistent lane multiplexing; no daemon imports."
+          "description": "Persistent TypeScript lanes preserve one-shot API."
         },
         {
-          "id": "main",
-          "label": "IDE window-scoped adapter",
-          "path": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/platform/insrc/electron-main/insrcDaemonMainService.ts",
-          "description": "Trusted Electron caller binds separate memory-only lanes per window; current global channel remains unclaimed."
+          "id": "jhost",
+          "label": "Project socket owner",
+          "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt",
+          "description": "New project-level Disposable service uses Kotlin persistent lane at existing transport boundary; APP gateway remains unclaimed/stateless."
         },
         {
           "id": "daemon",
-          "label": "Existing backend owners",
+          "label": "Backend sc1–sc6/sc8",
           "path": "src/daemon/connection-session-rpc.ts",
-          "description": "Consumes unchanged sc1–sc6/sc8 ownership and evidence gates."
+          "description": "Existing daemon owns authority, receipts, configurations and cleanup."
         }
       ],
       "dependencies": [
         {
-          "from": "extension",
-          "to": "core",
-          "label": "view/events"
+          "from": "vscode",
+          "to": "fixtures",
+          "label": "Node parity"
         },
         {
-          "from": "ide",
-          "to": "core",
-          "label": "same synchronized transitions"
+          "from": "jb",
+          "to": "fixtures",
+          "label": "JUnit parity"
         },
         {
-          "from": "extension",
-          "to": "extHost",
-          "label": "validated effects"
+          "from": "vscode",
+          "to": "vhost",
+          "label": "validated intents"
         },
         {
-          "from": "ide",
-          "to": "main",
-          "label": "trusted owner-scoped intents"
+          "from": "jb",
+          "to": "jhost",
+          "label": "actual project owner"
         },
         {
-          "from": "extHost",
+          "from": "vhost",
           "to": "daemon",
-          "label": "control/root-data/Saved sockets"
+          "label": "control/root-data/Saved"
         },
         {
-          "from": "main",
+          "from": "jhost",
           "to": "daemon",
-          "label": "isolated window-owned sockets"
+          "label": "isolated project lanes"
         }
       ]
     },
@@ -1492,12 +1598,6 @@
       "quotedText": "Existing shared thin one-shot socket client; persistent workbench support is proposed consumer extension."
     },
     {
-      "id": "c3",
-      "kind": "code",
-      "ref": "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts",
-      "quotedText": "Legacy list catches errors and returns empty array; new v2 lane must preserve failure."
-    },
-    {
       "id": "c4",
       "kind": "prior-artifact",
       "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/S005-HANDOFF.html",
@@ -1538,6 +1638,18 @@
       "kind": "step-output",
       "ref": "s2,s3,s8",
       "quotedText": "Two viable alternatives; final score table explicitly includes ac1–ac3,sc1–sc8,k1–k5."
+    },
+    {
+      "id": "c11",
+      "kind": "stakeholder",
+      "ref": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/CLIENT-SCOPE-UPDATE.json",
+      "quotedText": "insrc-ide is deprecated, only VS Code + JetBrains"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": "S005/evidence/design/jetbrains-discovery.json",
+      "quotedText": "Analyzer located Kotlin APP gateway, one-shot socket transport, native Settings and plugin.xml registrations; source and existing JUnit tests supplemented."
     }
   ]
 }

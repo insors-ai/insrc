@@ -13,7 +13,7 @@
 <div class="meta">Product requirements · 21 October 2026 · <span class="pill">Draft for review</span>
 </div>
 <p>
-Make registered data sources easy to find and maintain from VS Code’s insrc Settings, so data analysis and the
+Make registered data sources easy to find and maintain from insrc Settings in VS Code and JetBrains, so data analysis and the
 future ontology builder can use them.
 </p>
 </header>
@@ -26,16 +26,16 @@ Temporary connections support one-off CSV/JSON/Parquet analysis and any other da
 native User/Workspace settings tabs do not change connection ownership.
 </p>
 <div class="note">
-<strong>Existing implementation:</strong>
-The separate insrc IDE fork already registers a Data Sources editor and add/edit/remove/test commands. This
-work improves Settings discoverability and the management interaction, reusing that surface and the daemon.
-The standalone VS Code extension has Settings contributions but no equivalent connection management wiring
-found during inspection.
+<strong>Current client scope (user clarification, 29 October 2026):</strong>
+Only the standalone VS Code extension (<code>vscode-plugin/</code>) and JetBrains plugin
+(<code>jetbrains-plugin/</code>) are delivery targets. The insrc-ide fork is deprecated and is not a
+compatibility or release dependency. Both live clients have Settings surfaces; S005 adds native connection
+management and consumes the same daemon protocol. <a href="epics/manage-saved-temporary-data-connections-E20261021484fcef7/CLIENT-SCOPE-UPDATE.html">Scope correction</a>.
 </div>
 <p class="muted">
-Visual basis: existing insrc configuration groups, native VS Code Settings search/category layout, and the
-IDE’s theme-token-based Data Sources editor with repository sections. The mocks show proposed additions; they
-are not screenshots of shipping UI.
+Visual basis: existing insrc configuration groups, native VS Code Settings search/category layout, and
+JetBrains native Settings controls. The mocks show shared behavior and proposed additions; they are not
+screenshots of shipping UI.
 </p>
 <h2>2. Required behavior</h2>
 <p>Product baseline: CM01 discovery/listing; CM02 add; CM03 safe editing/credentials; CM04 draft tests; CM05 save outcomes; CM06 repository/error handling; CM07 saved/temporary lifetimes and filters; CM08 discard/delete. These are required outcomes, not assertions of existing production behavior.</p>
@@ -218,10 +218,10 @@ restarts. Source files are never deleted.
 Use native Settings for discovery and a themed editor for the rich list/form; a command link in the setting
 description should open the manager. Do not introduce a plaintext connections array in
 <code>settings.json</code>
-. Keep existing palette commands and the Data Sources editor routed to the same management behavior. Use VS
-Code theme tokens, native spacing, visible focus, associated labels, and keyboard-accessible controls. The
-standalone extension needs equivalent command/webview wiring; the IDE fork should extend its existing
-pane/service.
+. Route Settings and live command/action entry points to the same guarded management behavior. Use VS
+Code theme tokens and JetBrains native theme controls, spacing, visible focus, labels and keyboard access.
+The extension adds command/webview wiring; JetBrains adds a native Connections manager backed by a
+project-owned memory-only session service. Global Settings Apply/reset must not implicitly save connections.
 </p>
 <table>
 <thead>
@@ -308,7 +308,7 @@ contract compatibility. No live production data is required for UI testing.
 <li>
 <a href="../src/daemon/db-rpc.ts">Daemon connection management</a> and <a href="../src/daemon/db/config.ts">registry persistence</a>
 </li>
-<li>IDE fork: <code>src/vs/workbench/contrib/insrc/common/insrcConfiguration.ts</code>; <code>browser/dbDrivers/dbDriversPane.ts</code>; <code>dbConnectionCommands.ts</code>; <code>insrcDbConnectionsServiceImpl.ts</code>. Verified locally; separate repository.</li>
+<li><a href="../jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt">JetBrains native Settings</a>; <a href="../jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt">Kotlin daemon transport</a>. Current in-repository delivery target.</li>
 <li>
 <a href="ontology-builder-prd.html">Ontology PRD</a> · <a href="../plans/ontology-builder-implementation.md">Ontology delivery plan</a>
 </li>
@@ -355,4 +355,4 @@ $('theme').onclick=()=>{const light=$('studio').classList.toggle('light');$('the
 <!-- Delivery invariant: daemon owns connection persistence and secrets; clients use IPC; stored secret values must never be returned to clients. This is required behavior, not a claim of current implementation. -->
 
 <!-- Required mutation guarantee: failed registry reads and rejected stale mutations must preserve registry contents and stored credentials unchanged. Unknown mutation responses must reconcile idempotently using the same operation ID before another mutation; activation/refresh retries must not repeat creation. -->
-<!-- Required compatibility guarantee: connection IPC changes must preserve existing clients through an explicit compatibility strategy, and method names and payload shapes must remain synchronized with the separate IDE fork through mirrored types. Existing-client behavior is a design/build validation gate, not assumed compatibility. -->
+<!-- Required compatibility guarantee: connection IPC changes must preserve existing clients through an explicit compatibility strategy, and method names and payload shapes must remain synchronized across the VS Code and JetBrains plugins through strict typed consumers and common protocol fixtures; the deprecated insrc-ide fork has no compatibility or release obligation. Existing-client behavior is a design/build validation gate, not assumed compatibility. -->

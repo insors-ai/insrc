@@ -8,30 +8,30 @@
 <div><div class="proj">insrc</div><h1>Component dependencies</h1><span class="kind">Component dependencies</span></div>
 <table class="ref">
 <tr><th>Work item</th><td>E20261021484fcef7:S005</td></tr>
-<tr><th>Source doc</th><td><a href="./LLD.md">LLD-484fcef7efaf229e-s5</a></td></tr>
-<tr><th>Date</th><td>2026-10-29 19:13</td></tr>
+<tr><th>Source doc</th><td><a href="LLD.md">LLD-484fcef7efaf229e-s5</a></td></tr>
+<tr><th>Date</th><td>2026-10-29 14:05</td></tr>
 <tr><th>User</th><td>Subho Ghosh</td></tr>
 </table>
 </header>
-<section class="blk narr"><h2>Narrative</h2><p class="context">Story S005 of Epic manage-saved-temporary-data-connections · Manage and filter connections from Settings in both VS Code clients — Find and maintain connections in the editor.</p><p>Both native renderers consume one pure state/decoder core and use host-specific privileged transport adapters. Only adapters reach daemon IPC; no client imports daemon storage, providers or runtime drivers.</p></section>
+<section class="blk narr"><h2>Narrative</h2><p class="context">S005 — Manage connections in VS Code and JetBrains only</p><p>Native TypeScript and Kotlin consumers share protocol/scenario fixtures, not executable source. Only each workbench/project transport adapter reaches existing daemon owners. Deprecated insrc-ide is excluded.</p></section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
 <div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in">+</button><button id="zfit" title="Fit to view">Fit</button><button id="z100" title="Actual size">1:1</button></div>
 <div class="vp" id="vp"><div class="stage" id="stage"><pre class="mermaid">flowchart LR
-  extension[&quot;Standalone extension renderer&lt;br/&gt;&lt;small&gt;extension.ts&lt;/small&gt;&quot;]
-  ide[&quot;IDE Data Sources renderer&lt;br/&gt;&lt;small&gt;dbDriversPane.ts&lt;/small&gt;&quot;]
-  core[&quot;Pure sc7 core&quot;]
-  extHost[&quot;Extension workbench adapter&lt;br/&gt;&lt;small&gt;ipc-client.ts&lt;/small&gt;&quot;]
-  main[&quot;IDE window-scoped adapter&lt;br/&gt;&lt;small&gt;insrcDaemonMainService.ts&lt;/small&gt;&quot;]
-  daemon[&quot;Existing backend owners&lt;br/&gt;&lt;small&gt;connection-session-rpc.ts&lt;/small&gt;&quot;]
-  extension --&gt;|view/events| core
-  ide --&gt;|same synchronized transitions| core
-  extension --&gt;|validated effects| extHost
-  ide --&gt;|trusted owner-scoped intents| main
-  extHost --&gt;|control/root-data/Saved sockets| daemon
-  main --&gt;|isolated window-owned sockets| daemon</pre></div></div>
+  vscode[&quot;VSCode manager&lt;br/&gt;&lt;small&gt;extension.ts&lt;/small&gt;&quot;]
+  jb[&quot;JetBrains manager&lt;br/&gt;&lt;small&gt;InsrcSettingsConfigurable.kt&lt;/small&gt;&quot;]
+  fixtures[&quot;Common wire/sc7 scenarios&quot;]
+  vhost[&quot;Workbench socket owner&lt;br/&gt;&lt;small&gt;ipc-client.ts&lt;/small&gt;&quot;]
+  jhost[&quot;Project socket owner&lt;br/&gt;&lt;small&gt;UnixSocketDaemonRpc.kt&lt;/small&gt;&quot;]
+  daemon[&quot;Backend sc1–sc6/sc8&lt;br/&gt;&lt;small&gt;connection-session-rpc.ts&lt;/small&gt;&quot;]
+  vscode --&gt;|Node parity| fixtures
+  jb --&gt;|JUnit parity| fixtures
+  vscode --&gt;|validated intents| vhost
+  jb --&gt;|actual project owner| jhost
+  vhost --&gt;|control/root-data/Saved| daemon
+  jhost --&gt;|isolated project lanes| daemon</pre></div></div>
 </div></section>
-<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">6 components, 6 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>Standalone extension renderer</td><td>vscode-plugin/src/extension.ts</td><td>Pure sc7 core, Extension workbench adapter</td><td>New manager webview/commands using existing injectable host patterns.</td></tr><tr><td>IDE Data Sources renderer</td><td>/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts</td><td>Pure sc7 core, IDE window-scoped adapter</td><td>Preserves editor/palette identities, replaces legacy manager path.</td></tr><tr><td>Pure sc7 core</td><td class="missing">—</td><td class="missing">—</td><td>Proposed shared manager model/controller/strict decoders, synchronized to fork with hash checks.</td></tr><tr><td>Extension workbench adapter</td><td>src/shared/ipc-client.ts</td><td>Existing backend owners</td><td>Existing thin client extended with persistent lane multiplexing; no daemon imports.</td></tr><tr><td>IDE window-scoped adapter</td><td>/Users/subhagho/work/projects/insors/insrc-ide/src/vs/platform/insrc/electron-main/insrcDaemonMainService.ts</td><td>Existing backend owners</td><td>Trusted Electron caller binds separate memory-only lanes per window; current global channel remains unclaimed.</td></tr><tr><td>Existing backend owners</td><td>src/daemon/connection-session-rpc.ts</td><td class="missing">—</td><td>Consumes unchanged sc1–sc6/sc8 ownership and evidence gates.</td></tr></tbody></table></section>
-<footer class="ft"><span>Generated by insrc · companion of LLD-484fcef7efaf229e-s5</span><span>2026-10-29 19:13</span></footer>
+<section class="blk desc"><h2>Description</h2><h3>Components</h3><p class="lead">6 components, 6 dependencies. An arrow points from a component to what it depends on.</p><table class="dt"><thead><tr><th>Component</th><th>Path</th><th>Depends on</th><th>Description</th></tr></thead><tbody><tr><td>VSCode manager</td><td>vscode-plugin/src/extension.ts</td><td>Common wire/sc7 scenarios, Workbench socket owner</td><td>Dedicated webview/commands wired through extension host.</td></tr><tr><td>JetBrains manager</td><td>jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt</td><td>Common wire/sc7 scenarios, Project socket owner</td><td>New native Connections surface linked from existing application Settings; actual Project selects service.</td></tr><tr><td>Common wire/sc7 scenarios</td><td class="missing">—</td><td class="missing">—</td><td>Proposed language-neutral versioned JSON corpus drives Node and JUnit parity.</td></tr><tr><td>Workbench socket owner</td><td>src/shared/ipc-client.ts</td><td>Backend sc1–sc6/sc8</td><td>Persistent TypeScript lanes preserve one-shot API.</td></tr><tr><td>Project socket owner</td><td>jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt</td><td>Backend sc1–sc6/sc8</td><td>New project-level Disposable service uses Kotlin persistent lane at existing transport boundary; APP gateway remains unclaimed/stateless.</td></tr><tr><td>Backend sc1–sc6/sc8</td><td>src/daemon/connection-session-rpc.ts</td><td class="missing">—</td><td>Existing daemon owns authority, receipts, configurations and cleanup.</td></tr></tbody></table></section>
+<footer class="ft"><span>Generated by insrc · companion of LLD-484fcef7efaf229e-s5</span><span>2026-10-29 14:05</span></footer>
 </div>
 <script>(function(JM,Ag){typeof exports=="object"&&typeof module<"u"?module.exports=Ag():typeof define=="function"&&define.amd?define(Ag):(JM=typeof globalThis<"u"?globalThis:JM||self,JM.mermaid=Ag())})(this,function(){var FWe,RWe;"use strict";function JM(i){for(var s=[],u=1;u<arguments.length;u++)s[u-1]=arguments[u];var d=Array.from(typeof i=="string"?[i]:i);d[d.length-1]=d[d.length-1].replace(/\r?\n([\t ]*)$/,"");var p=d.reduce(function(y,T){var _=T.match(/\n([\t ]+|(?!\s).)/g);return _?y.concat(_.map(function(A){var P,R;return(R=(P=A.match(/[\t ]/g))===null||P===void 0?void 0:P.length)!==null&&R!==void 0?R:0})):y},[]);if(p.length){var v=new RegExp(`
 [	 ]{`+Math.min.apply(Math,p)+"}","g");d=d.map(function(y){return y.replace(v,`

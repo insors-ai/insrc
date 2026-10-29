@@ -65,6 +65,7 @@ import { InvestigationQualificationError } from './investigation-session.js';
 import { runClaudeInvestigationSession, claudeInvestigationAdapter } from './claude-investigation-session.js';
 import { runCodexInvestigationSession, codexInvestigationAdapter } from './codex-investigation-session.js';
 import { runNativeInvestigationProbe } from './native-investigation-probe.js';
+import { collectClaudeProbeObservations } from './claude-investigation-probe.js';
 import type { InvestigationProbeOptions, InvestigationProbeExport } from '../../shared/review-investigation-probe.js';
 
 const log = getLogger('cli-provider');
@@ -461,6 +462,7 @@ export class CliProvider implements LLMProvider {
   async runInvestigationProbe(options: InvestigationProbeOptions): Promise<InvestigationProbeExport> {
     return runNativeInvestigationProbe({ options, adapter: this.kind === 'claude' ? claudeInvestigationAdapter : codexInvestigationAdapter,
       binaryPath: resolveBin(this.binPath), modelArgs: this.modelArgs(), profile: this.getReviewBudgetProfile('reviewer-session'),
+      ...(this.kind === 'claude' ? { collect: collectClaudeProbeObservations } : {}),
       invoke: (args, prompt, execution) => runInProcessGroup(execution.binaryPath, args, { ...execution, stdin: prompt }) });
   }
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {

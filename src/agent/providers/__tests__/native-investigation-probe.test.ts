@@ -19,11 +19,13 @@ import { digestValue } from '../../../workflow/code-review/investigation/identit
 import { runInProcessGroup } from '../../../shared/process-group.js';
 import type { QualifiedInvestigationSessionBinding } from '../../../shared/types.js';
 
-const actor = `import {readFileSync,appendFileSync} from 'node:fs';
+const actor = `import {readFileSync,appendFileSync,writeFileSync,existsSync} from 'node:fs';
 import {createConnection} from 'node:net';
 appendFileSync(new URL('./calls.txt',import.meta.url),'called\\n');
 let input='';for await(const c of process.stdin)input+=c;
 const {turn}=JSON.parse(input.split('\\n').at(-1));
+writeFileSync(new URL('./observed.json',import.meta.url),JSON.stringify({args:process.argv.slice(2),home:process.env.HOME,hasApiKey:process.env.ANTHROPIC_API_KEY!==undefined,hasNodeOptions:process.env.NODE_OPTIONS!==undefined}));
+if(existsSync(new URL('./early-exit',import.meta.url))){process.stdout.write(JSON.stringify({type:'result',result:'I denied everything',structured_output:{tools:[],hooks:[],plugins:[]}}));process.exit(0);}
 const config=JSON.parse(readFileSync(process.cwd()+'/investigation-binding-'+process.env.INSRC_REVIEW_NATIVE_BINDING_ID+'.json','utf8'));
 const {expiresAt,...binding}=config.binding;
 async function call(progress){return new Promise((yes,no)=>{const s=createConnection(config.socket);let text='';s.on('error',no);s.on('connect',()=>s.write(JSON.stringify({...binding,operation:'progress',progress})+'\\n'));s.on('data',c=>{text+=c;const end=text.indexOf('\\n');if(end<0)return;const r=JSON.parse(text.slice(0,end));s.destroy();if(r.ok)yes(r.result);else no(Error('refused'));});});}
@@ -59,7 +61,7 @@ test('Trusted probe executes once with exact pinned launch, inclusive budget and
     const grant = issueInvestigationProbeGrant(f.context);
     const result = await f.provider.runInvestigationProbe({ grant, signal: f.abort.signal });
     assert.equal(readFileSync(join(f.repo, 'calls.txt'), 'utf8'), 'called\n');
-    assert.deepEqual(result.status.observations.map(o => o.check), ['durable-progress', 'cancellation-exit']);
+    assert.deepEqual(result.status.observations.filter(o => o.verdict !== 'unverifiable').map(o => o.check), ['durable-progress', 'cancellation-exit']);
     assert.equal(result.status.state, 'unsupported', 'scripted actor did not establish native effective inventory');
     assert.equal(result.candidate, undefined);
     assert.equal(result.status.usage.modelCalls, null, 'subprocess count is not actual model-call telemetry');
@@ -74,6 +76,26 @@ test('Trusted probe executes once with exact pinned launch, inclusive budget and
     await assert.rejects(() => large.provider.runInvestigationProbe({ grant, signal: large.abort.signal }));
     assert.equal(existsSync(join(large.repo, 'calls.txt')), false, 'inclusive admission refuses before launch');
   } finally { await large.close(); }
+});
+
+test('Claude probe retains OAuth without credential copies and never fabricates cancellation proof', async () => {
+  for (const early of [false, true]) {
+    const f = await fixture();
+    try {
+      if (early) writeFileSync(join(f.repo, 'early-exit'), 'fixture');
+      const result = await f.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant(f.context), signal: f.abort.signal });
+      const observed = JSON.parse(readFileSync(join(f.repo, 'observed.json'), 'utf8'));
+      assert.equal(observed.home, process.env['HOME']);
+      assert.equal(observed.hasApiKey, false);
+      assert.equal(observed.hasNodeOptions, false);
+      assert.equal(observed.args.includes('--bare'), false);
+      assert.equal(result.candidate, undefined);
+      assert.equal(result.status.state, 'unsupported');
+      assert.equal(result.status.observations.some(o => o.check === 'cancellation-exit'), !early);
+      assert.equal(existsSync(join(f.probe.cwd, 'auth.json')), false);
+      assert.equal(existsSync(join(f.probe.cwd, '.credentials.json')), false);
+    } finally { await f.close(); }
+  }
 });
 
 test('Production native session refuses probe grants and unchanged installed-proof checks hold', async () => {

@@ -1,0 +1,43 @@
+/* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import type { ProcessGroupResult } from '../../shared/process-group.js';
+import type { InvestigationProbeObservation } from '../../shared/review-investigation-probe.js';
+import type { NativeProbeInvocationIdentity } from './native-investigation-probe.js';
+import { createHash } from 'node:crypto';
+import { PROBE_OBSERVATION_BYTES } from '../../shared/review-investigation-probe.js';
+
+export const CLAUDE_PROBE_TELEMETRY_VERSION = '2.1.310 (Claude Code)';
+
+/** Recognized init hints can expose violations, but are not a complete effective
+ * configuration/denial transcript. In particular, result/structured_output text
+ * and requested flags are never native isolation evidence. */
+export function collectClaudeProbeObservations(result: ProcessGroupResult, identity: NativeProbeInvocationIdentity): readonly InvestigationProbeObservation[] {
+  const common = { attemptId: identity.attemptId, launchDigest: identity.launchDigest, effectiveDigest: identity.effectiveDigest,
+    provenance: 'runtime-event' as const, at: Date.now(), observationDigest: createHash('sha256')
+      .update(String(Buffer.byteLength(result.stdout))).update(':').update(result.stdout).update(result.stderr).digest('hex') };
+  const missing = (detail: string): InvestigationProbeObservation[] => [{ ...common, check: 'effective-inventory', verdict: 'unverifiable', detail }];
+  if (identity.binaryVersion !== CLAUDE_PROBE_TELEMETRY_VERSION)
+    return missing('Unsupported Claude telemetry version; no isolation inferred from version or flags');
+  if (result.outputLimitExceeded || result.observerFailed || Buffer.byteLength(result.stdout) > PROBE_OBSERVATION_BYTES)
+    return missing('Incomplete or over-limit native output cannot establish isolation');
+  let parsed: unknown;
+  try { parsed = JSON.parse(result.stdout); } catch { return missing('No recognized complete Claude runtime inventory event'); }
+  const events = Array.isArray(parsed) ? parsed : [parsed];
+  const init = events.find((event): event is Record<string, unknown> => !!event && typeof event === 'object' &&
+    (event as Record<string, unknown>)['type'] === 'system' && (event as Record<string, unknown>)['subtype'] === 'init');
+  if (!init) return missing('Claude result envelope does not expose complete effective inventory or independent denial probes');
+  const observations = missing('Claude init hints do not prove hooks, instruction/config sources, credential handling and every required denial');
+  const add = (check: InvestigationProbeObservation['check'], detail: string) => {
+    if (!observations.some(o => o.check === check)) observations.push({ ...common, check, verdict: 'observed-allowed', detail });
+  };
+  if (Array.isArray(init['tools'])) {
+    const tools = init['tools'].filter((tool): tool is string => typeof tool === 'string');
+    const broad = tools.filter(tool => !tool.startsWith('mcp__insrc-scoped-review__'));
+    if (broad.length) add('builtin-tools', 'Native init advertises tools outside the dedicated scoped MCP server');
+    if (tools.includes('Bash') || tools.includes('Shell')) add('shell', 'Native init advertises a shell tool');
+    if (tools.includes('Read') || tools.includes('Glob') || tools.includes('Grep')) add('raw-filesystem', 'Native init advertises unscoped filesystem tools');
+    if (tools.includes('WebFetch') || tools.includes('WebSearch')) add('network', 'Native init advertises unscoped network tools');
+  }
+  if (Array.isArray(init['plugins']) && init['plugins'].length) add('plugins', 'Native init advertises loaded plugins');
+  // Absence, even in a recognized init event, never manufactures a denied row.
+  return observations;
+}

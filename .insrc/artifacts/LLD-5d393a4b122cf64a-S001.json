@@ -1,0 +1,585 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793273734088-3e69mj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-29T11:39:36.587Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 242490,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d393a4b122cf64a",
+    "epicSlug": "classify-module-scope-mutable-state-reachable",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793273734088-3e69mj",
+    "hldEffectiveHash": "5d393a4b122cf64aa2fbc74f943c3e1c1b307c653fae2704e1dbedf8d3b3ff46",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive Story under one design: a reach computation from the session worker's handler runtime, a classified inventory fixture with a guard test, and moving any value that needs one copy to its owner. It has real design choices (how to compute reach over imports, the classification scheme, how the guard detects new state) and several tasks, but it is not a new subsystem and decomposes into no independent stories. The closest existing machinery is the session-source inventory test and fixture (partial match: it scans boundary sites, not module-scope state), so it extends a known pattern rather than inventing one. The inventory is large (the session worker imports 19 modules directly and the text search for module-scope mutable declarations under src/daemon hit its cap), which rules out small.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Story's four acceptance criteria (ac1 classification coverage, ac2 guard on new/stale entries, ac3 one-owner routing + move verification, ac4 scanner correctness) fully cover the upstream work item's 'Done when' list in plans/module-state-inventory-sweep.md, and no non-goal is built.",
+          "evidence": "plans/module-state-inventory-sweep.md 'Done when' lists exactly: (1) every value listed/classified with a reason, (2) a test fails on a new unclassified value, (3) any one-owner value is moved. ac1/ac2/ac4 map to (1)+(2), and ac3 plus Migration step 4 (with its explicit escape valve — 'if a needed move is large enough to deserve its own design, stop and raise it as a separate tracked item' — so an oversized move is not silently folded in) map to (3). [files: plans/module-state-inventory-sweep.md]",
+          "action": "Read plans/module-state-inventory-sweep.md in full and compared its 'Done when' bullets against LLD §5 acceptance mapping and §6 Migration step 4.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The four families the design says s3 already gave one owner (chat pool, todos bus, understanding service, run registry) exist exactly at the cited file:line locations with the cited mechanism (SHARED_STATE_METHODS, module-scope `understanding`/`understandingService`).",
+          "evidence": "src/daemon/chat-handler.ts:39 declares `let sessionPool: ChatSessionPool | null = null;`; src/daemon/todos-rpc.ts:122 declares `const bus = new EventEmitter();`; src/daemon/threads/method-class.ts:262 declares `export const SHARED_STATE_METHODS: ReadonlySet<string> = ...` filtered to chat./todos./understanding. method families (SHARED_STATE_FAMILIES at :259), with IN_DAEMON_SHARED_METHODS at :277; src/daemon/threads/session-worker.ts:77 declares `let understanding: UnderstandingService | undefined;`, opened at :184 via `UnderstandingService.open(PATHS.sockFile)`; src/daemon/index.ts:446 declares a function-local `let understandingService: UnderstandingService | undefined;` (inside the daemon start function, not module scope), opened at :523 — exactly matching the design's claim that this instance is 'not module-scope, so outside the scanner'. [files: src/daemon/chat-handler.ts, src/daemon/todos-rpc.ts, src/daemon/threads/method-class.ts, src/daemon/threads/session-worker.ts, src/daemon/index.ts]",
+          "action": "Read chat-handler.ts, todos-rpc.ts, method-class.ts (lines 240-310), session-worker.ts (lines 1-200) and index.ts (lines 435-530) at the cited locations.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The only existing source inventory (connectionSourceInventory/sessionSourceInventory in connection-source-inventory.ts, guarded by session-source-inventory.test.ts) covers only call/new-expression boundary sites (provider-use, connection-use, serialization, filesystem, storage-call, diagnostic), not top-level mutable-declaration module state, so there is currently no guard noticing new module-scope state.",
+          "evidence": "connection-source-inventory.ts's two exported functions both walk CallExpression/NewExpression nodes and classify them into boundary strings; neither inspects top-level VariableStatement declarations. `moduleStateInventory` does not exist anywhere in src/. [files: src/daemon/db/__tests__/connection-source-inventory.ts]",
+          "action": "Read connection-source-inventory.ts in full and grepped the repo for `moduleStateInventory`.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The numeric claim '548 files / 583 top-level candidates' describing the session worker's import closure is accurate.",
+          "evidence": "These counts depend on exactly the TypeScript import-closure walk the not-yet-built moduleStateInventory scanner would perform. No existing tool in the repo reproduces this count today (connectionSourceInventory walks all of src/, not the session-worker closure specifically), and recomputing it by hand over ~1800 src/**/*.ts files is beyond what a targeted read/grep can confirm.",
+          "action": "Globbed src/**/*.ts (1805 files total) and searched for any existing closure-walk utility scoped to session-worker.ts; none exists beyond this design's own proposal, so the exact closure count can't be independently recomputed without building and running the scanner.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "`moduleStateInventory` is genuinely new (no existing symbol by that name) and is designed to reuse connectionSourceInventory's `sourceProgram`/`filesUnder` ts.Program-over-tsconfig pattern.",
+          "evidence": "Grep for `moduleStateInventory` across src/ finds nothing; it appears only in this LLD's own artifact/docs copies. connectionSourceInventory's `sourceProgram` (tsconfig read + ts.createProgram) and `filesUnder` (recursive .ts walk skipping __tests__/*.test.ts) at connection-source-inventory.ts:8-21 are exactly the approach the design describes the new scanner following. [files: src/daemon/db/__tests__/connection-source-inventory.ts]",
+          "action": "Grepped for moduleStateInventory repo-wide and read connection-source-inventory.ts:1-22.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "`SHARED_STATE_METHODS` and `IN_DAEMON_SHARED_METHODS` are reused as-is with the stated shape (ReadonlySet<string> derived from chat./todos./understanding. method families plus chat.dropSession) rather than invented fresh.",
+          "evidence": "method-class.ts:258-264 defines SHARED_STATE_FAMILIES=['chat.','todos.','understanding.'] and derives SHARED_STATE_METHODS as a ReadonlySet<string> filtered from ENTRIES by that prefix list; IN_DAEMON_SHARED_METHODS at :277 is `new Set(['chat.dropSession'])`. Both match the design's §2.3 description exactly, and inDaemonTarget (:290-296) already consumes both sets the way the design's guard proposes to mirror. [files: src/daemon/threads/method-class.ts]",
+          "action": "Read method-class.ts lines 240-310.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every file:line call-site cited for the Session-thread state ownership rule (§3.2) — method-class.ts:262/:290, workflow-run-registry.ts:76/:91, session-worker.ts:77/:184, index.ts:446/:523 — points at the real declaration or call it claims to, with no stale line numbers.",
+          "evidence": "workflow-run-registry.ts:76 is `const runs = new Map<string, RunState>();` and :91 is `let board: RunBoard | undefined;` — both real module-scope state, not the comment-divider at :72 that an earlier draft of this same LLD was flagged for (recorded in .insrc/artifacts/LLD-5d393a4b122cf64a-S001.json's prior review finding `change-sites.1`, outcome does-not-hold). The current on-disk LLD.md (and the text under review) already cites :76/:91, confirming the stale :72 citation was corrected. method-class.ts:262/:290, session-worker.ts:77/:184 and index.ts:446/:523 were all independently confirmed above under current-behaviour. [files: src/daemon/workflow-run-registry.ts, docs/standalone/classify-module-scope-mutable-state-reachable-E202610295d393a4b/S001/LLD.md]",
+          "action": "Re-read workflow-run-registry.ts lines 1-100 to confirm :76 and :91 are real declarations (not the :72 comment divider from the prior review's flagged citation), and compared the on-disk docs/standalone LLD.md against the design text under review.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed `moduleStateInventory(root: string): ModuleStateSite[]` signature is internally consistent with how a test file would call it, mirroring `connectionSourceInventory(root: string): InventorySite[]`'s real shape.",
+          "evidence": "connectionSourceInventory(root: string): InventorySite[] matches the real export at connection-source-inventory.ts:23, and session-source-inventory.test.ts calls `sessionSourceInventory(root)` with the same single-string-argument pattern the new function would follow. [files: src/daemon/db/__tests__/connection-source-inventory.ts, src/daemon/db/__tests__/session-source-inventory.test.ts]",
+          "action": "Compared the LLD's §2.1 signature against the real connectionSourceInventory export and its test caller.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Omitting source/site digests from the new fixture (unlike session-source-inventory's fixture, which keys on sourceDigest/sitesDigest) is a deliberate, justified tradeoff rather than an oversight that would make the guard too strict or too loose.",
+          "evidence": "session-source-inventory.test.ts asserts `digest(readFileSync(...)) === entry.sourceDigest` for every classified file, so any edit to any of ~280 files fails that guard — exactly the friction the design's §7.2 (alternative a2) names as the reason to reject a digest-based fixture. §3.1 states the no-digest choice explicitly ('No source or site digests: editing a classified file never fails the guard'), so the divergence is examined and reasoned, not accidental. [files: src/daemon/db/__tests__/session-source-inventory.test.ts]",
+          "action": "Compared session-source-inventory.test.ts's digest assertions against LLD §3.1's explicit no-digest design and §7.2's rejection rationale for alternative a2.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Running this as a standalone Story with no parent HLD does not redesign scope actually owned by another active Story or disturb Epic 86197ac6 Story s3's shared-state mechanism (chat/todos/understanding routing, run registry).",
+          "evidence": "plans/module-state-inventory-sweep.md states plainly that the HLD risk table originally assigned this inventory to s1 and 's1 never delivered it', making it orphaned undelivered scope rather than something a currently active Story still owns. The LLD's §4 invariants explicitly preserve s3's routing/board mechanism unchanged ('s3's routing of chat.*, todos.* and understanding.* methods... stay as they are; method-class tests keep passing') and add only new classification/guard logic on top, not a redesign of s3's contract — consistent with method-class.ts's inDaemonTarget/SHARED_STATE_METHODS logic being read, not altered, by the design. [files: plans/module-state-inventory-sweep.md, src/daemon/threads/method-class.ts]",
+          "action": "Read plans/module-state-inventory-sweep.md's problem statement and cross-checked LLD §4 invariants against the untouched method-class.ts routing logic read earlier.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'shared-state one-owner entry whose method family is not routed' error path is mechanically checkable against real code: SHARED_STATE_METHODS/IN_DAEMON_SHARED_METHODS are each a ReadonlySet<string> a guard test can test membership/prefix against, as §4 assumes.",
+          "evidence": "Both sets are exported as `ReadonlySet<string>` (method-class.ts:262, :277); inDaemonTarget (lines 290-296) already performs the identical `SHARED_STATE_METHODS.has(method) || IN_DAEMON_SHARED_METHODS.has(method)` check the guard is designed to mirror, so the detection the design describes is buildable against the real sets, not a hypothetical interface. [files: src/daemon/threads/method-class.ts]",
+          "action": "Re-examined method-class.ts's inDaemonTarget function (lines 290-296).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The integration-level test subjects named for ac3 (method-class.test.ts, purge-shared.test.ts) exist in the repo and are plausible homes for a two-session-worker ownership check, as the design assumes.",
+          "evidence": "Both src/daemon/threads/__tests__/method-class.test.ts and src/daemon/threads/__tests__/purge-shared.test.ts exist, matching the LLD §5 'integration' subjects exactly; this validates the acceptance mapping doesn't point ac3 at a nonexistent or misnamed test file. [files: src/daemon/threads/__tests__/method-class.test.ts, src/daemon/threads/__tests__/purge-shared.test.ts]",
+          "action": "Globbed for both test file paths named in LLD §5 test strategy.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-29T11:45:52.467Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-29T11:49:22.652Z",
+    "rangeBase": "aa9bebe008074d39c9d8613b8fc4c1d9a87fdb79",
+    "questionResolutions": {
+      "qd3a46991": {
+        "question": "cd1 (partial): moduleStateInventory is a new test-side function this Story adds beside connectionSourceInventory; it is not an existing symbol.",
+        "status": "resolved",
+        "choice": "A. Standalone new helper (confirm as designed)",
+        "rationale": "The approved LLD declares moduleStateInventory as a new test-side function beside connectionSourceInventory.",
+        "resolvedAt": "2026-10-29T11:50:52.079Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story writes down, for every module-scope variable or container that a daemon session worker can load and that holds changing state, whether a separate copy per thread is correct, whether the value lives in a cross-thread store, or whether exactly one thread must own it, and why. A test-side compiler scanner finds those declarations from the session worker's imports, and a guard test fails when one appears or disappears without a matching entry in a reviewed inventory file. Any value that needs a single copy but does not have one yet is given its owner the way Story s3 did for the chat pool, the todos bus, the understanding service and the run registry."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Classify module-scope mutable state reachable from session handlers and guard it"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "moduleStateInventory",
+          "signature": "moduleStateInventory(root: string): ModuleStateSite[]  // new, test-side, beside connectionSourceInventory; interface ModuleStateSite { readonly key: string /* '<file>#<name>' */; readonly file: string; readonly name: string; readonly kind: 'let' | 'var' | 'container' | 'literal' }",
+          "parameters": [
+            {
+              "name": "root",
+              "type": "string",
+              "purpose": "The repo root holding tsconfig.json and src/",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ModuleStateSite[]",
+            "meaning": "Every top-level declaration, in the static and dynamic import closure of src/daemon/threads/session-worker.ts (value imports within src/, excluding __tests__ and *.test.ts), that holds mutable state: each `let`/`var`; each `const` bound to a constructed instance (new X) other than a frozen one; and each `const` array/object literal that is not `as const`/Object.freeze'd and that the type checker finds written somewhere in the program (assignment, property write, or a mutating call such as set/add/delete/clear/push/pop/shift/unshift/splice/sort). Sorted by key."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "The repo tsconfig cannot be read or parsed, as connectionSourceInventory throws today"
+            }
+          ],
+          "preconditions": [
+            "Runs in a test process with the repo's typescript dependency; reads source only"
+          ],
+          "postconditions": [
+            "Deterministic: the same source tree gives the same list in the same order",
+            "Never edits a file"
+          ]
+        },
+        {
+          "name": "connectionSourceInventory",
+          "signature": "connectionSourceInventory(root: string): InventorySite[]  // existing, unchanged; its sourceProgram/filesUnder approach is the pattern moduleStateInventory follows",
+          "parameters": [],
+          "returns": {
+            "type": "InventorySite[]",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The session-source inventory and its fixture are not changed by this Story except where a moved value edits a file that fixture pins (then refreshed with the refresh tool)"
+          ]
+        },
+        {
+          "name": "SHARED_STATE_METHODS",
+          "signature": "export const SHARED_STATE_METHODS: ReadonlySet<string>  // existing (src/daemon/threads/method-class.ts:262); extended only if a one-owner value is moved by routing its methods to the shared-state worker",
+          "parameters": [],
+          "returns": {
+            "type": "ReadonlySet<string>",
+            "meaning": "The session-class methods served on the one shared-state worker; the s3 way to give a family of state one owner."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Every one-owner entry whose owner is the shared-state worker names a method family that this set (or IN_DAEMON_SHARED_METHODS) routes there, and the existing method-class tests keep passing"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Module-state inventory fixture",
+        "change": "new",
+        "details": "A reviewed JSON file beside the new test, keyed by '<file>#<name>' for every site moduleStateInventory returns. Each entry: class 'per-thread' (a separate copy per thread is correct: a cache of immutable or re-readable data, a test seam, a per-thread handle over a shared file or block, logger or diagnostic setup, or a value only used on a thread class that is not a session worker), 'shared-store' (the state is kept in a cross-thread store: the shared lock block, the status board, LMDB/Lance files) or 'one-owner' (exactly one thread may hold it); for one-owner an owner naming the thread and how calls reach it (shared-state worker via SHARED_STATE_METHODS/inDaemonTarget, main thread, admin worker or indexing worker); and a reason of at least 40 characters. No source or site digests: editing a classified file never fails the guard.",
+        "schemaDiff": "+ { [key: '<file>#<name>']: { class: 'per-thread' | 'shared-store' | 'one-owner'; owner?: 'shared-state' | 'main' | 'admin' | 'indexing'; reason: string } }",
+        "callSites": [
+          "src/daemon/db/__tests__/connection-source-inventory.ts",
+          "src/daemon/db/__tests__/session-source-inventory.test.ts",
+          "src/daemon/threads/session-worker.ts"
+        ]
+      },
+      {
+        "entity": "Session-thread state ownership rule",
+        "change": "invariant-change",
+        "details": "Before: only the four s3 families (chat pool src/daemon/chat-handler.ts, todos bus src/daemon/todos-rpc.ts, understanding service: the module-scope client `understanding` in src/daemon/threads/session-worker.ts:77 (opened at src/daemon/threads/session-worker.ts:184) and, on the thread that hosts shared state, the start-up local understandingService in src/daemon/index.ts:446 (opened at src/daemon/index.ts:523; not module-scope, so outside the scanner), run registry src/daemon/workflow-run-registry.ts) are known to have one owner; all other module-scope state a session worker loads is unclassified. After: every such value is classified with a reason, and each value classified one-owner or shared-store is in fact owned or stored that way; values found to need a single copy that do not have one are moved (their methods routed to the owner, or the value put in an existing cross-thread store).",
+        "callSites": [
+          "src/daemon/threads/method-class.ts:262",
+          "src/daemon/threads/method-class.ts:290",
+          "src/daemon/workflow-run-registry.ts:76",
+          "src/daemon/workflow-run-registry.ts:91",
+          "src/daemon/chat-handler.ts",
+          "src/daemon/todos-rpc.ts",
+          "src/daemon/threads/session-worker.ts:77",
+          "src/daemon/threads/session-worker.ts:184",
+          "src/daemon/index.ts:446",
+          "src/daemon/index.ts:523"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A change adds a module-scope mutable declaration in a file the session worker loads, without classifying it.",
+          "detection": "The guard test compares moduleStateInventory's keys with the fixture's keys; the new key is missing from the fixture.",
+          "response": "The test fails naming the key and asking for a class and reason; nothing is excluded automatically.",
+          "userImpact": "The author classifies the new state (or makes it per-call) before the change can land.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A classified declaration is renamed, moved to another file, or removed.",
+          "detection": "A fixture key no longer appears in moduleStateInventory's output.",
+          "response": "The test fails naming the stale key, so the fixture never keeps entries for state that no longer exists.",
+          "userImpact": "The author updates the key (keeping or revisiting the classification).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A fixture entry has no class, an unknown class, a one-owner entry with no owner, or a reason under 40 characters.",
+          "detection": "The guard validates every entry's fields.",
+          "response": "The test fails naming the entry and the missing or invalid field.",
+          "userImpact": "None at runtime; the inventory stays reviewable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A one-owner entry names the shared-state worker but no method family routed there serves it.",
+          "detection": "For each one-owner entry with owner 'shared-state', the guard checks that the entry names a method prefix covered by SHARED_STATE_METHODS or IN_DAEMON_SHARED_METHODS.",
+          "response": "The test fails naming the entry; the value is either routed (a move) or reclassified with a correct reason.",
+          "userImpact": "A value claimed to have one owner cannot silently exist per worker.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The scanner cannot build the program (unreadable tsconfig).",
+          "detection": "moduleStateInventory throws, as connectionSourceInventory does.",
+          "response": "The test fails with that error.",
+          "userImpact": "None at runtime.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A const array or object literal that is only read (a lookup table)",
+          "expected": "Not reported: the type checker finds no write to it."
+        },
+        {
+          "input": "A const literal mutated through an alias the checker cannot follow (passed to a function that pushes into it)",
+          "expected": "May be missed by the write filter; the LLD accepts this limit, and the classification pass reviews the const literals in files that hold other state."
+        },
+        {
+          "input": "A `let` used only as a test seam (classifierImpl, depsForTest)",
+          "expected": "Reported and classified per-thread: a test sets it in one thread for that thread."
+        },
+        {
+          "input": "A per-thread store handle (src/db/graph/store.ts _instance) over files shared by every thread",
+          "expected": "Reported and classified per-thread with the reason that each thread opens its own handle over the shared LMDB/Lance files."
+        },
+        {
+          "input": "A declaration reached only through a dynamic import()",
+          "expected": "Reported: the closure follows dynamic imports with a string-literal specifier."
+        },
+        {
+          "input": "A module only loaded on the admin or indexing worker or the main thread",
+          "expected": "Not in the session worker's closure, so not reported."
+        },
+        {
+          "input": "One of the four s3 families (sessionPool in src/daemon/chat-handler.ts, the todos bus, the understanding service, the run registry board)",
+          "expected": "Classified one-owner (shared-state) or shared-store as s3 made them, with the s3 mechanism as the reason."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The session-source inventory guard and its fixture keep their meaning; this Story adds a separate guard and does not change theirs.",
+          "source": "c3"
+        },
+        {
+          "text": "s3's routing of chat.*, todos.* and understanding.* methods to the shared-state worker, and the run registry's board, stay as they are; method-class tests keep passing.",
+          "source": "c4"
+        },
+        {
+          "text": "Each thread keeps its own store handles over the shared LMDB/Lance files.",
+          "source": "c2"
+        },
+        {
+          "text": "The session worker still loads the full handler runtime; the guard reads its import closure and changes nothing in it.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run with npx tsx --test (the convention of src/daemon/db/__tests__/session-source-inventory.test.ts and src/daemon/threads/__tests__)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The scanner finds the right declarations: lets/vars, constructed containers, and written const literals, through static and dynamic imports, and skips read-only tables, frozen values and files outside the closure.",
+          "subjects": [
+            "moduleStateInventory over a temp-dir fixture project (as session-source-inventory.test.ts's second test builds one)"
+          ],
+          "fixturesNeeded": [
+            "A small temp project with a tsconfig, an entry file importing (statically and dynamically) modules that declare each kind of state, a read-only table, an `as const` table, and a module not in the closure"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The guard: every site the scanner reports over the real source tree has a valid fixture entry, every fixture key still exists, and shared-state one-owner entries name a routed family.",
+          "subjects": [
+            "the module-state inventory fixture against moduleStateInventory(repo root)",
+            "SHARED_STATE_METHODS / IN_DAEMON_SHARED_METHODS coverage of shared-state one-owner entries"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "For any value this Story moves to an owner, the existing ownership tests (method-class routing, shared-state purge) prove calls reach that owner from two session workers.",
+          "subjects": [
+            "src/daemon/threads/__tests__/method-class.test.ts",
+            "src/daemon/threads/__tests__/purge-shared.test.ts or a new two-worker check for the moved family"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "module-state-inventory.test.ts: every site moduleStateInventory reports over the source tree has a fixture entry with a valid class, owner where needed and a reason of at least 40 characters"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "module-state-inventory.test.ts: a new unclassified declaration fails the guard (scanner unit test over a temp project shows the new key is reported, and the guard's key comparison names it)",
+            "module-state-inventory.test.ts: a fixture key that no longer exists fails the guard"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "module-state-inventory.test.ts: each one-owner entry owned by the shared-state worker names a method family SHARED_STATE_METHODS or IN_DAEMON_SHARED_METHODS routes there",
+            "for each value moved by this Story: a two-session-worker test that both workers reach the one owner"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "module-state-inventory.test.ts scanner unit test: lets, constructed containers and written const literals are reported, read-only and frozen tables are not, dynamic imports are followed, modules outside the closure are skipped"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 bundles: a session worker loads nearly all of src/ (548 files) and with it 583 top-level candidates for module-scope state; only the four s3 families are known to have one owner (src/daemon/threads/method-class.ts:262 routing, src/daemon/workflow-run-registry.ts:91 board), and no test notices new module-scope state. The only source inventory, src/daemon/db/__tests__/session-source-inventory.test.ts, covers provider/connection boundary sites, not module state.",
+      "stateAfter": "A test-side scanner lists every module-scope mutable declaration in the session worker's import closure; a reviewed fixture classifies each one (per-thread, shared-store or one-owner with its owner) with a reason; a guard test fails on any unclassified, stale or invalid entry and on a shared-state one-owner entry whose family is not routed. Values found to need one copy but lacking one are moved to an owner the s3 way.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the test-side scanner beside the existing source inventory, with a unit test over a temporary project covering each declaration kind, read-only and frozen tables, dynamic imports and out-of-closure modules.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Generate the list of sites over the real source tree and classify every entry with a class, owner where needed, and a reason; record the classification as the fixture.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the guard test comparing the scanner's output with the fixture and validating each entry, including the shared-state routing check.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "For each entry classified one-owner or shared-store that is not already owned or stored that way, move it: route its method family to the owner (as s3 did with SHARED_STATE_METHODS) or keep it in an existing cross-thread store, with a two-session-worker test. If a needed move is large enough to deserve its own design, stop and raise it as a separate tracked item instead of folding it in.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Refresh the session-source inventory entries for any production file a move edits.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API, IPC method or payload changes. The scanner, fixture and guard are test-side. A move that routes a method family to the shared-state worker changes only which thread serves it; replies are unchanged, as with s3's routing. Threads stay behind daemon.threads.enabled (default off).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Declaration-level inventory fixture with a compiler scanner over the session worker's import closure",
+        "oneLineSummary": "A test-side scanner (a ts.Program like connectionSourceInventory) lists every module-scope mutable declaration the session worker can load; a JSON fixture keyed by file#name classifies each with a reason; the guard fails on any unclassified or stale key.",
+        "approach": "A new scanner beside connectionSourceInventory walks the static and dynamic import closure from src/daemon/threads/session-worker.ts and collects, per file, the top-level declarations that hold mutable state: every `let`/`var`, and every `const` whose initializer is a mutable container (new Map/Set/WeakMap/WeakSet/AsyncLocalStorage or another constructed instance, or an array/object literal) unless it is frozen (`as const`, Object.freeze) or the type checker finds no write to it (assignment, property write, or a mutating method call such as set/add/delete/push/splice) anywhere in the program. A fixture keyed by `<file>#<name>` gives each a class: `per-thread` (a separate copy per thread is correct: caches of immutable or re-readable data, test seams, per-thread handles over shared files, logger setup), `shared-store` (the value lives in a cross-thread store: the lock block, the status board, LMDB/Lance) or `one-owner` (only one thread may hold it; names the owner and how calls reach it, as s3's shared-state routing does), plus a reason of at least 40 characters. The guard test fails when a declaration is missing from the fixture, when a fixture key no longer exists, or when an entry has no valid class or reason; it does not digest source, so editing a classified file does not fail it. Any declaration classified one-owner or shared-store that is not already so is moved to its owner the s3 way (route its methods to the owning worker, or put the value in an existing cross-thread store).",
+        "pros": [
+          "Per-declaration classification, which is exactly what the work item asks for, and reviewable in one place",
+          "Reuses the existing ts.Program approach and repo tsconfig; no new dependency",
+          "No source digests: classified files can be edited freely; only new or removed mutable state trips the guard",
+          "Write-reference filtering drops the read-only const tables, keeping the inventory to real state"
+        ],
+        "cons": [
+          "A few hundred entries to classify by hand once",
+          "Write detection through aliases (a value passed to a function that mutates it) can miss a write, so a filtered-out const may in fact be mutated"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "File-level classification in the existing session-source inventory style",
+        "oneLineSummary": "Extend the session-source inventory pattern: one entry per file that holds module-scope mutable state, with a class and rationale for the file and a whole-file source digest.",
+        "approach": "Reuse the session-source-inventory shape: a fixture keyed by file listing the file's mutable declarations, one classification and rationale per file, and a sourceDigest so any edit forces re-inspection. The guard fails on a new or removed file, a changed declaration list, or a changed digest. Moves as in a1.",
+        "pros": [
+          "Smallest fixture (about 280 files instead of several hundred declarations)",
+          "Same shape and refresh tool as the existing inventory"
+        ],
+        "cons": [
+          "One class per file is wrong where a file mixes per-thread caches with state that needs one owner (src/db/graph/store.ts holds both handles and health broadcast state)",
+          "The whole-file digest fails the test on every edit to any of ~280 files, the friction this session's builds already hit with the session-source inventory"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Classifies files, not values, and the source digest fails the guard on every edit to ~280 files."
+      },
+      {
+        "id": "a3",
+        "name": "Classification comments at each declaration, checked by the guard",
+        "oneLineSummary": "Each module-scope mutable declaration carries a `// thread-state: <class> — <reason>` comment; the guard scans the same closure and fails on any declaration without a valid comment.",
+        "approach": "The scanner of a1 finds the declarations; instead of a fixture, each declaration has a leading comment naming its class and reason, which the guard parses. New state fails until its author writes the comment next to it. Moves as in a1.",
+        "pros": [
+          "The classification sits next to the code, visible to whoever edits it",
+          "No separate fixture to keep in sync"
+        ],
+        "cons": [
+          "Touches a few hundred source files with comment-only edits, across areas other sessions are editing (src/daemon/db), and each touched file then needs the session-source inventory refreshed",
+          "No single reviewable list of the classification"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Classifies values, but by editing a few hundred source files, many in areas another session is changing."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "cd1 (partial): moduleStateInventory is a new test-side function this Story adds beside connectionSourceInventory; it is not an existing symbol.",
+      "ts1 (ambiguous): the Story has no acceptance criteria; ac1-ac4 are derived from the work item's done-when list (plans/module-state-inventory-sweep.md) plus the scanner's correctness.",
+      "Moves (ambiguous): which values need a move is known only after the classification; any move large enough to need its own design is raised as a separate tracked item rather than folded into this Story."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "What a session-class handler can reach (TypeScript compiler walk of static and dynamic imports from src/daemon/threads/session-worker.ts, value imports only, within src/)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "Size and shape of module-scope mutable declarations in that closure (same compiler walk, top-level variable statements)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "The existing source-inventory guard to mirror (direct read of src/daemon/db/__tests__/connection-source-inventory.ts and src/daemon/db/__tests__/session-source-inventory.test.ts)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "How s3 gave its four families one owner (direct read of src/daemon/threads/method-class.ts and its tests)"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "Tests to extend (test.locate over threads and inventory)"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "plans/module-state-inventory-sweep.md"
+    }
+  ]
+}

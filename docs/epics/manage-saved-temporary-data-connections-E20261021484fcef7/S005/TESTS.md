@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -161,3 +161,20 @@ Run at 2026-10-29T16:14:53.729Z on commit `f5819230d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-owner.test.ts` | 0 | 1 | 4.6 s |  |
+
+## t10
+
+Run at 2026-10-29T16:30:27.553Z on commit `79cb1e42f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel | `src/shared/__tests__/connection-manager-draft.test.ts` |
+| pass | CM-S5-FORM-TS: unsafe input and unknown shapes refuse without changing draft or invoking getters | `src/shared/__tests__/connection-manager-draft.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-draft.test.ts` | 0 | 2 | 0.6 s |  |

@@ -1,0 +1,34 @@
+{
+  "task": "t11",
+  "focusedTests": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "cancelled": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "junitTests": {
+    "draft": 4,
+    "existingWire": 6,
+    "corpus": 2
+  },
+  "allCurrentDescriptorKinds": 29,
+  "sharedDraftScenarios": 9,
+  "sharedPublicFieldCases": 6,
+  "reuseAnalysis": "../t10/reuse-analysis.json: fresh in-session native candidate inventory contained protocol/model/session service and no draft form; reuses ConnectionProtocol boundary",
+  "privacy": "Synchronized memory-only draft; backing fields Transient and Gson(form)=={} verified; view has intent/presence/masked format only; private serializer returns defensive copy",
+  "compatibility": "Fixed edit key/kind/scope/effective family; pinned family preserved; unsupported/legacy shapes read-only; explicit Keep/Replace/Clear and reset semantics match shared fixtures",
+  "discard": "Unsaved draft erasure only; no mutation/navigation after Cancel and no connection/source deletion API",
+  "strictPercentFix": "Native decoder previously used URLDecoder replacement for malformed percent-encoded UTF8. Shared strict decoder now rejects it, matching TypeScript; existing wire tests pass. Literal plus/percent and valid UTF8 unchanged.",
+  "typecheck": "Node22 tsc --noEmit passed; JDK21 offline focused compile/test passed",
+  "noSettingsPersistence": true,
+  "fullSweep": "deferred until all implementation tasks",
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraft.kt": "865ed373958add54a52788d8338d775eced29d0e6296da749853af79cd8c941c",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt": "418752d730ff9143f4b1cefa084d6be804ba7871fe1a0c2401a5b89612879da7",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTest.kt": "3c7686977ddb02e7e2a913b425375741d33baebc53b3f30aa3caf1cc1b39254e",
+    "src/shared/__tests__/connection-manager-kotlin-draft.test.ts": "655ea31a0c1fc9fd7ac3467d1616844212b7ec81cd64d8a8b8257f4ec69c5f9d",
+    "test-fixtures/connection-management/v1/corpus.json": "3b17d83422d395f043ab044f2d29d0677964a518f57aac1702042d35545be2e2"
+  }
+}

@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index
+ok 1 - CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index
+  ---
+  duration_ms: 8.851167
+  type: 'test'
+  ...
+# Subtest: CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift
+ok 2 - CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift
+  ---
+  duration_ms: 13566.721459
+  type: 'test'
+  ...
+# Subtest: CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel
+ok 3 - CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel
+  ---
+  duration_ms: 178.840125
+  type: 'test'
+  ...
+# Subtest: CM-S5-FORM-TS: unsafe input and unknown shapes refuse without changing draft or invoking getters
+ok 4 - CM-S5-FORM-TS: unsafe input and unknown shapes refuse without changing draft or invoking getters
+  ---
+  duration_ms: 7.019792
+  type: 'test'
+  ...
+# Subtest: CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence
+ok 5 - CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence
+  ---
+  duration_ms: 20944.805875
+  type: 'test'
+  ...
+# Subtest: CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients
+ok 6 - CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients
+  ---
+  duration_ms: 8.027417
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types
+ok 7 - CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types
+  ---
+  duration_ms: 20625.979833
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21181.12275

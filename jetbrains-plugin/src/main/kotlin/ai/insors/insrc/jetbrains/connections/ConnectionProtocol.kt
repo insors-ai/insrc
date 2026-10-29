@@ -5,13 +5,15 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import java.io.StringReader
 import java.net.URI
-import java.net.URLDecoder
 import java.time.Instant
 import java.time.format.DateTimeFormatterBuilder
 import java.util.Collections
 import java.util.IdentityHashMap
 import kotlin.math.abs
 import kotlin.math.floor
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 
 /** Consumer DTOs. No session state is added to the application-wide legacy gateway. */
 data class ConnectionKey(val repoRoot: String, val scope: String, val id: String)
@@ -181,14 +183,28 @@ object ConnectionProtocol {
             ConnectionDriverDescriptor(kind, family, schema, secretSlots, editable, if (editable) null else "This driver requires a newer connection editor.")
         }
     }
+    val publicFieldNames: Set<String> = Collections.unmodifiableSet(setOf("kind", "label", "endpoint", "path", "schemaSource", "namespace", "pii", "options", "recursive", "partitioning"))
+    /** Match decodeURIComponent's strict UTF8 behavior, preserving literal + and malformed % characters. */
+    fun decodePublicPercent(value: String): String = checked {
+        val bytes=ByteArrayOutputStream();var i=0
+        while(i<value.length) {
+            if(value[i]=='%' && i+2<value.length && value.substring(i+1,i+3).all{it in "0123456789abcdefABCDEF"}) {
+                bytes.write(value.substring(i+1,i+3).toInt(16));i+=3
+            } else {
+                val point=value.codePointAt(i);bytes.write(String(Character.toChars(point)).toByteArray(Charsets.UTF_8));i+=Character.charCount(point)
+            }
+        }
+        Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes.toByteArray())).toString()
+    }
+    fun publicPatch(value: JsonElement): JsonObject = checked { obj(data(value)).also { safePublicFields(it) } }
     private fun safePublicFields(config: JsonObject) {
-        if (config.keySet().any { it !in setOf("kind", "label", "endpoint", "path", "schemaSource", "namespace", "pii", "options", "recursive", "partitioning") }) fail()
+        if (config.keySet().any { it !in publicFieldNames }) fail()
         fun walk(v: JsonElement) {
             if (v.isJsonPrimitive && v.asJsonPrimitive.isString) {
                 var decoded = v.asString
                 repeat(8) {
                     if (decoded.contains("\${secret:")) fail()
-                    val next = URLDecoder.decode(decoded.replace("+", "%2B").replace(Regex("%(?![0-9a-fA-F]{2})"), "%25"), Charsets.UTF_8)
+                    val next = decodePublicPercent(decoded)
                     if (next == decoded) return
                     decoded = next
                 }

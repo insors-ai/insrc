@@ -5372,5 +5372,31 @@
         }
       }
     }
+  ],
+  "publicFieldCases": [
+    {
+      "value": "data/literal+plus.csv",
+      "valid": true
+    },
+    {
+      "value": "data/literal%.csv",
+      "valid": true
+    },
+    {
+      "value": "data/%E2%82%AC.csv",
+      "valid": true
+    },
+    {
+      "value": "data/%C0%AF.csv",
+      "valid": false
+    },
+    {
+      "value": "data/%E2%82.csv",
+      "valid": false
+    },
+    {
+      "value": "data/%24%7Bsecret%3Afixture%7D.csv",
+      "valid": false
+    }
   ]
 }

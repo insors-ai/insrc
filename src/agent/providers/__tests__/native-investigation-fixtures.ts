@@ -59,14 +59,14 @@ export async function exerciseNativeInvestigationSessions(kind:'claude'|'codex')
    await f.store.prepare(manifest);const lease=await f.store.claim(300000),outer=new AbortController();let nativeFailure:unknown,calls=0,issuedBinding:ReturnType<typeof createQualifiedInvestigationBinding>|undefined;
    await runRecoveredContinuation(f.store,lease,baseTurn,{...context,schema,signal:outer.signal,backend:{...context.backend,execute:async(turn,tools,signal)=>{
     const wrapped={...tools,progress:async(p:Parameters<typeof tools.progress>[0])=>{const ack=await tools.progress(p);if(mode==='cancel')setTimeout(()=>outer.abort(),20);return ack;}};
-    const binding=createQualifiedInvestigationBinding(q,turn,wrapped,{processEpoch:f.options.processEpoch,assertProcessOwner:()=>{},assertCurrent:()=>f.store.assertLease(f.store.replay(),lease.leaseId,lease.generation),state:()=>f.store.replay().state});
+    const preflights:number[]=[];const binding=createQualifiedInvestigationBinding(q,turn,wrapped,{onPreflight:value=>{preflights.push(value.estimatedTotalTokens);},processEpoch:f.options.processEpoch,assertProcessOwner:()=>{},assertCurrent:()=>f.store.assertLease(f.store.replay(),lease.leaseId,lease.generation),state:()=>f.store.replay().state});
     issuedBinding=binding;
     const base={binding,prompt:'Review the supplied packet',schema,opts:{cwd:f.repo,deadlineMs:300000,stallMs:mode==='stall'?1000:300000,internalRetry:false,signal,reviewBudget:tools.execution.budget},binaryPath:bin,modelArgs,profile,evidenceScope:'scripted-fixture' as const,
      invoke:async(argv:readonly string[],prompt:string,exec:{cwd:string;binaryPath:string;timeoutMs:number;stallMs:number;signal:AbortSignal;env:NodeJS.ProcessEnv})=>{calls++;if(codex)assert.equal(readFileSync(argv[argv.indexOf('--output-schema')+1]!,'utf8'),JSON.stringify(codexStrictSchema(schema)));const result=await runInProcessGroup(exec.binaryPath,argv,{cwd:exec.cwd,env:exec.env,stdin:prompt,timeoutMs:exec.timeoutMs,stall:{ms:exec.stallMs,started:()=>false,silence:true},signal:exec.signal});if(result.aborted)throw new DOMException('cancelled','AbortError');if(result.stalled)throw Error('fixture stall watchdog');assert.equal(result.exitCode,0,result.stderr);return codex?JSON.parse(JSON.parse(result.stdout.trim().split('\n').at(-1)!).item.text):JSON.parse(result.stdout).structured_output;}};
     await assert.rejects(()=>run({...base,prompt:'x'.repeat(1000000)}),{code:'budget-refused'});assert.equal(calls,0);
     await assert.rejects(()=>run({...base,evidenceScope:'installed-probe'}),/fixtures do not certify/);assert.equal(calls,0);
     await assert.rejects(()=>new CliProvider({kind,binPath:bin}).runReviewSession('must not run',schema,{...base.opts,investigationBinding:binding}),/fixtures do not certify/);assert.equal(existsSync(join(f.repo,'called.json')),false);
-    try{return await run(base);}catch(cause){nativeFailure=cause;throw cause;}
+    try{const reply=await run(base);assert.ok(preflights.length>1);assert.ok(preflights.every(value=>value>0&&value<=128000));return reply;}catch(cause){nativeFailure=cause;throw cause;}
    }}});
    // S3's cancellation wait returns promptly; await the actual fixture provider's teardown before asserting/cleanup.
    if(issuedBinding)await drainInvestigationInvocation(issuedBinding);

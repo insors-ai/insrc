@@ -12,7 +12,7 @@ import { emptyLifecycle } from '../../workflow/artifact-core/decode.js';
 import { LifecycleService } from '../../workflow/artifact-core/lifecycle-service.js';
 import { approvedScopeReference } from '../review-investigation-work.js';
 import { InvestigationRepository } from '../review-investigation-repository.js';
-import { dispatchInvestigation,investigationTransport } from '../review-investigation-gateway.js';
+import { dispatchInvestigation,investigationTransport,legacyInvestigationDiagnostics } from '../review-investigation-gateway.js';
 import { parseInvestigationEnvelope } from '../../shared/review-investigation-wire.js';
 import { handleCodeReviewStep,DEFAULT_DEPS } from '../steps/code-review-step/handler.js';
 import { codeReviewRunStart } from '../code-review-rpc.js';
@@ -48,8 +48,10 @@ async function fixture(controller:boolean,planned:boolean,indexed:boolean,comple
 test('Entry parity across daemon controller source and indexed planned and planless runs',async()=>{
  for(const controller of [false,true])for(const planned of [false,true])for(const indexed of [false,true]){
   const f=await fixture(controller,planned,indexed);try{
+   assert.equal((await legacyInvestigationDiagnostics({repo:f.dir,buildArtifactId:buildId},{repository:async()=>f.repository})).status,null);
    const first=await f.dispatch(f.envelope(f.start));const runId=String(first.runId??(first.turn as InvestigationTurnV1)?.runId);
    if(controller){
+    const before=(await f.repository.service.open(runId)).store.journal.events().length;const status=await f.dispatch(f.envelope({version:1,engine:'plan-investigation-v1',operation:'status',repo:f.dir,runId}));assert.equal((status.status as {receipt:unknown}).receipt,null);assert.equal((await f.repository.service.open(runId)).store.journal.events().length,before);const reconnected=await f.dispatch(f.envelope({version:1,engine:'plan-investigation-v1',operation:'resume',repo:f.dir,runId}));assert.deepEqual(reconnected.binding,first.binding);
     assert.equal(first.next,'investigate');const turn=first.turn as InvestigationTurnV1,binding=first.binding as Record<string,unknown>,navigation=first.navigation as {sourceRefs:string[]};
     const command={version:1,engine:'plan-investigation-v1',repo:f.dir,runId,bindingId:binding.bindingId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,requestDigest:turn.requestDigest};
     await assert.rejects(()=>f.dispatch(f.envelope({...command,generation:turn.generation+1,operation:'read',reference:navigation.sourceRefs[0]})));

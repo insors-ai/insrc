@@ -63,7 +63,7 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
  if(activeDirectories.has(cwd))throw new InvestigationQualificationError('Qualified isolated directory already has an active session');
  const prompt=`${input.prompt}\n\n${JSON.stringify({turn:verified.turn,seed:binding.tools.seed,coverage:runtime.state().ledger.coverage,navigation:runtime.navigation??null})}`,wireSchema=reviewWireSchemaJson(input.profile,input.schema),catalog=JSON.stringify(scopedReviewToolCatalog(indexed));
  let extraChars=0;
- const admit=()=>{try{return preflightProviderReviewBudget(opts.reviewBudget!,input.profile,prompt.length+INVESTIGATION_SYSTEM_PROMPT.length+extraChars,wireSchema,undefined,catalog);}catch(cause){throw new InvestigationError('budget-refused','Inclusive native prompt, schema, tools and inspection history exceed admission.',{cause});}};admit();
+ const admit=()=>{try{const value=preflightProviderReviewBudget(opts.reviewBudget!,input.profile,prompt.length+INVESTIGATION_SYSTEM_PROMPT.length+extraChars,wireSchema,undefined,catalog);runtime.onPreflight?.(value);return value;}catch(cause){throw new InvestigationError('budget-refused','Inclusive native prompt, schema, tools and inspection history exceed admission.',{cause});}};admit();
  activeDirectories.add(cwd);const abort=new AbortController(),onAbort=()=>abort.abort();opts.signal.addEventListener('abort',onAbort,{once:true});if(opts.signal.aborted)abort.abort();
  const bridge=new ScopedReviewBridge(runtime.processEpoch,runtime.assertProcessOwner);let broker:Awaited<ReturnType<typeof startNativeReviewBroker>>|undefined,reply:InvestigationReplyV1|undefined,budgetFailure:unknown,launchCleanup:(()=>void)|undefined;
  try{

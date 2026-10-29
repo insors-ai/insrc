@@ -1,9 +1,11 @@
+import { investigationStatus,boundedInvestigationStatus } from './review-investigation-status.js';
+import { recoveryCompatibility } from '../workflow/code-review/investigation/recovery-lifecycle.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { randomUUID } from 'node:crypto';
 import type { ArtifactStore } from '../workflow/artifact-core/store.js';
 import { ArtifactIds } from '../workflow/artifact-ids.js';
 import type { LLMProvider,StructuredSchema } from '../shared/types.js';
-import type { ReviewControllerBudgetDeclaration } from '../shared/review-budget.js';
+import type { ReviewBudgetBreakdown,ReviewControllerBudgetDeclaration } from '../shared/review-budget.js';
 import { authorPartyOf,otherParty } from '../workflow/review/party.js';
 import { isLldBody } from '../workflow/artifacts/lld.js';
 import { isPlanBody } from '../workflow/artifacts/plan.js';
@@ -62,6 +64,7 @@ const criterionText:Record<string,string>={adherence:'Check each approved task, 
  * second acceptance ledger, generic HEAD diff, or client-authored provenance. */
 export class InvestigationRepository {
  readonly work:CanonicalReviewWorkAdapter;readonly service:ProductionReviewService;
+ private readonly preflights=new Map<string,ReviewBudgetBreakdown>();
  private readonly prepared=new Map<string,Prepared>();private readonly hosts=new Map<string,InvestigationControllerHost>();
  private readonly owners=new Map<string,{generation:number;attemptId:string}>();private readonly runs=new Map<string,Promise<unknown>>();
  constructor(readonly options:InvestigationRepositoryOptions){
@@ -124,7 +127,7 @@ export class InvestigationRepository {
   for(const packet of subject.packets)for(const block of packet.blocks)for(const side of [{blob:block.oldBlob,lines:block.oldLines},{blob:block.newBlob,lines:block.newLines}])if(side.blob)sourceRefs.push(sourceReference({kind:'blob',oid:side.blob,start:side.lines?.[0]??1,end:Math.min(side.lines?.[1]??1,(side.lines?.[0]??1)+499)}));
   const key=ArtifactIds.parse(subject.build.artifactId)!,tests=await this.work.readCanonicalHead(`TESTS-${key.epicHash}-${subject.storyId}`),tasks=tests?.head.body['tasks'];
   const testRefs=Array.isArray(tasks)?tasks.flatMap(t=>typeof t?.taskId==='string'?[JSON.stringify({kind:'test-result',taskId:t.taskId})]:[]):[];
-  const runtime:NativeInvestigationRuntime={processEpoch:this.options.processEpoch,assertProcessOwner:this.options.assertProcessOwner,assertCurrent,state:()=>store.replay().state,
+  const runtime:NativeInvestigationRuntime={processEpoch:this.options.processEpoch,assertProcessOwner:this.options.assertProcessOwner,assertCurrent,state:()=>store.replay().state,onPreflight:value=>{assertCurrent();this.preflights.set(d.runId,value);},
    navigation:freezeValue({sourceRefs,testRefs,changedEntityRefs:impact.entityReferences,changedEntities:impact.entitySummaries,index:impact.impact.index})};
   const provider=p.controller?.provider??p.daemon!.provider,seed=buildInvestigationSeed(view.basis,view.state);
   const draft={runId:d.runId,subjectDigest:d.subjectDigest,generation:lease.generation,attemptId,requestDigest:'',policyDigest:d.policyDigest,
@@ -150,7 +153,16 @@ export class InvestigationRepository {
  }
  async bound(envelope:InvestigationEnvelope){const command=envelope.command;if(!('bindingId' in command))throw new ReviewIntegrationError('invalid-command','Expected scoped operation');const host=this.hosts.get(command.runId);if(!host)throw new ReviewIntegrationError('identity-conflict','No active controller attempt');return host.command(envelope);}
  async cancel(runId:string){await this.service.cancel(runId);return this.view(runId);}
- async view(runId:string):Promise<Record<string,unknown>>{const {descriptor,store}=await this.service.open(runId),view=store.replay();return {version:1,engine:'plan-investigation-v1',next:view.lifecycle.completionReceipt?'done':'status',runId,subjectDigest:descriptor.subjectDigest,sourceMode:descriptor.start.sourceMode,recovery:store.status(),progress:{sequence:view.state.sequence,coverage:view.state.ledger.coverage}};}
+ async view(runId:string):Promise<Record<string,unknown>>{
+  const {descriptor,store}=await this.service.open(runId),view=store.replay();let fresh=true,available=true,reason:string|null=null;
+  try{await this.assertFresh(descriptor,view.manifest);}catch{fresh=false;}
+  try{await this.options.assertReady('resume');}catch{available=false;reason='Investigation execution is disabled or readiness is unavailable.';}
+  const compatibility=recoveryCompatibility(view,{...view.manifest,compatibility:{...view.manifest.compatibility,toolsDigest:scopedReviewCatalogDigest(descriptor.start.sourceMode==='indexed-impact')}},fresh);
+  let receipt=null,error=null;
+  if(view.lifecycle.completionReceipt)try{receipt=await readReviewCompletion(store,{canonical:this.options.canonical,actor:{id:'insrc:review-status',kind:'system',properties:{}},current:()=>this.completionContext(descriptor,view.manifest)});}catch{error={code:'completion-receipt-unavailable',retryable:false};}
+  const projection=investigationStatus({view,compatibility,readiness:{available,reason},receipt,error,preflight:this.hosts.get(runId)?.admission()??this.preflights.get(runId)});
+  return boundedInvestigationStatus({version:1,engine:'plan-investigation-v1',next:receipt?'done':'status',runId,subjectDigest:descriptor.subjectDigest,sourceMode:descriptor.start.sourceMode,...projection,progress:{sequence:view.state.sequence,coverage:view.state.ledger.coverage}});
+ }
  private async completionContext(d:ProductionReviewDescriptor,m:RecoveryManifest):Promise<{context:CompletionValidationContext;buildRecord:{meta:{revision:number};body:{commit:string}}}>{
   const build=await this.work.readCanonicalHead(d.start.buildArtifactId);if(!build||build.revision!==m.basis.subject.build.revision)throw new SubjectPreparationError('stale-contract','Canonical BUILD changed');
   return {context:{subjectDigest:m.subjectDigest,policyDigest:m.policyDigest,compatibility:m.compatibility,build:{...m.basis.subject.build,meta:build.head.meta},reviewerParty:d.reviewerParty,expectationConflicts:[],assertFresh:()=>this.assertFresh(d,m)},buildRecord:build.head as unknown as {meta:{revision:number};body:{commit:string}}};

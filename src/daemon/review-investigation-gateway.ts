@@ -56,3 +56,22 @@ const productionGateway:InvestigationGatewayDeps={repository:async repo=>{
   daemonAdapter:async(subject,mode)=>{if(!admission)throw new ReviewIntegrationError('unsupported-backend','No independently qualified installed investigation adapter');return admission.daemonAdapter(subject,mode);}});
  repositories.set(repo,runtime);return runtime;
 }};
+
+/** Read-only legacy diagnostics, including installed predecessor records. No
+ * investigative scope, lease, usage observation or completion claim is minted. */
+export async function legacyInvestigationDiagnostics(raw:unknown,deps:InvestigationGatewayDeps=productionGateway){
+ const {z}=await import('zod');const {legacyReviewStatus}=await import('./review-investigation-status.js');
+ const parsed=z.object({repo:z.string().min(1),buildArtifactId:z.string().min(1)}).strict().safeParse(raw);
+ if(!parsed.success)return legacyReviewStatus(null);
+ const {ArtifactIds}=await import('../workflow/artifact-ids.js');const key=ArtifactIds.parse(parsed.data.buildArtifactId);
+ if(key?.kind!=='BUILD'||!key.story)return legacyReviewStatus(null);
+ const repository=await deps.repository(realpathSync(parsed.data.repo)),build=await repository.work.readCanonicalHead(parsed.data.buildArtifactId);
+ if(!build)return legacyReviewStatus(null);
+ const review=await repository.work.readCanonicalHead(`CR-${key.epicHash}-${key.story}`);
+ if(!review||review.head.body['groundingMode']==='investigation')return legacyReviewStatus(null);
+ const {reviewedBuildFingerprint,reviewBuildGap}=await import('../workflow/code-review/build-freshness.js');
+ if(reviewBuildGap(build.head,review.head,repository.options.repoPath))return legacyReviewStatus(null);
+ const dimensions=review.head.body['dimensions'];if(!Array.isArray(dimensions)||dimensions.some(d=>typeof d?.dimension!=='string'))return legacyReviewStatus(null);
+ const runId=review.head.meta['runId'];if(typeof runId!=='string')return legacyReviewStatus(null);
+ return legacyReviewStatus({runId,buildFingerprint:reviewedBuildFingerprint(build.head),dimensions:dimensions.map(d=>({name:d.dimension as string,completed:true})),phase:'persisted-code-review'});
+}

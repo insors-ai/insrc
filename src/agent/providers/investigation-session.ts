@@ -2,6 +2,7 @@
 import { createHash,randomUUID } from 'node:crypto';
 import { constants,openSync,closeSync,fstatSync,readSync,lstatSync,realpathSync } from 'node:fs';
 import { relative,isAbsolute } from 'node:path';
+import type { ReviewBudgetBreakdown } from '../../shared/review-budget.js';
 import type { QualifiedInvestigationSessionBinding } from '../../shared/types.js';
 import type { InvestigationTools,InvestigationTurnV1,InvestigationState } from '../../workflow/code-review/investigation/continuation-types.js';
 import { digestValue,snapshotValue,freezeValue } from '../../workflow/code-review/investigation/identity.js';
@@ -49,6 +50,7 @@ const qualifications=new WeakMap<NativeInvestigationQualification,{authority:Nat
 export interface NativeInvestigationRuntime {
  readonly processEpoch:string;readonly assertProcessOwner:()=>void;readonly assertCurrent:()=>void;
  readonly state:()=>InvestigationState;
+ readonly onPreflight?:((value:ReviewBudgetBreakdown)=>void)|undefined;
  readonly navigation?:{readonly sourceRefs:readonly string[];readonly testRefs:readonly string[];readonly changedEntityRefs:readonly string[];
   readonly changedEntities?:readonly unknown[]|undefined;readonly index?:unknown}|undefined;
 }

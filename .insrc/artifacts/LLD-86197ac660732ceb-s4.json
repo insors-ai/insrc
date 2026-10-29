@@ -1,0 +1,816 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793257999487-zc3lem",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-29T07:22:10.569Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 531051,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicHash": "86197ac660732ceb",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1792588079400-heeqp4",
+    "hldEffectiveHash": "cea66c8968378e1417045e457b28ce64266424a197900e5c0c865bcf45b73dfb",
+    "hldAmendmentsApplied": [
+      "AMD-86197ac660732ceb-1"
+    ],
+    "authoredBy": "controller",
+    "questionResolutions": {
+      "q1e5c7d26": {
+        "question": "ac1 scope (sbdry3 partial, needs a user decision): the HLD says the main thread loads no handler runtime and runs no request handler. Connection-scoped requests (trusted connectionSession, session-memory execution, MAIN_DAEMON_CONNECTION_METHODS) cannot cross a worker channel until plans/connection-session-worker-crossing.md lands, which the user deferred until Epic 484fcef7 and Story 34798d20 complete. The chosen design (a1) builds the main thread's handler runtime lazily on the first such request, so ac1 holds for every other request. Options: (A) accept ac1 scoped this way now and close the gap in the follow-up [recommended]; (B) hold s4 until the follow-up is done.",
+        "status": "resolved",
+        "choice": "(A) accept ac1 scoped this way now and close the gap in the follow-up",
+        "rationale": "User decision 2026-10-29: connection-scoped requests stay on the main thread (lazily built runtime) until plans/connection-session-worker-crossing.md lands after Epic 484fcef7 and Story 34798d20.",
+        "resolvedAt": "2026-10-29T07:28:25.378Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "s4 makes the threaded daemon's main thread a controller and makes every thread's work visible. The main thread no longer builds the request-handler runtime at boot; it builds it only when a connection-scoped request (which cannot cross a worker channel until the logged follow-up lands) first needs it. The router, which sees every request it sends and every reply, frame and cancel, publishes each worker thread's state on the status board, so daemon.status and daemon.debug-status gain an additive `threads` list (role, class, session, busy, method, elapsed, queued, active runs) that stays correct even while a worker is CPU-bound. Session-pool workers join the supervisor's tracking, so shutdown terminates every worker and the shared-state worker gets the restart limit."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a1: a routing main thread plus worker threads by class of work. The main thread owns the Unix socket, framing and the attached-client registry, and does no handler work. Each request is classified (admin, session or indexing) and forwarded over a thread channel to its target: the admin worker, the code-indexing worker, or the session's pooled worker (session id = the request's client label and process id). Workers each load the handler runtime and open their own store handles under a verified per-store threading policy: direct use where a store is proven safe, a shared semaphore with guaranteed release where it is not. MCP step state (the four step state stores) moves into a store shared by all threads, so it outlives any worker; a detached workflow run stays owned by the worker that started it, which is not released while the run is active, and the run's record is published where every thread can read it. A request that carries no valid client identity is served on one shared unattributed worker, as today's daemon serves it, kept apart from every session. A shared status board lets every thread publish what it is doing, which the admin worker reads for daemon status and liveness.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Store guard and per-store threading policy",
+          "purpose": "Lets any thread use a store safely: records, per store, whether it is used directly or through a semaphore, and gives one helper that acquires and always releases the store's semaphore. Waiting for a lock is always asynchronous, so a waiting thread keeps serving its other work.",
+          "interfaceSketch": "type StoreId = 'graph' | 'lance' | 'duckdb';\ninterface StoreThreadingPolicy {\n  readonly store: StoreId;\n  readonly mode: 'direct' | 'guarded';\n  /** Counting-semaphore size for a guarded store (duckdb: 1); absent for a direct store. */\n  readonly permits?: number | undefined;\n  /** Why: the verification evidence (test or library contract) behind the mode. */\n  readonly basis: string;\n}\ninterface StoreQuiescence {\n  readonly store: StoreId;\n  /** How long reclaim waits for a dead worker's native calls before marking the store unhealthy. */\n  readonly limitMs: number;\n}\ninterface StoreGuardOptions {\n  /** Fail with StoreLockTimeoutError instead of waiting past this limit. */\n  readonly acquireTimeoutMs: number;\n  readonly signal?: AbortSignal | undefined;\n}\ninterface StoreLockHolder {\n  readonly store: StoreId;\n  readonly threadId: number;\n  readonly acquiredAt: number;\n}\ntype WithStore = <T>(store: StoreId, op: () => Promise<T>, opts: StoreGuardOptions) => Promise<T>;\ninterface StoreGuard {\n  readonly withStore: WithStore;\n  readonly policy: (store: StoreId) => StoreThreadingPolicy;\n  readonly holders: () => readonly StoreLockHolder[];\n  /** Router only: release every lock a dead worker held. */\n  /** Waits for quiescence per store; a store that does not quiesce in time is reported unhealthy. */\n  readonly reclaim: (threadId: number) => Promise<{ readonly released: readonly StoreId[]; readonly unhealthy: readonly StoreId[] }>;\n  readonly quiescence: (store: StoreId) => StoreQuiescence;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Thread channel and target registry",
+          "purpose": "The one message contract between the router and every worker: request, reply, stream frame, cancel and error envelopes, plus the registry where a worker registers as the target for a class of work. A session-class request with no valid session id resolves to the unattributed target.",
+          "interfaceSketch": "type MethodClass = 'admin' | 'session' | 'indexing';\ninterface SessionId { readonly label: string; readonly pid: number; }\ninterface RequestEnvelope {\n  readonly kind: 'request';\n  readonly requestId: string;\n  readonly method: string;\n  readonly params: unknown;\n  readonly stream: boolean;\n  readonly session?: SessionId | undefined;\n}\ninterface ReplyEnvelope { readonly kind: 'reply'; readonly requestId: string; readonly result?: unknown; readonly error?: string | undefined; }\ninterface FrameEnvelope { readonly kind: 'frame'; readonly requestId: string; readonly frame: unknown; }\ninterface CancelEnvelope { readonly kind: 'cancel'; readonly requestId: string; }\ntype ChannelEnvelope = RequestEnvelope | ReplyEnvelope | FrameEnvelope | CancelEnvelope;\ninterface ThreadTarget {\n  readonly threadId: number;\n  readonly cls: MethodClass;\n  readonly session?: SessionId | undefined;\n  /** The one shared worker for session-class requests that carry no valid identity. */\n  readonly unattributed?: true | undefined;\n}\ninterface TargetRegistry {\n  readonly register: (target: ThreadTarget) => void;\n  readonly unregister: (threadId: number) => void;\n  readonly targetFor: (cls: MethodClass, session?: SessionId) => ThreadTarget | undefined;\n}\n  // + shared?: true | undefined;  // Marks the one shared-state session worker, which serves the session-class families whose state is one process-wide copy (chat, todos, understanding); the registry keys it 'session:shared', checked before the unattributed case. (amend:AMD-86197ac660732ceb-1)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Thread status board",
+          "purpose": "Shared record each thread updates as it starts and finishes work: the router publishes its attached-client snapshot, the indexing workers publish lane state, summary-sweep progress, each repository's completeness and the unattributed-entity count, and detached workflow runs publish their full poll state, so the admin thread can answer status, debug-status, liveness and run polls without calling into a busy thread or touching a store.",
+          "interfaceSketch": "interface ThreadStatus {\n  readonly threadId: number;\n  readonly cls: MethodClass | 'router';\n  readonly session?: SessionId | undefined;\n  readonly busy: boolean;\n  readonly method?: string | undefined;\n  readonly since?: number | undefined;\n  readonly queued: number;\n}\ninterface LaneStatus {\n  readonly depth: number;\n  readonly processing: boolean;\n}\ninterface SummarySweepProgress {\n  readonly repoPath: string;\n  readonly done: number;\n  readonly total: number;\n}\ninterface IndexingStatus {\n  readonly index: LaneStatus;\n  readonly summary: LaneStatus;\n  readonly sweep?: SummarySweepProgress | undefined;\n  readonly idle: boolean;\n}\n/** The existing AttachedClient shape from the server, lastMethod included. */\ninterface AttachedClientSnapshot {\n  readonly id: number;\n  readonly label: string;\n  readonly connectedAt: number;\n  readonly pid?: number | undefined;\n  readonly lastMethod?: string | undefined;\n}\n/** Today's shapes from src/shared/types.ts, published unchanged. */\ntype RepoStatusSnapshot = RegisteredRepo & { readonly completeness?: RepoCompleteness | undefined };  // optional as today's withCompleteness leaves it out on a failed read (amendment, delivered by s2)\ninterface StoreStatusSnapshot {\n  /** undefined until first published; responses then mark the value unavailable. */\n  readonly repos?: readonly RepoStatusSnapshot[] | undefined;\n  readonly unattributedUnwritable?: UnattributedUnwritableCount | undefined;\n  readonly publishedAt: number;\n}\ninterface RunRecord {\n  readonly runId: string;\n  readonly status: 'running' | 'done' | 'error' | 'aborted';\n  readonly ownerThreadId: number;\n  readonly startedAt: number;\n  readonly model: string;\n  /** The append-only progress sequence a poll slices from its cursor. */\n  readonly frames: readonly unknown[];\n  readonly result?: unknown;\n  readonly error?: string | undefined;\n}\ninterface StatusSnapshot {\n  readonly threads: readonly ThreadStatus[];\n  readonly indexing: IndexingStatus;\n  readonly clients: readonly AttachedClientSnapshot[];\n  readonly runs: readonly RunRecord[];\n  readonly store: StoreStatusSnapshot;\n}\ninterface StatusBoard {\n  readonly publish: (status: ThreadStatus) => void;\n  readonly publishIndexing: (status: IndexingStatus) => void;\n  /** Amendment (additive, delivered by s2): one indexing worker publishes only its own lane; the board keeps both and derives IndexingStatus.idle as both lanes empty and not processing. */\n  readonly publishLane: (lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress) => void;\n  readonly publishClients: (clients: readonly AttachedClientSnapshot[]) => void;\n  readonly publishRun: (run: RunRecord) => void;\n  /** Amendment (additive, delivered by s3 with the detached-run move): removes a run the owner's retention evicted; a later poll for it answers 'unknown', as today. */\n  readonly forgetRun: (runId: string) => void;\n  readonly publishStore: (store: StoreStatusSnapshot) => void;\n  readonly snapshot: () => StatusSnapshot;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Method-class registry",
+          "purpose": "Declares the class of every RPC and stream method the daemon serves, so the router sends each request to the right kind of thread and no method is left unclassified.",
+          "interfaceSketch": "interface MethodClassEntry {\n  readonly method: string;\n  readonly cls: MethodClass;\n  readonly stream: boolean;\n}\ninterface MethodClassRegistry {\n  readonly classOf: (method: string) => MethodClass | undefined;\n  readonly entries: () => readonly MethodClassEntry[];\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Session pool",
+          "purpose": "Maps each session id to its worker, creating one on first need, queuing a session's requests to it in arrival order, running a request's nested calls inline, and releasing a worker after its idle timeout unless it owns an active detached run.",
+          "interfaceSketch": "interface SessionPoolOptions {\n  /** Release a session's worker after this long with no request. */\n  readonly idleTimeoutMs: number;\n}\ninterface SessionWorkerInfo {\n  readonly session: SessionId;\n  readonly threadId: number;\n  readonly createdAt: number;\n  readonly lastRequestAt: number;\n  readonly queued: number;\n  /** Detached workflow runs this worker owns; a worker with any is never idle-released. */\n  readonly activeRuns: number;\n}\ninterface SessionPool {\n  readonly workerFor: (session: SessionId) => Promise<SessionWorkerInfo>;\n  readonly sessions: () => readonly SessionWorkerInfo[];\n  readonly options: SessionPoolOptions;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "The main thread becomes the controller: it loads no handler runtime and runs no request handler, only the socket, classification, forwarding, worker supervision extended to every class and unified (s2 already supervises admin and both indexing workers; s4 adds the session pool's workers and the unattributed worker: in-flight requests failed, store locks reclaimed, the worker replaced) and shutdown coordination, including the locks-lost path. It also adds a `threads` section to daemon.status and daemon.debug-status from the status board and session pool (additive fields only) and makes the liveness answer report a busy session as busy rather than as a failure. Validation: ac1 — no request handler runs on the main thread; ac2 — a failing worker of any class fails only its own in-flight requests and is replaced; ac3 — shutdown and the locks-lost path behave as today; ac4 — daemon.status lists each thread with class, session, busy state, method and elapsed time; ac5 — with a session worker busy for minutes the liveness answer reports the daemon alive and the session busy; ac6 — every field of today's daemon.status and daemon.debug-status, including clients and sweep progress, is present with the same meaning."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "Verifying each store from several threads of one process (the LMDB graph environment, every Lance table, the in-memory DuckDB pool), including that a worker opening and later releasing its handles does not close a descriptor the process's locks depend on; the semaphore implementation over process-wide shared memory and its holder record; moving the four in-memory step state stores onto the shared step-state store with today's TTL; the status board's attached-client, sweep-progress and run-record slots; the thread channel's serialisation and the target registry's bookkeeping; the status board's hub-served layout on the main thread. As the root Story it owns every cross-cutting contract the other Stories consume. Validation: ac1 — one thread writes a repo's entities while another reads the same graph, the reader sees only whole transactions, and an entity's vectors are written only after its graph commit; ac2 — two threads write different artifacts or config entries and a third thread reads both back; ac3 — no code path outside the daemon opens a store; ac4 — a throwing LMDB transaction on one thread leaves nothing visible to another. Also: a worker opening and releasing its handles keeps the process's LMDB locks; the guard releases on success, throw, cancel and worker kill; an acquisition past its limit fails; nested acquisition is refused. Step-state compatibility: for each of the four kinds, token rotation (analyze, workflow), stable-token update (review) or consume-and-mint per stage (code-review, where a superseded token fails), read refresh of expiry, the 100-entry eviction and a missing-token error behave as today. LMDB's native environment is opened by the main thread at start and closed by it at shutdown; a worker may open and close its own handle on it (s1 verified this keeps the process's locks); lock reclaim waits for a dead worker's in-flight native calls. Per store, a quiescence observation with a time limit and an unhealthy-store outcome when it is exceeded; a guard wait never blocks its thread."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The main-thread router (connection handling, classification through the method-class registry, envelope forwarding to registered targets, writing replies and frames back, observing worker exits and reclaiming a dead worker's store locks), the admin worker, and indexing on two workers: the code-indexing worker hosting the whole index queue (both lanes, unchanged) and the file-watcher feed and serving every indexing-class method, and the document-summary worker running the summary jobs the summary lane hands it, so a summary starts only while code indexing is idle, as today. Both indexing workers publish lane state, idleness, summary-sweep progress, the full registered-repository records with each repository's completeness, and the unattributed-entity count with its reasons on the status board after every change. Session-class methods keep running on the main thread exactly as today until s3 moves them; there is no fallback worker. Shutdown and the locks-lost path keep today's behaviour with the workers included (each stops its work, the queue drains, the main thread closes the stores after the workers exit). Validation: ac1 — daemon.status and the TUI's admin reads answer within 100 ms while an indexing pass runs and another worker keeps an LMDB write transaction open; ac2 — each admin method's response matches today's recorded response; ac3 — a test enumerates every served RPC and stream method and fails on any without a class, and dispatch tests assert admin methods ran on the admin thread and indexing methods on the code-indexing thread; ac4/ac5 — a session request is answered during an indexing pass, and a file change is indexed while a session request runs; ac6 — summaries start only while code indexing is idle, and lane order and indexed results equal the single-thread baseline; ac7 — queue status and idle waiting read from another thread reflect the indexing workers' real state. Also: debug-status keeps every field including lastMethod; daemon.status and repo.list read only the status board and keep today's full response shapes. Also maintenance compaction: idle detection (30 min, configurable), the reclaimable-space threshold (25% and 256 MB), the daemon maintenance lock from the lock framework (afcfa027): every request but daemon.status takes it shared with no wait and is refused with the maintenance activity and reason while maintenance holds it exclusively; workers close and reopen their graph handles around the main thread's compaction; every started worker is registered with watchWorker, and the manual daemon.compact keeping today's responses. s2 adds the additive sc4 method publishLane and its hub binding. s2 supervises the workers it introduces (admin, code-indexing, document-summary): exit handling, lock reclaim, replacement and restart limits. ac8 — with the maintenance lock held exclusively, a request other than daemon.status and daemon.compact is refused at once with the activity and reason; daemon.status answers and reports the maintenance; a request already running finishes before compaction starts; an exclusive request that times out leaves the store open and untouched; every row written before compaction is present after it; daemon.compact returns today's CompactResult when idle and today's 'indexer is busy' refusal while the queue has work."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The session pool, moving every session-class method off the main thread: session-id mapping, per-session FIFO, worker creation and idle release, containment of a failing worker (its in-flight requests fail with an error, the next request gets a new worker), routing each step handler's state through the shared step-state store, the unattributed worker, inline nested calls, and ownership of detached workflow runs (records on the status board, abort routed to the owner, failure on owner exit, never idle-released while a run is active). Validation: ac1 — session B is answered while session A's worker spins; ac2 — A's second request starts only after its first completes; ac3 — requests from one client process over separate connections run on one worker, released after the idle timeout; ac4 — a worker failure fails only its session's requests; ac5 — provider calls stay serial (no Promise.all reaching a provider); ac6 — a step token minted before an idle release resumes on the new worker; ac7 — the liveness check (daemon.status) answer within 100 ms while a session worker spins the CPU for minutes. Also: unattributed requests are served apart from sessions; a nested in-daemon call completes without deadlock; a detached run survives idle time, accepts an abort from another thread, and is marked failed when its owner exits; a poll from another thread, and after the owner has gone, returns the same frames-since-cursor, model, result and error as today. The board's forgetRun operation (an additive sc4 method) is added with the detached-run move, called by the run owner's retention. Session workers take the maintenance lock shared per request like every other request, and are registered with watchWorker when started."
+        }
+      ],
+      "rolloutPhase": "Phase D — controller and thread visibility",
+      "nonFunctional": {
+        "performance": "The liveness check (daemon.status) answer within 100 ms at the 99th percentile while a session worker is CPU-bound and while an indexing pass runs; routing adds no more than 5 ms per request and per stream frame. A session worker's idle timeout defaults to 15 minutes and is configurable; step state keeps its own 1-hour TTL independent of worker release.",
+        "security": "No new listener or socket: the main thread keeps the existing Unix socket and its permissions; shared memory and thread channels are internal to the daemon process; clients still reach the stores only through IPC.",
+        "observability": "Every log line carries its thread id and class, and the session id for session work; daemon.status lists every thread with class, session, busy state, current method and elapsed time; a store-lock wait beyond its acquisition limit and a reclaimed lock after a worker exit are logged as warnings.",
+        "durability": "Step state survives a worker's release or failure because it lives in the shared step-state store; a detached workflow run lives in its owning worker, which is not released while the run is active, and is marked failed if that worker exits; its poll state lives in shared run storage, so polls still answer after the owner has gone. A worker that exits while holding a store lock has the lock reclaimed by the router. Atomicity is unchanged from today: each LMDB write transaction commits all or nothing, and an operation that writes LMDB then Lance keeps today's order and re-embed recovery. The process's one native LMDB environment is opened by the main thread at start and closed by it at shutdown; each worker opens and may close its own handle on it, which s1 verified keeps the process's locks; a lock held by a dead worker is reclaimed only after its in-flight native calls have finished."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DaemonStatus",
+          "signature": "interface DaemonStatus { /* every existing field unchanged */ threads?: ThreadView[] | undefined }; interface ThreadView { threadId: number; role: ThreadRole; cls: MethodClass | undefined; session?: SessionId | undefined; busy: boolean; method?: string | undefined; elapsedMs?: number | undefined; queued: number; activeRuns: number }; type ThreadRole = 'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state'",
+          "parameters": [],
+          "returns": {
+            "type": "DaemonStatus",
+            "meaning": "Today's daemon.status response plus `threads` when daemon threads are enabled: one entry per live worker thread. Absent with threads disabled, so a consumer that does not know the field sees no change (k5)."
+          },
+          "errors": [],
+          "preconditions": [
+            "daemon.threads.enabled for `threads` to be present"
+          ],
+          "postconditions": [
+            "Every field present today keeps its meaning (ac6)",
+            "Each live worker thread appears once; busy is true while the router has a request of that thread in flight (for document-summary: while the summary lane is processing); method and elapsedMs are those of its oldest in-flight request",
+            "activeRuns counts the board's runs with ownerThreadId === threadId and status 'running'"
+          ]
+        },
+        {
+          "name": "adminWorkerHandlers",
+          "signature": "adminWorkerHandlers(deps: AdminWorkerDeps): RpcHandlers  // 'daemon.debug-status' now answers { clients: AttachedClient[]; threads: ThreadView[] }",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "AdminWorkerDeps",
+              "purpose": "Adds threads: () => Promise<readonly ThreadView[]> read from the board snapshot",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RpcHandlers",
+            "meaning": "The admin worker's table; daemon.debug-status keeps `clients` exactly as today and adds `threads`."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "daemon.debug-status.clients is byte-identical to today's for the same board state"
+          ]
+        },
+        {
+          "name": "createAdminStatus",
+          "signature": "createAdminStatus(deps: AdminStatusDeps): AdminStatus  // daemonStatus() adds threads: threadViews(snapshot, now)",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "AdminStatusDeps",
+              "purpose": "Unchanged deps; the thread view is derived from the same board snapshot it already reads",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AdminStatus",
+            "meaning": "daemonStatus() returns today's DaemonStatus plus `threads`, built from snapshot.threads, snapshot.runs (activeRuns) and snapshot.indexing.summary (document-summary busy), with elapsedMs = now - since."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "No call into a worker other than the board snapshot hub request; a busy session worker never delays the answer"
+          ]
+        },
+        {
+          "name": "StatusBoard",
+          "signature": "class StatusBoard { publish(status: ThreadStatus): void; forget(threadId: number): void; snapshot(): StatusSnapshot }  // ThreadStatus gains role?: ThreadRole (sc4 fieldAdd, additive)",
+          "parameters": [
+            {
+              "name": "status",
+              "type": "ThreadStatus",
+              "purpose": "One worker thread's current state, published by the main thread's router (and by the supervisor for the document-summary worker)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The board's threads slot holds the latest status per thread; forget removes a thread that exited or was released."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called on the main thread (the board lives there); no hub hop"
+          ],
+          "postconditions": [
+            "snapshot().threads lists exactly the threads published and not forgotten"
+          ]
+        },
+        {
+          "name": "Router",
+          "signature": "new Router(opts: RouterOptions & { board?: Pick<StatusBoard, 'publish' | 'forget'> | undefined; roleOf?: ((threadId: number) => ThreadRole | undefined) | undefined })  // attach publishes an idle status, send/terminal/cancel/detach republish, detach forgets",
+          "parameters": [
+            {
+              "name": "opts.board",
+              "type": "Pick<StatusBoard, 'publish' | 'forget'> | undefined",
+              "purpose": "Where the router publishes each worker thread's in-flight view; absent with threads disabled and in unit tests that do not care",
+              "optional": true
+            },
+            {
+              "name": "opts.roleOf",
+              "type": "(threadId: number) => ThreadRole | undefined",
+              "purpose": "The thread's role from the target registry (admin, code-indexing, session, unattributed, shared-state)",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Router",
+            "meaning": "The router keeps, per worker thread, its in-flight requests (requestId -> method, since) and publishes ThreadStatus { threadId, cls, role, session, busy, method, since, queued } after each change."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A request counted in flight leaves the view at its reply, a stream's done/error frame, its cancel's end (s3 rule) or its worker's detach",
+            "queued is the length of the session's FIFO for a session worker, 0 otherwise"
+          ]
+        },
+        {
+          "name": "buildHandlerRuntime",
+          "signature": "buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime  // with threads enabled, called by the main thread only on its first local request",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "HandlerRuntimeDeps",
+              "purpose": "Unchanged",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HandlerRuntime",
+            "meaning": "Built once, on demand, by the router's local forward for a request that must stay on the main thread (trusted connectionSession, session-memory execution, MAIN_DAEMON_CONNECTION_METHODS, an unclassified method, or the abort of a run owned by the main thread). With threads disabled it is built at boot as today."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "A build failure answers that request with its error and the next local request tries again; it never takes the daemon down"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "With threads enabled and no local request yet, the main thread has not called buildHandlerRuntime",
+            "Shutdown stops the runtime's understanding routes only if it was built"
+          ]
+        },
+        {
+          "name": "Supervisor",
+          "signature": "class Supervisor { track(worker: Worker, name: string): void; terminateAll(): Promise<void> }  // track: a worker started outside start() (the session pool's) joins created, gets the error log, and is terminated by terminateAll",
+          "parameters": [
+            {
+              "name": "worker",
+              "type": "Worker",
+              "purpose": "A session-pool worker as it is created",
+              "optional": false
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "purpose": "Its role for logs",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The worker is supervised for errors and shutdown; its exit handling and replacement stay the pool's (s3)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "terminateAll ends every worker the daemon created, session-pool workers included",
+            "The shared-state worker's restarts count against the supervisor's restart limit (5 in 60 s), past which the daemon shuts down"
+          ]
+        },
+        {
+          "name": "SessionPool",
+          "signature": "new SessionPool(deps: SessionPoolDeps & { onCreated?: ((worker: Worker, name: string) => void) | undefined; restarted?: ((name: string) => boolean) | undefined })",
+          "parameters": [
+            {
+              "name": "deps.onCreated",
+              "type": "(worker: Worker, name: string) => void",
+              "purpose": "Hands each created worker to Supervisor.track",
+              "optional": true
+            },
+            {
+              "name": "deps.restarted",
+              "type": "(name: string) => boolean",
+              "purpose": "Asked before restarting the shared-state worker after an exit; false (the restart limit was passed) refuses the start",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "SessionPool",
+            "meaning": "sc6 unchanged; workers are tracked by the supervisor and the shared-state worker's restarts are rate-limited."
+          },
+          "errors": [
+            {
+              "type": "SessionWorkerStartError",
+              "condition": "As s3; also when the shared-state worker's restart limit was passed (the daemon is shutting down)"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": []
+        }
+      ],
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.fieldAdd",
+            "contractId": "sc4",
+            "field": {
+              "name": "role",
+              "type": "'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state' | undefined",
+              "optional": true,
+              "purpose": "What a thread is for, so daemon.status can tell the code-indexing and document-summary threads apart (the summary worker serves no request class) and mark the unattributed and shared-state session workers, which ThreadStatus.cls and session alone cannot."
+            },
+            "breaking": false
+          },
+          "rationale": "s4 ac4 lists each thread with its class and the session it serves, including the code-indexing and document-summary threads; ThreadStatus.cls is MethodClass | 'router', which gives both indexing threads the same value (the summary worker has no request class) and cannot mark the unattributed or shared-state session worker. One optional field fixes that without changing any existing field.",
+          "citations": [
+            {
+              "id": "c1",
+              "kind": "code",
+              "ref": "src/daemon/threads/status-board.ts:21"
+            },
+            {
+              "id": "c2",
+              "kind": "code",
+              "ref": "src/daemon/threads/supervisor.ts:36"
+            }
+          ]
+        }
+      }
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DaemonStatus",
+        "change": "field-add",
+        "details": "Optional `threads?: ThreadView[]` (additive, k5). Absent with daemon threads disabled.",
+        "schemaDiff": "+ threads?: ThreadView[] | undefined",
+        "callSites": [
+          "src/shared/types.ts:985-1028",
+          "src/daemon/threads/admin-status.ts:42-93",
+          "src/shared/ipc-client.ts:149-160"
+        ]
+      },
+      {
+        "entity": "daemon.debug-status result",
+        "change": "field-add",
+        "details": "Adds `threads: ThreadView[]` beside `clients`, which keeps today's shape and meaning.",
+        "schemaDiff": "{ clients: AttachedClient[] } -> { clients: AttachedClient[]; threads: ThreadView[] }",
+        "callSites": [
+          "src/daemon/admin-handlers.ts:106-114"
+        ]
+      },
+      {
+        "entity": "ThreadStatus",
+        "change": "field-add",
+        "details": "sc4 ThreadStatus gains optional `role?: ThreadRole`, so the code-indexing and document-summary threads (both class indexing or none) and the unattributed and shared-state session workers are told apart in the view. Proposed as an additive sc4 amendment.",
+        "schemaDiff": "+ role?: 'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state' | undefined",
+        "callSites": [
+          "src/daemon/threads/status-board.ts:21-30",
+          "src/daemon/threads/status-board.ts:92"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Unchanged: every worker exit, session-pool workers included, still reclaims named locks and store-guard permits through the exit path before the worker is disconnected."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "The router reads each target's class, session, unattributed and shared markers from the target registry to derive a thread's role; no envelope change, and wireRequest's refusal of a connection-scoped context stays (those requests run locally)."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "The router (on the main thread) publishes ThreadStatus per worker through StatusBoard.publish and removes it with forget; the admin worker reads snapshot().threads, runs and indexing to build the view. Adds the optional ThreadStatus.role through an additive amendment."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Classification is unchanged; the lazily built local runtime serves only what the router keeps local."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "SessionPool's API is unchanged; its worker creation is handed to the supervisor's tracking and the shared-state worker's restarts are rate-limited."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The lazy buildHandlerRuntime call on the first connection-scoped request throws (a handler table's module fails to load).",
+          "detection": "The router's local forward awaits the one-time build inside a try; the rejection is caught there before directDispatch is called.",
+          "response": "That request is answered with the build error (an error frame for a stream); the cached promise is cleared so the next local request builds again; logged at error with the method.",
+          "userImpact": "Only the connection-scoped request fails; every routed request is unaffected and the daemon stays up.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A session-pool worker exits while the router has its requests in flight.",
+          "detection": "The pool's worker 'exit' event (s3 path) calls router.failWorker, which detaches the thread; detach clears the thread's in-flight map.",
+          "response": "s3's failure answers are unchanged; the router calls board.forget(threadId) so the view drops the thread; the supervisor's tracked set loses the worker on its exit.",
+          "userImpact": "daemon.status stops listing the dead worker at once; no stale 'busy' entry remains.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The shared-state worker keeps exiting (crash loop).",
+          "detection": "The pool asks the supervisor's restart counter (restarted) before each shared-state start after an exit; past 5 restarts in 60 s it answers false.",
+          "response": "The start is refused with SessionWorkerStartError and the supervisor runs the daemon's shutdown with 'the shared-state worker exceeded the restart limit', as for the admin and indexing workers.",
+          "userImpact": "The daemon stops instead of spinning; clients reconnect to a restarted daemon.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A board.publish for a thread arrives after that thread was forgotten (a late send or terminal racing the worker's exit).",
+          "detection": "The router publishes only for a thread it still has attached (ports.has(threadId)); detach removes the port before forget.",
+          "response": "No publish after detach, so no ghost thread is re-added.",
+          "userImpact": "None.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "daemon.status with daemon.threads.enabled false",
+          "expected": "No `threads` field; every other field exactly as today."
+        },
+        {
+          "input": "daemon.status before any session worker exists",
+          "expected": "`threads` lists the admin, code-indexing and document-summary threads (and the shared-state worker once it has started), each idle with queued 0 and activeRuns 0."
+        },
+        {
+          "input": "A session worker CPU-bound for minutes on one request",
+          "expected": "daemon.status answers within the s3 bound; that thread shows busy: true with the method and an elapsedMs that grows across calls; reachability stays 'running'."
+        },
+        {
+          "input": "A session worker idle between requests but owning a running detached workflow run",
+          "expected": "busy: false, activeRuns: 1 (from the board's runs with that ownerThreadId), so it is visibly working and not a release candidate."
+        },
+        {
+          "input": "The unattributed or shared-state worker serving several requests at once",
+          "expected": "busy: true; method and elapsedMs are those of the oldest request in flight; queued 0 (they keep no FIFO)."
+        },
+        {
+          "input": "A session with requests waiting in its FIFO behind a long one",
+          "expected": "Its worker shows busy with the long request's method, and queued equals the FIFO length."
+        },
+        {
+          "input": "A stream cancelled by its socket while its worker still drains it",
+          "expected": "It stays in the view until its lifetime completes (the s3 end rule), then leaves it."
+        },
+        {
+          "input": "No connection-scoped request during the daemon's life",
+          "expected": "buildHandlerRuntime is never called on the main thread; shutdown skips stopping understanding routes that were never built."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every existing daemon.status and daemon.debug-status field keeps its value and meaning; only additive fields are added (k5).",
+          "source": "c4"
+        },
+        {
+          "text": "createShutdown's two timelines and its locks-lost branch (no store close, end through endAfterStoreFailure) are unchanged; closeStores still awaits maintenance.stop, sessionPool.close and supervisor.terminateAll before closing the stores.",
+          "source": "c4"
+        },
+        {
+          "text": "A worker's exit still fails its in-flight requests (Supervisor: \"the daemon's <class> thread stopped while serving <method>; retry\"; session pool: 'session worker failed: ...'), reclaims its locks and permits, then disconnects it.",
+          "source": "c3"
+        },
+        {
+          "text": "Connection-scoped requests (trusted connectionSession, session-memory execution, MAIN_DAEMON_CONNECTION_METHODS) keep running on the main thread through the local forward, with today's behaviour.",
+          "source": "c2"
+        },
+        {
+          "text": "With daemon.threads.enabled false, the main thread builds the handler runtime at boot and serves every request as today.",
+          "source": "c1"
+        },
+        {
+          "text": "daemon.status is answered by the admin worker from the board without calling into a busy thread.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (npx tsx --test); daemon-level tests spawn src/daemon/index.ts under a temp HOME with INSRC_MODE=mcp and INSRC_TEST_HOOKS=1, as src/daemon/threads/__tests__/s3-acceptance.test.ts does",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The router's per-thread in-flight view and its publishes, the thread-view builder, the supervisor's track and restart counter, and the session pool's onCreated/restarted hooks, over fakes.",
+          "subjects": [
+            "Router thread view: attach publishes idle; send marks busy with method and since; reply, stream done/error frame, cancelled-stream lifetime end and detach end it; the oldest in-flight request names method/since; queued equals the session FIFO length; no publish after detach",
+            "createAdminStatus thread view: role, cls, session, busy, method, elapsedMs = now - since, queued, activeRuns from the board's running runs per owner, document-summary busy from the summary lane",
+            "Supervisor.track: a tracked worker is terminated by terminateAll and its error is logged; the restart counter refuses past 5 in 60 s",
+            "SessionPool with onCreated and restarted: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError"
+          ],
+          "fixturesNeeded": [
+            "The in-thread fake-worker harness of src/daemon/threads/__tests__/router-session.test.ts (MessageChannel ports served with serveRequests) with a recording board",
+            "The fake worker starter of src/daemon/threads/__tests__/session-pool.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The threaded daemon over its socket: the main thread's handler runtime is not built until a connection-scoped request; the threads section and liveness under load; failure and replacement of each worker class; shutdown unchanged.",
+          "subjects": [
+            "Main thread loads no handler runtime: with threads enabled, after routed admin/indexing/session requests a test hook reports the main thread never called buildHandlerRuntime; a connection-scoped request is still answered as today and builds it then",
+            "daemon.status threads section lists admin, code-indexing, document-summary, shared-state and two session threads with role, class and session",
+            "A session worker spinning its CPU (test.spin) shows busy with method test.spin and growing elapsedMs on successive daemon.status calls answered within 100 ms; reachability is 'running'",
+            "Worker failure of each class (admin, code-indexing, document-summary, session, shared-state): its in-flight request gets an error, it disappears from threads, a replacement (or the next session request's new worker) appears, other threads keep answering",
+            "Shutdown (SIGTERM and daemon.shutdown) exits 0 after 'bye' with session-pool workers terminated by the supervisor; the locks-lost path still ends without a store close",
+            "daemon.status and daemon.debug-status keep every existing field with today's values (recorded comparison) and only add threads"
+          ],
+          "fixturesNeeded": [
+            "Temp HOME with a config enabling daemon.threads and a short session idle timeout, as in s3-acceptance.test.ts",
+            "INSRC_TEST_HOOKS test methods: test.spin, test.order with exitAfterMs, test.exit, plus a new test hook reporting whether the main thread built its handler runtime",
+            "The existing shutdown unit tests' injectable end deps for the locks-lost branch (src/daemon/shutdown.ts)"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The IPC response shapes stay compatible for existing consumers.",
+          "subjects": [
+            "DaemonStatus and the debug-status result: every field present in the single-thread daemon's response is present with the same value type and meaning; threads is optional and absent with threads disabled"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: with threads enabled, routed admin, indexing and session requests leave the main thread's handler runtime unbuilt (test hook), and a connection-scoped request is answered as today and builds it on first use",
+            "unit: the router's local forward builds the runtime once on the first local request, answers a build failure with its error and builds again on the next"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: an admin, code-indexing, document-summary, session and shared-state worker each exits mid-request; that request gets an error, the thread leaves the threads section, a replacement or new worker appears and other threads keep answering",
+            "unit: Supervisor.track terminates tracked session-pool workers at terminateAll and the shared-state restart counter refuses past the limit"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated before the stores close",
+            "unit: createShutdown's locks-lost branch still skips closeStores and ends through endAfterStoreFailure (existing shutdown tests, unchanged)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: daemon.status threads lists admin, code-indexing, document-summary, shared-state and two session threads with role, class, session, busy, method and elapsedMs",
+            "unit: the router's thread view marks busy/method/since per request and queued from the FIFO; the admin thread view computes elapsedMs and activeRuns"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: with a session worker spinning for the test's duration, daemon.status answers within 100 ms at p99 over repeated calls, lists that thread busy with growing elapsedMs, and IpcClient.reachability returns 'running'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "contract: daemon.status and daemon.debug-status from the threaded daemon contain every field of the single-thread daemon's response with the same value types and meaning; threads is the only added field",
+            "integration: daemon.debug-status clients keep today's shape including lastMethod"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "With daemon.threads.enabled, the main thread builds the full handler runtime at boot (buildHandlerRuntime called from main in src/daemon/index.ts) and serves the router's local forward with it; supervision is split between Supervisor (admin, code-indexing, document-summary) and SessionPool (session, unattributed, shared-state workers started with startWorker directly, closed by pool.close before supervisor.terminateAll); daemon.status and daemon.debug-status carry no thread information and the status board's ThreadStatus slot has no publisher (s1 bundles c1, c3, c4).",
+      "stateAfter": "With daemon.threads.enabled, the main thread builds the handler runtime only on its first local (connection-scoped or unclassified) request; the router publishes every worker thread's in-flight view on the board; daemon.status and daemon.debug-status add an optional `threads` list; session-pool workers are tracked by the Supervisor and the shared-state worker's restarts count against its limit. With the flag off, nothing changes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional ThreadStatus.role field (sc4 additive amendment) and the optional DaemonStatus.threads / debug-status threads fields; no consumer reads them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Give the Router an optional board and roleOf; when present it keeps the per-thread in-flight view and publishes on attach, send, end and detach. Wire it in index.ts only when threads are enabled.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Build the thread view in the admin worker from the board snapshot and answer it in daemon.status and daemon.debug-status.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Add Supervisor.track and the restart-counter query; pass the session pool onCreated (track) and restarted (shared-state restart limit) from startSessionRouting.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Move buildHandlerRuntime, the in-daemon client and installStepDaemonClient behind a one-time builder the router's local forward awaits when threads are enabled; keep the boot-time build when they are disabled; guard the shutdown's understandingRoutes.stop on the runtime having been built.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "daemon.threads.enabled"
+          ]
+        }
+      ],
+      "backwardCompat": "IPC is unchanged for existing clients (k5): daemon.status and daemon.debug-status only gain optional fields (threads), absent with daemon threads disabled; every existing field keeps its value and meaning, so the TUI, daemon-ctl.sh status, IpcClient.reachability and the JetBrains/VS Code plugins see no change unless they read the new field. The sc4 ThreadStatus change is an optional field add. With daemon.threads.enabled false the boot path, handler runtime and supervision are exactly as today.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Router-observed thread view, lazily loaded connection runtime, supervisor-tracked session workers",
+        "oneLineSummary": "The router publishes each worker's in-flight request view on the board; the main thread builds its handler runtime only on the first connection-scoped request; session-pool workers are created through the Supervisor's tracking so every class is supervised in one place.",
+        "approach": "Thread view: the router already sees every request it sends to a worker thread and every terminal reply, frame or cancel. It keeps, per worker thread, the requests in flight (method, since) and publishes a ThreadStatus (sc4, unchanged shape) through board.publish on each send and end: busy = any request in flight, method and since of the oldest, queued from the session FIFO length. Workers it does not route requests to (the document-summary worker) publish their lane state as today, and the threads view marks them from the board's lane slot. Registration and exit come from the target registry and the supervisor/pool exit paths (board.forget on exit). The admin worker adds an additive `threads` array to daemon.status and daemon.debug-status from board.snapshot().threads plus the pool's per-session info (session, createdAt, lastRequestAt, activeRuns) that the main thread publishes in the same ThreadStatus. Because the view is built on the main thread from what was sent, a worker spinning its CPU still shows busy with its method and elapsed time, and daemon.status (answered by the admin worker, s3 ac7 < 100 ms) keeps answering, so liveness = 'running' with the busy session listed. Main thread: buildHandlerRuntime is no longer called at boot when threads are enabled; the router's local forward builds it on the first request that must stay local (trusted connectionSession, session-memory execution, MAIN_DAEMON_CONNECTION_METHODS, a main-owned run's abort), so ac1 holds for every other request and the runtime is never loaded unless connection sessions are used. Supervision: SessionPool starts its workers through a Supervisor hook (track created worker, log its error, include it in terminateAll) while keeping s3's on-demand replacement (the session's next request starts a new worker) and its failure messages; the shared-state worker gets the supervisor's restart limit.",
+        "pros": [
+          "A CPU-bound worker cannot publish anything itself; a view built on the main thread from what was sent stays accurate while the worker is stuck, which is exactly the ac5 case",
+          "No change to the sc4 ThreadStatus shape or any worker's request loop; reuses board.publish and its hub binding that exist but have no publisher today",
+          "ac1 holds for every non-connection-scoped request and the handler runtime is not loaded at all until a connection session is used, without touching Epic 484fcef7's connection-session design",
+          "One supervision path: terminateAll covers every worker, and every worker's errors are logged the same way"
+        ],
+        "cons": [
+          "ac1 is met only for requests that are not connection-scoped until plans/connection-session-worker-crossing.md lands; the first connection-scoped request loads the runtime on the main thread",
+          "The view shows requests in flight, not CPU use: a worker idle between requests but running background work (a detached workflow run) shows not busy unless its active run is listed, so activeRuns must be included",
+          "Lazy construction moves the cost of buildHandlerRuntime (tool and template registration already happen at boot) to the first connection-scoped request"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Worker-published thread status",
+        "oneLineSummary": "Each worker's serveRequests publishes busy/idle with method and since on every request start and end; the admin worker reads it for daemon.status.",
+        "approach": "serveRequests (src/daemon/threads/worker-requests.ts) wraps each forward with board.publish({ threadId, cls, session, busy: true, method, since }) at start and busy: false at end, through the worker's StatusBoardClient. The admin worker renders the `threads` section from the board. Main-thread handler runtime and supervision changes as in a1.",
+        "pros": [
+          "Reflects what the worker itself is running, including requests it serves concurrently (unattributed and shared-state workers)",
+          "No new bookkeeping in the router"
+        ],
+        "cons": [
+          "A worker whose thread is CPU-bound cannot post its next update, and one that crashes mid-request leaves a stale 'busy' record until the exit path clears it; correctness of 'busy since' depends on the worker",
+          "Adds a hub message per request start and end on every worker, plus a change to every worker entry's request loop",
+          "Does not know the session's FIFO depth, which lives in the router; queued must still come from the main thread"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Same coverage as a1 on paper but fails ac5 in exactly the case it exists for: a CPU-bound worker cannot publish, and a crashed worker leaves a stale busy record."
+      },
+      {
+        "id": "a3",
+        "name": "Full controller: connection-scoped requests also leave the main thread",
+        "oneLineSummary": "Deliver ac1 literally by moving connection-session ownership (or a proxy of its trusted context) onto workers, so the main thread loads no handler runtime at all.",
+        "approach": "Make the trusted connection context crossable: either proxy abort signals, assert closures, registerDrain and the connection session's overlay lookups back to the main thread, or move connection-session ownership (temporary connections, credentials and private DuckDB) onto the session's worker. Then drop buildHandlerRuntime from the main thread entirely. Thread view and supervision as in a1.",
+        "pros": [
+          "Meets ac1 and FR1 exactly as written",
+          "Removes the last handler code from the main thread"
+        ],
+        "cons": [
+          "Redesigns admission, the no-persistence boundary for temporary credentials and cleanup owned by Epic 484fcef7, which is still in progress in another session; the user deferred this work (plans/connection-session-worker-crossing.md) until 484fcef7 and Story 34798d20 complete",
+          "Steps outside s4's boundary (it owns no contract; connection sessions are not in sc1-sc6)"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Only alternative that meets ac1 literally, but it redesigns Epic 484fcef7's connection-session ownership outside s4's boundary and against the user's explicit deferral; it belongs to the logged follow-up, not s4."
+      },
+      {
+        "id": "a4",
+        "name": "Status section only",
+        "oneLineSummary": "Add the router-observed `threads` section and liveness reporting, and leave the main thread's eager handler runtime and the two supervision paths as they are.",
+        "approach": "The thread view and the additive daemon.status / debug-status fields of a1, with no change to boot or supervision; ac1 and ac2's unified supervision are documented as not delivered.",
+        "pros": [
+          "Smallest change; delivers ac4, ac5 and ac6"
+        ],
+        "cons": [
+          "Does not meet ac1 (the main thread still loads and can run every handler) or the unified-supervision part of ac2",
+          "Leaves session-pool workers outside terminateAll's tracking and the shared-state worker without a restart limit"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Delivers the visibility half (ac4-ac6) cheaply but leaves ac1 unaddressed and ac2's unified supervision undone, so the Story would not be complete."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ac1 scope (sbdry3 partial, needs a user decision): the HLD says the main thread loads no handler runtime and runs no request handler. Connection-scoped requests (trusted connectionSession, session-memory execution, MAIN_DAEMON_CONNECTION_METHODS) cannot cross a worker channel until plans/connection-session-worker-crossing.md lands, which the user deferred until Epic 484fcef7 and Story 34798d20 complete. The chosen design (a1) builds the main thread's handler runtime lazily on the first such request, so ac1 holds for every other request. Options: (A) accept ac1 scoped this way now and close the gap in the follow-up [recommended]; (B) hold s4 until the follow-up is done."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:451",
+      "quotedText": "const { rpcHandlers, streamHandlers, understandingRoutes } = buildHandlerRuntime({"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/threads/router.ts:213",
+      "quotedText": "if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/threads/supervisor.ts:138",
+      "quotedText": "const error = `the daemon's ${thread} thread stopped while serving ${r.method}; retry`;"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/admin-handlers.ts:111",
+      "quotedText": "'daemon.debug-status': async (): Promise<{ clients: AttachedClient[] }> => ({ clients: [...await deps.clients()] }),"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/threads/__tests__/s3-acceptance.test.ts:221",
+      "quotedText": "test('ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins'"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/threads/status-board.ts:92",
+      "quotedText": "publish(status: ThreadStatus): void { this.threads.set(status.threadId, status); }"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/shutdown.ts:79",
+      "quotedText": "if (health.state === 'locks-lost') endAfterStoreFailure(reason, health, deps);"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts:153",
+      "quotedText": "return 'running';"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/threads/session-routing.ts:28",
+      "quotedText": "start: (name, opts) => startWorker(services, name, 'session-worker', opts?.shared ? { workerData: { shared: true }, transferList: [] } : undefined),"
+    }
+  ]
+}

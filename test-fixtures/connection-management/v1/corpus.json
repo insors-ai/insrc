@@ -4901,5 +4901,476 @@
         }
       ]
     }
+  ],
+  "draftScenarios": [
+    {
+      "id": "temporary-csv",
+      "kind": "csv",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "temporary",
+        "id": "preview"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "path"
+          ],
+          "value": "data/example.csv"
+        },
+        {
+          "action": "field",
+          "path": [
+            "options",
+            "delimiter"
+          ],
+          "value": ","
+        },
+        {
+          "action": "field",
+          "path": [
+            "options",
+            "header"
+          ],
+          "value": true
+        }
+      ],
+      "expected": {
+        "family": "file",
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "temporary",
+          "id": "preview"
+        },
+        "mode": "create",
+        "publicPatch": {
+          "kind": "csv",
+          "path": "data/example.csv",
+          "options": {
+            "delimiter": ",",
+            "header": true
+          }
+        },
+        "credentials": {}
+      }
+    },
+    {
+      "id": "pinned-family-update-keep",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "label"
+          ],
+          "value": "Fixture label"
+        }
+      ],
+      "expected": {
+        "family": "kv",
+        "mode": "update",
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres",
+          "label": "Fixture label"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "keep"
+          }
+        }
+      }
+    },
+    {
+      "id": "blank-replace-needs-input",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "replace"
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serializationError": "invalid-fields"
+    },
+    {
+      "id": "replace-then-keep-erases-input",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "replace",
+          "value": "fixture-only-replacement-canary"
+        },
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "keep"
+        }
+      ],
+      "expected": {
+        "dirty": false
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "keep"
+          }
+        }
+      }
+    },
+    {
+      "id": "explicit-clear",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "clear"
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "clear"
+          }
+        }
+      }
+    },
+    {
+      "id": "address-list-private-replacement",
+      "kind": "nats",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "temporary",
+        "id": "preview"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "options",
+            "servers"
+          ],
+          "value": [
+            "nats://fixture.invalid:4222"
+          ]
+        },
+        {
+          "action": "credential-addresses",
+          "slot": "options.servers",
+          "values": [
+            "nats://fixture:fixture-only-password@fixture.invalid:4222"
+          ]
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "temporary",
+          "id": "preview"
+        },
+        "mode": "create",
+        "publicPatch": {
+          "kind": "nats",
+          "options": {
+            "servers": [
+              "nats://fixture.invalid:4222"
+            ]
+          }
+        },
+        "credentials": {
+          "options.servers": {
+            "action": "replace",
+            "value": "[\"nats://fixture:fixture-only-password@fixture.invalid:4222\"]"
+          }
+        }
+      }
+    },
+    {
+      "id": "incomplete-structured-group",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "schemaSource",
+            "path"
+          ],
+          "value": "schema.prisma"
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serializationError": "invalid-fields"
+    },
+    {
+      "id": "reset-create-field",
+      "kind": "csv",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "temporary",
+        "id": "draft"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "path"
+          ],
+          "value": "data/example.csv"
+        },
+        {
+          "action": "reset-field",
+          "path": [
+            "path"
+          ]
+        }
+      ],
+      "expected": {
+        "dirty": false
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "temporary",
+          "id": "draft"
+        },
+        "mode": "create",
+        "publicPatch": {
+          "kind": "csv"
+        },
+        "credentials": {}
+      }
+    },
+    {
+      "id": "reset-update-keeps-baseline",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "endpoint"
+          ],
+          "value": "postgresql://other.invalid/db"
+        },
+        {
+          "action": "reset-field",
+          "path": [
+            "endpoint"
+          ]
+        }
+      ],
+      "expected": {
+        "dirty": false
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "keep"
+          }
+        }
+      }
+    }
   ]
 }

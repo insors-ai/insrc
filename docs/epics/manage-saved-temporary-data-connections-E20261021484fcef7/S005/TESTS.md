@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -145,3 +145,19 @@ Run at 2026-10-29T15:55:42.425Z on commit `863c1cc5a`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/connections/__tests__/session-owner.test.ts` | 0 | 4 | 1.9 s |  |
+
+## t9
+
+Run at 2026-10-29T16:14:53.729Z on commit `f5819230d`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views | `src/shared/__tests__/connection-manager-kotlin-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-kotlin-owner.test.ts` | 0 | 1 | 4.6 s |  |

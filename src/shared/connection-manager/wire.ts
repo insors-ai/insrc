@@ -99,9 +99,10 @@ export function decodeDriverDescriptors(value: unknown): readonly ClientDriverDe
   });
  });
 }
+export const PUBLIC_CONNECTION_FIELDS = Object.freeze(['kind','label','endpoint','path','schemaSource','namespace','pii','options','recursive','partitioning']);
 function safePublicFields(value: unknown): void {
  const config=object(value);
- if(Object.keys(config).some(k=>!['kind','label','endpoint','path','schemaSource','namespace','pii','options','recursive','partitioning'].includes(k)))fail();
+ if(Object.keys(config).some(k=>!PUBLIC_CONNECTION_FIELDS.includes(k)))fail();
  const walk=(v:unknown):void=>{
   if(typeof v==='string'){
    let decoded=v;
@@ -120,6 +121,10 @@ function safePublicFields(value: unknown): void {
   }
  };
  walk(config);
+}
+/** Shared public-field boundary for the private draft serializer; no credential materialization. */
+export function decodePublicConnectionPatch(value: unknown): Readonly<Record<string, unknown>> {
+ return decode(value, copy => { safePublicFields(copy); return object(copy); });
 }
 function safeRead(value: unknown, expected: ReplyExpectation): SafeConnection {
  const o = object(value); fields(o,['key','revision','kind','family','effectiveFamily','publicConfig','credentialPresence'],['label','declaredFamily','registeredFamily','compatibilityWarning','readOnly','hasUrl','hasPath','ephemeral']);

@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T15:55:42.425Z",
+    "updatedAt": "2026-10-29T16:14:53.729Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -399,6 +399,42 @@
               },
               {
                 "title": "CM-S5-OWNER-TS: disposal deadline closes only owned lanes even when end reply is lost",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "f5819230d",
+        "ranAt": "2026-10-29T16:14:53.729Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-owner.test.ts",
+                "title": "CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4626,
+            "titles": [
+              {
+                "title": "CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views",
                 "result": "pass"
               }
             ],

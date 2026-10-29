@@ -1,0 +1,41 @@
+{
+  "task": "t10",
+  "focusedTests": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "cancelled": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "junitCorpusTests": 2,
+  "allCurrentDescriptorKinds": 29,
+  "sharedDraftScenarios": 9,
+  "dirtyExitTargets": [
+    "root",
+    "row",
+    "filter",
+    "search",
+    "scope",
+    "kind",
+    "close",
+    "remove"
+  ],
+  "serialization": "Installed AJV validates the exact advertised schema without defaults/coercion/removal; edits allow structurally typed incomplete drafts; Save/Test use one immutable private serializer. Backend remains authority for dialect/materialization and registration validity.",
+  "credentialPrivacy": "Private intent map, blank masked Replace, explicit Clear, Keep default, address-list credential formatter, no replacement values in view or object JSON",
+  "compatibility": "Edit key/kind/scope/effective family fixed; no family normalization or retained secret lookup; unsupported public schema/required field/private shape disabled with fixed guidance",
+  "cancel": "No navigation/mutation effect; values/revision remain identical. Discard clears only unsaved in-memory form, never a connection registration.",
+  "reset": "Omit field on create; restore baseline/Keep on edit; no stored-field deletion inference",
+  "typecheck": "Node22 tsc --noEmit passed",
+  "pending": [
+    "Native Kotlin draft counterpart",
+    "Native UI/live acceptance and mutation/probe orchestration",
+    "Full sweep after all implementation tasks"
+  ],
+  "sourceSha256": {
+    "src/shared/connection-manager/draft.ts": "ccceadd044fe2792f9725378e9d7c72f4eb9ebe19da35997c7ded18725491c07",
+    "src/shared/connection-manager/wire.ts": "5ce1aee76bab3ea7be696b4ec8a0454217c42243d5a9df6d7edaee1500215820",
+    "src/shared/__tests__/connection-manager-draft.test.ts": "d8119fe8020fa087326e69d836cbe0a2fd12c4d4f62f579ba53ad49636a76693",
+    "test-fixtures/connection-management/v1/corpus.json": "195b9813c796554f0400392db3b11b9816a38685b137bc281b2682bb238dbc9c"
+  }
+}

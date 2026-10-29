@@ -1,4 +1,5 @@
 import { investigationStatus,boundedInvestigationStatus } from './review-investigation-status.js';
+import { acquireInvestigationProvider } from './review-investigation-provider-lane.js';
 import { recoveryCompatibility } from '../workflow/code-review/investigation/recovery-lifecycle.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { randomUUID } from 'node:crypto';
@@ -59,7 +60,6 @@ export interface InvestigationRepositoryOptions {
  readonly onProgress?:((runId:string,sequence:number,blockId:string|null)=>void)|undefined;
 }
 interface Prepared {readonly manifest:RecoveryManifest;readonly sources:SubjectPreparationDeps;readonly modelLabel:string;readonly authorParty:'controller'|'daemon';readonly reviewerParty:'controller'|'daemon';readonly daemon:InvestigationDaemonAdapter|null;readonly controller:InvestigationControllerHost|null;}
-let providerTail:Promise<void>=Promise.resolve();
 const criterionText:Record<string,string>={adherence:'Check each approved task, acceptance check and design obligation against inspected selected changes.',conventions:'Check relevant project conventions and architectural contracts.',coverage:'Check meaningful passing tests and gaps for the selected behavior; do not equate builder reports with executed tests.',quality:'Check correctness, error paths, race conditions, security and maintainability of the selected changes.',
  'functional-coverage':'Check all declared functional obligations against inspected implementation and tests.',diagram:'Check relevant diagram source, linked content and consistency; distinguish source inspection from unavailable rendering.',ux:'Check relevant layout, states and interactions against the approved UX; disclose unavailable visual evidence.'};
 /** One repository composition over the existing canonical store and S1-S5. No
@@ -78,7 +78,7 @@ export class InvestigationRepository {
     readEvidence:async(subjectId,reference)=>{if(subjectId!==m.basis.subject.subjectId)throw new ReviewIntegrationError('identity-conflict','Foreign evidence subject');const d=this.descriptor(id);return readReviewSource(m.basis.subject,reference,{},this.sources(d.start));},
     ...(options.usageWriter?{usageWriter:options.usageWriter}:{})};},
    assertFresh:(d,m)=>this.assertFresh(d,m),assertQualified:async d=>{await options.assertReady('resume',d.start.sourceMode);const p=this.required(d.runId);if(p.manifest.policyDigest!==d.policyDigest||p.reviewerParty!==d.reviewerParty||digestValue(p.manifest.compatibility)!==d.backendDigest)throw new RecoveryError('stale','Runtime policy or reviewer changed');await p.daemon?.assertQualified();},
-   admitProvider:signal=>this.admitProvider(signal),execution:(d,s,l,signal)=>this.execution(d,s,l,signal)});
+   admitProvider:acquireInvestigationProvider,execution:(d,s,l,signal)=>this.execution(d,s,l,signal)});
  }
  private required(id:string):Prepared{const p=this.prepared.get(id);if(!p)throw new ReviewIntegrationError('not-ready','A fresh compatible execution adapter is required');return p;}
  private descriptor(id:string){const d=this.service.descriptors.read(id);if(!d)throw new ReviewIntegrationError('identity-conflict','Unknown investigation run');return d;}
@@ -118,14 +118,6 @@ export class InvestigationRepository {
  }
  private admissionTail:Promise<void>=Promise.resolve();
  private async serializeAdmission<T>(work:()=>Promise<T>):Promise<T>{const prior=this.admissionTail;let release!:()=>void;this.admissionTail=new Promise<void>(resolve=>{release=resolve;});await prior;try{return await work();}finally{release();}}
- private async admitProvider(signal:AbortSignal):Promise<()=>void>{
-  let release!:()=>void;const prior=providerTail,owned=new Promise<void>(resolve=>{release=resolve;});
-  // An aborted waiter releases its own place but cannot let later waiters pass
-  // the provider that still owns the earlier place in this process-wide lane.
-  providerTail=prior.then(()=>owned);let onAbort!:()=>void;
-  try{await Promise.race([prior,new Promise<never>((_,reject)=>{onAbort=()=>reject(signal.reason??new Error('Investigation admission cancelled'));signal.addEventListener('abort',onAbort,{once:true});if(signal.aborted)onAbort();})]);signal.throwIfAborted();return release;}
-  catch(cause){release();throw cause;}finally{signal.removeEventListener('abort',onAbort);}
- }
  private async execution(d:ProductionReviewDescriptor,store:RecoveryStore,lease:NonNullable<ReturnType<RecoveryStore['status']>['owner']>,serviceSignal:AbortSignal):Promise<Awaited<ReturnType<ProductionReviewServiceOptions['execution']>>>{
   const abort=new AbortController(),signal=AbortSignal.any([serviceSignal,abort.signal]);
   const p=this.required(d.runId),view=store.replay(),attemptId=randomUUID(),subject=view.basis.subject;

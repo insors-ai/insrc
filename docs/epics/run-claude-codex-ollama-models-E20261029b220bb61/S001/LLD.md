@@ -356,20 +356,17 @@ Every caller narrows the union; the definitions answer is as in a1.
 - Item alt2: alternatives were scored against ac1-ac4, sc1 and sc2; Epic constraints k1-k6 appear in the notes but not as separate score entries (partial).
 - Resolved 2026-10-29 (user decision): the first batch for ollama-claude is deepseek-v4-pro:cloud, deepseek-v4.1-flash:cloud, glm-5.3:cloud, glm-5.3-flash:cloud, mistral-large-4:cloud and kimi-k3:cloud; Codex on Ollama is out of scope.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qc3aa8b10` — Item ts2: the test framework (node:test with node:assert/strict via tsx) is stated from the existing test files; the s1 bundles listed those files but did not report the framework explicitly (partial).
+  - **resolved**: Verify directly against package.json/tsconfig — Verified 2026-10-30: package.json's test script is `tsx --test src/**/__tests__/*.test.ts` (tsx ^4.21.0) and the tests import `node:test` and `node:assert/strict` (src/daemon/__tests__/model-registry.test.ts). The framework is node:test with node:assert/strict run through tsx. _(2026-10-29T18:45:33.649Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T18:34:45.776Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `s1 bundle: runner families in the registry and definitions` — "Families live in the model registry; each carries a CLI kind ('claude' | 'codex' | undefined)"
+- **[[c2]]** `code` `src/daemon/model-catalog.ts:140` — "function isCliFamily(id: FamilyId): id is CliFamilyId {"
+- **[[c3]]** `code` `src/daemon/model-registry.ts:269` — "const found = find(setting.runner, setting.model);"
+- **[[c4]]** `code` `src/daemon/model-definitions.ts:98` — "export function projectDefinitions("
+- **[[c5]]** `code` `src/config/model-defaults.ts:57` — "export function deriveModelDefaults(defs: ModelDefinitionsFile): DerivedModelDefaults {"
+- **[[c6]]** `code` `src/daemon/__tests__/model-catalog.test.ts:35` — "/** A valid minimal fixture with all three families. */"
+- **[[c7]]** `prior-artifact` `HLD-b220bb6174a2f5ed` — "sc1 Ollama-hosted CLI families in the definitions answer; sc2 Tier resolution on an Ollama-hosted family"

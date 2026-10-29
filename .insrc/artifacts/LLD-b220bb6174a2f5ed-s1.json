@@ -198,7 +198,16 @@
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-29T18:43:48.493Z"
+    "approvedAt": "2026-10-29T18:43:48.493Z",
+    "questionResolutions": {
+      "qc3aa8b10": {
+        "question": "Item ts2: the test framework (node:test with node:assert/strict via tsx) is stated from the existing test files; the s1 bundles listed those files but did not report the framework explicitly (partial).",
+        "status": "resolved",
+        "choice": "Verify directly against package.json/tsconfig",
+        "rationale": "Verified 2026-10-30: package.json's test script is `tsx --test src/**/__tests__/*.test.ts` (tsx ^4.21.0) and the tests import `node:test` and `node:assert/strict` (src/daemon/__tests__/model-registry.test.ts). The framework is node:test with node:assert/strict run through tsx.",
+        "resolvedAt": "2026-10-29T18:45:33.649Z"
+      }
+    }
   },
   "body": {
     "summary": {

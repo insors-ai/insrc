@@ -34,5 +34,7 @@
     "stepId": "s4"
   },
   "proposedAt": "2026-10-29T07:22:10.637Z",
-  "status": "pending"
+  "status": "approved",
+  "approvedAt": "2026-10-29T08:39:53.304Z",
+  "approvedBy": "Subho Ghosh (in-chat approval)"
 }

@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { join, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
-import { parseInvestigationProbeCommand, investigationProbeCommandSchema, probeStatusSchema, probeExportSchema, probeObservationSchema, PROBE_RESPONSE_BYTES } from '../shared/review-investigation-probe.js';
+import { parseInvestigationProbeCommand, investigationProbeCommandSchema, probeStatusSchema, probeExportSchema, probeObservationSchema, probeIdentitySchema, PROBE_RESPONSE_BYTES } from '../shared/review-investigation-probe.js';
 import type { InvestigationProbeCommand, InvestigationProbeStatus, InvestigationProbeExport, InvestigationProbeObservation } from '../shared/review-investigation-probe.js';
 import { digestValue, snapshotValue } from '../workflow/code-review/investigation/identity.js';
 import { acquireInvestigationProvider } from './review-investigation-provider-lane.js';
@@ -23,6 +23,7 @@ import { issueInvestigationProbeGrant } from '../agent/providers/investigation-p
 import { scopedReviewCatalogDigest } from '../shared/review-investigation-catalog.js';
 import { readInstalledCommit } from './installed-commit.js';
 import { investigationSourceDigest } from './review-investigation-adoption.js';
+import { validateUnsignedProbeExport } from './review-investigation-probe-export.js';
 
 type Start = Extract<InvestigationProbeCommand, { operation: 'start' }>;
 const copy = <T>(value: T): T => snapshotValue(value, PROBE_RESPONSE_BYTES);
@@ -35,7 +36,8 @@ export interface ProbeServiceOptions {
   readonly assertOwner: () => void;
   readonly registeredRepos: () => Promise<readonly string[]>;
   readonly execute: (request: Start, status: InvestigationProbeStatus, signal: AbortSignal,
-    observe: (observation: InvestigationProbeObservation) => Promise<void>) => Promise<InvestigationProbeExport>;
+    observe: (observation: InvestigationProbeObservation) => Promise<void>, pinIdentity: (identity:NativeAdapterIdentity)=>Promise<void>) => Promise<InvestigationProbeExport>;
+  readonly validateExport?: ((report:InvestigationProbeExport)=>InvestigationProbeExport) | undefined;
 }
 
 /** Main-daemon-only operator work; no canonical lifecycle or review dispatcher. */
@@ -119,7 +121,7 @@ export class InvestigationProbeService {
     }
     if (command.operation === 'export') {
       if (!terminal(record.status.state) || !record.report) throw Error('Probe evidence is incomplete or interrupted');
-      return this.response('exported', record, record.report);
+      return this.response('exported', record, (this.options.validateExport??validateUnsignedProbeExport)(record.report));
     }
     return this.response('status', record);
   }
@@ -140,6 +142,10 @@ export class InvestigationProbeService {
         this.guard(); signal.throwIfAborted(); const observation = probeObservationSchema.parse(value);
         if (observation.attemptId !== record.status.attemptId || record.status.observations.some(o => o.check === observation.check)) throw Error('Invalid probe observation identity');
         record.status.observations.push(observation); this.persist(record);
+      },async identity=>{
+        this.guard();signal.throwIfAborted();
+        if(record.status.identity)throw Error('Probe identity is already pinned');
+        record.status.identity=probeIdentitySchema.parse(identity);this.persist(record);
       }));
       if (Buffer.byteLength(JSON.stringify(report)) > PROBE_RESPONSE_BYTES) throw Error('Probe evidence exceeds bound');
       await this.registered(record.status.repo);
@@ -147,6 +153,7 @@ export class InvestigationProbeService {
       if (report.status.probeId !== record.status.probeId || report.status.attemptId !== record.status.attemptId ||
         report.status.requestId !== record.status.requestId || report.status.repo !== record.status.repo || report.status.sourceMode !== record.status.sourceMode ||
         !terminal(report.status.state)) throw Error('Probe result identity mismatch');
+      if(record.status.identity&&digestValue(record.status.identity)!==digestValue(report.status.identity))throw Error('Pinned probe result identity changed');
       record.status = copy(report.status); record.report = copy(report); this.persist(record);
     } catch (cause) {
       record.status.state = signal.aborted ? 'cancelled' : 'failed'; record.status.endedAt = Date.now();
@@ -159,7 +166,7 @@ export class InvestigationProbeService {
 /** Production composition uses the existing high-tier review role and provider
  * abstraction. Version inspection is metadata, never certification. */
 export async function executeInstalledProbe(request: Start, status: InvestigationProbeStatus, signal: AbortSignal,
-  observe: (value: InvestigationProbeObservation) => Promise<void>, registeredRepos: readonly string[], assertOwner: () => void): Promise<InvestigationProbeExport> {
+  observe: (value: InvestigationProbeObservation) => Promise<void>,pinIdentity:(identity:NativeAdapterIdentity)=>Promise<void>, registeredRepos: readonly string[], assertOwner: () => void): Promise<InvestigationProbeExport> {
   assertOwner(); signal.throwIfAborted();
   const { provider, resolution } = createRoleRouter({ cliTimeoutMs: 300000 }).resolveProviderForRole('review', loadAnalyzeConfig(), request.repo);
   if (!provider.runInvestigationProbe || !provider.getReviewBudgetProfile || !['cli-claude', 'cli-codex'].includes(resolution.runner)) throw Error('Unsupported review probe provider');
@@ -182,6 +189,7 @@ export async function executeInstalledProbe(request: Start, status: Investigatio
       binary: { path: binary, digest: investigationFileDigest(binary) }, runtimeFiles: [...new Map(pins.filter(p => p.path !== binary).map(p => [p.path, p])).values()],
       profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(indexed), launchDigest: adapter.launchDigest(args, fixture.cwd, InvestigationReplySchema) };
     const source = fileURLToPath(new URL('../../', import.meta.url));
+    await pinIdentity(identity);
     const grant = issueInvestigationProbeGrant({ origin: 'installed-probe', probeId: status.probeId, attemptId: status.attemptId,
       repo: request.repo, cwd: fixture.cwd, sourceMode: request.sourceMode, identity, budget, deadlineAt: Date.now() + 300000, assertCurrent, observe,
       runtime: { requestId: request.requestId, sourceCommit: readInstalledCommit(source), sourceDigest: investigationSourceDigest(source), fixture } });

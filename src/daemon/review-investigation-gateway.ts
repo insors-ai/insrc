@@ -86,12 +86,13 @@ async function productionProbeService(): Promise<InvestigationProbeService> {
  daemonRunFiles.assertSocketOwned();
  if(!probeService)probeService=(async()=>{
   const {InvestigationProbeService,executeInstalledProbe}=await import('./review-investigation-probe.js');
+  const {validateInstalledProbeExport}=await import('./review-investigation-probe-export.js');
   const {getDb}=await import('../db/client.js'),{listRepos}=await import('../db/repos.js');
   const {PATHS}=await import('../shared/paths.js'),{join}=await import('node:path');
   const registeredRepos=async()=>(await listRepos(await getDb())).map(r=>r.path);
   const assertOwner=()=>{if(!isMainThread)throw Error('Main daemon required');daemonRunFiles.assertSocketOwned();};
-  return new InvestigationProbeService({directory:join(PATHS.insrc,'review-probes'),assertOwner,registeredRepos,
-   execute:async(request,status,signal,observe)=>executeInstalledProbe(request,status,signal,observe,await registeredRepos(),assertOwner)});
+  return new InvestigationProbeService({directory:join(PATHS.insrc,'review-probes'),assertOwner,registeredRepos,validateExport:validateInstalledProbeExport,
+   execute:async(request,status,signal,observe,pin)=>executeInstalledProbe(request,status,signal,observe,pin,await registeredRepos(),assertOwner)});
  })();
  const pending=probeService;
  try{return await pending;}catch(cause){if(probeService===pending)probeService=undefined;throw cause;}

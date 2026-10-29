@@ -82,9 +82,9 @@ function checkFiles(q:Pick<NativeInvestigationQualification,'identity'|'effectiv
 }
 /** Validate full effective inventory and independently captured negative/progress/cancel probe trace.
  * Read-only sandbox declarations and CLI/provider boolean claims cannot qualify an adapter. */
-export async function qualifyInvestigationAdapter(reference:string,expected:NativeAdapterIdentity,repoPath:string,indexed:boolean,
- authority:NativeIsolationEvidenceAuthority,supportedAdapterVersions:readonly string[],now=Date.now()):Promise<NativeInvestigationQualification>{
- const evidence=snapshotValue(await authority.read(reference)),identity=snapshotValue(expected),repo=realpathSync(repoPath),effective=evidence.effective;
+function inspectIsolationData(input:NativeIsolationEvidence,expected:NativeAdapterIdentity,repoPath:string,indexed:boolean,
+ supportedAdapterVersions:readonly string[],now=Date.now()){
+ const evidence=snapshotValue(input),identity=snapshotValue(expected),repo=realpathSync(repoPath),effective=evidence.effective;
  if(evidence.version!==1||!supportedAdapterVersions.includes(identity.adapterVersion)||!identity.binaryVersion.trim()||digestValue(evidence.identity)!==digestValue(identity))refuse('Unsupported or unproven adapter/binary/profile identity');
  if(![identity.profileDigest,identity.catalogDigest,identity.launchDigest].every(d=>/^[a-f0-9]{64}$/.test(d))||identity.catalogDigest!==scopedReviewCatalogDigest(indexed)
   ||digestValue(effective.catalog)!==scopedReviewCatalogDigest(indexed))refuse('Effective scoped tool catalogue differs');
@@ -94,8 +94,21 @@ export async function qualifyInvestigationAdapter(reference:string,expected:Nati
  const trace=evidence.trace;if(trace.effectiveDigest!==digestValue(effective))refuse('Probe trace belongs to different effective configuration');
  for(const capability of ISOLATION_DENIAL_PROBES)if(!trace.events.some(e=>e.kind==='denied'&&e.capability===capability))refuse(`Missing independent isolation probe: ${capability}`);
  const ack=trace.events.flatMap(e=>e.kind==='block-ack'?[e.sequence]:[]),cancel=trace.events.findIndex(e=>e.kind==='cancel-requested'),exit=trace.events.findIndex(e=>e.kind==='process-exited'&&e.cancelled===true);
- if(ack.length<2||ack.some((n,i)=>!Number.isSafeInteger(n)||n!==i+1)||cancel<0||exit<=cancel)refuse('In-session progress or cancellation not proven');
- const evidenceDigest=digestValue(evidence);if(authority.origin==='installed-probe'){
+ const lastAck=trace.events.reduce((last,event,index)=>event.kind==='block-ack'?index:last,-1);
+ if(ack.length<2||ack.some((n,i)=>!Number.isSafeInteger(n)||n!==i+1)||cancel<=lastAck||exit<=cancel)refuse('In-session progress or cancellation not proven');
+ return freezeValue({evidence,identity,repo,evidenceDigest:digestValue(evidence)});
+}
+/** Unsigned inspection checks bytes but never issues a qualification handle. */
+export function inspectUnsignedIsolationEvidence(input:NativeIsolationEvidence,expected:NativeAdapterIdentity,repoPath:string,indexed:boolean,
+ supportedAdapterVersions:readonly string[],now=Date.now()){
+ const checked=inspectIsolationData(input,expected,repoPath,indexed,supportedAdapterVersions,now);
+ checkFiles({identity:checked.identity,effective:checked.evidence.effective},checked.repo);return checked;
+}
+/** Inspection above grants no authority; only authenticated qualification enters this WeakMap. */
+export async function qualifyInvestigationAdapter(reference:string,expected:NativeAdapterIdentity,repoPath:string,indexed:boolean,
+ authority:NativeIsolationEvidenceAuthority,supportedAdapterVersions:readonly string[],now=Date.now()):Promise<NativeInvestigationQualification>{
+ const {evidence,identity,repo,evidenceDigest}=inspectIsolationData(await authority.read(reference),expected,repoPath,indexed,supportedAdapterVersions,now),effective=evidence.effective;
+ if(authority.origin==='installed-probe'){
   if(!authority.verifyInstalled)refuse('Installed evidence has no independent verification authority');await authority.verifyInstalled(reference,evidenceDigest);
  }else if(authority.origin!=='scripted-fixture')refuse('Unknown qualification evidence origin');
  const q=freezeValue({version:1 as const,origin:authority.origin,reference,evidenceDigest,identity,effective,validUntil:evidence.validUntil});checkFiles(q,repo);qualifications.set(q,{authority,repo,indexed});return q;

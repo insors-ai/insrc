@@ -139,3 +139,19 @@ test('Oversized unsigned candidate fails explicitly instead of exporting truncat
     await assert.rejects(() => f.service.dispatch({ version: 1, operation: 'export', repo: f.repo, probeId }), /incomplete/);
   } finally { f.close(); }
 });
+
+test('Probe launch identity is durable before provider observation and cannot change', async () => {
+  const hash = 'a'.repeat(64), identity = { kind: 'claude' as const, adapterVersion: 'nonqualifying-fixture', binaryVersion: 'fixture',
+    binary: { path: '/synthetic/bin', digest: hash }, runtimeFiles: [], profileDigest: hash, catalogDigest: hash, launchDigest: hash };
+  const f = await fixture(async (request, status, signal, observe, pin) => {
+    await pin(identity);
+    const stored = JSON.parse(readFileSync(join(f.options.directory, `${status.probeId}.json`), 'utf8'));
+    assert.deepEqual(stored.status.identity, identity);
+    await assert.rejects(() => pin(identity), /already pinned/);
+    return execute(request, { ...status, identity }, signal, observe, pin);
+  });
+  try {
+    const first = await f.service.dispatch(start(f.repo)), probeId = (first.status as { probeId: string }).probeId;
+    assert.equal(((await terminal(f.service, f.repo, probeId)).status as { state: string }).state, 'unsupported');
+  } finally { f.close(); }
+});

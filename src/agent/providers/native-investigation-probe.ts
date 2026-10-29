@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { InvestigationReplySchema } from '../../shared/review-investigation.js';
 import { PROBE_ATTEMPT_MS, PROBE_OBSERVATION_BYTES, PROBE_REQUIRED_CHECKS, probeExportSchema } from '../../shared/review-investigation-probe.js';
@@ -104,8 +104,14 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
     const failed = rawOverflow || result.outputLimitExceeded || result.observerFailed || fixture.error() || result.spawnError ||
       observations.some(o => o.verdict !== 'unverifiable' && o.verdict !== expected(o.check)) ||
       result.timedOut || result.stalled || (!result.aborted && result.exitCode !== 0);
+    const evidenceFiles = [
+      ...(!rawOverflow ? [{kind:'native-output' as const,path:join(fixture.root,'native-output.json')}] : []),
+      {kind:'checkpoint-journal' as const,path:fixture.journalPath},
+      ...Object.keys(input.adapter.configuration(fixture.cwd,indexed)).map(path=>({kind:'configuration' as const,path})),
+    ].map(file=>({...file,digest:investigationFileDigest(file.path),bytes:statSync(file.path).size}));
     return probeExportSchema.parse({ version: 1, kind: 'review-investigation-probe-observations', origin: 'unsigned-installed-observations',
       sourceCommit: runtime.sourceCommit, sourceDigest: runtime.sourceDigest,
+      evidenceFiles,
       status: { version: 1, probeId: context.probeId, requestId: runtime.requestId, attemptId: context.attemptId, repo: context.repo,
         sourceMode: context.sourceMode, state: failed ? 'failed' : input.options.signal.aborted ? 'cancelled' : 'unsupported',
         identity: context.identity, startedAt, endedAt: Date.now(), observations, missingEvidence,

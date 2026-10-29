@@ -1,5 +1,81 @@
 # Plan-directed code review: opt-in protocol
 
+## Live operator probes
+
+Build first with `npm run build`, then update/restart the installed daemon. The
+IPC-only operator client does not sign, approve, edit configuration or invoke
+production review. Supply a fresh request UUID deliberately; reusing the same
+UUID and payload returns the existing probe without another invocation.
+
+```bash
+node scripts/review-investigation-probe.mjs prerequisites --repo /absolute/registered/project
+node scripts/review-investigation-probe.mjs start --repo /absolute/registered/project --mode source-only --request-id <UUID>
+node scripts/review-investigation-probe.mjs status --repo /absolute/registered/project --probe-id <returned-probe-UUID>
+node scripts/review-investigation-probe.mjs cancel --repo /absolute/registered/project --probe-id <returned-probe-UUID>
+node scripts/review-investigation-probe.mjs export --repo /absolute/registered/project --probe-id <returned-probe-UUID>
+```
+
+Start the indexed-impact probe separately with its own explicit UUID. Each
+start uses the currently selected high-tier review role; changing providers
+is a separate operator configuration decision. There are no automatic retries.
+The shared provider lane serializes probes and investigation reviews across
+repositories. A queued cancellation invokes no provider; active cancellation
+retains ownership until the real process and bridge have drained.
+
+The main daemon owns `codeReview.investigation.probe` start/status/cancel/export,
+including worker-originated connections. Its private fsynced status records live
+under `~/.insrc/review-probes`. A restart marks queued/running work interrupted;
+it never resumes the model call or promotes partial evidence. Replaying that
+UUID returns the interrupted record. Launch identity is pinned durably before
+invocation. Request/report responses are bounded to 2 MiB, runtime observations
+and captured CLI output to 8 MiB; exceeding a bound fails explicitly rather
+than truncating proof.
+
+Raw output, configuration and checkpoint files remain in a private
+`/tmp/insrc-p-*` fixture root (the platform temporary directory when different).
+Exports list their exact paths, sizes and hashes. Export rechecks those bytes;
+a changed/missing file cannot silently become evidence. The operator client
+places exported JSON in its own private temporary directory. Do not save these
+temporary reports in the Epic/Story folder. Retain the fixture root while
+independent inspection/qualification requires its pinned configuration files.
+
+The Claude `2.1.310` and Codex `0.164.0` collectors recognize limited runtime
+diagnostics. They deliberately do **not** certify a complete effective inventory:
+result/agent-message claims, requested flags, absent calls and silence do not
+prove denied access. Observed unwanted capabilities fail isolation; unverifiable
+facts leave the installation unsupported, with no candidate. Actual durable
+ACKs and a host-requested SIGKILL exit are required for progress/cancellation
+observations. A naturally completed process cannot be labelled cancelled.
+Subprocess counts are not model-call counts; unavailable counters remain null.
+
+Independent handoff, in order:
+
+1. Inspect the bounded raw files and independently establish **every** required
+   inventory/denial/progress/cancellation fact for the exact installation, mode,
+   launch and configuration. An unsupported report alone is insufficient.
+2. An independent attestor signs the unchanged installed-probe evidence format
+   described below, using an externally provisioned key. The daemon neither
+   creates nor receives the private key. Provision the public trust anchor
+   separately. Do not relabel scripted fixtures or self-sign missing facts.
+3. Publish version-pinned canonical probe, oracle/evaluation and readiness
+   records through the tracked workflows and obtain explicit approvals. The
+   oracle requires a real independent person actor; a system approval or a JSON
+   actor label cannot be represented as that person.
+4. Obtain approval of predecessor `AMD-8315a11f29fd2812-1`, and approved explicit
+   commit/parent/block scope evidence for a real subject whose BUILD tasks all
+   passed. The prior S6 review override did not turn its failed task into a pass.
+5. Authorize bounded test opt-in, then use normal production admission for the
+   exact subject. Verify findings/coverage, durable per-block progress,
+   cancellation/reconnect, canonical CR publication/receipt and observed usage.
+   Synthetic indexed probe work does not establish real caller-impact coverage.
+6. Present that evidence for explicit activation signoff. Only afterward start
+   the separately tracked deletion of the legacy **CODE** review engine,
+   preserving design review and required historical diagnostics.
+
+The client's prerequisite list states what still needs independent verification;
+it does not claim to have audited configured approvals or activation readiness.
+No probe, export or passing software test changes `codeReview.engine`.
+
 `legacy` remains the default. S6 adds `plan-investigation-v1` without changing
 DEF/HLD/LLD review, legacy controller frames, or already saved review states.
 An unknown engine/version/state is refused; it never becomes a HEAD diff.

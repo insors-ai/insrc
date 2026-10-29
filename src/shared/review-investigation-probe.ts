@@ -77,6 +77,7 @@ export const probeExportSchema = z.object({
   origin: z.literal('unsigned-installed-observations'),
   sourceCommit: z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/), sourceDigest: digest,
   status: probeStatusSchema, candidate: probeCandidateSchema.optional(),
+  evidenceFiles: z.array(z.object({kind:z.enum(['native-output','checkpoint-journal','configuration']),path:text,digest,bytes:time}).strict()).max(8).optional(),
 }).strict().superRefine((value, ctx) => {
   const checks = value.status.observations.map(o => o.check);
   if (new Set(checks).size !== checks.length)

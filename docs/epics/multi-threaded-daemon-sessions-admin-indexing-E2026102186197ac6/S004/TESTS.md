@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t5
 
@@ -71,3 +71,31 @@ Run at 2026-10-29T08:46:15.357Z on commit `35b52305d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/router-thread-view.test.ts` | 0 | 3 | 0.7 s |  |
+
+## t3
+
+Run at 2026-10-29T08:49:45.478Z on commit `b9477bb83`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: admin status: threads carries role, cls, session, busy, method, elapsedMs, queued and activeRuns from one board snapshot; other fields unchanged; absent when no thread is published**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | admin status: threads carries role, cls, session, busy, method, elapsedMs, queued and activeRuns from one board snapshot; other fields unchanged; absent when no thread is published | `src/daemon/threads/__tests__/admin-status.test.ts` |
+
+**unit: admin status: activeRuns counts only that thread's running runs, and the document-summary thread is busy while the summary lane processes**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | admin status: activeRuns counts only that thread's running runs, and the document-summary thread is busy while the summary lane processes | `src/daemon/threads/__tests__/admin-status.test.ts` |
+
+**unit: admin handlers: daemon.debug-status keeps clients as before and adds threads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | admin handlers: daemon.debug-status keeps clients as before and adds threads | `src/daemon/threads/__tests__/admin-status.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/admin-status.test.ts` | 0 | 4 | 0.7 s |  |

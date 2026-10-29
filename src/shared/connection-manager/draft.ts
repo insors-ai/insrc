@@ -101,6 +101,9 @@ function schemaAt(schema:Readonly<Record<string,unknown>>,path:readonly string[]
  return current;
 }
 export class ConnectionDraft {
+ #listeners=new Set<()=>void>();
+ onChange(listener:()=>void):{dispose():void} {this.#listeners.add(listener);return{dispose:()=>{this.#listeners.delete(listener);}};}
+ #changed():void {this.#draftRevision++;for(const listener of [...this.#listeners])try{listener();}catch{/* A view cannot disrupt private input erasure. */}}
  #descriptor:ClientDriverDescriptor;#validators:ReturnType<typeof validators>;#key:ConnectionKey;#mode:'create'|'update';#revision:string|undefined;
  #family:DriverDescriptor['family'];#values:Record<string,unknown>;#baseline:Record<string,unknown>;#initialId:string;
  #credentials:Record<string,CredentialPatch>={};#presence:Readonly<Record<string,boolean>>={};#draftRevision=0;
@@ -123,7 +126,7 @@ export class ConnectionDraft {
  }
  get dirty():boolean {return !this.#discarded&&(this.#key.id!==this.#initialId||JSON.stringify(this.#values)!==JSON.stringify(this.#baseline)||Object.values(this.#credentials).some(c=>c.action!=='keep'));}
  #editable():void {if(this.#discarded)throw new ConnectionDraftError('discarded');if(this.#readOnly)throw new ConnectionDraftError('read-only');if(this.#pending)throw new ConnectionDraftError('invalid-fields');if(this.#draftRevision>=Number.MAX_SAFE_INTEGER)fail();}
- setId(id:string):void {this.#editable();if(this.#mode==='update')throw new ConnectionDraftError('fixed-identity');if(typeof id!=='string'||id.length>16384||/[\u0000-\u001f]/.test(id))fail();this.#key={...this.#key,id};this.#draftRevision++;}
+ setId(id:string):void {this.#editable();if(this.#mode==='update')throw new ConnectionDraftError('fixed-identity');if(typeof id!=='string'||id.length>16384||/[\u0000-\u001f]/.test(id))fail();this.#key={...this.#key,id};this.#changed();}
  setField(path:readonly string[],value:unknown):void {
   this.#editable();if(!path.length||path.length>32||['id','kind','scope','family','effectiveFamily'].includes(path[0]!))throw new ConnectionDraftError('fixed-identity');
   schemaAt(this.#descriptor.publicInputSchema,path);
@@ -136,14 +139,14 @@ export class ConnectionDraft {
   (target as Record<string,unknown>)[path.at(-1)!]=data(value);
   // Structural typing prevents a raw options/JSON escape hatch; full required/range validation waits for serialize.
   const checked=data(next);
-  if(!this.#validators!.editing(checked))fail();safeEditingFields(checked);this.#values=checked;this.#draftRevision++;
+  if(!this.#validators!.editing(checked))fail();safeEditingFields(checked);this.#values=checked;this.#changed();
  }
  setCredential(slot:string,action:CredentialPatch['action'],replacement?:string):void {
   this.#editable();if(!this.#descriptor.secretSlots.includes(slot))fail();
   const patch=action==='replace'?{action,value:replacement??''}:{action};
   const safe=parseCredentialPatch(data(patch));
   if(safe.action==='replace'&&(safe.value.length>16384||safe.value.includes('${secret:')))fail();
-  this.#credentials[slot]=safe;this.#draftRevision++;
+  this.#credentials[slot]=safe;this.#changed();
  }
  setCredentialAddresses(slot:string,values:readonly string[]):void {
   if(!['options.servers','options.hosts'].includes(slot)||!values.length||values.length>1024||values.some(v=>typeof v!=='string'||!v||v.length>16384))fail();
@@ -155,12 +158,12 @@ export class ConnectionDraft {
   schemaAt(this.#descriptor.publicInputSchema,path);
   const next=data(this.#values);let target=next;let baseline:unknown=this.#baseline;
   for(const part of path.slice(0,-1)){
-   if(!target[part]||typeof target[part]!=='object'||Array.isArray(target[part])){this.#draftRevision++;return;}
+   if(!target[part]||typeof target[part]!=='object'||Array.isArray(target[part])){this.#changed();return;}
    target=target[part] as Record<string,unknown>;baseline=baseline&&typeof baseline==='object'?(baseline as Record<string,unknown>)[part]:undefined;
   }
   const leaf=path.at(-1)!;
   if(baseline&&typeof baseline==='object'&&Object.hasOwn(baseline,leaf))target[leaf]=data((baseline as Record<string,unknown>)[leaf]);else delete target[leaf];
-  this.#values=next;this.#draftRevision++;
+  this.#values=next;this.#changed();
  }
  serialize():SerializedConnectionDraft {
   this.#editable();
@@ -186,5 +189,5 @@ export class ConnectionDraft {
   this.clear();return freeze([{type:'navigate',target}]);
  }
  /** Erases unsaved inputs. This never deletes/discards an existing registered connection. */
- clear():void {if(this.#discarded)return;this.#values={};this.#baseline={};this.#credentials={};this.#presence={};this.#pending=null;this.#discarded=true;this.#draftRevision++;}
+ clear():void {if(this.#discarded)return;this.#values={};this.#baseline={};this.#credentials={};this.#presence={};this.#pending=null;this.#discarded=true;this.#changed();}
 }

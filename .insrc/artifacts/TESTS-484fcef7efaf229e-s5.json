@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T17:07:13.552Z",
+    "updatedAt": "2026-10-29T17:28:25.111Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -615,6 +615,42 @@
               },
               {
                 "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "b91a36215",
+        "ranAt": "2026-10-29T17:28:25.111Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
+                "title": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17205,
+            "titles": [
+              {
+                "title": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
                 "result": "pass"
               }
             ],

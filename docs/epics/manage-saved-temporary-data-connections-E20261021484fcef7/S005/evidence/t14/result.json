@@ -1,0 +1,26 @@
+{
+  "task": "t14",
+  "node": "22.23.2",
+  "focused": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "backendTypecheck": "pass",
+  "extensionTypecheck": "pass",
+  "sourceSha256": {
+    "src/shared/connection-manager/test-controller.ts": "70d0fd7e655cac713e5a83bd5487c67d81a6b8b66145355736b96a0893ec4d20",
+    "src/shared/connection-manager/draft.ts": "67f2cb26a528ac5dd6b4ed08bac912a21da95303525f52a65f433132dde84cd2",
+    "vscode-plugin/src/connections/session-owner.ts": "b2cb494114e5071c43b2da91327d07d6e91190939d56f85f001fb8cbd33bfb19",
+    "vscode-plugin/src/connections/gateway.ts": "30e01d36108d350ba3b44e35db4d9ec6a1b86380acd746f95a984de72ae8c00c",
+    "vscode-plugin/src/extension.ts": "9f66f8e2a1ffd33fd8a2cdacad237a064a208bf42031620af35ce53096f9859a",
+    "vscode-plugin/src/connections/__tests__/draft-test.test.ts": "ab40916c3bd42bc7acf19725a81e1d4811bccadbe25a5fc6ff498f933f7b9206"
+  },
+  "drainBoundary": "No new wire/API. Canceled/timeout/failed/transport-error retains the original source. Explicit retry uses that same transport; authoritative daemon busy refusal remains busy until real drain. Reachable is emitted after child close. Sources live in the workbench controller across manager close.",
+  "limits": [
+    "No live editor UI acceptance at this task; t26-t29 remain pending.",
+    "Full sweeps deferred until all tasks, per user instruction."
+  ]
+}

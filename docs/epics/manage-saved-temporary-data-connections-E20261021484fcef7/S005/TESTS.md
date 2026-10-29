@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -217,3 +217,19 @@ Run at 2026-10-29T17:07:13.552Z on commit `710d847c1`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 7 | 3 s |  |
+
+## t13
+
+Run at 2026-10-29T17:28:25.111Z on commit `b91a36215`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create | `src/shared/__tests__/connection-manager-kotlin-mutation.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-kotlin-mutation.test.ts` | 0 | 1 | 17.2 s |  |

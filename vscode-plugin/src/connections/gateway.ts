@@ -4,6 +4,14 @@ import { ConnectionMutationController } from '../../../src/shared/connection-man
 import type { MutationPorts } from '../../../src/shared/connection-manager/controller.js';
 import { decodeMutationOutcome } from '../../../src/shared/connection-manager/wire.js';
 import { ConnectionsWorkbenchOwner, ConnectionOwnerError } from './session-owner.js';
+import { ConnectionDraftTests } from '../../../src/shared/connection-manager/test-controller.js';
+
+export function createConnectionsDraftTests(owner:ConnectionsWorkbenchOwner):ConnectionDraftTests {
+ const tests=new ConnectionDraftTests({source:(key,epoch)=>owner.draftTestSource(key,epoch)});
+ const invalidation=owner.onTemporaryInvalidated(()=>tests.endTemporary());
+ const dispose=tests.dispose.bind(tests);tests.dispose=()=>{invalidation.dispose();dispose();};
+ return tests;
+}
 
 export function createConnectionsMutationController(owner:ConnectionsWorkbenchOwner,timing:Pick<MutationPorts,'now'|'timer'>={}):ConnectionMutationController {
  let lifetime=0;

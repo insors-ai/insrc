@@ -12,7 +12,7 @@ import { join } from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { createConnectionsMutationController } from './connections/gateway.js';
+import { createConnectionsDraftTests, createConnectionsMutationController } from './connections/gateway.js';
 import { ConnectionsWorkbenchOwner } from './connections/session-owner.js';
 import { createIpcClient } from '../../src/shared/ipc-client.js';
 import { PATHS } from '../../src/shared/paths.js';
@@ -108,6 +108,8 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(connectionsOwner);
   const connectionMutations = createConnectionsMutationController(connectionsOwner);
   context.subscriptions.push(connectionMutations);
+  const connectionTests = createConnectionsDraftTests(connectionsOwner);
+  context.subscriptions.push(connectionTests);
 
   const commands = createCommandRegistry(
     (command, callback) => vscode.commands.registerCommand(command, callback),

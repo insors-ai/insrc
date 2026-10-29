@@ -1,7 +1,8 @@
 /** Privileged workbench lifetime. Views receive status only, never session capabilities or sockets. */
 import { openIpcLane, IpcLaneError } from '../../../src/shared/ipc-client.js';
 import type { PersistentIpcLane } from '../../../src/shared/ipc-client.js';
-import type { OpenConnectionSessionResult, SessionResume } from '../../../src/shared/connection-management.js';
+import type { ConnectionKey, DraftTestRequest, OpenConnectionSessionResult, SessionResume } from '../../../src/shared/connection-management.js';
+import type { DraftTestSource } from '../../../src/shared/connection-manager/test-controller.js';
 import { parseSessionResume } from '../../../src/shared/connection-management-wire.js';
 import { connectionReplyData, decodeManagementCapabilities } from '../../../src/shared/connection-manager/wire.js';
 
@@ -179,6 +180,29 @@ export class ConnectionsWorkbenchOwner {
   let lane=this.#saved.get(root);if(!lane||lane.isClosed){if(!lane&&this.#saved.size>=64)throw new ConnectionOwnerError('offline');lane=this.#open();this.#saved.set(root,lane);}
   // This lane is never claimed or attached. No failed delegated request is replayed here.
   return await lane.rpc(method,copy,{signal});
+ }
+ /** Pin Test and its cancellation to exactly one existing owner transport, including after navigation.
+  * Captured sources never reconnect. A cancel acknowledgement is not a worker-drain boundary. */
+ draftTestSource(key:ConnectionKey,epoch:string):DraftTestSource {
+  this.#admit(key.repoRoot);
+  if(this.#status!=='ready'||this.#epoch!==epoch||this.#root!==key.repoRoot)throw new ConnectionOwnerError('stale-view');
+  const temporary=key.scope==='temporary';
+  let lane=temporary?this.#data.get(key.repoRoot):this.#saved.get(key.repoRoot);
+  if(!temporary&&(!lane||lane.isClosed)){
+   if(!lane&&this.#saved.size>=64)throw new ConnectionOwnerError('offline');
+   lane=this.#open();this.#saved.set(key.repoRoot,lane);
+  }
+  if(!lane||lane.isClosed)throw new ConnectionOwnerError('offline');
+  const captured=lane;
+  return Object.freeze({
+   run:async (request:DraftTestRequest)=>{
+    this.#admit(key.repoRoot);
+    if(this.#epoch!==epoch||captured.isClosed)throw new ConnectionOwnerError('offline');
+    if(temporary&&(!this.#resume||this.#now()>=this.#deadline)){this.#invalidate('expired');throw new ConnectionOwnerError('expired');}
+    return await captured.rpc(PREFIX+'test',this.#params(key.repoRoot,PREFIX+'test',request,temporary));
+   },
+   cancel:async (requestId:string)=>{this.#admit();return await captured.rpc(PREFIX+'cancelTest',{requestId});},
+  });
  }
  dispose():void {
   if(this.#disposed)return;this.#disposed=true;this.#cancelTimers();this.#dropData();

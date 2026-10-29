@@ -233,6 +233,8 @@ The scanner of a1 finds the declarations; instead of a fixture, each declaration
 
 - `qd3a46991` — cd1 (partial): moduleStateInventory is a new test-side function this Story adds beside connectionSourceInventory; it is not an existing symbol.
   - **resolved**: A. Standalone new helper (confirm as designed) — The approved LLD declares moduleStateInventory as a new test-side function beside connectionSourceInventory. _(2026-10-29T11:50:52.079Z)_
+- `q4da5879d` — ts1 (ambiguous): the Story has no acceptance criteria; ac1-ac4 are derived from the work item's done-when list (plans/module-state-inventory-sweep.md) plus the scanner's correctness.
+  - **resolved**: Adopt as-is (plan-local) — Raised with the LLD at presentation; the user approved the LLD with ac1-ac4 derived from plans/module-state-inventory-sweep.md. _(2026-10-29T11:51:35.306Z)_
 
 ## Citations
 

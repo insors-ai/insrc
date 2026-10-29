@@ -197,6 +197,13 @@
         "choice": "A. Standalone new helper (confirm as designed)",
         "rationale": "The approved LLD declares moduleStateInventory as a new test-side function beside connectionSourceInventory.",
         "resolvedAt": "2026-10-29T11:50:52.079Z"
+      },
+      "q4da5879d": {
+        "question": "ts1 (ambiguous): the Story has no acceptance criteria; ac1-ac4 are derived from the work item's done-when list (plans/module-state-inventory-sweep.md) plus the scanner's correctness.",
+        "status": "resolved",
+        "choice": "Adopt as-is (plan-local)",
+        "rationale": "Raised with the LLD at presentation; the user approved the LLD with ac1-ac4 derived from plans/module-state-inventory-sweep.md.",
+        "resolvedAt": "2026-10-29T11:51:35.306Z"
       }
     }
   },

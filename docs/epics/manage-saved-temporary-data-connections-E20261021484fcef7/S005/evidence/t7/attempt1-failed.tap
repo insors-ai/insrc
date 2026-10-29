@@ -1,0 +1,99 @@
+TAP version 13
+# Subtest: CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O
+not ok 1 - CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O
+  ---
+  duration_ms: 11064.054417
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-model.test.ts:1:92'
+  failureType: 'testCodeFailure'
+  error: |-
+    Focused JUnit validation failed: Calculating task graph as no cached configuration is available for tasks: test --tests ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest
+    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+    > Task :initializeIntellijPlatformPlugin
+    > Task :bundleBackendAssets UP-TO-DATE
+    > Task :patchPluginXml UP-TO-DATE
+    > Task :processResources UP-TO-DATE
+    > Task :generateManifest UP-TO-DATE
+    > Task :processTestResources UP-TO-DATE
+    > Task :verifyPluginProjectConfiguration UP-TO-DATE
+    
+    > Task :compileKotlin
+    w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModel.kt:9:36 Non-public primary constructor is exposed via the generated 'copy()' method of the 'data' class.
+    
+    The generated 'copy()' will change its visibility in future releases.
+    
+    To suppress the warning do one of the following:
+    - Annotate the data class with the '@ConsistentCopyVisibility' annotation.
+    - Use the '-Xconsistent-data-class-copy-visibility' compiler flag.
+    - Annotate the data class with the '@ExposedCopyVisibility' annotation 
+      (Discouraged, but can be used to keep binary compatibility).
+    
+    To learn more, see the documentation of the '@ConsistentCopyVisibility' and '@ExposedCopyVisibility' annotations.
+    
+    This will become an error in Kotlin 2.1.
+    
+    > Task :compileJava NO-SOURCE
+    > Task :classes UP-TO-DATE
+    > Task :instrumentCode
+    > Task :jar
+    > Task :instrumentedJar
+    > Task :composedJar
+    > Task :prepareTestSandbox
+    > Task :prepareTest
+    > Task :compileTestKotlin
+    > Task :compileTestJava NO-SOURCE
+    > Task :testClasses UP-TO-DATE
+    > Task :instrumentTestCode
+    
+    > Task :test FAILED
+    
+    ConnectionsManagerModelTest > same fifteen sc7 transcripts match state projections and effects() FAILED
+        org.opentest4j.AssertionFailedError at ConnectionsManagerModelTest.kt:44
+    16 actionable tasks: 10 executed, 6 up-to-date
+    Configuration cache entry stored.
+    
+    
+    2 tests completed, 1 failed
+    
+    FAILURE: Build failed with an exception.
+    
+    * What went wrong:
+    Execution failed for task ':test'.
+    > There were failing tests. See the report at: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/build/reports/tests/test/index.html
+    
+    * Try:
+    > Run with --scan to get full insights.
+    
+    BUILD FAILED in 10s
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    runConnectionJUnit (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/fixtures/connection-junit.ts:16:10)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-model.test.ts:5:2)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal
+ok 2 - CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal
+  ---
+  duration_ms: 5.916083
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11343.018625

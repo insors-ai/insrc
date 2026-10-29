@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-29T14:41:37.350Z  ·  **Updated:** 2026-10-29T15:33:17.819Z
+**Standalone:** no  ·  **Created:** 2026-10-29T14:41:37.350Z  ·  **Updated:** 2026-10-29T15:38:33.421Z
 
-**Commit:** 2772bd9a4
+**Commit:** 300eff40c
 
 ## Summary
 
-Adds an owned bounded Kotlin persistent connection lane with background socket IO, exact write uncertainty, cancellation and disposal; preserves stateless APP gateway and legacy one-shot API.
+Adds a pure immutable TypeScript manager model with registered-root retention, full-key/revision selection, distinct list states and stale-read refusal, scope/search counts, root/view/epoch guards, and authoritative committed reveal. Adds fifteen language-neutral state scenarios for both clients.
 
 ## Tasks validated
 
@@ -17,46 +17,54 @@ Adds an owned bounded Kotlin persistent connection lane with background socket I
 - ✓ `t3`
 - ✓ `t4`
 - ✓ `t5`
+- ✓ `t6`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-484fcef7efaf229e-s5.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/focused.tap` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/junit.xml` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/result.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `jetbrains-plugin/build.gradle.kts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCorpusTest.kt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/__tests__/connection-manager-corpus.test.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/__tests__/fixtures/connection-corpus.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `test-fixtures/connection-management/.gitattributes` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `test-fixtures/connection-management/v1/corpus.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `test-fixtures/connection-management/v1/manifest.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/task-validation.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/focused.tap` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/result.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/typecheck.txt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/__tests__/connection-manager-wire.test.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/connection-manager/wire.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/task-validation.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/focused.tap` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/result.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/typecheck.txt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/__tests__/connection-manager-kotlin-wire.test.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/__tests__/fixtures/connection-junit.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/task-validation.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/focused.tap` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/result.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/typecheck.txt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/__tests__/ipc-lane.test.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/ipc-client.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/task-validation.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t5/focused.tap` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t5/result.json` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t5/typecheck.txt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLaneTest.kt` — **insrc-build** (2026-10-29T15:33:17.819Z)
-- `src/shared/__tests__/connection-manager-kotlin-transport.test.ts` — **insrc-build** (2026-10-29T15:33:17.819Z)
+- `.insrc/artifacts/PLAN-484fcef7efaf229e-s5.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/focused.tap` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/junit.xml` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/result.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `jetbrains-plugin/build.gradle.kts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCorpusTest.kt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/connection-manager-corpus.test.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/fixtures/connection-corpus.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `test-fixtures/connection-management/.gitattributes` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `test-fixtures/connection-management/v1/corpus.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `test-fixtures/connection-management/v1/manifest.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t1/task-validation.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/focused.tap` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/result.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/typecheck.txt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/connection-manager-wire.test.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/connection-manager/wire.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t2/task-validation.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/focused.tap` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/result.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/typecheck.txt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/connection-manager-kotlin-wire.test.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/fixtures/connection-junit.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t3/task-validation.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/focused.tap` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/result.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/typecheck.txt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/ipc-lane.test.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/ipc-client.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t4/task-validation.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t5/focused.tap` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t5/result.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t5/typecheck.txt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLaneTest.kt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/connection-manager-kotlin-transport.test.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t5/task-validation.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t6/focused.tap` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t6/result.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t6/reuse-analysis.json` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t6/typecheck.txt` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/__tests__/connection-manager-model.test.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)
+- `src/shared/connection-manager/model.ts` — **insrc-build** (2026-10-29T15:38:33.421Z)

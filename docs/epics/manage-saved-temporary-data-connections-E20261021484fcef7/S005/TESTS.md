@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -94,3 +94,19 @@ Run at 2026-10-29T15:33:17.819Z on commit `2772bd9a4`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-transport.test.ts` | 0 | 1 | 5.7 s |  |
+
+## t6
+
+Run at 2026-10-29T15:38:33.421Z on commit `300eff40c`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal | `src/shared/__tests__/connection-manager-model.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-model.test.ts` | 0 | 1 | 0.4 s |  |

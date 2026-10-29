@@ -1,0 +1,22 @@
+{
+  "task": "t7",
+  "focusedNodeTests": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "junitTests": 2,
+  "sharedManagerScenarios": 15,
+  "pureModel": "No IntelliJ, socket, file, Settings or persistent state access; privileged draft/attempt orchestration deferred to assigned tasks",
+  "defensiveCopies": "Root lists copied/unmodifiable; protocol data copied before storing; row JSON/maps defensively copied for projections",
+  "initialFailure": "attempt1-failed.tap retained; fixture comparison normalized absent optional DTO fields represented as Kotlin null, retaining explicit state nulls",
+  "typecheck": "Node22 tsc --noEmit passed",
+  "fullSweep": "deferred until all implementation tasks",
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModel.kt": "bae9a5ecd063cb929166af6d740077a0b222f15e3bb9134a8067e79cd5da2c81",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt": "3d824ee577ef4fa5aa3ef6c6fae6b7f5553bbd06c8138f578250a623f7443df8",
+    "src/shared/__tests__/connection-manager-kotlin-model.test.ts": "dcbc2b344085b80a0e4fb19b2bd48a138e158533a9491f30e18ec83071390a04"
+  }
+}

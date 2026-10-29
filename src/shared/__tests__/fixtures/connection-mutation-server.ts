@@ -15,6 +15,7 @@ import type { MutationRequest } from '../../connection-management.js';
 import { _setKeystoreForTests } from '../../../daemon/db/secrets.js';
 
 const dir=process.argv[2]!,env=await environment(),f=await env.rootFixture('managed');_setPoolForTests(f.root,f.pool);
+const other=await env.rootFixture('other');_setPoolForTests(other.root,other.pool);const roots=[f.root,other.root];
 const previousKeystore=_setKeystoreForTests(f.keystore),sourcePath=join(f.root,'source.csv');writeFileSync(sourcePath,'id,name\n1,preserved\n');const sourceBytes=readFileSync(sourcePath);
 let credentialFail=false,resourceFail=false,builds=0,oldCloses=0,newCloses=0,removeStateCalls=0,cleanupCalls=0,ticketOnlyCleanup=true,originalCleanup=true;
 let originalRemoval:MutationRequest['ticket']|null=null,removeFieldsValid=true,lease:{release():Promise<void>}|null=null;
@@ -28,9 +29,9 @@ const recover=f.generations.recover.bind(f.generations);
 f.generations.recover=async()=>{if(cleanupFail&&afterCommit)throw new Error('fixture cleanup failure');return await recover();};
 f.hooks.writer=async stage=>{if(stage==='after-rename')afterCommit=true;};
 f.hooks.activate=async()=>{if(activationFail)throw new Error('fixture activation failure');};
-const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,monotonicNow:()=>now,isRegistered:async root=>root===f.root,
+const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,monotonicNow:()=>now,isRegistered:async root=>roots.includes(root),
  createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{},describe:async()=>({columns:[]})}) as Driver)}),dropOverlay:overlay=>overlay.close()});
-const P='db.connections.v2.',handlers=connectionManagementHandlers({sessionRuntime:runtime,enabled:async()=>true,removalEnabled:async()=>true,isRegistered:async root=>root===f.root});
+const P='db.connections.v2.',handlers=connectionManagementHandlers({sessionRuntime:runtime,enabled:async()=>true,removalEnabled:async()=>true,isRegistered:async root=>roots.includes(root)});
 const baseTicket=handlers[P+'ticket']!,baseMutate=handlers[P+'mutate']!,baseStatus=handlers[P+'status']!,baseActivate=handlers[P+'activate']!,baseList=handlers[P+'list']!;
 handlers[P+'ticket']=async(params,context)=>{tickets++;return await baseTicket(params,context);};
 handlers[P+'mutate']=async(params,context)=>{
@@ -59,7 +60,7 @@ for(const method of ['removalState','retryRemovalCleanup']){
   return await base(params,context);
  };
 }
-handlers['fixture.info']=async()=>({roots:[f.root],wallNow:f.clock.value});
+handlers['fixture.info']=async()=>({roots,wallNow:f.clock.value});
 handlers['fixture.stats']=async()=>({tickets,mutations,statuses,activations,lists,identicalReplay,savedRows:f.store.snapshot.file.connections.length,removeStateCalls,cleanupCalls,ticketOnlyCleanup,originalCleanup,removeFieldsValid,oldCloses,newCloses,sourcePreserved:readFileSync(sourcePath).equals(sourceBytes)});
 handlers['fixture.fault']=async params=>{
  const p=params as Record<string,unknown>;

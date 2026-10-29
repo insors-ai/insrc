@@ -20,9 +20,10 @@ internal class ConnectionMutationBackend:AutoCloseable {
     val lanes=CopyOnWriteArrayList<PersistentDaemonLane>()
     val wall=AtomicLong()
     val root:String
+    val otherRoot:String
     init {
         try{ready.get(15,TimeUnit.SECONDS)}catch(e:Exception){process.destroyForcibly();throw AssertionError("Mutation fixture did not start: "+output.joinToString("\n"),e)}
-        val info=command("fixture.info");root=info.getAsJsonArray("roots")[0].asString;wall.set(info["wallNow"].asLong)
+        val info=command("fixture.info");root=info.getAsJsonArray("roots")[0].asString;otherRoot=info.getAsJsonArray("roots")[1].asString;wall.set(info["wallNow"].asLong)
     }
     fun command(method:String,params:JsonObject=JsonObject()):JsonObject=PersistentDaemonLane.open(socket).use{lane->lane.request(method,params).result.toCompletableFuture().get(15,TimeUnit.SECONDS).asJsonObject}
     fun stats()=command("fixture.stats")

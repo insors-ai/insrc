@@ -216,7 +216,7 @@ The answer carries host on a host family and hosting on each of its models, exac
 
 ### 3.6 `Shipped definitions file` — field-add
 
-Appends one family after the existing three: ollama-claude (cliKind 'claude', host 'ollama'). It lists only models that returned a schema-checked answer through the Claude tool on Ollama in a probe, each with hosting and its efforts. The first batch (user decision 2026-10-29), all probed on 2026-10-29: deepseek-v4-pro:cloud, glm-5.3:cloud and mistral-large-4:cloud, all hosting 'cloud'. Each model's efforts follow the thinking levels Ollama reports for it: glm-5.3 lists low, high and max; deepseek-v4-pro and mistral-large-4 only switch thinking on or off, so they list none.
+Appends one family after the existing three: ollama-claude (cliKind 'claude', host 'ollama'). It lists only models that returned a schema-checked answer through the Claude tool on Ollama in a probe, each with hosting and its efforts. The first batch (user decision 2026-10-29), all probed on 2026-10-29 and all hosting 'cloud': deepseek-v4-pro:cloud, deepseek-v4.1-flash:cloud, glm-5.3:cloud, glm-5.3-flash:cloud, mistral-large-4:cloud and kimi-k3:cloud. Each model's efforts follow the thinking levels Ollama reports for it: glm-5.3, glm-5.3-flash, deepseek-v4.1-flash and kimi-k3 list low, high and max; deepseek-v4-pro and mistral-large-4 only switch thinking on or off, so they list none.
 
 **Call sites:**
 - `src/assets/models/cloud-model-catalog.json`
@@ -354,26 +354,22 @@ Every caller narrows the union; the definitions answer is as in a1.
 
 - Item ts2: the test framework (node:test with node:assert/strict via tsx) is stated from the existing test files; the s1 bundles listed those files but did not report the framework explicitly (partial).
 - Item alt2: alternatives were scored against ac1-ac4, sc1 and sc2; Epic constraints k1-k6 appear in the notes but not as separate score entries (partial).
-- Resolved 2026-10-29 (user decision): the first batch for ollama-claude is deepseek-v4-pro:cloud, glm-5.3:cloud and mistral-large-4:cloud; Codex on Ollama is out of scope. Open: whether to add kimi-k3:cloud, deepseek-v4.1-flash:cloud and glm-5.3-flash:cloud (all passed the 2026-10-29 probe).
+- Resolved 2026-10-29 (user decision): the first batch for ollama-claude is deepseek-v4-pro:cloud, deepseek-v4.1-flash:cloud, glm-5.3:cloud, glm-5.3-flash:cloud, mistral-large-4:cloud and kimi-k3:cloud; Codex on Ollama is out of scope.
 
 <!-- insrc:review -->
 
 ## Review
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+### ✅ Review `PASS` — design.story (design.story)
 
-**1 do not hold · 1 could not be verified · 8 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T17:51:25.454Z
+**0 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T18:34:45.776Z
 
 Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
 
 #### Does not hold (blocks approval)
 
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| change-sites | MED | §3.4's call-site citation 'src/daemon/model-registry.ts:65-73' names the line where the TierResolution/FallbackReason change is to be made. | Reading src/daemon/model-registry.ts, line 63 is the closing brace of the unrelated ResolvedModel interface ('readonly family: FamilyId; readonly source: ...; }' spans 60-63). FallbackReason actually starts at line 65 and the TierResolution interface at line 67 ('export interface TierResolution {'). The cited line does not contain either declaration. [files: src/daemon/model-registry.ts] | Correct the citation in LLD §3.4 to 'src/daemon/model-registry.ts:65-73' (FallbackReason + TierResolution) before build; low risk since the symbol name is unambiguous and the surrounding prose is otherwise accurate, but a build/review step working strictly off cited line numbers would land one edit on the wrong declaration. |
+_None._
 
 #### Could not verify (does not block)
 
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| tests | The Test-strategy's unit-level subject 'src/config/__tests__ (model-defaults)' names a specific existing test file covering deriveModelDefaults/SHIPPED_MODEL_DEFAULTS over the five-family fixture. | Globbing src/config/__tests__ finds no file literally named model-defaults*.test.ts; grepping for deriveModelDefaults/SHIPPED_MODEL_DEFAULTS usage instead finds tier-defaults.test.ts and config-catalog-defs.test.ts. The LLD's parenthetical is vague enough (unlike its other, file-exact citations) that I cannot confirm which of these two files — or a new one — the author intends to extend. [files: src/config/__tests__/tier-defaults.test.ts, src/config/__tests__/config-catalog-defs.test.ts] | Ask the author to name the exact test file(s) for this subject (likely tier-defaults.test.ts and/or config-catalog-defs.test.ts) before build, so the acceptance-mapping ac4 coverage for deriveModelDefaults is traceable the same way every other subject in this section is. |
+_None._

@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s3
 
-**Standalone:** no  ·  **Created:** 2026-10-25T13:49:15.323Z  ·  **Updated:** 2026-10-29T07:05:57.321Z
+**Standalone:** no  ·  **Created:** 2026-10-25T13:49:15.323Z  ·  **Updated:** 2026-10-29T07:52:18.278Z
 
-**Commit:** e166feb0e
+**Commit:** 8d1847262
 
 ## Summary
 
@@ -518,8 +518,6 @@ Implemented all planned S003 task outputs and committed final-source Node22 buil
 - `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-review-blocker.json` — **insrc-build** (2026-10-29T07:05:57.321Z)
 - `docs/standalone/split-oversized-diff-evidence-into-lossless-E202610265384820a/ISSUE.md` — **insrc-build** (2026-10-29T07:05:57.321Z)
 - `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/positive-control.json` — **insrc-build** (2026-10-29T07:05:57.321Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/resolution.json` — **insrc-build** (2026-10-29T07:05:57.321Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/review.json` — **insrc-build** (2026-10-29T07:05:57.321Z)
 - `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/scope.json` — **insrc-build** (2026-10-29T07:05:57.321Z)
 - `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/build.log` — **insrc-build** (2026-10-29T07:05:57.321Z)
 - `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/fixture-fix-before-rebuild.log` — **insrc-build** (2026-10-29T07:05:57.321Z)
@@ -554,3 +552,28 @@ Implemented all planned S003 task outputs and committed final-source Node22 buil
 - `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-second-session-source-inventory.test.ts.tap` — **insrc-build** (2026-10-29T07:05:57.321Z)
 - `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-second.json` — **insrc-build** (2026-10-29T07:05:57.321Z)
 - `src/daemon/db/__tests__/saved-management.test.ts` — **insrc-build** (2026-10-29T07:05:57.321Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/resolution.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/review.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-connection-leases.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-connection-management-rpc.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-connection-reservations.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-draft-test-routes.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-driver-field-audit.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-saved-management.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-session-probe.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-session-release-gate.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-session-source-inventory.test.ts.tap` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/build.log` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/file-refusal-rerun.log` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/interventions.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/run.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/services-rerun.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/services-rerun.log` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/summary.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/sweep.log` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/test-files.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/threads-boot-rerun.log` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/tracked-before.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/worker-stores-rerun.json` — **insrc-build** (2026-10-29T07:52:18.278Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/worker-stores-rerun.log` — **insrc-build** (2026-10-29T07:52:18.278Z)

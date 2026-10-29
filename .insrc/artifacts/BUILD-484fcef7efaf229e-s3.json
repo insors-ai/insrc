@@ -4,10 +4,15 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-29T07:05:57.321Z",
+    "updatedAt": "2026-10-29T07:52:18.278Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
-    "epicSlug": "manage-saved-temporary-data-connections"
+    "epicSlug": "manage-saved-temporary-data-connections",
+    "approvedAt": "2026-10-29T07:52:26.739Z",
+    "reviewOverride": {
+      "reason": "User explicitly approved this build and requested continuing after the full sweep. Manual code review was requested while the daemon code-review system is being rebuilt with resume support; MANUAL-S3-01 and test-harness follow-ups are resolved and t33 passed daemon validation. Accept the non-green full sweep in S003/evidence/full-sweep-20261029/summary.json: 6713 pass, 8 fail, 134 skip, 3 TODO. Docker-backed reruns passed; shutdown passed in isolation but its full-run failure remains recorded; worker-store nontermination and protected-store file-search failure reproduce. Do not relabel tests or t34, enable release gates, or clear external coverage/prerequisites.",
+      "at": "2026-10-29T07:52:26.739Z"
+    }
   },
   "body": {
     "tasks": [
@@ -3424,20 +3429,6 @@
       },
       {
         "target": {
-          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/resolution.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-29T07:05:57.321Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/review.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-29T07:05:57.321Z"
-      },
-      {
-        "target": {
           "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/scope.json"
         },
         "author": "insrc-build",
@@ -3673,8 +3664,208 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-10-29T07:05:57.321Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/resolution.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/review.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-connection-leases.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-connection-management-rpc.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-connection-reservations.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-draft-test-routes.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-driver-field-audit.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-saved-management.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-session-probe.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-session-release-gate.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final-session-source-inventory.test.ts.tap",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/manual-review-20261029/validation-final.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/build.log",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/file-refusal-rerun.log",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/interventions.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/run.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/services-rerun.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/services-rerun.log",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/summary.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/sweep.log",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/test-files.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/threads-boot-rerun.log",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/tracked-before.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/worker-stores-rerun.json",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/full-sweep-20261029/worker-stores-rerun.log",
+          "version": "8d1847262"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:52:18.278Z"
       }
     ],
-    "commit": "e166feb0e"
+    "commit": "8d1847262"
   }
 }

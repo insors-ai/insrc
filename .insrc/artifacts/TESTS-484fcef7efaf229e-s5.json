@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T15:18:23.711Z",
+    "updatedAt": "2026-10-29T15:33:17.819Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -228,6 +228,42 @@
               },
               {
                 "title": "CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "2772bd9a4",
+        "ranAt": "2026-10-29T15:33:17.819Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-transport.test.ts",
+                "title": "CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5729,
+            "titles": [
+              {
+                "title": "CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility",
                 "result": "pass"
               }
             ],

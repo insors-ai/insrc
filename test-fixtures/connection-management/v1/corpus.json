@@ -3272,5 +3272,1634 @@
     "canceled": "Connection test canceled.",
     "resource-limit": "Connection test exceeded the memory limit. Use a smaller input or a saved connection.",
     "unsupported-temporary": "This input cannot be tested without persistent storage. Use a saved connection."
-  }
+  },
+  "managerScenarios": [
+    {
+      "id": "no-repository",
+      "steps": []
+    },
+    {
+      "id": "all-states-empty-filter-search",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "filter",
+            "value": "saved"
+          },
+          "expected": {
+            "matchingCount": 1,
+            "visibleKeys": [
+              {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "CSV"
+          },
+          "expected": {
+            "listState": "empty-filter",
+            "matchingCount": 0
+          }
+        },
+        {
+          "event": {
+            "type": "filter",
+            "value": "temporary"
+          },
+          "expected": {
+            "listState": "ready",
+            "matchingCount": 1,
+            "visibleKeys": [
+              {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "empty-filter",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty-registry",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": []
+          },
+          "expected": {
+            "listState": "empty-registry",
+            "canMutate": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "read-error-stale",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "stale": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-error",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "code": "read-error"
+          },
+          "expected": {
+            "listState": "read-error",
+            "stale": true,
+            "canMutate": false,
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "read-error",
+            "canMutate": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "offline-stale",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "stale": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-error",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "code": "offline"
+          },
+          "expected": {
+            "listState": "offline",
+            "stale": true,
+            "canMutate": false,
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "offline",
+            "canMutate": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "upgrade-required-stale",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "stale": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-error",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "code": "upgrade-required"
+          },
+          "expected": {
+            "listState": "upgrade-required",
+            "stale": true,
+            "canMutate": false,
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "upgrade-required",
+            "canMutate": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "invalid-read-retains-last-good",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "bad": "data"
+              }
+            ]
+          },
+          "expected": {
+            "listState": "read-error",
+            "stale": true,
+            "matchingCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "root-generation-epoch-guards",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 0,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "old-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-b",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": []
+          },
+          "expected": {
+            "listState": "ready",
+            "matchingCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "root-ABA-generation",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-b"
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-b",
+            "viewGeneration": 2,
+            "rows": []
+          }
+        },
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 3
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading",
+            "rows": []
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 3,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready"
+          }
+        }
+      ]
+    },
+    {
+      "id": "full-key-and-revision-selection",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "wrong"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "retained-registered-root",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "registered-roots",
+            "roots": [
+              "/fixture/repo-b",
+              "/fixture/repo-a"
+            ]
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1
+          }
+        },
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/unregistered"
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-a"
+          }
+        },
+        {
+          "event": {
+            "type": "registered-roots",
+            "roots": [
+              "/fixture/repo-b"
+            ]
+          },
+          "expected": {
+            "repoRoot": null,
+            "listState": "no-repository",
+            "rows": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "committed-reveal-waits",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "filter",
+            "value": "saved"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "warehouse"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "committed-reveal",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          },
+          "expected": {
+            "listState": "loading",
+            "selected": null,
+            "pendingReveal": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            },
+            "filter": "saved"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              }
+            ]
+          },
+          "expected": {
+            "pendingReveal": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            },
+            "selected": null
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 3,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "pendingReveal": null,
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            },
+            "filter": "temporary",
+            "search": "",
+            "visibleKeys": [
+              {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "epoch-loss-clears-temporary",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "epoch",
+            "value": "next-epoch"
+          },
+          "expected": {
+            "listState": "offline",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              }
+            ],
+            "selected": null,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              }
+            ],
+            "listState": "offline"
+          }
+        }
+      ]
+    },
+    {
+      "id": "close-rejects-late-results",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "close"
+          },
+          "expected": {
+            "closed": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "closed": true,
+            "rows": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "disconnect-invalidates-inflight-and-ready",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "unavailable",
+            "code": "offline"
+          },
+          "expected": {
+            "listState": "offline",
+            "canMutate": false,
+            "stale": true
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": []
+          },
+          "expected": {
+            "listState": "offline",
+            "matchingCount": 2
+          }
+        }
+      ]
+    }
+  ]
 }

@@ -1,0 +1,1143 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793283094386-g2653z",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-29T14:17:18.935Z",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 344519,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "484fcef7efaf229e",
+    "epicSlug": "manage-saved-temporary-data-connections",
+    "storyId": "s5",
+    "lldRunId": "wf-1793280871734-66co5i",
+    "lldEffectiveHash": "dc1a3f91a768c5e20e9788e76390b96ae43e65586f3afa87762c1a5834745047",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build native connection managers for the VS Code extension and JetBrains plugin, with separate workbench/project session owners and one common wire/state fixture corpus. Add strict protocol consumers, safe forms and recovery effects, then wire native Settings/actions and verify actual two-client UI, lifecycle, privacy and source preservation. Run only relevant tests per task; after all implementation, freeze the source and run the full Node/backend, extension and Gradle checks, preserving failures and pending release evidence. Deprecated insrc-ide work is excluded."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define versioned cross-client wire and state fixtures",
+        "summary": "Create the language-neutral sc7 protocol/event/effect corpus and digest/version contract; no client source mirroring. [[c1]] [[c2]]",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Create a coverage index for all20LLD subjects and common wire/model transcripts; fixture presence is never native/live acceptance. [[c1]][[c2]]",
+          "Canonical keys/root/revision/epoch and unknown/cleanup phases are explicit; no real configuration, secrets or capabilities in fixtures. [[c1]]",
+          "Node and JUnit load the identical corpus from repository/packaged test resources and detect version/digest drift. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement TypeScript strict v2 reply decoders",
+        "summary": "Add proposed pure src/shared/connection-manager/wire.ts validators using current backend contracts. [[c1]] [[c2]]",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Validate capabilities/descriptors/safe reads/lists/tickets/outcomes/status/test/removal as bounded exact discriminated data. [[c1]]",
+          "Reject unknown required descriptor schema shapes, unsafe prototype/accessor/oversized data and target/epoch mismatch before use. [[c1]]",
+          "Fixed safe failures; no daemon/storage/provider runtime imports or raw exception output. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement Kotlin typed v2 protocol decoders",
+        "summary": "Add proposed connections/ConnectionProtocol.kt and typed DTOs separate from the stateless legacy gateway. [[c1]] [[c3]]",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Consume same wire fixtures and size/depth/discriminant rules as TypeScript. [[c1]]",
+          "Keep existing DaemonGateway and APP service legacy return shapes and no mutable project/session fields. [[c1]]",
+          "Reject malformed/mixed/unknown required descriptors without empty-list fallback or raw exception exposure. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Extend shared TypeScript IPC with persistent lanes",
+        "summary": "Extend existing src/shared/ipc-client.ts boundary with persistent multiplexing; preserve one-shot rpc/createIpcClient exports. [[c1]] [[c2]]",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Bound frame/buffer/pending requests; correlate IDs, reject duplicate/unsolicited malformed replies and settle exactly once. [[c1]]",
+          "Distinguish prewrite failure from written-but-unanswered outcome; cancellation/timeout cannot imply mutation refusal. [[c1]]",
+          "Disposal closes only owned sockets and pending requests; explicit test cancel remains available; no second extension socket stack. [[c1]]",
+          "Publish tested frame/buffer/pending/deadline constants; overflow refuses before send, never evicts/reclassifies an already written unknown mutation. Verify split frames, cancellation/reply/disposal and ID collision/wrap races. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add Kotlin persistent socket lane at existing boundary",
+        "summary": "Extend UnixSocketDaemonRpc.kt transport boundary with owned persistent lanes, preserving one-shot call(). [[c1]] [[c3]]",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Use bounded framing/multiplexing and complete writes; no blocking I/O on EDT. [[c1]]",
+          "Maintain independent per-lane IDs/replies, written-unknown classification, cancellation and bounded teardown. [[c1]]",
+          "Legacy application-wide gateway remains unclaimed/stateless and unchanged for unrelated methods. [[c1]]",
+          "Publish tested transport constants and exercise split multi-byte UTF8 frames, partial writes, background reads, cancellation/close races and exactly-once settlements. Written unanswered mutations stay unknown, never evicted as refused. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Implement pure TypeScript sc7 manager model",
+        "summary": "Add proposed model/controller core for root, full-key selection, list states, counts, filters and generation guards. [[c1]] [[c2]]",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Distinct loading/ready/empty-registry/empty-filter/read-error/offline/no-repository/upgrade-required; stale last-good rows non-actionable. [[c1]]",
+          "Retain explicitly selected registered root independent of active editor; ignore old root/view/epoch reads. [[c1]]",
+          "All/Saved/Temporary counts and matching search count correct; committed create reveal waits for authoritative refresh. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Implement native Kotlin sc7 manager model",
+        "summary": "Add proposed ConnectionsManagerModel.kt with the same language-neutral transitions/effects. [[c1]] [[c3]]",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Execute same sc7 state transcripts as TypeScript, including root/filter/count/reveal and stale results. [[c1]]",
+          "Pure state has no IntelliJ SDK I/O, global current-project state or PersistentStateComponent. [[c1]]",
+          "Sensitive draft and operation records are memory-only, not Settings Apply/reset state. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Implement VS Code workbench session owner",
+        "summary": "Add host-owned controller for one workbench session and explicit control, root-data and Saved lanes. [[c1]] [[c2]] [[c4]]",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "One owner per extension-host workbench;30sheartbeat,actual90slease/epoch semantics,controlled same-owner resume/redelegate/attach. [[c1]]",
+          "RootA→B→A and manager close retain same owner/overlays; actual extension disposal stops admission and best-effort ends/closes owned resources. [[c1]]",
+          "Capabilities never reach webview, memento, settings or logs; temporary expiry clears sensitive draft/attempt and invalidates generations. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Implement JetBrains project-owned session service",
+        "summary": "Add proposed PROJECT ConnectionsSessionService implementing Disposable; preserve APP gateway independence. [[c1]] [[c3]] [[c4]]",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t5",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Actual Project object owns session/control/root-data/Saved lanes; no payload project/window ID authority. [[c1]]",
+          "Background heartbeat/resume/end and bounded disposal; no EDT socket waits or invented close hook on PluginLifecycle. [[c1]]",
+          "Configurable/toolwindow disposal closes view only; project disposal ends owner; separate projects with same root remain isolated. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Implement TypeScript safe descriptor draft and dirty guards",
+        "summary": "Add descriptor-driven draft serializer, credential intent and guarded navigation for extension core. [[c1]] [[c2]]",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t2",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Offer every validated daemon kind; unsupported schemas/read-only legacy shapes get explicit guidance. [[c1]]",
+          "Edit fixes ID/kind/scope/family; public endpoint/path is safe; Keep/Replace/Clear masked/intent-specific with server-owned retained fields. [[c1]]",
+          "Dirty root/row/filter/scope/close/remove transitions Discard/Cancel; Cancel emits zero mutation/navigation effects. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Implement Kotlin safe descriptor draft and dirty guards",
+        "summary": "Add Kotlin draft/form model matching common scenarios, independent of global Settings edit model. [[c1]] [[c3]]",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t3",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Same descriptor support and credential intent serializer as approved contract; fixed edit identity/scope/pinned family. [[c1]]",
+          "Unsaved draft discard differs from temporary registration discard; Cancel retains form with zero destructive effects. [[c1]]",
+          "No raw JSON/options bypass, stored-secret retrieval, persistence or application Settings Apply mutation. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Implement TypeScript signed mutation and recovery effects",
+        "summary": "Add scope-specific manager gateway effects for ticket/mutate/status/activation/list recovery. [[c1]] [[c2]] [[c4]]",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t4",
+          "t8",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "Freeze exact request/ticket before submission; double submit blocked, lost/malformed reply =>unknown and same-operation reconciliation. [[c1]]",
+          "Not-seen allows identical same-ticket replay only under backend rules; expiry/reconciliation-required blocks replay/new mutation. [[c1]]",
+          "Committed registration,activation,cleanup and refresh are separate; retry only failed phase; clear replacement credentials after known commit. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Implement Kotlin signed mutation and recovery effects",
+        "summary": "Add project manager gateway matching sc2 semantics and strict decoded result handling. [[c1]] [[c3]] [[c4]]",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t5",
+          "t9",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "Unknown attempted request stays in project memory across view close and reopens reconciliation before fresh target mutation. [[c1]]",
+          "Separate actual owner-bound temporary lane and unclaimed Saved lane; no fallback by dropping session fields. [[c1]]",
+          "Postcommit activation/refresh retry never recreates; after project loss no ticket =>reload current state only, no invented historical result. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Implement TypeScript transient draft testing",
+        "summary": "Wire Test/cancel with the same immutable draft serializer as Save. [[c1]] [[c2]] [[c4]]",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t8",
+          "t10",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Optional Test sends requestId,draftRevision,fullkey,expectedRevision and epoch-bound local view identity. [[c1]]",
+          "One probe per transport, repeated clicks blocked; edit/navigation/close cancels; stale/late results ignored. [[c1]]",
+          "Cancellation/timeout response does not certify drain or release another operation; fixed safe elapsed status only. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Implement Kotlin transient draft testing",
+        "summary": "Wire Kotlin Test/cancel and EDT-safe status publication. [[c1]] [[c3]] [[c4]]",
+        "size": "M",
+        "order": 15,
+        "dependsOn": [
+          "t9",
+          "t11",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "Same Test/Save materialized input fixture and stale tuple as TypeScript. [[c1]]",
+          "Cancel on draft/root/selection/view change; real worker drain owned by daemon, no client driver construction. [[c1]]",
+          "Background call and generation/project-disposal checks before EDT update; native view never hangs on timeout/drain. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Implement TypeScript Delete and Discard presentation",
+        "summary": "Consume S004 confirmation/state and ticket-only cleanup retry without backend changes. [[c1]] [[c2]] [[c4]]",
+        "size": "M",
+        "order": 16,
+        "dependsOn": [
+          "t8",
+          "t10",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Resolve dirty draft first; exact root/scope/ID+revision and source-data guarantee before confirm; Cancel issues zero ticket calls. [[c1]]",
+          "Busy/conflict keeps row/draft; fresh revision requires reconfirm; unknown cannot be inferred from absent row. [[c1]]",
+          "Committed removal keeps separate operation card for independent credential/resource pending phases; retry only original ticket, safe with same-ID recreation. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Implement Kotlin Delete and Discard presentation",
+        "summary": "Mirror exact S004 removal copy/behavior through native Kotlin state and gateway. [[c1]] [[c3]] [[c4]]",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t9",
+          "t11",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "Reuse common20S004consumer snapshots and strict key/revision selection; no credentials/publicPatch on remove. [[c1]]",
+          "Cancel/busy/conflict/unknown/removed-cleanup-pending/removed remain distinct and truthful. [[c1]]",
+          "Independent phase retry sends only {ticket}; no current-ID cleanup selector or source deletion effect. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee"
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Build VS Code themed manager renderer and view host",
+        "summary": "Add dedicated vscode-plugin/src/connections host/renderer with injected API ports. [[c1]] [[c2]] [[c5]]",
+        "size": "M",
+        "order": 18,
+        "dependsOn": [
+          "t6",
+          "t10",
+          "t12",
+          "t14",
+          "t16"
+        ],
+        "acceptanceChecks": [
+          "Two-pane responsive list/draft layout, explicit root/scope/filter/counts and all error/empty/recovery states. [[c1]]",
+          "Strict allowlisted webview intent messages, CSP/escaping, no raw capabilities/config/secret persistence via setState or generic RPC bridge. [[c1]]",
+          "Accessible labels/focus-visible/status region; masked replacement fields; dirty close/hide handled without ending owner. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close"
+          }
+        ]
+      },
+      {
+        "id": "t19",
+        "title": "Build JetBrains native manager panel",
+        "summary": "Add proposed ConnectionsManagerPanel.kt using native Swing controls over project model. [[c1]] [[c3]] [[c5]]",
+        "size": "M",
+        "order": 19,
+        "dependsOn": [
+          "t7",
+          "t11",
+          "t13",
+          "t15",
+          "t17"
+        ],
+        "acceptanceChecks": [
+          "JBUI/theme-aware layout, label associations/JBPasswordField, keyboard focus/error/status and all sc7 states. [[c1]]",
+          "All I/O background; EDT-only updates checked against current view/project generation. [[c1]]",
+          "Immediate explicit connection actions separate from global Configurable Apply/reset; closing native view leaves project owner alive. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation"
+          }
+        ]
+      },
+      {
+        "id": "t20",
+        "title": "Wire VS Code Settings and command entry points",
+        "summary": "Register Settings discovery and common manager command routing in manifest/extension activation. [[c1]] [[c2]] [[c5]]",
+        "size": "M",
+        "order": 20,
+        "dependsOn": [
+          "t8",
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "Searching insrc connections exposes Manage Connections; command links and palette actions open same retained manager state. [[c1]]",
+          "No/multiple registered roots explicit, actual workbench selected; command args only selection hints validated against fresh daemon state. [[c1]]",
+          "Only extension.ts imports vscode; dedicated connections types instead of unrelated panels/types.ts; preserve live registered command IDs. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots"
+          }
+        ]
+      },
+      {
+        "id": "t21",
+        "title": "Wire JetBrains Settings and Manage Connections action",
+        "summary": "Register ConnectionsConfigurable and ManageConnectionsAction through plugin.xml. [[c1]] [[c3]] [[c5]]",
+        "size": "M",
+        "order": 21,
+        "dependsOn": [
+          "t9",
+          "t19"
+        ],
+        "acceptanceChecks": [
+          "Native Settings search/category opens manager; app Settings explicitly picks an actual live Project, then registered root/service. [[c1]]",
+          "No open project =>no-repository guidance and no temporary owner; context action uses actual Project object and same guarded manager. [[c1]]",
+          "Existing global Settings and ShowOrRegisterRepoAction remain compatible; closing/apply/reset global Settings never ends or mutates connection session. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence"
+          }
+        ]
+      },
+      {
+        "id": "t22",
+        "title": "Prove actual two-owner scoped transport isolation",
+        "summary": "Exercise independent workbench/project services through real socket fixtures. [[c1]] [[c4]] [[c6]]",
+        "size": "M",
+        "order": 22,
+        "dependsOn": [
+          "t8",
+          "t9",
+          "t20",
+          "t21"
+        ],
+        "acceptanceChecks": [
+          "Two projects/workbenches with same root/ID and overlapping request IDs have independent owners/replies; forged owner hints and wrong-root/generation fail before use. [[c1]]",
+          "Switch rootA→B→A retains original overlay; disposing one owner closes only its resources. [[c1]]",
+          "App Kotlin gateway stays stateless/unclaimed; unsupported production execution routes refuse rather than claiming positive global Saved affinity. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-WINDOW: two real workbench/project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal"
+          }
+        ]
+      },
+      {
+        "id": "t23",
+        "title": "Run cross-language parity and recovery matrix",
+        "summary": "Execute common wire/sc7 transcripts in actual TypeScript and Kotlin consumer implementations. [[c1]] [[c2]] [[c3]] [[c4]]",
+        "size": "M",
+        "order": 23,
+        "dependsOn": [
+          "t12",
+          "t13",
+          "t14",
+          "t15",
+          "t16",
+          "t17",
+          "t22"
+        ],
+        "acceptanceChecks": [
+          "Matching version/digest and state/effect outputs for every shared scenario; intentional consumer divergence fails. [[c1]]",
+          "Controlled unknown/reconnect/expired operation,activation/refresh failure and same-ID cleanup recreation verify exact effects, not just snapshots. [[c1]]",
+          "All20LLD subjects mapped to concrete consumer cases/evidence, with unavailable UI/live acceptance still pending. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-SYNC: TypeScript and Kotlin execute identical wire/sc7 recovery transcripts and divergent-consumer negative controls"
+          }
+        ]
+      },
+      {
+        "id": "t24",
+        "title": "Prove client privacy and temporary no-persistence",
+        "summary": "Poison/count Settings,memento,webview state,Kotlin persistence,telemetry/log/artifact sinks in actual adapters. [[c1]] [[c6]]",
+        "size": "M",
+        "order": 24,
+        "dependsOn": [
+          "t18",
+          "t19",
+          "t22",
+          "t23"
+        ],
+        "acceptanceChecks": [
+          "Synthetic endpoint/source/config/credential/capability canaries absent from captured sinks and other-owner events. [[c1]]",
+          "Temporary add/test/discard/end/expiry/reconnect cause zero client config/credential persistence; separate intentionally durable daemon Saved metadata is not relabeled absent. [[c1]]",
+          "Malformed/raw SDK/transport errors yield fixed safe UI text; screenshots exclude real secrets and capabilities. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage"
+          }
+        ]
+      },
+      {
+        "id": "t25",
+        "title": "Verify mixed-version and legacy compatibility",
+        "summary": "Exercise both current clients against missing/stale/malformed capabilities and old daemon behavior. [[c1]] [[c2]] [[c3]] [[c4]]",
+        "size": "M",
+        "order": 25,
+        "dependsOn": [
+          "t20",
+          "t21",
+          "t23"
+        ],
+        "acceptanceChecks": [
+          "Unsupported features disable affected controls with upgrade-required; manager never falls back to legacy upsert/delete. [[c1]]",
+          "Legacy shared IPC and Kotlin gateway unrelated methods retain projections/behavior; pinned/read-only records preserved. [[c1]]",
+          "Directory-scoped saved analysis remains backend-owned and unchanged; no new client root redirect or registry migration. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections"
+          }
+        ]
+      },
+      {
+        "id": "t26",
+        "title": "Execute real VS Code UI and keyboard acceptance",
+        "summary": "Launch actual extension-host manager and collect safe native interaction evidence. [[c1]] [[c5]] [[c6]]",
+        "size": "M",
+        "order": 26,
+        "dependsOn": [
+          "t20",
+          "t23",
+          "t24",
+          "t25"
+        ],
+        "acceptanceChecks": [
+          "Light/dark/highcontrast,focus order,labels,status/errors,masked fields and keyboard add/edit/Test/Delete/Discard verified in actual UI. [[c1]]",
+          "Settings/palette route equality,explicit roots,counts/filters,dirty guards,read/offline/empty/upgrade states and unknown/cleanup cards demonstrated. [[c1]]",
+          "Retain screenshots/actions/results with version/source identity; generated design mock alone never counts as UI acceptance. [[c1]]",
+          "Exercise native positive flows only against a separately isolated real daemon fixture with reviewed test-only prerequisite injection; verify production gate refusal separately. No production override/env bypass or fixture-only release acceptance. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "CM-S5-UI-VSCODE: actual extension host light/dark/highcontrast, keyboard, Settings/routes and all manager state flows against isolated daemon"
+          }
+        ]
+      },
+      {
+        "id": "t27",
+        "title": "Execute real JetBrains UI and keyboard acceptance",
+        "summary": "Launch sandbox IDE with native Connections manager; verify live application Settings/project action. [[c1]] [[c3]] [[c5]] [[c6]]",
+        "size": "M",
+        "order": 27,
+        "dependsOn": [
+          "t21",
+          "t23",
+          "t24",
+          "t25"
+        ],
+        "acceptanceChecks": [
+          "Explicit project chooser,no-project/multiroot retained selection,light/dark/highcontrast and keyboard paths verified natively. [[c1]]",
+          "Native dirty/cancel,scope/filter/counts,safe forms,Test and removal/recovery status behave as common scenarios. [[c1]]",
+          "Show Settings closing/Apply/reset does not save connections or end owner; record real sandbox evidence, unavailable IDE verification remains pending. [[c1]]",
+          "Simultaneous Settings/views share the actual chosen project controller, not duplicate owners. Chooser cancel/project disposal before selection completes creates no session or mutation. Native positive flows use isolated daemon fixture; shipped admission remains disabled. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "CM-S5-UI-JETBRAINS: actual native sandbox Settings/action/project chooser, themes, keyboard and view/owner lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t28",
+        "title": "Verify both-client temporary lifecycle end to end",
+        "summary": "Exercise actual client owner/control/data lanes with live isolated daemon sessions. [[c1]] [[c4]] [[c6]]",
+        "size": "M",
+        "order": 28,
+        "dependsOn": [
+          "t22",
+          "t26",
+          "t27"
+        ],
+        "acceptanceChecks": [
+          "Before-add lifetime copy visible in both clients; panel/Settings close+reopen/rootswitch retains temporary entries. [[c1]]",
+          "Sameepoch control reconnect within lease resumes; actual project/workbench disposal,90sdeadline and daemon restart invalidate old state without recreation. [[c1]]",
+          "Probe cancellation/late delivery and all owned sockets/workers drain or remain explicit failed cleanup; no leaked client timer/listener/session. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "CM-S5-LIFETIME: both actual clients before-add copy, panel/root retention, resume/disposal/90s expiry/restart and complete owned drain"
+          }
+        ]
+      },
+      {
+        "id": "t29",
+        "title": "Verify real SQL KV and file source preservation through both clients",
+        "summary": "Use disposable PostgreSQL/Redis and supported native/converted file fixtures via actual consumer paths. [[c1]] [[c4]] [[c6]]",
+        "size": "M",
+        "order": 29,
+        "dependsOn": [
+          "t26",
+          "t27",
+          "t28"
+        ],
+        "acceptanceChecks": [
+          "Test/Save/remove data and byte hashes unchanged after actual both-scope Delete/Discard; owned handles close. [[c1]]",
+          "Both clients render unsupported/resource-limit file refusal without disk conversion/cache fallback. [[c1]]",
+          "SQL Server absence stays pending as user authorized; do not substitute mocks or relabel service/provider/global-affinity limitations. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "CM-S5-SOURCE: actual both-client SQL/KV/native-converted file flows preserve seeded data/source bytes and close owned handles; unavailable SQL Server pending"
+          }
+        ]
+      },
+      {
+        "id": "t30",
+        "title": "Align artifacts and preserve current release prerequisites",
+        "summary": "Update relevant structured UX/interaction definitions and source-backed client inventory/evidence after implementation. [[c1]] [[c5]] [[c6]]",
+        "size": "M",
+        "order": 30,
+        "dependsOn": [
+          "t23",
+          "t24",
+          "t25",
+          "t28",
+          "t29"
+        ],
+        "acceptanceChecks": [
+          "Definitions and regenerated companions match final ownership/state/UI; inspect source/rendering and report limits honestly. [[c1]]",
+          "Record genuine VSCode/JetBrains evidence without deprecated-fork work or fake positive prerequisite statuses. [[c1]]",
+          "Shipped production admission stays fail-closed while S001/provider/positive Saved worker affinity/SQLServer or genuine client acceptance remains pending; historical S003/S004 failures preserved. [[c1]]",
+          "Only S005 consumer inventory/evidence and artifact alignment are in scope. Existing producer prerequisites and backend gate policy are consumed unchanged; no forced positive status, new enablement switch or clearing pending S001/provider/worker/SQLServer findings. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission"
+          },
+          {
+            "level": "smoke",
+            "name": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits"
+          }
+        ]
+      },
+      {
+        "id": "t31",
+        "title": "Validate targeted packaging and runtime smoke",
+        "summary": "Prepare production extension and JetBrains packaging after implementation without an early full sweep. [[c1]] [[c2]] [[c3]] [[c6]]",
+        "size": "M",
+        "order": 31,
+        "dependsOn": [
+          "t20",
+          "t21",
+          "t30"
+        ],
+        "acceptanceChecks": [
+          "Fresh Node22 backend/extension typecheck+bundle and targeted packaged extension smoke without backend node_modules. [[c1]]",
+          "JDK21 targeted Gradle compile/assemble and relevant packaging tests; full Gradle test/build scheduled only t32. [[c1]]",
+          "Client bundles contain only approved pure protocol/model/transport and native UI dependencies; no daemon storage/providers/runtime drivers or persisted temporary state. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite"
+          }
+        ]
+      },
+      {
+        "id": "t32",
+        "title": "Run final frozen builds full sweeps and acceptance matrix",
+        "summary": "After all implementation and focused validation, freeze manifest and execute complete repository+explicit extension+JetBrains checks once. [[c1]] [[c6]]",
+        "size": "M",
+        "order": 32,
+        "dependsOn": [
+          "t31"
+        ],
+        "acceptanceChecks": [
+          "Record exact commit/tree/runtime/discovered tests and zero source drift; fresh Node22 build, full backend and explicit extension test globs; JDK21 ./gradlew test build and applicable verifyPlugin. [[c1]]",
+          "Retain every raw result/pass/fail/skip/TODO,timeout/intervention; diagnostic reruns never replace original totals or clear historical S003/S004 findings. [[c1]]",
+          "Produce full20subject LLD matrix with proved/failed/pending and explicit release prerequisites; no automated code-review invocation. Perform manual post-build inspection, then present BUILD for explicit user completion approval. [[c1]]",
+          "No claim of release enablement, UI/service evidence or plugin verification when unavailable. Later implementation correction requires relevant retests and justified final revalidation. [[c1]]",
+          "A required executed suite failure keeps task tests failed; unavailable mandatory native/plugin-verifier evidence stays explicitly pending/failed. A later user completion exception never changes those results or activates release. [[c1]]"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "CM-S5-SWEEP: after all implementation freeze commit/tree/test manifests; fresh Node22 builds plus full backend and explicit extension suites, JDK21 Gradle test/build and applicable verifyPlugin; retain original results and20subject acceptance matrix"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "CM-S5-STATE: all list states distinct, retained root, full-key identity, filter/search/counts, add reveal and stale-view rejection",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t18",
+          "t19",
+          "t23"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-DIRTY: every draft exit Discard/Cancel; editing fixed identity/scope; zero effects after Cancel; unknown mutation retains reconciliation on close",
+        "coveredByTaskIds": [
+          "t10",
+          "t11",
+          "t18",
+          "t19",
+          "t23",
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-FORM: descriptor subset validation, every offered driver, safe endpoint/secret-slot serialization and Keep/Replace/Clear; pinned/read-only compatibility",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t10",
+          "t11",
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-TEST: same draft serializer for Save/Test, optional testing, exact stale-result tuple, repeated click suppression and cancel",
+        "coveredByTaskIds": [
+          "t14",
+          "t15",
+          "t23",
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-WIRE: capabilities, descriptors, safe lists/reads, tickets, outcomes/status, test/removal replies strict/size-bounded; old/missing/malformed fails closed",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3",
+          "t23",
+          "t25"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-SYNC: one versioned/digested JSON wire+state/effect transcript corpus executed by TypeScript and Kotlin, divergent-field/transition negative controls; both bundles exclude daemon/storage/provider code.",
+        "coveredByTaskIds": [
+          "t1",
+          "t23",
+          "t31"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-COMPAT: old daemon/new client upgrade UI; no legacy mutation fallback, legacy unrelated projections retained, pinned family retained",
+        "coveredByTaskIds": [
+          "t25",
+          "t31"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-TRANSPORT: persistent request multiplexing, disconnect pre/postwrite, timeout/abort, request ID collisions, finite buffers, exactly-once disposal and no raw error leak",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t22"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-OWNER: one owner per extension workbench or JetBrains Project;30sheartbeat,90sexpiry,sameepochresume/new epoch,root switches/close-reopen; no session end on Configurable disposal, no persistent capabilities.",
+        "coveredByTaskIds": [
+          "t8",
+          "t9",
+          "t22",
+          "t28"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-WINDOW: two actual project-scoped services/workbench hosts, same roots/IDs and overlapping RPC IDs, forged owner hints and disposed/stale-view refusal; owner-only delivery and independent project disposal.",
+        "coveredByTaskIds": [
+          "t9",
+          "t21",
+          "t22"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-OUTCOME: known commit vs activation/refresh failure; lostreply same-ticket recovery, expiry, no changedpayload/new operation retry; row/card independent cleanup phases",
+        "coveredByTaskIds": [
+          "t12",
+          "t13",
+          "t23",
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-REMOVE: exact root/scope/ID confirmation, zero-effect Cancel, busy/conflict retention, unknown status, ticket-only retry and same-ID recreation safety",
+        "coveredByTaskIds": [
+          "t16",
+          "t17",
+          "t23",
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-ENTRY: VSCode Settings/command and JetBrains native Settings/AnAction route each project/workbench to the same guarded manager; explicit project chooser for application Settings, no-project/multiroot/retained-root cases.",
+        "coveredByTaskIds": [
+          "t20",
+          "t21",
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-UI: actual VSCode extension and JetBrains native manager in light/dark/highcontrast, labels, focus/live status and keyboard-only add/edit/test/Delete/Discard flows.",
+        "coveredByTaskIds": [
+          "t18",
+          "t19",
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-LIFETIME: before-add temporary copy in both clients, panelclose/root switch retention, workbench disposal/reconnect/expiry/restart loss; no inferred lifecycle success from backend snapshots",
+        "coveredByTaskIds": [
+          "t8",
+          "t9",
+          "t28"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-SOURCE: both clients supported SQL/KV/file Test/Save/discard/delete leave seeded source rows/bytes unchanged; SQL Server unavailable remains pending",
+        "coveredByTaskIds": [
+          "t29"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-PRIVACY: synthetic endpoint/secret/config/capability canaries absent from Settings,memento,webview state,logs,telemetry,artifacts and other-window events; temporary actions cause zero persistence",
+        "coveredByTaskIds": [
+          "t24",
+          "t26",
+          "t27",
+          "t28"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-BUILD: fresh Node22 backend and extension typecheck/bundle; JDK21 ./gradlew test build and applicable verifyPlugin checks; packaged runtime smoke for both live clients.",
+        "coveredByTaskIds": [
+          "t31",
+          "t32"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-SWEEP: per-task relevant Node/JUnit tests, then final frozen backend+explicit extension+JetBrains suites with exact logs/counts; no forced live gates or historical failure relabeling.",
+        "coveredByTaskIds": [
+          "t32"
+        ]
+      },
+      {
+        "lldStrategyItem": "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates",
+        "coveredByTaskIds": [
+          "t25",
+          "t30",
+          "t32"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/dataModelChanges/errorPaths",
+      "quotedText": "Approved native VSCode+JetBrains sc7 contract; strict descriptors, full-key state, workbench/project ownership, safe draft/test/mutation/removal and explicit scope correction."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]",
+      "quotedText": "Existing shared TypeScript IPC and extension injectable host/test patterns; new dedicated connections modules, not unrelated panels/types."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[2]",
+      "quotedText": "Actual Kotlin native Settings, APP stateless gateway, one-shot socket boundary, new project Disposable service and JUnit/Gradle conventions."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges sc1–sc6/sc8 consumer effects; S004 S005-HANDOFF",
+      "quotedText": "Consume existing signed receipt/status, transient probe, owner-bound session/root lanes and ticket-only independent removal cleanup; backend ownership unchanged."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 uxDefinition/sequenceDefinition/componentDependencyDefinition",
+      "quotedText": "Native two-client manager layout and workbench/project lifetime boundaries, safe input/status/focus, no deprecated-fork source mirroring."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 testStrategy/migration",
+      "quotedText": "Twenty exact acceptance subjects, genuine two-client UI/lifecycle/service/privacy proof, final frozen suites, pending production prerequisites and manual post-build review policy."
+    }
+  ]
+}

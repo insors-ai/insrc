@@ -1,0 +1,18 @@
+{
+  "taskCount": 32,
+  "namedTestCount": 33,
+  "exactLLDSubjects": 20,
+  "acyclicTopologicalOrder": true,
+  "allCitationsUsedAndResolved": true,
+  "lldApprovedAt": "2026-10-29T14:11:25.300Z",
+  "lldReview": "pass",
+  "planApproved": false,
+  "deprecatedForkWork": false,
+  "fullSweepRunDuringPlanning": false,
+  "implementationStarted": false,
+  "policy": "Relevant tests per build task; final frozen full backend+explicit extension+Gradle suites only after implementation; manual post-build review, explicit final approval.",
+  "hashes": {
+    ".insrc/artifacts/PLAN-484fcef7efaf229e-s5.json": "1fff9a2b50eab416a94e51d9cc3f8599ed6821cea89ddbc354149d9807e1d716",
+    ".insrc/artifacts/LLD-484fcef7efaf229e-s5.json": "01bf77dd4becaa40e1f2448963f98acc0160c80db72a168366d363fb9a60a06d"
+  }
+}

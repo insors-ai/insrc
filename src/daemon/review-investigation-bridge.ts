@@ -58,7 +58,11 @@ export class ScopedReviewBridge {
    switch(command.operation){
     case 'read':result=await entry.grant.tools.read(command.reference);break;
     case 'impact':{
-     const query=entry.grant.tools.impact.queryChangedEntityCallers;if(entry.grant.tools.impact.mode!=='indexed-impact'||!query)throw new ReviewIntegrationError('invalid-command','Caller capability unavailable');result=await query(command.entityRef);break;
+     const query=entry.grant.tools.impact.queryChangedEntityCallers;if(entry.grant.tools.impact.mode!=='indexed-impact'||!query)throw new ReviewIntegrationError('invalid-command','Caller capability unavailable');
+     // sc3 durably records an impact obligation before acquisition. Surface its
+     // ACK/row identities so the reviewer never has to guess a sequence or hash.
+     let evidence:unknown,error:string|null=null;try{evidence=await query(command.entityRef);}catch{this.check(entry,peer);evidence=[];error='impact-unavailable';}
+     const state=entry.grant.state();result={evidence,error,progress:{sequence:state.sequence,acceptedBlockReceiptIds:state.accepted.map(a=>a.receipt.progressId),coverage:state.ledger.coverage}};break;
     }
     case 'progress':result=await entry.grant.tools.progress(command.progress);break;
     case 'reply':{

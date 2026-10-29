@@ -605,6 +605,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// no-verdict reason (no approved contract / no build) rather than a
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
+		'codeReview.investigation': async params => {
+ const {investigationTransport}=await import('./review-investigation-gateway.js');return investigationTransport(params);
+ },
 		'codeReview.grounding': async (params) => {
 			const p = (params ?? {}) as { repo?: string; epicHash?: string; storyId?: string };
 			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';

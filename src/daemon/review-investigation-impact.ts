@@ -25,16 +25,18 @@ export function daemonReviewImpactGraph(repoPath:string):ReviewImpactGraph{
 export interface ProductionImpactOptions {
  readonly basis:LedgerBasis;readonly sources:SubjectPreparationDeps;readonly graph:ReviewImpactGraph;
  readonly mode:'source-only'|'indexed-impact';readonly attemptId:string;readonly signal:AbortSignal;
+ readonly currentAttemptId?:(()=>string)|undefined;
  readonly assertCurrent:()=>Promise<void>;
 }
+export interface QualifiedImpactEntity {readonly entityRef:string;readonly blockId:string;readonly path:string;readonly name:string;readonly kind:string;readonly lines:readonly[number,number];}
 /** Only selected new-side entities with matching pinned file hash AND source body are queryable.
  * The graph has no commit-wide snapshot guarantee, so caller discovery always remains partial. */
 export async function productionImpactAdapter(o:ProductionImpactOptions){
- const mapped=new Map<string,{blockId:string;sourceDigest:string}>(),receipts=new Map<string,TrustedInspectionReceipt>();
+ const mapped=new Map<string,{blockId:string;sourceDigest:string}>(),receipts=new Map<string,TrustedInspectionReceipt>(),entitySummaries:QualifiedImpactEntity[]=[];
  const changedEntity=(ref:string)=>mapped.get(ref)??null;
  const impactReceipts=(values:readonly EvidenceV1[])=>values.map(v=>{const r=receipts.get(v.evidenceId);if(!r)throw Error('Unknown native caller receipt');return r;});
- if(o.mode==='source-only')return {impact:{mode:'source-only',index:null,queryChangedEntityCallers:null} satisfies ImpactCapabilityV1,changedEntity,impactReceipts,entityReferences:[] as readonly string[]};
- const s=o.basis.subject,attempt={runId:o.basis.runId,subjectDigest:s.subjectDigest,attemptId:o.attemptId};validateAttempt(attempt,o.basis);
+ if(o.mode==='source-only')return {impact:{mode:'source-only',index:null,queryChangedEntityCallers:null} satisfies ImpactCapabilityV1,changedEntity,impactReceipts,entityReferences:[] as readonly string[],entitySummaries};
+ const s=o.basis.subject;
  const check=async()=>{o.signal.throwIfAborted();await o.assertCurrent();o.signal.throwIfAborted();};await check();
  const state=await o.graph.state(),closure=new Set((await o.graph.closure()).map(p=>resolve(p)));
  if(!closure.has(resolve(o.sources.repoPath)))throw Error('Registered dependency closure excludes active repository');
@@ -53,10 +55,12 @@ export async function productionImpactAdapter(o:ProductionImpactOptions){
    // Parser bodies may exclude indentation surrounding the node, never source inside it.
    if(read.completeness!=='complete'||read.sourceDigest!==full.sourceDigest||read.text?.trim()!==e.body.trim())continue;
    mapped.set(e.id,{blockId:blocks[0]!.blockId,sourceDigest:full.sourceDigest});
+   entitySummaries.push({entityRef:e.id,blockId:blocks[0]!.blockId,path,name:e.name.slice(0,512),kind:e.kind,lines:[e.startLine,e.endLine]});
   }
  }
  await check();if(digestValue(await o.graph.state())!==digestValue(state))throw Error('Index changed during entity qualification');
  const impact:ImpactCapabilityV1={mode:'indexed-impact',index:{revision:state.revision,freshness:'unknown',completeness:state.completeness},queryChangedEntityCallers:async(ref:string)=>{
+  const attempt={runId:o.basis.runId,subjectDigest:s.subjectDigest,attemptId:o.currentAttemptId?.()??o.attemptId};validateAttempt(attempt,o.basis);
   await check();if(!mapped.has(ref))throw Error('Entity is not qualified selected scope');
   if(digestValue(await o.graph.state())!==digestValue(state))throw Error('Index changed after qualification');
   if(digestValue([...(await o.graph.closure())].map(p=>resolve(p)).sort())!==digestValue([...closure].sort()))throw Error('Registered dependency closure changed');
@@ -73,5 +77,5 @@ export async function productionImpactAdapter(o:ProductionImpactOptions){
    index:{sourceCommit:s.build.sourceCommit,indexId:state.revision,freshness:'unknown',coverage:state.completeness}});
   const value=evidenceFromReceipt(o.basis,native);receipts.set(value.evidenceId,native);return [value];
  }};
- return {impact,changedEntity,impactReceipts,entityReferences:freezeValue([...mapped.keys()])};
+ return {impact,changedEntity,impactReceipts,entityReferences:freezeValue([...mapped.keys()]),entitySummaries:freezeValue(entitySummaries)};
 }

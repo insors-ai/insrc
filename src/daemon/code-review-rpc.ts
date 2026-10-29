@@ -1,3 +1,5 @@
+import { isInvestigationInput } from '../shared/review-investigation-wire.js';
+import { investigationTransport } from './review-investigation-gateway.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -68,6 +70,7 @@ interface CodeReviewRunParams {
 /** The collaborators of {@link codeReviewRunStart}. Every one defaults to the
  *  real thing; a test replaces the ones it needs to. */
 export interface CodeReviewRunDeps {
+ readonly investigation?: ((input:unknown)=>Promise<Record<string,unknown>>) | undefined;
 	readonly resolveSubject?: ((repoPath: string, epicHash: string, storyId: string) => Promise<CodeReviewSubjectResolution>) | undefined;
 	/** The provider and its label for this review. */
 	readonly resolveProvider?: ((repoPath: string, client: 'claude' | 'codex' | undefined) => { provider: LLMProvider; modelLabel: string }) | undefined;
@@ -272,6 +275,7 @@ function modelLabelFor(
 export { buildAuthorParty };
 
 export async function codeReviewRunStart(rawParams: unknown, send: (msg: IpcStreamMessage) => void, signal: AbortSignal, deps: CodeReviewRunDeps = {}): Promise<void> {
+ if(isInvestigationInput(rawParams)){const result=await investigationTransport(rawParams,deps.investigation);send({id:0,stream:result['next']==='error'?'error':'done',data:result});return;}
 	try { await withReviewExecutionCeiling(rawParams, () => codeReviewRunStartInner(rawParams, send, signal, deps)); }
 	catch (err) { send({ id: 0, stream: 'error', data: { error: err instanceof Error ? err.message : 'review execution failed', recoverable: false } }); }
 }

@@ -58,6 +58,8 @@ export class CanonicalReviewWorkAdapter {
   if(!integrity.ok)throw new SubjectPreparationError('stale-contract',`Canonical contract integrity failed: ${integrity.reason}.`);
   return head;
  }
+ /** Canonical non-approvable records (BUILD/TESTS) still require repository and history integrity. */
+ readCanonicalHead=(id:string):Promise<HeadSnapshot|null>=>this.head(id);
  async approved(id:string,request:PrepareReviewRequest):Promise<VerifiedWorkArtifact>{
   const head=await this.head(id);if(!head)fail(`Missing approved contract ${id}.`);
   const key=ArtifactIds.parse(id),root=ArtifactIds.parse(request.rootArtifactId);

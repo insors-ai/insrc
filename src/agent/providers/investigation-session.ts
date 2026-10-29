@@ -49,6 +49,8 @@ const qualifications=new WeakMap<NativeInvestigationQualification,{authority:Nat
 export interface NativeInvestigationRuntime {
  readonly processEpoch:string;readonly assertProcessOwner:()=>void;readonly assertCurrent:()=>void;
  readonly state:()=>InvestigationState;
+ readonly navigation?:{readonly sourceRefs:readonly string[];readonly testRefs:readonly string[];readonly changedEntityRefs:readonly string[];
+  readonly changedEntities?:readonly unknown[]|undefined;readonly index?:unknown}|undefined;
 }
 const bindings=new WeakMap<QualifiedInvestigationSessionBinding,{qualification:NativeInvestigationQualification;turn:InvestigationTurnV1;repo:string;runtime:NativeInvestigationRuntime|undefined}>();
 const invocations=new WeakMap<QualifiedInvestigationSessionBinding,Promise<unknown>>();

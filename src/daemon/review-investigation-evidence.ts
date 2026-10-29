@@ -52,7 +52,9 @@ export class ProductionEvidenceAdapter {
   if(!ref||typeof ref!=='object'||Array.isArray(ref))reject('invalid reference');
   let read:ReviewReadReceiptV1,fields:Omit<TrustedInspectionReceipt,'receiptId'|'attempt'>;
   if(ref['kind']==='test-result'){
-   if(Object.keys(ref).sort().join(',')!=='kind,taskId'||typeof ref['taskId']!=='string'||!s.tasks.some(t=>t.id===ref['taskId']))reject('test task outside subject');
+   // TESTS is a canonical Story record, not an approved PLAN. Planless builds
+   // have recorded task ids too; membership is verified against TESTS below.
+   if(Object.keys(ref).sort().join(',')!=='kind,taskId'||typeof ref['taskId']!=='string'||!ref['taskId'].trim()||ref['taskId'].length>128)reject('invalid recorded test task');
    const key=ArtifactIds.parse(s.build.artifactId);if(!key)reject('invalid BUILD identity');
    const id=`TESTS-${key.epicHash}-${s.storyId}`,head=await this.options.canonical.readHeadSnapshot(id);if(!head)reject('TESTS record missing');
    if(typeof head.head.meta['repoPath']!=='string'||realpathSync(head.head.meta['repoPath'])!==realpathSync(this.options.sources.repoPath))reject('foreign TESTS repository');

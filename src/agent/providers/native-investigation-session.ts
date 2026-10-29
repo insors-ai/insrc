@@ -61,7 +61,7 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
  const command=nativeReviewMcpConfiguration(cwd,indexed).mcpServers['insrc-scoped-review'];
  for(const path of [command.command,command.args.find(p=>p.endsWith('/insrc-review-bridge.ts')||p.endsWith('/insrc-review-bridge.js'))!])if(!pinned.runtimeFiles.some(f=>f.path===realpathSync(path)))throw new InvestigationQualificationError('MCP runtime is not pinned by qualification');
  if(activeDirectories.has(cwd))throw new InvestigationQualificationError('Qualified isolated directory already has an active session');
- const prompt=`${input.prompt}\n\n${JSON.stringify({turn:verified.turn,seed:binding.tools.seed})}`,wireSchema=reviewWireSchemaJson(input.profile,input.schema),catalog=JSON.stringify(scopedReviewToolCatalog(indexed));
+ const prompt=`${input.prompt}\n\n${JSON.stringify({turn:verified.turn,seed:binding.tools.seed,coverage:runtime.state().ledger.coverage,navigation:runtime.navigation??null})}`,wireSchema=reviewWireSchemaJson(input.profile,input.schema),catalog=JSON.stringify(scopedReviewToolCatalog(indexed));
  let extraChars=0;
  const admit=()=>{try{return preflightProviderReviewBudget(opts.reviewBudget!,input.profile,prompt.length+INVESTIGATION_SYSTEM_PROMPT.length+extraChars,wireSchema,undefined,catalog);}catch(cause){throw new InvestigationError('budget-refused','Inclusive native prompt, schema, tools and inspection history exceed admission.',{cause});}};admit();
  activeDirectories.add(cwd);const abort=new AbortController(),onAbort=()=>abort.abort();opts.signal.addEventListener('abort',onAbort,{once:true});if(opts.signal.aborted)abort.abort();

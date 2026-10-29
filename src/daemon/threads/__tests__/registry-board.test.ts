@@ -174,3 +174,16 @@ test('board: past MAX_RUNS the oldest finished runs are dropped, whichever threa
 	for (let n = 1; n <= 5; n++) assert.ok(!ids.includes(`r${n}`), `r${n}, among the oldest finished, was dropped`);
 	assert.ok(ids.includes(`r${MAX_RUNS + 5}`), 'the newest is kept');
 });
+
+test('board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged', () => {
+	const b = new StatusBoard();
+	const plain = { threadId: 7, cls: 'admin', busy: false, queued: 0 } as const;
+	b.publish(plain);
+	b.publish({ threadId: 8, cls: 'session', session: { label: 'mcp', pid: 41 }, busy: true, method: 'x.run', since: 5, queued: 2, role: 'session' });
+	b.publish({ threadId: 9, cls: 'session', busy: false, queued: 0, role: 'shared-state' });
+	const threads = b.snapshot().threads;
+	assert.deepEqual(threads.find(t => t.threadId === 7), plain, 'a status without a role is kept as published, with no role added');
+	assert.equal(threads.find(t => t.threadId === 8)?.role, 'session');
+	assert.deepEqual(threads.find(t => t.threadId === 8)?.session, { label: 'mcp', pid: 41 });
+	assert.equal(threads.find(t => t.threadId === 9)?.role, 'shared-state', 'role tells the shared-state worker apart from a session worker of the same class');
+});

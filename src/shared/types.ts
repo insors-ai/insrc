@@ -1025,6 +1025,34 @@ export interface DaemonStatus {
    * daemon.status is refused meanwhile with the same activity and reason.
    */
   maintenance?:      { state: 'compacting'; since: string; activity: string; reason: string };
+  /**
+   * Present ONLY with daemon threads (Epic 86197ac6 s4): one entry per live
+   * worker thread, what it is for and what it is doing now. Absent without
+   * daemon threads, so a consumer that does not know the field sees no change.
+   */
+  threads?:          ThreadView[];
+}
+
+/** What a daemon worker thread is for (`ThreadView.role`). */
+export type ThreadRole = 'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state';
+
+/** One daemon worker thread in `DaemonStatus.threads` and the debug-status answer. */
+export interface ThreadView {
+  threadId:    number;
+  role:        ThreadRole;
+  /** The request class it serves; undefined for a worker that serves none (document summaries). */
+  cls:         'admin' | 'session' | 'indexing' | undefined;
+  /** The client session a session worker serves. */
+  session?:    { label: string; pid: number } | undefined;
+  /** Serving a request now (the document-summary thread: running a summary). */
+  busy:        boolean;
+  /** The method of its oldest request in flight, and how long that has run. */
+  method?:     string | undefined;
+  elapsedMs?:  number | undefined;
+  /** Requests waiting in its session's queue. */
+  queued:      number;
+  /** Detached workflow runs it owns that are still running. */
+  activeRuns:  number;
 }
 
 /** Per-lane state of the daemon's index queue (`DaemonStatus.queueLanes`). */

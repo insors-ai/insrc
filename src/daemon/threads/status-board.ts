@@ -11,7 +11,7 @@
  * messages (ordered per port) and read a snapshot with one hub request.
  */
 
-import type { AttachedClient, RegisteredRepo, RepoCompleteness, UnattributedUnwritableCount } from '../../shared/types.js';
+import type { AttachedClient, RegisteredRepo, RepoCompleteness, ThreadRole, UnattributedUnwritableCount } from '../../shared/types.js';
 import type { IndexRunView } from '../../indexer/run-record.js';
 import { getLogger } from '../../shared/logger.js';
 import type { HubClient, HubHandlers, MethodClass, SessionId } from './channel.js';
@@ -26,6 +26,8 @@ export interface ThreadStatus {
 	readonly method?: string | undefined;
 	readonly since?: number | undefined;
 	readonly queued: number;
+	/** What the thread is for (an additive sc4 field, s4 AMD-86197ac660732ceb-2). */
+	readonly role?: ThreadRole | undefined;
 }
 export interface LaneStatus { readonly depth: number; readonly processing: boolean; }
 export interface SummarySweepProgress { readonly repoPath: string; readonly done: number; readonly total: number; }

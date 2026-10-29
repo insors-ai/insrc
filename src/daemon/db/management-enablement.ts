@@ -34,6 +34,9 @@ export const CONNECTION_SESSION_GATE_FILES = [
 	'shared/step-context', 'shared/connection-management', 'shared/connection-management-wire',
 ] as const;
 
+/** sc6 also consumes the full session prerequisite set; these helpers cannot be omitted. */
+export const CONNECTION_REMOVAL_GATE_FILES = ['shared/connection-removal', 'daemon/db/removal-retirement'] as const;
+
 /** The complete deployed production tree, including new consumers and pure helpers. */
 async function productionSources(directory: URL, prefix = ''): Promise<string[]> {
 	const files: string[] = [];
@@ -69,8 +72,8 @@ export async function connectionManagementEnablement(evidenceUrl: URL = new URL(
 			testReportFile?: string | undefined;
 			scopes: string[];
 		};
-		const session = additionalScopes.includes('sc5');
-		if (evidence.version !== 2 || evidence.ready !== true || !/^[a-f0-9]{64}$/.test(evidence.inventoryDigest) || !/^[a-f0-9]{64}$/.test(evidence.testReportDigest) || ['sc1', 'sc2', 'sc3', 'sc4', 'sc8', ...additionalScopes, ...(session ? ['sc6', 'sc7'] : [])].some(scope => !evidence.scopes?.includes(scope)))
+		const session = additionalScopes.includes('sc5') || additionalScopes.includes('sc6');
+		if (evidence.version !== 2 || evidence.ready !== true || !/^[a-f0-9]{64}$/.test(evidence.inventoryDigest) || !/^[a-f0-9]{64}$/.test(evidence.testReportDigest) || ['sc1', 'sc2', 'sc3', 'sc4', 'sc8', ...additionalScopes, ...(session ? ['sc5', 'sc6', 'sc7'] : [])].some(scope => !evidence.scopes?.includes(scope)))
 			throw new Error();
 		const inventory = await releaseDocument(evidenceUrl, evidence.inventoryFile, evidence.inventoryDigest);
 		const report = await releaseDocument(evidenceUrl, evidence.testReportFile, evidence.testReportDigest);
@@ -83,7 +86,7 @@ export async function connectionManagementEnablement(evidenceUrl: URL = new URL(
 			if (row?.sourceDigest !== hash || typeof row.classification !== 'string' || !row.classification || row.classification === 'unclassified' || typeof row.rationale !== 'string' || row.rationale.length < 20) throw new Error();
 		}
 		const sourceRoot = new URL('../../../src/', import.meta.url), compiledRoot = new URL('../../../out/', import.meta.url);
-		const required = [...CONNECTION_FOUNDATION_GATE_FILES, ...CONNECTION_TEST_GATE_FILES, ...(session ? CONNECTION_SESSION_GATE_FILES : [])];
+		const required = [...CONNECTION_FOUNDATION_GATE_FILES, ...CONNECTION_TEST_GATE_FILES, ...(session ? [...CONNECTION_SESSION_GATE_FILES, ...CONNECTION_REMOVAL_GATE_FILES] : [])];
 		for (const [root, files, extension] of [[sourceRoot, evidence.sourceFiles, '.ts'], [compiledRoot, evidence.compiledFiles, '.js']] as const) {
 			if (!files || Array.isArray(files) || Object.keys(files).length < 10 || required.some(path => !Object.hasOwn(files, path + extension))) throw new Error();
 			for (const [path, expected] of Object.entries(files)) {

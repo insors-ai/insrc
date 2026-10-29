@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+ok 1 - CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+  ---
+  duration_ms: 4763.415375
+  type: 'test'
+  ...
+# Subtest: CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+ok 2 - CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+  ---
+  duration_ms: 3.246833
+  type: 'test'
+  ...
+# Subtest: CM-S4-GATE: required removal helpers and sc6 session prerequisites remain unadvertised in shipped bundles
+ok 3 - CM-S4-GATE: required removal helpers and sc6 session prerequisites remain unadvertised in shipped bundles
+  ---
+  duration_ms: 1.354125
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 4 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+  ---
+  duration_ms: 11288.188375
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 5 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+  ---
+  duration_ms: 456.352292
+  type: 'test'
+  ...
+# Subtest: CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity
+ok 6 - CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity
+  ---
+  duration_ms: 5.436333
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12416.441709

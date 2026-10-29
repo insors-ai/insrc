@@ -1,0 +1,215 @@
+{
+  "kind": "private-source-review-baseline",
+  "siteCount": 7518,
+  "classifiedFiles": 532,
+  "changed": [
+    {
+      "file": "src/daemon/connection-management-rpc.ts",
+      "previousSourceDigest": "25bc62b2ceab6822bad57fb918147ce894a36b38e41d823e0a8ea6d59c400430",
+      "sourceDigest": "d7a58fa450f9ed84da8ae39b19921469bfad880b57c128d6d0b26c4df836a8da",
+      "oldSiteCount": 7,
+      "siteCount": 7,
+      "rationale": "S004: exact ticket-only sc6 state/retry endpoints and existing remove intent require capability readiness before ticket/owner work. Presented session authority is never stripped to reach Saved. Fixed error projection; no legacy-delete fallback."
+    },
+    {
+      "file": "src/daemon/connection-session-rpc.ts",
+      "previousSourceDigest": "798693d787c6a713946de6ee4817decee4fc48f178e299a6673bc60df1a193d0",
+      "sourceDigest": "e5e63916aebfc404150cdc3e139755f3e2493713f64b22d788ad0d674dccdb6b",
+      "oldSiteCount": 32,
+      "siteCount": 36,
+      "rationale": "S004: existing socket/root/generation/workbench-ui gates precede remove receipts and cleanup. Temporary deletion and ledger publication share the current owner; no activation after remove. Stored edit probes retain the existing resolver lease through actual child drain. All-consumer Saved worker affinity remains a separate pending prerequisite."
+    },
+    {
+      "file": "src/daemon/db-rpc.ts",
+      "previousSourceDigest": "377c1b7cd75b76ea9ea54ee6dfd08715a109e0c205e0ab220fe2b4af2b050333",
+      "sourceDigest": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da",
+      "oldSiteCount": 9,
+      "siteCount": 13,
+      "rationale": "S004: legacy Saved upsert/delete compatibility is unchanged. A probe that borrows a persisted config now holds the existing Saved resolver lease through the supervisor drain; new unsaved drafts do not gain a fictitious stored revision. No session-to-Saved downgrade."
+    },
+    {
+      "file": "src/daemon/db/draft-test.ts",
+      "previousSourceDigest": "412b80a0a198e9d19640351f05d2b429d8f29bb0c05e3ec1b4ecb854a342f1a4",
+      "sourceDigest": "6e477ef30876fe9e32da4e867e3aca709896d0d1e8eef6f57fed0b34cc21a95c",
+      "oldSiteCount": 5,
+      "siteCount": 5,
+      "rationale": "S004: the existing supervisor supplies its private true-drain promise to preparation. It resolves only after preparation and actual child close or failed spawn, preserving timeout/cancel response independence and allowing the existing revision lease to remain held. No new wire or persisted lifetime field."
+    },
+    {
+      "file": "src/daemon/db/management-enablement.ts",
+      "previousSourceDigest": "89d2b93ef8aa3995c7f2dbc78a4d6b82e277268a8c8bdffc1fa404eff4f2db2d",
+      "sourceDigest": "544958c37a664d48cdd3d1492472f06d5bf32aa2d7756df145febd6bf83397ae",
+      "oldSiteCount": 12,
+      "siteCount": 12,
+      "rationale": "S004: source/compiled verification explicitly requires both removal helpers and all session prerequisites for sc6, including sc6-only verifier calls. Full deployed-source/build linkage still applies. Only private synthetic positive fixtures are permitted; shipped ready=false and pending external/client/affinity evidence remain unchanged."
+    },
+    {
+      "file": "src/daemon/db/management.ts",
+      "previousSourceDigest": "45ed592215c20cbe92adcfbe98739d869591d004c8c65e87657e62508566a708",
+      "sourceDigest": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489",
+      "oldSiteCount": 27,
+      "siteCount": 47,
+      "rationale": "S004: existing Saved root gate, MAC/ticket authority, registry and credential journal atomically remove one selected revision. Ambiguous commit retains the old runtime barrier until exact same-ticket inode/receipt reconciliation. Detach precedes asynchronous cleanup; credential and resource phases are independently truthful. No source deletion or new store."
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "previousSourceDigest": "a1e2a330d6a298dc4e01f3a9d9e13bd6a01566ca3221788b6e3c1d5747e1a32f",
+      "sourceDigest": "8a1a5b3ed74d4b6463fbfb0b65820dd79d0a546d2414d77540a4a5f07e98d183",
+      "oldSiteCount": 119,
+      "siteCount": 155,
+      "rationale": "S004: exact opaque prepare/commit/cancel tokens reuse the existing revision gate. Strict detach transfers only old SDK/build handles to bounded cleanup ownership and invalidates acquisition before release. Failed closes retain ownership; old cleanup cannot target a recreated ID. This is process-local ownership, not global worker affinity proof."
+    },
+    {
+      "file": "src/daemon/db/removal-retirement.ts",
+      "previousSourceDigest": null,
+      "sourceDigest": "ed9393a9adad751cf0752f103cb1951a5a70d6953a90d48fd937b7aa92b60169",
+      "oldSiteCount": 0,
+      "siteCount": 1,
+      "rationale": "S004: the unresolved constructor boundary is the local RemovalRetirementBudget capacity allocator, not a model/provider or driver factory. Exact opaque owner tokens reserve 64/root and 256/daemon capacity before commit. Joined retry retains failed close callbacks until physical completion; no config, signer, registry or persistent recovery store."
+    },
+    {
+      "file": "src/daemon/db/secrets.ts",
+      "previousSourceDigest": "c946f590ea0875227e4ee865152516878f4d1bb6830308fb9bc0feb17c756979",
+      "sourceDigest": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca",
+      "oldSiteCount": 10,
+      "siteCount": 10,
+      "rationale": "S004: metadata-only removal preparation reuses the protected sc2 journal, owns no staged replacement secrets, and selects only obsolete owned refs. Credential recovery uses existing fences and protected receipts; no plaintext credential is reconstructed for removal/state/retry. Protected cleanup refs remain internal, never sc6 wire/log values."
+    },
+    {
+      "file": "src/daemon/db/session-entries.ts",
+      "previousSourceDigest": "0a7559bd821c4a24d3f227541619a94ac79a9cec08aa18544412dc12c684c0c5",
+      "sourceDigest": "91b68d5f4b7bd58181898e0d95bc9f41a8eb24395cb2da9142847c39f7e83191",
+      "oldSiteCount": 5,
+      "siteCount": 5,
+      "rationale": "S004: memory-only prepare/commit/cancel removal uses the existing revision barrier and synchronous receipt revision. Logical deletion drops config/staging refs and live byte budget, while exact retired resources retain a shared 64-slot session reservation and removed-ID guard until close. No registry/keychain/cache reconstruction."
+    },
+    {
+      "file": "src/daemon/db/session-ledger.ts",
+      "previousSourceDigest": "c0283b4d8b11ee266d87ce91da74e9c017d38190d9805799c49b2927f46bcb03",
+      "sourceDigest": "258b6153921318c4f73db96ce5f29c6d7dd1ddae4bd6ce5493a424c13d3fdc50",
+      "oldSiteCount": 7,
+      "siteCount": 8,
+      "rationale": "S004: existing bounded in-memory HMAC ledger admits remove and publishes the unchanged safe removed/not-applicable outcome in the same synchronous turn as overlay commit. Postcommit failures return the committed receipt. No durable tombstones, second signer, separate quota or source payload serialization."
+    },
+    {
+      "file": "src/daemon/db/session-management.ts",
+      "previousSourceDigest": "c7f00a6a13bab6781d2d75e7ba0caad43a68b9dba424e401dd670251399eaa72",
+      "sourceDigest": "b787103b0618f24543d6b636c79d2472a67ea11d8fdccb1a1c19d1f3c6846ada",
+      "oldSiteCount": 1,
+      "siteCount": 1,
+      "rationale": "S004: strict bounded exact decoders plus pure safe projection compose the existing trusted binding, overlay and ledger. New state/retry select cleanup only from a verified removal receipt revision; current role/root/generation is rechecked after waits. No filesystem/keychain ports or caller-provided cleanup selectors."
+    },
+    {
+      "file": "src/daemon/db/session-resources.ts",
+      "previousSourceDigest": "39229c3154869921aaafda222318f26b50997705e2ddfb2827cd8eb49d129d0a",
+      "sourceDigest": "344be9a116afd0d1ec644d63f63a8498f056175acef3adf00db81ba21ab7f348",
+      "oldSiteCount": 13,
+      "siteCount": 13,
+      "rationale": "S004: private exact-generation SDK/file handles transfer to bounded explicit-removal retirement. Failure retains the shared resource slot and handle; explicit removal cleanup does not poison unrelated live generations. Existing ordinary-retirement failure guards and sc8 memory-only/no-spill policy remain unchanged. Expiry/shutdown drain already-owned handles without fresh admission."
+    },
+    {
+      "file": "src/shared/connection-management-wire.ts",
+      "previousSourceDigest": "0a749f3a4225960f4eec6b84298162a58508ce0e4ee8f5dcbe43520ee1e5d745",
+      "sourceDigest": "21d770c2c25207ceb009955d05ebf72d9c22f79a3afd8f630b2ea718072f6ead",
+      "oldSiteCount": 1,
+      "siteCount": 1,
+      "rationale": "S004: new ticket-only removal-state/retry decoders reject unknown fields, hidden/accessor/symbol fields, malformed bounds and non-remove tickets before owner lookup. Existing mutation, signed ticket, receipt and generic OperationStatus shapes stay unchanged; decoding does not grant authority."
+    },
+    {
+      "file": "src/shared/connection-management.ts",
+      "previousSourceDigest": "653ad7a212910f5b353771fe7ac693c2adda920b0d688ca831640ae6644e0acf",
+      "sourceDigest": "91420d8952759a0c5c4a1602b9b143979fa211e7b656192bade5bab749a01200",
+      "oldSiteCount": 1,
+      "siteCount": 1,
+      "rationale": "S004: additive RemovalState and ticket-only request aliases expose only key/operation/state and independent credential/resource phases. Existing sc2 persisted outcome/receipt, signed remove ticket and lease shapes are unchanged; no config or cleanup selector enters the new public contract."
+    }
+  ],
+  "sc6Sources": {
+    "src/daemon/connection-management-rpc.ts": {
+      "classification": "owner-rpc-boundary",
+      "rationale": "S004: exact ticket-only sc6 state/retry endpoints and existing remove intent require capability readiness before ticket/owner work. Presented session authority is never stripped to reach Saved. Fixed error projection; no legacy-delete fallback.",
+      "sourceDigest": "d7a58fa450f9ed84da8ae39b19921469bfad880b57c128d6d0b26c4df836a8da"
+    },
+    "src/daemon/connection-session-rpc.ts": {
+      "classification": "session-transport-authority",
+      "rationale": "S004: existing socket/root/generation/workbench-ui gates precede remove receipts and cleanup. Temporary deletion and ledger publication share the current owner; no activation after remove. Stored edit probes retain the existing resolver lease through actual child drain. All-consumer Saved worker affinity remains a separate pending prerequisite.",
+      "sourceDigest": "e5e63916aebfc404150cdc3e139755f3e2493713f64b22d788ad0d674dccdb6b"
+    },
+    "src/daemon/db-rpc.ts": {
+      "classification": "owner-rpc-boundary",
+      "rationale": "S004: legacy Saved upsert/delete compatibility is unchanged. A probe that borrows a persisted config now holds the existing Saved resolver lease through the supervisor drain; new unsaved drafts do not gain a fictitious stored revision. No session-to-Saved downgrade.",
+      "sourceDigest": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da"
+    },
+    "src/daemon/db/draft-test.ts": {
+      "classification": "saved-foundation-boundary",
+      "rationale": "S004: the existing supervisor supplies its private true-drain promise to preparation. It resolves only after preparation and actual child close or failed spawn, preserving timeout/cancel response independence and allowing the existing revision lease to remain held. No new wire or persisted lifetime field.",
+      "sourceDigest": "6e477ef30876fe9e32da4e867e3aca709896d0d1e8eef6f57fed0b34cc21a95c"
+    },
+    "src/daemon/db/management.ts": {
+      "classification": "saved-foundation-boundary",
+      "rationale": "S004: existing Saved root gate, MAC/ticket authority, registry and credential journal atomically remove one selected revision. Ambiguous commit retains the old runtime barrier until exact same-ticket inode/receipt reconciliation. Detach precedes asynchronous cleanup; credential and resource phases are independently truthful. No source deletion or new store.",
+      "sourceDigest": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489"
+    },
+    "src/daemon/db/pool.ts": {
+      "classification": "resolver-resource-foundation",
+      "rationale": "S004: exact opaque prepare/commit/cancel tokens reuse the existing revision gate. Strict detach transfers only old SDK/build handles to bounded cleanup ownership and invalidates acquisition before release. Failed closes retain ownership; old cleanup cannot target a recreated ID. This is process-local ownership, not global worker affinity proof.",
+      "sourceDigest": "8a1a5b3ed74d4b6463fbfb0b65820dd79d0a546d2414d77540a4a5f07e98d183"
+    },
+    "src/daemon/db/secrets.ts": {
+      "classification": "saved-foundation-boundary",
+      "rationale": "S004: metadata-only removal preparation reuses the protected sc2 journal, owns no staged replacement secrets, and selects only obsolete owned refs. Credential recovery uses existing fences and protected receipts; no plaintext credential is reconstructed for removal/state/retry. Protected cleanup refs remain internal, never sc6 wire/log values.",
+      "sourceDigest": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca"
+    },
+    "src/daemon/db/session-entries.ts": {
+      "classification": "session-private-generations",
+      "rationale": "S004: memory-only prepare/commit/cancel removal uses the existing revision barrier and synchronous receipt revision. Logical deletion drops config/staging refs and live byte budget, while exact retired resources retain a shared 64-slot session reservation and removed-ID guard until close. No registry/keychain/cache reconstruction.",
+      "sourceDigest": "91b68d5f4b7bd58181898e0d95bc9f41a8eb24395cb2da9142847c39f7e83191"
+    },
+    "src/daemon/db/session-ledger.ts": {
+      "classification": "session-private-receipts",
+      "rationale": "S004: existing bounded in-memory HMAC ledger admits remove and publishes the unchanged safe removed/not-applicable outcome in the same synchronous turn as overlay commit. Postcommit failures return the committed receipt. No durable tombstones, second signer, separate quota or source payload serialization.",
+      "sourceDigest": "258b6153921318c4f73db96ce5f29c6d7dd1ddae4bd6ce5493a424c13d3fdc50"
+    },
+    "src/daemon/db/session-management.ts": {
+      "classification": "session-management-decoding",
+      "rationale": "S004: strict bounded exact decoders plus pure safe projection compose the existing trusted binding, overlay and ledger. New state/retry select cleanup only from a verified removal receipt revision; current role/root/generation is rechecked after waits. No filesystem/keychain ports or caller-provided cleanup selectors.",
+      "sourceDigest": "b787103b0618f24543d6b636c79d2472a67ea11d8fdccb1a1c19d1f3c6846ada"
+    },
+    "src/daemon/db/session-resources.ts": {
+      "classification": "session-private-sdk-resources",
+      "rationale": "S004: private exact-generation SDK/file handles transfer to bounded explicit-removal retirement. Failure retains the shared resource slot and handle; explicit removal cleanup does not poison unrelated live generations. Existing ordinary-retirement failure guards and sc8 memory-only/no-spill policy remain unchanged. Expiry/shutdown drain already-owned handles without fresh admission.",
+      "sourceDigest": "344be9a116afd0d1ec644d63f63a8498f056175acef3adf00db81ba21ab7f348"
+    },
+    "src/shared/connection-management-wire.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "S004: new ticket-only removal-state/retry decoders reject unknown fields, hidden/accessor/symbol fields, malformed bounds and non-remove tickets before owner lookup. Existing mutation, signed ticket, receipt and generic OperationStatus shapes stay unchanged; decoding does not grant authority.",
+      "sourceDigest": "21d770c2c25207ceb009955d05ebf72d9c22f79a3afd8f630b2ea718072f6ead"
+    },
+    "src/shared/connection-management.ts": {
+      "classification": "shared-transport-foundation",
+      "rationale": "S004: additive RemovalState and ticket-only request aliases expose only key/operation/state and independent credential/resource phases. Existing sc2 persisted outcome/receipt, signed remove ticket and lease shapes are unchanged; no config or cleanup selector enters the new public contract.",
+      "sourceDigest": "91420d8952759a0c5c4a1602b9b143979fa211e7b656192bade5bab749a01200"
+    },
+    "src/daemon/db/removal-retirement.ts": {
+      "classification": "removal-retirement-ownership",
+      "rationale": "S004: the unresolved constructor boundary is the local RemovalRetirementBudget capacity allocator, not a model/provider or driver factory. Exact opaque owner tokens reserve 64/root and 256/daemon capacity before commit. Joined retry retains failed close callbacks until physical completion; no config, signer, registry or persistent recovery store.",
+      "sourceDigest": "ed9393a9adad751cf0752f103cb1951a5a70d6953a90d48fd937b7aa92b60169"
+    },
+    "src/shared/connection-removal.ts": {
+      "classification": "pure-removal-projection",
+      "rationale": "S004: pure confirmation/decision/state projection. Cancel produces no command; confirmed selection captures the revision. Only verified committed removed outcomes imply success, with fixed safe copy and independent cleanup phases. No ticket issuance, provider, filesystem, credential or resource ownership ports.",
+      "sourceDigest": "e8597a68c8bbd87253dc646340c7adf6b43730a92041779641ebc792d486378e"
+    },
+    "src/daemon/threads/method-class.ts": {
+      "classification": "removal-admission-routing",
+      "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking.",
+      "sourceDigest": "f130c578b932343059eb6b23de5b08802abe91c74c692a7184de0a244df84fad"
+    },
+    "src/daemon/db/management-enablement.ts": {
+      "classification": "deployment-code-evidence",
+      "rationale": "S004: source/compiled verification explicitly requires both removal helpers and all session prerequisites for sc6, including sc6-only verifier calls. Full deployed-source/build linkage still applies. Only private synthetic positive fixtures are permitted; shipped ready=false and pending external/client/affinity evidence remain unchanged.",
+      "sourceDigest": "544958c37a664d48cdd3d1492472f06d5bf32aa2d7756df145febd6bf83397ae"
+    }
+  },
+  "releaseEnabled": false
+}

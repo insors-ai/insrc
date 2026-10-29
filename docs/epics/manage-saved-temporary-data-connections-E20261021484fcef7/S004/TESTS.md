@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+**Totals:** 76 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -363,3 +363,45 @@ Run at 2026-10-29T12:30:29.035Z on commit `9e6c3cc25`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/composed-probe-logs.test.ts` | 0 | 2 | 4.4 s |  |
 | `src/daemon/db/__tests__/session-driver-logs.test.ts` | 0 | 4 | 8.5 s |  |
+
+## t21
+
+Run at 2026-10-29T12:36:33.595Z on commit `9c1565e33`. Tests check: **passed**. 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-COMPAT: relevant existing shared wire, saved-management, connection-reservations, session-ledger/entries/owner, draft-preparation and probe-disposal regression files only; explicit TAP for parsed child output.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values | `src/shared/__tests__/connection-management.test.ts` |
+| pass | CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state | `src/daemon/db/__tests__/connection-management-rpc.test.ts` |
+| pass | CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection | `src/daemon/db/__tests__/driver-profiles.test.ts` |
+| pass | CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate | `src/daemon/db/__tests__/connection-reservations.test.ts` |
+| pass | CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt | `src/daemon/db/__tests__/session-ledger.test.ts` |
+| pass | CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays | `src/daemon/db/__tests__/session-owner.test.ts` |
+| pass | CM-S2-F1: production metadata admission precedes secrets and prepares only selected owned credentials without effects | `src/daemon/db/__tests__/draft-preparation.test.ts` |
+| pass | CM-S2-A8: admitted KV drivers propagate SDK disposal failures instead of reporting successful cleanup | `src/daemon/db/__tests__/probe-disposal.test.ts` |
+| pass | CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs and pinned families without writes | `src/daemon/db/__tests__/runtime-config.test.ts` |
+| pass | CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked | `src/daemon/db/__tests__/connection-leases.test.ts` |
+| pass | CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved | `src/daemon/db/__tests__/draft-test-supervisor.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 17 | 1.5 s |  |
+| `src/daemon/db/__tests__/connection-management-rpc.test.ts` | 0 | 7 | 1.6 s |  |
+| `src/daemon/db/__tests__/connection-reservations.test.ts` | 0 | 8 | 1.9 s |  |
+| `src/daemon/db/__tests__/draft-preparation.test.ts` | 0 | 1 | 1.3 s |  |
+| `src/daemon/db/__tests__/draft-test-supervisor.test.ts` | 0 | 6 | 31.9 s |  |
+| `src/daemon/db/__tests__/driver-profiles.test.ts` | 0 | 9 | 1.5 s |  |
+| `src/daemon/db/__tests__/probe-disposal.test.ts` | 0 | 2 | 11.9 s |  |
+| `src/daemon/db/__tests__/runtime-config.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 16 | 5.9 s |  |
+| `src/daemon/db/__tests__/session-entries.test.ts` | 0 | 9 | 2.1 s |  |
+| `src/daemon/db/__tests__/session-ledger.test.ts` | 0 | 9 | 4.8 s |  |
+| `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 13 | 0.9 s |  |
+| `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 10 | 1.5 s |  |
+| `src/shared/__tests__/connection-management.test.ts` | 0 | 6 | 3.4 s |  |

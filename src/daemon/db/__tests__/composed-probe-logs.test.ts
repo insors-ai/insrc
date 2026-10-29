@@ -1,3 +1,4 @@
+import {runRemovalPrivacy} from './fixtures/removal-privacy-run.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -16,4 +17,8 @@ test('CM-S2-A9: composed daemon and child logs contain no source credential or d
   assert.match(output,/listening on/,'normal daemon-side log activity was captured');
   for(const canary of ['PRIVATE_ROW_CANARY','PRIVATE_NATIVE_CANARY','PRIVATE_SOURCE_PATH_CANARY','PRIVATE_NATIVE_PATH_CANARY','old-secret-canary','unrelated-private-canary','PRIVATE_AWS_CANARY','PRIVATE_TOKEN_CANARY','PRIVATE_TABLE_CANARY'])assert.equal(output.includes(canary),false,'canary found in captured logs');
  }finally{clearTimeout(timer);child.kill('SIGKILL');await rm(directory,{recursive:true,force:true});}
+});
+
+test('CM-S4-PRIVACY/NO-PERSIST: composed removal keeps temporary persistence poisoned and owner loss unrecoverable',{timeout:40000},async t=>{
+ t.diagnostic(JSON.stringify(await runRemovalPrivacy('source')));
 });

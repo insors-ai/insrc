@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -335,3 +335,13 @@ the gate ran no test: every named test of this Task was reported by the builder
 **live: CM-S4-FILES/NO-PERSIST: extend src/daemon/db/__tests__/session-file-matrix.test.ts and src/daemon/db/__tests__/session-file-resources.test.ts for actual native/converted source hashes, private runtime cleanup and filesystem canaries.**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: Commits 3dbb2876a and e9233ca80; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t18/result.json, source-compiled-relevant-pass.tap and node22-build.log. Fresh Node22 build; affected suites 4/4 pass, zero fail/skip/TODO. Actual source + compiled modules, ten supported native/converted kinds and CSV directories in both scopes, hashes/poisoned source mutation ports, 11 temporary and 11 saved actual closes per mode, private DuckDB zero counters/no spill/unchanged temporary state tree. Arrow/Feather negative controls retained. Original filesystem notification assertion failure preserved; no release activation.
+
+## t19
+
+Run at 2026-10-29T12:16:24.135Z on commit `99b3e402c`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: CM-S4-AFFINITY: production analysis/tool/probe owner-affinity acceptance in single-thread and threads-enabled modes, or explicit pre-use refusal; unsupported architecture remains pending.**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Commit 99b3e402c; S004/evidence/t19/result.json, production-refusal-pass.tap and analyzer-result.json. Node22 real single-thread and threads-enabled daemons: 2 tests pass, no skips. Both modes advertise no sc6 and refuse removal/private analysis/step/tool/edit-probe admission before use. This is refusal proof only: positive all-consumer Saved worker lease identity explicitly remains pending and release-blocking. Existing main/session callback/iterator/constructor/probe positive evidence stays scoped to t15/t16. No architecture or shipped gate changes; original 115-byte socket-path startup failure retained.

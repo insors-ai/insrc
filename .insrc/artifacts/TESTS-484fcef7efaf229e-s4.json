@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T12:09:06.306Z",
+    "updatedAt": "2026-10-29T12:16:24.135Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1692,6 +1692,27 @@
             "reported": {
               "result": "pass",
               "evidence": "Commits 3dbb2876a and e9233ca80; docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t18/result.json, source-compiled-relevant-pass.tap and node22-build.log. Fresh Node22 build; affected suites 4/4 pass, zero fail/skip/TODO. Actual source + compiled modules, ten supported native/converted kinds and CSV directories in both scopes, hashes/poisoned source mutation ports, 11 temporary and 11 saved actual closes per mode, private DuckDB zero counters/no spill/unchanged temporary state tree. Arrow/Feather negative controls retained. Original filesystem notification assertion failure preserved; no release activation."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t19",
+        "commit": "99b3e402c",
+        "ranAt": "2026-10-29T12:16:24.135Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-AFFINITY: production analysis/tool/probe owner-affinity acceptance in single-thread and threads-enabled modes, or explicit pre-use refusal; unsupported architecture remains pending.",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Commit 99b3e402c; S004/evidence/t19/result.json, production-refusal-pass.tap and analyzer-result.json. Node22 real single-thread and threads-enabled daemons: 2 tests pass, no skips. Both modes advertise no sc6 and refuse removal/private analysis/step/tool/edit-probe admission before use. This is refusal proof only: positive all-consumer Saved worker lease identity explicitly remains pending and release-blocking. Existing main/session callback/iterator/constructor/probe positive evidence stays scoped to t15/t16. No architecture or shipped gate changes; original 115-byte socket-path startup failure retained."
             }
           }
         ],

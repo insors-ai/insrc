@@ -1,0 +1,37 @@
+{
+  "subject": "CM-S4-PRIVACY/NO-PERSIST",
+  "runtime": "Node22.23.2",
+  "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-reporter=tap src/daemon/db/__tests__/session-driver-logs.test.ts src/daemon/db/__tests__/composed-probe-logs.test.ts",
+  "result": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "modes": [
+    "source",
+    "compiled"
+  ],
+  "proof": [
+    "Poisoned readFile/writeFile/keychain ports during temporary remove/state/retry/end/new-epoch replay: zero calls.",
+    "Entire isolated temporary state and source-root trees remain byte-for-byte unchanged; no removal checkpoints/artifacts/prompts are created by this path.",
+    "SDK-close and credential-journal failure payloads include synthetic endpoint/options/source/credential/ref/session canaries. None appears in removal replies or captured real rotating logs.",
+    "A positive normal-daemon log marker proves the actual sink was captured; logging was not globally disabled.",
+    "Removal state/error text matches fixed safe copy and stays bounded.",
+    "Session end revokes status; fresh owner/epoch rejects the old ticket without reconstruction."
+  ],
+  "compatibilityBoundary": "Existing protected sc2 Saved receipts intentionally retain only owned cleanupRefs and signed operation tickets, with their unchanged exact schema. Those refs are necessary for credential cleanup/recovery and are not sc6 wire/log output. No raw config/endpoint/credential/source/session capability is added to receipts; this Story does not change protected storage contracts.",
+  "limits": [
+    "Privacy proof is scoped to removal/state/retry and existing logging/probe regressions, not all provider/model paths.",
+    "Temporary config creation may use existing Saved-ID collision metadata before the poisoned removal section; discard/state/retry themselves do not read the registry."
+  ],
+  "releaseEnabled": false,
+  "sourceHashes": {
+    "src/daemon/db/__tests__/fixtures/removal-privacy-child.ts": "7094e5bce67dc6511885d5b19796de9429ab75baa6409c2e9a689f98374b890d",
+    "src/daemon/db/__tests__/fixtures/removal-privacy-run.ts": "75e38e6d55457e63f6ae2fc5885abfce90613dc1638d94373c99730dd8280d95",
+    "src/daemon/db/__tests__/session-driver-logs.test.ts": "deb660591b7705b12d7f6095efedc9431172dcbe38458ced9ce38099b786ebf1",
+    "src/daemon/db/__tests__/composed-probe-logs.test.ts": "4aeb0016db26e2a71a0ec7d79cf3bd2b0bf6001606cf6905b8ed3a8fe07f11ec"
+  },
+  "tapHash": "254355a08e1cda33532f28737fa2e64a299dfa4b690d445befefa249c4008dfa"
+}

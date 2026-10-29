@@ -1,3 +1,4 @@
+import {runRemovalPrivacy} from './fixtures/removal-privacy-run.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -54,4 +55,8 @@ test('CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed sourc
  }
  assert.deepEqual(audit.modules.filter(row => row.temporary === 'unsupported').map(row => row.module).sort(), ['etcd', 'nats']);
  for (const [file, expected] of Object.entries(audit.sourceDigests)) assert.equal(createHash('sha256').update(await readFile(new URL('../../../../node_modules/' + file, import.meta.url))).digest('hex'), expected, 'SDK diagnostic source changed: inspect asynchronous sinks before updating evidence');
+});
+
+test('CM-S4-PRIVACY/NO-PERSIST: source and compiled removal replies and rotating logs hide SDK journal and capability canaries',{timeout:75000},async t=>{
+ for(const mode of ['source','compiled'] as const)t.diagnostic(JSON.stringify(await runRemovalPrivacy(mode)));
 });

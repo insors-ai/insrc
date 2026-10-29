@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { adaptInvestigationReview } from './completion-artifact.js';
+import { adaptInvestigationReview, acceptedInvestigationDimensions } from './completion-artifact.js';
 import { assessReviewCompletion } from './completion-assessment.js';
 import { ledgerDigest, ledgerSnapshot, ledgerEqual } from './ledger-identity.js';
 import { validateArtifact } from '../record-validation.js';
@@ -41,6 +41,10 @@ export function readCompletionPublication(store:RecoveryStore,intentRef:string):
   ||candidate.body.investigation.subjectDigest!==intent.subjectDigest||candidate.body.investigation.policyDigest!==intent.policyDigest
   ||candidate.body.investigation.checkpointDigest!==intent.checkpointDigest||candidate.meta.reviewedBy!==intent.reviewerParty
   ||intent.artifactId!==`CR-${candidate.meta.epicHash}-${candidate.meta.storyId}`
+  ||candidate.meta.storyId!==view.basis.subject.storyId||candidate.body.storyId!==candidate.meta.storyId||candidate.body.epicHash!==candidate.meta.epicHash
+  ||intent.build.artifactId!==`BUILD-${candidate.meta.epicHash}-${candidate.meta.storyId}`
+  ||candidate.body.subject.buildRevision!==intent.build.revision||!ledgerEqual(candidate.body.dimensions,acceptedInvestigationDimensions(view))
+  ||!ledgerEqual(candidate.body.subject.changedFiles,[...new Set(view.basis.subject.packets.flatMap(p=>p.blocks.flatMap(b=>[b.oldPath,b.newPath].filter((v):v is string=>v!==null))))].sort())
   ||validateArtifact(candidate,view.basis.criteria.map(c=>c.id as import('../types.js').ReviewDimension)))throw new RecoveryError('corrupt','Publication closure differs from frozen digests.');
  return ledgerSnapshot({intentRef,intent,candidate});
 }

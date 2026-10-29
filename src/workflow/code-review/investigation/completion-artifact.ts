@@ -18,17 +18,9 @@ export interface CompletionArtifactInput {
 }
 const DIMENSIONS: readonly ReviewDimension[] = ['adherence','conventions','coverage','quality','functional-coverage','diagram','ux'];
 
-/** Canonical adaptation only: does not execute a judge, write an artifact or approve anything. */
-export async function adaptInvestigationReview(input: CompletionArtifactInput): Promise<CodeReviewArtifact> {
- const {view,context,linkage} = input;
- const assessment = await assessReviewCompletion(view,context);
- if (assessment.outcome !== 'publishable') throw new RecoveryError(assessment.outcome === 'stale' ? 'stale' : 'invalid-input', assessment.reasons.join(' '));
- if (linkage.runId !== assessment.runId || linkage.subjectDigest !== assessment.subjectDigest || linkage.policyDigest !== view.manifest.policyDigest
-  || linkage.checkpointDigest !== assessment.checkpointDigest || input.buildRecord.meta.revision !== context.build.revision
-  || input.buildRecord.body.commit !== context.build.sourceCommit || input.storyId !== view.basis.subject.storyId
-  || context.build.artifactId !== `BUILD-${input.epicHash}-${input.storyId}`)
-  throw new RecoveryError('invalid-input','Canonical adaptation identity differs from the accepted review or BUILD.');
- const dimensions = view.basis.criteria.map(c => {
+/** Pure projection also used to verify frozen candidates against authoritative accepted findings. */
+export function acceptedInvestigationDimensions(view:RecoveryView){
+ return view.basis.criteria.map(c => {
   if (!DIMENSIONS.includes(c.id as ReviewDimension)) throw new RecoveryError('unsupported',`Unmappable criterion ${c.id}.`);
   const dimension = c.id as ReviewDimension;
   const findings: DimensionFinding[] = view.state.ledger.findings.filter(f => f.criterion === c.id).map(f => {
@@ -41,6 +33,19 @@ export async function adaptInvestigationReview(input: CompletionArtifactInput): 
   });
   return {dimension,findings};
  });
+}
+
+/** Canonical adaptation only: does not execute a judge, write an artifact or approve anything. */
+export async function adaptInvestigationReview(input: CompletionArtifactInput): Promise<CodeReviewArtifact> {
+ const {view,context,linkage} = input;
+ const assessment = await assessReviewCompletion(view,context);
+ if (assessment.outcome !== 'publishable') throw new RecoveryError(assessment.outcome === 'stale' ? 'stale' : 'invalid-input', assessment.reasons.join(' '));
+ if (linkage.runId !== assessment.runId || linkage.subjectDigest !== assessment.subjectDigest || linkage.policyDigest !== view.manifest.policyDigest
+  || linkage.checkpointDigest !== assessment.checkpointDigest || input.buildRecord.meta.revision !== context.build.revision
+  || input.buildRecord.body.commit !== context.build.sourceCommit || input.storyId !== view.basis.subject.storyId
+  || context.build.artifactId !== `BUILD-${input.epicHash}-${input.storyId}`)
+  throw new RecoveryError('invalid-input','Canonical adaptation identity differs from the accepted review or BUILD.');
+ const dimensions = acceptedInvestigationDimensions(view);
  const counts = foldCounts(dimensions);
  const artifact: CodeReviewArtifact = {meta:{workflow:'code-review',runId:view.manifest.runId,repoPath:input.repoPath,
   createdAt:input.createdAt,model:input.model,elapsedMs:view.state.consumedActiveMs,repoIndexedAt:null,schemaVersion:CODE_REVIEW_SCHEMA_VERSION,

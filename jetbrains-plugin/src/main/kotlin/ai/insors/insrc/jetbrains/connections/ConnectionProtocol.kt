@@ -133,6 +133,8 @@ object ConnectionProtocol {
         visit(value, 0)
         return value.deepCopy()
     }
+    /** Same bounded data-only copy for persistent-lane request serialization. */
+    fun requestData(value: JsonElement): JsonElement = checked { data(value) }
 
     fun capabilities(value: JsonElement, expectedEpoch: String? = null): ConnectionCapabilities = checked {
         val o = obj(data(value)); fields(o, setOf("version", "daemonEpoch", "features", "receiptRetentionDays"))

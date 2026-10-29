@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T15:05:48.808Z",
+    "updatedAt": "2026-10-29T15:18:23.711Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -147,6 +147,87 @@
             "titles": [
               {
                 "title": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "55adb15a3",
+        "ranAt": "2026-10-29T15:18:23.711Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/ipc-lane.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 481,
+            "titles": [
+              {
+                "title": "CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners",
                 "result": "pass"
               }
             ],

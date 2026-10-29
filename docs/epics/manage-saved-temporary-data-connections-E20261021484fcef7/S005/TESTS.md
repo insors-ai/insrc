@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -57,3 +57,24 @@ Run at 2026-10-29T15:05:48.808Z on commit `acea568cf`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-kotlin-wire.test.ts` | 0 | 1 | 4.5 s |  |
+
+## t4
+
+Run at 2026-10-29T15:18:23.711Z on commit `55adb15a3`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility | `src/shared/__tests__/ipc-lane.test.ts` |
+| pass | CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane | `src/shared/__tests__/ipc-lane.test.ts` |
+| pass | CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth | `src/shared/__tests__/ipc-lane.test.ts` |
+| pass | CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely | `src/shared/__tests__/ipc-lane.test.ts` |
+| pass | CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests | `src/shared/__tests__/ipc-lane.test.ts` |
+| pass | CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners | `src/shared/__tests__/ipc-lane.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/ipc-lane.test.ts` | 0 | 6 | 0.5 s |  |

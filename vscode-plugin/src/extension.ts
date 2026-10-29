@@ -14,6 +14,8 @@ import * as vscode from 'vscode';
 
 import { createConnectionsDraftTests, createConnectionsMutationController } from './connections/gateway.js';
 import { ConnectionsWorkbenchOwner } from './connections/session-owner.js';
+import { ConnectionsManagerHost } from './connections/host.js';
+import { registerConnectionCommands } from './connections/wiring.js';
 import { ConnectionRemovals } from '../../src/shared/connection-manager/removal.js';
 import { createIpcClient } from '../../src/shared/ipc-client.js';
 import { PATHS } from '../../src/shared/paths.js';
@@ -314,6 +316,21 @@ export function activate(context: vscode.ExtensionContext): void {
     processScan: defaultProcessScan,
     logger: panelLog,
   });
+  const connectionManager = new ConnectionsManagerHost({
+    owner: connectionsOwner, mutations: connectionMutations,
+    tests: connectionTests, removals: connectionRemovals,
+    registeredRoots: async () => (await daemonData.registeredRepos()).map(repo => repo.path),
+    createPanel: () => {
+      const panel = vscode.window.createWebviewPanel('insrc.connections', 'Connections', vscode.ViewColumn.Active,
+        { enableScripts: true, localResourceRoots: [] });
+      return { ...webviewChannel(panel), onVisibility: listener => {
+        panel.onDidChangeViewState(event => listener(event.webviewPanel.visible));
+      } };
+    },
+  });
+  context.subscriptions.push(connectionManager, registerConnectionCommands(
+    (id, run) => vscode.commands.registerCommand(id, run), connectionManager,
+  ));
   // S006 sc9: ONE shared managed-daemon-pid resolver, read from the pidfile. Both
   // the Debug renderer (to exclude the managed daemon from the orphan offer) and
   // the consent-gated kill (defence-in-depth re-exclusion) read through it, so they

@@ -1,0 +1,11 @@
+{
+  "task": "t20",
+  "scope": "VS Code Settings discovery and shared manager command entry points",
+  "reuse": "Analyzer returned unrelated JetBrains candidates; direct source reads established existing webviewChannel and ConnectionsManagerHost reuse. panels/types.ts unchanged.",
+  "discovery": "Existing plugin-local insrc.chat.enabled Settings description contains insrc connections and Manage Connections command link. No dummy persisted preference or connection JSON editor added.",
+  "commandArguments": "Ignored, including forged selectors/tickets. Entry commands reveal the same workbench manager; effects require explicit current manager actions.",
+  "typechecks": { "backend": "pass", "vscode": "pass" },
+  "focusedInitialAttempt": "3 passed, entry failed due test expecting empty-registry for no registered repositories. Corrected to no-repository; empty-registry describes a selected repository with zero connections. Rerun 4/4 passed.",
+  "officialPlatformEvidence": "https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/preferences/browser/settingsTree.ts#L1009-L1022 supports trusted Settings markdown command links. Actual Settings search and keyboard rendering remain t26 live acceptance.",
+  "fullSweep": "deferred to t32 as requested"
+}

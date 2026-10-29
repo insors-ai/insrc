@@ -114,6 +114,31 @@
           "light": "media/insrc-delivery-icon.svg",
           "dark": "media/insrc-delivery-icon-dark.svg"
         }
+      },
+      {
+        "command": "insrc.openDataSources",
+        "title": "Manage Connections",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.add",
+        "title": "Add Connection",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.edit",
+        "title": "Edit Connection",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.test",
+        "title": "Test Connection",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.remove",
+        "title": "Delete or Discard Connection",
+        "category": "insrc"
       }
     ],
     "menus": {
@@ -138,7 +163,7 @@
           "insrc.chat.enabled": {
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Enable the in-editor insrc ctrl (sidebar Activity Bar view) over your own claude/codex CLI. On by default.",
+            "markdownDescription": "Enable the in-editor insrc ctrl (sidebar Activity Bar view) over your own claude/codex CLI. On by default. For insrc connections, [Manage Connections](command:insrc.openDataSources) opens the Saved and Temporary connection manager. Connection configuration and credentials are managed there.",
             "scope": "machine"
           },
           "insrc.chat.diffView": {

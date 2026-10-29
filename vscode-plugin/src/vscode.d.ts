@@ -104,7 +104,7 @@ declare module 'vscode' {
     reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
     onDidDispose(listener: () => unknown): Disposable;
     /** Fires when the panel's `active` / `visible` state changes (chat group lock). */
-    onDidChangeViewState(listener: (e: unknown) => unknown): Disposable;
+    onDidChangeViewState(listener: (e: { readonly webviewPanel: WebviewPanel }) => unknown): Disposable;
   }
 
   /** A tab in an editor group; `input` identifies what it shows (chat group lock). */
@@ -152,7 +152,7 @@ declare module 'vscode' {
       viewType: string,
       title: string,
       showOptions: ViewColumn | { readonly viewColumn: ViewColumn; readonly preserveFocus?: boolean | undefined },
-      options?: { enableScripts?: boolean | undefined },
+      options?: { enableScripts?: boolean | undefined; localResourceRoots?: readonly Uri[] | undefined },
     ): WebviewPanel;
     /** Ask for a line of text; resolves the entered text, or undefined when dismissed (Epic ce99b72065d03b1b s6). */
     export function showInputBox(options?: { prompt?: string | undefined; value?: string | undefined }): PromiseLike<string | undefined>;

@@ -13658,6 +13658,14 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "storage-call",
           "initDb"
         ],
@@ -13826,9 +13834,9 @@
           "writePid"
         ]
       ],
-      "siteCount": 67,
-      "sitesDigest": "af62d2d3d29a1f676cb8b51f3500640dfd1588bbcdbcf5db0d844af159746f5c",
-      "sourceDigest": "8b7fc1db441b64e999fb04d9a3f37bcd2d9302483a7feccdc617c1b7974f8b8f",
+      "siteCount": 69,
+      "sitesDigest": "e6680b56d4d6ee92ffe8354434a007d7a96d53d491e3660b7edcd89ae8e596f2",
+      "sourceDigest": "2bd83506fc450a826c19ad834af862f66f1ca2fc3cb10cb4d672f568ef9fcb6e",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -16109,7 +16117,7 @@
       ],
       "siteCount": 12,
       "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
-      "sourceDigest": "a4ca7d4397e89ae87b8ca93e1ec6afbcae8f6a8d4c89b3a8f3ae7216d45afdef",
+      "sourceDigest": "5b0211f62bbf6b7519dc7633018894a2d9d5726d2893d55e8da8fe2658d10269",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -16247,7 +16255,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "dd8824b22f3295067d2d78ebd6376c5cea895cf0b974782869dc5574d206e17f",
-      "sourceDigest": "0f14ceb981242dddbc678f81d9aca145da8c947a2a215ef4a846fe83a592a10c",
+      "sourceDigest": "6c5fc18f4637e4c933789617616a39d2340a261a5e2ea72a640630a026427b78",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -16328,7 +16336,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "8dd8d3f552b7ef2265d2fe0e921cd235231dec33b8e9b43988a453093e4fb922",
-      "sourceDigest": "3ef9bc43cd68033c87c5fa8911bf6e649cbbfa7278abfd873bc38ff2ccd5169a",
+      "sourceDigest": "e0c0c072ede85b32a055c2e4306c909a0d3d2ea886c7756e558f8ee2f34691d8",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -16383,11 +16391,15 @@
         [
           "serialization",
           "this.hub.send"
+        ],
+        [
+          "serialization",
+          "this.hub.send"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "7ec341728c3963d89f0caba3dc588c6d933ba97660a25cb1f15ea09ff42ea7f4",
-      "sourceDigest": "e7547052b54375c02ac33b86ad63d72af7176c062fd50d01dcce0efa6ce2b13d",
+      "siteCount": 12,
+      "sitesDigest": "65ba8c35d74ec7e88ce2e214cb23bd3368d250acaeddbcb7f3e0de193fb6fe4a",
+      "sourceDigest": "507a6163bab8b908319c1b434d4fab860fe1ce9f9dbd88486c02f286000b0944",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -16696,7 +16708,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "fcaf496b38cbb3b22211173de69b63a3b992009d287989f2e88692e92a4d81cb",
-      "sourceDigest": "bd61c56375223f185c23a47400aeb7916d2e50c6ee42fe1ec5047830573e857e",
+      "sourceDigest": "737e0efdb16f923a7de575285a4436c87ac1defb7336d304a8840f7cf3b16926",
       "boundaries": [
         "provider-adapter",
         "serialization",
@@ -19069,7 +19081,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "b54022d33053a935bcd0897c78a3d1d15131f661fc3accde2496c67b9a5d6d55",
-      "sourceDigest": "25786145cc6e2d547448c8082d976ff9ee8eff4b8422bb4ba6050853f6dead73",
+      "sourceDigest": "1668061685786cdbd18f86451891c8522805f7937f7e4a4766a2eab563d3bb72",
       "boundaries": [
         "diagnostic"
       ]
@@ -37324,7 +37336,7 @@
     "src/daemon/threads/method-class.ts": {
       "classification": "removal-admission-routing",
       "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking.",
-      "sourceDigest": "f130c578b932343059eb6b23de5b08802abe91c74c692a7184de0a244df84fad"
+      "sourceDigest": "496fc43a45cc0be52939068b8d7f4eedc4ab38e3673d366fdca6202a214afa65"
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",

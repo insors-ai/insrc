@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -201,3 +201,46 @@ Run at 2026-10-29T21:07:39.058Z on commit `609fdb21d`. Tests check: **passed**. 
 | `src/agent/providers/__tests__/investigation-session.test.ts` | 0 | 1 | 0.9 s |  |
 | `src/daemon/__tests__/review-investigation-probe-export.test.ts` | 0 | 3 | 0.7 s |  |
 | `src/daemon/__tests__/review-investigation-probe.test.ts` | 0 | 5 | 1.3 s |  |
+
+## t9
+
+Run at 2026-10-29T21:14:02.026Z on commit `15f9068b8`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**smoke: Compiled probe protocol and production build pass with unchanged default/admission**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/live-probe-t9-build.log; /tmp/live-probe-t9-compiled-smoke.log; /tmp/live-probe-t9-focused-tests.log (51/51 pass, 0 skipped, 89680ms)
+
+**integration: Affected native/adoption/repository/MCP/routing regressions preserve legacy and design behavior**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Legacy S005 pre S005 design and installation order partitions remain compatible | `src/daemon/__tests__/review-investigation-adoption.test.ts` |
+| pass | Opt in readiness and rollback retain status while refusing unsupported resumes | `src/daemon/__tests__/review-investigation-adoption.test.ts` |
+| pass | Cross engine schema generation and capability replay are rejected | `src/daemon/__tests__/review-investigation-repository.test.ts` |
+| pass | Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher | `src/daemon/__tests__/review-investigation-probe.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/review-investigation-adoption.test.ts` | 0 | 5 | 9.3 s |  |
+| `src/daemon/__tests__/review-investigation-probe.test.ts` | 0 | 5 | 1.2 s |  |
+| `src/daemon/__tests__/review-investigation-repository.test.ts` | 0 | 3 | 16.6 s |  |
+
+## t10
+
+Run at 2026-10-29T21:33:46.176Z on commit `15f9068b8`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: Post-approval exact commit-scoped acceptance validates progress/cancel/recovery/CR receipt and truthful accounting
+
+**live: Actual installed probe per authorized provider/mode produces supported observation evidence or explicit unsupported**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/live-insrc-probe-run.json and /tmp/live-probe-acceptance-report.json: exact installed identities; both modes unsupported; zero ACKs; no candidate.
+
+**live: Post-approval exact commit-scoped acceptance validates progress/cancel/recovery/CR receipt and truthful accounting**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: /tmp/live-probe-acceptance-report.json: PENDING, not executed; required independent installed qualification, trust anchor, oracle/evaluation/readiness and scoped approvals not established.
+
+**smoke: Acceptance report distinguishes pending prerequisites, software completion and explicit activation signoff**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/live-probe-acceptance-report.json: activationReady false, explicit missing prerequisites, software focused suite/build passed, no activation signoff.

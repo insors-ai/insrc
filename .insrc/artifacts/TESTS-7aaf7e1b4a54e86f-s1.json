@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 8,
-        "contentHash": "dbdac2e18b598e20664fcb7f3c01da8be3a446b12e0ed93b62b58ab420075899",
-        "at": "2026-10-29T21:07:39.147Z",
+        "number": 10,
+        "contentHash": "e6937baf82330481a7176ef942d5fce96c4b750a126613279a1217bd3d96fd66",
+        "at": "2026-10-29T21:33:46.215Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "7aaf7e1b4a54e86f",
     "storyId": "s1",
     "createdAt": "2026-10-29T20:03:05.623Z",
-    "updatedAt": "2026-10-29T21:07:39.058Z",
+    "updatedAt": "2026-10-29T21:33:46.176Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-29T18:54:45.779Z",
     "epicSlug": "provide-live-installed-review-qualification-before",
-    "revision": 8
+    "revision": 10
   },
   "body": {
     "tasks": [
@@ -649,6 +649,177 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "15f9068b8",
+        "ranAt": "2026-10-29T21:14:02.026Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Compiled probe protocol and production build pass with unchanged default/admission",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/live-probe-t9-build.log; /tmp/live-probe-t9-compiled-smoke.log; /tmp/live-probe-t9-focused-tests.log (51/51 pass, 0 skipped, 89680ms)"
+            }
+          },
+          {
+            "name": "Affected native/adoption/repository/MCP/routing regressions preserve legacy and design behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+                "title": "Cross engine schema generation and capability replay are rejected",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+                "title": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9286,
+            "titles": [
+              {
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              },
+              {
+                "title": "An exact start replay never schedules another completed or paused attempt",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1244,
+            "titles": [
+              {
+                "title": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher",
+                "result": "pass"
+              },
+              {
+                "title": "Probe UUID replay/conflict, crash interruption, readonly status and bounded export",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed probe never enters production investigation or legacy parsers",
+                "result": "pass"
+              },
+              {
+                "title": "Oversized unsigned candidate fails explicitly instead of exporting truncated evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Probe launch identity is durable before provider observation and cannot change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16647,
+            "titles": [
+              {
+                "title": "Entry parity across daemon controller source and indexed planned and planless runs",
+                "result": "pass"
+              },
+              {
+                "title": "Cross engine schema generation and capability replay are rejected",
+                "result": "pass"
+              },
+              {
+                "title": "Canonical repository publication completes without a second model call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "15f9068b8",
+        "ranAt": "2026-10-29T21:33:46.176Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "Actual installed probe per authorized provider/mode produces supported observation evidence or explicit unsupported",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/live-insrc-probe-run.json and /tmp/live-probe-acceptance-report.json: exact installed identities; both modes unsupported; zero ACKs; no candidate."
+            }
+          },
+          {
+            "name": "Post-approval exact commit-scoped acceptance validates progress/cancel/recovery/CR receipt and truthful accounting",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "/tmp/live-probe-acceptance-report.json: PENDING, not executed; required independent installed qualification, trust anchor, oracle/evaluation/readiness and scoped approvals not established."
+            }
+          },
+          {
+            "name": "Acceptance report distinguishes pending prerequisites, software completion and explicit activation signoff",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/live-probe-acceptance-report.json: activationReady false, explicit missing prerequisites, software focused suite/build passed, no activation signoff."
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: Post-approval exact commit-scoped acceptance validates progress/cancel/recovery/CR receipt and truthful accounting"
       }
     ]
   },

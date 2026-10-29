@@ -1,3 +1,4 @@
+import { performance } from 'node:perf_hooks';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { validateRecoveryUsage } from './recovery-usage.js';
 import type { RecoveryUsageWriter } from './recovery-usage.js';
@@ -49,7 +50,9 @@ export class RecoveryStore {
  async release(leaseId:string,generation:number,state:'paused'|'cancelled'|'stale'='paused'){return this.journal.exclusive(()=>{const v=this.replay();this.assertLease(v,leaseId,generation);return this.control(v,'release',generation,{leaseId,wallMs:this.now(v),state});});}
  /** Trusted, non-reentrant callback. S5 owns canonical identity/CAS and separate completion receipt. */
  async withPublicationFence<T>(leaseId:string,generation:number,checkpointDigest:string,intentRef:string|null,publish:(frozenIntentRef:string,assertCurrent:()=>void)=>Promise<T>):Promise<T>{
-  return this.journal.exclusive(async()=>{
+  let resolveCaller!:(value:T)=>void,rejectCaller!:(cause:unknown)=>void;
+  const caller=new Promise<T>((resolve,reject)=>{resolveCaller=resolve;rejectCaller=reject;});
+  const draining=this.journal.exclusive(async()=>{
    let view=this.replay(true);this.assertLease(view,leaseId,generation);
    if(checkpointDigest!==view.state.checkpoint)throw new RecoveryError('invalid-input','Publication checkpoint changed.');
    if(view.publication){
@@ -61,14 +64,22 @@ export class RecoveryStore {
     view=this.control(view,'publication-intent',generation,{version:1,leaseId,wallMs:this.now(view),intentRef,intentDigest:ledgerDigest(intent),checkpointDigest});
    }
    const frozen=view.publication!;let active=true;
+   const deadline=performance.now()+10000;
+   const expire=()=>{active=false;rejectCaller(new RecoveryError('publication-uncertain','Publication callback deadline elapsed; external outcome is uncertain.'));};
+   const timer=setTimeout(expire,10000);
    const assertCurrent=()=>{
+    if(performance.now()>=deadline&&active)expire();
     if(!active)throw new RecoveryError('ownership-lost','Publication invocation is no longer active.');
     const current=this.replay();this.assertLease(current,leaseId,generation);
     if(current.lifecycle.state!=='completion-requested'||current.state.checkpoint!==checkpointDigest||ledgerDigest(current.publication)!==ledgerDigest(frozen))throw new RecoveryError('ownership-lost','Frozen publication authority changed.');
    };
-   try{assertCurrent();const result=await publish(frozen.intentRef,assertCurrent);assertCurrent();return result;}
-   finally{active=false;}
+   try{assertCurrent();const result=await publish(frozen.intentRef,assertCurrent);assertCurrent();resolveCaller(result);}
+   catch(cause){rejectCaller(cause);}
+   finally{active=false;clearTimeout(timer);}
   });
+  // The caller may time out, but the queue awaits the actual callback. Never overlap a late external commit with takeover.
+  void draining.catch(rejectCaller);
+  return caller;
  }
  async requestCompletion(leaseId:string,generation:number){return this.journal.exclusive(()=>{const v=this.replay();this.assertLease(v,leaseId,generation);return this.control(v,'state',generation,{leaseId,wallMs:this.now(v),state:'completion-requested'});});}
  async recordCompletion(leaseId:string,generation:number,receipt:string){return this.journal.exclusive(()=>{const v=this.replay();if(v.lifecycle.completionReceipt){if(v.lifecycle.completionReceipt!==receipt)throw new RecoveryError('invalid-input','Conflicting terminal receipt.');return v;}this.assertLease(v,leaseId,generation);return this.control(v,'state',generation,{leaseId,wallMs:this.now(v),state:'completed',receipt});});}

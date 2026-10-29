@@ -18,7 +18,7 @@ export interface ResumeCompatibilityV1 {
  readonly invalidatedEvidenceIds: readonly string[]; readonly reasons: readonly string[]; readonly extensionRequired: boolean;
 }
 export type RecoveryErrorCode = 'invalid-input' | 'corrupt' | 'unsupported' | 'stale' | 'ownership-lost'
- | 'storage-unavailable' | 'uncertain-append' | 'budget-exhausted';
+ | 'storage-unavailable' | 'uncertain-append' | 'budget-exhausted' | 'publication-uncertain';
 export class RecoveryError extends Error {
  constructor(readonly code: RecoveryErrorCode, message: string, options?: ErrorOptions) {
   super(message, options); this.name = 'RecoveryError';

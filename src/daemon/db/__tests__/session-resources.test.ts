@@ -25,7 +25,7 @@ function committed(value: MutationOutcome) { assert.equal(value.status, 'committ
 async function fixture(ports: TemporaryResourcePorts = {}) {
  const env = await environment(), a = join(env.directory, 'a'), b = join(env.directory, 'b');
  for (const root of [a, b]) { await mkdir(root); await mkdir(dirname(connectionsPath(root)), { recursive: true }); await writeFile(connectionsPath(root), '{"connections":[]}'); }
- const runtime = new ConnectionSessionRpc<TemporaryConnectionOverlay>({ enabled: async () => true, isRegistered: async root => root === a || root === b,
+ const runtime = new ConnectionSessionRpc<TemporaryConnectionOverlay>({ enabled: async () => true, removalEnabled: async () => true, isRegistered: async root => root === a || root === b,
   createOverlay: (root, handle, context) => createTemporaryOverlay(root, handle, context, ports.factory ? { factory: kind => { const selected = ports.factory!(kind); return selected ? contextualDriverFactory(selected) : undefined; } } : ports), dropOverlay: overlay => overlay.close() });
  const queued: { entered: ReturnType<typeof deferred<TrustedRpcContext>>; release: ReturnType<typeof deferred> }[] = [];
  const held: { response: Promise<unknown>; release: ReturnType<typeof deferred> }[] = [];
@@ -42,6 +42,10 @@ async function request(client: Awaited<ReturnType<typeof sessionRpcClient>>, roo
  const key = { repoRoot: root, scope: 'temporary' as const, id: 'same' }, mode = revision ? 'update' as const : 'create' as const;
  const ticket = await client.call<OperationTicket>('db.connections.v2.ticket', { key, mode }); assert.ok(ticket.signature, JSON.stringify(ticket));
  return { ticket, operationId: ticket.operationId, key, mode, publicPatch: patch, credentials, ...(revision ? { expectedRevision: revision } : {}) };
+}
+async function removeRequest(client: Awaited<ReturnType<typeof sessionRpcClient>>, root: string, revision: string): Promise<MutationRequest> {
+ const key={repoRoot:root,scope:'temporary' as const,id:'same'},ticket=await client.call<OperationTicket>('db.connections.v2.ticket',{key,mode:'remove'});
+ return {key,ticket,operationId:ticket.operationId,mode:'remove',expectedRevision:revision};
 }
 function raw(config: ConnectionConfig, closed: () => void, marker = config.label): Driver {
  return { id: config.id, kind: config.kind, family: 'rdbms', privateConfig: config, describe: async () => ({ columns: [{ name: 'marker', type: 'text', nullable: false }] }), sample: async () => ({ rows: [{ marker }] }), close: async () => { closed(); } } as unknown as Driver;
@@ -96,6 +100,7 @@ test('CM-S3-LEASE: full callback pins revision through multiple calls busy updat
   const work = f.resolver.withConnection(access, 'same', async driver => { retained = driver; assert.equal((driver as unknown as Record<string, unknown>)['privateConfig'], undefined); assert.equal(Object.getPrototypeOf(driver), null); await driver.describe!('data'); entered.resolve(); await release.promise; if (driver.family !== 'rdbms') throw new Error('Expected relational driver'); await driver.sample('data', { limit: 1 }); return 7; });
   await entered.promise;
   const edit = await request(ui, f.a, { label: 'second' }, {}, initial.revision); rejected(await ui.call('db.connections.v2.mutate', edit), 'busy'); assert.equal(builds, 1); assert.equal(closes, 0);
+  rejected(await ui.call('db.connections.v2.mutate',await removeRequest(ui,f.a,initial.revision)),'busy');
   release.resolve(); assert.equal(await work, 7); assert.throws(() => retained!.describe!('data'), { code: 'conflict' });
   const updated = committed(await ui.call<MutationOutcome>('db.connections.v2.mutate', edit)); assert.notEqual(updated.revision, initial.revision); assert.equal(updated.activation, 'active'); assert.equal(builds, 2); assert.equal(closes, 1);
   const before = f.lookups;
@@ -124,6 +129,8 @@ for (const outcome of ['driver', 'rejection'] as const) test(`CM-S3-LEASE: late 
  try {
   const ui = await f.client(); await ui.call('db.connections.v2.session.open', { repoRoot: f.a }); const input = await request(ui, f.a, { kind: 'postgres', endpoint: 'postgres://host/db' });
   const pending = ui.call('db.connections.v2.mutate', input); await entered.promise;
+  const selected=await ui.call<{revision:string}>('db.connections.v2.read',{key:input.key});
+  rejected(await ui.call('db.connections.v2.mutate',await removeRequest(ui,f.a,selected.revision)),'busy');
   const ending = ui.call('db.connections.v2.session.end').then(value => { ended = true; return value; }); rejected(await ui.call('db.connections.v2.status', { ticket: input.ticket }), 'session-expired'); assert.equal(ended, false);
   release.resolve(); rejected(await pending, 'session-expired'); assert.deepEqual(await ending, { status: 'ended' }); assert.equal(closed, outcome === 'driver' ? 1 : 0);
  } finally { release.resolve(); await f.close(); }
@@ -138,6 +145,7 @@ test('CM-S3-LEASE: abandoned late iterator retains its lease and closes before e
   const use = f.resolver.withConnection(access, 'same', async driver => { void (driver as unknown as { scan(): Promise<unknown> }).scan(); });
   await called.promise;
   const edit = await request(ui, f.a, { label: 'blocked' }, {}, first.revision); rejected(await ui.call('db.connections.v2.mutate', edit), 'busy');
+  rejected(await ui.call('db.connections.v2.mutate',await removeRequest(ui,f.a,first.revision)),'busy');
   let ended = false; const ending = ui.call('db.connections.v2.session.end').then(result => { ended = true; return result; });
   rejected(await ui.call('db.connections.v2.status', { ticket: input.ticket }), 'session-expired'); assert.equal(ended, false);
   late.resolve({ [Symbol.asyncIterator]() { return { next: async () => ({ done: false, value: 'private-late-row' }), return: async () => { returned++; return { done: true, value: undefined }; } }; } });
@@ -165,4 +173,29 @@ test('CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for tw
 	const child = spawn(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('./fixtures/native-sqlite-isolation-child.ts', import.meta.url))], { env: { ...process.env, ...baseline, INSRC_MODE: 'probe-worker', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe'] });
 	let output = ''; child.stdout.on('data', b => { output += b; }); child.stderr.on('data', b => { output += b; }); const timer = setTimeout(() => child.kill('SIGKILL'), 15000);
 	try { const code = await new Promise<number | null>((resolve, reject) => { child.once('error', reject); child.once('close', resolve); }); assert.equal(code, 0, output); assert.match(output, /native-sqlite-isolation-ok/); } finally { clearTimeout(timer); child.kill('SIGKILL'); }
+});
+
+test('CM-S4-RACES: temporary remove replay and cleanup create races invalidate access before paused close',async()=>{
+ const entered=deferred(),release=deferred();let oldCloses=0,newCloses=0,builds=0;
+ const f=await fixture({factory:()=>async config=>{const generation=++builds;return {...raw(config,()=>{}),close:async()=>{if(generation===1){oldCloses++;entered.resolve();await release.promise;}else newCloses++;}} as Driver;}});
+ try{
+  const ui=await f.client();await ui.call('db.connections.v2.session.open',{repoRoot:f.a});
+  const create=await request(ui,f.a,{kind:'postgres',endpoint:'postgres://host/db'}),initial=committed(await ui.call<MutationOutcome>('db.connections.v2.mutate',create));
+  const held=await f.hold(ui),access=await f.runtime.accessFor(held.context,f.a),remove=await removeRequest(ui,f.a,initial.revision);
+  const [a,b]=await Promise.all([ui.call<MutationOutcome>('db.connections.v2.mutate',remove),ui.call<MutationOutcome>('db.connections.v2.mutate',structuredClone(remove))]);
+  const removed=committed(a);assert.deepEqual(a,b);await entered.promise;assert.equal(oldCloses,1);
+  const list=await f.resolver.list(access);assert.equal(list.some(row=>row.key.id==='same'),false);
+  await assert.rejects(f.resolver.lease(access,'same'),{code:'not-found'});await assert.rejects(f.resolver.withConnection(access,'same',async()=>{}),{code:'not-found'});
+  const edit=await request(ui,f.a,{label:'late'},{},initial.revision);rejected(await ui.call('db.connections.v2.mutate',edit),'busy');
+  const recreate=await request(ui,f.a,{kind:'postgres',endpoint:'postgres://host/new'});rejected(await ui.call('db.connections.v2.mutate',recreate),'busy');
+  const retry=ui.call('db.connections.v2.retryRemovalCleanup',{ticket:remove.ticket});
+  assert.equal((await ui.call<{state:string}>('db.connections.v2.removalState',{ticket:remove.ticket})).state,'removed-cleanup-pending');
+  release.resolve();assert.equal((await retry as {state:string}).state,'removed');assert.equal(oldCloses,1);
+  const fresh=committed(await ui.call<MutationOutcome>('db.connections.v2.mutate',recreate));assert.notEqual(fresh.revision,initial.revision);
+  assert.deepEqual(committed(await ui.call<MutationOutcome>('db.connections.v2.mutate',remove)),removed);
+  await ui.call('db.connections.v2.retryRemovalCleanup',{ticket:remove.ticket});assert.equal(newCloses,0);assert.equal(oldCloses,1);
+  assert.equal((await f.resolver.list(access)).find(row=>row.key.id==='same')!.revision,fresh.revision);
+  held.release.resolve();await held.response;
+ }finally{release.resolve();await f.close();}
+ assert.equal(newCloses,1);
 });

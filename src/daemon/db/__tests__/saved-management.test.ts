@@ -451,3 +451,19 @@ test('CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry read
 		await env.cleanup();
 	}
 });
+
+test('CM-S4-RACES: saved remove update remove and acquire interleave at the existing writer barrier',async()=>{
+ const env=await environment(),f=await env.rootFixture('controlled-race'),entered=deferred(),release=deferred();
+ try{
+  const initial=committed(await f.service.mutate(f.context,{...await f.request('selected'),credentials:{}}));
+  const remove=await removalRequest(f,'selected',initial.revision),second=await removalRequest(f,'selected',initial.revision),edit=await f.request('selected','update',initial.revision);
+  f.reset();f.hooks.writer=async stage=>{if(stage==='before-rename'){entered.resolve();await release.promise;}};
+  const removing=f.service.mutate(f.context,remove);await entered.promise;
+  const updating=f.service.mutate(f.context,edit),removingAgain=f.service.mutate(f.context,second);
+  await assert.rejects(f.pool.acquire('selected'),{code:'busy'});assert.equal(f.pool.leaseState('selected').barrier,'remove');
+  release.resolve();assert.equal(committed(await removing).registration,'removed');
+  for(const value of [await updating,await removingAgain]){assert.equal(value.status,'rejected');if(value.status==='rejected')assert.equal(value.code,'not-found');}
+  assert.equal(f.counts.writes,1);assert.equal(Object.hasOwn(f.store.snapshot.file._management!.receipts,edit.operationId),false);assert.equal(Object.hasOwn(f.store.snapshot.file._management!.receipts,second.operationId),false);
+  assert.deepEqual(await f.service.list(f.context),[]);await assert.rejects(f.pool.lease('selected'),{code:'not-found'});await assert.rejects(f.pool.acquire('selected'),{code:'not-found'});
+ }finally{release.resolve();f.hooks.writer=undefined;await env.cleanup();}
+});

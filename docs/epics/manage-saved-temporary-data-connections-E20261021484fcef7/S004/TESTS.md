@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 49 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -269,3 +269,21 @@ Run at 2026-10-29T11:36:59.958Z on commit `b8e836d4e`. Tests check: **passed**. 
 | `src/daemon/__tests__/handler-runtime.test.ts` | 0 | 2 | 0.8 s |  |
 | `src/daemon/db/__tests__/connection-session-rpc.test.ts` | 0 | 5 | 1.2 s |  |
 | `src/daemon/threads/__tests__/method-class.test.ts` | 0 | 7 | 1 s |  |
+
+## t15
+
+Run at 2026-10-29T11:45:03.414Z on commit `aa9bebe00`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-BUSY: extend src/daemon/db/__tests__/draft-preparation.test.ts and src/daemon/db/__tests__/probe-disposal.test.ts for full edit-probe lease lifetime through child cancellation/timeout/drain.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S2-F1: production metadata admission precedes secrets and prepares only selected owned credentials without effects | `src/daemon/db/__tests__/draft-preparation.test.ts` |
+| pass | CM-S4-BUSY: actual temporary edit probe holds its revision through cancel timeout late result and child failure drain | `src/daemon/db/__tests__/probe-disposal.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/draft-preparation.test.ts` | 0 | 1 | 1.7 s |  |
+| `src/daemon/db/__tests__/probe-disposal.test.ts` | 0 | 2 | 11.8 s |  |

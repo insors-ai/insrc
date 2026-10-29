@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:36:59.958Z",
+    "updatedAt": "2026-10-29T11:45:03.414Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1267,6 +1267,64 @@
               },
               {
                 "title": "CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "aa9bebe00",
+        "ranAt": "2026-10-29T11:45:03.414Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-BUSY: extend src/daemon/db/__tests__/draft-preparation.test.ts and src/daemon/db/__tests__/probe-disposal.test.ts for full edit-probe lease lifetime through child cancellation/timeout/drain.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/draft-preparation.test.ts",
+                "title": "CM-S2-F1: production metadata admission precedes secrets and prepares only selected owned credentials without effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/probe-disposal.test.ts",
+                "title": "CM-S4-BUSY: actual temporary edit probe holds its revision through cancel timeout late result and child failure drain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/draft-preparation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1676,
+            "titles": [
+              {
+                "title": "CM-S2-F1: production metadata admission precedes secrets and prepares only selected owned credentials without effects",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/probe-disposal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11818,
+            "titles": [
+              {
+                "title": "CM-S2-A8: admitted KV drivers propagate SDK disposal failures instead of reporting successful cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-BUSY: actual temporary edit probe holds its revision through cancel timeout late result and child failure drain",
                 "result": "pass"
               }
             ],

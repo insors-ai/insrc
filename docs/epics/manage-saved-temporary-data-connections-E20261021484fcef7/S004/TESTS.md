@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -231,3 +231,21 @@ Run at 2026-10-29T11:24:27.864Z on commit `cb3e917ee`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 5 | 37.1 s |  |
 | `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 13 | 4 s |  |
+
+## t13
+
+Run at 2026-10-29T11:33:11.932Z on commit `2256f0d8e`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-INPUT/RPC: extend src/daemon/db/__tests__/connection-management-rpc.test.ts and src/daemon/db/__tests__/connection-session-rpc.test.ts for both scopes, malformed requests, unverified MCP and explicit-saved downgrade refusal.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-INPUT/RPC: saved removal requires sc6 and accepts only exact authenticated ticket requests | `src/daemon/db/__tests__/connection-management-rpc.test.ts` |
+| pass | CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade | `src/daemon/db/__tests__/connection-session-rpc.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/connection-management-rpc.test.ts` | 0 | 7 | 2 s |  |
+| `src/daemon/db/__tests__/connection-session-rpc.test.ts` | 0 | 4 | 0.9 s |  |

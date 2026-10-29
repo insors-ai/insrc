@@ -37,7 +37,7 @@ const RECORDED_RPC = [
 	'conversation.saveTurn', 'conversation.stats', 'daemon.backup', 'daemon.compact', 'daemon.debug-status',
 	'daemon.shutdown', 'daemon.status', 'daemon.update', 'daemon.updateOutcome', 'dataAnalyzer.clearCache',
 	'dataAnalyzer.diffRuns', 'db.connections.v2.activate', 'db.connections.v2.cancelTest', 'db.connections.v2.capabilities', 'db.connections.v2.drivers',
-	'db.connections.v2.list', 'db.connections.v2.mutate', 'db.connections.v2.read',
+	'db.connections.v2.list', 'db.connections.v2.mutate', 'db.connections.v2.read', 'db.connections.v2.removalState', 'db.connections.v2.retryRemovalCleanup',
 	'db.connections.v2.session.attach', 'db.connections.v2.session.delegate', 'db.connections.v2.session.end',
 	'db.connections.v2.session.heartbeat', 'db.connections.v2.session.open', 'db.connections.v2.session.resume',
 	'db.connections.v2.status', 'db.connections.v2.test', 'db.connections.v2.ticket',

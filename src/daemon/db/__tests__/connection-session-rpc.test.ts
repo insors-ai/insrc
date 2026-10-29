@@ -1,3 +1,5 @@
+import { methodClasses } from '../../threads/method-class.js';
+import { randomUUID } from 'node:crypto';
 import { createTemporaryOverlay } from '../session-entries.js';
 import type { TemporaryConnectionOverlay } from '../session-entries.js';
 import '../drivers/index.js';
@@ -158,9 +160,32 @@ test('CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root
   assert.equal((await mcp.call('db.connections.v2.mutate',request)).code,'upgrade-required');
   assert.equal(overlay.read('row').revision,row.revision);
   assert.equal((await control.call('db.connections.v2.mutate',request)).value.registration,'removed');
+  const status=await control.call('db.connections.v2.status',{ticket});assert.equal(status.status,'committed');
+  assert.deepEqual(Object.keys(status.value).sort(),['activation','credentialCleanup','operationId','registration','revision']);
+  assert.equal(status.value.registration,'removed');assert.equal(status.value.activation,'not-applicable');
   assert.equal((await control.call('db.connections.v2.removalState',{ticket})).state,'removed');
   assert.equal((await control.call('db.connections.v2.retryRemovalCleanup',{ticket})).state,'removed');
   assert.equal((await control.call('db.connections.v2.mutate',request)).value.registration,'removed');
   await control.call('db.connections.v2.session.end');assert.equal((await control.call('db.connections.v2.removalState',{ticket})).code,'session-expired');
  }finally{await Promise.all([control.close(),mcp.close(),foreign.close()]);await server.close();await runtime.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test('CM-S4-RPC/GATE: actual sockets keep both removal scopes on main and refuse absent feature without worker fallback',async()=>{
+ const directory=realpathSync(mkdtempSync(join(tmpdir(),'cm-remove-route-'))),root=join(directory,'root');mkdirSync(root);
+ const registry=new TargetRegistry(),{port1,port2}=new MessageChannel();let workers=0;
+ registry.register({threadId:19,cls:'session'});port2.on('message',request=>{workers++;port2.postMessage({kind:'reply',requestId:request.requestId,result:'worker'});});
+ const router=new Router({classOf:method=>methodClasses.classOf(method),registry,routed:new Set(['session']),local:directDispatch(connectionManagementHandlers())});router.attach(19,port1);
+ const server=new IpcServer(router.forward,Date.now,join(directory,'d.sock'));await server.listen();const socket=await client(join(directory,'d.sock'));
+ try{
+  const capabilities=await socket.call('db.connections.v2.capabilities',{});
+  for(const feature of ['saved-remove','temporary-remove','removal-state','removal-cleanup-retry'])assert.equal(capabilities.features.includes(feature),false);
+  for(const scope of ['saved','temporary']){
+   const ticket={operationId:randomUUID(),lookupRoot:root,scope,connectionId:'row',mode:'remove',issuedAt:'2026-10-29T00:00:00.000Z',expiresAt:'2026-10-30T00:00:00.000Z',signature:'private-invalid-canary'};
+   for(const method of ['db.connections.v2.removalState','db.connections.v2.retryRemovalCleanup']){
+    const response=await socket.call(method,{ticket});assert.equal(response.code,'upgrade-required');assert.equal(response.status,'rejected');
+    assert.ok(!JSON.stringify(response).includes('private-invalid-canary'));
+   }
+  }
+  assert.equal(workers,0);
+ }finally{await socket.close();await server.close();port1.close();port2.close();rmSync(directory,{recursive:true,force:true});}
 });

@@ -134,3 +134,20 @@ test('the method-class module loads on a worker without importing a handler modu
 	await worker.terminate();
 	assert.deepEqual(reply, { status: 'admin', reindex: 'indexing', step: 'session', entries: methodClasses.entries().length });
 });
+
+test('CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership',async()=>{
+ const ts=await import('typescript'),source=readFileSync(join(HERE,'..','method-class.ts'),'utf8');
+ const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+ const output=await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+ const {MAIN_DAEMON_CONNECTION_METHODS}=await import('../method-class.js');
+ const tables=servedTables();
+ for(const method of ['db.connections.v2.removalState','db.connections.v2.retryRemovalCleanup']){
+  assert.ok(tables.rpc.includes(method));assert.ok(MAIN_DAEMON_CONNECTION_METHODS.has(method));
+  assert.equal(methodClasses.classOf(method),'session');
+  assert.equal(output.methodClasses.classOf(method),methodClasses.classOf(method));
+  assert.ok(output.MAIN_DAEMON_CONNECTION_METHODS.has(method));
+  assert.equal(SHARED_STATE_METHODS.has(method),false);
+ }
+ assert.deepEqual([...output.MAIN_DAEMON_CONNECTION_METHODS],[...MAIN_DAEMON_CONNECTION_METHODS]);
+ assert.deepEqual(output.methodClasses.entries(),methodClasses.entries());
+});

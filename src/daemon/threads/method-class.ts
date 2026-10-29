@@ -112,6 +112,8 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['db.connections.v2.mutate', 'session', false],
 	['db.connections.v2.read', 'session', false],
 	['db.connections.v2.status', 'session', false],
+ ['db.connections.v2.removalState', 'session', false],
+ ['db.connections.v2.retryRemovalCleanup', 'session', false],
 	['db.connections.v2.test', 'session', false],
 	['db.connections.v2.cancelTest', 'session', false],
 	['db.connections.v2.ticket', 'session', false],
@@ -299,6 +301,7 @@ export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'db.connections.v2.capabilities','db.connections.v2.drivers','db.connections.v2.list','db.connections.v2.read',
  'db.connections.v2.ticket','db.connections.v2.mutate','db.connections.v2.status','db.connections.v2.activate',
  'db.connections.v2.test','db.connections.v2.cancelTest',
+ 'db.connections.v2.removalState','db.connections.v2.retryRemovalCleanup',
  'db.connections.v2.session.open','db.connections.v2.session.resume','db.connections.v2.session.attach',
  'db.connections.v2.session.delegate','db.connections.v2.session.heartbeat','db.connections.v2.session.end',
 ]);

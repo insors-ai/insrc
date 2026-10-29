@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:24:27.864Z",
+    "updatedAt": "2026-10-29T11:33:11.932Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1061,6 +1061,96 @@
               },
               {
                 "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "2256f0d8e",
+        "ranAt": "2026-10-29T11:33:11.932Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-INPUT/RPC: extend src/daemon/db/__tests__/connection-management-rpc.test.ts and src/daemon/db/__tests__/connection-session-rpc.test.ts for both scopes, malformed requests, unverified MCP and explicit-saved downgrade refusal.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+                "title": "CM-S4-INPUT/RPC: saved removal requires sc6 and accepts only exact authenticated ticket requests",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+                "title": "CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2007,
+            "titles": [
+              {
+                "title": "CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: v2 safe reads legacy projections and label-only edits preserve credentials without raw fields or stored references",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: malformed unknown-field wrong-root ticket and scope payloads fail safely before mutation effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-R: a v2 refresh failure retries only safe list and preserves exact committed receipt revision bytes and keys",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preserve safe exact outcomes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-INPUT/RPC: saved removal requires sc6 and accepts only exact authenticated ticket requests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 919,
+            "titles": [
+              {
+                "title": "CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade",
                 "result": "pass"
               }
             ],

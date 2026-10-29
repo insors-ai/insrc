@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t5
 
@@ -166,3 +166,31 @@ Run at 2026-10-29T09:03:25.232Z on commit `1ef5e8603`. Tests check: **passed**. 
 | `src/daemon/threads/__tests__/s4-acceptance.test.ts` | 0 | 2 | 7.2 s |  |
 | `src/daemon/threads/__tests__/session-failure.test.ts` | 0 | 6 | 6.7 s |  |
 | `src/daemon/threads/__tests__/supervisor.test.ts` | 0 | 4 | 10.3 s |  |
+
+## t7
+
+Run at 2026-10-29T09:08:08.853Z on commit `450e019d0`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session | `src/daemon/threads/__tests__/s4-acceptance.test.ts` |
+
+**integration: s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running | `src/daemon/threads/__tests__/s4-acceptance.test.ts` |
+
+**integration: s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition | `src/daemon/threads/__tests__/s4-acceptance.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/s4-acceptance.test.ts` | 0 | 5 | 26.5 s |  |

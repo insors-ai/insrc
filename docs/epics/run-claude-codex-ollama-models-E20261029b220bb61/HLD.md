@@ -4,7 +4,7 @@
 
 ## Summary
 
-Each new runner is a new model family in insrc's shipped model definitions: one for the Claude command-line tool on Ollama and one for the Codex command-line tool on Ollama. Each declares that its tool runs on Ollama, and each of its models is marked cloud or local. A tier selects one of these families exactly as it selects a family today. The daemon starts the same command-line tool it starts today, pointed at Ollama for that run only, and the three settings clients list the new families from the definitions answer they already read.
+The new runner is a new model family in insrc's shipped model definitions: the Claude command-line tool on Ollama. It declares that its tool runs on Ollama, and each of its models is marked cloud or local. A tier selects it exactly as it selects a family today. The daemon starts the same command-line tool it starts today, pointed at Ollama for that run only, and the three settings clients list the new family from the definitions answer they already read.
 
 ## Contents
 
@@ -26,11 +26,11 @@ Each new runner is a new model family in insrc's shipped model definitions: one 
 
 ## 2. Framework summary
 
-Model the two new runners as two new families in the model definitions (alternative a1). The definitions file, its validator and the definitions answer gain two families, 'ollama-claude' and 'ollama-codex', each with the CLI kind of the tool it runs and a host mark 'ollama'; every model of those families carries a hosting mark, 'cloud' or 'local'. Tier settings, effort filtering and provider construction keep their one per-family path. A family with the Ollama host mark builds the existing CLI provider with an Ollama target applied to that subprocess only, and clients use the host mark to show cloud/local and to never offer unlisted model ids for those families.
+Model the new runner as a new family in the model definitions (alternative a1). The definitions file, its validator and the definitions answer gain one family, 'ollama-claude', with the CLI kind 'claude' and a host mark 'ollama'; every model of that family carries a hosting mark, 'cloud' or 'local'. Tier settings, effort filtering and provider construction keep their one per-family path. A family with the Ollama host mark builds the existing CLI provider with an Ollama target applied to that subprocess only, and clients use the host mark to show cloud/local and to never offer unlisted model ids for that family. Scope change 2026-10-29 (user decision): the Codex-on-Ollama family is withdrawn, because Ollama's cloud models ignore a requested output format and the Codex tool depends on it (DEF non-goal, citation c9 of the DEF).
 
 ## 3. Architecture shape
 
-Three layers, each changed in one place. (1) Definitions layer (s1): the shipped definitions file and the catalog validator admit a five-member closed family set; the two new families carry cliKind and host 'ollama', have no tier defaults or summariser of their own, and every model carries hosting. The registry exposes host and hosting, resolves a tier on a host family only to a declared model (otherwise a 'model-not-supported' resolution), maps a CLI client to its direct family only, and refuses the unknown-model check and the approved-model store for host families. The definitions answer gains the two marks. (2) Run layer (s2): the per-family provider factory passes the family's host to the CLI provider; for host 'ollama' the provider starts the claude CLI with an environment pointing it at the local Ollama (base URL, placeholder token, empty API key) or the codex CLI with Ollama's local-provider flags, adds nothing for direct families, checks Ollama reachability and the model's availability before a run and names the cause on failure, and keeps calls serial. (3) Client layer (s3, s4, s5): the terminal UI, the VS Code picker and settings, and the JetBrains Settings page list the new families from the answer, label each model cloud or local, offer effort only from the model's efforts, withhold 'Enter another model id' for host families, and show the tier the daemon reports. The on-disk tier validator (isRunner, src/config/analyze.ts:371) checks family ids against the list derived from the shipped definitions file (src/config/model-defaults.ts:57-60), so it admits the two new families with no code change; s1 covers it with a regression test. Classification rule (s1): today the daemon decides family behaviour from two tests that the new families would pass the wrong way, 'the family is not ollama' and 'the family has a CLI kind'. s1 classifies every such site into one of two meanings and keys it accordingly: 'runs a CLI' stays on the CLI kind and includes the host families (provider kind in src/analyze/context/shaper-provider.ts:228, :274, :287, :339; src/analyze/context/driver.ts:1160; src/daemon/list-models.ts:92-105; src/daemon/model-definitions.ts:104, :203), while 'a vendor CLI family' keys on the host mark being absent and excludes the host families: tier defaults and summariser required by the validator (isCliFamily, src/daemon/model-catalog.ts:140-142, :186-191), the unknown-model check (src/daemon/model-check.ts:319-320), the approved-model store (src/daemon/model-registry.ts:142, already closed), the unlisted-model fallback (src/daemon/model-registry.ts:277-278), the tier write's model check (src/daemon/config-write.ts:74) and run attribution by CLI-kind label prefix (src/workflow/attribution.ts:49), which must name the family that ran, not the first family with that CLI kind. The validator's test fixtures (src/daemon/__tests__/model-catalog.test.ts:35) grow to the five-family set.
+Three layers, each changed in one place. (1) Definitions layer (s1): the shipped definitions file and the catalog validator admit a four-member closed family set; the new family carries cliKind 'claude' and host 'ollama', have no tier defaults or summariser of their own, and every model carries hosting. The registry exposes host and hosting, resolves a tier on a host family only to a declared model (otherwise a 'model-not-supported' resolution), maps a CLI client to its direct family only, and refuses the unknown-model check and the approved-model store for host families. The definitions answer gains the two marks. (2) Run layer (s2): the per-family provider factory passes the family's host to the CLI provider; for host 'ollama' the provider starts the claude CLI with an environment pointing it at the local Ollama (base URL, placeholder token, empty API key), adds nothing for direct families, checks Ollama reachability and the model's availability before a run and names the cause on failure, and keeps calls serial. (3) Client layer (s3, s4, s5): the terminal UI, the VS Code picker and settings, and the JetBrains Settings page list the new family from the answer, label each model cloud or local, offer effort only from the model's efforts, withhold 'Enter another model id' for host families, and show the tier the daemon reports. The on-disk tier validator (isRunner, src/config/analyze.ts:371) checks family ids against the list derived from the shipped definitions file (src/config/model-defaults.ts:57-60), so it admits the two new families with no code change; s1 covers it with a regression test. Classification rule (s1): today the daemon decides family behaviour from two tests that the new families would pass the wrong way, 'the family is not ollama' and 'the family has a CLI kind'. s1 classifies every such site into one of two meanings and keys it accordingly: 'runs a CLI' stays on the CLI kind and includes the host families (provider kind in src/analyze/context/shaper-provider.ts:228, :274, :287, :339; src/analyze/context/driver.ts:1160; src/daemon/list-models.ts:92-105; src/daemon/model-definitions.ts:104, :203), while 'a vendor CLI family' keys on the host mark being absent and excludes the host families: tier defaults and summariser required by the validator (isCliFamily, src/daemon/model-catalog.ts:140-142, :186-191), the unknown-model check (src/daemon/model-check.ts:319-320), the approved-model store (src/daemon/model-registry.ts:142, already closed), the unlisted-model fallback (src/daemon/model-registry.ts:277-278), the tier write's model check (src/daemon/config-write.ts:74) and run attribution by CLI-kind label prefix (src/workflow/attribution.ts:49), which must name the family that ran, not the first family with that CLI kind. The validator's test fixtures (src/daemon/__tests__/model-catalog.test.ts:35) grow to the five-family set.
 
 ## 4. Diagrams
 
@@ -44,19 +44,19 @@ Three layers, each changed in one place. (1) Definitions layer (s1): the shipped
 **Owner Story:** `s1`
 **Consumed by:** `s2`, `s3`, `s4`, `s5`
 
-**Purpose:** The wire shape every consumer reads to know the two new families, that they run a CLI on Ollama, and which of their models are cloud or local.
+**Purpose:** The wire shape every consumer reads to know the new family, that it runs a CLI on Ollama, and which of its models are cloud or local.
 
 **Interface sketch (type-level):**
 
 ```
-type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama' | 'ollama-claude' | 'ollama-codex';
+type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama' | 'ollama-claude';
 type FamilyHost = 'ollama';
 type ModelHosting = 'cloud' | 'local';
 interface FamilyDefinitionEntry {
   readonly id: FamilyId;
   readonly displayName: string;
   readonly cliKind?: 'claude' | 'codex';
-  /** Present only on the two new families: the CLI runs against Ollama. */
+  /** Present only on the new family: the CLI runs against Ollama. */
   readonly host?: FamilyHost;
   readonly models: readonly ModelDefinitionEntry[];
 }
@@ -101,13 +101,13 @@ interface TierResolution {
 
 **Owns:** `sc1`, `sc2`
 
-The shipped definitions entries for the two families and their models (which cloud and local models are supported), the catalog validator's five-member check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1.
+The shipped definitions entry for the new family and its models (which cloud and local models are supported), the catalog validator's four-member check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1.
 
 ### 6.2 Story E20261029b220bb61:S002
 
 **Depends on:** `sc1`, `sc2`
 
-How the CLI provider points a run at Ollama (the claude environment and the codex local-provider flags, applied only to that subprocess), the pre-run checks that Ollama answers and the model is available or signed in for a cloud model, the failure messages that name the cause, and the time limit that keeps a run from waiting forever stay inside s2.
+How the CLI provider points a run at Ollama (the claude environment, applied only to that subprocess), the pre-run checks that Ollama answers and the model is available or signed in for a cloud model, the failure messages that name the cause, and the time limit that keeps a run from waiting forever stay inside s2.
 
 ### 6.3 Story E20261029b220bb61:S003
 
@@ -159,14 +159,14 @@ Each depends only on s1 and on sc1/sc2, so the daemon run path and the three cli
 | Area | Why | Mitigation |
 | :--- | :--- | :--- |
 | Clients exposing the new families before the daemon can run them | If a client ships s3/s4/s5 before s2, a user could pick a host family the daemon cannot yet run. | The daemon only lists the new families once s1 lands, and s2's pre-run check reports a clear cause; release the daemon with s2 before announcing the client releases. |
-| CLI-kind to family mapping | Two families now share each CLI kind; code that maps a CLI kind back to a family could pick the Ollama family and change today's behaviour (k6). | s1 restricts the client-to-family mapping to direct families and adds a regression test that today's mapping is unchanged. |
+| CLI-kind to family mapping | The new family shares the 'claude' CLI kind with cli-claude; code that maps a CLI kind back to a family could pick the Ollama family and change today's behaviour (k6). | s1 restricts the client-to-family mapping to direct families and adds a regression test that today's mapping is unchanged. |
 | Supported model list going stale | Ollama's cloud model names change; a shipped entry may stop existing. | s2's pre-run check names a missing model as the cause; the list is data in the shipped definitions file and is updated with a daemon release. |
 
 ## 9. Alternatives considered
 
-### 9.1 a1: Two new model families in the definitions — **CHOSEN**
+### 9.1 a1: A new model family in the definitions — **CHOSEN**
 
-Add a Claude-on-Ollama family and a Codex-on-Ollama family to the shipped definitions, each marked as running its CLI on Ollama, with every model marked cloud or local.
+Add a Claude-on-Ollama family to the shipped definitions, marked as running its CLI on Ollama, with every model marked cloud or local. (Originally two families; the Codex-on-Ollama family was withdrawn on 2026-10-29.)
 
 The definitions file and its validator gain two families next to the three existing ones. Each new family names the CLI it runs (the same claude/codex kind the existing CLI families carry) and additionally declares that the CLI is pointed at Ollama; each of its models carries the existing fields (id, display name, efforts, input limit) plus a hosting mark, cloud or local. The family set becomes five, still a closed list validated at load, and a tier selects one of the new families exactly as it selects a family today, so the tier, model and effort settings are reused unchanged.
 

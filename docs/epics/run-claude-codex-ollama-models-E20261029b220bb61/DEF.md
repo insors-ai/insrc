@@ -6,7 +6,7 @@
 
 **Flavor:** enhancement
 
-insrc can run its model work on the Claude Code and Codex command-line tools or on local Ollama models, but it cannot run those command-line tools on models that Ollama serves, including Ollama's hosted cloud models. This Epic lets a user pick, for any model tier, the Claude or Codex tool running on an Ollama model, from a list of models insrc declares as supported, marked cloud or local. The choice is offered the same way in the terminal UI, the VS Code extension and the JetBrains plugin, and the daemon runs it with the same structured, checked answers it gets today.
+insrc can run its model work on the Claude Code and Codex command-line tools or on local Ollama models, but it cannot run those command-line tools on models that Ollama serves, including Ollama's hosted cloud models. This Epic lets a user pick, for any model tier, the Claude tool running on an Ollama model, from a list of models insrc declares as supported, marked cloud or local. The choice is offered the same way in the terminal UI, the VS Code extension and the JetBrains plugin, and the daemon runs it with the same structured, checked answers it gets today.
 
 ## Contents
 
@@ -24,7 +24,7 @@ Every tier of insrc's model work resolves to one of three runners: the Claude co
 
 ## 2. Functional requirements
 
-- **E20261029b220bb61:FR001** — A user can set any model tier to run the Claude command-line tool on an Ollama model, or the Codex command-line tool on an Ollama model. _(The core capability the Epic adds.)_
+- **E20261029b220bb61:FR001** — A user can set any model tier to run the Claude command-line tool on an Ollama model. _(The core capability the Epic adds.)_
 - **E20261029b220bb61:FR002** — For each new runner the user chooses only among the models insrc declares as supported, and each model is shown as cloud or local. _(Supported models come from the definitions, mostly cloud (user decision).)_
 - **E20261029b220bb61:FR003** — Work routed to a tier on a new runner returns answers that are checked against the requested structure, as with today's runners. _(insrc's pipeline depends on structured answers.)_
 - **E20261029b220bb61:FR004** — The runner and model choice can be made from the terminal UI, the VS Code extension and the JetBrains plugin, and each shows the setting the daemon actually uses. _(Every settings surface must expose the new runners.)_
@@ -32,7 +32,7 @@ Every tier of insrc's model work resolves to one of three runners: the Claude co
 
 **s1:**
 
-- **E20261029b220bb61:S001:FR001** — The definitions answer names the two new runners and, for each, the supported models with a cloud or local mark and their effort levels.
+- **E20261029b220bb61:S001:FR001** — The definitions answer names the new runner and its supported models, each with a cloud or local mark and its effort levels.
 - **E20261029b220bb61:S001:FR002** — Tier resolution accepts a new runner only with a model the definitions declare for it.
 
 **s2:**
@@ -47,6 +47,7 @@ Every tier of insrc's model work resolves to one of three runners: the Claude co
 - **Offering the new runners in the installers' default model setup.** — User decision: the installers' defaults are out of scope; the runners are reached through settings only [[c4]].
 - **Discovering and offering whatever models a user's Ollama happens to have installed.** — User decision: the supported models for each new runner come from insrc's model definitions, not from what is installed [[c4]].
 - **Calling Ollama's or any provider's API directly from insrc's own process for these runners.** — Project principle: cloud model access goes through the locally installed Claude and Codex tools; direct REST providers must not be reintroduced [[c7]].
+- **Running the Codex command-line tool on Ollama models.** — User decision 2026-10-29 after a probe of eight Ollama cloud models: Ollama's cloud models ignore a requested output format on every route (format, response_format, text.format, output_config.format; ollama/ollama#12362), and the Codex tool's structured output relies on that format, so it returned prose for every cloud model. The Claude tool returned schema-checked answers for all eight, because it asks for the structure as a tool call and validates the arguments itself [[c9]].
 
 ## 4. Assumptions
 
@@ -68,26 +69,26 @@ Every tier of insrc's model work resolves to one of three runners: the Claude co
 
 ## 6. Stories
 
-### 6.1 E20261029b220bb61:S001 — The model definitions declare the supported Ollama models for the Claude and Codex tools
+### 6.1 E20261029b220bb61:S001 — The model definitions declare the supported Ollama models for the Claude tool
 
 **User value:** `size: M`
 
-As a user, I see exactly which Ollama models insrc supports for running the Claude or Codex tool, each marked cloud or local, so I choose a model that is expected to work rather than guessing.
+As a user, I see exactly which Ollama models insrc supports for running the Claude tool, each marked cloud or local, so I choose a model that is expected to work rather than guessing.
 
 **Extends:** [[c5]] [[c2]]
 
 **Acceptance criteria:**
 
-- **ac1:** Given insrc's shipped model definitions, when a client asks the daemon for the model definitions, then the answer lists a Claude-on-Ollama runner and a Codex-on-Ollama runner, each with its supported models, and every model is marked cloud or local. _(operationalizes `k1`, `k4`)_
+- **ac1:** Given insrc's shipped model definitions, when a client asks the daemon for the model definitions, then the answer lists a Claude-on-Ollama runner with its supported models, and every model is marked cloud or local. _(operationalizes `k1`, `k4`)_
 - **ac2:** Given a supported model that accepts effort levels and one that does not, when the definitions are read, then the first lists the effort levels it accepts and the second lists none. _(operationalizes `k3`)_
 - **ac3:** Given a tier set to a new runner with a model the definitions do not declare for it, when the daemon resolves that tier, then the model is not used and the tier's resolution reports that the model is not supported for that runner. _(operationalizes `k1`)_
 - **ac4:** Given tiers set to the Claude tool, the Codex tool or plain Ollama as today, when the definitions and tier resolution are read after this change, then those tiers resolve and are described exactly as before. _(operationalizes `k6`)_
 
-### 6.2 E20261029b220bb61:S002 — The daemon runs a tier's work on the Claude or Codex tool against an Ollama model
+### 6.2 E20261029b220bb61:S002 — The daemon runs a tier's work on the Claude tool against an Ollama model
 
 **User value:** `size: L`
 
-As a user who set a tier to a new runner, my workflows and analysis run on the Ollama model I chose, through the Claude or Codex tool, and return the same checked, structured answers as today.
+As a user who set a tier to a new runner, my workflows and analysis run on the Ollama model I chose, through the Claude tool, and return the same checked, structured answers as today.
 
 **Depends on:** `s1`
 
@@ -96,10 +97,9 @@ As a user who set a tier to a new runner, my workflows and analysis run on the O
 **Acceptance criteria:**
 
 - **ac1:** Given a tier set to the Claude tool on a supported Ollama cloud model, with Ollama running and signed in, when work routed to that tier asks for a structured answer, then the Claude tool is started against the local Ollama with that model and the answer returned matches the requested structure. _(operationalizes `k2`, `k3`)_
-- **ac2:** Given a tier set to the Codex tool on a supported Ollama model, when work routed to that tier asks for a structured answer, then the Codex tool is started against the local Ollama with that model and the answer returned matches the requested structure. _(operationalizes `k2`, `k3`)_
-- **ac3:** Given a tier on a new runner when Ollama is not running, the model is not available, or a cloud model is chosen and Ollama is not signed in, when work is routed to that tier, then the work fails with a message naming which of these is the cause, and nothing waits indefinitely. _(operationalizes `k2`)_
-- **ac4:** Given several pieces of work routed to tiers on new runners, when they run, then calls to the model provider are made one at a time, never concurrently. _(operationalizes `k5`)_
-- **ac5:** Given a tier on the Claude tool on Anthropic's service or the Codex tool on OpenAI's service, when work runs on it after this change, then the tool is started exactly as before, with no Ollama settings applied. _(operationalizes `k6`)_
+- **ac2:** Given a tier on a new runner when Ollama is not running, the model is not available, or a cloud model is chosen and Ollama is not signed in, when work is routed to that tier, then the work fails with a message naming which of these is the cause, and nothing waits indefinitely. _(operationalizes `k2`)_
+- **ac3:** Given several pieces of work routed to tiers on new runners, when they run, then calls to the model provider are made one at a time, never concurrently. _(operationalizes `k5`)_
+- **ac4:** Given a tier on the Claude tool on Anthropic's service or the Codex tool on OpenAI's service, when work runs on it after this change, then the tool is started exactly as before, with no Ollama settings applied. _(operationalizes `k6`)_
 
 **Local constraints:**
 
@@ -109,13 +109,13 @@ As a user who set a tier to a new runner, my workflows and analysis run on the O
 
 **User value:** `size: M`
 
-As a terminal UI user, I can set a tier to the Claude or Codex tool on an Ollama model from the model tiers screen, choosing from the supported models marked cloud or local.
+As a terminal UI user, I can set a tier to the Claude tool on an Ollama model from the model tiers screen, choosing from the supported models marked cloud or local.
 
 **Depends on:** `s1`
 
 **Acceptance criteria:**
 
-- **ac1:** Given the model tiers screen in the terminal UI, when the user changes a tier's runner, then the Claude-on-Ollama and Codex-on-Ollama runners are offered next to today's runners. _(operationalizes `k4`)_
+- **ac1:** Given the model tiers screen in the terminal UI, when the user changes a tier's runner, then the Claude-on-Ollama runner is offered next to today's runners. _(operationalizes `k4`)_
 - **ac2:** Given a tier with a new runner selected, when the user picks a model, then only the models the definitions declare for that runner are offered, each marked cloud or local, and an effort is offered only where the model supports it. _(operationalizes `k1`, `k3`)_
 - **ac3:** Given a tier saved on a new runner, when the screen is reopened, then it shows the runner, model and effort the daemon actually uses for that tier. _(operationalizes `k4`)_
 
@@ -123,13 +123,13 @@ As a terminal UI user, I can set a tier to the Claude or Codex tool on an Ollama
 
 **User value:** `size: M`
 
-As a VS Code user, I can set a tier to the Claude or Codex tool on an Ollama model from insrc's settings and tier picker, choosing from the supported models marked cloud or local.
+As a VS Code user, I can set a tier to the Claude tool on an Ollama model from insrc's settings and tier picker, choosing from the supported models marked cloud or local.
 
 **Depends on:** `s1`
 
 **Acceptance criteria:**
 
-- **ac1:** Given insrc's tier picker or its settings in VS Code, when the user changes a tier's runner, then the Claude-on-Ollama and Codex-on-Ollama runners are offered next to today's runners. _(operationalizes `k4`)_
+- **ac1:** Given insrc's tier picker or its settings in VS Code, when the user changes a tier's runner, then the Claude-on-Ollama runner is offered next to today's runners. _(operationalizes `k4`)_
 - **ac2:** Given a tier with a new runner selected, when the user picks a model, then only the models the definitions declare for that runner are offered, each marked cloud or local, and an effort is offered only where the model supports it. _(operationalizes `k1`, `k3`)_
 - **ac3:** Given a tier set on a new runner in VS Code settings to a model the definitions do not declare for it, when the setting is saved, then the change is refused with the reason and the tier keeps its previous setting. _(operationalizes `k1`)_
 - **ac4:** Given a tier saved on a new runner, when the user reopens the picker or settings, then they show the runner, model and effort the daemon actually uses. _(operationalizes `k4`)_
@@ -138,13 +138,13 @@ As a VS Code user, I can set a tier to the Claude or Codex tool on an Ollama mod
 
 **User value:** `size: M`
 
-As a JetBrains user, I can set a tier to the Claude or Codex tool on an Ollama model from insrc's Settings, choosing from the supported models marked cloud or local.
+As a JetBrains user, I can set a tier to the Claude tool on an Ollama model from insrc's Settings, choosing from the supported models marked cloud or local.
 
 **Depends on:** `s1`
 
 **Acceptance criteria:**
 
-- **ac1:** Given insrc's model tiers page in JetBrains Settings, when the user changes a tier's runner, then the Claude-on-Ollama and Codex-on-Ollama runners are offered next to today's runners. _(operationalizes `k4`)_
+- **ac1:** Given insrc's model tiers page in JetBrains Settings, when the user changes a tier's runner, then the Claude-on-Ollama runner is offered next to today's runners. _(operationalizes `k4`)_
 - **ac2:** Given a tier with a new runner selected, when the user picks a model, then only the models the definitions declare for that runner are offered, each marked cloud or local, and an effort is offered only where the model supports it. _(operationalizes `k1`, `k3`)_
 - **ac3:** Given a tier saved on a new runner, when the Settings page is reopened, then it shows the runner, model and effort the daemon actually uses. _(operationalizes `k4`)_
 
@@ -158,6 +158,7 @@ As a JetBrains user, I can set a tier to the Claude or Codex tool on an Ollama m
 - **[[c6]]** `stakeholder` `live probe 2026-10-29 (Ollama 0.40.12, claude 2.1.310, codex 0.165.0)` — "codex --output-schema returned {"answer":42,"word":"blue"}; claude --json-schema returned structured_output with mistral-large-3:675b-cloud in 7 s; a local 27B model hit HTTP 500 after 2m50s on claude"
 - **[[c7]]** `doc` `CLAUDE.md#project-principles` — "No direct cloud REST calls from our process. Cloud LLM access happens through the locally-installed `claude` and `codex` CLI binaries (via `CliProvider`)."
 - **[[c8]]** `convention` `CLAUDE.md#llm-provider-abstraction` — "Never `Promise.all` anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial `for...of` with sequential awaits."
+- **[[c9]]** `stakeholder` `probe of 8 Ollama cloud models and user decision in chat, 2026-10-29` — "claude --json-schema returned structured_output for all 8 cloud models; codex --output-schema returned prose for all 8; user: keep codex out, claude code is the only ollama option supported"
 
 <!-- insrc:review -->
 

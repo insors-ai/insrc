@@ -213,6 +213,13 @@
         "choice": "Treat k1-k6 as a pre-filter gate, not a score axis",
         "rationale": "The Epic constraints are must-meet; the chosen a1 meets k1-k6 (no undeclared model runs, CLI-only access, existing settings reused, one definitions answer, serial calls, existing runners unchanged), and the scored axes stay ac1-ac4 and sc1-sc2.",
         "resolvedAt": "2026-10-29T18:46:17.913Z"
+      },
+      "q388669cd": {
+        "question": "Resolved 2026-10-29 (user decision): the first batch for ollama-claude is deepseek-v4-pro:cloud, deepseek-v4.1-flash:cloud, glm-5.3:cloud, glm-5.3-flash:cloud, mistral-large-4:cloud and kimi-k3:cloud; Codex on Ollama is out of scope.",
+        "status": "resolved",
+        "choice": "Adopt resolved batch, Codex excluded",
+        "rationale": "User decision 2026-10-29: six cloud models for ollama-claude; Codex on Ollama is out of scope.",
+        "resolvedAt": "2026-10-29T18:46:47.975Z"
       }
     }
   },

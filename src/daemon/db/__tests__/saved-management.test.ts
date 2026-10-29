@@ -20,6 +20,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 import type { MutationRequest, MutationOutcome } from '../../../shared/connection-management.js';
 import '../drivers/index.js';
 import { environment, committed, deferred } from './fixtures/saved-management-fixture.js';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 async function removalRequest(f:Awaited<ReturnType<Awaited<ReturnType<typeof environment>>['rootFixture']>>,id:string,revision:string):Promise<MutationRequest>{
 	const key={repoRoot:f.root,scope:'saved' as const,id};const ticket=await f.service.ticket(f.context,key,'remove');
@@ -78,6 +81,61 @@ test('CM-S4-SAVED: busy stale and missing removals preserve registration credent
 			}
 		}finally{await lease.release();}
 	}finally{await env.cleanup();}
+});
+test('CM-S4-REPLAY: ambiguous rename and fsync failures retain the barrier until same-ticket classification',async()=>{
+	for(const boundary of ['before-rename','after-rename','parent-sync']){
+		const env=await environment(),f=await env.rootFixture(boundary);let request:MutationRequest|undefined;let closes=0;
+		try{
+			const initial=committed(await f.service.mutate(f.context,{...await f.request('selected'),credentials:{}}));
+			f.hooks.factory=async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{closes++;}} as Driver);
+			await f.pool.withConnection('selected',async()=>{});request=await removalRequest(f,'selected',initial.revision);
+			const before=await readFile(f.path,'utf8');
+			f.hooks.writer=async stage=>{if(stage===boundary)throw new Error('private-write-canary');};
+			const unknown=await f.service.mutate(f.context,request);assert.equal(unknown.status,'rejected');if(unknown.status==='rejected')assert.equal(unknown.code,'reconciliation-required');
+			assert.equal(f.pool.leaseState('selected').barrier,'remove');assert.equal(closes,0);await assert.rejects(f.pool.acquire('selected'),{code:'busy'});
+			const changed=await f.service.mutate(f.context,{...request,expectedRevision:randomUUID()});assert.equal(changed.status,'rejected');if(changed.status==='rejected')assert.equal(changed.code,'operation-mismatch');
+			assert.equal(f.pool.leaseState('selected').barrier,'remove');f.hooks.writer=undefined;
+			const status=await f.service.status(f.context,request.ticket);
+			assert.equal(f.pool.leaseState('selected').barrier,'none');
+			if(boundary==='before-rename'){
+				assert.equal(status.status,'not-seen');assert.equal(await readFile(f.path,'utf8'),before);assert.equal(closes,0);
+				await f.pool.withConnection('selected',async()=>{});committed(await f.service.mutate(f.context,request));
+			}else{assert.equal(status.status,'committed');if(status.status==='committed')assert.equal(status.value.registration,'removed');}
+			await f.pool.retryRemovalCleanup(request.operationId,initial.revision);assert.equal(closes,1);
+			await assert.rejects(f.pool.acquire('selected'),{code:'not-found'});
+		}finally{f.hooks.writer=undefined;if(request)await f.service.status(f.context,request.ticket);await env.cleanup();}
+	}
+});
+test('CM-S4-REPLAY: expired and pruned removal receipts cannot delete a recreated generation',async()=>{
+	const env=await environment(),f=await env.rootFixture('expired');
+	try{
+		const initial=committed(await f.service.mutate(f.context,{...await f.request('selected'),credentials:{}}));
+		const request=await removalRequest(f,'selected',initial.revision);const removed=committed(await f.service.mutate(f.context,request));
+		await f.restart();assert.deepEqual(committed(await f.service.mutate(f.context,request)),removed);
+		const recreated=committed(await f.service.mutate(f.context,{...await f.request('selected'),credentials:{}}));
+		f.clock.value=Date.parse(request.ticket.expiresAt)+1;
+		const expired=await f.service.status(f.context,request.ticket);assert.equal(expired.status,'committed');
+		await f.service.pruneReceipts(f.context);assert.equal(f.store.snapshot.file._management!.receipts[request.operationId],undefined);
+		const before=await readFile(f.path,'utf8'),result=await f.service.mutate(f.context,request);
+		assert.equal(result.status,'rejected');if(result.status==='rejected')assert.equal(result.code,'reconciliation-required');
+		assert.equal((await f.service.status(f.context,request.ticket)).status,'reconciliation-required');
+		assert.equal(f.store.snapshot.file._management!.revisions['selected'],recreated.revision);assert.equal(await readFile(f.path,'utf8'),before);
+	}finally{await env.cleanup();}
+});
+test('CM-S4-REPLAY: real process crash before or after rename recovers removal truth on restart',async()=>{
+	const exec=promisify(execFile),child=fileURLToPath(new URL('./fixtures/saved-removal-restart.ts',import.meta.url));
+	for(const stage of ['before-rename','after-rename']){
+		const directory=await mkdtemp(join(tmpdir(),'cm-remove-restart-'));await mkdir(join(directory,'repo'));
+		try{
+			await assert.rejects(exec(process.execPath,['--import','tsx',child,directory,stage],{timeout:20000,maxBuffer:1024*1024}),error=>!!error&&typeof error==='object'&&'code' in error&&error.code===73);
+			const result=await exec(process.execPath,['--import','tsx',child,directory,'status'],{timeout:20000,maxBuffer:1024*1024});
+			const line=result.stdout.split('\n').find(line=>line.startsWith('removal-restart-result:'));assert.ok(line,result.stdout+result.stderr);
+			const status=JSON.parse(line.slice('removal-restart-result:'.length));
+			assert.equal(status.status,stage==='before-rename'?'not-seen':'committed');assert.equal(status.journal,0);
+			assert.deepEqual(status.connections,stage==='before-rename'?['selected']:[]);
+			if(stage==='after-rename')assert.equal(status.registration,'removed');
+		}finally{await rm(directory,{recursive:true,force:true});}
+	}
 });
 test('CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports', async () => {
 	const env = await environment();

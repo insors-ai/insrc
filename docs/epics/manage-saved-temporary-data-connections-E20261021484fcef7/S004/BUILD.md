@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s4
 
-**Standalone:** no  ·  **Created:** 2026-10-29T10:08:25.734Z  ·  **Updated:** 2026-10-29T10:38:24.577Z
+**Standalone:** no  ·  **Created:** 2026-10-29T10:08:25.734Z  ·  **Updated:** 2026-10-29T10:44:21.065Z
 
-**Commit:** 386d5fd7f
+**Commit:** ff02f1e7e
 
 ## Summary
 
-S004 has strict request/state helpers, bounded Saved/temporary runtime cleanup and existing-journal credential removal preparation. Actual removal transaction/admission branches are still pending and release remains disabled.
+S004 adds private cleanup ownership and the Saved removal transaction with canonical replay. Ambiguous commit reconciliation, temporary removal and endpoint admission remain unfinished; release stays disabled.
 
 ## Tasks validated
 
@@ -18,29 +18,32 @@ S004 has strict request/state helpers, bounded Saved/temporary runtime cleanup a
 - ✓ `t4`
 - ✓ `t5`
 - ✓ `t6`
+- ✓ `t7`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-484fcef7efaf229e-s4.json` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/shared/__tests__/connection-management.test.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/shared/connection-management-wire.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/shared/connection-management.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/shared/__tests__/connection-removal.test.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/shared/connection-removal.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/__tests__/removal-retirement.test.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/removal-retirement.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/__tests__/connection-leases.test.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/pool.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/__tests__/session-cleanup.test.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/__tests__/session-resources.test.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/session-entries.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/session-resources.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5-first-validation.json` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/daemon-first-reporter-failure.tap` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/local-sandbox-refusal.tap` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/node22-relevant-pass.tap` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/resolution.json` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/__tests__/credential-generations.test.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
-- `src/daemon/db/secrets.ts` — **insrc-build** (2026-10-29T10:38:24.577Z)
+- `.insrc/artifacts/PLAN-484fcef7efaf229e-s4.json` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/shared/__tests__/connection-management.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/shared/connection-management-wire.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/shared/connection-management.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/shared/__tests__/connection-removal.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/shared/connection-removal.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/__tests__/removal-retirement.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/removal-retirement.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/__tests__/connection-leases.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/pool.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/__tests__/session-cleanup.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/__tests__/session-resources.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/session-entries.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/session-resources.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5-first-validation.json` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/daemon-first-reporter-failure.tap` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/local-sandbox-refusal.tap` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/node22-relevant-pass.tap` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/evidence/t5/resolution.json` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/__tests__/credential-generations.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/secrets.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/__tests__/saved-management.test.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)
+- `src/daemon/db/management.ts` — **insrc-build** (2026-10-29T10:44:21.065Z)

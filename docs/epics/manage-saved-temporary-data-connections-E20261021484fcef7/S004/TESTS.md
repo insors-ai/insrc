@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -119,3 +119,21 @@ Run at 2026-10-29T10:38:24.577Z on commit `386d5fd7f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/credential-generations.test.ts` | 0 | 10 | 13.9 s |  |
+
+## t7
+
+Run at 2026-10-29T10:44:21.065Z on commit `7afe40883`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-SAVED/REPLAY: extend src/daemon/db/__tests__/saved-management.test.ts for atomic row/revision/receipt removal, exact replay and unrelated-document preservation.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-SAVED: removal atomically drops selected row and revision while preserving source and unrelated document | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-REPLAY: concurrent identical removal and recreated-ID replay preserve exact original operation | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S4-SAVED: busy stale and missing removals preserve registration credentials and receipts | `src/daemon/db/__tests__/saved-management.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 8 | 2.8 s |  |

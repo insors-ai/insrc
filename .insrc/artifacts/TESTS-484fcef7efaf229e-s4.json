@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:38:24.577Z",
+    "updatedAt": "2026-10-29T10:44:21.065Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -505,6 +505,80 @@
               },
               {
                 "title": "CM-S4-CREDENTIALS: stale removal and journal preparation failure preserve registry and credentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7afe40883",
+        "ranAt": "2026-10-29T10:44:21.065Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-SAVED/REPLAY: extend src/daemon/db/__tests__/saved-management.test.ts for atomic row/revision/receipt removal, exact replay and unrelated-document preservation.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S4-SAVED: removal atomically drops selected row and revision while preserving source and unrelated document",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S4-REPLAY: concurrent identical removal and recreated-ID replay preserve exact original operation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S4-SAVED: busy stale and missing removals preserve registration credentials and receipts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/saved-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2804,
+            "titles": [
+              {
+                "title": "CM-S4-SAVED: removal atomically drops selected row and revision while preserving source and unrelated document",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-REPLAY: concurrent identical removal and recreated-ID replay preserve exact original operation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-SAVED: busy stale and missing removals preserve registration credentials and receipts",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
                 "result": "pass"
               }
             ],

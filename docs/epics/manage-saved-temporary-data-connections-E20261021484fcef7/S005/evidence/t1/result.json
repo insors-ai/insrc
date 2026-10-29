@@ -1,0 +1,22 @@
+{
+  "task": "s5/t1",
+  "node": "Node22.23.2",
+  "jvm": "JDK21",
+  "nodeTests": 2,
+  "junitTests": 2,
+  "junitFailures": 0,
+  "junitErrors": 0,
+  "typecheck": "tsc --noEmit passed",
+  "fullSweepRun": false,
+  "corpus": {
+    "wireCases": 18,
+    "transcripts": 12,
+    "S004snapshots": 20,
+    "acceptanceSubjects": 20
+  },
+  "acceptanceClaim": "Fixture contract only; all native/live acceptance remains pending.",
+  "sha256": {
+    "corpus.json": "30e486d47d44f902de75406e84b3a34a4744948b8d8261ec384b813450e5e058",
+    "manifest.json": "a1a4bab1a3b392c1b0e4d0c6db08c93eb41850e31bfa9b7d23c89bdb95a6ccca"
+  }
+}

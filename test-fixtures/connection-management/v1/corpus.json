@@ -1,0 +1,1479 @@
+{
+  "version": 1,
+  "protocolVersion": 2,
+  "purpose": "Synthetic cross-language wire/sc7 scenarios. Fixtures are not native/live acceptance or signed authority.",
+  "releaseEnabled": false,
+  "fixturesAreAcceptance": false,
+  "identity": {
+    "key": {
+      "repoRoot": "/fixture/repo-a",
+      "scope": "saved",
+      "id": "warehouse"
+    },
+    "temporaryKey": {
+      "repoRoot": "/fixture/repo-a",
+      "scope": "temporary",
+      "id": "preview"
+    },
+    "revision": "11111111-1111-4111-8111-111111111111",
+    "operationId": "22222222-2222-4222-8222-222222222222",
+    "daemonEpoch": "fixture-epoch"
+  },
+  "wire": [
+    {
+      "id": "wire-capabilities-0",
+      "kind": "capabilities",
+      "input": {
+        "version": 2,
+        "daemonEpoch": "fixture-epoch",
+        "features": [
+          "safe-read",
+          "driver-descriptors",
+          "operation-tickets",
+          "operation-status",
+          "saved-create",
+          "saved-update",
+          "saved-remove",
+          "temporary-remove",
+          "removal-state",
+          "removal-cleanup-retry"
+        ],
+        "receiptRetentionDays": 30
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-list-1",
+      "kind": "list",
+      "input": [
+        {
+          "key": {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "id": "warehouse"
+          },
+          "revision": "11111111-1111-4111-8111-111111111111",
+          "kind": "postgres",
+          "family": "rdbms",
+          "effectiveFamily": "rdbms",
+          "publicConfig": {
+            "endpoint": "postgresql://fixture.invalid/example"
+          },
+          "credentialPresence": {
+            "url.password": false
+          }
+        },
+        {
+          "key": {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "temporary",
+            "id": "preview"
+          },
+          "revision": "11111111-1111-4111-8111-111111111111",
+          "kind": "csv",
+          "family": "file",
+          "effectiveFamily": "file",
+          "publicConfig": {
+            "path": "data/example.csv"
+          },
+          "credentialPresence": {}
+        }
+      ],
+      "valid": true
+    },
+    {
+      "id": "wire-read-2",
+      "kind": "read",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "rdbms",
+        "effectiveFamily": "rdbms",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.password": false
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-ticket-3",
+      "kind": "ticket",
+      "input": {
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "lookupRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "connectionId": "warehouse",
+        "mode": "remove",
+        "issuedAt": "2026-01-01T00:00:00.000Z",
+        "expiresAt": "2026-01-31T00:00:00.000Z",
+        "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-outcome-4",
+      "kind": "outcome",
+      "input": {
+        "status": "committed",
+        "value": {
+          "operationId": "22222222-2222-4222-8222-222222222222",
+          "revision": "11111111-1111-4111-8111-111111111111",
+          "registration": "removed",
+          "activation": "not-applicable",
+          "credentialCleanup": "complete"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-status-5",
+      "kind": "status",
+      "input": {
+        "status": "not-seen"
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-test-6",
+      "kind": "test",
+      "input": {
+        "requestId": "22222222-2222-4222-8222-222222222222",
+        "draftRevision": 2,
+        "repoRoot": "/fixture/repo-a",
+        "daemonEpoch": "fixture-epoch",
+        "status": "reachable",
+        "tookMs": 3
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-removal-7",
+      "kind": "removal",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed-cleanup-pending",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending."
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-invalid-capabilities-0",
+      "kind": "capabilities",
+      "input": {
+        "version": 1,
+        "features": []
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-capabilities-1",
+      "kind": "capabilities",
+      "input": {
+        "version": 2,
+        "daemonEpoch": null,
+        "features": [
+          "safe-read",
+          "driver-descriptors",
+          "operation-tickets",
+          "operation-status",
+          "saved-create",
+          "saved-update",
+          "saved-remove",
+          "temporary-remove",
+          "removal-state",
+          "removal-cleanup-retry"
+        ],
+        "receiptRetentionDays": 30
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-list-2",
+      "kind": "list",
+      "input": {
+        "rows": []
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-read-3",
+      "kind": "read",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "session",
+          "id": "warehouse"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "rdbms",
+        "effectiveFamily": "rdbms",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.password": false
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-ticket-4",
+      "kind": "ticket",
+      "input": {
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "lookupRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "connectionId": "warehouse",
+        "mode": "upsert",
+        "issuedAt": "2026-01-01T00:00:00.000Z",
+        "expiresAt": "2026-01-31T00:00:00.000Z",
+        "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-outcome-5",
+      "kind": "outcome",
+      "input": {
+        "status": "committed",
+        "value": {
+          "operationId": "22222222-2222-4222-8222-222222222222"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-status-6",
+      "kind": "status",
+      "input": {
+        "status": "success"
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-test-7",
+      "kind": "test",
+      "input": {
+        "requestId": "22222222-2222-4222-8222-222222222222",
+        "draftRevision": -1
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-removal-8",
+      "kind": "removal",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed",
+        "resourceCleanup": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-read-9",
+      "kind": "read",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "rdbms",
+        "effectiveFamily": "rdbms",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.password": "plaintext"
+        }
+      },
+      "valid": false
+    }
+  ],
+  "transcripts": [
+    {
+      "id": "choose-root",
+      "initial": {
+        "repoRoot": null,
+        "filter": "all",
+        "listState": "no-repository",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 0,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "select-root",
+          "repoRoot": "/fixture/repo-a"
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "effects": [
+        {
+          "type": "list",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-registry",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-result",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1,
+          "rows": []
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "empty-registry",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "effects": []
+    },
+    {
+      "id": "successful-rows",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-result",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1,
+          "rows": [
+            {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111",
+              "kind": "postgres",
+              "family": "rdbms",
+              "effectiveFamily": "rdbms",
+              "publicConfig": {
+                "endpoint": "postgresql://fixture.invalid/example"
+              },
+              "credentialPresence": {
+                "url.password": false
+              }
+            },
+            {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111",
+              "kind": "csv",
+              "family": "file",
+              "effectiveFamily": "file",
+              "publicConfig": {
+                "path": "data/example.csv"
+              },
+              "credentialPresence": {}
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ],
+        "counts": {
+          "all": 2,
+          "saved": 1,
+          "temporary": 1
+        }
+      },
+      "effects": []
+    },
+    {
+      "id": "saved-filter",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "filter",
+          "value": "saved"
+        }
+      ],
+      "expected": {
+        "filter": "saved",
+        "listState": "ready",
+        "visibleKeys": [
+          {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "id": "warehouse"
+          }
+        ],
+        "counts": {
+          "all": 2,
+          "saved": 1,
+          "temporary": 1
+        }
+      },
+      "effects": []
+    },
+    {
+      "id": "empty-filter",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "filter",
+          "value": "temporary"
+        }
+      ],
+      "expected": {
+        "filter": "temporary",
+        "listState": "empty-filter",
+        "visibleKeys": [],
+        "counts": {
+          "all": 1,
+          "saved": 1,
+          "temporary": 0
+        }
+      },
+      "effects": []
+    },
+    {
+      "id": "read-error-not-empty",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-error",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1,
+          "code": "registry-unreadable"
+        }
+      ],
+      "expected": {
+        "listState": "read-error",
+        "canMutate": false
+      },
+      "effects": []
+    },
+    {
+      "id": "stale-list-ignored",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-result",
+          "repoRoot": "/fixture/repo-b",
+          "viewGeneration": 0,
+          "rows": [
+            {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111",
+              "kind": "postgres",
+              "family": "rdbms",
+              "effectiveFamily": "rdbms",
+              "publicConfig": {
+                "endpoint": "postgresql://fixture.invalid/example"
+              },
+              "credentialPresence": {
+                "url.password": false
+              }
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "effects": []
+    },
+    {
+      "id": "dirty-cancel-navigation",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": true,
+        "draftRevision": 2,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "request-close"
+        },
+        {
+          "type": "dirty-decision",
+          "value": "cancel"
+        }
+      ],
+      "expected": {
+        "dirty": true,
+        "draftRevision": 2,
+        "repoRoot": "/fixture/repo-a",
+        "closed": false
+      },
+      "effects": []
+    },
+    {
+      "id": "unknown-retains-attempt",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "attempt-written",
+          "ticket": {
+            "operationId": "22222222-2222-4222-8222-222222222222",
+            "lookupRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "connectionId": "warehouse",
+            "mode": "remove",
+            "issuedAt": "2026-01-01T00:00:00.000Z",
+            "expiresAt": "2026-01-31T00:00:00.000Z",
+            "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          "expectedRevision": "11111111-1111-4111-8111-111111111111"
+        },
+        {
+          "type": "delivery-lost"
+        },
+        {
+          "type": "submit"
+        }
+      ],
+      "expected": {
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "operationState": "unknown",
+        "canMutate": false
+      },
+      "effects": []
+    },
+    {
+      "id": "unknown-close-keeps-recovery",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ],
+        "operation": {
+          "ticket": {
+            "operationId": "22222222-2222-4222-8222-222222222222",
+            "lookupRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "connectionId": "warehouse",
+            "mode": "remove",
+            "issuedAt": "2026-01-01T00:00:00.000Z",
+            "expiresAt": "2026-01-31T00:00:00.000Z",
+            "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          "state": "unknown"
+        }
+      },
+      "events": [
+        {
+          "type": "request-close"
+        }
+      ],
+      "expected": {
+        "closed": true,
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "operationState": "unknown"
+      },
+      "effects": []
+    },
+    {
+      "id": "cleanup-pending-keeps-operation",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "removal-result",
+          "value": {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "operationId": "22222222-2222-4222-8222-222222222222",
+            "state": "removed-cleanup-pending",
+            "credentialCleanup": "complete",
+            "resourceCleanup": "pending",
+            "safeMessage": "The registration was removed. Application-owned cleanup is pending."
+          }
+        }
+      ],
+      "expected": {
+        "visibleKeys": [
+          {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "temporary",
+            "id": "preview"
+          }
+        ],
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "operationState": "removed-cleanup-pending",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      },
+      "effects": []
+    },
+    {
+      "id": "late-test-ignored",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 3,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ],
+        "test": {
+          "requestId": "22222222-2222-4222-8222-222222222222",
+          "draftRevision": 3
+        }
+      },
+      "events": [
+        {
+          "type": "test-result",
+          "value": {
+            "requestId": "22222222-2222-4222-8222-222222222222",
+            "draftRevision": 2,
+            "repoRoot": "/fixture/repo-a",
+            "daemonEpoch": "fixture-epoch",
+            "status": "reachable",
+            "tookMs": 3
+          }
+        }
+      ],
+      "expected": {
+        "draftRevision": 3,
+        "testStatus": "pending"
+      },
+      "effects": []
+    }
+  ],
+  "removalSnapshots": [
+    {
+      "scope": "saved",
+      "phase": "confirming",
+      "confirmation": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333",
+        "action": "Delete",
+        "message": "Delete this saved registration and its obsolete application-owned credentials. Source files, databases, tables and remote data will be preserved."
+      },
+      "operationIssuedBeforeConfirmation": false,
+      "cancelCommand": null,
+      "confirmedSelection": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removing",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removing",
+        "safeMessage": "Removing the connection registration."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "busy",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "busy",
+        "safeMessage": "The connection is currently in use. Retry after the current work finishes."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "conflict",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "conflict",
+        "safeMessage": "The connection revision changed. Refresh before confirming removal again."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "not-seen",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "reconciliation-required",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "pending",
+        "resourceCleanup": "complete"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "pending",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed",
+        "safeMessage": "The registration was removed. Source data was preserved.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "complete"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "confirming",
+      "confirmation": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333",
+        "action": "Discard",
+        "message": "Discard this temporary registration and release its application-owned resources. Source files, databases, tables and remote data will be preserved."
+      },
+      "operationIssuedBeforeConfirmation": false,
+      "cancelCommand": null,
+      "confirmedSelection": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removing",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removing",
+        "safeMessage": "Removing the connection registration."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "busy",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "busy",
+        "safeMessage": "The connection is currently in use. Retry after the current work finishes."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "conflict",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "conflict",
+        "safeMessage": "The connection revision changed. Refresh before confirming removal again."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "not-seen",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "reconciliation-required",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removed",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed",
+        "safeMessage": "The registration was removed. Source data was preserved.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "complete"
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "subject": "CM-S5-STATE",
+      "requirement": "CM-S5-STATE: all list states distinct, retained root, full-key identity, filter/search/counts, add reveal and stale-view rejection",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-DIRTY",
+      "requirement": "CM-S5-DIRTY: every draft exit Discard/Cancel; editing fixed identity/scope; zero effects after Cancel; unknown mutation retains reconciliation on close",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-FORM",
+      "requirement": "CM-S5-FORM: descriptor subset validation, every offered driver, safe endpoint/secret-slot serialization and Keep/Replace/Clear; pinned/read-only compatibility",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-TEST",
+      "requirement": "CM-S5-TEST: same draft serializer for Save/Test, optional testing, exact stale-result tuple, repeated click suppression and cancel",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-WIRE",
+      "requirement": "CM-S5-WIRE: capabilities, descriptors, safe lists/reads, tickets, outcomes/status, test/removal replies strict/size-bounded; old/missing/malformed fails closed",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-SYNC",
+      "requirement": "CM-S5-SYNC: one versioned/digested JSON wire+state/effect transcript corpus executed by TypeScript and Kotlin, divergent-field/transition negative controls; both bundles exclude daemon/storage/provider code.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-COMPAT",
+      "requirement": "CM-S5-COMPAT: old daemon/new client upgrade UI; no legacy mutation fallback, legacy unrelated projections retained, pinned family retained",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-TRANSPORT",
+      "requirement": "CM-S5-TRANSPORT: persistent request multiplexing, disconnect pre/postwrite, timeout/abort, request ID collisions, finite buffers, exactly-once disposal and no raw error leak",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-OWNER",
+      "requirement": "CM-S5-OWNER: one owner per extension workbench or JetBrains Project;30sheartbeat,90sexpiry,sameepochresume/new epoch,root switches/close-reopen; no session end on Configurable disposal, no persistent capabilities.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-WINDOW",
+      "requirement": "CM-S5-WINDOW: two actual project-scoped services/workbench hosts, same roots/IDs and overlapping RPC IDs, forged owner hints and disposed/stale-view refusal; owner-only delivery and independent project disposal.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-OUTCOME",
+      "requirement": "CM-S5-OUTCOME: known commit vs activation/refresh failure; lostreply same-ticket recovery, expiry, no changedpayload/new operation retry; row/card independent cleanup phases",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-REMOVE",
+      "requirement": "CM-S5-REMOVE: exact root/scope/ID confirmation, zero-effect Cancel, busy/conflict retention, unknown status, ticket-only retry and same-ID recreation safety",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-ENTRY",
+      "requirement": "CM-S5-ENTRY: VSCode Settings/command and JetBrains native Settings/AnAction route each project/workbench to the same guarded manager; explicit project chooser for application Settings, no-project/multiroot/retained-root cases.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-UI",
+      "requirement": "CM-S5-UI: actual VSCode extension and JetBrains native manager in light/dark/highcontrast, labels, focus/live status and keyboard-only add/edit/test/Delete/Discard flows.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-LIFETIME",
+      "requirement": "CM-S5-LIFETIME: before-add temporary copy in both clients, panelclose/root switch retention, workbench disposal/reconnect/expiry/restart loss; no inferred lifecycle success from backend snapshots",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-SOURCE",
+      "requirement": "CM-S5-SOURCE: both clients supported SQL/KV/file Test/Save/discard/delete leave seeded source rows/bytes unchanged; SQL Server unavailable remains pending",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-PRIVACY",
+      "requirement": "CM-S5-PRIVACY: synthetic endpoint/secret/config/capability canaries absent from Settings,memento,webview state,logs,telemetry,artifacts and other-window events; temporary actions cause zero persistence",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-BUILD",
+      "requirement": "CM-S5-BUILD: fresh Node22 backend and extension typecheck/bundle; JDK21 ./gradlew test build and applicable verifyPlugin checks; packaged runtime smoke for both live clients.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-SWEEP",
+      "requirement": "CM-S5-SWEEP: per-task relevant Node/JUnit tests, then final frozen backend+explicit extension+JetBrains suites with exact logs/counts; no forced live gates or historical failure relabeling.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-GATE",
+      "requirement": "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    }
+  ]
+}

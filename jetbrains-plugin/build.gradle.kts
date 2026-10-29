@@ -115,6 +115,11 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// S005: Node and JUnit consume the same versioned JSON corpus, never mirrored source.
+sourceSets.named("test") {
+    resources.srcDir(rootProject.file("../test-fixtures"))
+}
+
 // Bundle the sibling backend assets the plugin must ship with, so both travel INSIDE
 // the plugin jar rather than being read from an (absent-on-a-fresh-machine) daemon dir:
 //   - insrc-daemon-install.sh (Story S003 / t6-t7): the bootstrap installer that clones

@@ -114,6 +114,8 @@ export class RecoveryJournal {
    return recoveryValue(result);
   } finally { closeSync(fd); }
  }
+ /** Re-establish durability before returning a receipt discovered after an uncertain append. */
+ stabilize():void {this.guard();const fd=openSync(join(this.directory,'events.jsonl'),constants.O_RDONLY|nofollow);try{fsyncSync(fd);syncDirectory(this.directory);this.guard();}finally{closeSync(fd);}}
  append(input: Omit<RecoveryEvent,'version'|'ordinal'|'previousDigest'|'digest'|'runId'>): RecoveryEvent {
   this.guard(); this.read(input.payloadRef); recoveryId(input.eventId); recoveryInteger(input.generation); recoveryDigest(input.subjectDigest); recoveryDigest(input.policyDigest);
   if (!eventKinds.includes(input.kind)) throw new RecoveryError('invalid-input','Unknown recovery event kind.');

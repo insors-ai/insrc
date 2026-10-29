@@ -10,7 +10,7 @@ import { digestValue } from '../../workflow/code-review/investigation/identity.j
 import { InvestigationError } from '../../workflow/code-review/investigation/continuation-types.js';
 import type { InvestigationReplyV1 } from '../../workflow/code-review/investigation/continuation-types.js';
 import { ScopedReviewBridge } from '../../daemon/review-investigation-bridge.js';
-import { startNativeReviewBroker,nativeReviewBindingPath } from '../../mcp/review-investigation-native.js';
+import { NATIVE_REVIEW_BINDING_ENV,startNativeReviewBroker,nativeReviewBindingPath } from '../../mcp/review-investigation-native.js';
 import { inspectQualifiedInvestigationBinding,investigationBindingIdentity,investigationBindingDirectory,trackInvestigationInvocation,InvestigationQualificationError } from './investigation-session.js';
 import type { NativeAdapterIdentity } from './investigation-session.js';
 import { preflightProviderReviewBudget,reviewWireSchemaJson } from './review-budget.js';
@@ -76,7 +76,7 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
   });
   runtime.assertCurrent();launchCleanup=input.adapter.prepareLaunch?.(cwd,input.schema);
   const remaining=Math.min(timeoutMs,opts.deadlineMs-Math.ceil(performance.now()-startedAt));if(remaining<=0)throw new InvestigationQualificationError('Native attempt deadline elapsed before launch');
-  let result:unknown;try{result=await input.invoke(args,prompt,{cwd,binaryPath:actual.binary.path,timeoutMs:remaining,stallMs:Math.min(stallMs,remaining),signal:abort.signal,env:nativeInvestigationEnvironment()});}catch(cause){throw budgetFailure??cause;}
+  let result:unknown;try{result=await input.invoke(args,prompt,{cwd,binaryPath:actual.binary.path,timeoutMs:remaining,stallMs:Math.min(stallMs,remaining),signal:abort.signal,env:{...nativeInvestigationEnvironment(),[NATIVE_REVIEW_BINDING_ENV]:grant.binding.bindingId}});}catch(cause){throw budgetFailure??cause;}
   runtime.assertCurrent();if(budgetFailure)throw budgetFailure;
   if(!reply||!Value.Check(InvestigationReplySchema,result)||digestValue(result)!==digestValue(reply))throw new InvestigationQualificationError('Native final output does not match accepted scoped reply');
   return reply;

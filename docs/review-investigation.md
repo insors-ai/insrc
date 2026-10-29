@@ -187,3 +187,10 @@ records. The approved sequence companion remains accurate: qualification and
 runtime-image checks remain inside its daemon-service/reviewer boundary.
 The final independent code review follows the last task validation so it binds
 the completed BUILD; BUILD completion still requires an explicit human approval.
+
+Native broker bindings use per-invocation capability filenames. The static MCP
+configuration names a logical prefix; the trusted launcher injects the current
+binding identity as private runtime data. Ambient values are discarded. A
+restarted daemon can retain stale capability files without overwriting them or
+blocking a fresh invocation, and an older MCP process cannot discover the new
+capability through a shared filename. Normal teardown removes only its own file.

@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import assert from 'node:assert/strict';
-import { mkdtempSync,writeFileSync,readFileSync,chmodSync,rmSync,realpathSync,existsSync } from 'node:fs';
+import { mkdtempSync,writeFileSync,readFileSync,chmodSync,rmSync,realpathSync,existsSync,readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { runCodexInvestigationSession,codexInvestigationArgs,codexInvestigationLaunchDigest,CODEX_INVESTIGATION_DISABLED_FEATURES } from '../codex-investigation-session.js';
@@ -24,8 +24,9 @@ const args=process.argv.slice(2),cwd=process.cwd();let stdin='';for await(const 
 const frame=JSON.parse(stdin.split('\\n\\n').at(-1)),turn=frame.turn;
 const codex=args[0]==='exec';const mcp=JSON.parse(readFileSync(codex?cwd+'/investigation-mcp.json':args[args.indexOf('--mcp-config')+1],'utf8'));
 const path=mcp.mcpServers['insrc-scoped-review'].args.find(x=>x.endsWith('investigation-binding.json'));
-const config=JSON.parse(readFileSync(path,'utf8')),{expiresAt,...binding}=config.binding;
-writeFileSync(new URL('./called.json',import.meta.url),JSON.stringify({args,cwd,env:{HOME:process.env.HOME,NODE_OPTIONS:process.env.NODE_OPTIONS,ANTHROPIC_API_KEY:process.env.ANTHROPIC_API_KEY}}));
+const actual=path.replace('investigation-binding.json','investigation-binding-'+process.env.INSRC_REVIEW_NATIVE_BINDING_ID+'.json');
+const config=JSON.parse(readFileSync(actual,'utf8')),{expiresAt,...binding}=config.binding;
+writeFileSync(new URL('./called.json',import.meta.url),JSON.stringify({args,cwd,env:{HOME:process.env.HOME,NODE_OPTIONS:process.env.NODE_OPTIONS,ANTHROPIC_API_KEY:process.env.ANTHROPIC_API_KEY,hasInvocationBinding:/^[a-f0-9]{64}$/.test(process.env.INSRC_REVIEW_NATIVE_BINDING_ID??'')}}));
 async function call(operation,data){return await new Promise((yes,no)=>{const s=createConnection(config.socket);let text='';s.setEncoding('utf8');s.on('error',no);s.on('connect',()=>s.write(JSON.stringify({...binding,operation,...data})+'\\n'));s.on('data',c=>{text+=c;const i=text.indexOf('\\n');if(i<0)return;const r=JSON.parse(text.slice(0,i));s.destroy();if(r.ok)yes(r.result);else no(Error('refused'));});});}
 const progress=(blockId,expectedSequence)=>({runId:turn.runId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,progressId:turn.attemptId+'-'+blockId,expectedSequence,blockId,disposition:'unverified',evidenceIds:[],notes:'Fixture inspected scope; more evidence required',coverageUpdates:[],findings:[],outstandingWork:[]});
 const first=await call('progress',{progress:progress('block-1',0)});await call('progress',{progress:progress('block-1',0)});
@@ -73,11 +74,12 @@ export async function exerciseNativeInvestigationSessions(kind:'claude'|'codex')
    if(mode==='complete'&&nativeFailure)throw nativeFailure;
    assert.equal(calls,1);assert.equal(f.store.status().blockCheckpoints.length,mode==='complete'||mode==='bad-final'?2:1);assert.equal(f.store.status().attempts.length,1);
    if(mode!=='complete')assert.ok(nativeFailure);if(mode==='bad-final')assert.match(String(nativeFailure),/does not match accepted/);
-   assert.equal(existsSync(join(cwd,'investigation-binding.json')),false);if(codex)assert.equal(existsSync(join(cwd,'investigation-schema.json')),false);
-   const called=JSON.parse(readFileSync(join(f.repo,'called.json'),'utf8'));assert.equal(called.cwd,cwd);assert.equal(called.env.HOME,process.env.HOME);assert.equal(called.env.NODE_OPTIONS,undefined);assert.equal(called.env.ANTHROPIC_API_KEY,undefined);
+   assert.equal(readdirSync(cwd).some(name=>name.startsWith('investigation-binding-')),false);if(codex)assert.equal(existsSync(join(cwd,'investigation-schema.json')),false);
+   const called=JSON.parse(readFileSync(join(f.repo,'called.json'),'utf8'));assert.equal(called.cwd,cwd);assert.equal(called.env.HOME,process.env.HOME);assert.equal(called.env.NODE_OPTIONS,undefined);assert.equal(called.env.ANTHROPIC_API_KEY,undefined);assert.equal(called.env.hasInvocationBinding,true);
   }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
  }
  const env=nativeInvestigationEnvironment({HOME:'/existing-auth-home',PATH:'/bin',NODE_OPTIONS:'--require evil',ANTHROPIC_API_KEY:'not-copied',CLAUDE_PLUGIN_ROOT:'/untrusted'});assert.deepEqual(env,{TERM:'dumb',HOME:'/existing-auth-home',PATH:'/bin'});
  assert.equal(nativeInvestigationEnvironment({CLAUDE_CONFIG_DIR:'/existing-cli-auth'}).CLAUDE_CONFIG_DIR,'/existing-cli-auth');
  assert.equal(nativeInvestigationEnvironment({CODEX_HOME:'/existing-codex-auth'}).CODEX_HOME,'/existing-codex-auth');
+ assert.equal(nativeInvestigationEnvironment({INSRC_REVIEW_NATIVE_BINDING_ID:'untrusted'}).INSRC_REVIEW_NATIVE_BINDING_ID,undefined);
 }

@@ -2,13 +2,22 @@
 import { createServer,createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { constants,openSync,closeSync,fstatSync,readFileSync,writeFileSync,chmodSync,lstatSync,realpathSync,unlinkSync } from 'node:fs';
-import { join,dirname } from 'node:path';
+import { join,dirname,basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { ScopedReviewBinding } from '../daemon/review-investigation-bridge.js';
 import { parseReviewInvestigationCommand } from '../shared/review-investigation.js';
 
 export interface NativeReviewBridgeConfig {readonly version:1;readonly socket:string;readonly binding:ScopedReviewBinding;}
-export const nativeReviewBindingPath=(cwd:string)=>join(cwd,'investigation-binding.json');
+export const NATIVE_REVIEW_BINDING_ENV='INSRC_REVIEW_NATIVE_BINDING_ID';
+/** The configuration pins the logical prefix; an invocation receives only its
+ * own capability filename through private runtime data, never a shared alias. */
+export function nativeReviewBindingPath(cwd:string,bindingId?:string):string{
+ if(bindingId!==undefined&&!/^[a-f0-9]{64}$/.test(bindingId))throw Error('Invalid native binding identity');
+ return join(cwd,bindingId===undefined?'investigation-binding.json':`investigation-binding-${bindingId}.json`);
+}
+export function resolveNativeReviewBindingPath(logicalPath:string,bindingId:string|undefined):string{
+ if(basename(logicalPath)!=='investigation-binding.json'||!bindingId)throw Error('Private invocation binding required');return nativeReviewBindingPath(dirname(logicalPath),bindingId);
+}
 function privateDirectory(path:string){const stat=lstatSync(path);if(!stat.isDirectory()||stat.isSymbolicLink()||(stat.mode&0o077)!==0||realpathSync(path)!==path)throw Error('Native bridge directory is not private');}
 export function readNativeReviewBridgeConfig(path:string):NativeReviewBridgeConfig{
  privateDirectory(dirname(path));const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW);
@@ -21,7 +30,7 @@ export function readNativeReviewBridgeConfig(path:string):NativeReviewBridgeConf
 }
 /** Private per-session socket: no method names or general daemon forwarding exist on this transport. */
 export async function startNativeReviewBroker(cwd:string,binding:ScopedReviewBinding,forward:(command:unknown)=>Promise<unknown>){
- privateDirectory(cwd);const socketPath=join(cwd,`review-${randomUUID()}.sock`),bindingPath=nativeReviewBindingPath(cwd),clients=new Set<Socket>();
+ privateDirectory(cwd);const socketPath=join(cwd,`review-${randomUUID()}.sock`),bindingPath=nativeReviewBindingPath(cwd,binding.bindingId),clients=new Set<Socket>();
  const server=createServer(socket=>{
   clients.add(socket);let text='',dispatched=false;socket.setEncoding('utf8');socket.setTimeout(Math.max(1,Math.min(300000,binding.expiresAt-Date.now())),()=>socket.destroy());
   socket.on('close',()=>clients.delete(socket));socket.on('error',()=>{});

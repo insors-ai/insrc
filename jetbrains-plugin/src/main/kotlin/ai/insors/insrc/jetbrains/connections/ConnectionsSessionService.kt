@@ -82,6 +82,7 @@ class ConnectionsSessionService(@Transient private val project: Project) : Dispo
     }
     val view: ConnectionOwnerView get() = owner.view
     fun setRegisteredRoots(roots: List<String>) = owner.setRegisteredRoots(roots)
+    fun features(root:String):List<String> = owner.features(root)
     fun selectRoot(root: String): CompletionStage<ConnectionOwnerView> = owner.selectRoot(root)
     fun requestTemporary(root: String, identity: ConnectionOwnerView, method: String, params: JsonElement): ConnectionLaneCall = owner.requestTemporary(root, identity, method, params)
     fun requestSaved(root: String, method: String, params: JsonElement): ConnectionLaneCall = owner.requestSaved(root, method, params)
@@ -136,6 +137,8 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
     @Volatile private var authority:SessionAuthority?=null
     @Volatile private var deadline=0L
     private val generation=AtomicLong()
+    private val featureSnapshots=ConcurrentHashMap<String,List<String>>()
+    fun features(root:String):List<String> = featureSnapshots[root]?:emptyList()
     private val data=ConcurrentHashMap<String,PersistentDaemonLane>()
     private val saved=ConcurrentHashMap<String,PersistentDaemonLane>()
     private val owned=ConcurrentHashMap.newKeySet<PersistentDaemonLane>()
@@ -160,7 +163,7 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
     private fun timer(ms:Long,block:()->Unit):AutoCloseable = ports.timer?.invoke(block,maxOf(0,ms)) ?: scheduler.schedule(block,maxOf(0,ms),TimeUnit.MILLISECONDS).let{future->AutoCloseable{future.cancel(false)}}
     fun setRegisteredRoots(values:List<String>) {
         admit();require(values.size<=16384&&values.all{it.isNotEmpty()&&it.length<=16384&&it.none{c->c.code<32}})
-        roots=values.toSet()
+        roots=values.toSet();featureSnapshots.keys.removeIf{it !in roots}
         for(map in listOf(data,saved))for((r,lane)in map)if(r !in roots&&map.remove(r,lane))lane.close()
         if(root!=null&&root !in roots){root=null;emit()}
     }
@@ -168,7 +171,7 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
     private fun cancelTimers() {heartbeat?.close();heartbeat=null;expiry?.close();expiry=null}
     private fun invalidate(next:String,clearEpoch:Boolean=false,expectedDeadline:Long?=null) {
         val old:PersistentDaemonLane?
-        synchronized(lock){if(disposed||authority==null&&control==null&&status==next&&!clearEpoch||expectedDeadline!=null&&(deadline!=expectedDeadline||ports.now()<expectedDeadline))return;cancelTimers();authority=null;deadline=0;old=control;control=null;status=next;if(clearEpoch)epoch=null}
+        synchronized(lock){if(disposed||authority==null&&control==null&&status==next&&!clearEpoch||expectedDeadline!=null&&(deadline!=expectedDeadline||ports.now()<expectedDeadline))return;cancelTimers();authority=null;deadline=0;old=control;control=null;status=next;if(clearEpoch||next=="upgrade-required")featureSnapshots.clear();if(clearEpoch)epoch=null}
         dropData().forEach{it.close()};old?.close();invalidations.forEach{runCatching{it()}};emit()
     }
     private fun lost(lane:PersistentDaemonLane) {
@@ -233,9 +236,12 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
         try {
             current(lane){}
             val cap=ConnectionProtocol.capabilities(rpc(lane,"capabilities",JsonObject().apply{addProperty("repoRoot",selected)}));current(lane){admit(selected)}
-            if(!cap.features.containsAll(listOf("workbench-sessions","session-delegation")))throw ConnectionOwnerException("upgrade-required")
+            if(!cap.features.containsAll(ConnectionActions.base))throw ConnectionOwnerException("upgrade-required")
             if(epoch!=null&&epoch!=cap.daemonEpoch){invalidate("expired",true);epoch=cap.daemonEpoch;if(epochRetry)throw ConnectionOwnerException("offline");ensure(selected,true);return}
             epoch=cap.daemonEpoch
+            // Metadata eviction never discards an operation or a daemon-owned overlay.
+            if(!featureSnapshots.containsKey(selected)&&featureSnapshots.size>=64)featureSnapshots.keys.firstOrNull()?.let{featureSnapshots.remove(it)}
+            featureSnapshots[selected]=java.util.Collections.unmodifiableList(cap.features.toList())
             if(authority==null) {
                 val sent=ports.now();val opened=session(rpc(lane,"session.open",JsonObject().apply{addProperty("repoRoot",selected)}),true)
                 current(lane){if(opened.daemonEpoch!=epoch)throw ConnectionOwnerException("expired");authority=opened};renew(lane,sent)
@@ -304,6 +310,7 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
     /** Captured Test source never reconnects or downgrades a claimed transport. */
     fun draftTestSource(key:ConnectionKey,expectedEpoch:String):CompletionStage<DraftTestSource> = submit {
         admit(key.repoRoot)
+        if(!ConnectionActions.supported(features(key.repoRoot),key.scope,"test"))throw ConnectionOwnerException("upgrade-required")
         if(status!="ready"||epoch!=expectedEpoch||root!=key.repoRoot)throw ConnectionOwnerException("stale-view")
         val temporary=key.scope=="temporary"
         val lane=if(temporary)data[key.repoRoot]?.takeUnless{it.isClosed}?:throw ConnectionOwnerException("offline")
@@ -316,6 +323,7 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
                 val copy=params(key.repoRoot,PREFIX+"test",request,temporary)
                 return submit {
                     admit(key.repoRoot)
+                    if(!ConnectionActions.supported(features(key.repoRoot),key.scope,"test"))throw ConnectionOwnerException("upgrade-required")
                     if(epoch!=expectedEpoch||lane.isClosed)throw ConnectionOwnerException("offline")
                     if(temporary&&(authority==null||ports.now()>=deadline)){invalidate("expired");throw ConnectionOwnerException("expired")}
                     lane.request(PREFIX+"test",copy)
@@ -329,7 +337,7 @@ internal class ConnectionsSessionOwner(private val ports: ConnectionOwnerPorts =
     override fun close() {
         val lane:PersistentDaemonLane?
         synchronized(lock){if(disposed)return;disposed=true;cancelTimers();lane=control;control=null;authority=null;status="disposed";disposal=CompletableFuture()}
-        dropData().forEach{it.close()};saved.values.forEach{it.close()};saved.clear()
+        dropData().forEach{it.close()};saved.values.forEach{it.close()};saved.clear();featureSnapshots.clear()
         invalidations.forEach{runCatching{it()}};emit();listeners.clear();invalidations.clear()
         pending.forEach{it.completeExceptionally(ConnectionOwnerException("disposed"))};pending.clear();worker.shutdownNow();scheduler.shutdownNow()
         Thread({

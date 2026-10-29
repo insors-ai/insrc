@@ -5,6 +5,7 @@ import type { ConnectionKey, DraftTestRequest, OpenConnectionSessionResult, Sess
 import type { DraftTestSource } from '../../../src/shared/connection-manager/test-controller.js';
 import { parseSessionResume } from '../../../src/shared/connection-management-wire.js';
 import { connectionReplyData, decodeManagementCapabilities } from '../../../src/shared/connection-manager/wire.js';
+import { CONNECTION_MANAGER_BASE, connectionActionSupported } from '../../../src/shared/connection-manager/capabilities.js';
 
 export interface OwnerTimer { dispose(): void }
 export interface WorkbenchOwnerPorts {
@@ -38,6 +39,7 @@ function resumeReply(value:unknown,open:boolean):SessionResume|OpenConnectionSes
 export class ConnectionsWorkbenchOwner {
  #open:()=>PersistentIpcLane; #now:()=>number; #timer:(callback:()=>void,ms:number)=>OwnerTimer;
  #roots=new Set<string>(); #root:string|null=null; #epoch:string|null=null; #generation=0;
+ #features=new Map<string,readonly string[]>();
  #status:ConnectionOwnerView['status']='idle'; #disposed=false;
  #control:PersistentIpcLane|null=null; #resume:SessionResume|null=null;
  #data=new Map<string,PersistentIpcLane>(); #saved=new Map<string,PersistentIpcLane>();
@@ -58,6 +60,7 @@ export class ConnectionsWorkbenchOwner {
  setRegisteredRoots(roots:readonly string[]):void {
   this.#admit();if(roots.length>16384||roots.some(r=>!r||r.length>16384||/[\u0000-\u001f]/.test(r)))throw new ConnectionOwnerError('invalid-request');
   this.#roots=new Set(roots);
+  for(const root of this.#features.keys())if(!this.#roots.has(root))this.#features.delete(root);
   for(const map of [this.#data,this.#saved])for(const [root,lane]of map)if(!this.#roots.has(root)){map.delete(root);lane.dispose();}
   if(this.#root&&!this.#roots.has(this.#root)){this.#root=null;this.#emit();}
  }
@@ -68,6 +71,7 @@ export class ConnectionsWorkbenchOwner {
   const control=this.#control;this.#control=null;control?.dispose();
   this.#status=status;
   for(const listener of [...this.#invalidations])try{listener();}catch{/* Erasure must reach every controller. */}
+  if(epochChanged||status==='upgrade-required')this.#features.clear();
   if(epochChanged)this.#epoch=null;
   this.#emit();
  }
@@ -113,7 +117,7 @@ export class ConnectionsWorkbenchOwner {
    this.#current(control);
    const capabilities=decodeManagementCapabilities(await control.rpc(PREFIX+'capabilities',{repoRoot:root}));
    this.#current(control);this.#admit(root);
-   if(!capabilities.features.includes('workbench-sessions')||!capabilities.features.includes('session-delegation'))throw new ConnectionOwnerError('upgrade-required');
+   if(!CONNECTION_MANAGER_BASE.every(feature=>capabilities.features.includes(feature)))throw new ConnectionOwnerError('upgrade-required');
    if(this.#epoch!==null&&this.#epoch!==capabilities.daemonEpoch){
     this.#invalidate('expired',true);this.#epoch=capabilities.daemonEpoch;
     // Re-enter on a fresh, unclaimed control lane after clearing every old temporary input.
@@ -121,6 +125,9 @@ export class ConnectionsWorkbenchOwner {
     return await this.#ensure(root,true);
    }
    this.#epoch=capabilities.daemonEpoch;
+   // Only metadata is evicted; signed attempts and daemon-owned overlays stay intact.
+   if(!this.#features.has(root)&&this.#features.size>=64){const oldest=this.#features.keys().next().value;if(oldest!==undefined)this.#features.delete(oldest);}
+   this.#features.set(root,Object.freeze([...capabilities.features]));
    if(!this.#resume){
     const sent=this.#now(),opened=resumeReply(await control.rpc(PREFIX+'session.open',{repoRoot:root}),true);
     this.#current(control);if(opened.daemonEpoch!==this.#epoch)throw new ConnectionOwnerError('expired');
@@ -185,6 +192,7 @@ export class ConnectionsWorkbenchOwner {
   * Captured sources never reconnect. A cancel acknowledgement is not a worker-drain boundary. */
  draftTestSource(key:ConnectionKey,epoch:string):DraftTestSource {
   this.#admit(key.repoRoot);
+  if(!connectionActionSupported(this.features(key.repoRoot),key.scope,'test'))throw new ConnectionOwnerError('upgrade-required');
   if(this.#status!=='ready'||this.#epoch!==epoch||this.#root!==key.repoRoot)throw new ConnectionOwnerError('stale-view');
   const temporary=key.scope==='temporary';
   let lane=temporary?this.#data.get(key.repoRoot):this.#saved.get(key.repoRoot);
@@ -197,6 +205,7 @@ export class ConnectionsWorkbenchOwner {
   return Object.freeze({
    run:async (request:DraftTestRequest)=>{
     this.#admit(key.repoRoot);
+    if(!connectionActionSupported(this.features(key.repoRoot),key.scope,'test'))throw new ConnectionOwnerError('upgrade-required');
     if(this.#epoch!==epoch||captured.isClosed)throw new ConnectionOwnerError('offline');
     if(temporary&&(!this.#resume||this.#now()>=this.#deadline)){this.#invalidate('expired');throw new ConnectionOwnerError('expired');}
     return await captured.rpc(PREFIX+'test',this.#params(key.repoRoot,PREFIX+'test',request,temporary));
@@ -207,6 +216,7 @@ export class ConnectionsWorkbenchOwner {
  dispose():void {
   if(this.#disposed)return;this.#disposed=true;this.#cancelTimers();this.#dropData();
   for(const lane of this.#saved.values())lane.dispose();this.#saved.clear();
+  this.#features.clear();
   const control=this.#control;this.#control=null;this.#resume=null;this.#status='disposed';
   for(const listener of [...this.#invalidations])try{listener();}catch{/* Erase all temporary inputs. */}
   this.#emit();this.#listeners.clear();this.#invalidations.clear();
@@ -217,5 +227,7 @@ export class ConnectionsWorkbenchOwner {
  }
  /** Authenticated daemon expiry is a revocation only; it can never grant a new owner. */
  expireTemporary():void{if(!this.#disposed)this.#invalidate('expired');}
+ /** Public feature metadata only; no session capability or mutable backing map. */
+ features(root:string):readonly string[]{return this.#features.get(root)??Object.freeze([]);}
  whenDisposed():Promise<void>{return this.#disposeDone;}
 }

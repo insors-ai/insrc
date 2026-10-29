@@ -5,6 +5,7 @@ import type { MutationPorts } from '../../../src/shared/connection-manager/contr
 import { decodeMutationOutcome } from '../../../src/shared/connection-manager/wire.js';
 import { ConnectionsWorkbenchOwner, ConnectionOwnerError } from './session-owner.js';
 import { ConnectionDraftTests } from '../../../src/shared/connection-manager/test-controller.js';
+import { connectionMutationSupported } from '../../../src/shared/connection-manager/capabilities.js';
 
 export function createConnectionsDraftTests(owner:ConnectionsWorkbenchOwner):ConnectionDraftTests {
  const tests=new ConnectionDraftTests({source:(key,epoch)=>owner.draftTestSource(key,epoch)});
@@ -20,6 +21,7 @@ export function createConnectionsMutationController(owner:ConnectionsWorkbenchOw
   ...timing,
   sessionStamp:stamp,
   call:async(key,method,params,expected)=>{
+   if(!connectionMutationSupported(owner.features(key.repoRoot),key.scope,method,params))throw new ConnectionOwnerError('upgrade-required');
    if(key.scope==='saved')return await owner.requestSaved(key.repoRoot,method,params);
    if(expected===null||stamp(key)!==expected)throw new ConnectionOwnerError('expired');
    // Only explicit recovery/status may resume a live owner. Never replay a mutation during reconnect.

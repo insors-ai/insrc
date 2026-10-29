@@ -21,7 +21,7 @@ let preparation:ReturnType<typeof gate>|null=null,delivery:ReturnType<typeof gat
 let expected:Record<string,unknown>|null=null;
 const runtime=new ConnectionSessionRpc({enabled:async()=>true,isRegistered:async root=>roots.includes(root),createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context),dropOverlay:overlay=>overlay.close()});
 const handlers:RpcHandlers=Object.fromEntries(CONNECTION_SESSION_METHODS.map(m=>[m,(p,c)=>runtime.call(m,p,c!)]));
-handlers['db.connections.v2.capabilities']=async(_p,c)=>({version:2,daemonEpoch:c!.daemonEpoch,features:['safe-read','driver-descriptors','workbench-sessions','session-delegation'],receiptRetentionDays:30});
+handlers['db.connections.v2.capabilities']=async(_p,c)=>({version:2,daemonEpoch:c!.daemonEpoch,features:['safe-read','driver-descriptors','workbench-sessions','session-delegation','draft-test','test-cancellation'],receiptRetentionDays:30});
 handlers['db.connections.v2.test']=async(p,c)=>{
  const request=p as DraftTestRequest;tests++;sources.add(c!.connectionIdentity);claimed=!!c!.connectionSession;
  const {requestId:_id,draftRevision:_revision,...input}=request;

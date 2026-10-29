@@ -32,7 +32,7 @@ async function fixture(){
  let preparation:ReturnType<typeof deferred>|null=null,reply:ReturnType<typeof deferred>|null=null,change:((r:DraftTestResult)=>DraftTestResult)|null=null;
  const gates:ReturnType<typeof deferred>[]=[];
  const handlers:RpcHandlers=Object.fromEntries(CONNECTION_SESSION_METHODS.map(m=>[m,(p,c)=>runtime.call(m,p,c!)]));
- handlers[prefix+'capabilities']=async(_p,c)=>({version:2,daemonEpoch:c!.daemonEpoch,features:['safe-read','driver-descriptors','workbench-sessions','session-delegation'],receiptRetentionDays:30});
+ handlers[prefix+'capabilities']=async(_p,c)=>({version:2,daemonEpoch:c!.daemonEpoch,features:['safe-read','driver-descriptors','workbench-sessions','session-delegation','draft-test','test-cancellation'],receiptRetentionDays:30});
  handlers[prefix+'test']=async(p,c)=>{
   const request=p as DraftTestRequest;assert.ok(c);calls.push({request,connection:c.connectionIdentity,claimed:!!c.connectionSession});
   if(request.key.scope==='temporary')await runtime.accessFor(c,request.key.repoRoot);else assert.equal(c.connectionSession,undefined);

@@ -17,6 +17,8 @@ import { ConnectionDraft } from '../../../../../src/shared/connection-manager/dr
 import { decodeDriverDescriptors } from '../../../../../src/shared/connection-manager/wire.js';
 import { loadConnectionCorpus } from '../../../../../src/shared/__tests__/fixtures/connection-corpus.js';
 import { ConnectionsWorkbenchOwner } from '../../session-owner.js';
+import { rpc } from '../../../../../src/shared/ipc-client.js';
+import { listConnectionsRpc, listDriverKindsRpc } from '../../../../../src/daemon/db-rpc.js';
 import { createConnectionsMutationController } from '../../gateway.js';
 
 const PREFIX='db.connections.v2.';
@@ -26,10 +28,16 @@ export async function managementFixture(options:{multipleRoots?:boolean;manualCl
  const roots=[f.root,...other?[other.root]:[]];
  const lanes:PersistentIpcLane[]=[],requests:string[]=[],calls:string[]=[],removalRequests:{method:string;params:unknown}[]=[],held=new Set<Promise<unknown>>();
  let fault:'none'|'before'|'after'|'malformed'|'pending'='none',refreshFail=false,statusMalformed=false,ticketMalformed=false;
+ let capabilityMode='normal',omittedFeatures:string[]=[],readRows:unknown=null,legacyMutations=0;
  const ownerClock={value:0};
  const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,...options.manualClock?{monotonicNow:()=>ownerClock.value}:{},isRegistered:async root=>roots.includes(root),
   createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{},describe:async()=>({columns:[]})}) as Driver)}),dropOverlay:overlay=>overlay.close()});
  const handlers=connectionManagementHandlers({sessionRuntime:runtime,enabled:async()=>true,removalEnabled:async()=>true,isRegistered:async root=>roots.includes(root)});
+ const baseCapabilities=handlers[PREFIX+'capabilities']!;
+ handlers[PREFIX+'capabilities']=async(params,context)=>{calls.push('capabilities');if(capabilityMode==='missing')throw new Error('unknown method');const reply=await baseCapabilities(params,context) as {features:string[]};return{...reply,...capabilityMode==='old'?{version:1}:capabilityMode==='future'?{version:3}:capabilityMode==='malformed'?{version:'2'}:{},features:reply.features.filter(feature=>!omittedFeatures.includes(feature))};};
+ handlers['db.listConnections']=(params,context)=>listConnectionsRpc(params as {repoRoot:unknown},context);
+ handlers['db.listDriverKinds']=async()=>listDriverKindsRpc();
+ for(const method of ['db.saveConnection','db.deleteConnection'])handlers[method]=async()=>{legacyMutations++;throw new Error('legacy mutation is forbidden in this fixture');};
  const baseMutate=handlers[PREFIX+'mutate']!,baseList=handlers[PREFIX+'list']!,baseStatus=handlers[PREFIX+'status']!,baseActivate=handlers[PREFIX+'activate']!,baseTicket=handlers[PREFIX+'ticket']!;
  handlers[PREFIX+'ticket']=async(params,context)=>{calls.push('ticket');const result=await baseTicket(params,context);return ticketMalformed?{...(result as object),connectionId:'wrong-target'}:result;};
  handlers[PREFIX+'mutate']=async(params,context)=>{
@@ -44,7 +52,7 @@ export async function managementFixture(options:{multipleRoots?:boolean;manualCl
   if(selected==='malformed'&&(result as {status:string}).status==='committed')return{...(result as object),value:{...(result as {value:object}).value,operationId:randomUUID()}};
   return result;
  };
- handlers[PREFIX+'list']=async(params,context)=>{calls.push('list');if(refreshFail)throw new Error('fixture read failure');return await baseList(params,context);};
+ handlers[PREFIX+'list']=async(params,context)=>{calls.push('list');if(refreshFail)throw new Error('fixture read failure');if(readRows!==null)return readRows;return await baseList(params,context);};
  handlers[PREFIX+'status']=async(params,context)=>{calls.push('status');return statusMalformed?{status:'committed',value:{}}:await baseStatus(params,context);};
  handlers[PREFIX+'activate']=async(params,context)=>{calls.push('activate');return await baseActivate(params,context);};
  for(const method of ['removalState','retryRemovalCleanup']){
@@ -60,7 +68,7 @@ export async function managementFixture(options:{multipleRoots?:boolean;manualCl
  const controller=createConnectionsMutationController(owner,{now:()=>f.clock.value,timer:(callback,delay)=>{const id=++sequence;delays.push(delay);timers.set(id,callback);return{dispose:()=>{timers.delete(id);}};}});
  const descriptor=decodeDriverDescriptors(loadConnectionCorpus().driverDescriptors).find(d=>d.kind==='postgres')!;
  const draft=(id:string,scope:'saved'|'temporary'='saved')=>{const draft=new ConnectionDraft(descriptor,{repoRoot:f.root,scope,id});draft.setField(['endpoint'],'postgres://fixture.invalid/db');draft.setCredential('url.password','replace','fixture-only-private-replacement');return draft;};
- return {f,owner,controller,calls,requests,removalRequests,timers,delays,draft,forkOwner,roots,advanceOwnerClock:(value:number)=>{ownerClock.value=value;},setFault:(value:typeof fault)=>{fault=value;},setRefreshFail:(value:boolean)=>{refreshFail=value;},setStatusMalformed:(value:boolean)=>{statusMalformed=value;},
+ return {f,owner,controller,calls,requests,removalRequests,timers,delays,draft,forkOwner,roots,setCapabilities:(mode:string,omit:string[]=[])=>{capabilityMode=mode;omittedFeatures=omit;},setReadRows:(rows:unknown)=>{readRows=rows;},legacyWrites:()=>legacyMutations,legacyList:()=>rpc('db.listConnections',{repoRoot:f.root},()=>createConnection(join(env.directory,'daemon.sock'))),advanceOwnerClock:(value:number)=>{ownerClock.value=value;},setFault:(value:typeof fault)=>{fault=value;},setRefreshFail:(value:boolean)=>{refreshFail=value;},setStatusMalformed:(value:boolean)=>{statusMalformed=value;},
   setTicketMalformed:(value:boolean)=>{ticketMalformed=value;},drain:async()=>{for(const work of held)await work;},
   nextTimer:()=>{const [id,callback]=timers.entries().next().value!;timers.delete(id);callback();},
   close:async()=>{for(const work of held)await work;controller.dispose();for(const owner of owners){owner.dispose();await owner.whenDisposed();}for(const lane of lanes)lane.dispose();await server.close();await runtime.close();await closeAll();await env.cleanup();}};

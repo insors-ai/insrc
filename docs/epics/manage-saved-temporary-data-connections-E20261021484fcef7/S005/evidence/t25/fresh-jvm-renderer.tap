@@ -1,0 +1,64 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed: 'insrcFixtureReports' was added and 'kotlin.compiler.execution.strategy' and 'kotlin.incremental' were removed.
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :initializeIntellijPlatformPlugin
+> Task :generateManifest
+> Task :bundleBackendAssets
+> Task :patchPluginXml
+> Task :processTestResources
+> Task :processResources
+
+> Task :verifyPluginProjectConfiguration
+[org.jetbrains.intellij.platform] The following plugin configuration issues were found:
+- The dependency on the Kotlin Standard Library (stdlib) is automatically added when using the Gradle Kotlin plugin and may conflict with the version provided with the IntelliJ Platform, see: https://jb.gg/intellij-platform-kotlin-stdlib
+
+> Task :compileKotlin
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModel.kt:9:36 Non-public primary constructor is exposed via the generated 'copy()' method of the 'data' class.
+
+The generated 'copy()' will change its visibility in future releases.
+
+To suppress the warning do one of the following:
+- Annotate the data class with the '@ConsistentCopyVisibility' annotation.
+- Use the '-Xconsistent-data-class-copy-visibility' compiler flag.
+- Annotate the data class with the '@ExposedCopyVisibility' annotation 
+  (Discouraged, but can be used to keep binary compatibility).
+
+To learn more, see the documentation of the '@ConsistentCopyVisibility' and '@ExposedCopyVisibility' annotations.
+
+This will become an error in Kotlin 2.1.
+
+> Task :compileJava NO-SOURCE
+> Task :classes
+> Task :instrumentCode
+> Task :jar
+> Task :instrumentedJar
+> Task :composedJar
+> Task :prepareTestSandbox
+> Task :prepareTest
+
+> Task :compileTestKotlin
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:34:81 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:89:81 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt:92:119 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt:21:85 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsCompatibilityTest.kt:28:50 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt:39:53 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt:62:49 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt:24:58 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt:25:22 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt:35:85 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt:87:85 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsPrivacyTest.kt:29:150 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsPrivacyTest.kt:57:116 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt:98:60 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/S003TypesTest.kt:60:28 Check for instance is always 'true'.
+
+> Task :compileTestJava NO-SOURCE
+> Task :testClasses
+> Task :instrumentTestCode
+> Task :test
+
+BUILD SUCCESSFUL in 1m 6s
+16 actionable tasks: 16 executed
+Configuration cache entry stored.

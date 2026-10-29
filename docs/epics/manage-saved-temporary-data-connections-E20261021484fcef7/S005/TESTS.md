@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 55 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -407,3 +407,19 @@ Run at 2026-10-29T20:05:05.638Z on commit `dd12ef1c8`. Tests check: **passed**. 
 | `src/shared/__tests__/connection-manager-parity.test.ts` | 0 | 3 | 90.1 s |  |
 | `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 7 | 3 s |  |
 | `vscode-plugin/src/connections/__tests__/removal.test.ts` | 0 | 3 | 1.2 s |  |
+
+## t24
+
+Run at 2026-10-29T20:34:29.967Z on commit `02bd623fb`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage | `src/shared/__tests__/connection-manager-privacy.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-privacy.test.ts` | 0 | 1 | 29.6 s |  |

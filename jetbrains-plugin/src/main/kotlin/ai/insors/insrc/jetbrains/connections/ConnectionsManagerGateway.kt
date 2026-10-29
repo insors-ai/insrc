@@ -5,7 +5,7 @@ import com.google.gson.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.*
 
-data class ConnectionsManagerView(val generation:Long,val formId:Long,val list:ConnectionsManagerProjection,val draft:ConnectionDraftView?,val choices:List<ConnectionDriverChoice>,val blocked:Boolean,val valid:Boolean,val test:DraftTestView,val operations:List<MutationRecordView>,val confirmation:RemovalConfirmation?,val dirty:Boolean,val error:String,val notice:String)
+data class ConnectionsManagerView(val generation:Long,val formId:Long,val list:ConnectionsManagerProjection,val draft:ConnectionDraftView?,val choices:List<ConnectionDriverChoice>,val blocked:Boolean,val valid:Boolean,val test:DraftTestView,val operations:List<MutationRecordView>,val confirmation:RemovalConfirmation?,val dirty:Boolean,val error:String,val notice:String,val controls:ConnectionControls=ConnectionControls())
 
 /** One Project-memory editor over the native domain cores. Native panels are disposable subscribers. */
 class ConnectionsManagerGateway internal constructor(
@@ -73,7 +73,10 @@ class ConnectionsManagerGateway internal constructor(
         val projection=ConnectionsManagerModel.project(captured.first)
         val valid=captured.second?.let{runCatching{it.serialize()}.isSuccess}==true
         val prompt=removals.view
-        return ConnectionsManagerView(uiGeneration.get(),captured.third,projection,form,connectionDriverChoices(synchronized(lock){descriptors}),form?.let{mutations.isBlocked(it.key)}==true,valid,probes.view,mutations.records.filter{it.key.repoRoot==projection.repoRoot},prompt.confirmation,synchronized(lock){pending!=null}||prompt.resolveDirty,synchronized(lock){error},synchronized(lock){notice})
+        val features=session.features(projection.repoRoot?:"")
+        val records=mutations.records.filter{it.key.repoRoot==projection.repoRoot}
+        val controls=ConnectionControls(form?.let{ConnectionActions.supported(features,it.key.scope,it.mode)}==true,form?.let{ConnectionActions.supported(features,it.key.scope,"test")}==true,projection.selected?.let{ConnectionActions.supported(features,it.key.scope,"remove")}==true,records.associate{r->r.recordId to listOf("reconcile","replay","activation","cleanup","refresh","dismiss").filter{ConnectionActions.operation(features,r.key.scope,r.mode,it)}})
+        return ConnectionsManagerView(uiGeneration.get(),captured.third,projection,form,connectionDriverChoices(synchronized(lock){descriptors}),form?.let{mutations.isBlocked(it.key)}==true,valid,probes.view,records,prompt.confirmation,synchronized(lock){pending!=null}||prompt.resolveDirty,synchronized(lock){error},synchronized(lock){notice},controls)
     }
     private fun bindProbe(){val current=synchronized(lock){draft};val epoch=session.view.daemonEpoch
         runCatching{probes.setView(if(views.get()>0&&current!=null&&!current.view.discarded&&epoch!=null)DraftTestIdentity(current.view.key,epoch,uiGeneration.get())else null)}}
@@ -119,7 +122,8 @@ class ConnectionsManagerGateway internal constructor(
                 dispatch(ManagerEvent.ListError(identity,if(cause is ConnectionOwnerException&&cause.code=="upgrade-required")"upgrade-required"else if(cause is ConnectionOwnerException)"offline"else"read-error"))}
         }}
     }
-    private fun change(body:()->Unit){try{admit();synchronized(lock){error=""};body()}catch(_:Exception){synchronized(lock){error="Review the connection fields and current operation state before continuing."}};emit()}
+    private fun change(body:()->Unit){try{admit();synchronized(lock){error=""};body()}catch(e:Exception){synchronized(lock){error=if(e is ConnectionOwnerException&&e.code=="upgrade-required")"Upgrade the daemon to use this connection action. The original operation is retained."else"Review the connection fields and current operation state before continuing."}};emit()}
+    private fun requireAction(key:ConnectionKey,action:String){if(!ConnectionActions.supported(session.features(key.repoRoot),key.scope,action))throw ConnectionOwnerException("upgrade-required")}
     private fun editable():ConnectionDraft {admit();val capture=synchronized(lock){model to draft}
         val value=capture.second?:throw MutationStateException("invalid-state")
         if(!ConnectionsManagerModel.project(capture.first).canMutate||mutations.isBlocked(value.view.key))throw MutationStateException("busy")
@@ -162,22 +166,23 @@ class ConnectionsManagerGateway internal constructor(
     fun reset(path:List<String>)=change{editable().resetField(path)}
     fun credential(slot:String,action:String,value:String?=null)=change{val form=editable();try{form.setCredential(slot,action,value)}catch(e:Exception){if(action=="replace"&&form.view.credentials.any{it.slot==slot})runCatching{form.setCredential(slot,"replace","")};throw e}}
     fun addresses(slot:String,values:List<String>)=change{val form=editable();try{form.setCredentialAddresses(slot,values)}catch(e:Exception){if(form.view.credentials.any{it.slot==slot})runCatching{form.setCredential(slot,"replace","")};throw e}}
-    fun save()=change{val form=editable();probes.cancel();mutations.submit(form).whenComplete{_,_->emit()}}
-    fun test()=change{val form=editable();val epoch=session.view.daemonEpoch?:throw MutationStateException("invalid-state");probes.test(form,DraftTestIdentity(form.view.key,epoch,uiGeneration.get())).whenComplete{_,_->emit()}}
+    fun save()=change{val form=editable();requireAction(form.view.key,form.view.mode);probes.cancel();mutations.submit(form).whenComplete{_,_->emit()}}
+    fun test()=change{val form=editable();requireAction(form.view.key,"test");val epoch=session.view.daemonEpoch?:throw MutationStateException("invalid-state");probes.test(form,DraftTestIdentity(form.view.key,epoch,uiGeneration.get())).whenComplete{_,_->emit()}}
     fun cancelTest(){probes.cancel()}
     fun remove()=change{val projection=ConnectionsManagerModel.project(synchronized(lock){model});val selected=projection.selected?:return@change
         val row=projection.rows.firstOrNull{it.key==selected.key&&it.revision==selected.revision&&it.key in projection.visibleKeys}?:return@change
-        if(projection.canMutate){removals.begin(row,synchronized(lock){draft});bump()}}
+        if(projection.canMutate){requireAction(row.key,"remove");removals.begin(row,synchronized(lock){draft});bump()}}
     fun decideDirty(decision:String)=change{
         if(removals.view.resolveDirty){removals.resolveDirty(decision);if(synchronized(lock){draft}?.view?.discarded==true)synchronized(lock){draft=null;formId++};bump();return@change}
         val action=synchronized(lock){pending}?:return@change;val current=synchronized(lock){draft}?:return@change
         val effects=current.decideDiscard(decision);synchronized(lock){pending=null};bump()
         if(decision=="discard"&&effects.isNotEmpty()){synchronized(lock){draft=null;formId++};bindProbe();action()}
     }
-    fun decideRemoval(decision:String)=change{removals.decide(decision).whenComplete{_,_->emit()};bump()}
+    fun decideRemoval(decision:String)=change{if(decision=="confirm")removals.view.confirmation?.let{requireAction(it.key,"remove")};removals.decide(decision).whenComplete{_,_->emit()};bump()}
     fun requestClose(action:()->Unit)=navigate(DraftNavigation("close"),action)
     fun operation(id:String,action:String)=change{
-        if(mutations.records.none{it.recordId==id&&it.key.repoRoot==synchronized(lock){model.repoRoot}})return@change
+        val record=mutations.records.firstOrNull{it.recordId==id&&it.key.repoRoot==synchronized(lock){model.repoRoot}}?:return@change
+        if(!ConnectionActions.operation(session.features(record.key.repoRoot),record.key.scope,record.mode,action))throw ConnectionOwnerException("upgrade-required")
         val work=when(action){"reconcile"->mutations.reconcile(id);"replay"->mutations.replay(id);"activation"->mutations.retryActivation(id);"cleanup"->mutations.retryCleanup(id);"refresh"->mutations.retryRefresh(id);"dismiss"->{mutations.dismiss(id);null};else->throw MutationStateException("invalid-state")}
         work?.whenComplete{_,_->emit()}
     }

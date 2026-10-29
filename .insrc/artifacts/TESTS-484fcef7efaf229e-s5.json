@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T20:05:05.638Z",
+    "updatedAt": "2026-10-29T20:34:29.967Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1169,6 +1169,42 @@
               },
               {
                 "title": "CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t24",
+        "commit": "02bd623fb",
+        "ranAt": "2026-10-29T20:34:29.967Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-privacy.test.ts",
+                "title": "CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-privacy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 29553,
+            "titles": [
+              {
+                "title": "CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage",
                 "result": "pass"
               }
             ],

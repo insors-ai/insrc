@@ -26,6 +26,7 @@ export type ConnectionIntent=Header&(
 );
 export interface ConnectionPanel extends ChatPanelChannel {onVisibility?(listener:(visible:boolean)=>void):void}
 export interface ConnectionRenderView {
+ readonly controls:import('../../../src/shared/connection-manager/capabilities.js').ConnectionControls;
  readonly viewId:string;readonly generation:number;
  readonly list:Pick<ManagerProjection,'roots'|'repoRoot'|'filter'|'search'|'listState'|'counts'|'matchingCount'|'stale'|'canMutate'>;
  readonly rows:readonly {readonly key:ConnectionKey;readonly revision:string;readonly kind:string;readonly label:string;readonly family:string;readonly selected:boolean}[];

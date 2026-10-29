@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong
 /** Owned subprocess fixture; all production authority is exercised, with fixture-only storage/gates/drivers. */
 internal class ConnectionMutationBackend:AutoCloseable {
     val dir=Files.createTempDirectory("s5m-").toRealPath()
-    private val socket=dir.resolve("daemon.sock")
+    val socket=dir.resolve("daemon.sock")
     private val process=ProcessBuilder(System.getenv("INSRC_FIXTURE_NODE")?:"node","--import","tsx","src/shared/__tests__/fixtures/connection-mutation-server.ts",dir.toString()).directory(Path.of("..").toFile()).redirectErrorStream(true).start()
     private val ready=CompletableFuture<Void>()
     private val output=CopyOnWriteArrayList<String>()

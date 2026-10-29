@@ -15,6 +15,9 @@ import type { ConnectionRemovals } from '../../../src/shared/connection-manager/
 import { decodeDriverDescriptors } from '../../../src/shared/connection-manager/wire.js';
 import type { ClientDriverDescriptor } from '../../../src/shared/connection-manager/wire.js';
 import type { ConnectionScope,SafeConnection } from '../../../src/shared/connection-management.js';
+import { connectionActionSupported,connectionOperationSupported } from '../../../src/shared/connection-manager/capabilities.js';
+import type { ConnectionAction } from '../../../src/shared/connection-manager/capabilities.js';
+import type { ConnectionKey } from '../../../src/shared/connection-management.js';
 
 export interface ConnectionsHostPorts {
  readonly createPanel:()=>ConnectionPanel;readonly registeredRoots:()=>Promise<readonly string[]>;
@@ -104,7 +107,9 @@ export class ConnectionsManagerHost {
    const projection=projectConnectionManager(this.#model),visible=new Set(projection.visibleKeys.map(k=>JSON.stringify(k)));
    const draft=this.#draft?.view??null;let valid=false;if(this.#draft)try{this.#draft.serialize();valid=true;}catch{/* Incomplete field values remain editable. */}
    const operations=this.#ports.mutations.records.filter(r=>r.key.repoRoot===this.#model.repoRoot);
+   const features=this.#ports.owner.features(projection.repoRoot??'');
    const view:ConnectionRenderView={viewId:this.#viewId,generation:this.#generation,
+    controls:{save:!!draft&&connectionActionSupported(features,draft.key.scope,draft.mode),test:!!draft&&connectionActionSupported(features,draft.key.scope,'test'),remove:!!projection.selected&&connectionActionSupported(features,projection.selected.key.scope,'remove'),operations:Object.fromEntries(operations.map(r=>[r.recordId,['reconcile','replay','activation','cleanup','refresh','dismiss'].filter(action=>connectionOperationSupported(features,r.key.scope,r.mode,action))]))},
     list:{roots:projection.roots,repoRoot:projection.repoRoot,filter:projection.filter,search:projection.search,listState:projection.listState,counts:projection.counts,matchingCount:projection.matchingCount,stale:projection.stale,canMutate:projection.canMutate},
     rows:projection.rows.filter(r=>visible.has(JSON.stringify(r.key))).map(r=>({key:r.key,revision:r.revision,kind:r.kind,label:r.label??r.key.id,family:r.effectiveFamily,selected:!!projection.selected&&sameConnectionKey(projection.selected.key,r.key)&&projection.selected.revision===r.revision})),
     choices:connectionDriverChoices(this.#descriptors),draft,formId:this.#formId,blocked:!!draft&&this.#ports.mutations.isBlocked(draft.key),valid,
@@ -114,6 +119,10 @@ export class ConnectionsManagerHost {
  }
  #editable():ConnectionDraft{
   const draft=this.#draft;if(!draft||!projectConnectionManager(this.#model).canMutate||this.#ports.mutations.isBlocked(draft.view.key))throw new Error('Action unavailable');return draft;
+ }
+ #allow(key:ConnectionKey,action:ConnectionAction):boolean{
+  if(connectionActionSupported(this.#ports.owner.features(key.repoRoot),key.scope,action))return true;
+  this.#error='Upgrade the daemon to use this connection action.';return false;
  }
  #navigate(target:DraftNavigation,action:()=>void|Promise<void>):void{
   if(this.#draft?.dirty){this.#draft.requestExit(target);this.#pending=action;this.#bump();this.#publish();return;}
@@ -164,12 +173,12 @@ export class ConnectionsManagerHost {
     case 'credential-addresses':{
      const draft=this.#editable();try{draft.setCredentialAddresses(intent.slot,intent.values);}catch(error){if(draft.view.credentials.some(c=>c.slot===intent.slot))try{draft.setCredential(intent.slot,'replace','');}catch{/* Read-only forms remain unchanged. */}throw error;}break;
     }
-    case 'test':{const draft=this.#editable();const epoch=this.#ports.owner.view.daemonEpoch;if(epoch)await this.#ports.tests.test(draft,{key:draft.view.key,daemonEpoch:epoch,viewGeneration:this.#generation});break;}
+    case 'test':{const draft=this.#editable();if(!this.#allow(draft.view.key,'test'))break;const epoch=this.#ports.owner.view.daemonEpoch;if(epoch)await this.#ports.tests.test(draft,{key:draft.view.key,daemonEpoch:epoch,viewGeneration:this.#generation});break;}
     case 'cancel-test':this.#ports.tests.cancel();break;
-    case 'save':{const draft=this.#editable();this.#ports.tests.cancel();await this.#ports.mutations.submit(draft);break;}
+    case 'save':{const draft=this.#editable();if(!this.#allow(draft.view.key,draft.view.mode))break;this.#ports.tests.cancel();await this.#ports.mutations.submit(draft);break;}
     case 'remove':{
      const selected=this.#model.selected,row=selected&&this.#model.rows.find(r=>sameConnectionKey(r.key,selected.key)&&r.revision===selected.revision);
-     if(row&&projectConnectionManager(this.#model).canMutate&&projectConnectionManager(this.#model).visibleKeys.some(k=>sameConnectionKey(k,row.key))){this.#ports.removals.begin(row,this.#draft??undefined);this.#bump();}break;
+     if(row&&projectConnectionManager(this.#model).canMutate&&projectConnectionManager(this.#model).visibleKeys.some(k=>sameConnectionKey(k,row.key))&&this.#allow(row.key,'remove')){this.#ports.removals.begin(row,this.#draft??undefined);this.#bump();}break;
     }
     case 'dirty':{
      if(this.#ports.removals.view.resolveDirty){this.#ports.removals.resolveDirty(intent.decision);this.#bump();break;}
@@ -177,9 +186,10 @@ export class ConnectionsManagerHost {
      const effects=this.#draft.decideDiscard(intent.decision);this.#bump();
      if(intent.decision==='discard'&&effects.length){this.#draft=null;this.#bindTest();await action();}break;
     }
-    case 'removal':await this.#ports.removals.decide(intent.decision);this.#bump();break;
+    case 'removal':if(intent.decision==='confirm'&&this.#ports.removals.view.confirmation&&!this.#allow(this.#ports.removals.view.confirmation.key,'remove'))break;await this.#ports.removals.decide(intent.decision);this.#bump();break;
     case 'operation':{
-     if(!this.#ports.mutations.records.some(r=>r.recordId===intent.recordId&&r.key.repoRoot===this.#model.repoRoot))return;
+     const record=this.#ports.mutations.records.find(r=>r.recordId===intent.recordId&&r.key.repoRoot===this.#model.repoRoot);if(!record)return;
+     if(!connectionOperationSupported(this.#ports.owner.features(record.key.repoRoot),record.key.scope,record.mode,intent.action)){this.#error='Upgrade the daemon to use this recovery action. The original operation is retained.';break;}
      switch(intent.action){
       case 'reconcile':await this.#ports.mutations.reconcile(intent.recordId);break;
       case 'replay':await this.#ports.mutations.replay(intent.recordId);break;

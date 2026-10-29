@@ -1,0 +1,7 @@
+{
+  "testCallsNewControlsDescriptor": true,
+  "calls": [
+    "283: invokestatic  #960                // Method ai/insors/insrc/jetbrains/connections/ConnectionsManagerView.copy$default:(Lai/insors/insrc/jetbrains/connections/ConnectionsManagerView;JJLai/insors/insrc/jetbrains/connections/ConnectionsManagerProjection;Lai/insors/insrc/jetbrains/connections/ConnectionDraftView;Ljava/util/List;ZZLai/insors/insrc/jetbrains/connections/DraftTestView;Ljava/util/List;Lai/insors/insrc/jetbrains/connections/RemovalConfirmation;ZLjava/lang/String;Ljava/lang/String;Lai/insors/insrc/jetbrains/connections/ConnectionControls;ILjava/lang/Object;)Lai/insors/insrc/jetbrains/connections/ConnectionsManagerView;",
+    "306: invokestatic  #960                // Method ai/insors/insrc/jetbrains/connections/ConnectionsManagerView.copy$default:(Lai/insors/insrc/jetbrains/connections/ConnectionsManagerView;JJLai/insors/insrc/jetbrains/connections/ConnectionsManagerProjection;Lai/insors/insrc/jetbrains/connections/ConnectionDraftView;Ljava/util/List;ZZLai/insors/insrc/jetbrains/connections/DraftTestView;Ljava/util/List;Lai/insors/insrc/jetbrains/connections/RemovalConfirmation;ZLjava/lang/String;Ljava/lang/String;Lai/insors/insrc/jetbrains/connections/ConnectionControls;ILjava/lang/Object;)Lai/insors/insrc/jetbrains/connections/ConnectionsManagerView;"
+  ]
+}

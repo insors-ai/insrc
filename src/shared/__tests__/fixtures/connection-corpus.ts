@@ -9,6 +9,7 @@ export interface ConnectionCorpus {
  version: 1; protocolVersion: 2; releaseEnabled: false; fixturesAreAcceptance: false;
  identity: { key: { repoRoot: string; scope: string; id: string }; revision: string; operationId: string; daemonEpoch: string };
  wire: CorpusWireCase[]; transcripts: CorpusTranscript[]; removalSnapshots: unknown[];
+ capabilityCases:{id:string;features:string[];scope:string;action:string;mode:string;expected:boolean}[];
  publicFieldCases: {value:string;valid:boolean}[];
  draftScenarios: {id:string;kind:string;key:unknown;current?:unknown;steps:Record<string,unknown>[];expected:Record<string,unknown>;serialized?:unknown;serializationError?:string}[];
  managerScenarios: {id:string;steps:{event:Record<string,unknown>;expected:Record<string,unknown>;effects?:Record<string,unknown>[]}[]}[];

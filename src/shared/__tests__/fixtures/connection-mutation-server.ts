@@ -13,6 +13,7 @@ import { IpcServer, directDispatch } from '../../../daemon/server.js';
 import type { Driver } from '../../db-driver.js';
 import type { MutationRequest } from '../../connection-management.js';
 import { _setKeystoreForTests } from '../../../daemon/db/secrets.js';
+import { listConnectionsRpc, listDriverKindsRpc } from '../../../daemon/db-rpc.js';
 import { connectionTestSupervisor } from '../../../daemon/db/draft-test.js';
 
 const dir=process.argv[2]!,env=await environment(),f=await env.rootFixture('managed');_setPoolForTests(f.root,f.pool);
@@ -33,6 +34,15 @@ f.hooks.activate=async()=>{if(activationFail)throw new Error('fixture activation
 const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,monotonicNow:()=>now,isRegistered:async root=>roots.includes(root),
  createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{},describe:async()=>({columns:[]})}) as Driver)}),dropOverlay:overlay=>overlay.close()});
 const P='db.connections.v2.',handlers=connectionManagementHandlers({sessionRuntime:runtime,enabled:async()=>true,removalEnabled:async()=>true,isRegistered:async root=>roots.includes(root)});
+let capabilityMode='normal',omittedFeatures:string[]=[],readRows:unknown=null,legacyMutations=0;
+const baseCapabilities=handlers[P+'capabilities']!;
+handlers[P+'capabilities']=async(params,context)=>{if(capabilityMode==='missing')throw new Error('unknown method');const reply=await baseCapabilities(params,context) as {features:string[]};return{...reply,...capabilityMode==='old'?{version:1}:capabilityMode==='future'?{version:3}:capabilityMode==='malformed'?{version:'2'}:{},features:reply.features.filter(feature=>!omittedFeatures.includes(feature))};};
+handlers['db.listConnections']=(params,context)=>listConnectionsRpc(params as {repoRoot:unknown},context);
+handlers['db.listDriverKinds']=async()=>listDriverKindsRpc();
+for(const method of ['db.saveConnection','db.deleteConnection'])handlers[method]=async()=>{legacyMutations++;throw new Error('legacy mutation is forbidden in this fixture');};
+handlers['fixture.capabilities']=async params=>{const p=params as {mode?:string;omit?:string[]};capabilityMode=p.mode??'normal';omittedFeatures=p.omit??[];return{configured:true};};
+handlers['fixture.readRows']=async params=>{readRows=(params as {rows:unknown}).rows;return{configured:true};};
+handlers['fixture.seedSaved']=async params=>{const request=await f.request((params as {id:string}).id);return await f.service.mutate(f.context,request);};
 const baseTicket=handlers[P+'ticket']!,baseMutate=handlers[P+'mutate']!,baseStatus=handlers[P+'status']!,baseActivate=handlers[P+'activate']!,baseList=handlers[P+'list']!;
 handlers[P+'ticket']=async(params,context)=>{tickets++;return await baseTicket(params,context);};
 handlers[P+'mutate']=async(params,context)=>{
@@ -52,7 +62,7 @@ handlers[P+'mutate']=async(params,context)=>{
 };
 handlers[P+'status']=async(params,context)=>{statuses++;return await baseStatus(params,context);};
 handlers[P+'activate']=async(params,context)=>{activations++;return await baseActivate(params,context);};
-handlers[P+'list']=async(params,context)=>{lists++;if(refreshFail)throw new Error('fixture refresh failure');return await baseList(params,context);};
+handlers[P+'list']=async(params,context)=>{lists++;if(refreshFail)throw new Error('fixture refresh failure');if(readRows!==null)return readRows;return await baseList(params,context);};
 for(const method of ['removalState','retryRemovalCleanup']){
  const base=handlers[P+method]!;handlers[P+method]=async(params,context)=>{
   if(method==='removalState')removeStateCalls++;else cleanupCalls++;
@@ -62,7 +72,7 @@ for(const method of ['removalState','retryRemovalCleanup']){
  };
 }
 handlers['fixture.info']=async()=>({roots,wallNow:f.clock.value});
-handlers['fixture.stats']=async()=>({tickets,mutations,statuses,activations,lists,probeActive:connectionTestSupervisor.activeCount,identicalReplay,savedRows:f.store.snapshot.file.connections.length,registryWrites:f.counts.writes,credentialSets:f.counts.sets,credentialDeletes:f.counts.deletes,removeStateCalls,cleanupCalls,ticketOnlyCleanup,originalCleanup,removeFieldsValid,oldCloses,newCloses,sourcePreserved:readFileSync(sourcePath).equals(sourceBytes)});
+handlers['fixture.stats']=async()=>({tickets,mutations,statuses,activations,lists,probeActive:connectionTestSupervisor.activeCount,legacyMutations,identicalReplay,savedRows:f.store.snapshot.file.connections.length,registryWrites:f.counts.writes,credentialSets:f.counts.sets,credentialDeletes:f.counts.deletes,removeStateCalls,cleanupCalls,ticketOnlyCleanup,originalCleanup,removeFieldsValid,oldCloses,newCloses,sourcePreserved:readFileSync(sourcePath).equals(sourceBytes)});
 handlers['fixture.fault']=async params=>{
  const p=params as Record<string,unknown>;
  if(typeof p['mode']==='string')fault=p['mode'];if(typeof p['refreshFail']==='boolean')refreshFail=p['refreshFail'];if(typeof p['activationFail']==='boolean')activationFail=p['activationFail'];if(typeof p['cleanupFail']==='boolean')cleanupFail=p['cleanupFail'];

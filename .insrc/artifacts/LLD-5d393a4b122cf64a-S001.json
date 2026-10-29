@@ -204,6 +204,13 @@
         "choice": "Adopt as-is (plan-local)",
         "rationale": "Raised with the LLD at presentation; the user approved the LLD with ac1-ac4 derived from plans/module-state-inventory-sweep.md.",
         "resolvedAt": "2026-10-29T11:51:35.306Z"
+      },
+      "q930c487a": {
+        "question": "Moves (ambiguous): which values need a move is known only after the classification; any move large enough to need its own design is raised as a separate tracked item rather than folded into this Story.",
+        "status": "resolved",
+        "choice": "Manual review gate after classification",
+        "rationale": "The user decides, per value needing an owner, whether the move is done inline or raised as a separate tracked item; a fixed size threshold would be arbitrary.",
+        "resolvedAt": "2026-10-29T11:52:08.829Z"
       }
     }
   },

@@ -235,6 +235,8 @@ The scanner of a1 finds the declarations; instead of a fixture, each declaration
   - **resolved**: A. Standalone new helper (confirm as designed) — The approved LLD declares moduleStateInventory as a new test-side function beside connectionSourceInventory. _(2026-10-29T11:50:52.079Z)_
 - `q4da5879d` — ts1 (ambiguous): the Story has no acceptance criteria; ac1-ac4 are derived from the work item's done-when list (plans/module-state-inventory-sweep.md) plus the scanner's correctness.
   - **resolved**: Adopt as-is (plan-local) — Raised with the LLD at presentation; the user approved the LLD with ac1-ac4 derived from plans/module-state-inventory-sweep.md. _(2026-10-29T11:51:35.306Z)_
+- `q930c487a` — Moves (ambiguous): which values need a move is known only after the classification; any move large enough to need its own design is raised as a separate tracked item rather than folded into this Story.
+  - **resolved**: Manual review gate after classification — The user decides, per value needing an owner, whether the move is done inline or raised as a separate tracked item; a fixed size threshold would be arbitrary. _(2026-10-29T11:52:08.829Z)_
 
 ## Citations
 

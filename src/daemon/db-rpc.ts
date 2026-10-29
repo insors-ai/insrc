@@ -26,7 +26,7 @@ import { getLogger } from '../shared/logger.js';
 import { familyOf, kindExists, listRegisteredKinds, } from './db/registry.js';
 import { connectionsPath, loadConnections, repoIdOf, saveConnections, } from './db/config.js';
 import { deleteSecret, extractUrlPassword, makeSecretRef, referencedSecrets, credentialKeystore, } from './db/secrets.js';
-import { reloadAll } from './db/pool-cache.js';
+import { reloadAll, savedConnectionResolver } from './db/pool-cache.js';
 import { assertUnmanagedWrite, managementMarkerExists } from './db/managed-store.js';
 import { savedManagementFor, withSavedRootGate, managementRejection } from './db/management.js';
 import { materializeDraft, safeConnection } from './db/driver-profiles.js';
@@ -264,9 +264,11 @@ export async function testConnectionRpc(params: {readonly repoRoot?: unknown; re
  let family:DriverFamily=parsed.family??familyOf(parsed.kind)??'rdbms';
  const began=performance.now();
  try {
-  const result=await connectionTestSupervisor.run({requestId:randomUUID(),draftRevision:0,key:{repoRoot,scope:'saved',id:parsed.id},publicPatch:{},credentials:{}},context,async signal=>{
+  const result=await connectionTestSupervisor.run({requestId:randomUUID(),draftRevision:0,key:{repoRoot,scope:'saved',id:parsed.id},publicPatch:{},credentials:{}},context,async (signal,drained)=>{
    signal.throwIfAborted();let cfg:SaveConnectionInput=parsed;
    if(!cfg.url&&!cfg.path){
+    const lease=await savedConnectionResolver.lease({lookupRoot:repoRoot,daemonEpoch:context.daemonEpoch},cfg.id);
+    void drained.then(()=>lease.release(),()=>lease.release()).catch(()=>{});
     const existing=await loadConnections(repoRoot);signal.throwIfAborted();
     const match=existing.resolved.find(c=>c.id===cfg.id);if(!match)throw new Error();cfg=mergePersisted(cfg,match);
    }

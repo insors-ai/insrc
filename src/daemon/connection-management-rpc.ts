@@ -67,7 +67,7 @@ export interface ConnectionTestPorts {
  readonly sessionRuntime?: SessionRpcRuntime | undefined;
  readonly removalEnabled?: (()=>Promise<boolean>) | undefined;
  readonly enabled?: (()=>Promise<boolean>) | undefined;
- readonly prepareTemporary?: ((request:DraftTestRequest,context:TrustedRpcContext,signal:AbortSignal)=>Promise<EffectiveDraft>) | undefined;
+ readonly prepareTemporary?: ((request:DraftTestRequest,context:TrustedRpcContext,signal:AbortSignal,drained:Promise<void>)=>Promise<EffectiveDraft>) | undefined;
  readonly isRegistered?: ((root:string)=>Promise<boolean>) | undefined;
 }
 export async function connectionManagementRpc(method: Method, value: unknown, transport?: TrustedRpcContext, testPorts:ConnectionTestPorts={}): Promise<unknown> {
@@ -89,13 +89,13 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 			const request=parseDraftTestRequest(value), runtime=testPorts.sessionRuntime??connectionSessionRuntime;
 			if (request.key.scope === 'temporary' && request.expectedRevision !== undefined && !context.connectionSession) throw new ManagementServiceError('upgrade-required');
 			const probeContext=context.connectionSession ? await (runtime.probeContext?.(context,request)??Promise.reject(new ManagementServiceError('upgrade-required'))) : context;
-			return await connectionTestSupervisor.run(request,probeContext,async signal=>{
+			return await connectionTestSupervisor.run(request,probeContext,async (signal,drained)=>{
 				if(!await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())throw new ManagementServiceError('upgrade-required');
 				signal.throwIfAborted();const repoRoot=await root(request.key.repoRoot,true);signal.throwIfAborted();
-				if(request.key.scope==='saved')return (await owner(repoRoot)).prepareDraft(managementContext(repoRoot,context),request,signal);
+				if(request.key.scope==='saved')return (await owner(repoRoot)).prepareDraft(managementContext(repoRoot,context),request,signal,drained);
 				if(request.expectedRevision!==undefined){
 					const prepare=testPorts.prepareTemporary??runtime.prepareTemporary?.bind(runtime); if(!prepare)throw new ManagementServiceError('upgrade-required');
-					const effective=await prepare(request,probeContext,signal);signal.throwIfAborted();return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
+					const effective=await prepare(request,probeContext,signal,drained);signal.throwIfAborted();return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
 				}
 				if(!await (testPorts.isRegistered??(async root=>await lookupRepoId(root)!==undefined))(repoRoot))throw new ManagementServiceError('invalid-input');
 				signal.throwIfAborted();

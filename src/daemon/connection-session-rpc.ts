@@ -28,7 +28,7 @@ export interface SessionRpcRuntime {
 	ready(): Promise<boolean>;
  removalReady?(): Promise<boolean>;
  probeContext?(context: TrustedRpcContext, request: DraftTestRequest): Promise<TrustedRpcContext>;
- prepareTemporary?(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal): Promise<EffectiveDraft>;
+ prepareTemporary?(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal, drained?: Promise<void>): Promise<EffectiveDraft>;
 	manage?(method: string, value: unknown, context: TrustedRpcContext): Promise<unknown>;
 }
 export interface ConnectionSessionRpcPorts<Overlay> extends Omit<SessionOwnerPorts<Overlay>, 'daemonEpoch'> {
@@ -225,10 +225,19 @@ export class ConnectionSessionRpc<Overlay> implements SessionRpcRuntime {
    owned.assertActive(); if (!context.registerDrain) throw fail('session-expired'); context.registerDrain(work); owned.overlay.retainWork(work);
   } });
  }
- async prepareTemporary(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal): Promise<EffectiveDraft> {
+ async prepareTemporary(request: DraftTestRequest, context: TrustedRpcContext, signal: AbortSignal, drained?: Promise<void>): Promise<EffectiveDraft> {
   if (request.key.scope !== 'temporary' || request.expectedRevision === undefined) throw new ManagementServiceError('invalid-input');
   const owned = await this.probeOwner(context, request.key.repoRoot); signal.throwIfAborted();
   const revision = request.expectedRevision;
+  if(drained){
+   const resolver=owned.overlay.resolver(owned.binding.access,{assertActive:owned.assertActive,signal:owned.binding.signal,...(context.registerDrain?{registerDrain:context.registerDrain}:{})});
+   const lease=await resolver.lease(owned.binding.access,request.key.id);
+   try{
+    if(lease.revision!==revision)throw new ManagementServiceError('conflict');
+    lease.retainWork?.(drained);
+   }catch(error){await lease.release();throw error;}
+   void drained.then(()=>lease.release(),()=>lease.release()).catch(()=>{});
+  }
   const result = await owned.overlay.withGeneration(request.key.id, revision, config => materializeDraft({ key: request.key, mode: 'update', expectedRevision: revision,
    publicPatch: request.publicPatch, credentials: request.credentials, current: { config, revision }, readSecret: async () => { throw new ManagementServiceError('secret-unavailable'); } }));
   owned.assertActive(); signal.throwIfAborted(); return result;

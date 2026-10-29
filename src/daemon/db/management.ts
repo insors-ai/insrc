@@ -144,7 +144,7 @@ export class SavedConnectionManagement {
 			throw new ManagementServiceError('invalid-input');
 	}
 	/** Readonly selected draft preparation; metadata admission must precede every keychain read. */
-	async prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest,'key'|'expectedRevision'|'publicPatch'|'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> {
+	async prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest,'key'|'expectedRevision'|'publicPatch'|'credentials'>, signal?: AbortSignal, drained?: Promise<void>): Promise<EffectiveDraft> {
 		this.context(context);
 		const key = parseConnectionKey(request.key);
 		if (key.repoRoot !== this.root || key.scope !== 'saved') throw new ManagementServiceError('invalid-input');
@@ -160,6 +160,12 @@ export class SavedConnectionManagement {
 			if (editing && !config) throw new ManagementServiceError('not-found');
 			if (!editing && config) throw new ManagementServiceError('duplicate-id');
 			if (editing && revision !== request.expectedRevision) throw new ManagementServiceError('conflict');
+   if(editing && drained){
+    const lease=await this.ports.pool.lease(key.id);
+    if(lease.revision!==revision){await lease.release();throw new ManagementServiceError('conflict');}
+    // The supervisor resolves this only after preparation and the actual child close.
+    void drained.then(()=>lease.release(),()=>lease.release()).catch(()=>{});
+   }
 			await this.ports.tickets.assertAvailable();
 			signal?.throwIfAborted();
 			const refs = referencedSecrets(config);

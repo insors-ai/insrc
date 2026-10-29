@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:33:11.932Z",
+    "updatedAt": "2026-10-29T11:36:59.958Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1151,6 +1151,122 @@
               },
               {
                 "title": "CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "b8e836d4e",
+        "ranAt": "2026-10-29T11:36:59.958Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-RPC/GATE: extend src/daemon/threads/__tests__/method-class.test.ts and actual socket fixtures for handler/allowlist/main routing, old-feature refusal and compiled/source agreement.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+                "title": "CM-S4-RPC/GATE: actual sockets keep both removal scopes on main and refuse absent feature without worker fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 842,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1246,
+            "titles": [
+              {
+                "title": "CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RPC/GATE: actual sockets keep both removal scopes on main and refuse absent feature without worker fallback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 970,
+            "titles": [
+              {
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every served chat.*, todos.* and understanding.* method is in the shared-state set",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership",
                 "result": "pass"
               }
             ],

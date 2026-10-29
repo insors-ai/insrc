@@ -1,0 +1,656 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "dbdac2e18b598e20664fcb7f3c01da8be3a446b12e0ed93b62b58ab420075899",
+        "at": "2026-10-29T21:07:39.147Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "createdAt": "2026-10-29T20:03:05.623Z",
+    "updatedAt": "2026-10-29T21:07:39.058Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "epicSlug": "provide-live-installed-review-qualification-before",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d20a7c622",
+        "ranAt": "2026-10-29T20:03:05.623Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Probe schemas reject launch overrides, forged/serialized grants and invalid observation states",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/investigation-probe-grant.test.ts",
+                "title": "Probe schemas reject launch overrides, forged/serialized grants and invalid observation states",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/investigation-probe-grant.test.ts",
+                "title": "Probe grants snapshot identity and budget and reject cancelled or expired authority",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Probe capability remains optional and cannot supply production qualification",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/investigation-probe-grant.test.ts",
+                "title": "Probe capability remains optional and cannot supply production qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/investigation-probe-grant.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "Probe schemas reject launch overrides, forged/serialized grants and invalid observation states",
+                "result": "pass"
+              },
+              {
+                "title": "Probe capability remains optional and cannot supply production qualification",
+                "result": "pass"
+              },
+              {
+                "title": "Probe grants snapshot identity and budget and reject cancelled or expired authority",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "0f84455f8",
+        "ranAt": "2026-10-29T20:08:18.548Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Probe and review across repositories share one lane until actual teardown",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-provider-lane.test.ts",
+                "title": "Probe and review across repositories share one lane until actual teardown",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+                "title": "Process wide provider admission serializes repositories and cancels queued work without a lease",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Cancelling queued probe does not invoke provider or release another owner's slot",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-provider-lane.test.ts",
+                "title": "Cancelling queued probe does not invoke provider or release another owner's slot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-provider-lane.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1664,
+            "titles": [
+              {
+                "title": "Probe and review across repositories share one lane until actual teardown",
+                "result": "pass"
+              },
+              {
+                "title": "Cancelling queued probe does not invoke provider or release another owner's slot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 26211,
+            "titles": [
+              {
+                "title": "Crash concurrent resume cancel and frozen publication recover without duplicate execution",
+                "result": "pass"
+              },
+              {
+                "title": "Accountable findings and pending usage survive canonical WARN and BLOCK publication",
+                "result": "pass"
+              },
+              {
+                "title": "Process wide provider admission serializes repositories and cancels queued work without a lease",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "30b1dcd7d",
+        "ranAt": "2026-10-29T20:15:05.346Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Synthetic probe bridge records ordered durable ACKs and rejects cross-run capabilities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts",
+                "title": "Synthetic probe bridge records ordered durable ACKs and rejects cross-run capabilities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Private canaries leave real source/config/auth untouched and cleanup on failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts",
+                "title": "Private canaries leave real source/config/auth untouched and cleanup on failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 684,
+            "titles": [
+              {
+                "title": "Synthetic probe bridge records ordered durable ACKs and rejects cross-run capabilities",
+                "result": "pass"
+              },
+              {
+                "title": "Private canaries leave real source/config/auth untouched and cleanup on failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "8b5a86106",
+        "ranAt": "2026-10-29T20:23:46.534Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Probe capture overflow and spawn observation failure drain the actual process",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 850,
+            "titles": [
+              {
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1339,
+            "titles": [
+              {
+                "title": "Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+                "result": "pass"
+              },
+              {
+                "title": "Probe capture overflow and spawn observation failure drain the actual process",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "20b8c75aa",
+        "ranAt": "2026-10-29T20:29:14.015Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Claude observed inventory/denial parser rejects model claims, flags, gaps and stale identities",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-probe.test.ts",
+                "title": "Claude observed inventory/denial parser rejects model claims, flags, gaps and stale identities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 455,
+            "titles": [
+              {
+                "title": "Claude observed inventory/denial parser rejects model claims, flags, gaps and stale identities",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2040,
+            "titles": [
+              {
+                "title": "Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof",
+                "result": "pass"
+              },
+              {
+                "title": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+                "result": "pass"
+              },
+              {
+                "title": "Probe capture overflow and spawn observation failure drain the actual process",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "df622d03d",
+        "ranAt": "2026-10-29T20:36:26.482Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Codex observation parser pins launcher and real runtime; missing inventory remains unsupported",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/codex-investigation-probe.test.ts",
+                "title": "Codex observation parser pins launcher and real runtime; missing inventory remains unsupported",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Codex probe preserves strict schema cleanup and actual process drain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Codex probe preserves strict schema cleanup and actual process drain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/codex-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 704,
+            "titles": [
+              {
+                "title": "Codex observation parser pins launcher and real runtime; missing inventory remains unsupported",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3576,
+            "titles": [
+              {
+                "title": "Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "Codex probe preserves strict schema cleanup and actual process drain",
+                "result": "pass"
+              },
+              {
+                "title": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof",
+                "result": "pass"
+              },
+              {
+                "title": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+                "result": "pass"
+              },
+              {
+                "title": "Probe capture overflow and spawn observation failure drain the actual process",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "395fe9e9f",
+        "ranAt": "2026-10-29T20:48:36.490Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+                "title": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Probe UUID replay/conflict, crash interruption, readonly status and bounded export",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+                "title": "Probe UUID replay/conflict, crash interruption, readonly status and bounded export",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+                "title": "Oversized unsigned candidate fails explicitly instead of exporting truncated evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Malformed probe never enters production investigation or legacy parsers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+                "title": "Malformed probe never enters production investigation or legacy parsers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1263,
+            "titles": [
+              {
+                "title": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher",
+                "result": "pass"
+              },
+              {
+                "title": "Probe UUID replay/conflict, crash interruption, readonly status and bounded export",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed probe never enters production investigation or legacy parsers",
+                "result": "pass"
+              },
+              {
+                "title": "Oversized unsigned candidate fails explicitly instead of exporting truncated evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "609fdb21d",
+        "ranAt": "2026-10-29T21:07:39.058Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Unsigned export validates every required observation and never signs, approves or changes config",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts",
+                "title": "Unsigned export validates every required observation and never signs, approves or changes config",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts",
+                "title": "Unsigned raw evidence export rejects changed bytes and foreign fixture roots",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+                "title": "Probe launch identity is durable before provider observation and cannot change",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "IPC-only operator client reports missing attestation/readiness prerequisites without invoking production review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts",
+                "title": "IPC-only operator client reports missing attestation/readiness prerequisites without invoking production review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 902,
+            "titles": [
+              {
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 725,
+            "titles": [
+              {
+                "title": "Unsigned export validates every required observation and never signs, approves or changes config",
+                "result": "pass"
+              },
+              {
+                "title": "Unsigned raw evidence export rejects changed bytes and foreign fixture roots",
+                "result": "pass"
+              },
+              {
+                "title": "IPC-only operator client reports missing attestation/readiness prerequisites without invoking production review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1278,
+            "titles": [
+              {
+                "title": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher",
+                "result": "pass"
+              },
+              {
+                "title": "Probe UUID replay/conflict, crash interruption, readonly status and bounded export",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed probe never enters production investigation or legacy parsers",
+                "result": "pass"
+              },
+              {
+                "title": "Oversized unsigned candidate fails explicitly instead of exporting truncated evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Probe launch identity is durable before provider observation and cannot change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

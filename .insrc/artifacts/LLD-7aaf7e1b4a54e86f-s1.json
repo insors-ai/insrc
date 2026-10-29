@@ -1,0 +1,652 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793302600193-rwk4r6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:41:13.183Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 271110,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "epicSlug": "provide-live-installed-review-qualification-before",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793302600193-rwk4r6",
+    "hldEffectiveHash": "554086532d2f2f7788a4449d6111792364343aaed86401c5871f84735ba4a78b",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "860869cdcd88f76500391306356f82431117c03674eaf550a9de66f8c7dfa875",
+        "at": "2026-10-29T19:48:22.202Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 5
+        },
+        "at": "2026-10-29T19:47:22.782Z",
+        "report": {
+          "entityId": "LLD-7aaf7e1b4a54e86f-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-764faa25e5cbc6ad00e405da126c8542"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:49:16.020Z",
+        "override": {
+          "reason": "User explicitly approved and requested PLAN after presentation of LLD revision 3 and exhausted three-call review cycle. Prior HIGH missing handler/method routing integration sites corrected in revision 2; final MED missing gateway dispatch home corrected in revision 3 with integration assertions. User authorizes approval without another design review; latest formal verdict on prior revision remains recorded, not claimed clean. Activation and legacy removal remain gated on real acceptance and explicit signoff."
+        }
+      }
+    },
+    "rangeBase": "dc8c3797f7b7990d67f974bff703302dcbe43cac"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Add a daemon-owned operator probe that runs the actual installed review CLI against controlled canaries, collects independently checkable isolation/progress/cancellation observations and emits unsigned evidence. External attestation and canonical approval remain required before a bounded end-to-end review can run through production admission. Missing effective-inventory visibility produces unsupported, never fabricated qualification or automatic activation."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Provide live installed review qualification before activation"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "CliProvider",
+          "signature": "class CliProvider implements LLMProvider",
+          "parameters": [],
+          "returns": {
+            "type": "CliProvider",
+            "meaning": "Existing provider owns model subprocesses. Add an optional provider-level qualification probe operation, implemented only by CLI; default unsupported for other providers. It accepts only an opaque daemon-issued single-use probe grant, signal, exact profile/budget and deadline. No arbitrary executable, args, prompt, paths or production binding may be supplied through IPC."
+          },
+          "errors": [
+            {
+              "type": "unsupported",
+              "condition": "Provider/binary has no independently observable effective inventory or exact launch support"
+            },
+            {
+              "type": "probe-refused",
+              "condition": "Untrusted grant, stale pins, budget, cancellation or launch identity mismatch"
+            }
+          ],
+          "preconditions": [
+            "Use the selected high-tier review role through the existing role router.",
+            "The main daemon allocates a private 0700 fixture root outside all registered repositories and resolves actual runtime images.",
+            "Acquire the same process-wide provider execution lane used by investigation reviews; probe requests serialize and cancellation drains actual processes."
+          ],
+          "postconditions": [
+            "Probe execution creates no production qualification, review run, canonical CR, readiness, signature or configuration change.",
+            "Record actual process events and unknown usage as null; never count estimates as observations."
+          ]
+        },
+        {
+          "name": "nativeReviewMcpConfiguration",
+          "signature": "nativeReviewMcpConfiguration(cwd: string, indexed: boolean): { mcpServers: Record<string, unknown> }",
+          "parameters": [
+            {
+              "name": "cwd",
+              "type": "string",
+              "purpose": "Daemon-private pinned fixture/production cwd",
+              "optional": false
+            },
+            {
+              "name": "indexed",
+              "type": "boolean",
+              "purpose": "Exact source-only or indexed-impact catalogue",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "object",
+            "meaning": "Reuse exact dedicated MCP catalogue and launch configuration. Probe-only grants resolve synthetic fixtures; production grants remain separately issued and inaccessible."
+          },
+          "errors": [
+            {
+              "type": "probe-refused",
+              "condition": "Configuration/runtime fingerprint differs from the independently observed launch"
+            }
+          ],
+          "preconditions": [
+            "Per-invocation capability file and socket isolation remain mandatory."
+          ],
+          "postconditions": [
+            "No general daemon tools, DB or raw repository access is exposed."
+          ]
+        },
+        {
+          "name": "qualifyInvestigationAdapter",
+          "signature": "qualifyInvestigationAdapter(reference: string, expected: NativeAdapterIdentity, repoPath: string, indexed: boolean, authority: NativeIsolationEvidenceAuthority, supportedAdapterVersions: readonly string[], now?: number): Promise<NativeInvestigationQualification>",
+          "parameters": [
+            {
+              "name": "reference",
+              "type": "string",
+              "purpose": "Approved signed evidence reference, never unsigned probe output",
+              "optional": false
+            },
+            {
+              "name": "expected",
+              "type": "NativeAdapterIdentity",
+              "purpose": "Current actual installation/launch/profile/catalog pins",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Registered canonical project",
+              "optional": false
+            },
+            {
+              "name": "indexed",
+              "type": "boolean",
+              "purpose": "Qualification mode",
+              "optional": false
+            },
+            {
+              "name": "authority",
+              "type": "NativeIsolationEvidenceAuthority",
+              "purpose": "Unchanged independent installed signature verification",
+              "optional": false
+            },
+            {
+              "name": "supportedAdapterVersions",
+              "type": "readonly string[]",
+              "purpose": "Explicit supported adapters",
+              "optional": false
+            },
+            {
+              "name": "now",
+              "type": "number",
+              "purpose": "Existing expiry check",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<NativeInvestigationQualification>",
+            "meaning": "Existing private verified authority only after signed evidence and file/configuration checks; no probe bypass is added."
+          },
+          "errors": [
+            {
+              "type": "InvestigationQualificationError",
+              "condition": "Any missing, stale, forged, scripted or unsupported installed evidence"
+            }
+          ],
+          "preconditions": [
+            "Independent signing key is provisioned outside daemon; daemon never creates/copies private keys or OAuth credentials."
+          ],
+          "postconditions": [
+            "Existing in-memory qualification issuance and production reviewSession checks remain unchanged."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Operator probe request/status",
+        "change": "new",
+        "details": "Version 1 additive main-daemon IPC codeReview.investigation.probe with strict discriminated operations start/status/cancel/export. Start carries request UUID, registered canonical repo, source mode and an explicit host budget declaration; no caller-supplied observed inventory, key, command, prompt or evidence. Daemon selects current high-tier review provider and fixture suite. Status owns one probe ID with queued/running/cancelling/completed/unsupported/failed/cancelled state, attempt ID, immutable launch pins, coverage of required observations and nullable usage. Exact UUID replay returns the same attempt and never invokes twice. No automatic retry/resume after crash: interrupted probes require a new explicit request; partial evidence is never exportable as qualification. The owning daemon alone creates mutable records, 0600 under a private probe root, with observations and output limits; no DB access from client. Proposed internal modules stay in src/daemon and src/agent/providers. The operation uses the existing main-daemon method routing and provider lane rather than worker-local state. Integration registration [[c6]] [[c7]]: add the strict codeReview.investigation.probe handler to buildHandlerRuntime in src/daemon/handler-runtime.ts. Add its session/non-worker classification and include the method in MAIN_DAEMON_CONNECTION_METHODS in src/daemon/threads/method-class.ts, following the existing investigation siblings. start/status/cancel/export must all reach the owning main daemon instance, including connections arriving via worker dispatch. Registration and runtime inventories are build change sites; existing qualification/adoption entries remain unchanged. Probe dispatch home [[c8]]: src/daemon/review-investigation-gateway.ts owns a new separately parsed probe dispatcher for start/status/cancel/export, delegated by the new handler-runtime entry. It composes a dedicated daemon-owned probe service and emits only the probe response schema. It never passes probe packets into dispatchInvestigation, production admission or legacy parsers; existing investigationTransport and production gateway semantics remain unchanged. The new dispatcher is an explicit change site, alongside main-daemon registration/classification.",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts",
+          "src/agent/providers/native-investigation-session.ts",
+          "src/daemon/review-investigation-adoption.ts",
+          "src/daemon/handler-runtime.ts",
+          "src/daemon/threads/method-class.ts",
+          "src/daemon/review-investigation-gateway.ts"
+        ]
+      },
+      {
+        "entity": "NativeIsolationEvidence",
+        "change": "new",
+        "details": "Preserve the existing version-1 NativeIsolationEvidence schema unchanged. Add an unsigned observation envelope version 1 with sourceCommit/sourceDigest, probe ID/mode, adapter identity, exact configuration/environment/runtime pins, started/ended times, bounded raw observation hashes, per-required-probe verdict observed-denied/observed-allowed/unverifiable, and optional candidate NativeIsolationEvidence. One probe owns many observations, each observation belongs to exactly one probe; one candidate binds exactly one mode/provider/install/configuration. Observation records are never signature authority. Every denial and effective-inventory field needs process/runtime telemetry or a separately attested observer artifact bound to exact process attempt/launch/configuration. CLI model statements, requested flags, absent tool calls, generated empty arrays or timeout alone are not proof. If the installed CLI exposes no authoritative inventory/probe result for any required capability, emit unsupported with explicit missingEvidence and no candidate. Existing independently provisioned trust anchor verifies externally signed existing installed-probe report; no signing/export operation can auto-publish or approve it. Existing model metadata inspection remains non-certifying.",
+        "callSites": [
+          "src/agent/providers/investigation-session.ts",
+          "src/daemon/review-investigation-adoption.ts",
+          "src/agent/providers/__tests__/native-investigation-fixtures.ts"
+        ]
+      },
+      {
+        "entity": "Probe fixture and acceptance evidence relationships",
+        "change": "new",
+        "details": "Probe fixtures are daemon-owned canary files, inert fake user/project MCP servers, hook/plugin/instruction markers and a local network listener with no external effects. Never edit actual user/project configuration or install anything into real auth homes. Any test requiring ambient config perturbation or credential copying is unsupported. Reuse exact adapter launch, environment policy and private MCP entry; no --bare. Raw filesystem canary outside fixture cwd is harmless; shell can only request an inert canary operation; network target is loopback. A separate cross-run invalid capability must be refused by host, not by model assertion. Host verifies two durable ACKs using the existing scoped protocol on synthetic work, then requests cancellation while the process is live and records actual process-group exit/bridge closure. Probe runs are not reviews of the active repo and cannot mint production qualification/bindings. After separately approved signed probes, evaluation/oracle/readiness and predecessor AMD, bounded acceptance uses an approved real subject with all build tasks passed, explicit commit/parent/block scope attestations and independent reviewer. Compare exact findings/coverage, progress, cancellation/reconnect, final canonical CR receipt and observed accounting; missing index impact remains explicit required evidence. User signs activation after this evidence; legacy deletion is a separate tracked follow-up.",
+        "callSites": [
+          "src/agent/providers/native-investigation-session.ts",
+          "src/daemon/__tests__/review-investigation-adoption.test.ts",
+          "src/daemon/__tests__/review-investigation-evaluation.test.ts",
+          "src/mcp/__tests__/review-investigation-native-restart.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Installed CLI lacks authoritative effective inventory or denial telemetry",
+          "detection": "Required observation matrix contains unverifiable fields; parse structured runtime events only, never model assertions or requested flags.",
+          "response": "unsupported with missingEvidence; emit diagnostic observations but no NativeIsolationEvidence candidate, signed report or production binding.",
+          "userImpact": "Activation remains closed for this installation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Any prohibited capability is observed available or canary is accessed",
+          "detection": "Observer records effective extra tool/config or canary listener/file/hook event bound to the attempt.",
+          "response": "failed isolation; drain process and revoke fixture bridge. Retain bounded redacted evidence, never candidate.",
+          "userImpact": "Must correct native isolation before qualification.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Grant forgery, changed installation or configuration",
+          "detection": "Private grant registry, pinned actual files and launch/catalog/profile/environment digests checked before launch and before export.",
+          "response": "probe-refused; stale/incomplete evidence cannot export candidate.",
+          "userImpact": "Explicit new probe required after correcting pins.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Budget/time limit, cancel or daemon crash",
+          "detection": "Monotonic deadline, abort signal, observed process liveness and persisted nonterminal attempt on boot.",
+          "response": "At most one 300-second actual process attempt per explicit start, no retry; inclusive 128K context policy. Cancel queued operation without invocation; hold global lane until process group and bridge drain. Mark crash interrupted and invalidate candidate. Bound logs to 8MiB and status/export to 2MiB; overrun fails instead of truncating proof.",
+          "userImpact": "No hidden repeated model cost; interrupted evidence cannot qualify.",
+          "recoverable": true
+        },
+        {
+          "scenario": "External evidence signature or canonical approval absent/stale",
+          "detection": "Unchanged approved-reference and installed-probe signature verification fails.",
+          "response": "Do not call production review. Display exact missing prerequisite; no key generation, autoapproval, config mutation or legacy fallback.",
+          "userImpact": "Independent attestation/approval needed before live acceptance.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Same request UUID replayed after client disconnect",
+          "expected": "Return same probe/status without a new CLI call. Changed payload for same UUID is identity conflict."
+        },
+        {
+          "input": "Source-only passes; indexed mode lacks caller evidence or observer support",
+          "expected": "Keep separate mode-bound results; no inferred indexed qualification. Index gaps stay required/unverified."
+        },
+        {
+          "input": "Two operator sessions start probe/review concurrently",
+          "expected": "One global provider lane, queued status and cancellation; no overlap or worker-local grants."
+        },
+        {
+          "input": "Model completes after one ACK or exits naturally before cancellation",
+          "expected": "Insufficient proof; no synthetic second ACK or cancelled exit. Fresh explicitly requested attempt required."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Qualification accepts installed evidence only after independent verification; scripted fixtures cannot upgrade to installed proof.",
+          "source": "c1"
+        },
+        {
+          "text": "CLI model execution remains in CliProvider; no cloud REST, credential copying or production review authorization from probe grants.",
+          "source": "c2"
+        },
+        {
+          "text": "Native session exact configuration and private dedicated MCP remain shared launch authority; production qualification checks unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Reject unobservable or forged proof and enforce strict observation/export schemas.",
+          "subjects": [
+            "Every required isolation observation must be independently supported; model text/flags/silence cannot pass",
+            "Candidate requires exact install/config/profile/catalog identity, two ACKs and live cancellation exit",
+            "Unsigned/scripted/partial/stale records never become production authority"
+          ],
+          "fixturesNeeded": [
+            "Recorded bounded CLI telemetry labelled synthetic",
+            "Tampered identities, forged grants, missing/extra tools, canary violations and expired reports"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise main-daemon ownership, actual child lifecycle and scoped fixture bridge without live model cost.",
+          "subjects": [
+            "Strict start/status/cancel/export routing; exact UUID idempotency and payload conflicts",
+            "Concurrent probe/review sessions share global lane and drain before next launch",
+            "Per-invocation files/socket cleanup; crash marks interrupted with no auto retry",
+            "No real configuration/auth writes or source reads; diagnostic/report bounds",
+            "Handler inventory includes codeReview.investigation.probe; method classification and MAIN_DAEMON_CONNECTION_METHODS pin every operation to main daemon; exercise real routed IPC start/status/cancel/export, not only a directly called handler",
+            "Registered probe handler delegates to the gateway probe dispatcher; malformed/probe packets cannot enter dispatchInvestigation, legacy codeReview.run or production admission"
+          ],
+          "fixturesNeeded": [
+            "Deterministic fake subprocess binaries clearly marked nonqualifying",
+            "Controlled canary root and local listener",
+            "Existing MCP restart and production adoption fixtures"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Run one explicitly initiated actual installed provider attempt per mode, classify unsupported honestly, then bounded real acceptance only after independent evidence approvals.",
+          "subjects": [
+            "Selected high-tier installed CLI actual image/launch identity and effective inventory",
+            "All required denied-capability probes with independently attributable observations",
+            "Two durable scoped ACKs then host cancellation and actual process-group exit",
+            "Post-approval approved real commit-scoped subject yields findings/coverage, recoverability and frozen CR receipt",
+            "Report observed model calls/tokens/latency, unknown fields null"
+          ],
+          "fixturesNeeded": [
+            "Existing CLI OAuth only",
+            "Independent observer/attestor and externally provisioned trust anchor",
+            "Separately approved oracle/evaluation/probes/readiness/predecessor AMD/scope ISSUE and all-tasks-passed BUILD"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Preserve existing review behavior and admission checks.",
+          "subjects": [
+            "Legacy and design review routing unchanged",
+            "Probe grants unusable as production qualification/binding or ordinary provider options",
+            "Unsupported/missing report never selects fallback or mutates engine config"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify actual compiled installation has operator surface and remains closed until signoff.",
+          "subjects": [
+            "npm run build and affected native/adoption/MCP focused suites under Node22",
+            "Installed daemon health/commit/capability checks and read-only acceptance report"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Actual installed provider launches only from trusted bounded probe grant; one attempt, no retries, global serialization"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Every effective inventory/denial observation independently supported or explicit unsupported with no candidate"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Two durable ACKs and cancellation/process-group/bridge teardown; restart invalidates incomplete proof"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Signed evidence import/current canonical approval required; no automated keys, approvals, configuration or qualification bypass"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "After independent prerequisite approvals, production-path source-only/indexed real acceptance reports exact scoped CR/receipt and truthful accounting; activation signoff remains separate"
+          ]
+        }
+      ],
+      "testFramework": "Existing TypeScript node:test suites executed with Node22 --import tsx; SDK stdio/socket integration patterns from native restart tests. Live runs explicit and serial; deterministic tests never certify installed binaries."
+    },
+    "migration": {
+      "stateBefore": "s1 analyzer identifies existing qualification verifier, production adoption consumer, native session execution and scripted fixture callers. Installed daemon dc8c3797f is deployed, default legacy, missing signed installed-probe/readiness evidence. No live probe producer is established. [[c1]] [[c2]] [[c3]]",
+      "stateAfter": "Additive operator probe can collect real bounded observations without opening production admission. Qualifying evidence is externally signed and canonically approved before normal acceptance. Installation may remain unsupported if inventory cannot be independently established. Activation/default and legacy code removal stay separate user decisions.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Deploy additive daemon probe/provider contracts with production engine selection and existing saved review formats unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Run deterministic boundaries and actual installed observation attempts serially, retaining bounded reports in /tmp and private runtime state outside artifact folders. Unsupported results remain diagnostic.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Operator independently verifies observations and provisions trust anchor/signs reports outside daemon. Present separate oracle/evaluation/probe/readiness/predecessor/scope records for explicit approval; do not synthesize lifecycle actor identity or elevate a system approval into a person.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "With qualified exact installation, use normal admission for bounded real acceptance under explicit opt-in authorization, present findings/coverage/receipt/accounting and ask activation signoff. Revert opt-in and drain if unsuccessful; never automatically fall back.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Only after acceptance and user activation signoff, route legacy CODE-review deletion as a separate tracked change preserving design review and durable old-run diagnostics.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive IPC/provider optional capability; old clients and non-CLI providers remain valid and unsupported for probe. Existing NativeIsolationEvidence/readiness schemas, signed report verification, production bindings, legacy/design routes, saved states and canonical CR receipts unchanged. No migration of old review records or automatic default switch.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Daemon-owned bounded probe and external evidence attestation",
+        "oneLineSummary": "Separate non-review probe execution from production qualification while sharing exact native launch identity.",
+        "approach": "Add an explicit daemon operator probe operation using the selected CliProvider and existing adapter launch/configuration functions. Probe execution accepts only controlled synthetic canaries, never repository content or production review authority. It emits bounded unsigned observations plus existing NativeIsolationEvidence only when every required fact is externally observable. Independently supplied signature and current canonical approvals remain mandatory before production qualification. Run acceptance through the unchanged production route only after readiness approvals.",
+        "pros": [
+          "Smallest cohesive path that supplies actual native probing without weakening production qualification",
+          "Reuses provider lifecycle, adapter identity, private MCP and existing signed report shape",
+          "No signing key, automatic activation or legacy fallback introduced"
+        ],
+        "cons": [
+          "CLI versions lacking authoritative effective inventory remain unsupported",
+          "Requires independent evidence attestation and canonical approval before live production acceptance"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "External standalone qualification program",
+        "oneLineSummary": "Run probes outside the daemon and import signed reports.",
+        "approach": "Implement a separate installed operator program that duplicates native launch setup and evidence collection then imports signed qualification reports into canonical governance records. Production remains unchanged, but the program must independently bind every runtime, environment and configuration detail to the daemon's selected provider.",
+        "pros": [
+          "Independent process can collect and attest evidence",
+          "No prequalification invocation surface in daemon"
+        ],
+        "cons": [
+          "Duplicates provider lifecycle and global provider serialization",
+          "Launch drift between operator process and daemon increases validation burden"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Independent operation is possible but adds duplicated launch authority and drift risk."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "live-probe-authority",
+      "narrative": "Separate the prequalification controlled fixture path from production authority. Independent attestation and user approval intervene before real review acceptance and activation.",
+      "participants": [
+        {
+          "id": "operator",
+          "label": "Operator",
+          "description": "Explicitly starts bounded probes and later signs off activation."
+        },
+        {
+          "id": "daemon",
+          "label": "Owning daemon",
+          "description": "Owns private fixtures, strict probe grants, global lane, observation records and admission."
+        },
+        {
+          "id": "cli",
+          "label": "CliProvider / installed CLI",
+          "description": "Runs exact native launch through existing OAuth and emits observable runtime evidence."
+        },
+        {
+          "id": "attestor",
+          "label": "Independent attestor",
+          "description": "Examines bound observations and signs outside daemon; owns external private signing authority."
+        },
+        {
+          "id": "production",
+          "label": "Production admission",
+          "description": "Unchanged signed/approved evidence verifier and normal scoped review route."
+        }
+      ],
+      "messages": [
+        {
+          "from": "operator",
+          "to": "daemon",
+          "label": "Start explicit bounded probe",
+          "description": "Strict UUID, registered repo, mode and host budget; no arbitrary launch authority."
+        },
+        {
+          "from": "daemon",
+          "to": "cli",
+          "label": "Issue one fixture-only probe grant",
+          "description": "Exact pinned launch on global lane; no production binding or repository content."
+        },
+        {
+          "from": "cli",
+          "to": "daemon",
+          "label": "Actual telemetry, scoped ACKs and cancellation exit",
+          "kind": "return",
+          "description": "Runtime observations must support every inventory/denial claim; otherwise unsupported."
+        },
+        {
+          "from": "daemon",
+          "to": "operator",
+          "label": "Export unsigned candidate or unsupported diagnostics",
+          "kind": "return",
+          "description": "No signing, approval or activation performed by exporter."
+        },
+        {
+          "from": "operator",
+          "to": "attestor",
+          "label": "Independently verify bound evidence",
+          "description": "Attestation binds exact mode, installation, config and observation hashes."
+        },
+        {
+          "from": "attestor",
+          "to": "operator",
+          "label": "Externally signed report",
+          "kind": "return",
+          "description": "Daemon never receives private key or copies CLI credentials."
+        },
+        {
+          "from": "operator",
+          "to": "production",
+          "label": "Approve prerequisites and authorize bounded opt-in acceptance",
+          "description": "Separately approve signed probes, oracle/evaluation/readiness, AMD and scope; explicit test opt-in remains required."
+        },
+        {
+          "from": "production",
+          "to": "operator",
+          "label": "Real findings, durable progress, CR receipt and accounting",
+          "kind": "return",
+          "description": "Normal production path only; no HEAD diff fallback. Activation signoff and legacy removal follow separately."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/provide-live-installed-review-qualification-before-E202610297aaf7e1b/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]",
+      "quotedText": "Existing qualification verifier and observed production/scripted consumers; graph completeness limited."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/native-investigation-session.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-7aaf7e1b4a54e86f"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-adoption.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:608-615",
+      "quotedText": "Sibling investigation handler registration in buildHandlerRuntime."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts:89-91",
+      "quotedText": "Session classification plus MAIN_DAEMON_CONNECTION_METHODS near line 283 pin process-local investigation operations."
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-gateway.ts",
+      "quotedText": "Existing investigation handler dispatch home; add an isolated strict probe dispatcher without changing production/legacy parsing."
+    }
+  ]
+}

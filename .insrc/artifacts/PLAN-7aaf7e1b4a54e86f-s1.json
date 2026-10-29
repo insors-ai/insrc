@@ -1,0 +1,571 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793303363163-d95heh",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:52:39.218Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 194199,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "epicSlug": "provide-live-installed-review-qualification-before",
+    "storyId": "s1",
+    "lldRunId": "wf-1793302600193-rwk4r6",
+    "lldEffectiveHash": "554086532d2f2f7788a4449d6111792364343aaed86401c5871f84735ba4a78b",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "504196033bfdb918dec45fdf088086ac91cbdca4915036fb7d40bdc8573a3d0e",
+        "at": "2026-10-29T19:52:58.660Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:34.656Z"
+      }
+    },
+    "rangeBase": "dc8c3797f7b7990d67f974bff703302dcbe43cac"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build a bounded installed-CLI probe path using the existing native adapters, private scoped bridge and one shared provider execution lane. Export independently checkable unsigned observations while preserving production evidence and approval gates. Ten ordered tasks separate software verification from actual installation probes and conditional real-review acceptance; activation signoff and legacy deletion follow later."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define strict probe contracts and private grants",
+        "summary": "Add proposed src/shared/review-investigation-probe.ts schemas and optional LLMProvider probe capability in src/shared/types.ts; add a proposed provider-local opaque single-use probe grant registry. Define start/status/cancel/export, UUID identity, observation verdicts, nullable accounting and unsigned candidate shape. Preserve NativeIsolationEvidence version 1 and production binding APIs.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Reject arbitrary launch args/prompts/paths/keys or caller-claimed effective inventory.",
+          "Serialized/forged/scripted grants cannot invoke installed probes or production reviewSession.",
+          "Version/mode/state/observation schemas retain explicit unsupported and unknown values."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Probe schemas reject launch overrides, forged/serialized grants and invalid observation states"
+          },
+          {
+            "level": "unit",
+            "name": "Probe capability remains optional and cannot supply production qualification"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Share the existing provider lane with probes",
+        "summary": "Extract existing module-private providerTail ownership from src/daemon/review-investigation-repository.ts into a proposed src/daemon/review-investigation-provider-lane.ts; use it from review and probe orchestration with unchanged drain semantics. Do not add a second queue.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Two review/probe requests across repos never overlap provider invocation.",
+          "Queued cancellation makes no model call or lease acquisition; active cancellation holds lane until real teardown.",
+          "Prior repository concurrency/recovery behavior remains intact."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Probe and review across repositories share one lane until actual teardown"
+          },
+          {
+            "level": "integration",
+            "name": "Cancelling queued probe does not invoke provider or release another owner's slot"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Build controlled fixtures and scoped probe observations",
+        "summary": "Add proposed src/daemon/review-investigation-probe-fixtures.ts for private 0700 fixture roots, inert canaries and dedicated scoped protocol. Reuse private MCP entry/configuration and per-invocation files from native-investigation-session.ts. Own bounded observations and synthetic ACK journal without production subject/binding authority.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "No actual user/project config writes, auth copying, arbitrary source access or external network effects.",
+          "Cross-run capability rejection is observed by host; ACKs are durable and ordered.",
+          "Fixtures/bridge close and revoke on cancellation/crash; over-limit evidence fails without truncation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Synthetic probe bridge records ordered durable ACKs and rejects cross-run capabilities"
+          },
+          {
+            "level": "integration",
+            "name": "Private canaries leave real source/config/auth untouched and cleanup on failure"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add bounded provider probe execution",
+        "summary": "Extend CliProvider and native-investigation-session.ts through the optional provider abstraction using exact existing launch functions and in-memory probe grants. Add a distinct synthetic-only bootstrap execution path, never a requireInstalled=false production bypass. Observe launch/process events and expose collection hooks for version-pinned native observation support.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "One explicit start permits at most one 300-second attempt, inclusive 128K budget and no internal retry.",
+          "Exact binary/runtime/config/environment/profile/catalog identity matches recorded launch.",
+          "Actual process-group exit and bridge teardown are awaited; model output alone never establishes proof.",
+          "Existing native production qualification and ordinary review paths unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation"
+          },
+          {
+            "level": "unit",
+            "name": "Production native session refuses probe grants and unchanged installed-proof checks hold"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Collect actual Claude probe evidence",
+        "summary": "Implement Claude-specific observation integration in proposed src/agent/providers/claude-investigation-probe.ts, reusing claude-investigation-session.ts launch/configuration helpers and CliProvider runner. Version-pin supported independently observable telemetry; represent unsupported fields explicitly rather than manufacturing an inventory.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Keep existing OAuth; never --bare or copied credentials.",
+          "Every inventory/denial claim points to attempt-bound runtime or independently attested observation; requested flags/model text/silence insufficient.",
+          "Require two actual durable ACKs followed by live cancellation/exit for candidate; any missing fact gives unsupported/no candidate."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Claude observed inventory/denial parser rejects model claims, flags, gaps and stale identities"
+          },
+          {
+            "level": "integration",
+            "name": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Collect actual Codex probe evidence",
+        "summary": "Implement Codex-specific observation integration in proposed src/agent/providers/codex-investigation-probe.ts, reusing codex-investigation-session.ts exact strict schema/config/args. Pin launcher, actual runtime/vendor executable and configuration identity, and explicitly reject unsupported effective inventory visibility.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "No JS launcher-only identity or broad-tool fallback.",
+          "All required inventory/denial/progress/cancellation observations bind exact invocation and mode.",
+          "Schema/config cleanup and process drain preserve existing native behavior; absent proof gives unsupported/no candidate."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Codex observation parser pins launcher and real runtime; missing inventory remains unsupported"
+          },
+          {
+            "level": "integration",
+            "name": "Codex probe preserves strict schema cleanup and actual process drain"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Wire the daemon-owned probe service and real IPC route",
+        "summary": "Add proposed src/daemon/review-investigation-probe.ts service with strict repo registration, identity replay, private durable state, crash interruption, shared lane, bounded status/export and observer collection. Add isolated probe dispatcher in review-investigation-gateway.ts; register codeReview.investigation.probe in handler-runtime.ts, method-class.ts session classification and MAIN_DAEMON_CONNECTION_METHODS. Keep all operations on owning main daemon.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Actual routed start/status/cancel/export reaches the same owner, including worker-originated connections.",
+          "UUID exact replay never invokes twice; changed payload conflicts; reboot never automatically retries or exports incomplete qualification.",
+          "Probe packets cannot enter dispatchInvestigation, production/legacy parsers or mint canonical CR/readiness.",
+          "8MiB observation bound and 2MiB response bound fail explicitly; status remains read-only."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher"
+          },
+          {
+            "level": "integration",
+            "name": "Probe UUID replay/conflict, crash interruption, readonly status and bounded export"
+          },
+          {
+            "level": "integration",
+            "name": "Malformed probe never enters production investigation or legacy parsers"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Export evidence and document independent operator handoff",
+        "summary": "Implement validated unsigned export with immutable observation digests and exact candidate when fully supported, using the unchanged NativeIsolationEvidence schema. Add a proposed scripts/review-investigation-probe.mjs IPC-only operator client and update docs/review-investigation.md for probe execution, independent verification/signature/approval import and bounded acceptance prerequisites.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Daemon never generates/copies signing keys, signs reports, approves evidence, changes engine config or relabels fixtures.",
+          "Partial/stale/over-limit/failed evidence remains diagnostic and cannot export a qualification candidate.",
+          "Runbook maps signed probe, approved oracle/evaluation/readiness, predecessor AMD, exact scope proof and all-tasks-passed real BUILD; system actor cannot be asserted as independent person.",
+          "Reports remain in /tmp/private runtime storage; no temporary review documents in artifact folders."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Unsigned export validates every required observation and never signs, approves or changes config"
+          },
+          {
+            "level": "integration",
+            "name": "IPC-only operator client reports missing attestation/readiness prerequisites without invoking production review"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Verify compiled contracts and focused regressions",
+        "summary": "Run focused affected provider/daemon/MCP/method-class suites under Node22, then npm run build. Verify compiled operator IPC surface, strict schemas, canonical integrity and unchanged legacy/design and production admission behavior. Use fake subprocesses only as explicitly nonqualifying deterministic fixtures; no full repository sweep.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Tests cover forged grants, strict routing, UUID replay, shared lane/drain, crash interruption, bounded export and schema/config cleanup.",
+          "Affected native/adoption/repository/MCP/method-class tests and production build pass; report failures without rerunning unrelated hours-long suites.",
+          "Compiled protocol smoke makes no model calls and does not change engine selection or qualification evidence."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Compiled probe protocol and production build pass with unchanged default/admission"
+          },
+          {
+            "level": "integration",
+            "name": "Affected native/adoption/repository/MCP/routing regressions preserve legacy and design behavior"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Capture bounded installed probes and acceptance handoff",
+        "summary": "Using the built operator path, run actual installed probes serially for explicitly authorized provider/mode combinations, at most one 300-second attempt each and no automatic retry. Capture actual observations, supported candidate or unsupported reasons, calls/tokens/latency or null. Execute bounded real-review acceptance through unchanged production admission only once separately approved evidence and explicit test opt-in authorization exist; otherwise leave acceptance pending with exact prerequisites. Perform one mandatory final Story code-review call; no automatic repeated rounds.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Each actual installed attempt is bound to exact source/provider/runtime/config/mode pins; deterministic fixtures never certify installation.",
+          "Unsupported/missing observer facts produce no candidate and no false acceptance pass. Independent signer/trust anchor and canonical approval remain operator decisions.",
+          "Only a fully authorized approved real subject with explicit commit scope may produce the production acceptance findings/coverage/progress/CR receipt; otherwise record pending, not passed.",
+          "Final technical completion/code review does not imply activation signoff; activation and tracked legacy CODE deletion remain subsequent explicit user decisions."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "Actual installed probe per authorized provider/mode produces supported observation evidence or explicit unsupported"
+          },
+          {
+            "level": "live",
+            "name": "Post-approval exact commit-scoped acceptance validates progress/cancel/recovery/CR receipt and truthful accounting"
+          },
+          {
+            "level": "smoke",
+            "name": "Acceptance report distinguishes pending prerequisites, software completion and explicit activation signoff"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Every required isolation observation must be independently supported; model text/flags/silence cannot pass",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t5",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Candidate requires exact install/config/profile/catalog identity, two ACKs and live cancellation exit",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Unsigned/scripted/partial/stale records never become production authority",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Strict start/status/cancel/export routing; exact UUID idempotency and payload conflicts",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Concurrent probe/review sessions share global lane and drain before next launch",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Per-invocation files/socket cleanup; crash marks interrupted with no auto retry",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "No real configuration/auth writes or source reads; diagnostic/report bounds",
+        "coveredByTaskIds": [
+          "t3",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Handler inventory includes codeReview.investigation.probe; method classification and MAIN_DAEMON_CONNECTION_METHODS pin every operation to main daemon; exercise real routed IPC start/status/cancel/export, not only a directly called handler",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Registered probe handler delegates to the gateway probe dispatcher; malformed/probe packets cannot enter dispatchInvestigation, legacy codeReview.run or production admission",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Selected high-tier installed CLI actual image/launch identity and effective inventory",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t6",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "All required denied-capability probes with independently attributable observations",
+        "coveredByTaskIds": [
+          "t3",
+          "t5",
+          "t6",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Two durable scoped ACKs then host cancellation and actual process-group exit",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Post-approval approved real commit-scoped subject yields findings/coverage, recoverability and frozen CR receipt",
+        "coveredByTaskIds": [
+          "t8",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Report observed model calls/tokens/latency, unknown fields null",
+        "coveredByTaskIds": [
+          "t4",
+          "t7",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy and design review routing unchanged",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Probe grants unusable as production qualification/binding or ordinary provider options",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Unsupported/missing report never selects fallback or mutates engine config",
+        "coveredByTaskIds": [
+          "t7",
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "npm run build and affected native/adoption/MCP focused suites under Node22",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Installed daemon health/commit/capability checks and read-only acceptance report",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/provide-live-installed-review-qualification-before-E202610297aaf7e1b/S001/LLD.md#2-contract-details",
+      "quotedText": "Approved revision 3 contract API and operator probe request/status data model."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/provide-live-installed-review-qualification-before-E202610297aaf7e1b/S001/LLD.md#3-data-model-changes",
+      "quotedText": "Unsigned observation/candidate shape, exact native identity, independently verified evidence and unchanged qualification authority."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/provide-live-installed-review-qualification-before-E202610297aaf7e1b/S001/LLD.md#5-error-paths",
+      "quotedText": "Single attempt limits, shared provider lane, cancellation/process drain, crash invalidation, identity replay and bounds."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/provide-live-installed-review-qualification-before-E202610297aaf7e1b/S001/LLD.md#6-test-strategy",
+      "quotedText": "Controlled fixture/native observation/progress/cancellation acceptance and focused coverage."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/provide-live-installed-review-qualification-before-E202610297aaf7e1b/S001/LLD.md#3-data-model-changes",
+      "quotedText": "Explicit gateway dispatch home, handler-runtime registration and method-class/main-daemon ownership."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/provide-live-installed-review-qualification-before-E202610297aaf7e1b/S001/LLD.md#7-migration",
+      "quotedText": "Additive rollout, independent operator handoff, conditional real acceptance and separate activation/legacy removal."
+    }
+  ]
+}

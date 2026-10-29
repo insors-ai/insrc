@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cebb64e2-0a9d-443b-b0be-c084d277df19",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.178Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build controlled fixtures and scoped probe observations",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d291280a8b29ecc7c721bf4b336bdb00324aa7a104a85d91855e989f35bddfdf",
+        "at": "2026-10-29T19:59:35.178Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.178Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build controlled fixtures and scoped probe observations",
+    "summary": "Add proposed src/daemon/review-investigation-probe-fixtures.ts for private 0700 fixture roots, inert canaries and dedicated scoped protocol. Reuse private MCP entry/configuration and per-invocation files from native-investigation-session.ts. Own bounded observations and synthetic ACK journal without production subject/binding authority.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "No actual user/project config writes, auth copying, arbitrary source access or external network effects.",
+      "Cross-run capability rejection is observed by host; ACKs are durable and ordered.",
+      "Fixtures/bridge close and revoke on cancellation/crash; over-limit evidence fails without truncation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Synthetic probe bridge records ordered durable ACKs and rejects cross-run capabilities"
+      },
+      {
+        "level": "integration",
+        "name": "Private canaries leave real source/config/auth untouched and cleanup on failure"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd5f9bee-0d3a-459f-a5e2-46c4e8d2adf8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.181Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Collect actual Claude probe evidence",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ca0a08afb65ba8cd0c49a97fa4080c2b63a81b802ae1764204a3246fc73e7ad",
+        "at": "2026-10-29T19:59:35.181Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.182Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Collect actual Claude probe evidence",
+    "summary": "Implement Claude-specific observation integration in proposed src/agent/providers/claude-investigation-probe.ts, reusing claude-investigation-session.ts launch/configuration helpers and CliProvider runner. Version-pin supported independently observable telemetry; represent unsupported fields explicitly rather than manufacturing an inventory.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Keep existing OAuth; never --bare or copied credentials.",
+      "Every inventory/denial claim points to attempt-bound runtime or independently attested observation; requested flags/model text/silence insufficient.",
+      "Require two actual durable ACKs followed by live cancellation/exit for candidate; any missing fact gives unsupported/no candidate."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Claude observed inventory/denial parser rejects model claims, flags, gaps and stale identities"
+      },
+      {
+        "level": "integration",
+        "name": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

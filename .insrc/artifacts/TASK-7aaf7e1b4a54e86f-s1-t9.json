@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-059acb49-f8e4-4570-8726-710171b3151f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.187Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify compiled contracts and focused regressions",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b886670c94eaa5a4e0f2ab7ed79f73c25af6444d1c781885fa1a277458e3b991",
+        "at": "2026-10-29T19:59:35.187Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.188Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify compiled contracts and focused regressions",
+    "summary": "Run focused affected provider/daemon/MCP/method-class suites under Node22, then npm run build. Verify compiled operator IPC surface, strict schemas, canonical integrity and unchanged legacy/design and production admission behavior. Use fake subprocesses only as explicitly nonqualifying deterministic fixtures; no full repository sweep.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Tests cover forged grants, strict routing, UUID replay, shared lane/drain, crash interruption, bounded export and schema/config cleanup.",
+      "Affected native/adoption/repository/MCP/method-class tests and production build pass; report failures without rerunning unrelated hours-long suites.",
+      "Compiled protocol smoke makes no model calls and does not change engine selection or qualification evidence."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Compiled probe protocol and production build pass with unchanged default/admission"
+      },
+      {
+        "level": "integration",
+        "name": "Affected native/adoption/repository/MCP/routing regressions preserve legacy and design behavior"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

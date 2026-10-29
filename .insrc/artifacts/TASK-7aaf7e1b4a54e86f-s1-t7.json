@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7c2d1fea-1f74-4220-a292-506dfe900964",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.183Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the daemon-owned probe service and real IPC route",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "94c98546350b98d60ce911cfe0b39bb1bd0c975dfee7423eea436e894a51fe57",
+        "at": "2026-10-29T19:59:35.184Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.184Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the daemon-owned probe service and real IPC route",
+    "summary": "Add proposed src/daemon/review-investigation-probe.ts service with strict repo registration, identity replay, private durable state, crash interruption, shared lane, bounded status/export and observer collection. Add isolated probe dispatcher in review-investigation-gateway.ts; register codeReview.investigation.probe in handler-runtime.ts, method-class.ts session classification and MAIN_DAEMON_CONNECTION_METHODS. Keep all operations on owning main daemon.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Actual routed start/status/cancel/export reaches the same owner, including worker-originated connections.",
+      "UUID exact replay never invokes twice; changed payload conflicts; reboot never automatically retries or exports incomplete qualification.",
+      "Probe packets cannot enter dispatchInvestigation, production/legacy parsers or mint canonical CR/readiness.",
+      "8MiB observation bound and 2MiB response bound fail explicitly; status remains read-only."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Real routed probe IPC registers all operations on owning main daemon and strict gateway dispatcher"
+      },
+      {
+        "level": "integration",
+        "name": "Probe UUID replay/conflict, crash interruption, readonly status and bounded export"
+      },
+      {
+        "level": "integration",
+        "name": "Malformed probe never enters production investigation or legacy parsers"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

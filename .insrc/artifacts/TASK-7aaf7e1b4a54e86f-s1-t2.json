@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2a85b926-07d6-45ac-ae30-077f8caf2755",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.176Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Share the existing provider lane with probes",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f0f7acd879435249cd6dcbea7b7e6f40d16a91f78ea4cf6c6006ff067f0bdee5",
+        "at": "2026-10-29T19:59:35.176Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.177Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Share the existing provider lane with probes",
+    "summary": "Extract existing module-private providerTail ownership from src/daemon/review-investigation-repository.ts into a proposed src/daemon/review-investigation-provider-lane.ts; use it from review and probe orchestration with unchanged drain semantics. Do not add a second queue.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Two review/probe requests across repos never overlap provider invocation.",
+      "Queued cancellation makes no model call or lease acquisition; active cancellation holds lane until real teardown.",
+      "Prior repository concurrency/recovery behavior remains intact."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Probe and review across repositories share one lane until actual teardown"
+      },
+      {
+        "level": "integration",
+        "name": "Cancelling queued probe does not invoke provider or release another owner's slot"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

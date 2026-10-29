@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3fd66db7-f261-41de-86c8-fffdd2f17230",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.185Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Export evidence and document independent operator handoff",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2aed10ef798901b621b7ef1612618e4d1ed89e6b1e658916e2ab2ad344255942",
+        "at": "2026-10-29T19:59:35.185Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.186Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Export evidence and document independent operator handoff",
+    "summary": "Implement validated unsigned export with immutable observation digests and exact candidate when fully supported, using the unchanged NativeIsolationEvidence schema. Add a proposed scripts/review-investigation-probe.mjs IPC-only operator client and update docs/review-investigation.md for probe execution, independent verification/signature/approval import and bounded acceptance prerequisites.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Daemon never generates/copies signing keys, signs reports, approves evidence, changes engine config or relabels fixtures.",
+      "Partial/stale/over-limit/failed evidence remains diagnostic and cannot export a qualification candidate.",
+      "Runbook maps signed probe, approved oracle/evaluation/readiness, predecessor AMD, exact scope proof and all-tasks-passed real BUILD; system actor cannot be asserted as independent person.",
+      "Reports remain in /tmp/private runtime storage; no temporary review documents in artifact folders."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Unsigned export validates every required observation and never signs, approves or changes config"
+      },
+      {
+        "level": "integration",
+        "name": "IPC-only operator client reports missing attestation/readiness prerequisites without invoking production review"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

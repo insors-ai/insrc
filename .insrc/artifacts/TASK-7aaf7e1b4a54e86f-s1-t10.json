@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bb5c359b-65e3-4db3-bea5-80164d27ff9c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.188Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Capture bounded installed probes and acceptance handoff",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4c4800c03bbdbd4b3a74abd0e5062a096af7d26f977943cf1f35ea3054750311",
+        "at": "2026-10-29T19:59:35.188Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.189Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Capture bounded installed probes and acceptance handoff",
+    "summary": "Using the built operator path, run actual installed probes serially for explicitly authorized provider/mode combinations, at most one 300-second attempt each and no automatic retry. Capture actual observations, supported candidate or unsupported reasons, calls/tokens/latency or null. Execute bounded real-review acceptance through unchanged production admission only once separately approved evidence and explicit test opt-in authorization exist; otherwise leave acceptance pending with exact prerequisites. Perform one mandatory final Story code-review call; no automatic repeated rounds.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "Each actual installed attempt is bound to exact source/provider/runtime/config/mode pins; deterministic fixtures never certify installation.",
+      "Unsupported/missing observer facts produce no candidate and no false acceptance pass. Independent signer/trust anchor and canonical approval remain operator decisions.",
+      "Only a fully authorized approved real subject with explicit commit scope may produce the production acceptance findings/coverage/progress/CR receipt; otherwise record pending, not passed.",
+      "Final technical completion/code review does not imply activation signoff; activation and tracked legacy CODE deletion remain subsequent explicit user decisions."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Actual installed probe per authorized provider/mode produces supported observation evidence or explicit unsupported"
+      },
+      {
+        "level": "live",
+        "name": "Post-approval exact commit-scoped acceptance validates progress/cancel/recovery/CR receipt and truthful accounting"
+      },
+      {
+        "level": "smoke",
+        "name": "Acceptance report distinguishes pending prerequisites, software completion and explicit activation signoff"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

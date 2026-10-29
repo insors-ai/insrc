@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3647670e-d7db-4ae4-9a6b-3ba5f3ab7558",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.179Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add bounded provider probe execution",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7aaf7e1b4a54e86f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "00fd6e56712f04d4487ff9ea5c9baee219bceeb19ee9798a7e8e65d5c6d5332b",
+        "at": "2026-10-29T19:59:35.179Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.180Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add bounded provider probe execution",
+    "summary": "Extend CliProvider and native-investigation-session.ts through the optional provider abstraction using exact existing launch functions and in-memory probe grants. Add a distinct synthetic-only bootstrap execution path, never a requireInstalled=false production bypass. Observe launch/process events and expose collection hooks for version-pinned native observation support.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "One explicit start permits at most one 300-second attempt, inclusive 128K budget and no internal retry.",
+      "Exact binary/runtime/config/environment/profile/catalog identity matches recorded launch.",
+      "Actual process-group exit and bridge teardown are awaited; model output alone never establishes proof.",
+      "Existing native production qualification and ordinary review paths unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation"
+      },
+      {
+        "level": "unit",
+        "name": "Production native session refuses probe grants and unchanged installed-proof checks hold"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

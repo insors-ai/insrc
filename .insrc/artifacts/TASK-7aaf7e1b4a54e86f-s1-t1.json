@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4176786a-75e9-4730-a0a3-90cc34f74c18",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T19:59:35.174Z",
+    "epicCreatedAt": "2026-10-29T18:54:45.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7aaf7e1b4a54e86f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define strict probe contracts and private grants",
+      "parent": {
+        "entityId": "STORY-7aaf7e1b4a54e86f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7aaf7e1b4a54e86f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9e9d16a634bd3889c1344211f072cbaa4b57d16571c15aad6030cc4e7f078fed",
+        "at": "2026-10-29T19:59:35.174Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T19:59:35.175Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define strict probe contracts and private grants",
+    "summary": "Add proposed src/shared/review-investigation-probe.ts schemas and optional LLMProvider probe capability in src/shared/types.ts; add a proposed provider-local opaque single-use probe grant registry. Define start/status/cancel/export, UUID identity, observation verdicts, nullable accounting and unsigned candidate shape. Preserve NativeIsolationEvidence version 1 and production binding APIs.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Reject arbitrary launch args/prompts/paths/keys or caller-claimed effective inventory.",
+      "Serialized/forged/scripted grants cannot invoke installed probes or production reviewSession.",
+      "Version/mode/state/observation schemas retain explicit unsupported and unknown values."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Probe schemas reject launch overrides, forged/serialized grants and invalid observation states"
+      },
+      {
+        "level": "unit",
+        "name": "Probe capability remains optional and cannot supply production qualification"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

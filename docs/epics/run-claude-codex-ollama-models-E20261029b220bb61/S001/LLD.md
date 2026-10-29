@@ -360,6 +360,8 @@ Every caller narrows the union; the definitions answer is as in a1.
 
 - `qc3aa8b10` — Item ts2: the test framework (node:test with node:assert/strict via tsx) is stated from the existing test files; the s1 bundles listed those files but did not report the framework explicitly (partial).
   - **resolved**: Verify directly against package.json/tsconfig — Verified 2026-10-30: package.json's test script is `tsx --test src/**/__tests__/*.test.ts` (tsx ^4.21.0) and the tests import `node:test` and `node:assert/strict` (src/daemon/__tests__/model-registry.test.ts). The framework is node:test with node:assert/strict run through tsx. _(2026-10-29T18:45:33.649Z)_
+- `qf8c575ab` — Item alt2: alternatives were scored against ac1-ac4, sc1 and sc2; Epic constraints k1-k6 appear in the notes but not as separate score entries (partial).
+  - **resolved**: Treat k1-k6 as a pre-filter gate, not a score axis — The Epic constraints are must-meet; the chosen a1 meets k1-k6 (no undeclared model runs, CLI-only access, existing settings reused, one definitions answer, serial calls, existing runners unchanged), and the scored axes stay ac1-ac4 and sc1-sc2. _(2026-10-29T18:46:17.913Z)_
 
 ## Citations
 

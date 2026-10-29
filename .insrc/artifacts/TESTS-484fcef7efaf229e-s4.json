@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:08:25.734Z",
+    "updatedAt": "2026-10-29T10:12:55.214Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -69,6 +69,69 @@
               },
               {
                 "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "08f5e1719",
+        "ranAt": "2026-10-29T10:12:55.214Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-CONFIRM/STATE: proposed pure-state tests for exact repository/ID/scope, zero-effect cancellation, unknown outcomes and independent cleanup phases.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-removal.test.ts",
+                "title": "CM-S4-CONFIRM: cancellation creates no command or ticket and confirmation captures the exact generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-removal.test.ts",
+                "title": "CM-S4-STATE: uncertain status and missing rows never become successful removal",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-removal.test.ts",
+                "title": "CM-S4-STATE: committed removal tracks credential and runtime cleanup independently",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-removal.test.ts",
+                "title": "CM-S4-STATE: unrelated outcomes cannot assert removal and projections never copy unsafe fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-removal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 339,
+            "titles": [
+              {
+                "title": "CM-S4-CONFIRM: cancellation creates no command or ticket and confirmation captures the exact generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-STATE: uncertain status and missing rows never become successful removal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-STATE: committed removal tracks credential and runtime cleanup independently",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-STATE: unrelated outcomes cannot assert removal and projections never copy unsafe fields",
                 "result": "pass"
               }
             ],

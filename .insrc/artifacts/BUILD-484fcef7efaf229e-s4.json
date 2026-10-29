@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T10:08:25.734Z",
+    "updatedAt": "2026-10-29T10:12:55.214Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "S004 currently adds only additive sc6 removal state/request contracts and strict ticket-only decoding; removal remains unimplemented and disabled.",
+    "summary": "S004 now has strict ticket-only request contracts and a pure confirmation/status projection; both removal owner branches and RPC activation remain pending and disabled.",
     "testRecord": {
       "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/TESTS.md"
     },
@@ -26,30 +30,44 @@
           "file": ".insrc/artifacts/PLAN-484fcef7efaf229e-s4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:08:25.734Z"
+        "timestamp": "2026-10-29T10:12:55.214Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/connection-management.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:08:25.734Z"
+        "timestamp": "2026-10-29T10:12:55.214Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management-wire.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:08:25.734Z"
+        "timestamp": "2026-10-29T10:12:55.214Z"
       },
       {
         "target": {
           "file": "src/shared/connection-management.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-29T10:08:25.734Z"
+        "timestamp": "2026-10-29T10:12:55.214Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/connection-removal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:12:55.214Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/connection-removal.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:12:55.214Z"
       }
     ],
-    "commit": "1df739847"
+    "commit": "08f5e1719"
   }
 }

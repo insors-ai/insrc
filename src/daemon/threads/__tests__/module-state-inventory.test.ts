@@ -12,15 +12,21 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { IN_DAEMON_SHARED_METHODS, SHARED_STATE_METHODS } from '../method-class.js';
 import { inventoryProblems, moduleStateInventory } from './module-state-inventory.js';
 import type { ModuleStateSite, StateEntry } from './module-state-inventory.js';
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
+const fixture = (): Record<string, StateEntry> => JSON.parse(readFileSync(new URL('./fixtures/module-state-inventory.json', import.meta.url), 'utf8')) as Record<string, StateEntry>;
+const routed: ReadonlySet<string> = new Set([...SHARED_STATE_METHODS, ...IN_DAEMON_SHARED_METHODS]);
+/** The real source tree's sites, scanned once for the tests that read them. */
+let scanned: ModuleStateSite[] | undefined;
+const realSites = (): ModuleStateSite[] => (scanned ??= moduleStateInventory(root));
 
 /** A temporary project with an entry and modules that declare each kind of state. */
 function project(): string {
@@ -114,4 +120,13 @@ test('module-state inventory: the guard names a missing key, a stale key, an inv
 		"src/b/c.ts#new: not classified (add a class and a reason)",
 		"src/b/c.ts#three: owned by the shared-state worker but no routed method starts with 'repo.'",
 	], 'a prefix limits the check to keys under it');
+});
+
+test('module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store', { timeout: 120_000 }, () => {
+	const entries = fixture();
+	assert.deepEqual(inventoryProblems(realSites(), entries, routed, 'src/daemon/'), [], 'the src/daemon/ slice is classified');
+	assert.deepEqual(entries['src/daemon/chat-handler.ts#sessionPool'], { ...entries['src/daemon/chat-handler.ts#sessionPool'], class: 'one-owner', owner: 'shared-state', methods: 'chat.' });
+	assert.deepEqual(entries['src/daemon/todos-rpc.ts#bus'], { ...entries['src/daemon/todos-rpc.ts#bus'], class: 'one-owner', owner: 'shared-state', methods: 'todos.' });
+	assert.deepEqual(entries['src/daemon/threads/session-worker.ts#understanding'], { ...entries['src/daemon/threads/session-worker.ts#understanding'], class: 'one-owner', owner: 'shared-state', methods: 'understanding.' });
+	assert.equal(entries['src/daemon/workflow-run-registry.ts#board']?.class, 'shared-store');
 });

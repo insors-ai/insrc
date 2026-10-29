@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-29T17:40:57.921Z",
+    "updatedAt": "2026-10-29T17:49:55.782Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -691,6 +691,42 @@
               },
               {
                 "title": "CM-S5-TEST-TS: real supervisor timeout keeps its transport and never treats the result as drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "be1ff5aed",
+        "ranAt": "2026-10-29T17:49:55.782Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-test.test.ts",
+                "title": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-test.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4448,
+            "titles": [
+              {
+                "title": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
                 "result": "pass"
               }
             ],

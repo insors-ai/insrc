@@ -1,7 +1,9 @@
 /** Workbench-memory effects. Backend signed tickets/receipts remain the only mutation authority. */
-import type { CommittedOutcome, ConnectionKey, ManagementErrorCode, MutationRequest, OperationTicket, SafeConnection } from '../connection-management.js';
+import type { CommittedOutcome, ConnectionKey, ManagementErrorCode, MutationRequest, OperationTicket, RemovalState, SafeConnection } from '../connection-management.js';
+import { removalConfirmation, removalInProgress, projectRemovalRejection, projectRemovalState } from '../connection-removal.js';
+import type { RemovalSelection } from '../connection-removal.js';
 import type { ConnectionDraft, SerializedConnectionDraft } from './draft.js';
-import { connectionReplyData, decodeMutationOutcome, decodeOperationStatus, decodeOperationTicket, decodeSafeConnectionList } from './wire.js';
+import { connectionReplyData, decodeMutationOutcome, decodeOperationStatus, decodeOperationTicket, decodeRemovalState, decodeSafeConnectionList } from './wire.js';
 
 export const MUTATION_CONTROLLER_LIMITS=Object.freeze({records:64,attemptBytes:16*1024*1024,polls:5,firstPollMs:1000,maxPollMs:16000});
 export type MutationPhase='ticketing'|'ticket-error'|'submitting'|'unknown'|'pending'|'not-seen'|'reconciliation-required'|'rejected'|'committed'|'session-ended';
@@ -10,6 +12,7 @@ export interface MutationView {
  readonly operationId:string|null;readonly outcome:CommittedOutcome|null;readonly busy:boolean;
  readonly refresh:'not-started'|'pending'|'complete'|'failed';readonly errorCode:ManagementErrorCode|'transport-error'|'invalid-response'|null;
  readonly canReplay:boolean;readonly canDismiss:boolean;
+ readonly removal:RemovalState|null;
 }
 export interface MutationTimer {dispose():void}
 export interface MutationPorts {
@@ -26,10 +29,12 @@ export class MutationStateError extends Error {
  constructor(readonly code:'busy'|'resource-limit'|'disposed'|'invalid-state'){super('The connection operation cannot proceed in its current state.');}
 }
 interface Attempt {
- readonly id:string;readonly key:ConnectionKey;readonly mode:SerializedConnectionDraft['mode'];readonly stamp:string|null;
- phase:MutationPhase;busy:boolean;operationId:string|null;ticket:OperationTicket|null;request:MutationRequest|null;input:SerializedConnectionDraft|null;
+ readonly id:string;readonly key:ConnectionKey;readonly mode:OperationTicket['mode'];readonly stamp:string|null;
+ phase:MutationPhase;busy:boolean;operationId:string|null;ticket:OperationTicket|null;request:MutationRequest|null;input:MutationInput|null;
  clearDraft:(()=>void)|null;bytes:number;outcome:CommittedOutcome|null;refresh:MutationView['refresh'];errorCode:MutationView['errorCode'];polls:number;timer:MutationTimer|null;
+ removal:RemovalState|null;
 }
+type MutationInput=SerializedConnectionDraft|{readonly key:ConnectionKey;readonly mode:'remove';readonly expectedRevision:string};
 const PREFIX='db.connections.v2.';
 const sameKey=(a:ConnectionKey,b:ConnectionKey):boolean=>a.repoRoot===b.repoRoot&&a.scope===b.scope&&a.id===b.id;
 function freeze<T>(v:T):T{if(v&&typeof v==='object'&&!Object.isFrozen(v)){Object.values(v).forEach(freeze);Object.freeze(v);}return v;}
@@ -54,8 +59,8 @@ export class ConnectionMutationController {
  #alive(r:Attempt):boolean{return !this.#disposed&&this.#records.get(r.id)===r&&r.phase!=='session-ended';}
  #unexpired(r:Attempt):boolean{return !!r.ticket&&this.#now()<Date.parse(r.ticket.expiresAt);}
  #view(r:Attempt):MutationView{
-  const canDismiss=!r.busy&&(r.phase==='ticket-error'||r.phase==='rejected'||r.phase==='session-ended'||r.phase==='committed'&&r.outcome?.credentialCleanup==='complete'&&['active','not-applicable'].includes(r.outcome.activation)&&r.refresh==='complete');
-  return freeze({recordId:r.id,key:copy(r.key),mode:r.mode,phase:r.phase,operationId:r.operationId,outcome:r.outcome?copy(r.outcome):null,busy:r.busy,refresh:r.refresh,errorCode:r.errorCode,canReplay:!r.busy&&r.phase==='not-seen'&&!!r.request&&this.#unexpired(r),canDismiss});
+  const canDismiss=!r.busy&&(r.phase==='ticket-error'||r.phase==='rejected'||r.phase==='session-ended'||r.phase==='committed'&&r.outcome?.credentialCleanup==='complete'&&['active','not-applicable'].includes(r.outcome.activation)&&r.refresh==='complete'&&(r.mode!=='remove'||r.removal?.state==='removed'));
+  return freeze({recordId:r.id,key:copy(r.key),mode:r.mode,phase:r.phase,operationId:r.operationId,outcome:r.outcome?copy(r.outcome):null,busy:r.busy,refresh:r.refresh,errorCode:r.errorCode,canReplay:!r.busy&&r.phase==='not-seen'&&!!r.request&&this.#unexpired(r),canDismiss,removal:r.removal?copy(r.removal):null});
  }
  get records():readonly MutationView[]{return Object.freeze([...this.#records.values()].map(r=>this.#view(r)));}
  record(id:string):MutationView{return this.#view(this.#get(id));}
@@ -64,11 +69,18 @@ export class ConnectionMutationController {
  #clearDraft(r:Attempt):void{const clear=r.clearDraft;r.clearDraft=null;try{clear?.();}catch{/* Committed truth survives a closed view. */}}
  #expect(r:Attempt){return{key:r.key,operationId:r.operationId!,mode:r.mode};}
  async submit(draft:ConnectionDraft):Promise<MutationView>{
-  this.#admit();const input=freeze(copy(draft.serialize()));
+  this.#admit();return await this.#submit(freeze(copy(draft.serialize())),()=>draft.clear());
+ }
+ /** Caller must first resolve dirty input and obtain explicit confirmation of this exact generation. */
+ async remove(selection:RemovalSelection):Promise<MutationView>{
+  this.#admit();const captured=removalConfirmation(selection.key,selection.expectedRevision);
+  return await this.#submit(freeze({key:captured.key,mode:'remove',expectedRevision:captured.expectedRevision}),null);
+ }
+ async #submit(input:MutationInput,clearDraft:(()=>void)|null):Promise<MutationView>{
   if(this.isBlocked(input.key))throw new MutationStateError('busy');
   const bytes=byteSize(input);
   if(this.#records.size>=MUTATION_CONTROLLER_LIMITS.records||this.#bytes+bytes>MUTATION_CONTROLLER_LIMITS.attemptBytes||this.#next>=Number.MAX_SAFE_INTEGER)throw new MutationStateError('resource-limit');
-  const r:Attempt={id:`operation-${++this.#next}`,key:freeze(copy(input.key)),mode:input.mode,stamp:this.#ports.sessionStamp(input.key),phase:'ticketing',busy:true,operationId:null,ticket:null,request:null,input,clearDraft:()=>draft.clear(),bytes,outcome:null,refresh:'not-started',errorCode:null,polls:0,timer:null};
+  const r:Attempt={id:`operation-${++this.#next}`,key:freeze(copy(input.key)),mode:input.mode,stamp:this.#ports.sessionStamp(input.key),phase:'ticketing',busy:true,operationId:null,ticket:null,request:null,input,clearDraft,bytes,outcome:null,refresh:'not-started',errorCode:null,polls:0,timer:null,removal:null};
   this.#bytes+=bytes;this.#records.set(r.id,r);this.#emit();
   try{
    const raw=await this.#ports.call(r.key,PREFIX+'ticket',{key:r.key,mode:r.mode},r.stamp);
@@ -87,21 +99,35 @@ export class ConnectionMutationController {
  }
  async #mutate(r:Attempt):Promise<void>{
   if(!r.request||!this.#alive(r))return;
+  if(r.mode==='remove'&&r.ticket)r.removal=freeze(removalInProgress(r.ticket));
   r.phase='submitting';r.errorCode=null;this.#emit();
   try{
    const result=decodeMutationOutcome(await this.#ports.call(r.key,PREFIX+'mutate',r.request,r.stamp),this.#expect(r));
    if(!this.#alive(r))return;
    if(result.status==='committed'){await this.#commit(r,result.value);return;}
    r.errorCode=result.code;
+   if(r.mode==='remove'&&r.ticket)r.removal=freeze(projectRemovalRejection(r.ticket,result.code));
    if(result.code==='session-expired'&&r.key.scope==='temporary'){this.#ports.expireTemporary?.();this.endTemporary();return;}
    r.phase=['reconciliation-required','recovery-required','operation-mismatch'].includes(result.code)?'reconciliation-required':'rejected';
    if(r.phase==='rejected'){r.ticket=null;this.#release(r);}
-  }catch{if(this.#alive(r)){r.phase='unknown';r.errorCode='transport-error';}}
+  }catch{if(this.#alive(r)){r.phase='unknown';r.errorCode='transport-error';if(r.mode==='remove'&&r.ticket)r.removal=freeze(projectRemovalState(r.ticket,{status:'pending'}));}}
  }
  async #commit(r:Attempt,outcome:CommittedOutcome):Promise<void>{
   if(r.outcome&&(outcome.revision!==r.outcome.revision||outcome.registration!==r.outcome.registration))throw new MutationStateError('invalid-state');
-  r.outcome=freeze(copy(outcome));r.phase='committed';r.errorCode=null;this.#release(r);this.#clearDraft(r);r.timer?.dispose();r.timer=null;this.#emit();
+  r.outcome=freeze(copy(outcome));r.phase='committed';r.errorCode=null;this.#release(r);this.#clearDraft(r);r.timer?.dispose();r.timer=null;
+  if(r.mode==='remove'&&r.ticket)r.removal=freeze(projectRemovalState(r.ticket,{status:'committed',value:outcome}));this.#emit();
+  if(r.mode==='remove')await this.#removalState(r,false);
   await this.#refresh(r);
+ }
+ async #removalState(r:Attempt,retry:boolean):Promise<void>{
+  if(!r.ticket||!r.outcome||r.mode!=='remove')throw new MutationStateError('invalid-state');
+  try{
+   const value=decodeRemovalState(await this.#ports.call(r.key,PREFIX+(retry?'retryRemovalCleanup':'removalState'),{ticket:r.ticket},r.stamp),this.#expect(r));
+   if(!this.#alive(r))return;
+   if(value.state!=='removed'&&value.state!=='removed-cleanup-pending')throw new MutationStateError('invalid-state');
+   r.outcome=freeze({...r.outcome,credentialCleanup:value.credentialCleanup!});
+   r.removal=freeze(projectRemovalState(r.ticket,{status:'committed',value:r.outcome},value.resourceCleanup!));r.errorCode=null;
+  }catch{if(this.#alive(r))r.errorCode='transport-error';}
  }
  async #refresh(r:Attempt):Promise<void>{
   if(!r.outcome||!this.#alive(r))return;
@@ -129,11 +155,12 @@ export class ConnectionMutationController {
    const result=decodeOperationStatus(await this.#ports.call(r.key,PREFIX+'status',{ticket:r.ticket},r.stamp),this.#expect(r));
    if(!this.#alive(r))return;
    if(result.status==='committed'){
-    if(known){if(result.value.revision!==known.revision||result.value.registration!==known.registration)throw new MutationStateError('invalid-state');r.outcome=freeze(copy(result.value));r.errorCode=null;}
+    if(known){if(result.value.revision!==known.revision||result.value.registration!==known.registration)throw new MutationStateError('invalid-state');r.outcome=freeze(copy(result.value));r.errorCode=null;if(r.mode==='remove')await this.#removalState(r,false);}
     else await this.#commit(r,result.value);
    }else if(known){r.errorCode='reconciliation-required';}
    else{
     r.phase=result.status==='not-seen'&&!this.#unexpired(r)?'reconciliation-required':result.status;
+    if(r.mode==='remove'&&r.ticket)r.removal=freeze(projectRemovalState(r.ticket,result));
     r.errorCode=r.phase==='reconciliation-required'?'reconciliation-required':null;
     if(r.phase==='pending')this.#schedule(r);
    }
@@ -160,10 +187,14 @@ export class ConnectionMutationController {
   }catch{if(this.#alive(r))r.errorCode='transport-error';}
  });}
  /** For create/update, status itself retries credential-generation maintenance using the original ticket. */
- retryCleanup(id:string):Promise<MutationView>{return this.#action(id,async r=>{if(r.phase!=='committed'||!r.outcome||r.outcome.credentialCleanup!=='pending')throw new MutationStateError('invalid-state');await this.#status(r);});}
+ retryCleanup(id:string):Promise<MutationView>{return this.#action(id,async r=>{
+  if(r.phase!=='committed'||!r.outcome)throw new MutationStateError('invalid-state');
+  if(r.mode==='remove'){if(r.removal?.state!=='removed-cleanup-pending')throw new MutationStateError('invalid-state');await this.#removalState(r,true);}
+  else{if(r.outcome.credentialCleanup!=='pending')throw new MutationStateError('invalid-state');await this.#status(r);}
+ });}
  endTemporary():void{
   for(const r of this.#records.values())if(r.key.scope==='temporary'&&r.phase!=='session-ended'){
-   r.timer?.dispose();r.timer=null;r.phase='session-ended';r.ticket=null;r.outcome=null;r.errorCode='session-expired';this.#release(r);this.#clearDraft(r);
+   r.timer?.dispose();r.timer=null;r.phase='session-ended';r.ticket=null;r.outcome=null;r.removal=null;r.errorCode='session-expired';this.#release(r);this.#clearDraft(r);
   }this.#emit();
  }
  dismiss(id:string):void{const r=this.#get(id);if(!this.#view(r).canDismiss)throw new MutationStateError('invalid-state');this.#release(r);r.ticket=null;r.clearDraft=null;this.#records.delete(id);this.#emit();}

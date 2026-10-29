@@ -14,6 +14,7 @@ import * as vscode from 'vscode';
 
 import { createConnectionsDraftTests, createConnectionsMutationController } from './connections/gateway.js';
 import { ConnectionsWorkbenchOwner } from './connections/session-owner.js';
+import { ConnectionRemovals } from '../../src/shared/connection-manager/removal.js';
 import { createIpcClient } from '../../src/shared/ipc-client.js';
 import { PATHS } from '../../src/shared/paths.js';
 import { createStatusSurface } from './surfaces/status-surface.js';
@@ -108,6 +109,8 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(connectionsOwner);
   const connectionMutations = createConnectionsMutationController(connectionsOwner);
   context.subscriptions.push(connectionMutations);
+  const connectionRemovals = new ConnectionRemovals(connectionMutations);
+  context.subscriptions.push(connectionRemovals);
   const connectionTests = createConnectionsDraftTests(connectionsOwner);
   context.subscriptions.push(connectionTests);
 

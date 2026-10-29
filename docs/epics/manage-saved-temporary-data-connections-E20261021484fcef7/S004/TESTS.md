@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -193,3 +193,22 @@ Run at 2026-10-29T11:03:27.461Z on commit `7d6467db5`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/db/__tests__/session-ledger.test.ts` | 0 | 9 | 5.5 s |  |
+
+## t11
+
+Run at 2026-10-29T11:14:28.803Z on commit `ebfd418c3`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S4-TEMP/INVALIDATE: extend src/daemon/db/__tests__/session-entries.test.ts for exact owner/root/revision, atomic budgets, opaque tokens, stale CAS and retained-ID reservations.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S4-TEMP: exact overlay removal publishes revision-only receipt and invalidates private staged edits | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S4-TEMP: removed config bytes are released immediately while runtime slot cleanup stays pending | `src/daemon/db/__tests__/session-entries.test.ts` |
+| pass | CM-S4-TEMP: stale canceled forged and expired removal tokens have no publication effects | `src/daemon/db/__tests__/session-entries.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-entries.test.ts` | 0 | 9 | 2.3 s |  |

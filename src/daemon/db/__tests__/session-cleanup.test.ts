@@ -6,6 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { TemporaryDriverResources } from '../session-resources.js';
 import { contextualDriverFactory, temporaryDriverOwner } from '../driver-log-policy.js';
 import type { Driver } from '../../../shared/db-driver.js';
+import { ConnectionSessionOwner } from '../session-owner.js';
+import { createTemporaryOverlay } from '../session-entries.js';
+import type { TemporaryConnectionOverlay } from '../session-entries.js';
+import { temporaryRemovalState, retryTemporaryRemovalCleanup } from '../session-management.js';
+import { environment } from './fixtures/saved-management-fixture.js';
+import { readFile } from 'node:fs/promises';
 let matrix: Promise<void> | undefined;
 function runMatrix() {
 	return matrix ??= (async () => {
@@ -51,4 +57,29 @@ test('CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction
   const closing=resources.close();finish();await assert.rejects(acquiring,{code:'session-expired'});await closing;
   assert.equal(closed,1);assert.equal(slots,0);
  } finally {finish();await resources.close();}
+});
+
+test('CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation', {timeout:15000},async()=>{
+ const env=await environment(),f=await env.rootFixture('retry');let fail=true,calls=0,finish!:()=>void,entered!:()=>void;
+ const held=new Promise<void>(resolve=>{finish=resolve;}),started=new Promise<void>(resolve=>{entered=resolve;});
+ const owner=new ConnectionSessionOwner<TemporaryConnectionOverlay>({daemonEpoch:'epoch',monotonicNow:()=>0,isRegistered:async root=>root===f.root,
+  createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{calls++;if(fail)throw new Error('private-temp-sdk-canary');entered();await held;}} as Driver))}),dropOverlay:overlay=>overlay.close()});
+ const oldContext={connectionIdentity:'old',daemonEpoch:'epoch'},newContext={connectionIdentity:'new',daemonEpoch:'epoch'};
+ try{
+  const opened=await owner.open(oldContext,f.root),selected=await owner.management(oldContext,f.root),old={...selected,assertRequest:()=>selected.binding.assertActive()};
+  const row=old.overlay.commit(await old.overlay.prepare({key:{repoRoot:f.root,scope:'temporary',id:'row'},mode:'create',publicPatch:{kind:'postgres',endpoint:'postgres://host/db'}}));
+  const access=old.binding.access;await old.overlay.resolver(access,{assertActive:old.assertRequest,signal:old.binding.signal}).withConnection(access,'row',async()=>{});
+  const before=await readFile(f.path,'utf8'),vault=[...f.values];f.reset();
+  const ticket=old.ledger.issue(row.key,'remove'),prepared=old.overlay.prepareRemoval({id:'row',expectedRevision:row.revision});
+  const outcome=await old.ledger.mutate({ticket,operationId:ticket.operationId,key:row.key,mode:'remove',expectedRevision:row.revision},async(_request,commit)=>commit(()=>old.overlay.commitRemoval(prepared)),old.assertRequest);
+  assert.equal(outcome.status,'committed');if(outcome.status!=='committed')throw new Error('Expected receipt');
+  assert.equal(temporaryRemovalState(old,ticket).resourceCleanup,'pending');const failed=await retryTemporaryRemovalCleanup(old,ticket);assert.equal(failed.state,'removed-cleanup-pending');assert.ok(!JSON.stringify(failed).includes('canary'));
+  const failedCalls=calls; // The initial cleanup and first retry may join the same failing attempt.
+  fail=false;const retry=retryTemporaryRemovalCleanup(old,ticket);await started;owner.resume(newContext,opened);finish();await assert.rejects(retry,{code:'session-expired'});
+  const current=await owner.management(newContext,f.root),fresh={...current,assertRequest:()=>current.binding.assertActive()};assert.equal(temporaryRemovalState(fresh,ticket).state,'removed');
+  const replacement=fresh.overlay.commit(await fresh.overlay.prepare({key:row.key,mode:'create',publicPatch:{kind:'postgres',endpoint:'postgres://host/new'}}));await retryTemporaryRemovalCleanup(fresh,ticket);
+  assert.equal(fresh.overlay.read('row').revision,replacement.revision);assert.equal(calls,failedCalls+1);assert.throws(()=>fresh.ledger.activation(ticket.operationId,outcome.value.revision,'active'),{code:'operation-mismatch'});
+  await owner.end(newContext);assert.throws(()=>temporaryRemovalState(fresh,ticket),{code:'session-expired'});
+  assert.equal(await readFile(f.path,'utf8'),before);assert.deepEqual([...f.values],vault);assert.ok(Object.values(f.counts).every(value=>value===0));
+ }finally{fail=false;finish();await owner.close();await env.cleanup();}
 });

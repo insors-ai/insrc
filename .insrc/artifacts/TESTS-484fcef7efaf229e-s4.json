@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s4",
     "createdAt": "2026-10-29T10:08:25.734Z",
-    "updatedAt": "2026-10-29T11:03:27.461Z",
+    "updatedAt": "2026-10-29T11:14:28.803Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -855,6 +855,89 @@
               },
               {
                 "title": "CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "ebfd418c3",
+        "ranAt": "2026-10-29T11:14:28.803Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S4-TEMP/INVALIDATE: extend src/daemon/db/__tests__/session-entries.test.ts for exact owner/root/revision, atomic budgets, opaque tokens, stale CAS and retained-ID reservations.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S4-TEMP: exact overlay removal publishes revision-only receipt and invalidates private staged edits",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S4-TEMP: removed config bytes are released immediately while runtime slot cleanup stays pending",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-entries.test.ts",
+                "title": "CM-S4-TEMP: stale canceled forged and expired removal tokens have no publication effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-entries.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2267,
+            "titles": [
+              {
+                "title": "CM-S4-TEMP: exact overlay removal publishes revision-only receipt and invalidates private staged edits",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: removed config bytes are released immediately while runtime slot cleanup stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: stale canceled forged and expired removal tokens have no publication effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-REPLAY: cumulative config quota refuses create and update without partial state",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state",
                 "result": "pass"
               }
             ],

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test, mock } from 'node:test';
+import fsPromises from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync, readFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,6 +13,11 @@ import type { TrustedRpcContext } from '../../request-context.js';
 import type { OpenConnectionSessionResult, SessionResume, SessionDataAttach, ConnectionSessionAudience } from '../../../shared/connection-management.js';
 import { IpcServer, directDispatch } from '../../server.js';
 import type { RpcHandler } from '../../server.js';
+import { createTemporaryOverlay } from '../session-entries.js';
+import type { TemporaryConnectionOverlay } from '../session-entries.js';
+import { temporaryRemovalState, retryTemporaryRemovalCleanup } from '../session-management.js';
+import { _setKeystoreForTests } from '../secrets.js';
+import '../drivers/index.js';
 
 const context = (identity: string, daemonEpoch = 'epoch'): TrustedRpcContext => ({ connectionIdentity: identity, daemonEpoch });
 const code = (expected: string) => (error: unknown): boolean => error instanceof ManagementServiceError && error.code === expected;
@@ -20,6 +27,49 @@ function fixture() {
 	mkdirSync(a); mkdirSync(b);
 	return { directory, a, b, registered: new Set([a, b]) };
 }
+
+test('CM-S4-NO-PERSIST: temporary state and retry use only exact owner receipts without registry keychain or file ports',async()=>{
+	const f=fixture(),sentinel=join(f.directory,'saved-sentinel.json');writeFileSync(sentinel,'{"saved":"untouched"}');const bytes=readFileSync(sentinel);
+	const owner=new ConnectionSessionOwner<TemporaryConnectionOverlay>({daemonEpoch:'epoch',monotonicNow:()=>0,isRegistered:async root=>f.registered.has(root),createOverlay:createTemporaryOverlay,dropOverlay:overlay=>overlay.close()});
+	let keychain=0,files=0;const previous=_setKeystoreForTests({getKey:async()=>{keychain++;throw new Error('forbidden keychain');},setKey:async()=>{keychain++;throw new Error('forbidden keychain');},deleteKey:async()=>{keychain++;throw new Error('forbidden keychain');}});
+	const read=mock.method(fsPromises,'readFile',async()=>{files++;throw new Error('forbidden registry/cache/checkpoint read');});
+	const write=mock.method(fsPromises,'writeFile',async()=>{files++;throw new Error('forbidden registry/cache/checkpoint write');});syncBuiltinESMExports();
+	try{
+		await owner.open(context('A'),f.a);await owner.open(context('B'),f.a);
+		const selected=await owner.management(context('A'),f.a),a={...selected,assertRequest:()=>selected.binding.assertActive()};
+		const row=a.overlay.commit(await a.overlay.prepare({key:{repoRoot:f.a,scope:'temporary',id:'row'},mode:'create',publicPatch:{kind:'postgres',endpoint:'postgres://host/db'},credentials:{'url.password':{action:'replace',value:'private-temporary-canary'}}}));
+		const ticket=a.ledger.issue(row.key,'remove');assert.equal(temporaryRemovalState(a,ticket).state,'unknown');
+		const other=await owner.management(context('A'),f.b),lookup=mock.method(a.ledger,'status',a.ledger.status.bind(a.ledger));
+		try{
+			assert.throws(()=>temporaryRemovalState({...other,assertRequest:()=>other.binding.assertActive()},ticket),{code:'operation-mismatch'});assert.equal(lookup.mock.callCount(),0);
+			const delegation=await owner.delegate(context('A'),f.a,'mcp-unverified'),binding=await owner.attach(context('MCP'),{...delegation,repoRoot:f.a});
+			assert.throws(()=>temporaryRemovalState({...a,binding},ticket),{code:'upgrade-required'});assert.equal(lookup.mock.callCount(),0);
+		}finally{lookup.mock.restore();}
+		const foreign=await owner.management(context('B'),f.a);assert.throws(()=>temporaryRemovalState({...foreign,assertRequest:()=>foreign.binding.assertActive()},ticket),{code:'invalid-input'});
+		const prepared=a.overlay.prepareRemoval({id:'row',expectedRevision:row.revision});
+		await a.ledger.mutate({ticket,operationId:ticket.operationId,key:row.key,mode:'remove',expectedRevision:row.revision},async(_request,commit)=>commit(()=>a.overlay.commitRemoval(prepared)),a.assertRequest);
+		assert.equal(temporaryRemovalState(a,ticket).state,'removed');assert.equal((await retryTemporaryRemovalCleanup(a,ticket)).state,'removed');
+		assert.equal(files,0);assert.equal(keychain,0);assert.deepEqual(readFileSync(sentinel),bytes);assert.ok(!JSON.stringify([temporaryRemovalState(a,ticket),JSON.stringify(owner)]).includes('private-temporary-canary'));
+		await owner.end(context('A'));assert.throws(()=>temporaryRemovalState(a,ticket),{code:'session-expired'});assert.equal(files,0);assert.equal(keychain,0);
+	}finally{read.mock.restore();write.mock.restore();syncBuiltinESMExports();_setKeystoreForTests(previous);await owner.close();rmSync(f.directory,{recursive:true,force:true});}
+});
+
+test('CM-S4-STATE: resume preserves temporary receipt truth but expiry end and a new epoch revoke it',async()=>{
+	const f=fixture();let now=0;
+	const ports={daemonEpoch:'epoch',monotonicNow:()=>now,isRegistered:async(root:string)=>f.registered.has(root),createOverlay:createTemporaryOverlay,dropOverlay:(overlay:TemporaryConnectionOverlay)=>overlay.close()};
+	const owner=new ConnectionSessionOwner<TemporaryConnectionOverlay>(ports);
+	try{
+		const opened=await owner.open(context('old'),f.a),selected=await owner.management(context('old'),f.a),old={...selected,assertRequest:()=>selected.binding.assertActive()};
+		const row=old.overlay.commit(await old.overlay.prepare({key:{repoRoot:f.a,scope:'temporary',id:'row'},mode:'create',publicPatch:{kind:'postgres',endpoint:'postgres://host/db'}}));
+		const ticket=old.ledger.issue(row.key,'remove');const prepared=old.overlay.prepareRemoval({id:'row',expectedRevision:row.revision});
+		await old.ledger.mutate({ticket,operationId:ticket.operationId,key:row.key,mode:'remove',expectedRevision:row.revision},async(_request,commit)=>commit(()=>old.overlay.commitRemoval(prepared)),old.assertRequest);
+		now=30000;owner.heartbeat(context('old'));owner.resume(context('new'),opened);assert.throws(()=>temporaryRemovalState(old,ticket),{code:'session-expired'});
+		const current=await owner.management(context('new'),f.a),fresh={...current,assertRequest:()=>current.binding.assertActive()};now=90000;
+		assert.equal(temporaryRemovalState(fresh,ticket).state,'removed');now=120000;assert.throws(()=>temporaryRemovalState(fresh,ticket),{code:'session-expired'});
+		const restarted=new ConnectionSessionOwner<TemporaryConnectionOverlay>({...ports,daemonEpoch:'new-epoch'});
+		try{await assert.rejects(restarted.management(context('new','new-epoch'),f.a),{code:'session-expired'});assert.throws(()=>restarted.resume(context('new','new-epoch'),{...opened,daemonEpoch:'new-epoch'}),{code:'session-expired'});}finally{await restarted.close();}
+	}finally{await owner.close();rmSync(f.directory,{recursive:true,force:true});}
+});
 
 test('CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays', async () => {
 	const f = fixture(); let now = 0;

@@ -1,8 +1,44 @@
 /** Strict temporary management decoding; mutation publication stays daemon memory only. */
-import type { ConnectionKey, MutationRequest, OperationTicket } from '../../shared/connection-management.js';
-import { parseConnectionKey, parseMutationRequest, parseOperationTicket, parseSessionOpen, ManagementInputError } from '../../shared/connection-management-wire.js';
+import type { ConnectionKey, MutationRequest, OperationTicket, RemovalState, OperationStatus } from '../../shared/connection-management.js';
+import { parseConnectionKey, parseMutationRequest, parseOperationTicket, parseSessionOpen, parseRemovalStateRequest, ManagementInputError } from '../../shared/connection-management-wire.js';
+import { projectRemovalState } from '../../shared/connection-removal.js';
+import type { TemporaryConnectionOverlay } from './session-entries.js';
+import type { SessionOperationLedger } from './session-ledger.js';
+import type { TrustedConnectionSession } from '../request-context.js';
 import { canonicalRequestJson } from './management-tickets.js';
 import { ManagementServiceError } from './management.js';
+/** Supplied only by the existing trusted session owner, never decoded from caller JSON. */
+export interface TemporaryRemovalOwner {
+ readonly binding: TrustedConnectionSession;
+ readonly overlay: TemporaryConnectionOverlay;
+ readonly ledger: SessionOperationLedger;
+ readonly assertRequest: () => void;
+}
+function assertRemovalOwner(owner: TemporaryRemovalOwner): void {
+ owner.binding.assertActive();owner.assertRequest();
+ if(owner.binding.signal.aborted)throw new ManagementServiceError('session-expired');
+ if(owner.binding.audience!=='workbench-ui')throw new ManagementServiceError('upgrade-required');
+}
+function removalStatus(owner: TemporaryRemovalOwner, value: OperationTicket): {ticket: OperationTicket; status: OperationStatus} {
+ assertRemovalOwner(owner);
+ const ticket=Object.freeze(structuredClone(parseRemovalStateRequest({ticket:value}).ticket));
+ if(ticket.scope!=='temporary'||ticket.lookupRoot!==owner.binding.access.lookupRoot)throw new ManagementServiceError('operation-mismatch');
+ const status=owner.ledger.status(ticket);assertRemovalOwner(owner);return{ticket,status};
+}
+export function temporaryRemovalState(owner: TemporaryRemovalOwner, value: OperationTicket): RemovalState {
+ const {ticket,status}=removalStatus(owner,value);
+ const phase=status.status==='committed'&&owner.overlay.removalCleanupPending(status.value.revision)?'pending':'complete';
+ assertRemovalOwner(owner);return projectRemovalState(ticket,status,phase);
+}
+export async function retryTemporaryRemovalCleanup(owner: TemporaryRemovalOwner, value: OperationTicket): Promise<RemovalState> {
+ const {ticket,status}=removalStatus(owner,value);
+ if(status.status!=='committed')return projectRemovalState(ticket,status);
+ // The revision comes from this owner's verified receipt, never from a cleanup selector on the wire.
+ // Validate the removal phases before touching any cleanup handle.
+ projectRemovalState(ticket,status,'pending');
+ try{await owner.overlay.retryRemovalCleanup(status.value.revision);}catch{assertRemovalOwner(owner);}
+ assertRemovalOwner(owner);return temporaryRemovalState(owner,ticket);
+}
 export const TEMPORARY_MANAGEMENT_METHODS: ReadonlySet<string> = new Set(['db.connections.v2.list', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.read', 'db.connections.v2.activate']);
 export type TemporaryManagementCommand =
 	| { readonly method: 'db.connections.v2.list'; readonly root: string }

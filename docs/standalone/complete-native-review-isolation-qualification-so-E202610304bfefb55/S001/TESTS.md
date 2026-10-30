@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -87,3 +87,13 @@ Run at 2026-10-30T10:21:28.220Z on commit `332fbfb12`. Tests check: **passed**. 
 | `src/agent/providers/__tests__/codex-investigation-session.test.ts` | 0 | 1 | 6 s |  |
 | `src/agent/providers/__tests__/native-investigation-probe.test.ts` | 0 | 13 | 18.3 s |  |
 | `src/daemon/__tests__/review-investigation-adoption.test.ts` | 0 | 8 | 9.6 s |  |
+
+## t4
+
+Run at 2026-10-30T10:50:36.072Z on commit `61f43754a`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: Installed source-only and indexed-impact probes each complete with a validated candidate using one serial control restricted pair**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/qualification-fix-live-acceptance.json; /tmp/live-insrc-probe-v2-admission-fixed-run.json; actual probes dd88812b-0a8e-4cec-9946-c0f8cdf434f0 and ab926476-faf4-48e3-9c4e-4638c0e787d6 completed with exported candidates/no missing evidence on03959efd1. Canonical draft mode records .insrc/artifacts/ISSUE-9ff1c86fdd7adcbc.json and ISSUE-f29a3e27b3282f6e.json; safe drained restart logs /tmp/qualification-fix-daemon-restart-2.log. Failed earlier IDs remain in /tmp/live-insrc-probe-v2-qualification-run.json, not promoted. Corrected admission arithmetic /tmp/v2-probe-admission-analysis.jsonl; focused tests/build /tmp/qualification-fix-t4-admission-tests.log and /tmp/qualification-fix-t4-build.log.

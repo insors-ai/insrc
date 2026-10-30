@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "d4f0f159cb17af167aea4f66d1b62bff3fcba6cd085e026d92072e5d0503f3f6",
-        "at": "2026-10-30T10:21:28.271Z",
+        "number": 4,
+        "contentHash": "7e2cd74a9c34afd1535e6dc4c3a0ab3a12fb532a150e7fbca02faaec5704a836",
+        "at": "2026-10-30T10:50:36.097Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4bfefb556f0dc560",
     "storyId": "s1",
     "createdAt": "2026-10-30T09:51:03.769Z",
-    "updatedAt": "2026-10-30T10:21:28.220Z",
+    "updatedAt": "2026-10-30T10:50:36.072Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T09:20:29.318Z",
     "epicSlug": "complete-native-review-isolation-qualification-so",
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "tasks": [
@@ -520,6 +520,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "61f43754a",
+        "ranAt": "2026-10-30T10:50:36.072Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Installed source-only and indexed-impact probes each complete with a validated candidate using one serial control restricted pair",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/qualification-fix-live-acceptance.json; /tmp/live-insrc-probe-v2-admission-fixed-run.json; actual probes dd88812b-0a8e-4cec-9946-c0f8cdf434f0 and ab926476-faf4-48e3-9c4e-4638c0e787d6 completed with exported candidates/no missing evidence on03959efd1. Canonical draft mode records .insrc/artifacts/ISSUE-9ff1c86fdd7adcbc.json and ISSUE-f29a3e27b3282f6e.json; safe drained restart logs /tmp/qualification-fix-daemon-restart-2.log. Failed earlier IDs remain in /tmp/live-insrc-probe-v2-qualification-run.json, not promoted. Corrected admission arithmetic /tmp/v2-probe-admission-analysis.jsonl; focused tests/build /tmp/qualification-fix-t4-admission-tests.log and /tmp/qualification-fix-t4-build.log."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   },

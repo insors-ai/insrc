@@ -22,7 +22,26 @@
     "epicSlug": "verify-installed-native-review-qualification-source",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "dad0a81dcc05a1b52845bb2834f924476f07a1edefdbede05e20c2fcbb3e34c3",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Verify installed native review qualification for source-only",

@@ -22,7 +22,26 @@
     "epicSlug": "verify-installed-native-review-qualification-indexed",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "e5bb41ce444a4658f14aaea8fa8217f4b48283895fe845256d596c5424959261",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Verify installed native review qualification for indexed-impact",

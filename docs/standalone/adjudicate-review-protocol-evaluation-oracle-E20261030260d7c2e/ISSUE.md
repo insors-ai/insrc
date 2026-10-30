@@ -1,0 +1,20 @@
+<!-- insrc:artifact ISSUE-260d7c2e6ea183cc -->
+
+# Adjudicate review protocol evaluation oracle
+
+## Reproduction
+
+Activation evaluation needs an independently approved oracle. Inspect the four cases in src/daemon/__tests__/fixtures/review-evaluation-oracle.v1.json: empty totals must return 0; unknown token usage must remain null; queued replies must return the answer; the clean refactor must return 5 and introduce no defect.
+
+## Root cause
+
+The existing evaluation admission requires an approved canonical oracle adjudicated by a person distinct from the producer. The checked-in fixture is not itself that approval. This record supplies the proposed expectations for explicit human adjudication, limited to deterministic protocol conformance; no live quality, recall, savings or default replacement claim follows.
+
+## Fix intent
+
+{"version":1,"kind":"review-investigation-oracle","fixtureVersion":"review-protocol-corpus-v1","cases":[{"caseId":"empty-total","description":"Removing the reduce initial value breaks the promised zero for an empty collection.","before":"function probe() { return [].reduce((a, b) => a + b, 0); }","after":"function probe() { return [].reduce((a, b) => a + b); }","probe":"probe()","expected":0,"requiredDefects":["empty-reduce-initializer"],"requiredCoverage":["empty-total-behavior","empty-total-test"]},{"caseId":"unknown-usage","description":"Unknown token counters must remain null; converting unknown to zero hides missing observations.","before":"function probe() { const tokens = null; return tokens; }","after":"function probe() { const tokens = null; return tokens ?? 0; }","probe":"probe()","expected":null,"requiredDefects":["unknown-tokens-to-zero"],"requiredCoverage":["unknown-quality","unknown-token-test"]},{"caseId":"queued-reply","description":"The queued path drops the response while direct dispatch still replies.","before":"function probe() { const queued = true; const response = 'answer'; return queued ? response : response; }","after":"function probe() { const queued = true; const response = 'answer'; return queued ? undefined : response; }","probe":"probe()","expected":"answer","requiredDefects":["queued-response-dropped"],"requiredCoverage":["queued-path","queued-reply-test"]},{"caseId":"clean-control","description":"A source-preserving refactor must retain its coverage and must not acquire an invented defect.","before":"function probe() { return 2 + 3; }","after":"function probe() { const total = 2 + 3; return total; }","probe":"probe()","expected":5,"requiredDefects":[],"requiredCoverage":["clean-control-test"]}]}
+
+## Citations
+
+- **[[c1]]** `doc` `src/daemon/__tests__/fixtures/review-evaluation-oracle.v1.json`
+- **[[c2]]** `doc` `docs/review-investigation.md`

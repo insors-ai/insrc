@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "7b10fc46c33bbc5d45f9b03ff16ea5e7a6bf0481fdc5729cead7b2e75be88f7a",
-        "at": "2026-10-30T10:23:31.568Z",
+        "number": 4,
+        "contentHash": "8696d3e6ed380037bfb2147d1e8bdf33d784a01ba076fc6d6598b876e9d1524b",
+        "at": "2026-10-30T10:53:53.166Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "4bfefb556f0dc560",
     "storyId": "s1",
-    "revision": 3,
-    "updatedAt": "2026-10-30T10:21:28.220Z",
+    "revision": 4,
+    "updatedAt": "2026-10-30T10:50:36.072Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "complete-native-review-isolation-qualification-so"
@@ -48,9 +48,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "Independent v2 export reconstruction rejects changed proof/candidate/native/source/phase/runtime facts, and installed sessions recheck source policy before accepting scoped operations.63 affected scripted provider/adoption/recovery tests and full npm build passed. Commit332fbfb12. Actual installed qualification remains t4; no activation or legacy deletion.",
+    "summary": "Actual installed Claude v2 source-only and indexed-impact probes completed on03959efd1 with independently exported candidates and no missing checks; real controls, two durable ACKs and SIGKILL exit verified. Canonical probe records ISSUE-9ff1c86fdd7adcbc and ISSUE-f29a3e27b3282f6e are prepared, not approved. Earlier attempts failed solely from host-only diagnostic text being mischarged as model context; corrected without changing128K cap or byte bounds.16 focused regression tests/build passed. Readiness and real new-engine acceptance remain pending.",
     "testRecord": {
       "md": "docs/standalone/complete-native-review-isolation-qualification-so-E202610304bfefb55/S001/TESTS.md"
     },
@@ -60,122 +64,227 @@
           "file": "src/agent/providers/__tests__/claude-investigation-v2.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/investigation-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/native-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-export.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/shared/review-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/shared/review-isolation-evidence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-diagnostics.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-qualification.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
       },
       {
         "target": {
           "file": "src/agent/providers/native-investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:21:28.220Z"
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-4bfefb556f0dc560-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-4bfefb556f0dc560-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t6.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-4bfefb556f0dc560-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-4bfefb556f0dc560-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": "docs/review-investigation.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-9ff1c86fdd7adcbc.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-f29a3e27b3282f6e.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/verify-installed-native-review-qualification-indexed-E20261030f29a3e27/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/verify-installed-native-review-qualification-source-E202610309ff1c86f/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:50:36.072Z"
       }
     ],
-    "commit": "332fbfb12"
+    "commit": "61f43754a"
   },
   "citations": []
 }

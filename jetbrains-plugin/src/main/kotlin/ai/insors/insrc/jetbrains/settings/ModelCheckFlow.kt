@@ -59,8 +59,8 @@ class ModelCheckFlow(
     var checkAgain: Boolean = false
         private set
 
-    /** The families that can be checked: CLI families only (the local family has no check). */
-    fun families(): List<DefinedFamilyDto> = definitions.families.filter { it.cliKind != null }
+    /** The families that can be checked: vendor CLI families only (the local family, and a CLI family on a host, take only their listed models). */
+    fun families(): List<DefinedFamilyDto> = definitions.families.filter { it.cliKind != null && it.host == null }
 
     /** The efforts to try for [family]: every effort its listed models take, in order. */
     fun claimedEfforts(family: String): List<String> =

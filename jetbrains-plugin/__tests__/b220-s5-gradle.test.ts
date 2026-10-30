@@ -59,3 +59,7 @@ test("b220-s5-gradle.test.ts: ModelTiersModelTest notes an undeclared host-famil
 test('b220-s5-gradle.test.ts: ModelTiersModelTest resolves a tier saved on the host family to its runner, model and effort on reopen', LONG, () => {
 	junitCase('settings.ModelTiersModelTest', 'resolves a tier saved on the host family to its runner, model and effort on reopen');
 });
+
+test('b220-s5-gradle.test.ts: ModelCheckFlowTest keeps the host family out of Check model and offers it again when the answer has no host', LONG, () => {
+	junitCase('settings.ModelCheckFlowTest', 'keeps the host family out of Check model and offers it again when the answer has no host');
+});

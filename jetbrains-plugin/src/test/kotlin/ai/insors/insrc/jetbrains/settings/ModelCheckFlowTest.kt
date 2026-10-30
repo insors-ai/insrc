@@ -158,4 +158,21 @@ class ModelCheckFlowTest {
         running = true, uptimeSec = 1, queueDepth = 0, embeddingsPending = 0,
         modelPullStatus = "ready", modelPullPct = null, lmdbFileSizeMb = null, repoCount = 0,
     )
+
+    @Test
+    fun `keeps the host family out of Check model and offers it again when the answer has no host`() {
+        // Epic b220bb61, Story s5: a CLI family that runs on Ollama takes only its listed models.
+        val hosted = defs.copy(families = defs.families + listOf(
+            DefinedFamilyDto("fam-hosted", "claude", "FakeH", emptyMap(), null, listOf(DefinedModelDto("h:cloud", emptyList(), null, emptyList(), "shipped", null, hosting = "cloud")), host = "ollama"),
+            DefinedFamilyDto("fam-y", "claude", "FakeY", emptyMap(), null, listOf(m("y-a", listOf("lo")))),
+        ))
+        val gw = gateway(Recorder())
+        val flow = ModelCheckFlow(gw, hosted, DaemonRestart({ DaemonActionResult.Ok() }, gw))
+        assertEquals(listOf("fam-x", "fam-y"), flow.families().map { it.id }, "vendor CLI families only, in order")
+
+        // An older daemon answers without host: the same family is a vendor CLI family again.
+        val older = hosted.copy(families = hosted.families.map { it.copy(host = null) })
+        val oldFlow = ModelCheckFlow(gw, older, DaemonRestart({ DaemonActionResult.Ok() }, gw))
+        assertEquals(listOf("fam-x", "fam-hosted", "fam-y"), oldFlow.families().map { it.id })
+    }
 }

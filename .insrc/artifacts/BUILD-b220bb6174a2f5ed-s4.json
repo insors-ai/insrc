@@ -4,10 +4,15 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s4",
     "createdAt": "2026-10-30T08:31:56.791Z",
-    "updatedAt": "2026-10-30T08:44:06.234Z",
+    "updatedAt": "2026-10-30T08:46:58.027Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
-    "epicSlug": "run-claude-codex-ollama-models"
+    "epicSlug": "run-claude-codex-ollama-models",
+    "approvedAt": "2026-10-30T08:46:58.342Z",
+    "reviewOverride": {
+      "reason": "manual code review: 0 HIGH / 0 MED; LOW 1-4 fixed in e7ce2bd8f, LOW 5 accepted",
+      "at": "2026-10-30T08:46:58.342Z"
+    }
   },
   "body": {
     "tasks": [
@@ -75,6 +80,6 @@
         "timestamp": "2026-10-30T08:44:06.234Z"
       }
     ],
-    "commit": "e7ce2bd8f"
+    "commit": "37c1ac2c4"
   }
 }

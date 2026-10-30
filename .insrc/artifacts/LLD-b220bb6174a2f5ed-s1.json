@@ -25,180 +25,6 @@
     "hldEffectiveHash": "ca5bac7aee6017131c5204a57baa27e41f2e27c7cfda243bf4d4fdb1d0a3748a",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S001's acceptance criteria (ac1-ac4 in §6) match the Epic DEF's s1 acceptance criteria (ac1-ac4 operationalizing k1/k3/k4/k6) and the LLD designs only sc1/sc2, which §6.1 of the HLD assigns exclusively to s1.",
-          "evidence": "DEF.md:82-85 lists s1's ac1 (definitions answer lists the host runner with cloud/local marks), ac2 (efforts per model), ac3 (undeclared model refused as not-supported, no substitute) and ac4 (existing families unchanged exactly as before) — these are the same four criteria the LLD §6 'Acceptance mapping' table proves with tests. [files: docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/DEF.md]",
-          "action": "read DEF.md §2 (s1 AC) and compared to LLD §6 acceptance mapping",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design builds no non-goal: it adds only a Claude-on-Ollama family, not a Codex-on-Ollama one, matching the Epic's explicit non-goal.",
-          "evidence": "DEF.md:50 — 'Running the Codex command-line tool on Ollama models' is listed as a non-goal (Ollama cloud ignores requested output format; only the Claude tool returned schema-checked answers). The LLD's open questions note: 'Codex on Ollama is out of scope.' matching §3.6's single new family 'ollama-claude' with cliKind 'claude' only. [files: docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/DEF.md]",
-          "action": "read DEF.md §3 Non-goals",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "isCliFamily currently decides vendor-vs-not purely by 'id !== ollama', and FAMILY_IDS / FamilyId currently has exactly the three members the design says it does, matching the design's 'today' description and its migration 'State before'.",
-          "evidence": "src/daemon/model-catalog.ts:140-142 — 'function isCliFamily(id: FamilyId): id is CliFamilyId { return id !== 'ollama'; }'; line 37 — 'export type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama';'; line 127 — FAMILY_IDS has the same three ids. [files: src/daemon/model-catalog.ts]",
-          "action": "read src/daemon/model-catalog.ts",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "TierResolution.model is currently required (ResolvedModel, not optional) and FallbackReason currently has exactly 'unlisted-model' | 'rejected-model', matching the design's described 'before' state in §3.4 and the migration section.",
-          "evidence": "src/daemon/model-registry.ts:65 — 'export type FallbackReason = 'unlisted-model' | 'rejected-model';' and line 69 — 'readonly model: ResolvedModel;' (not optional). [files: src/daemon/model-registry.ts]",
-          "action": "read src/daemon/model-registry.ts",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The 'ollama-claude' family id and the host/hosting marks do not already exist anywhere in the catalog types or shipped file — this is genuinely new, not a rename of something already present.",
-          "evidence": "FamilyId (model-catalog.ts:37), FAMILY_IDS (:127) and the shipped cloud-model-catalog.json (families: cli-claude, cli-codex, ollama — read first 30 lines) contain no 'ollama-claude', 'host' or 'hosting' field anywhere. [files: src/daemon/model-catalog.ts, src/assets/models/cloud-model-catalog.json]",
-          "action": "read model-catalog.ts and the shipped JSON asset",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The 'reused' pieces the design leans on (TierDefault, ModelDefinition.efforts/aliases, the registry's find/resolveTier/cliKind shape) already exist with the shape the LLD assumes, so building the host family on top of them is reuse, not invention.",
-          "evidence": "ModelDefinition (model-catalog.ts:48-59) already has id/aliases/efforts/inputLimit; ModelRegistry.resolveTier/cliKind/find (model-registry.ts:81-97, 267-286) already have the signatures §2.2-2.3 build on. [files: src/daemon/model-catalog.ts, src/daemon/model-registry.ts]",
-          "action": "read src/daemon/model-catalog.ts and src/daemon/model-registry.ts",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The cited call sites for the 'vendor CLI family' classification switch (model-check.ts:319, config-write.ts:74, model-registry.ts:105/269/277-278, model-definitions.ts:98/104/117-119) are real and currently implement exactly the behaviour the design says must change.",
-          "evidence": "model-check.ts:319 gates on `registry.cliKind(family)` alone (no host concept yet) and returns 'family must be a CLI family of the model definitions' when undefined; config-write.ts:74 (`rejectedIn`) gates on `registry.cliKind(family.id) === undefined`; model-definitions.ts:104/117-119 gate rejectedModels/installed on `cliKind !== undefined`. All of these would, unmodified, wrongly treat the new host family (which the design gives a cliKind) as a vendor family — confirming these are the real change sites the design names. [files: src/daemon/model-check.ts, src/daemon/config-write.ts, src/daemon/model-definitions.ts]",
-          "action": "read src/daemon/model-check.ts:308-340, src/daemon/config-write.ts:68-77, src/daemon/model-definitions.ts:98-132",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The build-step validate call site (src/daemon/steps/build-step/phases/validate.ts:195) that reads resolution.model.id unconditionally only ever resolves against the default vendor family, so the design's claim that it 'keeps a required model' (needs no undefined-guard) is accurate.",
-          "evidence": "validate.ts:192-195 — `const family = registry.defaultFamily();` then `registry.resolveTier(resolution.tier, { runner: family, ... })`; defaultFamily() always returns a CliFamilyId per model-catalog.ts:80, never the host family, so per the design's own postcondition ('model is undefined only when family is a host family') this call site's model can never be undefined. [files: src/daemon/steps/build-step/phases/validate.ts, src/daemon/model-catalog.ts]",
-          "action": "read src/daemon/steps/build-step/phases/validate.ts:179-199 and src/daemon/model-catalog.ts:78-83",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The two cited 'first family with a given CLI kind' / 'family without a CLI kind' readers (the installer script and model-defaults.ts) keep resolving to the same families after the host family is appended fourth with a cliKind, as the design's invariant [[c5]] claims.",
-          "evidence": "scripts/insrc-daemon-install.sh:290-293 picks the toolloop family via `f.cliKind === undefined` (only plain 'ollama' still qualifies) and the tier-default family via Array.find on cliKind===kind in file order (cli-claude/cli-codex still appear before the appended host family, so `find` still returns them first); src/config/model-defaults.ts:81 picks the 'local' family via `f['cliKind'] === undefined`, which the host family (cliKind:'claude') does not satisfy. [files: scripts/insrc-daemon-install.sh, src/config/model-defaults.ts]",
-          "action": "read scripts/insrc-daemon-install.sh:280-298 and src/config/model-defaults.ts:49-83",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "TierResolution.model becoming optional requires every reader of resolution.model.id to add a guard; the two config/analyze.ts call sites the design cites currently read resolution.model.id unconditionally and would need exactly the change the design describes.",
-          "evidence": "src/config/analyze.ts:234 and :238-239 (inside resolveTierWith) read `resolution.model.id` directly with no undefined check, and :245 (tierModelOf) reads `r.model.id` directly — both are real, currently-unguarded reads of the field the design is making optional. [files: src/config/analyze.ts]",
-          "action": "read src/config/analyze.ts:229-246",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The LLD's adjacent-scope list for s2-s5 matches the HLD's own story-boundary table, and the LLD's own contract ownership (sc1, sc2) matches what the HLD assigns to s1 alone.",
-          "evidence": "HLD.md:42-44 and :76-78 — 'Owner Story: s1' for both sc1 and sc2, 'Consumed by: s2, s3, s4, s5'; HLD.md:100-128 — s1 'Owns: sc1, sc2'; s2-s5 each list only 'Depends on: sc1, sc2' with the same per-story scope text (CLI provider env, terminal UI, VS Code picker, JetBrains Settings) that the LLD's §1 'Adjacent scope' reproduces verbatim. [files: docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/HLD.md]",
-          "action": "read docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/HLD.md §5-6",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "resolveTier's existing fallback mechanism (unlisted/rejected) never substitutes a different family, matching the design's stated invariant that the new 'model-not-supported' path on a host family also never substitutes.",
-          "evidence": "src/daemon/model-registry.ts:267-286 — for the three existing families, a miss falls back to that same family's (or the default family's, for plain ollama) tier default model, never a model from an unrelated family; the design's §2.2 postcondition ('A host-family resolution never substitutes another model or family') is a stricter version of the same pattern already in place for vendor families' unlisted/rejected handling, which this code confirms is the established convention. [files: src/daemon/model-registry.ts]",
-          "action": "read src/daemon/model-registry.ts:267-286",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every test file the design's §6 test strategy and acceptance-mapping table names already exists in the repo (so the plan amends real, current suites rather than inventing paths).",
-          "evidence": "Glob confirmed all cited files exist: src/daemon/__tests__/model-catalog.test.ts, model-registry.test.ts, model-check.test.ts, model-definitions.test.ts, model-catalog-asset.test.ts, models-definitions-daemon.test.ts, model-literal-scan.test.ts, and src/config/__tests__/tier-defaults.test.ts, config-catalog-defs.test.ts, tier-resolution.test.ts, src/daemon/__tests__/config-write-models.test.ts. [files: src/daemon/__tests__/model-catalog.test.ts, src/daemon/__tests__/model-registry.test.ts, src/daemon/__tests__/model-definitions.test.ts, src/config/__tests__/tier-resolution.test.ts]",
-          "action": "Glob for each cited test file path",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 13,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-29T18:34:45.776Z",
-      "model": "cli-claude:claude-sonnet-5",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-29T18:43:48.493Z",
     "questionResolutions": {
       "qc3aa8b10": {
         "question": "Item ts2: the test framework (node:test with node:assert/strict via tsx) is stated from the existing test files; the s1 bundles listed those files but did not report the framework explicitly (partial).",
@@ -221,6 +47,11 @@
         "rationale": "User decision 2026-10-29: six cloud models for ollama-claude; Codex on Ollama is out of scope.",
         "resolvedAt": "2026-10-29T18:46:47.975Z"
       }
+    },
+    "approvedAt": "2026-10-30T03:54:27.481Z",
+    "reviewOverride": {
+      "reason": "Round 1-3 findings applied; factual and line-reference corrections after the cli-vibe family landed, no design change (user decision 2026-10-30).",
+      "at": "2026-10-30T03:54:27.481Z"
     }
   },
   "body": {
@@ -273,7 +104,7 @@
           "sc2"
         ],
         "depends": [],
-        "internal": "The shipped definitions entry for the new family and its models (which cloud and local models are supported), the catalog validator's four-member check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1."
+        "internal": "The shipped definitions entry for the new family and its models (which cloud and local models are supported), the catalog validator's required-family check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1."
       },
       "adjacentBoundaries": [
         {
@@ -330,7 +161,7 @@
           "parameters": [],
           "returns": {
             "type": "ModelDefinitionsFile",
-            "meaning": "The frozen, validated definitions with four families: cli-claude, cli-codex, ollama, ollama-claude."
+            "meaning": "The frozen, validated definitions with five families: the vendor CLI families cli-claude, cli-codex and cli-vibe, the plain ollama family, and ollama-claude."
           },
           "errors": [
             {
@@ -339,11 +170,11 @@
             }
           ],
           "preconditions": [
-            "The shipped file lists the host family after the three existing families."
+            "The shipped file lists the host family after the existing families."
           ],
           "postconditions": [
             "Vendor-CLI checks key on 'has cliKind and no host', not on 'id is not ollama'.",
-            "The three existing family entries validate exactly as before."
+            "The existing family entries validate exactly as before."
           ]
         },
         {
@@ -365,7 +196,7 @@
           ],
           "returns": {
             "type": "TierResolution",
-            "meaning": "For a host family with a declared model: that model, with the effort kept only if the model lists it. For a host family with an undeclared model: model undefined and fallback { reason: 'model-not-supported', requested }. For the three existing families: exactly today's result."
+            "meaning": "For a host family with a declared model: that model, with the effort kept only if the model lists it. For a host family with an undeclared model: model undefined and fallback { reason: 'model-not-supported', requested }. For the existing families (cli-claude, cli-codex, cli-vibe, ollama): exactly today's result."
           },
           "errors": [],
           "preconditions": [
@@ -378,7 +209,7 @@
         },
         {
           "name": "ModelRegistry.cliKind",
-          "signature": "cliKind(family: FamilyId): 'claude' | 'codex' | undefined",
+          "signature": "cliKind(family: FamilyId): 'claude' | 'codex' | 'vibe' | undefined",
           "parameters": [
             {
               "name": "family",
@@ -388,13 +219,13 @@
             }
           ],
           "returns": {
-            "type": "'claude' | 'codex' | undefined",
+            "type": "'claude' | 'codex' | 'vibe' | undefined",
             "meaning": "The CLI the family runs; 'claude' for the host family too, so 'runs a CLI' callers include it."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "Unchanged for the three existing families."
+            "Unchanged for the existing families."
           ]
         },
         {
@@ -410,7 +241,7 @@
           ],
           "returns": {
             "type": "'ollama' | undefined",
-            "meaning": "'ollama' for the host family (sc1 host field), undefined for the three existing families."
+            "meaning": "'ollama' for the host family (sc1 host field), undefined for the existing families."
           },
           "errors": [],
           "preconditions": [],
@@ -475,7 +306,7 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "The entries for the three existing families are unchanged."
+            "The entries for the existing families are unchanged."
           ]
         },
         {
@@ -517,11 +348,11 @@
       {
         "entity": "FamilyId",
         "change": "field-modify",
-        "details": "The closed family-id union and FAMILY_IDS grow from three to four members: 'ollama-claude' joins 'cli-claude', 'cli-codex' and 'ollama'. CliFamilyId keeps meaning the two vendor CLI families; a new HostFamilyId names the host family.",
+        "details": "The closed family-id union and FAMILY_IDS grow by one member: 'ollama-claude' joins 'cli-claude', 'cli-codex', 'cli-vibe' and 'ollama' ('cli-vibe', the Mistral Vibe CLI family, landed separately in ef850d10d and is a vendor CLI family like the other two). CliFamilyId keeps meaning the vendor CLI families (cli-claude, cli-codex, cli-vibe); a new HostFamilyId names the host family.",
         "schemaDiff": "- type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama';\n+ type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama' | 'ollama-claude';\n+ type HostFamilyId = 'ollama-claude';",
         "callSites": [
-          "src/daemon/model-catalog.ts:37",
-          "src/daemon/model-catalog.ts:127"
+          "src/daemon/model-catalog.ts:39",
+          "src/daemon/model-catalog.ts:137"
         ]
       },
       {
@@ -530,7 +361,7 @@
         "details": "Adds host?: 'ollama'. Present only on the host family, which also carries cliKind and carries neither tierDefaults nor summariserModel.",
         "schemaDiff": "+ readonly host?: 'ollama' | undefined;",
         "callSites": [
-          "src/daemon/model-catalog.ts:67"
+          "src/daemon/model-catalog.ts:75"
         ]
       },
       {
@@ -539,17 +370,17 @@
         "details": "Adds hosting?: 'cloud' | 'local'. Required on every model of a host family, absent on every other model.",
         "schemaDiff": "+ readonly hosting?: 'cloud' | 'local' | undefined;",
         "callSites": [
-          "src/daemon/model-catalog.ts:48"
+          "src/daemon/model-catalog.ts:54"
         ]
       },
       {
         "entity": "TierResolution",
         "change": "field-modify",
-        "details": "model becomes optional and FallbackReason gains 'model-not-supported'. model is undefined only for a host family whose configured model is not declared; the existing fallback field name 'requested' is kept (the sc2 sketch's 'configured' names the same value).",
+        "details": "model becomes optional and FallbackReason gains 'model-not-supported'. model is undefined only for a host family whose configured model is not declared; the existing fallback field name 'requested' is kept (the sc2 sketch's 'configured' names the same value). In resolveTierWith every read of resolution.model.id (src/config/analyze.ts:234-235 in the dropped-effort warning and :238-239 in the fallback warning) must be guarded: the 'model-not-supported' branch logs the tier, runner and requested model without reading model.id.",
         "schemaDiff": "- export type FallbackReason = 'unlisted-model' | 'rejected-model';\n+ export type FallbackReason = 'unlisted-model' | 'rejected-model' | 'model-not-supported';\n- readonly model: ResolvedModel;\n+ readonly model: ResolvedModel | undefined;",
         "callSites": [
           "src/daemon/model-registry.ts:65-73",
-          "src/config/analyze.ts:232",
+          "src/config/analyze.ts:231-242",
           "src/config/analyze.ts:245",
           "src/daemon/steps/build-step/phases/validate.ts:195"
         ]
@@ -565,7 +396,7 @@
       {
         "entity": "Shipped definitions file",
         "change": "field-add",
-        "details": "Appends one family after the existing three: ollama-claude (cliKind 'claude', host 'ollama'). It lists only models that returned a schema-checked answer through the Claude tool on Ollama in a probe, each with hosting and its efforts. The first batch (user decision 2026-10-29), all probed on 2026-10-29 and all hosting 'cloud': deepseek-v4-pro:cloud, deepseek-v4.1-flash:cloud, glm-5.3:cloud, glm-5.3-flash:cloud, mistral-large-4:cloud and kimi-k3:cloud. Each model's efforts follow the thinking levels Ollama reports for it: glm-5.3, glm-5.3-flash, deepseek-v4.1-flash and kimi-k3 list low, high and max; deepseek-v4-pro and mistral-large-4 only switch thinking on or off, so they list none.",
+        "details": "Appends one family after the existing families: ollama-claude (cliKind 'claude', host 'ollama'). It lists only models that returned a schema-checked answer through the Claude tool on Ollama in a probe, each with hosting and its efforts. The first batch (user decision 2026-10-29), all probed on 2026-10-29 and all hosting 'cloud': deepseek-v4-pro:cloud, deepseek-v4.1-flash:cloud, glm-5.3:cloud, glm-5.3-flash:cloud, mistral-large-4:cloud and kimi-k3:cloud. Each model's efforts follow the thinking levels Ollama reports for it: glm-5.3, glm-5.3-flash, deepseek-v4.1-flash and kimi-k3 list low, high and max; deepseek-v4-pro and mistral-large-4 only switch thinking on or off, so they list none.",
         "callSites": [
           "src/assets/models/cloud-model-catalog.json"
         ]
@@ -575,7 +406,7 @@
       {
         "contractId": "sc1",
         "role": "implements",
-        "howDetails": "The catalog types, validator, registry and projectDefinitions add host and hosting exactly as sketched; the five-member FamilyId is the sketch's union. Sites that mean 'a vendor CLI family' switch from 'id is not ollama' or 'has a CLI kind' to 'has a CLI kind and no host', per the HLD's classification rule: isCliFamily (src/daemon/model-catalog.ts:140), the unknown-model check gate (src/daemon/model-check.ts:319), the unlisted/rejected fallback (src/daemon/model-registry.ts:277-278), the tier write's model check (src/daemon/config-write.ts:74), familyForClient (src/daemon/model-registry.ts:105), attribution by label prefix (src/workflow/attribution.ts:49) and the projection's rejectedModels decision (src/daemon/model-definitions.ts:104, used at :117-119), so rejectedModels appears only on vendor CLI families while installed stays on the family without a CLI kind. The approved-model store already refuses other families (src/daemon/model-registry.ts:142). Sites that mean 'runs a CLI' (the provider-factory and listing sites) stay on cliKind."
+        "howDetails": "The catalog types, validator, registry and projectDefinitions add host and hosting exactly as sketched; the FamilyId union is the sketch's union plus the separately landed vendor family 'cli-vibe'. Sites that mean 'a vendor CLI family' switch from 'id is not ollama' or 'has a CLI kind' to 'has a CLI kind and no host', per the HLD's classification rule: the catalog's former isCliFamily, now isVendorFamily and isHostFamily (src/daemon/model-catalog.ts:151-158), the unknown-model check gate (src/daemon/model-check.ts:348-349), the unlisted/rejected fallback (src/daemon/model-registry.ts:276-289), the tier write's model check (src/daemon/config-write.ts:74), familyForClient (src/daemon/model-registry.ts:105), attribution by label prefix (src/workflow/attribution.ts:49) and the projection's rejectedModels decision (src/daemon/model-definitions.ts:104, used at :117-119), so rejectedModels appears only on vendor CLI families while installed stays on the family without a CLI kind. The approved-model store already refuses other families (src/daemon/model-registry.ts:142). Sites that mean 'runs a CLI' (the provider-factory and listing sites) stay on cliKind."
       },
       {
         "contractId": "sc2",
@@ -587,7 +418,7 @@
       "errorCases": [
         {
           "scenario": "A host family entry in the definitions file lacks host or cliKind, carries tierDefaults or summariserModel, or has a model without hosting.",
-          "detection": "validateFamily checks a host family's shape when the file is loaded (the replacement of isCliFamily at src/daemon/model-catalog.ts:140-142 and the checks at :186-191).",
+          "detection": "validateFamily checks a host family's shape when the file is loaded (isHostFamily at src/daemon/model-catalog.ts:156-158, replacing isCliFamily, and the checks in validateFamily at :206-227).",
           "response": "Throws ModelCatalogValidationError naming the family and the faulty field, as for today's families.",
           "userImpact": "The daemon refuses to start with a message naming the bad entry; this only happens with a broken shipped file, which the asset test catches before release.",
           "recoverable": false
@@ -601,14 +432,14 @@
         },
         {
           "scenario": "A tier names a host family with a model the definitions do not declare for it (for example a hand-edited config, or a model removed in a later release).",
-          "detection": "resolveTier finds no model of that id or alias in the host family (registry find at src/daemon/model-registry.ts:269).",
+          "detection": "resolveTier finds no model of that id or alias in the host family (registry find at src/daemon/model-registry.ts:268). This is the target behaviour, implemented by Task t2. Until t2 lands, resolveTier's fallback (src/daemon/model-registry.ts:276-289) treats ollama-claude as a non-vendor family and returns the default vendor family's tier-default model with fallback 'unlisted-model', which is the substitution alternative a2 describes and this design rejects; t2 replaces that branch for host families.",
           "response": "Returns model undefined and fallback { reason: 'model-not-supported', requested }; resolveTierWith logs a warning naming the tier, family and requested model. No other model or family is substituted.",
           "userImpact": "The tier is shown as not supported in the settings surfaces and the run layer (s2) refuses to run it with that reason, rather than running a model the user did not choose.",
           "recoverable": true
         },
         {
           "scenario": "A caller asks for the unknown-model check or an approved-model profile on a host family.",
-          "detection": "The check gate (src/daemon/model-check.ts:319) and the store reader (src/daemon/model-registry.ts:142) accept vendor CLI families only.",
+          "detection": "The check gate (src/daemon/model-check.ts:348-349) and the store reader (src/daemon/model-registry.ts:142) accept vendor CLI families only.",
           "response": "The check answers invalid ('family must be a vendor CLI family of the model definitions'); a store entry naming a host family is logged and skipped, as an unknown family is today.",
           "userImpact": "Host families stay limited to their declared models (k1).",
           "recoverable": true
@@ -625,20 +456,20 @@
         },
         {
           "input": "A client identity 'claude' or 'codex' when a host family with the same CLI kind is listed before or after the vendor family.",
-          "expected": "familyForClient returns the vendor family (cli-claude or cli-codex), never the host family."
+          "expected": "familyForClient returns the vendor family (cli-claude, cli-codex or cli-vibe), never the host family."
         },
         {
           "input": "The union of effort levels (effortLevels) with host-family models present.",
           "expected": "Host models' efforts join the union only if they add a level not already present; levels already offered stay in today's order."
         },
         {
-          "input": "deriveModelDefaults over the four-family file.",
-          "expected": "familyIds lists four ids; the tier defaults still come from the default vendor family; the local family is still 'ollama' (the only family without a cliKind)."
+          "input": "deriveModelDefaults over the five-family file.",
+          "expected": "familyIds lists all five ids; the tier defaults still come from the default vendor family; the local family is still 'ollama' (the only family without a cliKind)."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "The three existing families keep their entries, CLI kinds, tier defaults, summariser, tool-loop model and resolution; a tier on them resolves exactly as before, including the unlisted/rejected fallback to the family's tier default.",
+          "text": "The existing families keep their entries, CLI kinds, tier defaults, summariser, tool-loop model and resolution; a tier on them resolves exactly as before, including the unlisted/rejected fallback to the family's tier default.",
           "source": "c3"
         },
         {
@@ -646,11 +477,11 @@
           "source": "c3"
         },
         {
-          "text": "The definitions answer's entries for the three existing families are unchanged; installed appears only on the plain Ollama family and rejectedModels only on vendor CLI families.",
+          "text": "The definitions answer's entries for the existing families are unchanged; installed appears only on the plain Ollama family and rejectedModels only on vendor CLI families.",
           "source": "c4"
         },
         {
-          "text": "Readers that take the first family with a given CLI kind (the installer, scripts/insrc-daemon-install.sh:290-293) and that take the family without a CLI kind as the local family (src/config/model-defaults.ts:57-83) keep picking the same families, because the host families are appended after the existing three and carry a CLI kind.",
+          "text": "Readers that take the first family with a given CLI kind (the installer, scripts/insrc-daemon-install.sh:290-293) and that take the family without a CLI kind as the local family (src/config/model-defaults.ts:57-83) keep picking the same families, because the host families are appended after the existing families and carry a CLI kind.",
           "source": "c5"
         },
         {
@@ -666,17 +497,17 @@
           "level": "unit",
           "purpose": "Validator rules for host and vendor families on in-memory fixtures.",
           "subjects": [
-            "src/daemon/__tests__/model-catalog.test.ts: the fixture grows to four families; a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails with a named reason; hosting on a vendor or plain-Ollama model fails; the three existing families validate as before."
+            "src/daemon/__tests__/model-catalog.test.ts: the fixture grows to include ollama-claude alongside every existing family; a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails with a named reason; hosting on a vendor or plain-Ollama model fails; the existing families validate as before."
           ],
           "fixturesNeeded": [
-            "A valid four-family fixture (the existing three plus ollama-claude with one cloud and one local model)."
+            "A valid fixture with every existing family plus ollama-claude with one cloud and one local model."
           ]
         },
         {
           "level": "unit",
           "purpose": "Registry resolution, host, client mapping and gates.",
           "subjects": [
-            "src/daemon/__tests__/model-registry.test.ts: resolveTier on a host family resolves a declared model and alias, drops an effort the model does not list, and returns model undefined with 'model-not-supported' for an undeclared model without substituting; resolveTier on the three existing families is unchanged, including the unlisted and rejected fallbacks; host() is 'ollama' only for the host family; cliKind() is 'claude' for it; familyForClient returns the vendor family for both clients.",
+            "src/daemon/__tests__/model-registry.test.ts: resolveTier on a host family resolves a declared model and alias, drops an effort the model does not list, and returns model undefined with 'model-not-supported' for an undeclared model without substituting; resolveTier on the existing families is unchanged, including the unlisted and rejected fallbacks; host() is 'ollama' only for the host family; cliKind() is 'claude' for it; familyForClient returns the vendor family for each client.",
             "src/daemon/__tests__/model-check.test.ts: the unknown-model check refuses a host family.",
             "src/daemon/__tests__/config-write-models.test.ts: the tier write's model check treats a host family as not open to unlisted ids.",
             "the attribution test for src/workflow/attribution.ts: a run label of a host family is attributed to that family, not the vendor family with the same CLI kind."
@@ -686,15 +517,15 @@
           "level": "unit",
           "purpose": "The definitions answer and the derived defaults.",
           "subjects": [
-            "src/daemon/__tests__/model-definitions.test.ts: projectDefinitions carries host on the host family and hosting on each of its models, with each model's efforts; the entries for the three existing families equal today's; the host family carries neither rejectedModels nor installed.",
-            "src/config/__tests__/tier-defaults.test.ts and src/config/__tests__/config-catalog-defs.test.ts: deriveModelDefaults over the four-family file lists four familyIds, keeps the default family's tier defaults, and keeps 'ollama' as the local family. src/config/__tests__/tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports a 'model-not-supported' resolution without reading a missing model."
+            "src/daemon/__tests__/model-definitions.test.ts: projectDefinitions carries host on the host family and hosting on each of its models, with each model's efforts; the entries for the existing families equal today's; the host family carries neither rejectedModels nor installed.",
+            "src/config/__tests__/tier-defaults.test.ts and src/config/__tests__/config-catalog-defs.test.ts: deriveModelDefaults over the five-family file lists five familyIds, keeps the default family's tier defaults, and keeps 'ollama' as the local family. src/config/__tests__/tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports a 'model-not-supported' resolution without reading a missing model."
           ]
         },
         {
           "level": "contract",
           "purpose": "The shipped asset and the daemon answer as clients see them.",
           "subjects": [
-            "src/daemon/__tests__/model-catalog-asset.test.ts: the shipped file validates, lists the host family after the existing three, and every host-family model has hosting.",
+            "src/daemon/__tests__/model-catalog-asset.test.ts: the shipped file validates, lists the host family after the existing families, and every host-family model has hosting.",
             "src/daemon/__tests__/models-definitions-daemon.test.ts: models.definitions over the real daemon returns the host family with host and hosting.",
             "src/daemon/__tests__/model-literal-scan.test.ts stays green: new family ids appear only where the scan allows."
           ]
@@ -727,16 +558,16 @@
           "criterionId": "ac4",
           "provingTests": [
             "model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged, including the unlisted and rejected fallbacks",
-            "model-registry.test.ts: familyForClient returns cli-claude and cli-codex as today",
-            "model-definitions.test.ts: the three existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed",
-            "model-catalog.test.ts: the three existing families validate as before"
+            "model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today",
+            "model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed",
+            "model-catalog.test.ts: the existing families validate as before"
           ]
         }
       ]
     },
     "migration": {
-      "stateBefore": "Three families (cli-claude, cli-codex, ollama) in the shipped definitions file, validated as exactly one entry per family with 'id is not ollama' deciding the CLI-family rules (src/daemon/model-catalog.ts:127, :140-142); TierResolution.model is always present and an unlisted model falls back to the family's tier default (src/daemon/model-registry.ts:65-73, :269-284); the definitions answer has no host or hosting field (src/daemon/model-definitions.ts:98-131).",
-      "stateAfter": "Four families: the existing three unchanged plus ollama-claude appended, with cliKind 'claude', host 'ollama' and every model marked cloud or local. Vendor-CLI decisions key on 'cliKind and no host'. A host family's undeclared model resolves to no model with 'model-not-supported'. The definitions answer adds host and hosting.",
+      "stateBefore": "Before this Story (commit 377eefdd2, plus the Mistral Vibe vendor family cli-vibe that landed in ef850d10d): four families (cli-claude, cli-codex, cli-vibe, ollama) in the shipped definitions file, validated as exactly one entry per family with 'id is not ollama' deciding the CLI-family rules; TierResolution.model is always present and an unlisted model falls back to the family's tier default (src/daemon/model-registry.ts:65-73, :267-289); the definitions answer has no host or hosting field (src/daemon/model-definitions.ts:98-131). Progress: Task t1 of this Story landed in the same commit ef850d10d, so the current src/daemon/model-catalog.ts already carries the host-family types and validation (FamilyId at :39, FAMILY_IDS at :137, isVendorFamily/isHostFamily at :151-158) and the shipped file already lists ollama-claude; the registry, gates and definitions answer (t2-t4) are not yet changed.",
+      "stateAfter": "Five families: the existing four (cli-claude, cli-codex, cli-vibe, ollama) unchanged plus ollama-claude appended, with cliKind 'claude', host 'ollama' and every model marked cloud or local. Vendor-CLI decisions key on 'cliKind and no host'. A host family's undeclared model resolves to no model with 'model-not-supported'. The definitions answer adds host and hosting.",
       "migrationSteps": [
         {
           "order": 1,
@@ -750,12 +581,12 @@
         },
         {
           "order": 3,
-          "action": "Add the host-family validation rules and grow the validator test fixture to four families.",
+          "action": "Add the host-family validation rules and grow the validator test fixture to include ollama-claude.",
           "rollbackable": true
         },
         {
           "order": 4,
-          "action": "Append the host family with its declared models to the shipped definitions file, after the existing three.",
+          "action": "Append the host family with its declared models to the shipped definitions file, after the existing families.",
           "rollbackable": true
         },
         {
@@ -773,10 +604,10 @@
         "id": "a1",
         "name": "Optional model only on a host-family refusal (sc2 as sketched)",
         "oneLineSummary": "One host family in the closed family set; TierResolution.model becomes optional and is absent only when the host family names an undeclared model, with fallback reason 'model-not-supported'.",
-        "approach": "The catalog's family-id set grows by 'ollama-claude'. CliFamilyId keeps meaning the two vendor CLI families; a new HostFamilyId names the host family. FamilyDefinition gains host?: 'ollama' and ModelDefinition gains hosting?: 'cloud' | 'local'. Validation replaces the 'id !== ollama' test with the family's shape: a host family needs cliKind, host and hosting on every model, and must not carry tierDefaults or summariserModel; a vendor CLI family keeps today's rules. The shipped file appends the host family after the existing three, so readers that take the first family with a CLI kind keep picking the vendor family.\n\nThe registry exposes host(family) and returns hosting on resolved models. resolveTier keeps today's path for the three existing families; for a host family, a declared model resolves as usual and an undeclared one returns { family, model: undefined, fallback: { reason: 'model-not-supported', requested } } with no substitute. familyForClient, the approved-model store and the unknown-model check consider vendor families only. projectDefinitions adds host on the family and hosting on each model of a host family. resolveTierWith logs the refusal, and tierModelOf reports the configured id so clients show what was set and why it is not used.",
+        "approach": "The catalog's family-id set grows by 'ollama-claude'. CliFamilyId keeps meaning the vendor CLI families; a new HostFamilyId names the host family. FamilyDefinition gains host?: 'ollama' and ModelDefinition gains hosting?: 'cloud' | 'local'. Validation replaces the 'id !== ollama' test with the family's shape: a host family needs cliKind, host and hosting on every model, and must not carry tierDefaults or summariserModel; a vendor CLI family keeps today's rules. The shipped file appends the host family after the existing families, so readers that take the first family with a CLI kind keep picking the vendor family.\n\nThe registry exposes host(family) and returns hosting on resolved models. resolveTier keeps today's path for the existing families; for a host family, a declared model resolves as usual and an undeclared one returns { family, model: undefined, fallback: { reason: 'model-not-supported', requested } } with no substitute. familyForClient, the approved-model store and the unknown-model check consider vendor families only. projectDefinitions adds host on the family and hosting on each model of a host family. resolveTierWith logs the refusal, and tierModelOf reports the configured id so clients show what was set and why it is not used.",
         "pros": [
           "Matches the approved sc2 sketch: a refused model has no model and an explicit reason, so nothing silently runs a different model.",
-          "The three existing families keep their resolution and fallback unchanged; the optional model is reachable only through a host family.",
+          "The existing families keep their resolution and fallback unchanged; the optional model is reachable only through a host family.",
           "Clients get both the configured id and the reason, which is what s3-s5 must show."
         ],
         "cons": [

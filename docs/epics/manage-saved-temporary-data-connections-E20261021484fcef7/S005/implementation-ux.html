@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>insrc · Implemented Connections layout</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f3f5f8;color:#1b1f24;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}.page{max-width:1180px;margin:0 auto;padding:28px 28px 48px}header.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:18px;border-bottom:2px solid #1f3a8a}.hdr .proj{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#5b6673;font-weight:600}.hdr h1{margin:4px 0 0;font-size:24px;color:#0f1d4a}.hdr .kind{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;color:#1f3a8a;background:#e6ecfb;border-radius:10px;padding:2px 10px}table.ref{border-collapse:collapse;font-size:13px;min-width:380px}table.ref th{text-align:left;font-weight:600;color:#44505e;background:#eef1f6;padding:6px 12px;border:1px solid #d6dbe1;width:120px;white-space:nowrap}table.ref td{padding:6px 12px;border:1px solid #d6dbe1;background:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}table.ref a{color:#1f6feb;text-decoration:none}section.blk{margin-top:26px}section.blk>h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:#1f3a8a;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #d6dbe1}.context{font-size:13px;color:#44505e;background:#eef1f6;border-left:3px solid #1f3a8a;padding:8px 12px;border-radius:0 4px 4px 0;margin:0 0 10px}.narr p{margin:0 0 8px;max-width:900px}.vp-wrap{border:1px solid #c9d0d9;border-radius:8px;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(16,22,26,.06)}.vp-bar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f7f8fa;border-bottom:1px solid #e1e5ea;font-size:12px;color:#5b6673}.vp-bar .sp{flex:1}.vp-bar button{font:inherit;font-size:12px;border:1px solid #c9d0d9;background:#fff;border-radius:4px;padding:3px 9px;cursor:pointer;color:#1b1f24}.vp-bar button:hover{background:#eef1f6}.vp-bar .zl{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}.vp{position:relative;height:62vh;min-height:380px;overflow:hidden;cursor:grab;background:#fff;background-image:radial-gradient(#e3e7ec 1px,transparent 1px);background-size:18px 18px}.vp.drag{cursor:grabbing}.stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}.stage pre.mermaid{margin:0;background:transparent}.desc h3{font-size:14px;margin:18px 0 8px;color:#0f1d4a}.desc p.lead{margin:0 0 10px;color:#44505e}table.dt{border-collapse:collapse;width:100%;font-size:13px;background:#fff;margin-bottom:6px}table.dt th{text-align:left;background:#eef1f6;color:#44505e;font-weight:600;padding:7px 10px;border:1px solid #d6dbe1}table.dt td{padding:7px 10px;border:1px solid #d6dbe1;vertical-align:top}td.missing{color:#9aa4af}[data-insrc-path]{cursor:pointer}.tag{display:inline-block;font-size:11px;border-radius:9px;padding:1px 8px;background:#eef1f6;color:#44505e}.tag.pk{background:#fde9c9;color:#8a5300}.tag.fk{background:#dcebff;color:#174ea6}.tag.call{background:#e6ecfb;color:#1f3a8a}.tag.ret{background:#e7f5ea;color:#1a7f37}.pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#cf6a00;color:#fff;font-size:10px;font-weight:700;text-align:center}footer.ft{margin-top:30px;padding-top:10px;border-top:1px dashed #c9d0d9;font-size:12px;color:#8b95a1;display:flex;justify-content:space-between}.ux-card{background:#fff;border:1px solid #d6dbe1;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(16,22,26,.08)}.ux-card>*+*{margin-top:10px}.ux-text{margin:0;overflow-wrap:anywhere}.ux-bolder{font-weight:700}.ux-lighter{font-weight:300}.ux-subtle{color:#6b7684}.ux-size-small{font-size:12px}.ux-size-medium{font-size:17px}.ux-size-large{font-size:21px}.ux-size-extraLarge{font-size:26px}.ux-color-accent{color:#1f6feb}.ux-color-good{color:#1a7f37}.ux-color-warning{color:#9a6700}.ux-color-attention{color:#cf222e}.ux-container{border:1px solid #e4e8ec;border-radius:6px;padding:12px;background:#fafbfc}.ux-container>*+*{margin-top:10px}.ux-columnset{display:flex;gap:12px;align-items:flex-start}.ux-column{flex:1 1 0;min-width:0}.ux-column>*+*{margin-top:10px}.ux-columnset:empty,.ux-container:empty{min-height:28px}.ux-image{display:flex;gap:10px;align-items:center;border:1px dashed #c4ccd4;border-radius:6px;padding:10px;background:#f4f6f8;color:#5b6673}.ux-image__icon{font-size:20px;line-height:1}.ux-image__meta{display:flex;flex-direction:column;min-width:0}.ux-image__alt{font-size:13px}.ux-image__url{font-size:11px;color:#8b95a1;overflow-wrap:anywhere}.ux-field{display:block}.ux-label{display:block;font-size:12px;font-weight:600;color:#44505e;margin-bottom:4px}.ux-input{display:block;border:1px solid #c4ccd4;border-radius:5px;padding:7px 10px;background:#fff;color:#8b95a1;font-size:13px;min-height:34px;overflow-wrap:anywhere}.ux-input--multi{min-height:68px}.ux-choices{display:flex;flex-wrap:wrap;gap:14px}.ux-choice{display:inline-flex;align-items:center;gap:6px;font-size:13px}.ux-choice__mark{color:#8b95a1}.ux-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:2px}.ux-btn{display:inline-flex;align-items:center;border-radius:5px;padding:7px 14px;font-size:13px;font-weight:600}.ux-btn--submit{background:#1f6feb;color:#fff}.ux-btn--link{background:#fff;color:#1f6feb;border:1px solid #9dc1f5}.ux-btn__glyph{font-weight:400}.ux-unknown{border:1px dashed #cf222e;border-radius:6px;padding:10px;background:#fff5f5;color:#cf222e;font-size:12px}.ux-notes{margin-top:22px;border-top:1px solid #d6dbe1;padding-top:16px}.ux-note h2{font-size:13px;margin:0 0 6px;color:#1b1f24}.ux-note p{margin:0 0 12px;color:#44505e;white-space:pre-wrap;overflow-wrap:anywhere}.ux-source{font-size:12px;margin-bottom:14px}.ux-source a{color:#1f6feb}.stage .ux-card{width:640px;margin:24px}.ux-container{position:relative}.ux-pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#cf6a00;color:#fff;font-size:10px;font-weight:700;text-align:center;margin-right:6px;vertical-align:middle}.ux-pin--abs{position:absolute;left:-9px;top:-9px;margin:0}</style></head>
+<body><div class="page">
+<header class="hdr">
+<div><div class="proj">insrc</div><h1>Implemented Connections layout</h1><span class="kind">UX mock</span></div>
+<table class="ref">
+<tr><th>Work item</th><td>S005 implementation</td></tr>
+<tr><th>Source doc</th><td><a href="implementation-definitions.json">Implementation definitions</a></td></tr>
+<tr><th>Date</th><td>2026-10-30</td></tr>
+<tr><th>User</th><td>insrc</td></tr>
+</table>
+</header>
+<section class="blk narr"><h2>Narrative</h2><p class="context">Implemented VS Code + JetBrains consumers. Live acceptance pending user manual testing.</p><p>Shared layout/state schematic for VSCode extension and native JetBrains Connections manager. Both use the same scoped rows, safe draft and truthful recovery; JetBrains application Settings explicitly selects an open project before a project-owned manager. This is design preview only. Implemented in dedicated TypeScript webview and native Swing manager. Save, Test, Remove and recovery actions have independent advertised-capability admission. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence.</p></section>
+<section class="blk"><h2>View</h2><div class="vp-wrap">
+<div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in">+</button><button id="zfit" title="Fit to view">Fit</button><button id="z100" title="Actual size">1:1</button></div>
+<div class="vp" id="vp"><div class="stage" id="stage"><div class="ux-card"><p class="ux-text"><span class="ux-pin">1</span>Manage Connections</p><div class="ux-field"><span class="ux-label"><span class="ux-pin">2</span>Registered repository</span><div class="ux-choices"><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>insrc — /workspace/insrc</span><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>analytics — /workspace/analytics</span></div></div><div class="ux-field"><span class="ux-label"><span class="ux-pin">3</span>Connection scope</span><div class="ux-choices"><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>All (3)</span><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>Saved repository (2)</span><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>Temporary session (1)</span></div></div><div class="ux-columnset"><span class="ux-pin">4</span><div class="ux-column" style="flex:1 1 0"><p class="ux-text"><span class="ux-pin">5</span>Connections · 3 matching</p><label class="ux-field"><span class="ux-label"><span class="ux-pin">6</span>Search connections</span><span class="ux-input">ID, label or driver</span></label><p class="ux-text"><span class="ux-pin">7</span>warehouse · PostgreSQL · Saved repository
+orders · Parquet · Temporary session
+cache · Redis · Saved repository</p><div class="ux-actions"><span class="ux-pin">8</span><span class="ux-pin">9</span><span class="ux-btn ux-btn--submit">Add connection</span><span class="ux-pin">10</span><span class="ux-btn ux-btn--submit">Edit selected</span><span class="ux-pin">11</span><span class="ux-btn ux-btn--submit">Discard selected</span></div><p class="ux-text"><span class="ux-pin">12</span>Read error: Connections could not be read. Retry.
+Empty filter: No connections match this filter.
+Empty registry: No connections yet.</p></div><div class="ux-column" style="flex:2 1 0"><p class="ux-text"><span class="ux-pin">13</span>Add connection</p><label class="ux-field"><span class="ux-label"><span class="ux-pin">14</span>Connection ID</span><span class="ux-input">orders-preview</span></label><div class="ux-field"><span class="ux-label"><span class="ux-pin">15</span>Driver</span><div class="ux-choices"><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>Parquet</span><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>CSV</span><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>JSON</span><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>PostgreSQL</span></div></div><div class="ux-field"><span class="ux-label"><span class="ux-pin">16</span>Lifetime</span><div class="ux-choices"><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>Saved repository (default)</span><span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">○</span>Temporary session</span></div></div><label class="ux-field"><span class="ux-label"><span class="ux-pin">17</span>File path</span><span class="ux-input">data/orders.parquet</span></label><p class="ux-text"><span class="ux-pin">18</span>Temporary connections stay available when this manager closes or you switch repositories. They expire when the workbench ends, after lease loss, or when the daemon restarts.</p><div class="ux-actions"><span class="ux-pin">19</span><span class="ux-pin">20</span><span class="ux-btn ux-btn--submit">Test draft</span><span class="ux-pin">21</span><span class="ux-btn ux-btn--submit">Add connection</span><span class="ux-pin">22</span><span class="ux-btn ux-btn--submit">Cancel draft</span></div><p class="ux-text"><span class="ux-pin">23</span>Credential slots use native masked Keep / Replace / Clear controls in the implementation. Stored values are never returned.</p></div></div><p class="ux-text"><span class="ux-pin">24</span>Confirm Discard · orders · Temporary session · /workspace/insrc
+Discard this registration and release its application-owned resources. Source files, databases, tables and remote data will be preserved.</p><div class="ux-actions"><span class="ux-pin">25</span><span class="ux-pin">26</span><span class="ux-btn ux-btn--submit">Cancel removal</span><span class="ux-pin">27</span><span class="ux-btn ux-btn--submit">Confirm Discard</span></div><p class="ux-text"><span class="ux-pin">28</span>Recovery examples
+Busy: Connection in use. Retry after current work finishes.
+Unknown: Removal outcome unknown. Reconcile the same operation.
+Removed; cleanup pending: credentials complete, resources pending. Retry cleanup only.</p><div class="ux-actions"><span class="ux-pin">29</span><span class="ux-pin">30</span><span class="ux-btn ux-btn--submit">Reconcile operation</span><span class="ux-pin">31</span><span class="ux-btn ux-btn--submit">Retry owned cleanup</span></div><p class="ux-text"><span class="ux-pin">32</span>Dirty draft: Discard unsaved changes or Cancel navigation?</p><div class="ux-actions"><span class="ux-pin">33</span><span class="ux-pin">34</span><span class="ux-btn ux-btn--submit">Discard unsaved draft</span><span class="ux-pin">35</span><span class="ux-btn ux-btn--submit">Cancel navigation</span></div></div></div></div>
+</div></section>
+<section class="blk desc"><h2>Description</h2><p class="lead">35 key elements. Numbers match the markers on the mock; layout-only containers are omitted.</p><table class="dt"><thead><tr><th>#</th><th>Element</th><th>Type</th><th>Id / target</th><th>Description</th></tr></thead><tbody><tr><td><span class="pin">1</span></td><td>Manage Connections</td><td>TextBlock</td><td class="missing">—</td><td>Themed editor title reached by Settings and palette.</td></tr><tr><td><span class="pin">2</span></td><td>Registered repository</td><td>Input.ChoiceSet</td><td>repo</td><td>Explicit selection in multiroot workspaces; retained selected root remains independent of active editor.</td></tr><tr><td><span class="pin">3</span></td><td>Connection scope</td><td>Input.ChoiceSet</td><td>filter</td><td>Counts from successful authoritative selected-root snapshot before filtering; no counts inferred on read error.</td></tr><tr><td><span class="pin">4</span></td><td>Column set</td><td>ColumnSet</td><td class="missing">—</td><td>Master/detail layout stacks when narrow; keyboard order follows header, list, draft and actions.</td></tr><tr><td><span class="pin">5</span></td><td>Connections · 3 matching</td><td>TextBlock</td><td class="missing">—</td><td>Matching count after selected scope/search.</td></tr><tr><td><span class="pin">6</span></td><td>Search connections</td><td>Input.Text</td><td>search</td><td>Local filter of current authoritative root; no probes.</td></tr><tr><td><span class="pin">7</span></td><td>warehouse · PostgreSQL · Saved repository orders · Parque...</td><td>TextBlock</td><td class="missing">—</td><td>Safe row metadata only; full repo/scope/ID/revision retained in host selection.</td></tr><tr><td><span class="pin">8</span></td><td>Action set</td><td>ActionSet</td><td class="missing">—</td><td>Actions route the same guarded manager state as palette and Settings. Saved row action is Delete, temporary is Discard.</td></tr><tr><td><span class="pin">9</span></td><td>Add connection</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">10</span></td><td>Edit selected</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Edit selected; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">11</span></td><td>Discard selected</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Discard selected; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">12</span></td><td>Read error: Connections could not be read. Retry. Empty f...</td><td>TextBlock</td><td class="missing">—</td><td>Alternative state copy, not simultaneous production messages; unavailable reads never become empty state.</td></tr><tr><td><span class="pin">13</span></td><td>Add connection</td><td>TextBlock</td><td class="missing">—</td><td>Draft remains on safe failed operations; not on temporary expiry.</td></tr><tr><td><span class="pin">14</span></td><td>Connection ID</td><td>Input.Text</td><td>id</td><td>Required unique ID; fixed during edit.</td></tr><tr><td><span class="pin">15</span></td><td>Driver</td><td>Input.ChoiceSet</td><td>driver</td><td>Illustrative subset; actual picker offers every validated daemon descriptor with actionable unsupported guidance.</td></tr><tr><td><span class="pin">16</span></td><td>Lifetime</td><td>Input.ChoiceSet</td><td>scope</td><td>Scope independent of driver family; fixed during edit.</td></tr><tr><td><span class="pin">17</span></td><td>File path</td><td>Input.Text</td><td>path</td><td>Illustrative descriptor field; host validates descriptor-specific schema. No arbitrary raw config editor.</td></tr><tr><td><span class="pin">18</span></td><td>Temporary connections stay available when this manager cl...</td><td>TextBlock</td><td class="missing">—</td><td>Always visible before temporary Add; temporary configs/credentials are memory-only.</td></tr><tr><td><span class="pin">19</span></td><td>Action set</td><td>ActionSet</td><td class="missing">—</td><td>Test optional and does not persist. Save/Test consume the identical captured draft; duplicate submission blocked.</td></tr><tr><td><span class="pin">20</span></td><td>Test draft</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Test draft; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">21</span></td><td>Add connection</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">22</span></td><td>Cancel draft</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Cancel draft; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">23</span></td><td>Credential slots use native masked Keep / Replace / Clear...</td><td>TextBlock</td><td class="missing">—</td><td>No unmasked password input in this schematic renderer.</td></tr><tr><td><span class="pin">24</span></td><td>Confirm Discard · orders · Temporary session · /workspace...</td><td>TextBlock</td><td class="missing">—</td><td>Modal content example: exact target and selected revision captured before ticket issuance.</td></tr><tr><td><span class="pin">25</span></td><td>Action set</td><td>ActionSet</td><td class="missing">—</td><td>Cancel has zero ticket/mutation effects; confirmed request consumes signed ticket and exact revision.</td></tr><tr><td><span class="pin">26</span></td><td>Cancel removal</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Cancel removal; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">27</span></td><td>Confirm Discard</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Confirm Discard; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">28</span></td><td>Recovery examples Busy: Connection in use. Retry after cu...</td><td>TextBlock</td><td class="missing">—</td><td>Separate operation status card persists after committed registration removal; never infer outcome from absent row.</td></tr><tr><td><span class="pin">29</span></td><td>Action set</td><td>ActionSet</td><td class="missing">—</td><td>Ticket-only recovery; no current-ID selector or repeated create.</td></tr><tr><td><span class="pin">30</span></td><td>Reconcile operation</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Reconcile operation; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">31</span></td><td>Retry owned cleanup</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Retry owned cleanup; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">32</span></td><td>Dirty draft: Discard unsaved changes or Cancel navigation?</td><td>TextBlock</td><td class="missing">—</td><td>Draft discard is distinct from discarding an existing temporary registration.</td></tr><tr><td><span class="pin">33</span></td><td>Action set</td><td>ActionSet</td><td class="missing">—</td><td>Cancel keeps current form and produces no navigation/mutation effect.</td></tr><tr><td><span class="pin">34</span></td><td>Discard unsaved draft</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Discard unsaved draft; actual implementation uses validated controller intent, not direct daemon calls.</td></tr><tr><td><span class="pin">35</span></td><td>Cancel navigation</td><td>Action.Submit</td><td class="missing">—</td><td>Preview Cancel navigation; actual implementation uses validated controller intent, not direct daemon calls.</td></tr></tbody></table></section>
+<footer class="ft"><span>Generated by insrc · companion of Implementation definitions</span><span>2026-10-30</span></footer>
+</div>
+<script>/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/*
+ * Companion page pan/zoom (LLD-d9f85b3c S001/t2).
+ *
+ * A dependency-free, transform-based pan/zoom for the companion page's view
+ * panel. It moves one "stage" element inside a clipping "viewport" with a CSS
+ * transform, so it works the same for any child: a Mermaid SVG or an HTML UX
+ * mock. The page inlines this file verbatim, so it must stay self-contained (no
+ * imports, no network) and plain ES5 so any browser that opens the page runs it.
+ *
+ * Usage, from the page:
+ *   var pz = window.insrcPanZoom.init({
+ *     viewport: 'vp', stage: 'stage', zoomLabel: 'zl',
+ *     zoomIn: 'zin', zoomOut: 'zout', fit: 'zfit', reset: 'z100',
+ *     fitOnLoad: true,
+ *   });
+ *   pz.fit();   // e.g. again once Mermaid has drawn the diagram
+ *
+ * Every id but viewport and stage is optional; a missing control is skipped.
+ */
+(function () {
+	'use strict';
+
+	var MIN_SCALE = 0.2;
+	var MAX_SCALE = 8;
+	var MAX_FIT_SCALE = 2;      // Fit never enlarges a small visual past 200%.
+	var FIT_MARGIN = 0.92;      // Fit leaves a little room around the visual.
+	var WHEEL_STEP = 1.12;
+	var BUTTON_STEP = 1.25;
+	var DBLCLICK_STEP = 1.5;
+	var RESET_OFFSET = 20;      // 1:1 places the visual just inside the top-left.
+
+	function byId(id) {
+		return id ? document.getElementById(id) : null;
+	}
+
+	function init(opts) {
+		var vp = byId(opts && opts.viewport);
+		var st = byId(opts && opts.stage);
+		if (!vp || !st) {
+			return { fit: function () {}, reset: function () {} };
+		}
+		var label = byId(opts.zoomLabel);
+		var s = 1, x = 0, y = 0;
+
+		st.style.transformOrigin = '0 0';
+
+		function apply() {
+			st.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')';
+			if (label) { label.textContent = Math.round(s * 100) + '%'; }
+		}
+
+		// Zoom by `factor`, keeping the point (cx, cy) of the viewport still.
+		function zoomAt(factor, cx, cy) {
+			var next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, s * factor));
+			x = cx - (cx - x) * (next / s);
+			y = cy - (cy - y) * (next / s);
+			s = next;
+			apply();
+		}
+
+		function fit() {
+			var w = st.scrollWidth, h = st.scrollHeight;
+			var W = vp.clientWidth, H = vp.clientHeight;
+			if (!w || !h || !W || !H) { return; }
+			s = Math.min(Math.min(W / w, H / h) * FIT_MARGIN, MAX_FIT_SCALE);
+			x = (W - w * s) / 2;
+			y = (H - h * s) / 2;
+			apply();
+		}
+
+		function reset() {
+			s = 1; x = RESET_OFFSET; y = RESET_OFFSET;
+			apply();
+		}
+
+		function centre() {
+			return [vp.clientWidth / 2, vp.clientHeight / 2];
+		}
+
+		function local(ev) {
+			var r = vp.getBoundingClientRect();
+			return [ev.clientX - r.left, ev.clientY - r.top];
+		}
+
+		vp.addEventListener('wheel', function (ev) {
+			ev.preventDefault();
+			var p = local(ev);
+			zoomAt(ev.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP, p[0], p[1]);
+		}, { passive: false });
+
+		var drag = null;
+		vp.addEventListener('pointerdown', function (ev) {
+			if (ev.button !== undefined && ev.button !== 0) { return; }   // primary button only
+			drag = { px: ev.clientX, py: ev.clientY, x: x, y: y };
+			vp.classList.add('drag');
+			if (vp.setPointerCapture) { vp.setPointerCapture(ev.pointerId); }
+		});
+		vp.addEventListener('pointermove', function (ev) {
+			if (!drag) { return; }
+			x = drag.x + ev.clientX - drag.px;
+			y = drag.y + ev.clientY - drag.py;
+			apply();
+		});
+		function endDrag() {
+			drag = null;
+			vp.classList.remove('drag');
+		}
+		vp.addEventListener('pointerup', endDrag);
+		vp.addEventListener('pointercancel', endDrag);
+
+		vp.addEventListener('dblclick', function (ev) {
+			var p = local(ev);
+			zoomAt(DBLCLICK_STEP, p[0], p[1]);
+		});
+
+		function bind(id, handler) {
+			var el = byId(id);
+			if (el) { el.addEventListener('click', handler); }
+		}
+		bind(opts.zoomIn, function () { var p = centre(); zoomAt(BUTTON_STEP, p[0], p[1]); });
+		bind(opts.zoomOut, function () { var p = centre(); zoomAt(1 / BUTTON_STEP, p[0], p[1]); });
+		bind(opts.fit, fit);
+		bind(opts.reset, reset);
+
+		apply();
+		if (opts.fitOnLoad) { setTimeout(fit, 0); }
+		return { fit: fit, reset: reset };
+	}
+
+	window.insrcPanZoom = { init: init };
+})();
+</script>
+<script>
+(function(){
+var EXT='ts|tsx|js|jsx|mjs|cjs|json|md|html|css|scss|py|go|java|scala|rs|rb|sh|yml|yaml|toml|sql|txt|xml|c|h|cpp|hpp|cs|kt|swift|lock';
+var RE=new RegExp('(?<![A-Za-z0-9_./@:-])((?:[A-Za-z0-9_.@-]+/)+[A-Za-z0-9_@-][A-Za-z0-9_.@-]*\\.(?:'+EXT+'))(?::(\\d+)(?:-\\d+)?(?::\\d+)?)?(?![A-Za-z0-9_])(?!\\.[A-Za-z0-9])');
+var DRAG=4;
+function ownText(el){var s='',k=el.childNodes||[];
+for(var i=0;i<k.length;i++){if(k[i].nodeType===3)s+=String(k[i].data||'');}
+return s;}
+function markCodeRefs(){try{
+var all=document.querySelectorAll('*');
+for(var i=0;i<all.length;i++){var el=all[i];
+var tag=String(el.tagName||'').toLowerCase();
+if(tag==='script'||tag==='style')continue;
+var m=RE.exec(ownText(el));
+if(!m){
+if(el.getAttribute('data-insrc-path')){el.removeAttribute('data-insrc-path');el.removeAttribute('data-insrc-line');}
+continue;}
+el.setAttribute('data-insrc-path',m[1]);
+if(m[2])el.setAttribute('data-insrc-line',m[2]);else if(el.removeAttribute)el.removeAttribute('data-insrc-line');
+}
+}catch(e){}}
+function markedFrom(t){
+while(t&&t.nodeType===1){if(t.getAttribute('data-insrc-path'))return t;t=t.parentNode;}
+return null;}
+var down=null;
+document.addEventListener('pointerdown',function(e){
+if(e.button!==undefined&&e.button!==0){down=null;return;}
+down={t:e.target,x:e.clientX,y:e.clientY};},true);
+document.addEventListener('click',function(e){try{
+var d=down;down=null;
+var t=e.target;
+if(d&&e.detail!==0){var dx=e.clientX-d.x,dy=e.clientY-d.y;
+if(dx*dx+dy*dy>DRAG*DRAG)return;
+t=d.t;}
+var el=markedFrom(t);if(!el)return;
+var msg={type:'insrc-open-code-ref',path:el.getAttribute('data-insrc-path')};
+var line=el.getAttribute('data-insrc-line');
+if(line)msg.line=Number(line);
+var p=window.parent;
+if(p&&p!==window)p.postMessage(msg,'*');
+}catch(x){}},true);
+window.insrcMarkCodeRefs=markCodeRefs;
+markCodeRefs();
+})();
+</script>
+<script>window.insrcPanZoom.init({viewport:'vp',stage:'stage',zoomLabel:'zl',zoomIn:'zin',zoomOut:'zout',fit:'zfit',reset:'z100',fitOnLoad:true});</script>
+</body></html>

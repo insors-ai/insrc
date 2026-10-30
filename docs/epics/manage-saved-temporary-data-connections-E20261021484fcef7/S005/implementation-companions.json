@@ -1,0 +1,17 @@
+[
+  {
+    "kind": "ux-mock",
+    "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/implementation-ux.html",
+    "title": "Implemented Connections layout"
+  },
+  {
+    "kind": "diagram-mermaid",
+    "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/implementation-sequence.html",
+    "title": "Implemented ownership and recovery"
+  },
+  {
+    "kind": "diagram-mermaid",
+    "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/implementation-components.html",
+    "title": "Implemented client boundaries"
+  }
+]

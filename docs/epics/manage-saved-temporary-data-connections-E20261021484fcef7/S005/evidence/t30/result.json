@@ -1,0 +1,15 @@
+{
+  "task": "t30",
+  "manualAcceptanceOwner": "user",
+  "manualAcceptancePending": [
+    "t26",
+    "t27",
+    "t28",
+    "t29"
+  ],
+  "historicalFailedUIAttempt": "../t26/result.json",
+  "renderVerification": "Structured source and generated HTML inspected; canonical renderers regenerated all three companions. Live browser/IDE rendering intentionally left for user manual validation.",
+  "producerGatePolicyChanged": false,
+  "releaseEnabled": false,
+  "targetedTests": "connection-manager-release.test.ts: 2 pass"
+}

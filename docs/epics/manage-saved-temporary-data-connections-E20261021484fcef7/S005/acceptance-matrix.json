@@ -1,0 +1,283 @@
+{
+  "releaseEnabled": false,
+  "fixturesAreAcceptance": false,
+  "subjects": [
+    {
+      "subject": "CM-S5-STATE",
+      "requirement": "CM-S5-STATE: all list states distinct, retained root, full-key identity, filter/search/counts, add reveal and stale-view rejection",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-model.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-DIRTY",
+      "requirement": "CM-S5-DIRTY: every draft exit Discard/Cancel; editing fixed identity/scope; zero effects after Cancel; unknown mutation retains reconciliation on close",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-draft.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTest.kt",
+        "vscode-plugin/src/connections/__tests__/host.test.ts"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-FORM",
+      "requirement": "CM-S5-FORM: descriptor subset validation, every offered driver, safe endpoint/secret-slot serialization and Keep/Replace/Clear; pinned/read-only compatibility",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-draft.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-TEST",
+      "requirement": "CM-S5-TEST: same draft serializer for Save/Test, optional testing, exact stale-result tuple, repeated click suppression and cancel",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-WIRE",
+      "requirement": "CM-S5-WIRE: capabilities, descriptors, safe lists/reads, tickets, outcomes/status, test/removal replies strict/size-bounded; old/missing/malformed fails closed",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-wire.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-SYNC",
+      "requirement": "CM-S5-SYNC: one versioned/digested JSON wire+state/effect transcript corpus executed by TypeScript and Kotlin, divergent-field/transition negative controls; both bundles exclude daemon/storage/provider code.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-parity.test.ts"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-COMPAT",
+      "requirement": "CM-S5-COMPAT: old daemon/new client upgrade UI; no legacy mutation fallback, legacy unrelated projections retained, pinned family retained",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-wire.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt",
+        "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+        "src/shared/__tests__/connection-manager-compatibility.test.ts"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final sweep t32"
+    },
+    {
+      "subject": "CM-S5-TRANSPORT",
+      "requirement": "CM-S5-TRANSPORT: persistent request multiplexing, disconnect pre/postwrite, timeout/abort, request ID collisions, finite buffers, exactly-once disposal and no raw error leak",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/ipc-client.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLaneTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-OWNER",
+      "requirement": "CM-S5-OWNER: one owner per extension workbench or JetBrains Project;30sheartbeat,90sexpiry,sameepochresume/new epoch,root switches/close-reopen; no session end on Configurable disposal, no persistent capabilities.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-WINDOW",
+      "requirement": "CM-S5-WINDOW: two actual project-scoped services/workbench hosts, same roots/IDs and overlapping RPC IDs, forged owner hints and disposed/stale-view refusal; owner-only delivery and independent project disposal.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-OUTCOME",
+      "requirement": "CM-S5-OUTCOME: known commit vs activation/refresh failure; lostreply same-ticket recovery, expiry, no changedpayload/new operation retry; row/card independent cleanup phases",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-REMOVE",
+      "requirement": "CM-S5-REMOVE: exact root/scope/ID confirmation, zero-effect Cancel, busy/conflict retention, unknown status, ticket-only retry and same-ID recreation safety",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/removal.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-ENTRY",
+      "requirement": "CM-S5-ENTRY: VSCode Settings/command and JetBrains native Settings/AnAction route each project/workbench to the same guarded manager; explicit project chooser for application Settings, no-project/multiroot/retained-root cases.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/entry.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final frozen sweep t32"
+    },
+    {
+      "subject": "CM-S5-UI",
+      "requirement": "CM-S5-UI: actual VSCode extension and JetBrains native manager in light/dark/highcontrast, labels, focus/live status and keyboard-only add/edit/test/Delete/Discard flows.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/host.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt"
+      ],
+      "evidenceStatus": "Pending user manual acceptance after installation; historical failed UI attempt retained.",
+      "remainingTask": "t26/t27"
+    },
+    {
+      "subject": "CM-S5-LIFETIME",
+      "requirement": "CM-S5-LIFETIME: before-add temporary copy in both clients, panelclose/root switch retention, workbench disposal/reconnect/expiry/restart loss; no inferred lifecycle success from backend snapshots",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt"
+      ],
+      "evidenceStatus": "Pending user manual acceptance after installation; historical failed UI attempt retained.",
+      "remainingTask": "t28"
+    },
+    {
+      "subject": "CM-S5-SOURCE",
+      "requirement": "CM-S5-SOURCE: both clients supported SQL/KV/file Test/Save/discard/delete leave seeded source rows/bytes unchanged; SQL Server unavailable remains pending",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/removal.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt"
+      ],
+      "evidenceStatus": "Pending user manual acceptance after installation; historical failed UI attempt retained.",
+      "remainingTask": "t29; SQL Server pending by user instruction"
+    },
+    {
+      "subject": "CM-S5-PRIVACY",
+      "requirement": "CM-S5-PRIVACY: synthetic endpoint/secret/config/capability canaries absent from Settings,memento,webview state,logs,telemetry,artifacts and other-window events; temporary actions cause zero persistence",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "vscode-plugin/src/connections/__tests__/host.test.ts",
+        "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt",
+        "src/shared/__tests__/connection-manager-privacy.test.ts"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "final sweep t32; live privacy manual acceptance pending"
+    },
+    {
+      "subject": "CM-S5-BUILD",
+      "requirement": "CM-S5-BUILD: fresh Node22 backend and extension typecheck/bundle; JDK21 ./gradlew test build and applicable verifyPlugin checks; packaged runtime smoke for both live clients.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-parity.test.ts"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "t31/t32"
+    },
+    {
+      "subject": "CM-S5-SWEEP",
+      "requirement": "CM-S5-SWEEP: per-task relevant Node/JUnit tests, then final frozen backend+explicit extension+JetBrains suites with exact logs/counts; no forced live gates or historical failure relabeling.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live",
+      "consumerTestFiles": [],
+      "evidenceStatus": "Per-task actual consumer test logs retained; frozen full sweep intentionally pending t32.",
+      "remainingTask": "t32",
+      "existingEvidence": [
+        "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/TESTS.md",
+        "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t22/attempt1.tap"
+      ]
+    },
+    {
+      "subject": "CM-S5-GATE",
+      "requirement": "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests",
+      "consumerTestFiles": [
+        "src/shared/__tests__/connection-manager-corpus.test.ts",
+        "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+        "src/daemon/db/__tests__/connection-session-rpc.test.ts"
+      ],
+      "evidenceStatus": "consumer tests exist; final acceptance pending",
+      "remainingTask": "t30"
+    }
+  ],
+  "limits": "Coverage pointers do not convert fixtures or headless tests into live acceptance. Original 12 conceptual transcripts remain reference examples; the 16 production-model scenarios and 18 wire decisions are compared directly across actual consumers.",
+  "manualAcceptance": {
+    "owner": "user",
+    "status": "pending",
+    "instruction": "For UI validations, I will do it manually. Complete the full build, then install the plugins for manual testing.",
+    "tasks": [
+      "t26",
+      "t27",
+      "t28",
+      "t29"
+    ]
+  }
+}

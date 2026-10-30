@@ -1,0 +1,461 @@
+{
+  "uxDefinition": {
+    "type": "AdaptiveCard",
+    "version": "1.5",
+    "narrative": "Shared layout/state schematic for VSCode extension and native JetBrains Connections manager. Both use the same scoped rows, safe draft and truthful recovery; JetBrains application Settings explicitly selects an open project before a project-owned manager. This is design preview only. Implemented in dedicated TypeScript webview and native Swing manager. Save, Test, Remove and recovery actions have independent advertised-capability admission. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence.",
+    "body": [
+      {
+        "type": "TextBlock",
+        "text": "Manage Connections",
+        "description": "Themed editor title reached by Settings and palette.",
+        "wrap": true
+      },
+      {
+        "type": "Input.ChoiceSet",
+        "id": "repo",
+        "label": "Registered repository",
+        "choices": [
+          {
+            "title": "insrc \u2014 /workspace/insrc",
+            "value": "insrc"
+          },
+          {
+            "title": "analytics \u2014 /workspace/analytics",
+            "value": "analytics"
+          }
+        ],
+        "description": "Explicit selection in multiroot workspaces; retained selected root remains independent of active editor."
+      },
+      {
+        "type": "Input.ChoiceSet",
+        "id": "filter",
+        "label": "Connection scope",
+        "choices": [
+          {
+            "title": "All (3)",
+            "value": "all"
+          },
+          {
+            "title": "Saved repository (2)",
+            "value": "saved"
+          },
+          {
+            "title": "Temporary session (1)",
+            "value": "temporary"
+          }
+        ],
+        "description": "Counts from successful authoritative selected-root snapshot before filtering; no counts inferred on read error."
+      },
+      {
+        "type": "ColumnSet",
+        "description": "Master/detail layout stacks when narrow; keyboard order follows header, list, draft and actions.",
+        "columns": [
+          {
+            "type": "Column",
+            "width": 1,
+            "description": "Connection list with scope badges and distinct loading/failure/empty states.",
+            "items": [
+              {
+                "type": "TextBlock",
+                "text": "Connections \u00b7 3 matching",
+                "description": "Matching count after selected scope/search.",
+                "wrap": true
+              },
+              {
+                "type": "Input.Text",
+                "id": "search",
+                "label": "Search connections",
+                "placeholder": "ID, label or driver",
+                "description": "Local filter of current authoritative root; no probes."
+              },
+              {
+                "type": "TextBlock",
+                "text": "warehouse \u00b7 PostgreSQL \u00b7 Saved repository\norders \u00b7 Parquet \u00b7 Temporary session\ncache \u00b7 Redis \u00b7 Saved repository",
+                "description": "Safe row metadata only; full repo/scope/ID/revision retained in host selection.",
+                "wrap": true
+              },
+              {
+                "type": "ActionSet",
+                "description": "Actions route the same guarded manager state as palette and Settings. Saved row action is Delete, temporary is Discard.",
+                "actions": [
+                  {
+                    "type": "Action.Submit",
+                    "title": "Add connection",
+                    "description": "Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls."
+                  },
+                  {
+                    "type": "Action.Submit",
+                    "title": "Edit selected",
+                    "description": "Preview Edit selected; actual implementation uses validated controller intent, not direct daemon calls."
+                  },
+                  {
+                    "type": "Action.Submit",
+                    "title": "Discard selected",
+                    "description": "Preview Discard selected; actual implementation uses validated controller intent, not direct daemon calls."
+                  }
+                ]
+              },
+              {
+                "type": "TextBlock",
+                "text": "Read error: Connections could not be read. Retry.\nEmpty filter: No connections match this filter.\nEmpty registry: No connections yet.",
+                "description": "Alternative state copy, not simultaneous production messages; unavailable reads never become empty state.",
+                "wrap": true
+              }
+            ]
+          },
+          {
+            "type": "Column",
+            "width": 2,
+            "description": "Add form; editing fixes ID, kind and scope. Native secret widgets rendered separately and always masked.",
+            "items": [
+              {
+                "type": "TextBlock",
+                "text": "Add connection",
+                "description": "Draft remains on safe failed operations; not on temporary expiry.",
+                "wrap": true
+              },
+              {
+                "type": "Input.Text",
+                "id": "id",
+                "label": "Connection ID",
+                "placeholder": "orders-preview",
+                "description": "Required unique ID; fixed during edit."
+              },
+              {
+                "type": "Input.ChoiceSet",
+                "id": "driver",
+                "label": "Driver",
+                "choices": [
+                  {
+                    "title": "Parquet",
+                    "value": "parquet"
+                  },
+                  {
+                    "title": "CSV",
+                    "value": "csv"
+                  },
+                  {
+                    "title": "JSON",
+                    "value": "json"
+                  },
+                  {
+                    "title": "PostgreSQL",
+                    "value": "postgres"
+                  }
+                ],
+                "description": "Illustrative subset; actual picker offers every validated daemon descriptor with actionable unsupported guidance."
+              },
+              {
+                "type": "Input.ChoiceSet",
+                "id": "scope",
+                "label": "Lifetime",
+                "choices": [
+                  {
+                    "title": "Saved repository (default)",
+                    "value": "saved"
+                  },
+                  {
+                    "title": "Temporary session",
+                    "value": "temporary"
+                  }
+                ],
+                "description": "Scope independent of driver family; fixed during edit."
+              },
+              {
+                "type": "Input.Text",
+                "id": "path",
+                "label": "File path",
+                "placeholder": "data/orders.parquet",
+                "description": "Illustrative descriptor field; host validates descriptor-specific schema. No arbitrary raw config editor."
+              },
+              {
+                "type": "TextBlock",
+                "text": "Temporary connections stay available when this manager closes or you switch repositories. They expire when the workbench ends, after lease loss, or when the daemon restarts.",
+                "description": "Always visible before temporary Add; temporary configs/credentials are memory-only.",
+                "wrap": true
+              },
+              {
+                "type": "ActionSet",
+                "description": "Test optional and does not persist. Save/Test consume the identical captured draft; duplicate submission blocked.",
+                "actions": [
+                  {
+                    "type": "Action.Submit",
+                    "title": "Test draft",
+                    "description": "Preview Test draft; actual implementation uses validated controller intent, not direct daemon calls."
+                  },
+                  {
+                    "type": "Action.Submit",
+                    "title": "Add connection",
+                    "description": "Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls."
+                  },
+                  {
+                    "type": "Action.Submit",
+                    "title": "Cancel draft",
+                    "description": "Preview Cancel draft; actual implementation uses validated controller intent, not direct daemon calls."
+                  }
+                ]
+              },
+              {
+                "type": "TextBlock",
+                "text": "Credential slots use native masked Keep / Replace / Clear controls in the implementation. Stored values are never returned.",
+                "description": "No unmasked password input in this schematic renderer.",
+                "wrap": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "TextBlock",
+        "text": "Confirm Discard \u00b7 orders \u00b7 Temporary session \u00b7 /workspace/insrc\nDiscard this registration and release its application-owned resources. Source files, databases, tables and remote data will be preserved.",
+        "description": "Modal content example: exact target and selected revision captured before ticket issuance.",
+        "wrap": true
+      },
+      {
+        "type": "ActionSet",
+        "description": "Cancel has zero ticket/mutation effects; confirmed request consumes signed ticket and exact revision.",
+        "actions": [
+          {
+            "type": "Action.Submit",
+            "title": "Cancel removal",
+            "description": "Preview Cancel removal; actual implementation uses validated controller intent, not direct daemon calls."
+          },
+          {
+            "type": "Action.Submit",
+            "title": "Confirm Discard",
+            "description": "Preview Confirm Discard; actual implementation uses validated controller intent, not direct daemon calls."
+          }
+        ]
+      },
+      {
+        "type": "TextBlock",
+        "text": "Recovery examples\nBusy: Connection in use. Retry after current work finishes.\nUnknown: Removal outcome unknown. Reconcile the same operation.\nRemoved; cleanup pending: credentials complete, resources pending. Retry cleanup only.",
+        "description": "Separate operation status card persists after committed registration removal; never infer outcome from absent row.",
+        "wrap": true
+      },
+      {
+        "type": "ActionSet",
+        "description": "Ticket-only recovery; no current-ID selector or repeated create.",
+        "actions": [
+          {
+            "type": "Action.Submit",
+            "title": "Reconcile operation",
+            "description": "Preview Reconcile operation; actual implementation uses validated controller intent, not direct daemon calls."
+          },
+          {
+            "type": "Action.Submit",
+            "title": "Retry owned cleanup",
+            "description": "Preview Retry owned cleanup; actual implementation uses validated controller intent, not direct daemon calls."
+          }
+        ]
+      },
+      {
+        "type": "TextBlock",
+        "text": "Dirty draft: Discard unsaved changes or Cancel navigation?",
+        "description": "Draft discard is distinct from discarding an existing temporary registration.",
+        "wrap": true
+      },
+      {
+        "type": "ActionSet",
+        "description": "Cancel keeps current form and produces no navigation/mutation effect.",
+        "actions": [
+          {
+            "type": "Action.Submit",
+            "title": "Discard unsaved draft",
+            "description": "Preview Discard unsaved draft; actual implementation uses validated controller intent, not direct daemon calls."
+          },
+          {
+            "type": "Action.Submit",
+            "title": "Cancel navigation",
+            "description": "Preview Cancel navigation; actual implementation uses validated controller intent, not direct daemon calls."
+          }
+        ]
+      }
+    ]
+  },
+  "sequenceDefinition": {
+    "id": "s005-lifecycle-and-recovery",
+    "narrative": "Both live clients keep session ownership above manager views: extension workbench or JetBrains Project. A lost reply reconciles the original operation; closing Settings/manager does not end temporary state. Per-action feature checks precede effect submission; unsupported Test does not block Save. Same-epoch recovery retains original tickets; no legacy mutation fallback.",
+    "participants": [
+      {
+        "id": "ui",
+        "label": "Manager renderer",
+        "description": "Untrusted view sends validated intents, never raw capabilities."
+      },
+      {
+        "id": "core",
+        "label": "sc7 workbench controller",
+        "description": "Memory-only state, immutable attempt and view-generation guard."
+      },
+      {
+        "id": "host",
+        "label": "Workbench/project lane owner",
+        "description": "Actual extension workbench or JetBrains Project owns private capabilities and separate control/data/Saved lanes."
+      },
+      {
+        "id": "daemon",
+        "label": "Existing daemon sc1\u2013sc6",
+        "description": "Owns authority, receipts, registry, temporary memory and cleanup."
+      }
+    ],
+    "messages": [
+      {
+        "from": "ui",
+        "to": "core",
+        "label": "Open manager; choose registered root",
+        "description": "Retain selected root and request feature handshake before forms.",
+        "kind": "call"
+      },
+      {
+        "from": "core",
+        "to": "host",
+        "label": "Acquire workbench owner and exact root lane",
+        "description": "Control socket is independent of renderer lifetime; Saved actions use unclaimed Saved lane.",
+        "kind": "call"
+      },
+      {
+        "from": "host",
+        "to": "daemon",
+        "label": "Open/resume; delegate workbench-ui; attach root data socket",
+        "description": "Existing sc5 methods; capabilities remain inside privileged host.",
+        "kind": "call"
+      },
+      {
+        "from": "daemon",
+        "to": "host",
+        "label": "Bound root/epoch and authoritative safe list",
+        "description": "Decode exact replies before UI state; read failures are errors.",
+        "kind": "call"
+      },
+      {
+        "from": "core",
+        "to": "host",
+        "label": "Issue ticket then submit frozen draft",
+        "description": "Only after user submit/confirmation; exact same serializer for Test/Save.",
+        "kind": "call"
+      },
+      {
+        "from": "host",
+        "to": "core",
+        "label": "Written request lost its reply",
+        "description": "Unknown truth; retain same request/ticket and block fresh mutation.",
+        "kind": "call"
+      },
+      {
+        "from": "core",
+        "to": "host",
+        "label": "Status(original ticket) via proper scope lane",
+        "description": "Same owner/epoch for temporary; separate Saved lane for Saved.",
+        "kind": "call"
+      },
+      {
+        "from": "host",
+        "to": "daemon",
+        "label": "Reconcile exact operation",
+        "description": "Never infer from absent row or resend with changed payload/new ID.",
+        "kind": "call"
+      },
+      {
+        "from": "daemon",
+        "to": "host",
+        "label": "Committed truth with independent phases",
+        "description": "Render registration, activation/refresh and owned cleanup separately.",
+        "kind": "call"
+      },
+      {
+        "from": "host",
+        "to": "core",
+        "label": "Publish validated safe outcome for current view generation",
+        "description": "No direct daemon-to-renderer capability path; Kotlin updates Swing only on EDT and after disposal/generation checks.",
+        "kind": "return"
+      },
+      {
+        "from": "ui",
+        "to": "core",
+        "label": "Close panel or switch root",
+        "description": "Dirty guard; retain workbench owner and unknown operation memory.",
+        "kind": "call"
+      },
+      {
+        "from": "host",
+        "to": "daemon",
+        "label": "Heartbeat while owner lives; end on workbench/project disposal",
+        "description": "30sheartbeat; daemon90sdeadline/epoch authoritative. End does not occur on panelclose.",
+        "kind": "call"
+      }
+    ]
+  },
+  "componentDependencyDefinition": {
+    "id": "s005-live-client-boundaries",
+    "narrative": "Native TypeScript and Kotlin consumers share protocol/scenario fixtures, not executable source. Only each workbench/project transport adapter reaches existing daemon owners. Deprecated insrc-ide is excluded. One owner per extension workbench or actual JetBrains Project; manager views do not own sessions. Legacy application gateway stays stateless.",
+    "components": [
+      {
+        "id": "vscode",
+        "label": "VSCode manager",
+        "path": "vscode-plugin/src/extension.ts",
+        "description": "Dedicated webview/commands wired through extension host."
+      },
+      {
+        "id": "jb",
+        "label": "JetBrains manager",
+        "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt",
+        "description": "New native Connections surface linked from existing application Settings; actual Project selects service."
+      },
+      {
+        "id": "fixtures",
+        "label": "Common wire/sc7 scenarios",
+        "description": "Versioned JSON corpus executed by TypeScript and Kotlin; headless evidence does not establish live acceptance."
+      },
+      {
+        "id": "vhost",
+        "label": "Workbench socket owner",
+        "path": "vscode-plugin/src/connections/session-owner.ts",
+        "description": "Persistent TypeScript lanes preserve one-shot API."
+      },
+      {
+        "id": "jhost",
+        "label": "Project socket owner",
+        "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt",
+        "description": "New project-level Disposable service uses Kotlin persistent lane at existing transport boundary; APP gateway remains unclaimed/stateless."
+      },
+      {
+        "id": "daemon",
+        "label": "Backend sc1\u2013sc6/sc8",
+        "path": "src/daemon/connection-session-rpc.ts",
+        "description": "Existing daemon owns authority, receipts, configurations and cleanup."
+      }
+    ],
+    "dependencies": [
+      {
+        "from": "vscode",
+        "to": "fixtures",
+        "label": "Node parity"
+      },
+      {
+        "from": "jb",
+        "to": "fixtures",
+        "label": "JUnit parity"
+      },
+      {
+        "from": "vscode",
+        "to": "vhost",
+        "label": "validated intents"
+      },
+      {
+        "from": "jb",
+        "to": "jhost",
+        "label": "actual project owner"
+      },
+      {
+        "from": "vhost",
+        "to": "daemon",
+        "label": "control/root-data/Saved"
+      },
+      {
+        "from": "jhost",
+        "to": "daemon",
+        "label": "isolated project lanes"
+      }
+    ]
+  }
+}

@@ -204,7 +204,7 @@ test('CM-S5-RENDER-TS: Refresh recovers repository discovery after reload, retai
  const host=new ConnectionsManagerHost({owner,mutations,tests:probes,removals,openedPath:()=>f.f.root,registeredRoots:async()=>{if(++reads===1)throw new Error('fixture initial discovery failed');return [f.f.root];},createPanel:()=>panel});
  try{
   const writes=f.requests.length;await host.open();assert.equal(panel.view.list.listState,'no-repository');assert.equal(panel.view.list.roots.length,0);assert.match(panel.view.error,/Refresh/);
-  panel.dom!.click('refresh');await until(()=>panel.view.list.listState==='ready');assert.equal(reads,2);assert.equal(panel.view.error,'');assert.equal(panel.view.list.repoRoot,f.f.root);assert.equal(panel.view.list.counts.saved,1);assert.equal(panel.view.list.counts.temporary,0);assert.equal(panel.view.rows[0]!.key.id,'saved-before-reload');assert.equal(f.requests.length,writes,'discovery retry performs no mutation');
+  panel.dom!.click('refresh');await until(()=>panel.view.list.listState==='ready');assert.equal(reads,2);assert.equal(panel.view.error,'');assert.equal(panel.dom!.el('message-latest').textContent,'Repository list loaded.');assert.equal(panel.view.list.repoRoot,f.f.root);assert.equal(panel.view.list.counts.saved,1);assert.equal(panel.view.list.counts.temporary,0);assert.equal(panel.view.rows[0]!.key.id,'saved-before-reload');assert.equal(f.requests.length,writes,'discovery retry performs no mutation');
  }finally{host.dispose();removals.dispose();probes.dispose();mutations.dispose();await f.close();}
 });
 

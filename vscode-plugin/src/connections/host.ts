@@ -43,7 +43,7 @@ const PREFIX='db.connections.v2.';
 export class ConnectionsManagerHost {
  #ports:ConnectionsHostPorts;#panel:ConnectionPanel|null=null;#viewId='';#generation=0;#formId=0;#ready=false;#visible=true;#disposed=false;#publishing=false;
  #model:ConnectionManagerState=createConnectionManager([],'');#draft:ConnectionDraft|null=null;#descriptors:readonly ClientDriverDescriptor[]=[];#descriptorEpoch='';#descriptorRoot='';
- #picking=false;#rootRead=0;#openedPath:string|undefined;
+ #picking=false;#rootRead=0;#rootDiscoveryFailed=false;#openedPath:string|undefined;
  #messages:{id:number;text:string}[]=[];#messageId=0;#messageRoot:string|null=null;#messageSeen=new Map<string,string>();
  #pending:(()=>void|Promise<void>)|null=null;#error='';#notice='';#read:AbortController|null=null;#subscriptions:MutationTimer[]=[];
  constructor(ports:ConnectionsHostPorts){
@@ -127,12 +127,12 @@ export class ConnectionsManagerHost {
   const current=()=>!this.#disposed&&this.#panel===panel&&this.#rootRead===request;
   try{
    const roots=await this.#ports.registeredRoots();if(!current())return;
-   this.#ports.owner.setRegisteredRoots(roots);this.#error='';this.#dispatch({type:'registered-roots',roots});
+   this.#ports.owner.setRegisteredRoots(roots);this.#error='';if(this.#rootDiscoveryFailed)this.#notice='Repository list loaded.';this.#rootDiscoveryFailed=false;this.#dispatch({type:'registered-roots',roots});
    if(this.#draft&&!roots.includes(this.#draft.view.key.repoRoot)){this.#draft.clear();this.#draft=null;this.#bump();this.#bindTest();}
    const preferred=!this.#model.repoRoot&&!this.#draft?connectionRootForPath(roots,this.#openedPath):undefined;
    if(preferred)this.#dispatch({type:'select-root',repoRoot:preferred});
    else if(this.#model.repoRoot)this.#dispatch({type:'refresh'});
-  }catch{if(!current())return;this.#error='Registered repositories could not be loaded. Use Refresh to retry when the daemon is available.';this.#dispatch({type:'unavailable',code:'offline'});}
+  }catch{if(!current())return;this.#rootDiscoveryFailed=true;this.#error='Registered repositories could not be loaded. Use Refresh to retry when the daemon is available.';this.#dispatch({type:'unavailable',code:'offline'});}
   this.#publish();
  }
  #publish():void{

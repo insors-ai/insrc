@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "9a3d83992",
+  "version": "0.5.22",
+  "package": "vscode-plugin/insrc-vscode-0.5.22-s005-9a3d83992.vsix",
+  "sha256": "a841965fb9efc42f74fe0297486e7afe347fc486a1d7c50fc221587fe0b39d1b",
+  "archiveVerified": true,
+  "savedConnection": "test-parquet",
+  "readOnlyDiagnostic": "6 roots; 1 Saved / 0 Temporary; zero registration writes",
+  "manualNativeUI": "pending-user",
+  "daemonRestarted": false
+}

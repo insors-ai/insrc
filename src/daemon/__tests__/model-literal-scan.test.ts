@@ -52,12 +52,20 @@ const OLLAMA_NON_RUNNER: readonly Exclusion[] = [
 	{ file: 'src/cli/services/setup.ts', owner: 's5', why: "the 'ollama' program `setup pull` runs (spawn), not a runner" },
 ];
 
+interface ShippedDefinitions { families: Array<{ id: string; cliKind?: string; models: Array<{ id: string; aliases?: string[] }> }> }
+const shipped = (): ShippedDefinitions =>
+	JSON.parse(readFileSync(join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as ShippedDefinitions;
+
 /** The model ids and aliases the shipped definitions name. */
 function modelNames(): Set<string> {
-	const defs = JSON.parse(readFileSync(join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ models: Array<{ id: string; aliases?: string[] }> }> };
 	const names = new Set<string>();
-	for (const f of defs.families) for (const m of f.models) { names.add(m.id); for (const a of m.aliases ?? []) names.add(a); }
+	for (const f of shipped().families) for (const m of f.models) { names.add(m.id); for (const a of m.aliases ?? []) names.add(a); }
 	return names;
+}
+
+/** The ids of the shipped families that run a CLI (Epic b220bb61, Story s3: vendor and Ollama-hosted alike). */
+function cliFamilyIds(): string[] {
+	return shipped().families.filter(f => f.cliKind !== undefined).map(f => f.id);
 }
 
 /** The source with its comments removed, scanned lexically so a comment marker
@@ -105,13 +113,14 @@ function daemonFiles(): string[] {
 /** The violations in `files`, read from `source` (default: disk). */
 function scan(files: readonly string[], source: (file: string) => string = f => readFileSync(join(ROOT, f), 'utf8')): string[] {
 	const names = modelNames();
+	const familyIds = cliFamilyIds();
 	const violations: string[] = [];
 	for (const file of files) {
 		const code = stripComments(source(file));
 		if (!excluded(MODEL_NAME_EXCLUSIONS, file)) {
 			for (const n of names) if (quoted(n).test(code)) violations.push(`${file}: model-name literal '${n}'`);
 		}
-		if (!excluded(FAMILY_ID_OWNERS, file) && /['"`]cli-(claude|codex)['"`]/.test(code)) violations.push(`${file}: CLI family id literal`);
+		if (!excluded(FAMILY_ID_OWNERS, file) && familyIds.some(id => quoted(id).test(code))) violations.push(`${file}: CLI family id literal`);
 		if (!excluded(OLLAMA_NON_RUNNER, file) && /['"`]ollama['"`]/.test(code)) violations.push(`${file}: runner 'ollama' literal`);
 		// A read is code: `.ollamaNumCtx` outside a string (the retired path is named in one), or a bracket access.
 		if (/\.ollamaNumCtx\b/.test(blankStrings(code)) || /\[\s*['"]ollamaNumCtx['"]\s*\]/.test(code)) violations.push(`${file}: reads models.shaper.ollamaNumCtx`);
@@ -171,4 +180,22 @@ test('model-literal-scan.test.ts: the scan covers src/cli and the recommender', 
 	// No exclusion covers the TUI tree or the recommender's model names.
 	assert.deepEqual(EXCLUDED_TREES, []);
 	assert.equal(MODEL_NAME_EXCLUSIONS.some(e => e.file.startsWith('src/cli') || e.file === 'src/shared/model-recommender.ts'), false);
+});
+
+test('model-literal-scan.test.ts: every CLI family id of the shipped definitions, including ollama-claude and cli-vibe, is flagged outside the owners', () => {
+	const ids = cliFamilyIds();
+	// Read from the shipped definitions: the vendor CLIs and the Ollama-hosted one, not the CLI-less local family.
+	for (const id of ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama-claude']) assert.ok(ids.includes(id), `${id} is a shipped CLI family`);
+	assert.equal(ids.includes('ollama'), false);
+
+	const target = 'src/cli/panes/ModelTiersPane.tsx';
+	for (const id of ids) {
+		const found = scan([target], f => readFileSync(join(ROOT, f), 'utf8') + `\nconst r = '${id}';\n`);
+		assert.deepEqual(found, [`${target}: CLI family id literal`], `'${id}' is caught`);
+		// An owner may write it, and a comment naming it is not code.
+		assert.deepEqual(scan(['src/daemon/model-catalog.ts'], f => readFileSync(join(ROOT, f), 'utf8') + `\nconst r = '${id}';\n`), []);
+		assert.deepEqual(scan([target], f => readFileSync(join(ROOT, f), 'utf8') + `\n// const r = '${id}';\n`), []);
+	}
+	// A longer id that merely contains one is not a match.
+	assert.deepEqual(scan([target], f => readFileSync(join(ROOT, f), 'utf8') + "\nconst r = 'ollama-claude-next';\n"), []);
 });

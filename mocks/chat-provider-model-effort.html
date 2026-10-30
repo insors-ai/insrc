@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>insrc chat — provider·model popup + effort gauge (UX mock)</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg: light-dark(#ffffff, #1b1b1b);
+  --bg-inset: light-dark(#f3f3f3, #252526);
+  --panel: light-dark(#ffffff, #1e1e1e);
+  --fg: light-dark(#1b1b1b, #cccccc);
+  --fg-strong: light-dark(#000000, #ffffff);
+  --muted: light-dark(#6a6a6a, #9d9d9d);
+  --border: light-dark(#d4d4d4, #3c3c3c);
+  --border-lit: light-dark(#c8c8c8, #4a4a4a);
+  --dropdown-bg: light-dark(#ffffff, #252526);
+  --dropdown-border: light-dark(#c8c8c8, #454545);
+  --hover: light-dark(#ececec, #2a2d2e);
+  --sel: light-dark(#0078d4, #0e639c);
+  --accent: light-dark(#0e639c, #4fc3f7);
+  --focus: light-dark(#0078d4, #0090ff);
+  --user-bg: light-dark(#dbeafe, #1e3a5f);
+  --assistant-bg: light-dark(#f5f5f5, #262626);
+  --msg-border: light-dark(#d4d4d4, #3c3c3c);
+  --font: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:13px;padding:1rem;display:flex;flex-direction:column;align-items:center;gap:.75rem}
+.demo-bar{display:flex;gap:1rem;align-items:center;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:.4rem .8rem;background:var(--bg-inset)}
+.demo-bar b{color:var(--accent);letter-spacing:.08em}
+.app-window{width:min(860px,100%);border:1px solid var(--border-lit);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:0 8px 30px rgb(0 0 0 / .25)}
+.title-bar{display:flex;justify-content:space-between;padding:.45rem .9rem;background:var(--bg-inset);border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)}
+.title-bar b{color:var(--fg)}
+.box{display:flex;flex-direction:column;height:520px}
+.chrome{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-inset);border-bottom:1px solid var(--border-lit);font-size:12px;flex:0 0 auto}
+.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px}
+.histchip{display:inline-flex;align-items:center;padding:3px 8px 3px 24px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;color:var(--fg);position:relative}
+.histchip::before{content:"🕘";position:absolute;left:6px;font-size:11px;opacity:.7}
+.histchip select{background:none;border:0;outline:none;max-width:14ch;font:inherit;color:inherit}
+.runbtn,.gaugebtn{display:inline-flex;align-items:center;gap:6px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;font:inherit;color:inherit;height:24px}
+.runbtn:hover,.gaugebtn:hover{background:var(--hover)}
+.runbtn:focus-visible,.gaugebtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px}
+.runbtn .chev{opacity:.6;font-size:10px}
+.gaugebtn svg{display:block}
+.gaugebtn.dim{opacity:.55;cursor:default}
+.term{flex:1 1 auto;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.msg{display:flex;flex-direction:column;gap:3px;max-width:85%}
+.msg .who{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.msg.user{align-self:flex-end;align-items:flex-end}
+.msg.user .who{color:#3b82f6}
+.msg .bubble{padding:8px 12px;border-radius:10px;border:1px solid var(--msg-border);white-space:pre-wrap}
+.msg.user .bubble{background:var(--user-bg);border-radius:10px 10px 2px 10px}
+.msg.assistant .bubble{background:var(--assistant-bg);border-radius:2px 10px 10px 10px}
+.msg.assistant .who{color:#c586c0}
+.progress{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:4px 14px;border-top:1px solid var(--border);background:var(--bg-inset);color:var(--muted);font-size:11px}
+.progress .elapsed{margin-left:auto;font-family:var(--font)}
+.inputbar{flex:0 0 auto;display:flex;gap:8px;align-items:flex-end;padding:8px 12px;border-top:1px solid var(--border-lit);background:var(--bg-inset)}
+.inputbar .send{color:#22c55e;font-size:16px;cursor:pointer;user-select:none;padding:0 2px}
+.inputbar textarea{flex:1;resize:none;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font:inherit;min-height:38px}
+.statusbar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:5px 12px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+.statusbar select{background:var(--dropdown-bg);color:var(--fg);border:1px solid var(--dropdown-border);border-radius:5px;font:inherit;padding:2px 4px}
+/* the bottom-right corner holds the new controls */
+.statusbar .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px;position:relative}
+
+/* ---- popups: open UPWARD from the bottom-right corner, subtle rise ---- */
+@keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.popup,.slider-pop{position:absolute;bottom:calc(100% + 8px);right:0;display:none;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:10px;box-shadow:0 12px 32px rgb(0 0 0 / .38);z-index:20;animation:rise .12s ease-out}
+.popup.open,.slider-pop.open{display:flex}
+
+/* provider → model menu: two scrollable panes under section labels + one hint bar */
+.popup{flex-direction:column;padding:6px;min-width:400px}
+.popup .panes{display:flex;gap:2px}
+.popup .pane{display:flex;flex-direction:column;min-width:180px;max-height:264px;overflow-y:auto}
+.popup .pane + .pane{border-left:1px solid var(--border);padding-left:2px}
+.popup .pane-h{padding:6px 10px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.popup .item{display:flex;align-items:center;gap:8px;margin:1px;padding:5px 8px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.popup .item:hover{background:var(--hover)}
+.popup .chk{width:14px;flex:0 0 14px;color:var(--accent);font-weight:600;visibility:hidden}
+.popup .item.sel .chk{visibility:visible}
+.popup .item.sel .lbl{color:var(--fg-strong)}
+.popup .item .sub{margin-left:auto;color:var(--muted);font-size:11px;font-family:var(--font)}
+.popup .item.dis{opacity:.45;cursor:default}
+.popup .item.dis:hover{background:none}
+.popup .foot{margin-top:6px;padding:6px 10px 2px;border-top:1px solid var(--border);color:var(--muted);font-size:11px}
+
+/* effort slider popup: section label, slider with tick marks, notch labels, one note */
+.slider-pop{flex-direction:column;width:330px;padding:10px 14px 12px}
+.slider-pop .pane-h{padding:2px 2px 8px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.slider-wrap input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:0}
+.ticks{display:flex;justify-content:space-between;padding:0 7px}
+.ticks i{width:1px;height:5px;background:var(--border-lit)}
+.ticks i.on{background:var(--accent);height:8px}
+.notches{display:flex;justify-content:space-between;padding:0 2px;margin-top:3px}
+.notches span{font-size:10px;color:var(--muted);cursor:pointer;padding:1px 2px;border-radius:4px}
+.notches span:hover{background:var(--hover)}
+.notches span.on{color:var(--accent);font-weight:600}
+.slider-pop .foot{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="demo-bar"><b>UX MOCK</b><span>insrc chat panel — provider→model popup + effort gauge in the bottom-right corner</span><span>Illustrative data · no daemon calls</span></div>
+<div class="app-window">
+  <div class="title-bar"><span>Visual Studio Code</span><b>insrc — chat</b><span>⋯</span></div>
+  <div class="box">
+    <div class="chrome">
+      <span style="color:var(--muted)">insrc</span>
+      <span class="right">
+        <span class="histchip"><select id="hist" aria-label="session"><option value="">new…</option><option selected>understand this project</option></select></span>
+      </span>
+    </div>
+    <div class="term" id="term">
+      <div class="msg user"><span class="who">you</span><div class="bubble">add vibe as a CLI provider like claude/codex</div></div>
+      <div class="msg assistant"><span class="who">claude · opus [high]</span><div class="bubble">Done — CliProvider gained a `vibe` kind, a `cli-vibe` model family, MCP registration via `vibe mcp add`, and client detection. Build + tests pass.</div></div>
+    </div>
+    <div class="progress"><span>● idle</span><span class="elapsed">0.0s</span></div>
+    <div class="inputbar"><span class="send">❯</span><textarea rows="2" placeholder="Ask insrc…"></textarea></div>
+    <div class="statusbar">
+      <button class="attachbtn" style="background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer;padding:2px 6px" title="attach files">📎</button>
+      <span>edits <select id="mode" aria-label="mode"><option>Manual</option><option selected>Edit Automatically</option><option>Auto</option></select></span>
+      <span class="right">
+        <button id="runbtn" class="runbtn" aria-haspopup="menu" aria-expanded="false" title="provider · model">claude · opus <span class="chev">▾</span></button>
+        <button id="gaugebtn" class="gaugebtn" aria-haspopup="dialog" aria-expanded="false" title="effort level">
+          <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13.5A5.5 5.5 0 1 1 13.5 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 8l3.2-3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span id="effortlabel">high</span>
+        </button>
+        <!-- provider → model popup (opens upward from the bottom-right corner) -->
+        <div id="runpop" class="popup" role="menu" aria-label="provider and model">
+          <div class="panes">
+            <div class="pane" id="provpane"><div class="pane-h">Provider</div></div>
+            <div class="pane" id="modelpane"><div class="pane-h">Model</div></div>
+          </div>
+          <div class="foot" id="runpopfoot"></div>
+        </div>
+        <!-- effort slider popup (opens upward) -->
+        <div id="effortpop" class="slider-pop" role="dialog" aria-label="effort level">
+          <div class="pane-h">Effort</div>
+          <div class="slider-wrap">
+            <input type="range" id="effortslider" min="0" step="1" value="0" aria-label="effort level">
+            <div class="ticks" id="ticks"></div>
+            <div class="notches" id="notches"></div>
+          </div>
+          <div class="foot" id="effortnote"></div>
+        </div>
+      </span>
+    </div>
+  </div>
+</div>
+<script>
+// Illustrative catalog (mirrors the daemon's models.definitions projection for cli families).
+const CATALOG = [
+  { family: 'cli-claude', provider: 'claude', label: 'Claude Code', models: [
+    { id: 'claude-opus-5-5', alias: 'opus', name: 'Claude Opus 5.5', efforts: ['low','medium','high','xhigh','max'] },
+    { id: 'claude-sonnet-5', alias: 'sonnet', name: 'Claude Sonnet 5', efforts: ['low','medium','high','xhigh','max'] },
+    { id: 'claude-haiku-5-5', alias: 'haiku', name: 'Claude Haiku 5.5', efforts: ['low','medium','high','xhigh','max'] },
+  ]},
+  { family: 'cli-codex', provider: 'codex', label: 'Codex', models: [
+    { id: 'gpt-6-astra', name: 'GPT-6 Astra', efforts: ['low','medium','high','xhigh','max','ultra'] },
+    { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', efforts: ['low','medium','high','xhigh','max','ultra'] },
+    { id: 'gpt-6-luna', name: 'GPT-6 Luna', efforts: ['low','medium','high','xhigh','max'] },
+  ]},
+  { family: 'cli-vibe', provider: 'vibe', label: 'Mistral Vibe', models: [
+    { id: 'mistral-large-latest', name: 'Mistral Large', efforts: ['low','medium','high','xhigh','max'] },
+    { id: 'mistral-vibe-cli-latest', alias: 'mistral-medium-3.5', name: 'Mistral Medium 3.5', efforts: ['low','medium','high','xhigh','max'] },
+    { id: 'zai-glm-5-3', alias: 'glm-5-3', name: 'GLM 5.3 (Mistral-hosted)', efforts: ['low','high','max'] },
+    { id: 'mistral-small-latest', name: 'Mistral Small', efforts: ['low','medium','high','xhigh','max'] },
+  ]},
+];
+const state = { provider: 'claude', model: 'claude-opus-5-5', effort: 'high', hover: null };
+const $ = (id) => document.getElementById(id);
+const fam = () => CATALOG.find(f => f.provider === state.provider);
+const model = () => fam().models.find(m => m.id === state.model);
+const modelName = () => state.model === '' ? 'default' : (model().alias || model().name);
+const effortLevels = () => state.model === ''
+  ? [...new Set(fam().models.flatMap(m => m.efforts))]
+  : model().efforts;
+
+function render() {
+  $('runbtn').innerHTML = state.provider + ' · ' + modelName() + ' <span class="chev">▾</span>';
+  $('effortlabel').textContent = state.effort === '' ? 'default' : state.effort;
+  $('gaugebtn').classList.toggle('dim', effortLevels().length === 0);
+}
+
+function item(sel, label, sub, onClick, onHover, dis) {
+  const it = document.createElement('div');
+  it.className = 'item' + (sel ? ' sel' : '') + (dis ? ' dis' : '');
+  it.setAttribute('role', 'menuitem');
+  if (dis) it.setAttribute('aria-disabled', 'true');
+  it.innerHTML = '<span class="chk">✓</span><span class="lbl"></span>' + (sub ? '<span class="sub"></span>' : '');
+  it.querySelector('.lbl').textContent = label;
+  if (sub) it.querySelector('.sub').textContent = sub;
+  if (!dis) { if (onHover) it.onmouseenter = onHover; it.onclick = onClick; }
+  return it;
+}
+
+// ---- provider → model popup ----
+function renderRunPop() {
+  state.hover = state.provider;
+  // A started chat (the transcript has rows) keeps its provider: other providers are disabled.
+  const started = $('term').childElementCount > 0;
+  const pp = $('provpane');
+  pp.innerHTML = '<div class="pane-h">Provider</div>';
+  for (const f of CATALOG) {
+    const dis = started && f.provider !== state.provider;
+    pp.appendChild(item(
+      f.provider === state.provider,
+      f.label,
+      String(f.models.length),
+      () => { state.provider = f.provider; state.hover = f.provider; if (!effortLevels().includes(state.effort) && state.model !== '') { /* keep effort if valid */ } renderRunPop(); render(); },
+      () => { state.hover = f.provider; renderModels(); },
+      dis,
+    ));
+  }
+  renderModels();
+  $('runpopfoot').textContent = started
+    ? 'Provider is fixed once a chat has started · model and effort apply to the next turns.'
+    : 'Provider change starts a new chat · model change applies to the next turns.';
+}
+function renderModels() {
+  const f = CATALOG.find(x => x.provider === state.hover) || fam();
+  const mp = $('modelpane');
+  mp.innerHTML = '<div class="pane-h">' + f.label + '</div>';
+  mp.appendChild(item(state.model === '', 'default', 'CLI default', () => pick(f.provider, '')));
+  for (const m of f.models) {
+    mp.appendChild(item(state.provider === f.provider && state.model === m.id, m.name, m.alias || m.id, () => pick(f.provider, m.id)));
+  }
+}
+function pick(provider, modelId) {
+  const changedProvider = provider !== state.provider;
+  state.provider = provider; state.model = modelId; state.hover = provider;
+  if (state.model !== '' && !effortLevels().includes(state.effort)) state.effort = '';
+  closePops(); render(); renderEffortPop();
+  if (changedProvider) { $('term').innerHTML = ''; addSys('new chat: ' + provider + ' · ' + modelName()); }
+}
+
+// ---- effort slider popup ----
+function renderEffortPop() {
+  const levels = ['default', ...effortLevels()];
+  const cur = state.effort === '' ? 0 : Math.max(0, levels.indexOf(state.effort));
+  const s = $('effortslider');
+  s.max = levels.length - 1; s.value = cur;
+  s.setAttribute('aria-valuetext', levels[cur]);
+  const t = $('ticks'); t.innerHTML = '';
+  const n = $('notches'); n.innerHTML = '';
+  levels.forEach((l, i) => {
+    const tick = document.createElement('i');
+    if (i === cur) tick.className = 'on';
+    t.appendChild(tick);
+    const sp = document.createElement('span');
+    sp.textContent = l; if (i === cur) sp.className = 'on';
+    sp.onclick = () => { s.value = i; applyEffort(); };
+    n.appendChild(sp);
+  });
+  $('effortnote').textContent = state.provider === 'vibe'
+    ? 'vibe has no per-call thinking flag — the level is informational; the model’s `thinking` in ~/.vibe/config.toml applies.'
+    : 'Applies to the next turns of this chat.';
+}
+function applyEffort() {
+  const levels = ['default', ...effortLevels()];
+  const i = Number($('effortslider').value);
+  state.effort = levels[i] === 'default' ? '' : levels[i];
+  render(); renderEffortPop();
+}
+$('effortslider').addEventListener('input', () => {
+  const levels = ['default', ...effortLevels()];
+  $('effortslider').setAttribute('aria-valuetext', levels[Number($('effortslider').value)]);
+});
+$('effortslider').addEventListener('change', applyEffort);
+
+// ---- open/close ----
+function closePops() {
+  $('runpop').classList.remove('open'); $('effortpop').classList.remove('open');
+  $('runbtn').setAttribute('aria-expanded','false'); $('gaugebtn').setAttribute('aria-expanded','false');
+}
+$('runbtn').onclick = (e) => { e.stopPropagation(); const was = $('runpop').classList.contains('open'); closePops(); if (!was) { renderRunPop(); $('runpop').classList.add('open'); $('runbtn').setAttribute('aria-expanded','true'); } };
+$('gaugebtn').onclick = (e) => { e.stopPropagation(); if ($('gaugebtn').classList.contains('dim')) return; const was = $('effortpop').classList.contains('open'); closePops(); if (!was) { renderEffortPop(); $('effortpop').classList.add('open'); $('gaugebtn').setAttribute('aria-expanded','true'); } };
+document.addEventListener('click', closePops);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePops(); });
+
+function addSys(text) {
+  const d = document.createElement('div');
+  d.style.cssText = 'align-self:center;color:var(--muted);font-size:11px;font-style:italic';
+  d.textContent = text;
+  $('term').appendChild(d); $('term').scrollTop = $('term').scrollHeight;
+}
+render(); renderEffortPop();
+</script>
+</body>
+</html>

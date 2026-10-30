@@ -29,7 +29,8 @@ import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
-import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-store.js';
+import type { ChatSessionStore, ChatSession, TranscriptEntry, RunConfig } from './session-store.js';
+import type { ModelDefinitions } from '../models/definitions.js';
 import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
 import type { TurnEvent } from './stream-events.js';
 import type { DeclaredOutcome, PresentedTurn, ReviewPresenter } from './review-presenter.js';
@@ -81,6 +82,48 @@ export interface ChatEditGovernanceDeps {
   readonly notify?: (msg: string) => void;
 }
 
+/** One served model as the run-config popup lists it. */
+export interface RunModelView {
+  readonly id: string;
+  readonly name: string;
+  readonly alias?: string | undefined;
+  readonly efforts: readonly string[];
+}
+
+/** One provider as the run-config popup lists it: its served models + efforts. */
+export interface RunProviderView {
+  readonly id: ProviderId;
+  readonly label: string;
+  readonly models: readonly RunModelView[];
+}
+
+/** cliKind (daemon family) → chat ProviderId — the same mapping familyForClient uses. */
+const CLI_KIND_TO_PROVIDER: Readonly<Record<string, ProviderId>> = { claude: 'claude', codex: 'codex', vibe: 'vibe' };
+
+/** Project the daemon's model definitions to the popup's per-provider view, keeping only
+ *  installed providers and dropping rejected model ids. Pure; never throws. */
+export function runCatalogView(defs: ModelDefinitions, available: readonly ProviderId[]): readonly RunProviderView[] {
+  const out: RunProviderView[] = [];
+  for (const f of defs.families) {
+    const provider = f.cliKind !== undefined ? CLI_KIND_TO_PROVIDER[f.cliKind] : undefined;
+    if (provider === undefined || !available.includes(provider)) continue;
+    const rejected = new Set(f.rejectedModels ?? []);
+    out.push({
+      id: provider,
+      label: f.displayName,
+      models: f.models
+        .filter((m) => !rejected.has(m.id))
+        .map((m) => ({
+          id: m.id,
+          name: m.displayName ?? m.id,
+          ...(m.aliases.length > 0 ? { alias: m.aliases[0] } : {}),
+          efforts: m.efforts,
+        })),
+    });
+  }
+  return out;
+}
+
 export interface ChatPanelHostDeps {
   createPanel(opts: { viewType: string; title: string }): ChatPanelChannel;
   readonly providers: ProviderRegistry;
@@ -99,7 +142,7 @@ export interface ChatPanelHostDeps {
    * conversation) over the session's provider. Returns undefined on failure (the truncated
    * first prompt then stays as the title). Injected in tests to decouple from the CLI.
    */
-  readonly deriveTitle?: (input: { provider: ProviderId; prompt: string; cwd: string }) => Promise<string | undefined>;
+  readonly deriveTitle?: (input: { provider: ProviderId; prompt: string; cwd: string; model?: string | undefined; effort?: string | undefined }) => Promise<string | undefined>;
   /**
    * The registry a turn takes its session's lease from before it starts a CLI process, so only
    * one process works on a session at a time. Absent -> an in-memory registry (this window only).
@@ -139,6 +182,13 @@ export interface ChatPanelHostDeps {
    * its run is over; a followed turn begins one on its first event. Absent -> nothing is presented.
    */
   readonly presenter?: ReviewPresenter | undefined;
+  /**
+   * The daemon's model definitions (models.definitions), read once at host start and
+   * re-rendered into the bottom-right provider·model popup: per CLI family, the served
+   * models (shipped + user-approved, rejected excluded) with their effort levels.
+   * Absent -> the popup lists providers with no models (the CLI default only).
+   */
+  readonly definitions?: (() => Promise<ModelDefinitions>) | undefined;
 }
 
 export interface ChatAttachmentDeps {
@@ -237,6 +287,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // Normalize a session's stored mode (optional/back-compat/corrupt -> 'manual').
   const modeOf = (s: ChatSession | undefined): PermissionMode =>
     s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
+  // Run-config controls (bottom-right popup + gauge): the daemon's model definitions,
+  // loaded once at host start; when they land, a wired panel re-renders with them.
+  let runCatalog: readonly RunProviderView[] = [];
+  const refreshRunCatalog = (): void => {
+    if (deps.definitions === undefined) return;
+    void deps.definitions().then((d) => {
+      runCatalog = runCatalogView(d, deps.providers.available);
+      if (channel !== undefined && !disposed) channel.setHtml(renderShell());
+    }).catch((err) => {
+      log.warn(`[chat] models.definitions unavailable; run-config popup lists providers only — ${err instanceof Error ? err.message : String(err)}`);
+    });
+  };
+  refreshRunCatalog();
   // ISSUE-6a811b8a: the approval queue. Every approval-request a turn raises is queued here and
   // only the oldest undecided one (the head) is shown as an actionable card; the next is shown once
   // it is decided. Each request keeps the facts its decision needs: `toolName` (the tool to
@@ -501,7 +564,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const postRestored = (s: ChatSession): void => {
     const window = latestWindow(s.transcript);
     post({ type: 'session-restored', sessionId: s.id, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
+    postRunConfig(s);
     postOutbox(); // Epic E20261014613abdb3 Story S002: each chat shows its own outbox
+  };
+
+  /** Echo the session's run config to the bottom-right buttons ('' = CLI default). */
+  const postRunConfig = (s: ChatSession): void => {
+    post({ type: 'run-config', provider: s.provider, model: s.model ?? '', effort: s.effort ?? '' });
   };
 
   /**
@@ -915,7 +984,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (deps.deriveTitle === undefined) return;
     let raw: string | undefined;
     try {
-      raw = await deps.deriveTitle({ provider: target.provider, prompt: firstPrompt, cwd: deps.cwd() });
+      raw = await deps.deriveTitle({
+        provider: target.provider,
+        prompt: firstPrompt,
+        cwd: deps.cwd(),
+        ...(target.model !== undefined ? { model: target.model } : {}),
+        ...(target.effort !== undefined ? { effort: target.effort } : {}),
+      });
     } catch {
       return; // keep the fallback title
     }
@@ -980,6 +1055,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `--btn-bg:var(--vscode-button-background);--btn-fg:var(--vscode-button-foreground);--btn-hover:var(--vscode-button-hoverBackground);` +
       `--btn2-bg:var(--vscode-button-secondaryBackground);--btn2-fg:var(--vscode-button-secondaryForeground);--btn2-hover:var(--vscode-button-secondaryHoverBackground);` +
       `--dropdown-bg:var(--vscode-dropdown-background);--dropdown-fg:var(--vscode-dropdown-foreground);--dropdown-border:var(--vscode-contrastBorder,var(--vscode-dropdown-border));` +
+      // the popups' drop shadow (the theme's widget shadow)
+      `--pop-shadow:var(--vscode-widget-shadow);` +
       `--check-bg:var(--vscode-checkbox-background);--check-fg:var(--vscode-checkbox-foreground);--check-border:var(--vscode-contrastBorder,var(--vscode-checkbox-border));}` +
       // The colour scheme (form controls, scrollbars) follows the theme-kind class VS Code puts on
       // the body. High-contrast light also carries the plain high-contrast class, so it comes last.
@@ -1084,6 +1161,42 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
       `background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:3px 3px,3px 3px;background-repeat:no-repeat;}` +
       `.segsel:hover{color:var(--accent);}.segsel:disabled{opacity:.5;cursor:default;}.segsel option{background:var(--dropdown-bg);color:var(--dropdown-fg);font-weight:400;}` +
+      // Run-config controls in the status bar's bottom-right corner: the provider·model
+      // button + effort gauge button, and their popups opening UPWARD from there.
+      `.statusbar .runctl{margin-left:auto;display:inline-flex;align-items:center;gap:8px;position:relative;}` +
+      `.runbtn,.gaugebtn{display:inline-flex;align-items:center;gap:6px;height:24px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;padding:0 8px;cursor:pointer;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;}` +
+      `.runbtn:hover,.gaugebtn:hover{color:var(--accent);}` +
+      `.runbtn:focus-visible,.gaugebtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
+      `.runbtn .chev{opacity:.6;font-size:10px;}` +
+      `.gaugebtn.dim{opacity:.5;cursor:default;}` +
+      `@keyframes insrc-rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}` +
+      `.popup,.slider-pop{position:absolute;bottom:calc(100% + 8px);right:0;display:none;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:10px;box-shadow:0 12px 32px var(--pop-shadow);z-index:20;animation:insrc-rise .12s ease-out;color:var(--dropdown-fg);}` +
+      `.popup.open,.slider-pop.open{display:flex;}` +
+      `.popup{flex-direction:column;padding:6px;min-width:400px;}` +
+      `.popup .panes{display:flex;gap:2px;}` +
+      `.popup .pane{display:flex;flex-direction:column;min-width:180px;max-height:264px;overflow-y:auto;}` +
+      `.popup .pane + .pane{border-left:1px solid var(--border-lit);padding-left:2px;}` +
+      `.popup .pane-h{padding:6px 10px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}` +
+      `.popup .item{display:flex;align-items:center;gap:8px;margin:1px;padding:5px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;}` +
+      `.popup .item:hover{background:var(--sel);}` +
+      `.popup .item.dis{opacity:.45;cursor:default;}` +
+      `.popup .item.dis:hover{background:none;}` +
+      `.popup .chk{width:14px;flex:0 0 14px;color:var(--accent);font-weight:600;visibility:hidden;}` +
+      `.popup .item.sel .chk{visibility:visible;}` +
+      `.popup .item.sel .lbl{color:var(--fg-strong);}` +
+      `.popup .item .sub{margin-left:auto;color:var(--muted);font-size:11px;font-family:var(--font);}` +
+      `.popup .foot{margin-top:6px;padding:6px 10px 2px;border-top:1px solid var(--border-lit);color:var(--muted);font-size:11px;}` +
+      `.slider-pop{flex-direction:column;width:330px;padding:10px 14px 12px;}` +
+      `.slider-pop .pane-h{padding:2px 2px 8px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}` +
+      `.slider-pop input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:0;}` +
+      `.ticks{display:flex;justify-content:space-between;padding:0 7px;}` +
+      `.ticks i{width:1px;height:5px;background:var(--border-lit);}` +
+      `.ticks i.on{background:var(--accent);height:8px;}` +
+      `.notches{display:flex;justify-content:space-between;padding:0 2px;margin-top:3px;}` +
+      `.notches span{font-size:10px;color:var(--muted);cursor:pointer;padding:1px 2px;border-radius:4px;}` +
+      `.notches span:hover{background:var(--sel);}` +
+      `.notches span.on{color:var(--accent);font-weight:600;}` +
+      `.slider-pop .foot{margin-top:10px;padding-top:8px;border-top:1px solid var(--border-lit);color:var(--muted);font-size:11px;line-height:1.4;}` +
       // Keep the header session switcher compact so a long session name can't overflow the chrome —
       // it is the only control in the header now (its selected option shows the active session).
       // ISSUE-bd2d6b6a: it is rendered as a CHIP — a bordered, faintly-filled, rounded container —
@@ -1142,14 +1255,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `</style>`;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
-    // S005: provider <option>s are rendered server-side from providers.available (the
-    // installed claude/codex set is fixed per panel, k4) so NO new sc3 message is needed;
-    // values are attribute-escaped. Empty available -> the selector is disabled.
     const available = deps.providers.available;
-    // No placeholder: the select shows the ACTIVE session's provider (set from history-list on
-    // restore); picking a different provider starts a new chat with it.
-    const providerOpts = available.map((p) => `<option value="${attr(p)}">${attr(p)}</option>`).join('');
-    const provDisabled = available.length === 0 ? ' disabled' : '';
+    // Run-config buttons (bottom-right): labels reflect the ACTIVE session's persisted
+    // model/effort (absent = the CLI default, shown as 'default'); the catalog the popup
+    // reads is embedded as escaped JSON for the nonce'd bootstrap (no extra fetch/CSP).
+    const runProvider = session?.provider ?? available[0];
+    const runModelId = session?.model;
+    const runEffort = session?.effort;
+    const runModel = runCatalog.find((p) => p.id === runProvider)?.models.find((m) => m.id === runModelId);
+    const runModelLabel = runModel !== undefined ? (runModel.alias ?? runModel.name) : 'default';
+    const runEffortLabel = runEffort !== undefined && runEffort !== '' ? runEffort : 'default';
+    const catalogJson = attr(JSON.stringify(runCatalog));
     // Story E2026101259da3204:S001: the attachment controls, present only with the host's seams.
     // The host owns the pending list; this draws what attachments-pending says and asks for
     // changes by message. A pasted image is read here, sent as base64, and its data: URL kept as
@@ -1260,23 +1376,44 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `reg.onSelectionDecision(function(requestId,selected){vs.postMessage({v:1,payload:{type:'selection-decision',requestId:requestId,selected:selected}});});` +
       attachScript +
       outboxScript +
-      // S005: provider-selector + history-dropdown wiring (same one nonce'd script).
+      // S005: history-dropdown wiring (same one nonce'd script).
       `var cur='';` +
-      `const ps=document.getElementById('insrc-provider');` +
       `const hs=document.getElementById('insrc-history');` +
+      // Run-config controls (bottom-right): the provider·model popup + effort gauge.
+      // State lives in the buttons' data-* attributes (server-rendered from the active
+      // session); the model catalog is embedded once in #insrc-catalog.
+      `var catalog=[];try{catalog=JSON.parse(document.getElementById('insrc-catalog').getAttribute('data-catalog')||'[]');}catch(e){catalog=[];}` +
+      `const rb=document.getElementById('insrc-runbtn'),gb=document.getElementById('insrc-effortbtn');` +
+      `const rp=document.getElementById('insrc-runpop'),ep=document.getElementById('insrc-effortpop');` +
+      `function rstate(){return{provider:rb?rb.getAttribute('data-provider')||'':'',model:rb?rb.getAttribute('data-model')||'':'',effort:rb?rb.getAttribute('data-effort')||'':''};}` +
+      `function rprov(p){return catalog.filter(function(f){return f.id===p;})[0];}` +
+      `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m;})[0]:undefined;}` +
+      `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML=(s.provider||'…')+' · '+(m?(m.alias||m.name):'default')+' <span class="chev">▾</span>';}` +
+      `function elabel(){var s=rstate();document.getElementById('insrc-effortlabel').textContent=s.effort||'default';}` +
+      `function rlevels(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);if(!f)return[];if(m)return m.efforts.slice();var u=[];f.models.forEach(function(x){x.efforts.forEach(function(e){if(u.indexOf(e)<0)u.push(e);});});return u;}` +
+      `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');}` +
+      `function mitem(sel,label,sub,onclick,onhover,dis){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
+      `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.';catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:'',effort:rstate().effort}});}},function(){renderModelPane(f);},started&&f.id!==s.provider));});renderModelPane(rprov(hover||s.provider));}` +
+      `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&s.model===m.id,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
+      `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});rb.setAttribute('data-model',id);rlabel();closePops();}}` +
+      `function renderEffortPop(){var s=rstate(),levels=['default'].concat(rlevels()),cur=s.effort?levels.indexOf(s.effort):0;if(cur<0)cur=0;var sl=document.getElementById('insrc-effortslider');sl.max=levels.length-1;sl.value=cur;sl.setAttribute('aria-valuetext',levels[cur]);var tk=document.getElementById('insrc-ticks'),nt=document.getElementById('insrc-notches');tk.innerHTML='';nt.innerHTML='';levels.forEach(function(l,i){var t=document.createElement('i');if(i===cur)t.className='on';tk.appendChild(t);var sp=document.createElement('span');sp.textContent=l;if(i===cur)sp.className='on';sp.onclick=function(){sl.value=i;applyEffort();};nt.appendChild(sp);});document.getElementById('insrc-effortnote').textContent=s.provider==='vibe'?'vibe has no per-call thinking flag — the level is informational; the model’s \`thinking\` in ~/.vibe/config.toml applies.':'Applies to the next turns of this chat.';}` +
+      `function applyEffort(){var s=rstate(),levels=['default'].concat(rlevels()),i=Number(document.getElementById('insrc-effortslider').value);var e=levels[i]==='default'?'':levels[i];vs.postMessage({v:1,payload:{type:'set-run-config',effort:e}});rb.setAttribute('data-effort',e);elabel();renderEffortPop();}` +
+      `if(rb)rb.onclick=function(e){e.stopPropagation();var was=rp.classList.contains('open');closePops();if(!was){renderProvPane();rp.classList.add('open');rb.setAttribute('aria-expanded','true');}};` +
+      `if(gb)gb.onclick=function(e){e.stopPropagation();if(gb.classList.contains('dim'))return;var was=ep.classList.contains('open');closePops();if(!was){renderEffortPop();ep.classList.add('open');gb.setAttribute('aria-expanded','true');}};` +
+      `var esl=document.getElementById('insrc-effortslider');if(esl){esl.addEventListener('change',applyEffort);}` +
+      `document.addEventListener('click',closePops);` +
+      `document.addEventListener('keydown',function(e){if(e.key==='Escape')closePops();});` +
+      `rlabel();elabel();` +
       // S002 (ux-polish): webview-local turn running-state drives the leading '>' prompt send/stop control.
       // ❯ (Send) at rest, ■ (Stop) while a turn runs; set on submit, cleared on done/error.
       `var running=false;` +
-      // S001 (74bc0120): the provider select is LOCKED once the active session has context.
-      // Changing it does not switch a session's provider — ChatSession.provider is readonly and
-      // nativeSessionId is a provider-specific resume handle — it posts new-chat, ABANDONING the
-      // current conversation. So it stays usable only on an empty chat, and re-locks on that chat's
-      // first turn. setProvLock is the SOLE writer of the control's disabled property: it captures
-      // the server-rendered capability gate (provDisabled, when no CLI is installed) once at startup
-      // and never enables past it, so the no-CLI gate cannot be re-opened by any lock transition.
-      // Starts LOCKED so a webview that never receives a session message fails safe.
-      `var provLocked=true;var provGate=!!(ps&&ps.disabled);` +
-      `function setProvLock(l){provLocked=l;if(ps)ps.disabled=provGate||provLocked;}` +
+      // Whether the active chat has started (has rows): the provider is fixed then — the
+      // popup disables the other providers (the host refuses the new-chat too). Model and
+      // effort stay changeable for the session's subsequent turns.
+      `var started=false;` +
+      // (The old provider select + its lock are gone: the bottom-right run-config popup
+      // posts new-chat on a provider change of an UNSTARTED draft — ChatSession.provider
+      // stays readonly.)
       `const sendBtn=document.getElementById('insrc-prompt');` +
       `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}${queueOn ? `var ib=document.getElementById('insrc-input');if(ib)ib.placeholder=r?${JSON.stringify(QUEUE_PLACEHOLDER)}:${JSON.stringify(IDLE_PLACEHOLDER)};` : ''}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
@@ -1292,8 +1429,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function tickElapsed(){if(progElapsed)progElapsed.textContent=fmtElapsed(Date.now()-progT0);}` +
       `function setProgress(text){if(prog){prog.className='progress';if(progLabel)progLabel.textContent=text;if(!progTimer){progT0=Date.now();tickElapsed();progTimer=setInterval(tickElapsed,1000);}}}` +
       `function setIdle(){if(prog){prog.className='progress idle';if(progLabel)progLabel.textContent='idle';}if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
-      `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
-      `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
+      `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else{vs.postMessage({v:1,payload:{type:'new-chat',provider:(rb?rb.getAttribute('data-provider'):'')||''}});}});` +
       // S001 (bugfix): the SINGLE chat-mode control (Manual / Edit Automatically / Auto). Posts
       // set-permission-mode; its wrapping seg flags 'perm-auto' (amber pill) when fully autonomous.
       `var pmode='manual';` +
@@ -1329,7 +1465,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the held rows and keeps the reader's place (a page it did not ask for is discarded).
       `else if(m.type==='transcript-page'){pager.prepend(m);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
-      `else if(m.type==='turn-running'){if(m.sessionId===cur){setRunning(true);setProgress('working\\u2026');setProvLock(true);}}` +
+      `else if(m.type==='turn-running'){if(m.sessionId===cur){setRunning(true);setProgress('working\\u2026');}}` +
       `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments}),m.key);});}` +
       (attachOn ? `else if(m.type==='attachments-pending'){renderPending(m);}` : '') +
       (queueOn ? `else if(m.type==='outbox'){renderOutbox(m.view);}` : '') +
@@ -1343,16 +1479,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // absolute index firstIndex (0 when absent); each row is keyed and stamped by its absolute index.
       `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();` +
       `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
+      `started=_total>0;` +
       `pager.reset(cur,_first,_total);` +
       `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;setRunning(false);setIdle();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
-      `setProvLock(_total>0);}` +
+      `}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       // S001 (74bc0120): the active session appearing in the PERSISTED history is itself proof of
       // context — session-store's draft() only enters the store on its first save, i.e. once the
       // chat has a message — so re-settle the lock here alongside the existing provider re-sync.
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(_ac)setProvLock(true);}});` +
+      // Run-config echo: the host confirms a session's provider/model/effort (open/switch/
+      // restore / set-run-config) — the buttons' labels and data-* follow it.
+      `else if(m.type==='run-config'){if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();}` +
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it
       // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
@@ -1361,7 +1501,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // With attachments on, a blank box still submits when chips are shown.
       // Epic E20261014613abdb3 Story S002: with the queue, a sent message waits in the outbox until it
       // starts, so the turn is marked running only when the host says so ('turn-running').
-      `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';${queueOn ? '' : `setRunning(true);setProgress('working\\u2026');`}setProvLock(true);}` +
+      `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;started=true;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';${queueOn ? '' : `setRunning(true);setProgress('working\\u2026');`}}` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
       pasteScript +
       // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
@@ -1427,8 +1567,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M13.2 7.3 8 12.5a3.2 3.2 0 0 1-4.5-4.5l5.6-5.6a2.1 2.1 0 0 1 3 3L6.6 10.9a1.1 1.1 0 0 1-1.5-1.5l4.8-4.8"/></svg>` +
           `</button>`
         : '') +
-      `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
       `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span>` +
+      // Run-config controls, bottom-right corner of the status bar. The popups open upward.
+      `<span class="runctl">` +
+      `<button id="insrc-runbtn" type="button" class="runbtn ${provCls}" aria-haspopup="menu" aria-expanded="false" title="provider · model" data-provider="${attr(runProvider ?? '')}" data-model="${attr(runModelId ?? '')}" data-effort="${attr(runEffort ?? '')}">${attr(runProvider ?? '…')} · ${attr(runModelLabel)} <span class="chev">▾</span></button>` +
+      `<button id="insrc-effortbtn" type="button" class="gaugebtn ${provCls}" aria-haspopup="dialog" aria-expanded="false" title="effort level"><span aria-hidden="true">◔</span> <span id="insrc-effortlabel">${attr(runEffortLabel)}</span></button>` +
+      `<div id="insrc-runpop" class="popup" role="menu" aria-label="provider and model">` +
+      `<div class="panes"><div class="pane" id="insrc-provpane"><div class="pane-h">Provider</div></div><div class="pane" id="insrc-modelpane"><div class="pane-h">Model</div></div></div>` +
+      `<div class="foot" id="insrc-popfoot">Provider change starts a new chat · model change applies to the next turns.</div>` +
+      `</div>` +
+      `<div id="insrc-effortpop" class="slider-pop" role="dialog" aria-label="effort level">` +
+      `<div class="pane-h">Effort</div>` +
+      `<input type="range" id="insrc-effortslider" min="0" step="1" value="0" aria-label="effort level">` +
+      `<div class="ticks" id="insrc-ticks"></div>` +
+      `<div class="notches" id="insrc-notches"></div>` +
+      `<div class="foot" id="insrc-effortnote"></div>` +
+      `</div>` +
+      `<div id="insrc-catalog" hidden data-catalog="${catalogJson}"></div>` +
+      `</span>` +
       `</div>` +
       `</div>` +
       `<script nonce="${nonce}">${MARKED_SRC}\n;${HLJS_SRC}\n;${bootstrap}</script></body></html>`
@@ -1532,9 +1688,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         q.waitTimer = undefined;
       }
     }
+    const runCfg: RunConfig = { ...(s.model !== undefined ? { model: s.model } : {}), ...(s.effort !== undefined ? { effort: s.effort } : {}) };
     const req = s.nativeSessionId !== undefined
-      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
-      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable };
+      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...runCfg, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
+      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...runCfg, ...grant, ...readable };
 
     // Story E20261013b2e8109f:S001: this turn's diff state, opened in beforeRun.
     let dt: DiffTurn | undefined;
@@ -1803,6 +1960,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           log.warn(`[chat] new-chat: provider not available ${msg.provider}`);
           return;
         }
+        // A started chat's provider is fixed: a new-chat naming a DIFFERENT provider is
+        // refused (the popup disables those entries once the session has rows; this is the
+        // host-side backstop). A same-provider new-chat is the 'new…' flow and always passes,
+        // as does any provider switch while the active session is still an empty draft.
+        if (session !== undefined && session.transcript.length > 0 && msg.provider !== session.provider) {
+          log.warn(`[chat] new-chat: provider change refused on started session ${session.id} (${session.provider} -> ${msg.provider})`);
+          postRunConfig(session);
+          return;
+        }
         // Switching the active session stops following any in-flight turn first, or its deltas
         // would paint into the newly-restored session's view (a session-file turn keeps running).
         endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
@@ -1813,11 +1979,26 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         settleQueued();
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
-        session = deps.store.draft(msg.provider);
+        session = deps.store.draft(msg.provider, {
+          ...(typeof msg.model === 'string' && msg.model !== '' ? { model: msg.model } : {}),
+          ...(typeof msg.effort === 'string' && msg.effort !== '' ? { effort: msg.effort } : {}),
+        });
         permissionMode = modeOf(session);
         postRestored(session);
         postPending(session.id);
         postHistory(); // refresh the dropdown (the draft is not yet listed until it has a message)
+        return;
+      }
+      case 'set-run-config': {
+        // Model/effort for the current session's subsequent turns. Absent/'' = CLI default.
+        if (session === undefined) return;
+        const model = typeof msg.model === 'string' ? msg.model : undefined;
+        const effort = typeof msg.effort === 'string' ? msg.effort : undefined;
+        if (model === undefined && effort === undefined) return;
+        if (model !== undefined) session.model = model === '' ? undefined : model;
+        if (effort !== undefined) session.effort = effort === '' ? undefined : effort;
+        trySave(session);
+        postRunConfig(session);
         return;
       }
       case 'open-chat': {

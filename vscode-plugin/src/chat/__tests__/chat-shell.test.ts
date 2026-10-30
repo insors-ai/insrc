@@ -319,7 +319,7 @@ test('shell: the attach button is icon-only with an aria-label, sits first in th
   assert.equal(button[1]!.replace(/<[^>]*>/g, '').trim(), '', 'no text inside the button');
   // First in the status bar, before the provider select.
   assert.ok(on.includes('<div class="statusbar"><button id="insrc-attach"'));
-  assert.ok(on.indexOf('id="insrc-attach"') < on.indexOf('id="insrc-provider"'));
+  assert.ok(on.indexOf('id="insrc-attach"') < on.indexOf('class="runctl"'), 'the attach button precedes the bottom-right run controls');
   // The chip row sits between the input and the status bar, hidden until there is something in it.
   const row = on.indexOf('<div id="insrc-attachments" class="attachbar" hidden>');
   assert.ok(on.indexOf('<div class="inputbar">') < row && row < on.indexOf('<div class="statusbar">'));
@@ -342,7 +342,8 @@ test('shell: the attach button is icon-only with an aria-label, sits first in th
   }
   assert.ok(off.includes('function doSubmit(){if(!box.value.trim())return;'));
   assert.ok(on.includes('function doSubmit(){if(!box.value.trim()&&attCount===0)return;'));
-  assert.ok(off.includes('<div class="statusbar"><span class="seg"><select id="insrc-provider"'));
+  assert.ok(off.includes('<div class="statusbar"><span class="seg" id="insrc-modeseg">'), 'without the attach seam the status bar opens with the mode seg');
+  assert.ok(off.includes('<span class="runctl">'), 'the bottom-right runctl group is present');
 });
 
 test('shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared', () => {
@@ -502,7 +503,7 @@ test('chat shell: the outbox band is present only with the queue, and the queue 
   const off = runShell();
   for (const absent of ['insrc-outbox', 'renderOutbox']) assert.ok(!off.html.includes(absent), `no ${absent} without the queue`);
   assert.ok(!off.html.includes('Ctrl+Enter to queue'), 'no queue hint without the queue');
-  assert.ok(off.html.includes("setRunning(true);setProgress('working\\u2026');setProvLock(true);}"), 'without the queue a submit still marks the turn running');
+  assert.ok(off.html.includes("setRunning(true);setProgress('working\\u2026');}"), 'without the queue a submit still marks the turn running');
 
   const v = runShell({ queue: true });
   assert.ok(v.html.includes('id="insrc-outbox"'));

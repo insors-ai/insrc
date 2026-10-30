@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Script } from 'node:vm';
-import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
+import { createChatPanelHost, runCatalogView, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
 import { transcriptPagerWebviewSource } from '../transcript-pager.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import { createFileChatSessionStore, ROWS_SUFFIX } from '../session-file-store.js';
@@ -499,7 +499,7 @@ test('S001 (ux polish): a turn with NO tool-result events persists a byte-identi
 const historyLists = (fc: FakeChannel): unknown[] =>
   fc.posted.filter((m) => m.payload.type === 'history-list').map((m) => m.payload['chats']);
 
-test('S005 shell: provider-selector options == available + history-dropdown; one script + CSP intact', () => {
+test('S005 shell: run-config controls (provider·model popup + effort gauge) + history-dropdown; one script + CSP intact', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
@@ -510,9 +510,12 @@ test('S005 shell: provider-selector options == available + history-dropdown; one
   });
   host.open();
   const html = fc.html();
-  assert.match(html, /<select id="insrc-provider"/, 'has a provider-selector');
-  assert.match(html, /<option value="claude">claude<\/option>/, 'claude option');
-  assert.match(html, /<option value="codex">codex<\/option>/, 'codex option');
+  assert.match(html, /<button id="insrc-runbtn"[^>]*aria-haspopup="menu"/, 'has the provider·model button');
+  assert.match(html, /<button id="insrc-effortbtn"[^>]*aria-haspopup="dialog"/, 'has the effort gauge button');
+  assert.match(html, /<div id="insrc-runpop" class="popup"/, 'has the provider·model popup');
+  assert.match(html, /<div id="insrc-effortpop" class="slider-pop"/, 'has the effort slider popup');
+  assert.match(html, /<div id="insrc-catalog" hidden data-catalog="/, 'embeds the model catalog');
+  assert.doesNotMatch(html, /<select id="insrc-provider"/, 'the old provider select is gone');
   assert.match(html, /<select id="insrc-history"/, 'has a history-dropdown');
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
@@ -531,7 +534,10 @@ test('S005 shell: empty providers.available -> disabled selector', () => {
     cwd: () => '/repo',
   });
   host.open();
-  assert.match(fc.html(), /<select id="insrc-provider"[^>]*disabled/, 'selector disabled when no CLI installed');
+  // No CLI installed: the run button renders in its empty state (no provider) — the popup
+  // simply lists nothing; there is no disabled-select state anymore.
+  assert.match(fc.html(), /<button id="insrc-runbtn"[^>]*data-provider=""/, 'run button renders empty when no CLI installed');
+  assert.doesNotMatch(fc.html(), /<select id="insrc-provider"/, 'the old provider select is gone');
 });
 
 test('S005 open() posts a history-list', () => {
@@ -1619,7 +1625,7 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
   assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u276f'/, 'Stop=■ (u25a0) while running, Send=❯ (u276f) at rest');
   // t2: click reuses the EXISTING doSubmit / cancel-turn body verbatim (byte-identical send intent).
   assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);setIdle\(\);\}else\{doSubmit\(\);\}/, 'the "> " prompt posts cancel-turn while running AND resets the UI locally, else submits');
-  assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty then posts submit-turn + marks running (unchanged)');
+  assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;started=true;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty, marks the chat started, then posts submit-turn');
   // t2: role=button span is keyboard-activatable (Enter/Space -> click).
   assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');
 });
@@ -1650,53 +1656,68 @@ test('S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of
   assert.match(html, /\.chrome #insrc-history\{max-width:100%;\}/);
 });
 
-test('S001 (74bc0120) ac4: the no-CLI capability gate is the sole render-time disable and still wins', () => {
+test('run-config controls: the statusbar runctl group carries the run button, gauge, popups and catalog', () => {
   const withCli = fidelityHtml();
-  // With a provider available the select is rendered WITHOUT disabled — the lock has not leaked
-  // into render time (it is runtime-only, because the shell is built once at open).
-  const sel = /<select id="insrc-provider"[^>]*>/.exec(withCli);
-  assert.ok(sel, 'the provider select is rendered');
-  assert.doesNotMatch(sel![0], /disabled/, 'not disabled at render time when a CLI is available');
-  // The runtime lock composes with the gate rather than replacing it: provGate captures the
-  // server-rendered disabled state once, and the sole writer ORs it in, so no transition can
-  // re-enable a control the capability gate closed.
-  assert.match(withCli, /var provGate=!!\(ps&&ps\.disabled\);/, 'the capability gate is captured at startup');
-  assert.match(withCli, /ps\.disabled=provGate\|\|provLocked;/, 'the sole writer ORs the gate in — it can never enable past it');
-  // ONE writer only: any other `.disabled =` on the provider select would bypass the composition.
-  assert.equal((withCli.match(/ps\.disabled=/g) ?? []).length, 1, 'exactly one construct writes the select disabled property');
+  const at = withCli.indexOf('<span class="runctl">');
+  assert.ok(at >= 0, 'the .runctl group is rendered in the statusbar');
+  const runctl = withCli.slice(at);
+  assert.match(runctl, /<button id="insrc-runbtn"[^>]*data-provider="[^"]*" data-model="[^"]*" data-effort="[^"]*"/, 'run button carries the session run-config in data-*');
+  assert.match(runctl, /<button id="insrc-effortbtn"[^>]*>.*<span id="insrc-effortlabel">/, 'gauge button carries the effort label');
+  assert.match(runctl, /<div id="insrc-runpop" class="popup" role="menu"[^>]*>/, 'provider·model popup present');
+  assert.match(runctl, /id="insrc-provpane"/, 'provider pane present');
+  assert.match(runctl, /id="insrc-modelpane"/, 'model pane present');
+  assert.match(runctl, /<div id="insrc-effortpop" class="slider-pop" role="dialog"[^>]*>/, 'effort slider popup present');
+  assert.match(runctl, /id="insrc-effortslider"/, 'effort slider present');
+  assert.match(runctl, /<div id="insrc-catalog" hidden data-catalog="/, 'model catalog embedded once');
+  assert.ok(runctl.indexOf('insrc-runbtn') < runctl.indexOf('insrc-effortbtn'), 'run button left of the gauge');
+  assert.doesNotMatch(withCli, /<select id="insrc-provider"/, 'the old provider select is gone');
 });
 
-test('S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions', () => {
+test('run-config popup bootstrap: catalog parse + button wiring posts new-chat / set-run-config; run-config echo branch present', () => {
   const html = fidelityHtml();
-  // Fails safe: a webview that never receives a session message leaves the control locked.
-  assert.match(html, /var provLocked=true;/, 'the lock is initialised CLOSED');
-  // ac1 + ac2 — derived from the replayed transcript, so an empty chat unlocks and a chat with
-  // rows locks, re-derived per session rather than latching.
-  assert.match(html, /setProvLock\(_total>0\);/, "session-restored settles the lock from the session's total row count");
-  // The active session appearing in the PERSISTED history proves it has context (draft() only
-  // enters the store on first save).
-  assert.match(html, /if\(_ac\)setProvLock\(true\);/, 'history-list re-settles the lock for the active session');
-  // ac3 — a fresh chat re-locks on its first turn, and the empty-input guard must come FIRST so a
-  // blank submit cannot lock the control.
-  // Window the function by LENGTH, not by a brace regex: the body contains braces inside its
-  // postMessage literal, so /\{[^}]*\}/ truncates before the tail.
-  const at = html.indexOf('function doSubmit(){');
-  assert.ok(at >= 0, 'doSubmit is present');
-  const submit = html.slice(at, at + 260);
-  const guardAt = submit.indexOf('!box.value.trim()');
-  const lockAt = submit.indexOf('setProvLock(true)');
-  assert.ok(guardAt >= 0 && lockAt >= 0, 'doSubmit has both the empty guard and the lock call');
-  assert.ok(guardAt < lockAt, 'the empty-input guard precedes the lock — a blank submit cannot lock the control');
+  // The model catalog is embedded once and parsed at bootstrap.
+  assert.match(html, /catalog=JSON\.parse\(document\.getElementById\('insrc-catalog'\)\.getAttribute\('data-catalog'\)\|\|'\[\]'\)/, 'catalog parsed from #insrc-catalog');
+  // Both buttons are wired.
+  assert.match(html, /if\(rb\)rb\.onclick=function\(e\)\{e\.stopPropagation\(\);/, 'run button opens the popup');
+  assert.match(html, /if\(gb\)gb\.onclick=function\(e\)\{e\.stopPropagation\(\);/, 'gauge button opens the slider');
+  // A provider change posts new-chat carrying the current effort; a model change on the SAME
+  // provider posts set-run-config.
+  assert.match(html, /type:'new-chat',provider:f\.id,model:'',effort:rstate\(\)\.effort/, 'provider pick posts new-chat');
+  assert.match(html, /type:'new-chat',provider:f\.id,model:id,effort:s\.effort/, 'cross-provider model pick posts new-chat');
+  assert.match(html, /type:'set-run-config',model:id/, 'same-provider model pick posts set-run-config');
+  assert.match(html, /type:'set-run-config',effort:e/, 'effort slider posts set-run-config');
+  // The host→webview run-config echo updates the buttons' data-* + labels.
+  assert.match(html, /else if\(m\.type==='run-config'\)\{if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);/, 'run-config echo branch present');
+  // The old provider-select lock machinery is gone from the bootstrap.
+  assert.doesNotMatch(html, /provLocked|setProvLock/, 'no provider lock remains');
+  // A started chat (rows in the transcript) fixes the provider: the flag comes from the
+  // restore's total and from the first submit; other providers render disabled.
+  assert.match(html, /var started=false;/, 'started initialised false');
+  assert.match(html, /started=_total>0;/, 'session-restored derives started from the total row count');
+  const subAt = html.indexOf('function doSubmit(){');
+  assert.ok(subAt >= 0, 'doSubmit present');
+  assert.match(html.slice(subAt, subAt + 200), /return;started=true;/, 'the first submit marks the chat started');
+  assert.match(html, /function mitem\(sel,label,sub,onclick,onhover,dis\)/, 'mitem takes a disabled flag');
+  assert.match(html, /if\(dis\)d\.setAttribute\('aria-disabled','true'\);/, 'disabled items carry aria-disabled');
+  assert.match(html, /if\(!dis\)\{if\(onhover\)d\.onmouseenter=onhover;d\.onclick=onclick;\}/, 'disabled items get no handlers');
+  assert.match(html, /started&&f\.id!==s\.provider/, 'renderProvPane disables other providers once started');
+  assert.match(html, /\.popup \.item\.dis\{opacity:\.45;cursor:default;\}/, 'disabled item style present');
+  assert.match(html, /id="insrc-popfoot"/, 'popup foot present');
+  assert.match(html, /started\?'Provider is fixed once a chat has started/, 'the foot note switches when started');
 });
 
-test('S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged', () => {
+test('regression: the history dropdown still opens/new-chats, and session-restored still clears + replays', () => {
   const html = fidelityHtml();
-  // The control's meaning when usable is untouched: a change still starts a NEW chat.
-  assert.match(html, /ps\.addEventListener\('change',function\(\)\{if\(ps\.value\)\{vs\.postMessage\(\{v:1,payload:\{type:'new-chat',provider:ps\.value\}\}\);\}\}\);/, 'a provider change still posts new-chat');
-  // session-restored still clears, resets keys and replays; history-list still re-syncs the value.
+  // Picking a session posts open-chat; picking 'new…' posts new-chat with the provider taken
+  // from the run button's data-provider (the select is gone).
+  const hsAt = html.indexOf("hs.addEventListener('change',function(){");
+  assert.ok(hsAt >= 0, 'history change handler present');
+  const hsHandler = html.slice(hsAt, hsAt + 260);
+  assert.match(hsHandler, /type:'open-chat',chatId:hs\.value/, 'a picked session posts open-chat');
+  assert.match(hsHandler, /type:'new-chat',provider:\(rb\?rb\.getAttribute\('data-provider'\):''\)\|\|''/, "'new…' posts new-chat with the run button's provider");
+  // session-restored still clears, resets keys and replays.
   assert.match(html, /t\.textContent='';reg\.resetKeys\(\);var _rows=m\.transcript\|\|\[\]/, 'session-restored still clears, resets keys and replays the transcript');
   assert.match(html, /_rows\.forEach\(function\(x,i\)/, 'every posted row is replayed');
-  assert.match(html, /if\(_ac&&_ac\.provider\)\{ps\.value=_ac\.provider;\}/, 'history-list still re-syncs the provider value');
 });
 
 test('both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%', () => {
@@ -1741,7 +1762,10 @@ test('S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll
   host.open();
   const html = fc.html();
   assert.match(html, /#insrc-term\{flex:1 1 auto;min-height:0;overflow-y:auto/, '#insrc-term is the flex-growing scroll region');
-  assert.equal((html.match(/overflow-y:auto/g) ?? []).length, 1, '#insrc-term is the ONLY overflow-y:auto region');
+  // The run-config popup's model pane scrolls internally (intentional); excluding that rule,
+  // #insrc-term stays the only page-level scroll region.
+  const pageLevel = html.replace(/\.popup \.pane\{[^}]*\}/g, '');
+  assert.equal((pageLevel.match(/overflow-y:auto/g) ?? []).length, 1, '#insrc-term is the ONLY page-level overflow-y:auto region');
   assert.match(html, /\.chrome\{[^}]*flex:0 0 auto/, 'the header is fixed (flex:0)');
   assert.match(html, /\.inputbar\{[^}]*flex:0 0 auto/, 'the input bar is fixed (flex:0)');
 });
@@ -1778,9 +1802,13 @@ test('S002 ac1/k1: all pre-existing element ids remain; one inline script; no in
   });
   host.open();
   const html = fc.html();
-  for (const id of ['insrc-term', 'insrc-input', 'insrc-provider', 'insrc-history', 'insrc-mode']) {
+  for (const id of ['insrc-term', 'insrc-input', 'insrc-runbtn', 'insrc-effortbtn', 'insrc-history', 'insrc-mode']) {
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }
+  for (const id of ['insrc-runpop', 'insrc-effortpop', 'insrc-catalog']) {
+    assert.match(html, new RegExp(`id="${id}"`), `${id} present (run-config popups + catalog)`);
+  }
+  assert.doesNotMatch(html, /<select id="insrc-provider"/, 'the old provider select is gone');
   assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one inline script');
   assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
   assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
@@ -1940,7 +1968,9 @@ test('S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — #insrc-input h
   assert.doesNotMatch(promptCss, /align-self:flex-end/, 'the ❯ is no longer bottom-aligned');
   // A textarea scrolls its own content natively, so we add NO overflow-y:auto — #insrc-term stays
   // the panel's single scroll region (the S002 fixed-region layout invariant).
-  assert.equal((html.match(/overflow-y:auto/g) ?? []).length, 1, '#insrc-term stays the ONLY overflow-y:auto region');
+  // Excluding the run-config popup pane's internal scroll, #insrc-term stays the single scroll region.
+  const pageLevel = html.replace(/\.popup \.pane\{[^}]*\}/g, '');
+  assert.equal((pageLevel.match(/overflow-y:auto/g) ?? []).length, 1, '#insrc-term stays the ONLY page-level overflow-y:auto region');
 });
 
 test('S001 (fidelity) ac2: the placeholder gains the interrupt hint', () => {
@@ -1952,18 +1982,22 @@ test('S001 (fidelity) ac2: the placeholder gains the interrupt hint', () => {
 test('ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar', () => {
   const html = fidelityHtml();
   const chrome = html.slice(html.indexOf('<div class="chrome">'), html.indexOf('<div id="insrc-term"'));
-  const statusbarFull = html.slice(html.indexOf('<div class="statusbar">'));
-  const statusbar = statusbarFull.slice(0, statusbarFull.indexOf('</div>'));
+  const statusbar = html.slice(html.indexOf('<div class="statusbar">'));
   // Header: ONLY the session dropdown (right-aligned). No provider/mode selects, no duplicate session text.
   assert.match(chrome, /<select id="insrc-history"/, 'the session dropdown is in the header');
   assert.doesNotMatch(chrome, /<select id="insrc-provider"/, 'the provider select is NOT in the header');
+  assert.doesNotMatch(chrome, /id="insrc-runbtn"|id="insrc-effortbtn"/, 'the run-config controls are NOT in the header');
   assert.doesNotMatch(chrome, /id="insrc-mode(seg)?"/, 'the mode select is NOT in the header');
   assert.doesNotMatch(chrome, /id="insrc-sesstitle"|class="seglabel"/, 'no duplicate session label/title text in the header');
-  // Footer: the FUNCTIONAL provider + mode selects, left-to-right (provider then the 'edits' mode).
-  assert.match(statusbar, /<select id="insrc-provider"/, 'the provider select is in the footer');
-  assert.match(statusbar, /id="insrc-modeseg">edits <select id="insrc-mode"/, 'the edits (mode) select follows the provider in the footer');
+  // Footer: the mode select on the left, then the run-config controls pushed to the bottom-right.
+  assert.match(statusbar, /id="insrc-modeseg">edits <select id="insrc-mode"/, 'the edits (mode) select is in the footer');
   assert.match(statusbar, /<option value="manual">Manual<\/option><option value="edit-auto">Edit Automatically<\/option><option value="auto">Auto<\/option>/, 'the mode options are preserved in the footer');
-  assert.ok(statusbar.indexOf('insrc-provider') < statusbar.indexOf('insrc-mode'), 'provider is left of the mode select');
+  assert.match(statusbar, /<span class="runctl">/, 'the runctl group is in the footer');
+  assert.match(statusbar, /<button id="insrc-runbtn"/, 'the provider·model button is in the footer');
+  assert.match(statusbar, /<button id="insrc-effortbtn"/, 'the effort gauge is in the footer');
+  assert.ok(statusbar.indexOf('insrc-modeseg') < statusbar.indexOf('class="runctl"'), 'the mode select is left of the runctl group');
+  assert.ok(statusbar.indexOf('insrc-runbtn') < statusbar.indexOf('insrc-effortbtn'), 'run button is left of the gauge');
+  assert.doesNotMatch(statusbar, /<select id="insrc-provider"/, 'the old provider select is gone from the footer');
   // The read-only session/edits mirror segments + the ✓ idle marker are gone (dedup + progress conveys idle).
   assert.doesNotMatch(statusbar, /insrc-statussess|insrc-statusedits/, 'no read-only session/edits mirror segments');
   assert.doesNotMatch(statusbar, /✓ idle/, 'no ✓ idle marker (the progress bar conveys idle/busy)');
@@ -4077,7 +4111,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
-  assert.match(html, /setProvLock\(_total>0\);/, 'the provider lock settles from total');
+  assert.match(html, /else if\(m\.type==='run-config'\)\{if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);\}/, 'the run-config echo branch settles the buttons from the session');
 });
 
 test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {
@@ -5348,4 +5382,127 @@ test('the chat opens a declared pending document even when the insrc_present too
   assert.deepEqual(opened, ['LLD-aaa-S001']);
   h.runs[0]!.feed(doneOf(1));
   await waitFor(() => dones(h.fc) === 1);
+});
+
+// ---- run-config controls (provider·model popup + effort gauge, bottom-right) ----
+
+
+test('runCatalogView: maps cliKind→provider, keeps only installed providers, drops rejected models, picks the first alias', () => {
+  const defs = {
+    version: 1,
+    defaultFamily: 'cli-claude',
+    families: [
+      { id: 'cli-claude', cliKind: 'claude', displayName: 'Claude CLI', models: [
+        { id: 'claude-opus-5-5', aliases: ['opus'], displayName: 'Claude Opus 5.5', efforts: ['low', 'high'], source: 'shipped' },
+        { id: 'claude-gone', aliases: [], efforts: [], source: 'shipped' },
+      ], rejectedModels: ['claude-gone'], tierDefaults: {} },
+      { id: 'cli-codex', cliKind: 'codex', displayName: 'Codex CLI', models: [
+        { id: 'gpt-6-astra', aliases: [], efforts: ['low', 'ultra'], source: 'shipped' },
+      ], rejectedModels: [], tierDefaults: {} },
+      { id: 'cli-vibe', cliKind: 'vibe', displayName: 'Mistral Vibe CLI', models: [
+        { id: 'zai-glm-5-3', aliases: ['glm-5-3'], efforts: ['low', 'max'], source: 'shipped' },
+      ], rejectedModels: [], tierDefaults: {} },
+      { id: 'ollama', displayName: 'Ollama', models: [], toolLoopModel: 'qwen' },
+    ],
+  } as never;
+  const view = runCatalogView(defs, ['claude', 'vibe']); // codex NOT installed
+  assert.deepEqual(view.map((p) => p.id), ['claude', 'vibe'], 'only installed CLI families, ollama excluded');
+  assert.deepEqual(view[0]!.models.map((m) => [m.id, m.alias, m.efforts]), [['claude-opus-5-5', 'opus', ['low', 'high']]], 'rejected model dropped, first alias kept');
+  assert.deepEqual(view[1]!.models[0], { id: 'zai-glm-5-3', name: 'zai-glm-5-3', alias: 'glm-5-3', efforts: ['low', 'max'] });
+});
+
+test('new-chat with model/effort: the draft carries them and the next turn request includes them', async () => {
+  const fc = fakeChannel();
+  const reqs: TurnRequest[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  fc.send(env('new-chat', { provider: 'claude', model: 'opus', effort: 'high' }));
+  await new Promise((r) => setTimeout(r, 0));
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(reqs.length, 1);
+  assert.equal(reqs[0]!.model, 'opus');
+  assert.equal(reqs[0]!.effort, 'high');
+  // The host echoes the run config to the buttons.
+  assert.ok(fc.posted.some((m) => m.payload.type === 'run-config' && m.payload.provider === 'claude' && m.payload.model === 'opus' && m.payload.effort === 'high'));
+});
+
+test('set-run-config: updates the session for subsequent turns and echoes run-config; invalid shapes are no-ops', async () => {
+  const fc = fakeChannel();
+  const reqs: TurnRequest[] = [];
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  fc.send(env('new-chat', { provider: 'claude' }));
+  await new Promise((r) => setTimeout(r, 0));
+  fc.send(env('set-run-config', { model: 'sonnet' }));
+  await new Promise((r) => setTimeout(r, 0));
+  fc.send(env('set-run-config', { effort: 'max' }));
+  fc.send(env('set-run-config', { model: 42 })); // non-string: ignored
+  await new Promise((r) => setTimeout(r, 0));
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(reqs.length, 1);
+  assert.equal(reqs[0]!.model, 'sonnet', 'model change applies to the next turn');
+  assert.equal(reqs[0]!.effort, 'max', 'effort change applies to the next turn');
+  const echoes = fc.posted.filter((m) => m.payload.type === 'run-config');
+  assert.ok(echoes.some((m) => m.payload.model === 'sonnet' && m.payload.effort === 'max'), 'the final run-config echo carries both');
+  // clearing back to the CLI default works
+  fc.send(env('set-run-config', { model: '' }));
+  await new Promise((r) => setTimeout(r, 0));
+  fc.send(env('submit-turn', { text: 'again' }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(reqs.at(-1)!.model, undefined, 'empty model = CLI default (flag omitted)');
+});
+
+test('a started chat refuses a provider change (host backstop); an unstarted draft allows it', async () => {
+  const fc = fakeChannel();
+  const ran: string[] = [];
+  const claude = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: () => { ran.push('claude'); } });
+  const codex = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: () => { ran.push('codex'); } });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude, codex }, ['claude', 'codex']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  fc.send(env('new-chat', { provider: 'claude' }));
+  await new Promise((r) => setTimeout(r, 0));
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(ran, ['claude'], 'first turn runs on claude');
+  // The session has rows now: a new-chat naming a different provider is refused.
+  const before = fc.posted.length;
+  fc.send(env('new-chat', { provider: 'codex' }));
+  await new Promise((r) => setTimeout(r, 0));
+  const after = fc.posted.slice(before);
+  assert.ok(after.some((m) => m.payload.type === 'run-config' && m.payload.provider === 'claude'), 'the refused change re-echoes the current provider');
+  assert.ok(!after.some((m) => m.payload.type === 'session-restored'), 'the refused change does not restore a new session');
+  fc.send(env('submit-turn', { text: 'again' }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(ran, ['claude', 'claude'], 'the next turn still runs on claude');
+  // A same-provider new-chat (the 'new…' flow) is allowed even on a started session.
+  fc.send(env('new-chat', { provider: 'claude' }));
+  await new Promise((r) => setTimeout(r, 0));
+  assert.ok(fc.posted.some((m) => m.payload.type === 'session-restored'), 'same-provider new-chat starts a fresh draft');
+  // On the fresh (empty) draft a provider switch IS allowed.
+  fc.send(env('new-chat', { provider: 'codex' }));
+  await new Promise((r) => setTimeout(r, 0));
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(ran, ['claude', 'claude', 'codex'], 'an unstarted draft allows the provider switch');
 });

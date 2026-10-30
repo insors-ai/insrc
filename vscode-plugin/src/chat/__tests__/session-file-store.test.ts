@@ -837,3 +837,23 @@ test("session file store: a diff row, a row that replaces it and a withdrawing r
   assert.deepEqual(page.rows[2], diff({ sid: 'k-1', path: 'src/b.ts', lines: [], added: 0, withdrawn: true }));
   assert.deepEqual(page.rows.slice(3), [say('b1'), say('b2'), second, gone]);
 });
+
+test('run config persists in the session head file and reads back (old heads without the fields read as absent)', () => {
+  const { store, fake } = makeStore();
+  const s = store.create('vibe', { model: 'glm-5-3', effort: 'max' });
+  store.append(s.id, row(0));
+  store.save(s);
+  const headRaw = JSON.parse(fake.files.get(headPath(s.id))!) as Record<string, unknown>;
+  assert.equal(headRaw['model'], 'glm-5-3');
+  assert.equal(headRaw['effort'], 'max');
+  // A fresh store over the same fs reads them back.
+  const again = makeStore({ fake });
+  const got = again.store.get(s.id);
+  assert.equal(got?.model, 'glm-5-3');
+  assert.equal(got?.effort, 'max');
+  // Back-compat: a head written before the fields existed reads as absent.
+  fake.files.set(headPath('old'), JSON.stringify({ v: 1, id: 'old', provider: 'claude', createdAt: '2025-01-01T00:00:00.000Z', title: 'old chat', editMode: 'auto', mode: 'manual', updatedAt: '2025-01-01T00:00:00.000Z', rows: 0, savedAt: '2025-01-01T00:00:00.000Z' }));
+  const old = again.store.get('old');
+  assert.equal(old?.model, undefined);
+  assert.equal(old?.effort, undefined);
+});

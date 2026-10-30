@@ -74,6 +74,14 @@ export interface TurnRequest {
    * attached paths named in the prompt.
    */
   readonly readDirs?: readonly string[];
+  /**
+   * Run config from the chat panel's bottom-right controls: `model` is an id/alias of
+   * the provider's family (absent = the CLI's own default), `effort` a level the
+   * model accepts (absent = the CLI's default). Mapped per CLI in buildArgs; vibe
+   * pins the model via VIBE_ACTIVE_MODEL (see envFor) and cannot take an effort.
+   */
+  readonly model?: string | undefined;
+  readonly effort?: string | undefined;
 }
 
 /** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
@@ -208,6 +216,8 @@ export type SpawnFn = (
      * prompt text until it ends, an open pipe means it never starts the turn.
      */
     readonly closeInput?: boolean | undefined;
+    /** Full child environment (merged over nothing — pass a complete env). Absent -> inherit. */
+    readonly env?: NodeJS.ProcessEnv | undefined;
   },
 ) => SpawnedProcess;
 
@@ -302,6 +312,11 @@ interface ProviderMapper {
    * reported as undeliverable. Absent -> the input stays open for the decision relay.
    */
   readonly inputIsPrompt?: boolean | undefined;
+  /**
+   * Per-turn environment for the spawn (e.g. vibe pins its model with VIBE_ACTIVE_MODEL,
+   * which has no --model flag). Absent -> the child inherits the extension host's env.
+   */
+  envFor?(req: TurnRequest): NodeJS.ProcessEnv | undefined;
 }
 
 // ---- S004: permission-request normalizing adapter (over field aliases) -------
@@ -538,6 +553,9 @@ const claudeMapper: ProviderMapper = {
     if (req.permissionMode === 'manual') args.push('--permission-prompts', 'host');
     else if (req.permissionMode === 'edit-auto') args.push('--permission-mode', 'acceptEdits', '--permission-prompts', 'host');
     else if (req.permissionMode === 'auto') args.push('--permission-mode', 'bypassPermissions');
+    // Run config (chat panel): --model / --effort when set; absent = the CLI's own defaults.
+    if (req.model !== undefined && req.model !== '') args.push('--model', req.model);
+    if (req.effort !== undefined && req.effort !== '') args.push('--effort', req.effort);
     // S001 (bugfix): the manual/edit-auto grant re-run pre-allows the approved tool so the resumed
     // action proceeds instead of denying again. Space-separated names after --allowedTools.
     if (req.allowedTools && req.allowedTools.length > 0) args.push('--allowedTools', ...req.allowedTools);
@@ -737,8 +755,13 @@ const codexMapper: ProviderMapper = {
     // byte-identical argv to today (k2). The flag goes before the prompt (positional).
     // ISSUE-65cb63f7: `--` ends the options, so a prompt starting with '-' stays the prompt.
     const auto = req.permissionMode === 'auto' ? ['--dangerously-bypass-approvals-and-sandbox'] : [];
-    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', ...auto, '--', req.prompt];
-    return ['exec', '--json', ...auto, '--', req.prompt];
+    // Run config (chat panel): -m / -c model_reasoning_effort= when set; absent = CLI defaults.
+    const runCfg = [
+      ...(req.model !== undefined && req.model !== '' ? ['-m', req.model] : []),
+      ...(req.effort !== undefined && req.effort !== '' ? ['-c', `model_reasoning_effort=${req.effort}`] : []),
+    ];
+    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', ...auto, ...runCfg, '--', req.prompt];
+    return ['exec', '--json', ...auto, ...runCfg, '--', req.prompt];
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();
@@ -896,8 +919,15 @@ const vibeMapper: ProviderMapper = {
     if (req.permissionMode === 'auto') args.push('--auto-approve');
     else if (req.permissionMode === 'manual') args.push('--agent', 'ask');
     else if (req.permissionMode === 'edit-auto') args.push('--agent', 'accept-edits');
+    // Run config: vibe has no --model/--effort flags — the model is pinned via
+    // VIBE_ACTIVE_MODEL in envFor(); effort is not forwardable (the model's own
+    // `thinking` setting in the user's vibe config applies).
     args.push('--', req.prompt);
     return args;
+  },
+  envFor(req: TurnRequest): NodeJS.ProcessEnv | undefined {
+    if (req.model === undefined || req.model === '') return undefined;
+    return { ...process.env, VIBE_ACTIVE_MODEL: req.model };
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();
@@ -1062,6 +1092,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         cwd: effectiveReq.cwd,
         ...(output !== undefined ? { output } : {}),
         ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
+        ...(mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
       });
     } catch (err) {
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
@@ -1334,7 +1365,7 @@ export function createProviderRegistry(deps: AdapterDeps): ProviderRegistry {
  */
 export async function deriveChatTitle(
   providers: ProviderRegistry,
-  input: { readonly provider: ProviderId; readonly prompt: string; readonly cwd: string },
+  input: { readonly provider: ProviderId; readonly prompt: string; readonly cwd: string; readonly model?: string | undefined; readonly effort?: string | undefined },
   opts?: { readonly timeoutMs?: number | undefined },
 ): Promise<string | undefined> {
   let adapter: StreamAdapter;
@@ -1346,7 +1377,7 @@ export async function deriveChatTitle(
   const instruction =
     `Reply with ONLY a concise 3-6 word title (no quotes, no punctuation, no preamble) ` +
     `for a developer chat that begins with this message:\n\n${input.prompt}`;
-  const req: TurnRequest = { provider: input.provider, prompt: instruction, cwd: input.cwd };
+  const req: TurnRequest = { provider: input.provider, prompt: instruction, cwd: input.cwd, ...(input.model !== undefined ? { model: input.model } : {}), ...(input.effort !== undefined ? { effort: input.effort } : {}) };
   const it = adapter.run(req)[Symbol.asyncIterator]();
   const deadline = Date.now() + (opts?.timeoutMs ?? 8000);
   let turnId: string | undefined;
@@ -1419,6 +1450,7 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       cwd: opts.cwd,
       stdio: fds !== undefined ? [stdin, fds[0]!, fds[1]!] : [stdin, 'pipe', 'pipe'],
       detached: ownGroup,
+      ...(opts.env !== undefined ? { env: opts.env } : {}),
     });
   } finally {
     // The child holds its own copies of the descriptors; ours are not needed after spawn.

@@ -29,9 +29,11 @@ test('the adapter spawns the CLI directly via node:child_process (k1)', () => {
 
 test('the exec path never reaches the daemon IPC (k1: extension-managed, bypasses daemon)', () => {
   const src = adapterSrc();
-  assert.doesNotMatch(src, /daemon\.sock/, 'no daemon socket');
-  assert.doesNotMatch(src, /IpcClient|ipcClient|client\.(call|request)\(/, 'no daemon IPC client call');
-  assert.doesNotMatch(src, /workflow_run|workflow_step|analyze_step/, 'no daemon workflow/analyze IPC (grounding is via the CLI\'s own MCP)');
+  // Code only: prose comments may name the daemon MCP tools the CLI itself hosts.
+  const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  assert.doesNotMatch(codeOnly, /daemon\.sock/, 'no daemon socket');
+  assert.doesNotMatch(codeOnly, /IpcClient|ipcClient|client\.(call|request)\(/, 'no daemon IPC client call');
+  assert.doesNotMatch(codeOnly, /workflow_run|workflow_step|analyze_step/, 'no daemon workflow/analyze IPC (grounding is via the CLI\'s own MCP)');
 });
 
 test('the exec path makes no direct cloud REST call (k2: own-CLI-OAuth only)', () => {
@@ -50,11 +52,11 @@ test('the adapter is vscode-free (import-scan)', () => {
 
 test('Ollama is never a registrable provider (k4)', () => {
   const src = adapterSrc();
-  // The ProviderId union is exactly the two agentic CLIs, and the registry loop
+  // The ProviderId union is exactly the three agentic CLIs, and the registry loop
   // iterates exactly them — 'ollama' is not a value anywhere in the code (prose
   // comments documenting its EXCLUSION are allowed and expected).
-  assert.match(src, /type ProviderId = 'claude' \| 'codex'/, 'ProviderId is exactly claude|codex');
-  assert.match(src, /for \(const id of \['claude', 'codex'\] as const\)/, 'the registry iterates exactly the two agentic CLIs');
+  assert.match(src, /type ProviderId = 'claude' \| 'codex' \| 'vibe'/, 'ProviderId is exactly the three agentic CLIs (claude|codex|vibe)');
+  assert.match(src, /for \(const id of \['claude', 'codex', 'vibe'\] as const\)/, 'the registry iterates exactly the three agentic CLIs');
   const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
   assert.doesNotMatch(codeOnly, /ollama/i, "'ollama' never appears in code (only in exclusion comments)");
 });

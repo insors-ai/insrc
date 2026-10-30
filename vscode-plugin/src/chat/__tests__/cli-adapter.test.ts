@@ -1759,3 +1759,32 @@ test('a claude result with is_error carries its text on done ok:false, a codex e
   assert.equal(rd.ok, false);
   assert.equal(rd.message, 'API Error: 529 {"type":"overloaded_error"}');
 });
+
+// ---- run config: model/effort in argv per provider + vibe env pin ------------
+
+test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effort=; vibe pins via env (no effort flag)', async () => {
+  {
+    const { deps, spawner } = depsFor({ lines: CLAUDE_TEXT_TURN });
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', model: 'opus', effort: 'high' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output-format=stream-json', '--verbose', '--model', 'opus', '--effort', 'high', '--', 'hi']);
+  }
+  {
+    const { deps, spawner } = depsFor({ lines: CODEX_TEXT_TURN });
+    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', model: 'gpt-6-astra', effort: 'ultra' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '-m', 'gpt-6-astra', '-c', 'model_reasoning_effort=ultra', '--', 'hi']);
+  }
+  {
+    // vibe: model via VIBE_ACTIVE_MODEL in the spawn env; effort not forwardable.
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', model: 'glm-5-3', effort: 'max' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi'], 'no --model/--effort flags for vibe');
+    const env = spawner.calls[0]!.env;
+    assert.equal(env?.['VIBE_ACTIVE_MODEL'], 'glm-5-3', 'the model is pinned via env');
+  }
+  {
+    // absent run config → byte-identical argv to before (k2)
+    const { deps, spawner } = depsFor({ lines: CLAUDE_TEXT_TURN });
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output-format=stream-json', '--verbose', '--', 'hi']);
+  }
+});

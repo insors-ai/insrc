@@ -760,6 +760,9 @@ export function activate(context: vscode.ExtensionContext): void {
       providers: chatProviders,
       store: chatStore,
       cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
+      // Run-config popup: the daemon's model definitions (per-family models + efforts),
+      // read once at host start; the panel re-renders when they land.
+      definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
       // LLM chat titling: a one-shot over the same CLI (no resume; timeout-bounded) names the
       // chat after its first turn, replacing the truncated-prompt fallback.
       deriveTitle: (input) => deriveChatTitle(chatProviders, input),

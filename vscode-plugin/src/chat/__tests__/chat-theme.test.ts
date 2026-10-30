@@ -80,7 +80,7 @@ function selectors(style: string): Set<string> {
 /** The theme variables of the approved mapping (SPEC-3d2161bcef24cecf and the design's layer). */
 const APPROVED_THEME_VARIABLES = [
   'editor-font-family', 'editor-background', 'editor-foreground', 'editor-selectionBackground', 'editor-inactiveSelectionBackground',
-  'editorWidget-background', 'editorWidget-border', 'panel-border', 'contrastBorder', 'focusBorder',
+  'editorWidget-background', 'editorWidget-border', 'panel-border', 'contrastBorder', 'focusBorder', 'widget-shadow',
   'descriptionForeground', 'errorForeground', 'editorWarning-foreground', 'textLink-foreground',
   'textCodeBlock-background', 'textPreformat-foreground', 'textPreformat-background', 'textBlockQuote-background', 'textBlockQuote-border', 'textSeparator-foreground',
   'chat-requestBackground', 'chat-requestBorder',
@@ -228,7 +228,8 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   assert.ok(html.indexOf(sheet) < html.indexOf(style), "the chat's style comes after the shared sheet");
   // The selects carry a surface class the shared sheet also paints; `.segsel`, later in the
   // document with the same specificity, sets all three properties that rule sets.
-  assert.match(html, /<select id="insrc-provider" class="segsel insrc-term-[\w-]+"/);
+  assert.match(html, /<button id="insrc-runbtn" type="button" class="runbtn insrc-term-[\w-]+"/);
+  assert.match(html, /<button id="insrc-effortbtn" type="button" class="gaugebtn insrc-term-[\w-]+"/);
   assert.match(sheet, /\.insrc-term-[\w-]+ \{ display: block; background: var\(--it-bg\); color: var\(--it-fg\); border: 1px solid var\(--it-border\); \}/);
   has('.segsel', 'background:transparent', 'border:none', 'color:var(--fg)');
   // bars: the widget ground with the widget border
@@ -357,6 +358,42 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '#insrc-progress.idle .spin i:nth-child(2)',
     '#insrc-progress.idle .spin i:nth-child(3)',
     '@keyframes insrc-breathe',
+    // Run-config controls (bottom-right): the provider·model button + effort gauge, their
+    // upward popups, the slider's ticks/notches, and the rise animation.
+    '@keyframes insrc-rise',
+    '.gaugebtn.dim',
+    '.notches',
+    '.notches span',
+    '.notches span.on',
+    '.notches span:hover',
+    '.popup',
+    '.popup .chk',
+    '.popup .foot',
+    '.popup .item',
+    '.popup .item .sub',
+    '.popup .item.dis',
+    '.popup .item.dis:hover',
+    '.popup .item.sel .chk',
+    '.popup .item.sel .lbl',
+    '.popup .item:hover',
+    '.popup .pane',
+    '.popup .pane + .pane',
+    '.popup .pane-h',
+    '.popup .panes',
+    '.popup,.slider-pop',
+    '.popup.open,.slider-pop.open',
+    '.runbtn .chev',
+    '.runbtn,.gaugebtn',
+    '.runbtn:focus-visible,.gaugebtn:focus-visible',
+    '.runbtn:hover,.gaugebtn:hover',
+    '.slider-pop',
+    '.slider-pop .foot',
+    '.slider-pop .pane-h',
+    '.slider-pop input[type=range]',
+    '.statusbar .runctl',
+    '.ticks',
+    '.ticks i',
+    '.ticks i.on',
     // Story E20261013b2e8109f:S001: the no-shrink rule and the diff widget (the seven .insrc-diff-* rules of the old box left the fixture).
     '#insrc-term>*',
     '.insrc-diffw',

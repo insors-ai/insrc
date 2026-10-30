@@ -353,3 +353,20 @@ test('INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from ses
   assert.equal(mod.updatedAtOf(s), '2026-02-02T00:00:00.000Z');
   assert.equal(store.list()[0]!.updatedAt, '2026-02-02T00:00:00.000Z');
 });
+
+test('run config: draft/create carry model+effort; save/get round-trips them; absent stays absent (back-compat)', () => {
+  const store = createInMemoryChatSessionStore({ now: () => '2026-01-01T00:00:00.000Z', genId: (() => { let n = 0; return () => `id-${++n}`; })() });
+  const d = store.draft('claude', { model: 'opus', effort: 'high' });
+  assert.equal(d.model, 'opus');
+  assert.equal(d.effort, 'high');
+  const plain = store.draft('claude');
+  assert.equal(plain.model, undefined, 'no run config → absent, not undefined-stringified');
+  assert.equal(plain.effort, undefined);
+  store.save(d);
+  const got = store.get(d.id);
+  assert.equal(got?.model, 'opus');
+  assert.equal(got?.effort, 'high');
+  const created = store.create('vibe', { model: 'glm-5-3' });
+  assert.equal(created.model, 'glm-5-3');
+  assert.equal(created.effort, undefined);
+});

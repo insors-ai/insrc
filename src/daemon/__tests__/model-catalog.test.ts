@@ -299,3 +299,11 @@ test('model-catalog.test.ts: the existing families validate as before', () => {
 	});
 	for (const f of [claude, codex, ollama, vibe]) assert.ok(!('host' in f!), `${f!.id} has no host`);
 });
+
+test("model-catalog.test.ts: ollama-claude must run the claude CLI and declare at least one model", () => {
+	for (const kind of ['codex', 'vibe']) {
+		assertRefused(`cliKind ${kind}`, x => { x.families[3].cliKind = kind; },
+			new RegExp(`families\\[3\\] \\(ollama-claude\\): cliKind '${kind}' is not 'claude'`));
+	}
+	assertRefused('no models', x => { x.families[3].models = []; }, /families\[3\] \(ollama-claude\): models is empty/);
+});

@@ -124,4 +124,5 @@ test("attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to
 	assert.deepEqual([legacy.runner, legacy.model], ['ollama-claude', 'ollama-claude:kimi-k3:cloud'], 'a historical artifact keeps its raw label');
 	// The vendor family keeps its own labels.
 	assert.equal(singleModelAttribution('claude').outputs[0]!.runner, 'cli-claude');
+	assert.equal(singleModelAttribution('claude:glm-5.3:cloud').outputs[0]!.runner, 'cli-claude', 'a bare CLI-kind label is the vendor family; host runs are labelled by family id (shaperModelLabel)');
 });

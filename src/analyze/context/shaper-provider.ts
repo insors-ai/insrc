@@ -37,7 +37,7 @@ import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort } from '../../config/analyze.js';
-import { getModelRegistry, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
+import { getModelRegistry, ModelNotSupportedError, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
 import type { CliFamilyId, EffortLevel, FamilyId } from '../../daemon/model-catalog.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
@@ -286,6 +286,8 @@ export function shaperModelLabel(cfg: AnalyzeConfig, overrides?: ShaperProviderO
 	const s = shaperSelection(cfg, overrides);
 	const cli = s.registry.cliKind(s.family);
 	if (cli === undefined) return `${s.family}:${s.model!.id}`;
+	// An Ollama-hosted family is named by its own id, so attribution keeps it apart from the vendor family.
+	if (s.registry.host(s.family) !== undefined) return s.model !== undefined ? `${s.family}:${s.model.id}` : s.family;
 	return s.model !== undefined ? `${cli}:${s.model.id}` : cli;
 }
 
@@ -336,6 +338,8 @@ export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperP
 	const family = cfg.summariserProvider;
 	let model = registry.find(family, cfg.summariserModel);
 	if (model === undefined) {
+		// An Ollama-hosted family runs only what it declares: refuse, substitute nothing.
+		if (registry.host(family) !== undefined) throw new ModelNotSupportedError(family, cfg.summariserModel, 'summariser provider');
 		const cli = registry.cliKind(family) !== undefined;
 		model = cli ? registry.summariserModel(family as CliFamilyId) : registry.toolLoopModel();
 		captureAnalysisDiagnostics(log).emit('warn', () => [{ family, configured: cfg.summariserModel, model: model!.id }, cli

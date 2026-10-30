@@ -227,3 +227,36 @@ test("provider-from-registry.test.ts: the router's summariser resolution names t
 	assert.equal((r.provider as unknown as { model: string }).model, 'llama:loop');
 	assert.equal(r.resolution.model, 'llama:loop');
 });
+
+// ── the Ollama-hosted family (Epic b220bb61, Story s1 · code-review fixes) ──
+
+test('provider-from-registry.test.ts: a refused ollama-claude cheap tier makes the summariser refuse with model-not-supported, never substitute', async () => {
+	const registry = getModelRegistry();
+	const { summariserSelection } = await import('../shaper-provider.js');
+	const { ModelNotSupportedError } = await import('../../../daemon/model-registry.js');
+	const refused = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'ollama-claude', model: 'kimi-k9:cloud' } } }), SHAPER, DEPTH, registry);
+	assert.equal(refused.summariserProvider, 'ollama-claude');
+	const isRefusal = (e: unknown): boolean => e instanceof ModelNotSupportedError
+		&& e.family === 'ollama-claude' && e.requested === 'kimi-k9:cloud' && /model-not-supported/.test(e.message);
+	assert.throws(() => summariserSelection(refused, { registry }), isRefusal);
+	assert.throws(() => buildSummariserProvider(refused, { registry }), isRefusal);
+	assert.throws(() => createRoleRouter({ registry }).resolveSummariser(refused), isRefusal);
+	// A declared host model is selected as itself.
+	const declared = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'ollama-claude', model: 'glm:cloud' } } }), SHAPER, DEPTH, registry);
+	assert.deepEqual([summariserSelection(declared, { registry }).family, summariserSelection(declared, { registry }).model.id], ['ollama-claude', 'glm:cloud']);
+});
+
+test("provider-from-registry.test.ts: the run label of an ollama-claude shaper names the host family, and attribution maps it there", async () => {
+	const registry = getModelRegistry();
+	const { shaperModelLabel } = await import('../shaper-provider.js');
+	const { singleModelAttribution } = await import('../../../workflow/attribution.js');
+	const host = assembleConfig(parseTiering({ tiers: { core: { runner: 'ollama-claude', model: 'glm:cloud' } } }), SHAPER, DEPTH, registry);
+	const label = shaperModelLabel(host, { registry });
+	assert.equal(label, 'ollama-claude:glm:cloud');
+	// Attribution reads the shipped definitions, where ollama-claude is a family id.
+	const stamp = singleModelAttribution(label).outputs[0]!;
+	assert.deepEqual([stamp.runner, stamp.model], ['ollama-claude', 'glm:cloud']);
+	const refused = assembleConfig(parseTiering({ tiers: { core: { runner: 'ollama-claude', model: 'kimi-k9:cloud' } } }), SHAPER, DEPTH, registry);
+	assert.equal(shaperModelLabel(refused, { registry }), 'ollama-claude', 'no model: the bare family id, never the vendor CLI kind');
+	assert.equal(singleModelAttribution('ollama-claude').outputs[0]!.runner, 'ollama-claude');
+});

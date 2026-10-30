@@ -66,6 +66,18 @@ export interface ResolvedModel extends ModelDefinition {
  *  nothing is substituted and the resolution carries no model. */
 export type FallbackReason = 'unlisted-model' | 'rejected-model' | 'model-not-supported';
 
+/** A run asked for a model an Ollama-hosted family does not declare; nothing is substituted. */
+export class ModelNotSupportedError extends Error {
+	readonly family: FamilyId;
+	readonly requested: string;
+	constructor(family: FamilyId, requested: string, what: string) {
+		super(`${what}: model '${requested}' is not supported by ${family} (model-not-supported)`);
+		this.name = 'ModelNotSupportedError';
+		this.family = family;
+		this.requested = requested;
+	}
+}
+
 export interface TierResolution {
 	readonly family:         FamilyId;
 	/** undefined only for a host family's undeclared model ('model-not-supported'). */

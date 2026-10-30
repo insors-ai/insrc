@@ -46,7 +46,8 @@ function labelStamp(label: string, role: string, keepRawLabel = false): OutputMo
 		if (label.startsWith(`${f.id}:`)) return stamp(f.id, keepRawLabel ? label : label.slice(f.id.length + 1));
 	}
 	for (const f of families) {
-		if (f.cliKind !== undefined && label.startsWith(f.cliKind)) return stamp(f.id, label);
+		// A bare CLI-kind label names the vendor family, never an Ollama-hosted one.
+		if (f.cliKind !== undefined && f.host === undefined && label.startsWith(f.cliKind)) return stamp(f.id, label);
 	}
 	const byModel = families.find(f => f.models.some(m => m.id === label || (m.aliases ?? []).includes(label)));
 	return stamp(byModel?.id ?? SHIPPED_DEFINITIONS.defaultFamily, label);

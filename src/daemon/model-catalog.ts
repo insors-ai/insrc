@@ -159,6 +159,9 @@ function isHostFamily(id: FamilyId): id is HostFamilyId {
 	return id === 'ollama-claude';
 }
 
+/** The CLI each Ollama-hosted family runs. */
+const HOST_CLI_KIND: Readonly<Record<HostFamilyId, 'claude'>> = { 'ollama-claude': 'claude' };
+
 /** The model a name (id or alias) resolves to within one family's models. */
 function resolveName(models: readonly ModelDefinition[], name: string): ModelDefinition | undefined {
 	return models.find(m => m.id === name || (m.aliases ?? []).includes(name));
@@ -215,6 +218,7 @@ function validateFamily(raw: Json, index: number, fail: (reason: string) => neve
 	}
 	if (hosted) {
 		if (raw['host'] !== 'ollama') fail(`${at}: host is missing or not 'ollama'`);
+		if (raw['cliKind'] !== HOST_CLI_KIND[id as HostFamilyId]) fail(`${at}: cliKind '${String(raw['cliKind'])}' is not '${HOST_CLI_KIND[id as HostFamilyId]}'`);
 		if (raw['tierDefaults'] !== undefined) fail(`${at}: tierDefaults is not allowed on an Ollama-hosted family`);
 		if (raw['summariserModel'] !== undefined) fail(`${at}: summariserModel is not allowed on an Ollama-hosted family`);
 	} else if (raw['host'] !== undefined) {
@@ -223,6 +227,7 @@ function validateFamily(raw: Json, index: number, fail: (reason: string) => neve
 	if (!Array.isArray(raw['models'])) fail(`${at}: models is not a list`);
 	const models = (raw['models'] as unknown[]).map((m, i) => validateModel(m, `${at}: models[${i}]`, fail));
 
+	if (hosted && models.length === 0) fail(`${at}: models is empty`);
 	for (const m of models) {
 		if (hosted && m.hosting === undefined) fail(`${at}: model '${m.id}' has no hosting ('cloud' | 'local')`);
 		if (!hosted && m.hosting !== undefined) fail(`${at}: model '${m.id}' has hosting, which only Ollama-hosted families take`);

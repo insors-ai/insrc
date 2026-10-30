@@ -1,0 +1,2 @@
+{"stage":"initial failure","roots":0,"error":"Registered repositories could not be loaded. Use Refresh to retry when the daemon is available."}
+{"stage":"refreshed","roots":6,"selectedRoot":"/Users/subhagho/work/projects/insors/insrc","filter":"all","counts":{"all":1,"saved":1,"temporary":0},"rows":[{"id":"test-parquet","scope":"saved","kind":"parquet"}],"error":"","registrationWrites":0}

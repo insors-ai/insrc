@@ -194,3 +194,27 @@ test('Connections defaults to opened context and preserves manual selection and 
   openedPath='/unregistered/file.ts';await host.open();assert.equal(panel.view.list.repoRoot,f.f.root);
  }finally{host.dispose();removals.dispose();probes.dispose();await f.close();}
 });
+
+test('CM-S5-RENDER-TS: Refresh recovers repository discovery after reload, retaining Saved registrations and expiring Temporary ones',{timeout:30000},async()=>{
+ const f=await managementFixture();
+ await f.controller.submit(f.draft('saved-before-reload'));
+ await f.controller.submit(f.draft('temporary-before-reload','temporary'));
+ f.owner.dispose();await f.owner.whenDisposed();
+ const owner=f.forkOwner(),mutations=(await import('../gateway.js')).createConnectionsMutationController(owner),probes=createConnectionsDraftTests(owner),removals=new ConnectionRemovals(mutations),panel=new FakeConnectionPanel();let reads=0;
+ const host=new ConnectionsManagerHost({owner,mutations,tests:probes,removals,openedPath:()=>f.f.root,registeredRoots:async()=>{if(++reads===1)throw new Error('fixture initial discovery failed');return [f.f.root];},createPanel:()=>panel});
+ try{
+  const writes=f.requests.length;await host.open();assert.equal(panel.view.list.listState,'no-repository');assert.equal(panel.view.list.roots.length,0);assert.match(panel.view.error,/Refresh/);
+  panel.dom!.click('refresh');await until(()=>panel.view.list.listState==='ready');assert.equal(reads,2);assert.equal(panel.view.error,'');assert.equal(panel.view.list.repoRoot,f.f.root);assert.equal(panel.view.list.counts.saved,1);assert.equal(panel.view.list.counts.temporary,0);assert.equal(panel.view.rows[0]!.key.id,'saved-before-reload');assert.equal(f.requests.length,writes,'discovery retry performs no mutation');
+ }finally{host.dispose();removals.dispose();probes.dispose();mutations.dispose();await f.close();}
+});
+
+test('CM-S5-RENDER-TS: repository discovery retries ignore stale replies and restore unselected guidance without an opened-path match',async()=>{
+ const f=await managementFixture(),probes=createConnectionsDraftTests(f.owner),removals=new ConnectionRemovals(f.controller),panel=new FakeConnectionPanel();let reads=0,resolve!:(roots:readonly string[])=>void;
+ const pending=new Promise<readonly string[]>(r=>{resolve=r;});
+ const host=new ConnectionsManagerHost({owner:f.owner,mutations:f.controller,tests:probes,removals,openedPath:()=>'/not-registered',registeredRoots:async()=>{reads++;if(reads===1)throw new Error('fixture discovery failure');if(reads===2)return pending;return [f.f.root];},createPanel:()=>panel});
+ try{
+  await host.open();panel.dom!.click('refresh');await until(()=>reads===2);panel.dom!.click('refresh');await until(()=>panel.view.list.roots.length===1);
+  assert.equal(panel.view.list.listState,'no-repository');assert.equal(panel.view.list.repoRoot,null);assert.equal(panel.view.error,'');resolve([]);await new Promise<void>(r=>setTimeout(r,5));assert.deepEqual(panel.view.list.roots,[f.f.root]);
+  panel.dom!.choose('root',f.f.root);await until(()=>panel.view.list.listState==='empty-registry');
+ }finally{resolve([]);host.dispose();removals.dispose();probes.dispose();await f.close();}
+});

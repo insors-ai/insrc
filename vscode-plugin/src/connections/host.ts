@@ -43,7 +43,7 @@ const PREFIX='db.connections.v2.';
 export class ConnectionsManagerHost {
  #ports:ConnectionsHostPorts;#panel:ConnectionPanel|null=null;#viewId='';#generation=0;#formId=0;#ready=false;#visible=true;#disposed=false;#publishing=false;
  #model:ConnectionManagerState=createConnectionManager([],'');#draft:ConnectionDraft|null=null;#descriptors:readonly ClientDriverDescriptor[]=[];#descriptorEpoch='';#descriptorRoot='';
- #picking=false;
+ #picking=false;#rootRead=0;#openedPath:string|undefined;
  #messages:{id:number;text:string}[]=[];#messageId=0;#messageRoot:string|null=null;#messageSeen=new Map<string,string>();
  #pending:(()=>void|Promise<void>)|null=null;#error='';#notice='';#read:AbortController|null=null;#subscriptions:MutationTimer[]=[];
  constructor(ports:ConnectionsHostPorts){
@@ -104,9 +104,10 @@ export class ConnectionsManagerHost {
   }
  }
  async open():Promise<void>{
-  if(this.#disposed)return;if(this.#panel){this.#panel.reveal();return;}
+  if(this.#disposed)return;if(this.#panel){this.#panel.reveal();if(!this.#model.roots.length)await this.#refreshRoots();return;}
   // Capture editor context before creating a webview changes editor focus.
   let openedPath:string|undefined;try{openedPath=this.#ports.openedPath?.();}catch{/* Context is only a default. */}
+  this.#openedPath=openedPath;
   const panel=this.#ports.createPanel();this.#panel=panel;this.#visible=true;this.#viewId=randomUUID();this.#bump();this.#ready=false;
   const viewId=this.#viewId;
   panel.onMessage(raw=>{if(this.#panel!==panel||this.#disposed)return;const intent=parseConnectionIntent(raw);if(intent&&intent.viewId===viewId&&(intent.type==='ready'||intent.generation===this.#generation)&&(this.#visible||intent.type==='ready'||intent.type==='cancel-test'))void this.#handle(intent).catch(()=>{this.#error='The connection action could not complete. Review the current state and retry.';this.#publish();});});
@@ -118,14 +119,20 @@ export class ConnectionsManagerHost {
   });
   panel.onVisibility?.(visible=>{if(this.#panel!==panel)return;this.#visible=visible;this.#bump();if(visible)this.#publish();});
   panel.setHtml(connectionManagerDocument((this.#ports.nonce??makeNonce)(),viewId,this.#generation));panel.reveal();this.#bindTest();
+  await this.#refreshRoots();
+ }
+ /** Refresh root metadata too: an initial failed read must not strand an empty dropdown. */
+ async #refreshRoots():Promise<void>{
+  const panel=this.#panel;if(!panel||this.#disposed)return;const request=++this.#rootRead;
+  const current=()=>!this.#disposed&&this.#panel===panel&&this.#rootRead===request;
   try{
-   const roots=await this.#ports.registeredRoots();if(this.#disposed||this.#panel!==panel)return;
-   this.#ports.owner.setRegisteredRoots(roots);this.#dispatch({type:'registered-roots',roots});
+   const roots=await this.#ports.registeredRoots();if(!current())return;
+   this.#ports.owner.setRegisteredRoots(roots);this.#error='';this.#dispatch({type:'registered-roots',roots});
    if(this.#draft&&!roots.includes(this.#draft.view.key.repoRoot)){this.#draft.clear();this.#draft=null;this.#bump();this.#bindTest();}
-   const preferred=!this.#model.repoRoot&&!this.#draft?connectionRootForPath(roots,openedPath):undefined;
+   const preferred=!this.#model.repoRoot&&!this.#draft?connectionRootForPath(roots,this.#openedPath):undefined;
    if(preferred)this.#dispatch({type:'select-root',repoRoot:preferred});
    else if(this.#model.repoRoot)this.#dispatch({type:'refresh'});
-  }catch{if(this.#disposed||this.#panel!==panel)return;this.#error='Registered repositories are unavailable. Reconnect the daemon and reopen Connections.';this.#dispatch({type:'unavailable',code:'offline'});}
+  }catch{if(!current())return;this.#error='Registered repositories could not be loaded. Use Refresh to retry when the daemon is available.';this.#dispatch({type:'unavailable',code:'offline'});}
   this.#publish();
  }
  #publish():void{
@@ -224,7 +231,7 @@ export class ConnectionsManagerHost {
     case 'filter':this.#navigate({type:'filter',value:intent.value},()=>this.#dispatch({type:'filter',value:intent.value}));break;
     case 'search':this.#navigate({type:'search',value:intent.value},()=>this.#dispatch({type:'search',value:intent.value}));break;
     case 'clear-filter':this.#navigate({type:'filter',value:'all'},()=>{this.#dispatch({type:'filter',value:'all'});this.#dispatch({type:'search',value:''});});break;
-    case 'refresh':this.#dispatch({type:'refresh'});break;
+    case 'refresh':await this.#refreshRoots();break;
     case 'select':{
      const visible=projectConnectionManager(this.#model).visibleKeys;
      const row=this.#model.rows.find(r=>sameConnectionKey(r.key,intent.key)&&r.revision===intent.revision&&visible.some(k=>sameConnectionKey(k,r.key)));

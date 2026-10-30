@@ -26,7 +26,7 @@
     "src/shared/connection-manager/wire.ts": "5ce1aee76bab3ea7be696b4ec8a0454217c42243d5a9df6d7edaee1500215820",
     "src/shared/ipc-client.ts": "a06f7a2ca4ec1604c515f08b0eff028c5d32fb79bdffdf6bd4f315e0a25e9617",
     "vscode-plugin/src/connections/gateway.ts": "df8de3e005eb0f48c71abfaeab02e7986a9cfe17becc44889aebaf81bb660042",
-    "vscode-plugin/src/connections/host.ts": "6ae4d6e04668837cad66d061f521f26608cf2532a6a6c805ec1254064f6eb300",
+    "vscode-plugin/src/connections/host.ts": "c596db758da0e3f5820c27a49db746fbb9533c41059cb525dfcaf3777a06830d",
     "vscode-plugin/src/connections/renderer.ts": "9cd7642c06234e022edf495dce90ed32410712758a6080f685e3b376a5de085e",
     "vscode-plugin/src/connections/session-owner.ts": "1b46559ccc3a9bd99ae661072de5f7f932395f7922ae75dd81744294ec3aafde",
     "vscode-plugin/src/connections/types.ts": "75e7a0c03a1ef111f2a6c75ac02da612f7f30fde7e1c449ebf316a1775b86f0a",

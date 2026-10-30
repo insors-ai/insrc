@@ -17,6 +17,7 @@
 
 import type { DisposableLike } from '../surfaces/types.js';
 import type { RegisteredRepo, RepoCompleteness } from '../../../src/shared/types.js';
+import type { ModelTiersRenderer, ModelTiersWrite } from './model-tiers.js';
 
 // ---------------------------------------------------------------------------
 // sc9 host + view types (verbatim from the HLD interfaceSketch)
@@ -36,6 +37,8 @@ export interface WebviewPanelHost {
   openDetailedStatus(tab?: DetailTab): void;
   /** Create-or-reveal the separate Repo Configuration panel (shell only in S004). */
   openRepoConfiguration(): void;
+  /** Create-or-reveal the separate Model Tiers panel (Story S001). */
+  openModelTiers(): void;
   /** Show the status-bar 2-item menu and route the choice to the matching open method. */
   showStatusMenu(): Promise<void>;
 }
@@ -221,7 +224,7 @@ export interface RepoProviderRegistration {
 export interface MenuItem {
   readonly label: string;
   /** Which host action this item maps to (kept out of the visible label). */
-  readonly action: 'detailed' | 'repoConfig';
+  readonly action: 'detailed' | 'repoConfig' | 'modelTiers';
 }
 
 /**
@@ -290,6 +293,20 @@ export interface WebviewPanelHostDeps {
    * effect (the consent-gated `mcp.register` IPC, k4); the host performs none itself.
    */
   readonly onRepoRegisterProviders?: ((reg: RepoProviderRegistration) => void) | undefined;
+  /**
+   * OPTIONAL Model Tiers panel body renderer (Story S001). When wired,
+   * openModelTiers renders its body (one card per tier + the Core-floor
+   * footer) instead of the placeholder. A host built without it renders the
+   * placeholder exactly (fallback preserved, mirroring repoRenderer).
+   */
+  readonly modelTiersRenderer?: ModelTiersRenderer | undefined;
+  /**
+   * OPTIONAL sink for a Model Tiers field write (Story S001). The panel posts
+   * a {type:'modelTiersWrite', ...} message; the host forwards a validated
+   * ModelTiersWrite here. extension.ts owns the effect (the global
+   * config.write — no per-repo consent, k6); the host performs no write itself.
+   */
+  readonly onModelTiersWrite?: ((write: ModelTiersWrite) => void) | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

@@ -79,6 +79,8 @@ function makeHost(opts: {
   repoRenderer?: WebviewPanelHostDeps['repoRenderer'];
   onRepoConfigWrite?: WebviewPanelHostDeps['onRepoConfigWrite'];
   onRepoRegisterProviders?: WebviewPanelHostDeps['onRepoRegisterProviders'];
+  modelTiersRenderer?: WebviewPanelHostDeps['modelTiersRenderer'];
+  onModelTiersWrite?: WebviewPanelHostDeps['onModelTiersWrite'];
 } = {}): {
   host: ReturnType<typeof createWebviewPanelHost>;
   created: FakePanel[];
@@ -106,6 +108,8 @@ function makeHost(opts: {
     repoRenderer: opts.repoRenderer,
     onRepoConfigWrite: opts.onRepoConfigWrite,
     onRepoRegisterProviders: opts.onRepoRegisterProviders,
+    modelTiersRenderer: opts.modelTiersRenderer,
+    onModelTiersWrite: opts.onModelTiersWrite,
   };
   return { host: createWebviewPanelHost(deps), created, offered, warns };
 }
@@ -113,13 +117,13 @@ function makeHost(opts: {
 /** Flush pending microtasks/timers so the host's async render lands. */
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
-test('showStatusMenu offers EXACTLY two items and routes each choice to the matching panel (ac1)', async () => {
+test('showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel', async () => {
   // Detailed Status choice → opens the detailed panel.
   const detailed = makeHost({ pick: { label: 'Detailed Status', action: 'detailed' } });
   await detailed.host.showStatusMenu();
   await tick();
   assert.equal(detailed.offered.length, 1);
-  assert.deepEqual(detailed.offered[0]!.map((i) => i.label), ['Detailed Status', 'Repo Configuration']);
+  assert.deepEqual(detailed.offered[0]!.map((i) => i.label), ['Detailed Status', 'Repo Configuration', 'Model Tiers']);
   assert.equal(detailed.created.length, 1, 'the detailed panel was created');
   assert.equal(detailed.created[0]!.viewType, 'insrc.detailedStatus');
 
@@ -128,6 +132,13 @@ test('showStatusMenu offers EXACTLY two items and routes each choice to the matc
   await repo.host.showStatusMenu();
   assert.equal(repo.created.length, 1);
   assert.equal(repo.created[0]!.viewType, 'insrc.repoConfiguration');
+
+  // Model Tiers choice → opens the Model Tiers panel.
+  const tiers = makeHost({ pick: { label: 'Model Tiers', action: 'modelTiers' } });
+  await tiers.host.showStatusMenu();
+  await tick();
+  assert.equal(tiers.created.length, 1);
+  assert.equal(tiers.created[0]!.viewType, 'insrc.modelTiers');
 });
 
 test('Cancel path: a dismissed menu (undefined) opens no panel (ac1)', async () => {
@@ -147,6 +158,19 @@ test('openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs,
   assert.match(html, /class="tab active"[^>]*data-tab="daemon"/, 'daemon is the active default tab');
   assert.match(html, /uptime 5s/, 'the daemon body renders the gateway.status() detail');
   assert.doesNotMatch(html, /coming soon/, 'the daemon tab is not a placeholder');
+});
+
+test('the shared shell styles form controls with theme variables — selects/dropdowns do not fall back to the browser white ground', async () => {
+  const { host, created } = makeHost();
+  host.openDetailedStatus();
+  await tick();
+  const html = created[0]!.html;
+  assert.match(html, /select, input\[type=text\][^{]*\{[^}]*background:\s*var\(--vscode-dropdown-background/, 'selects take the dropdown background theme variable');
+  assert.match(html, /select[^{]*\{[^}]*color:\s*var\(--vscode-dropdown-foreground/, 'selects take the dropdown foreground');
+  assert.match(html, /option \{[^}]*background:\s*var\(--vscode-dropdown-background/, 'options are themed too (the open dropdown list)');
+  assert.match(html, /select, input\[type=text\][^{]*\{[^}]*border:\s*1px solid var\(--vscode-dropdown-border/, 'selects take the dropdown border');
+  assert.match(html, /button \{[^}]*background:\s*var\(--vscode-button-background/, 'buttons take the button background');
+  assert.match(html, /button:hover \{[^}]*background:\s*var\(--vscode-button-hoverBackground/, 'button hover is themed');
 });
 
 test('Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws', async () => {
@@ -646,4 +670,91 @@ test('the repo bootstrap script posts repoRegisterProviders with the checked dat
   assert.match(boot, /getElementById\('insrc-register-providers'\)/, 'the register button is wired');
   assert.match(boot, /querySelectorAll\('input\[data-provider\]'\)/, 'checked providers are collected');
   assert.match(boot, /type: 'repoRegisterProviders', repoPath: repoPath, clients: clients/, 'posts the sanctioned message shape');
+});
+
+// ---- Story S001: Model Tiers panel — openModelTiers + modelTiersWrite message route ----
+
+test('S001: openModelTiers always opens/reveals the panel (never a no-op); with no modelTiersRenderer it renders the placeholder', async () => {
+  // With a modelTiersRenderer: its body is rendered inside the shell.
+  const wired = makeHost({ modelTiersRenderer: async () => `<p class="tiers-body">cards</p>` });
+  wired.host.openModelTiers();
+  await tick();
+  assert.equal(wired.created.length, 1);
+  assert.equal(wired.created[0]!.viewType, 'insrc.modelTiers');
+  assert.match(wired.created[0]!.html, /tiers-body/, 'the modelTiersRenderer body is rendered');
+  assert.doesNotMatch(wired.created[0]!.html, /coming soon/);
+
+  // Without a modelTiersRenderer: the panel still opens — the placeholder, never a no-op.
+  const bare = makeHost();
+  bare.host.openModelTiers();
+  await tick();
+  assert.equal(bare.created.length, 1, 'openModelTiers opens the panel even with no renderer wired');
+  assert.match(bare.created[0]!.html, /coming soon/, 'no modelTiersRenderer -> placeholder fallback');
+
+  // A second call reveals the existing panel rather than creating another.
+  bare.host.openModelTiers();
+  await tick();
+  assert.equal(bare.created.length, 1, 'single-instance: no duplicate panel');
+  assert.equal(bare.created[0]!.reveals, 2, 'the existing panel is revealed again (once per open call)');
+});
+
+test("S001: a {kind:'tierField'} modelTiersWrite forwards a validated ModelTiersWrite; a {kind:'coreFloor'} one too; malformed ones are silent no-ops", async () => {
+  const writes: unknown[] = [];
+  const { host, created, warns } = makeHost({
+    modelTiersRenderer: async () => `<div>body</div>`,
+    onModelTiersWrite: (w) => writes.push(w),
+  });
+  host.openModelTiers();
+  await tick();
+
+  created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'tierField', tier: 'cheap', field: 'model', value: 'glm-5.3' });
+  created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'coreFloor', value: 'core' });
+  assert.deepEqual(writes, [
+    { kind: 'tierField', tier: 'cheap', field: 'model', value: 'glm-5.3' },
+    { kind: 'coreFloor', value: 'core' },
+  ], 'both write kinds are forwarded');
+
+  created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'tierField', tier: 'not-a-tier', field: 'model', value: 'x' }); // bad tier
+  created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'tierField', tier: 'core', field: 'not-a-field', value: 'x' }); // bad field
+  created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'tierField', tier: 'core', field: 'model', value: 42 }); // non-string value
+  created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'coreFloor', value: 'not-a-tier' }); // bad coreFloor value
+  created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'nonsense', value: 'x' }); // unknown kind
+  created[0]!.injectMessage({ type: 'nonsense' });
+  assert.doesNotThrow(() => created[0]!.injectMessage(null), 'a null message never throws');
+  assert.equal(writes.length, 2, 'every malformed message is a silent no-op — nothing further forwarded');
+  assert.equal(warns.length, 0, 'a malformed message is a silent no-op, not an error');
+});
+
+test('S001: a modelTiersRenderer throw degrades to an error body; an onModelTiersWrite throw is caught', async () => {
+  const a = makeHost({
+    modelTiersRenderer: async () => {
+      throw new Error('rawConfig rejected');
+    },
+  });
+  assert.doesNotThrow(() => a.host.openModelTiers());
+  await tick();
+  assert.match(a.created[0]!.html, /could not load this view/, 'a renderer reject degrades to an error body');
+  assert.ok(a.warns.some((w) => /Model Tiers view/.test(w)), 'the renderer failure was logged (never thrown)');
+
+  const b = makeHost({
+    modelTiersRenderer: async () => `<div>ok</div>`,
+    onModelTiersWrite: () => {
+      throw new Error('sink boom');
+    },
+  });
+  b.host.openModelTiers();
+  await tick();
+  assert.doesNotThrow(() => b.created[0]!.injectMessage({ type: 'modelTiersWrite', kind: 'coreFloor', value: 'mid' }));
+  assert.ok(b.warns.some((w) => /model-tiers write handler failed/.test(w)), 'the onModelTiersWrite throw was caught + logged');
+});
+
+test('the model-tiers bootstrap script posts modelTiersWrite for both a tier field change and the core-floor change', () => {
+  const src = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
+  const m = src.match(/const MODEL_TIERS_BOOTSTRAP = `([\s\S]*?)`;/);
+  assert.ok(m, 'MODEL_TIERS_BOOTSTRAP exists');
+  const boot = m[1]!;
+  assert.match(boot, /querySelectorAll\('select\[data-tier\]\[data-field\]'\)/, 'per-tier field selects are wired');
+  assert.match(boot, /kind: 'tierField', tier: el\.getAttribute\('data-tier'\), field: el\.getAttribute\('data-field'\), value: el\.value/, 'posts the sanctioned tierField shape');
+  assert.match(boot, /querySelector\('select\[data-field="coreFloor"\]'\)/, 'the core-floor select is wired');
+  assert.match(boot, /kind: 'coreFloor', value: floor\.value/, 'posts the sanctioned coreFloor shape');
 });

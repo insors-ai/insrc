@@ -1,0 +1,181 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "7b10fc46c33bbc5d45f9b03ff16ea5e7a6bf0481fdc5729cead7b2e75be88f7a",
+        "at": "2026-10-30T10:23:31.568Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-ac7ec5c8-4e93-46eb-9952-14cdfc101d9a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:51:03.769Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "revision": 3,
+    "updatedAt": "2026-10-30T10:21:28.220Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "complete-native-review-isolation-qualification-so"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Independent v2 export reconstruction rejects changed proof/candidate/native/source/phase/runtime facts, and installed sessions recheck source policy before accepting scoped operations.63 affected scripted provider/adoption/recovery tests and full npm build passed. Commit332fbfb12. Actual installed qualification remains t4; no activation or legacy deletion.",
+    "testRecord": {
+      "md": "docs/standalone/complete-native-review-isolation-qualification-so-E202610304bfefb55/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/claude-investigation-v2.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/investigation-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/native-investigation-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/native-investigation-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-probe-export.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-probe-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-investigation-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-isolation-evidence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-diagnostics.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-qualification.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/native-investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T10:21:28.220Z"
+      }
+    ],
+    "commit": "332fbfb12"
+  },
+  "citations": []
+}

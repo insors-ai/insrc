@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-eca0e1aa-9e4f-4e7f-96ca-3ebf02e23e6e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:44:01.469Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Pin the v2 launch policy and native evidence contract",
+      "parent": {
+        "entityId": "STORY-4bfefb556f0dc560-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4bfefb556f0dc560-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "abf3dbb8e3d07a262124c63e833fc741f6cea6185bc5a39708cc0da1e774b455",
+        "at": "2026-10-30T09:44:01.470Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:44:01.471Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pin the v2 launch policy and native evidence contract",
+    "summary": "Extend the shared Claude restricted/control templates and strict typed v2 boundary/protocol/basis fields. Turn actual 2.1.310 startup diagnostic captures into exact-version inventory/source-policy parsing and negative fixtures; keep old v1/Codex/design behavior. Demonstrate required managed/source facts early so implementation cannot conceal an unsupported qualification contract.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Session-local policy disables unwanted builtin plugins, hooks, instruction discovery and memory, retains OAuth and exact scoped bridge; no safe-mode/bare/bypass or global config changes.",
+      "Exact schema-bound StructuredOutput is explicitly a protocol tool; unknown, duplicate, malformed or contradictory native tools/plugins/sources refuse.",
+      "Native no-managed/organization/source grammar is based on the real feasibility capture; missing, unsupported, remote or conflicting managed evidence cannot qualify.",
+      "Strict v2 fields/basis enums are required only for v2; old formats cannot mint v2 proof.",
+      "Native diagnostic capture is private, bounded, hashed and redacted before user-facing summaries; no secrets/model assertions become proof. Strict evidence schema/type/qualification consumers match v2."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Claude v2 launch disables plugins hooks instructions and memory without breaking OAuth or scoped MCP"
+      },
+      {
+        "level": "unit",
+        "name": "StructuredOutput is schema-bound protocol only and every unknown duplicate malformed or contradictory native capability refuses"
+      },
+      {
+        "level": "unit",
+        "name": "Missing or managed policy provenance cannot become an empty effective inventory"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

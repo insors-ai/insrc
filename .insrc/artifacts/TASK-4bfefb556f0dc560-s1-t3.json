@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e0e0ab2f-cb26-4f6a-ad39-980baa9b6ce7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:44:01.474Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Replay qualification evidence at export and production admission",
+      "parent": {
+        "entityId": "STORY-4bfefb556f0dc560-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4bfefb556f0dc560-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4bfefb556f0dc560-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bd151ff062f35bccf9148b04fa97d3230b4d3abc619f4945a73b9b79f1e1f3fb",
+        "at": "2026-10-30T09:44:01.474Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:44:01.475Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replay qualification evidence at export and production admission",
+    "summary": "Independently reconstruct facts and candidates from bound raw evidence in export validation and carry v2 proof through existing installed qualification/adoption. Preserve byte/source/profile/catalog/config identity, expiry and canonical authority checks and compatibility.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Exporter recomputes full effective inventory, unique complete bases, verdicts and candidate; changed/deleted/swapped raw facts or control-to-restricted promotion refuse.",
+      "Current source/runtime/config/schema/profile/catalog/mode pins and safe bounded private files are enforced before candidate acceptance and before production launch.",
+      "V2 candidate can issue a real installed-origin qualification only via current canonical approval authority; fixture/lookalike/unapproved/stale evidence still refuses.",
+      "Existing v1/Codex/ordinary provider/design review and rollback/status/publication paths pass focused regressions and build."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Deleting changing or swapping any evidence basis raw phase pin or candidate refuses qualification"
+      },
+      {
+        "level": "integration",
+        "name": "V1 fixtures Codex ordinary provider and design review compatibility remain intact"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

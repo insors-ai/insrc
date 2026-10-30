@@ -1,0 +1,527 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "d4f0f159cb17af167aea4f66d1b62bff3fcba6cd085e026d92072e5d0503f3f6",
+        "at": "2026-10-30T10:21:28.271Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "createdAt": "2026-10-30T09:51:03.769Z",
+    "updatedAt": "2026-10-30T10:21:28.220Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "epicSlug": "complete-native-review-isolation-qualification-so",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6ca7ee613",
+        "ranAt": "2026-10-30T09:51:03.769Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Claude v2 launch disables plugins hooks instructions and memory without breaking OAuth or scoped MCP",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-v2.test.ts",
+                "title": "Claude v2 launch disables plugins hooks instructions and memory without breaking OAuth or scoped MCP",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "StructuredOutput is schema-bound protocol only and every unknown duplicate malformed or contradictory native capability refuses",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-v2.test.ts",
+                "title": "StructuredOutput is schema-bound protocol only and every unknown duplicate malformed or contradictory native capability refuses",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Missing or managed policy provenance cannot become an empty effective inventory",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-v2.test.ts",
+                "title": "Missing or managed policy provenance cannot become an empty effective inventory",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-v2.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 724,
+            "titles": [
+              {
+                "title": "Claude v2 launch disables plugins hooks instructions and memory without breaking OAuth or scoped MCP",
+                "result": "pass"
+              },
+              {
+                "title": "StructuredOutput is schema-bound protocol only and every unknown duplicate malformed or contradictory native capability refuses",
+                "result": "pass"
+              },
+              {
+                "title": "Missing or managed policy provenance cannot become an empty effective inventory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "03c52d887",
+        "ranAt": "2026-10-30T10:07:08.586Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Complete paired host evidence emits a completed Claude v2 candidate and qualifies through installed authority",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Complete paired host evidence emits a completed Claude v2 candidate and qualifies through installed authority",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Internal post-ACK cancellation qualifies only after actual process drain while operator cancellation stays cancelled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Internal post-ACK cancellation qualifies only after actual process drain while operator cancellation stays cancelled",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16170,
+            "titles": [
+              {
+                "title": "Trusted probe executes one control and one restricted phase with exact pins and bounded cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "Complete paired host evidence emits a completed Claude v2 candidate and qualifies through installed authority",
+                "result": "pass"
+              },
+              {
+                "title": "Internal post-ACK cancellation qualifies only after actual process drain while operator cancellation stays cancelled",
+                "result": "pass"
+              },
+              {
+                "title": "A reachable v2 candidate still refuses inactive controls missing native policy and restricted leaks",
+                "result": "pass"
+              },
+              {
+                "title": "Oversized native diagnostics drain the process and are discarded without a retry",
+                "result": "pass"
+              },
+              {
+                "title": "Codex probe preserves strict schema cleanup and actual process drain",
+                "result": "pass"
+              },
+              {
+                "title": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof",
+                "result": "pass"
+              },
+              {
+                "title": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+                "result": "pass"
+              },
+              {
+                "title": "Probe capture overflow and spawn observation failure drain the actual process",
+                "result": "pass"
+              },
+              {
+                "title": "Restricted capability leaks fail and control-phase evidence cannot qualify production",
+                "result": "pass"
+              },
+              {
+                "title": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+                "result": "pass"
+              },
+              {
+                "title": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "332fbfb12",
+        "ranAt": "2026-10-30T10:21:28.220Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Deleting changing or swapping any evidence basis raw phase pin or candidate refuses qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Deleting changing or swapping any evidence basis raw phase pin or candidate refuses qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "V1 fixtures Codex ordinary provider and design review compatibility remain intact",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+                "title": "Installed v2 sessions recheck native startup policy before accepting scoped operations",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts",
+                "title": "Native-only terminal result validation preserves ordinary Claude buffered completions",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 733,
+            "titles": [
+              {
+                "title": "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed contradictory unknown-version and oversized streams never pass isolation",
+                "result": "pass"
+              },
+              {
+                "title": "Native-only terminal result validation preserves ordinary Claude buffered completions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7751,
+            "titles": [
+              {
+                "title": "Installed v2 sessions recheck native startup policy before accepting scoped operations",
+                "result": "pass"
+              },
+              {
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35305,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "title": "provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+                "result": "pass"
+              },
+              {
+                "title": "review-scoped provider and driver logs redact sentinel content on all failure paths",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5988,
+            "titles": [
+              {
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18258,
+            "titles": [
+              {
+                "title": "Trusted probe executes one control and one restricted phase with exact pins and bounded cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "Complete paired host evidence emits a completed Claude v2 candidate and qualifies through installed authority",
+                "result": "pass"
+              },
+              {
+                "title": "Internal post-ACK cancellation qualifies only after actual process drain while operator cancellation stays cancelled",
+                "result": "pass"
+              },
+              {
+                "title": "A reachable v2 candidate still refuses inactive controls missing native policy and restricted leaks",
+                "result": "pass"
+              },
+              {
+                "title": "Oversized native diagnostics drain the process and are discarded without a retry",
+                "result": "pass"
+              },
+              {
+                "title": "Deleting changing or swapping any evidence basis raw phase pin or candidate refuses qualification",
+                "result": "pass"
+              },
+              {
+                "title": "Codex probe preserves strict schema cleanup and actual process drain",
+                "result": "pass"
+              },
+              {
+                "title": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof",
+                "result": "pass"
+              },
+              {
+                "title": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+                "result": "pass"
+              },
+              {
+                "title": "Probe capture overflow and spawn observation failure drain the actual process",
+                "result": "pass"
+              },
+              {
+                "title": "Restricted capability leaks fail and control-phase evidence cannot qualify production",
+                "result": "pass"
+              },
+              {
+                "title": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+                "result": "pass"
+              },
+              {
+                "title": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9593,
+            "titles": [
+              {
+                "title": "Approved installed probe without signature is accepted without trust-key provisioning",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy signature metadata is inert and bounded",
+                "result": "pass"
+              },
+              {
+                "title": "Draft stale and tampered evidence remain refused",
+                "result": "pass"
+              },
+              {
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              },
+              {
+                "title": "An exact start replay never schedules another completed or paused attempt",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

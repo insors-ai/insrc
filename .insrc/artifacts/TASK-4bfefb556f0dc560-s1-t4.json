@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d708d6ee-fe9b-4514-b03e-7060e869dd98",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:44:01.476Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Deploy and qualify both installed review modes",
+      "parent": {
+        "entityId": "STORY-4bfefb556f0dc560-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4bfefb556f0dc560-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4bfefb556f0dc560-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d6ad98ff0a9fe98310596a30d015e03aae5776679cf6314605375266ea15ccea",
+        "at": "2026-10-30T09:44:01.476Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:44:01.476Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Deploy and qualify both installed review modes",
+    "summary": "Commit/build/deploy the tested source, safely update/restart the daemon after checking other sessions, and run one deliberate serial control/restricted pair per mode with persisted request IDs. Export real completed candidates and prepare current mode-specific canonical probe records.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "Installed source-only and indexed-impact attempts both reach completed with independently validated candidates on exact current source/binary/model/profile pins; failed/unsupported is not task acceptance.",
+      "Actual controls fire, restricted native inventory/source policy and all bases pass, two durable ACKs precede actual cancellation/exit; no automatic retries.",
+      "Record actual known/unknown usage honestly and retain bounded private raw evidence. Prepare concrete mode-specific records for explicit approval without autoapproving them.",
+      "Do not interrupt another session's active reviews/work during daemon deployment; no credential copies or user-global CLI settings edits."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Installed source-only and indexed-impact probes each complete with a validated candidate using one serial control restricted pair"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

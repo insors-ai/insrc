@@ -84,6 +84,30 @@ These restrictions concern model-facing tools and inherited customization;
 the CLI retains its existing OAuth and model-provider connectivity. A tool
 inventory is not an OS filesystem/network sandbox claim.
 
+Claude's `claude-scoped-v2` adapter disables the observed built-in plugins,
+hooks, instruction discovery and auto-memory through session-local settings.
+Its exact schema-bound `StructuredOutput` entry is recorded separately as a
+protocol tool; unknown or executable tools still fail. The labelled control
+deliberately permits the synthetic hooks and plugin, while the restricted
+phase uses the production template.
+
+The v2 host combines native inventory, pinned source-policy diagnostics,
+active controls, real broker refusals, journal ACKs and process exit into an
+explicit `review-agent-capabilities-v1` proof. Each native diagnostic file is
+limited to 256 KiB within the pair's aggregate 8 MiB retention bound. Known
+managed-policy paths must be absent, and native diagnostics must confirm the
+supported unmanaged consumer-account policy; missing, changed or unsupported
+organization/source facts remain unsupported. A raw silent canary remains
+unverifiable; it is never relabelled as an independent denial.
+
+Only complete evidence produces `completed` plus a candidate. Export rebuilds
+the candidate and all its observations from the raw files rather than trusting
+the proposed result. An operator cancellation cannot produce a candidate.
+Installed production sessions also recheck native source policy before scoped
+operations. Historical v1 diagnostics and scripted fixtures cannot mint v2
+installed qualification, and a completed candidate still needs the approvals
+and real acceptance below.
+
 Activation handoff, in order:
 
 1. Inspect the bounded raw files and independently establish **every** required

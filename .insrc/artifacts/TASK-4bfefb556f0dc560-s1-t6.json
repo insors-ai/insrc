@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09818232-13b7-46f7-9732-55ba2d24261b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:44:01.478Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run real new-engine acceptance and present activation signoff",
+      "parent": {
+        "entityId": "STORY-4bfefb556f0dc560-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4bfefb556f0dc560-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4bfefb556f0dc560-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "099734f1353093f8a51f518d258111581cac1a286aa4f9eed0f78c96cacdf6e7",
+        "at": "2026-10-30T09:44:01.478Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:44:01.479Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run real new-engine acceptance and present activation signoff",
+    "summary": "With explicit bounded test opt-in and current approved evidence, run one actual scoped plan-investigation-v1 review via normal admission. Verify durable checkpoints and final publication, perform the mandatory Story code review, and present concrete tested activation configuration/rollback for final signoff.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "One actual plan-investigation-v1 review uses only relevant selected commit packets and reaches accepted per-block checkpoints plus final canonical publication. No legacy fallback or synthetic result counts.",
+      "Handoff identifies actual reviewed commits, source/binary/model/profile/policy pins, approved evidence references, known/unknown usage, tested config and rollback.",
+      "Actual review or prerequisite failure remains failed/pending; no diagnostic-only completion and no claimed cost/quality savings without measurement.",
+      "One mandatory final Story code review is recorded without automatic review rounds or broad test sweeps. The acceptance review can serve it only if the canonical completion gate recognizes that exact Story review.",
+      "Present final activation signoff; default activation and later legacy CODE deletion are separate user decisions, not performed by this task."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Approved current qualification evaluation readiness and reconciliation enable one real scoped plan-investigation-v1 review with accepted per-block checkpoints and final publication"
+      },
+      {
+        "level": "smoke",
+        "name": "Activation handoff lists concrete verified evidence references real review result and remaining explicit default activation signoff"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

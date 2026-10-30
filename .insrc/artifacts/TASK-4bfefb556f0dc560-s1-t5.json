@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5f27d514-063a-4fcc-ab5a-48d4eea0c742",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:44:01.477Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prepare and approve current activation evidence",
+      "parent": {
+        "entityId": "STORY-4bfefb556f0dc560-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4bfefb556f0dc560-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4bfefb556f0dc560-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eaa425bb194b9eb2b9e819561f77341f49cd4b096716edcea7ab163842b67812",
+        "at": "2026-10-30T09:44:01.477Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:44:01.478Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prepare and approve current activation evidence",
+    "summary": "Inventory existing canonical governance records; reuse existing evaluation/readiness mechanisms and prepare exact mode probes, independent oracle/evaluation, readiness and predecessor reconciliation references. Obtain required explicit approvals rather than treating preparation or system actors as independent adjudication.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Current mode-specific canonical probe records reference actual validated candidates and exact installed source/profile/catalog/policy pins.",
+      "Independent oracle adjudication is by a real person with current canonical approval; actual evaluation preserves every required defect/control/coverage row and meets existing criteria.",
+      "Readiness and predecessor reconciliation records are concrete, current, approved and accepted by unchanged normal admission. No signatures or automatic/fake approvals.",
+      "If evidence/approval is pending or evaluation fails, name the specific record/check and keep t5 pending/failed; do not infer readiness from config or fixtures."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Current canonical qualification independent evaluation readiness and reconciliation pass normal production admission"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

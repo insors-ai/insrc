@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a48bdd93-4847-40b9-8a7b-952113df6e23",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:44:01.473Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4bfefb556f0dc560",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Construct completed candidates from real paired host evidence",
+      "parent": {
+        "entityId": "STORY-4bfefb556f0dc560-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4bfefb556f0dc560-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4bfefb556f0dc560-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "870f1dc99936e2d11f1c0ef22cedde9e57f3dd61111519e7224635a4ade410cb",
+        "at": "2026-10-30T09:44:01.473Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:44:01.473Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Construct completed candidates from real paired host evidence",
+    "summary": "Integrate bounded native diagnostics and host facts into the existing serial control/restricted runner. Build actual effective inventory, all required per-check bases and ordered ACK/cancel trace; emit completed candidate only when independently supported, replacing the unreachable success branch.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Complete scripted native/host evidence reaches completed plus candidate, and installed evidence inspection accepts its v2 shape.",
+      "Raw canary silence is unchanged; candidate denials require bound policy/native/source facts and working labelled controls, never flags or model claims alone.",
+      "Every leak/missing fact yields failed/unsupported without candidate. Operator cancellation cannot count as successful internal post-ACK cancellation.",
+      "Keep shared provider lane, aggregate128K/300sec/8MiB including diagnostic files; at most one control then one restricted subprocess, actual drain, no retry and unknown usage null."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Complete paired host evidence emits a completed Claude v2 candidate and qualifies through installed authority"
+      },
+      {
+        "level": "integration",
+        "name": "Internal post-ACK cancellation qualifies only after actual process drain while operator cancellation stays cancelled"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

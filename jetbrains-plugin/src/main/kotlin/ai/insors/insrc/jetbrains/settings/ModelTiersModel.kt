@@ -90,7 +90,12 @@ class ModelTiersModel(
         val result: Resolved = if (configuredFamily != null && !model.isNullOrEmpty()) {
             val found = served(configuredFamily, model)
             if (found == null) {
-                notes += "$model is not listed for ${configuredFamily.displayName} — the daemon runs its default for the tier instead"
+                // A family on a host takes only its listed models: the daemon refuses the tier (model-not-supported).
+                notes += if (configuredFamily.host != null) {
+                    "$model is not supported by ${configuredFamily.displayName} — the tier will not run"
+                } else {
+                    "$model is not listed for ${configuredFamily.displayName} — the daemon runs its default for the tier instead"
+                }
                 Resolved(configuredFamily.id, model, effortLeaf ?: "", listed = false, note = null)
             } else {
                 Resolved(configuredFamily.id, found.id, effortLeaf ?: "", listed = true, note = null)
@@ -160,6 +165,7 @@ class ModelTiersModel(
         if (m.aliases.isNotEmpty()) append(" · ").append(m.aliases.joinToString(", "))
         if (m.installed == false) append(" — not installed")
         if (m.source == "user-approved") append(" — approved")
+        if (m.hosting != null) append(" — ").append(m.hosting)
     }
 
     /**
@@ -176,7 +182,7 @@ class ModelTiersModel(
         val choices = fam.models.map { ModelChoice.Model(id = it.id, label = label(it), current = it.id == s.pendingModel) }
         val prefix = when {
             !s.saved.listed && s.pendingRunner == s.saved.runner && s.pendingModel == s.saved.model && s.pendingModel.isNotEmpty() ->
-                listOf(ModelChoice.CurrentNotInCatalog(s.pendingModel))
+                listOf(ModelChoice.CurrentNotInCatalog(s.pendingModel, hosted = fam.host != null))
             choices.none { it.current } -> listOf(ModelChoice.SelectPrompt)
             else -> emptyList()
         }
@@ -293,9 +299,9 @@ sealed interface ModelChoice {
     /** A selectable model from the definitions; [current] marks the tier's selected one. */
     data class Model(val id: String, override val label: String, val current: Boolean) : ModelChoice
 
-    /** A non-selectable marker showing a configured model the definitions do not list. */
-    data class CurrentNotInCatalog(val id: String) : ModelChoice {
-        override val label: String = "(current, not listed): $id"
+    /** A non-selectable marker showing a configured model the definitions do not list ([hosted]: its family runs on a host, so the tier will not run). */
+    data class CurrentNotInCatalog(val id: String, val hosted: Boolean = false) : ModelChoice {
+        override val label: String = if (hosted) "(current, not supported): $id" else "(current, not listed): $id"
     }
 
     /** A non-selectable prompt shown when no concrete model is chosen, so the combo never falsely pre-selects one. */

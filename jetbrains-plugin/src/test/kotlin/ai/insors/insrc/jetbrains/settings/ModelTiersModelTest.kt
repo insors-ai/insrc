@@ -214,4 +214,100 @@ class ModelTiersModelTest {
         assertTrue(staleWithEffort.unsavable().isEmpty())
         assertEquals(listOf(PendingWrite(listOf("models", "tiers", "mid"), WriteOp.Set(mapOf("runner" to "cli-claude", "model" to "c-big", "effort" to "")))), staleWithEffort.collectWrites())
     }
+
+    // --- Epic b220bb61, Story s5: a family that runs its CLI on Ollama (host), its models cloud or local ---
+
+    private fun hostedModel(id: String, hosting: String, efforts: List<String> = emptyList(), aliases: List<String> = emptyList()) =
+        DefinedModelDto(id = id, aliases = aliases, displayName = null, efforts = efforts, source = "shipped", installed = null, hosting = hosting)
+
+    /** defs plus FakeH: host 'ollama', no tierDefaults, a cloud model with efforts and an alias, a local one without. */
+    private val hostedDefs = defs.copy(families = defs.families + DefinedFamilyDto(
+        id = "ollama-claude", cliKind = "claude", displayName = "FakeH", tierDefaults = emptyMap(), toolLoopModel = null,
+        models = listOf(hostedModel("hc:cloud", "cloud", listOf("low", "max"), aliases = listOf("hc")), hostedModel("hl:7b", "local")),
+        host = "ollama",
+    ))
+
+    @Test
+    fun `offers the host family, labels its models cloud or local, offers efforts only where the model has them and writes the whole tier`() {
+        val m = ModelTiersModel(catalog(), hostedDefs)
+        assertEquals(listOf("cli-codex", "cli-claude", "ollama", "ollama-claude"), m.runnerOptions())
+        m.selectRunner("core", "ollama-claude")
+        assertEquals(Triple("ollama-claude", "hc:cloud", ""), current(m, "core"), "the first declared model, CLI-default effort")
+        assertEquals(
+            listOf("hc:cloud · hc — cloud", "hl:7b — local"),
+            m.modelOptions("core").filterIsInstance<ModelChoice.Model>().map { it.label },
+            "only its declared models, each marked",
+        )
+        assertEquals(listOf("", "low", "max"), m.effortOptions("core"))
+        m.selectEffort("core", "max")
+        assertEquals(listOf(PendingWrite(listOf("models", "tiers", "core"), WriteOp.Set(mapOf("runner" to "ollama-claude", "model" to "hc:cloud", "effort" to "max")))), m.collectWrites())
+        m.selectModel("core", "hl:7b")
+        assertEquals(listOf(""), m.effortOptions("core"), "a model with no efforts offers only the CLI default")
+        assertEquals(listOf(PendingWrite(listOf("models", "tiers", "core"), WriteOp.Set(mapOf("runner" to "ollama-claude", "model" to "hl:7b", "effort" to "")))), m.collectWrites())
+
+        // Vendor and plain Ollama labels carry no cloud/local mark.
+        m.selectRunner("mid", "cli-codex")
+        assertEquals(listOf("x-a · xa", "x-b — approved"), m.modelOptions("mid").filterIsInstance<ModelChoice.Model>().map { it.label })
+        m.selectRunner("cheap", "ollama")
+        assertEquals(listOf("loc:1", "loc:2 — not installed"), m.modelOptions("cheap").filterIsInstance<ModelChoice.Model>().map { it.label })
+
+        // A host model configured by alias: its canonical id, labelled with its hosting.
+        val byAlias = ModelTiersModel(catalog("core.runner" to "ollama-claude", "core.model" to "hc"), hostedDefs)
+        assertEquals(Triple("ollama-claude", "hc:cloud", ""), current(byAlias, "core"))
+        assertEquals(ModelChoice.Model("hc:cloud", "hc:cloud · hc — cloud", current = true), byAlias.selectedModelChoice("core"))
+        assertNull(byAlias.note("core"))
+    }
+
+    @Test
+    fun `notes an undeclared host-family model as not supported, the tier will not run, while a vendor or host-less family keeps today's note`() {
+        val gone = ModelTiersModel(catalog("core.runner" to "ollama-claude", "core.model" to "gone:cloud"), hostedDefs)
+        assertEquals(Triple("ollama-claude", "gone:cloud", ""), current(gone, "core"))
+        assertEquals("gone:cloud is not supported by FakeH — the tier will not run", gone.note("core"))
+        assertEquals(ModelChoice.CurrentNotInCatalog("gone:cloud", hosted = true), gone.selectedModelChoice("core"))
+        assertEquals("(current, not supported): gone:cloud", gone.selectedModelChoice("core").label)
+        gone.selectEffort("core", "max") // not accepted: only the CLI default is offered for an undeclared model
+        assertEquals(listOf(""), gone.effortOptions("core"))
+
+        // An edit still on the undeclared model is refused; nothing undeclared is written.
+        val dirty = ModelTiersModel(catalog("core.runner" to "ollama-claude", "core.model" to "gone:cloud", "core.effort" to "max"), hostedDefs)
+        dirty.selectEffort("core", "")
+        assertEquals(mapOf("core" to "choose a listed model for the core tier first (gone:cloud is not listed)"), dirty.unsavable())
+        assertEquals(emptyList<PendingWrite>(), dirty.collectWrites())
+
+        // A vendor family keeps today's note and marker.
+        val vendor = ModelTiersModel(catalog("core.runner" to "cli-claude", "core.model" to "c-old"), hostedDefs)
+        assertEquals("c-old is not listed for FakeC — the daemon runs its default for the tier instead", vendor.note("core"))
+        assertEquals("(current, not listed): c-old", vendor.selectedModelChoice("core").label)
+
+        // An older daemon answers without host: the same family behaves as a vendor family.
+        val hostless = hostedDefs.copy(families = hostedDefs.families.map { it.copy(host = null, models = it.models.map { md -> md.copy(hosting = null) }) })
+        val old = ModelTiersModel(catalog("core.runner" to "ollama-claude", "core.model" to "gone:cloud"), hostless)
+        assertEquals("gone:cloud is not listed for FakeH — the daemon runs its default for the tier instead", old.note("core"))
+        assertEquals(ModelChoice.CurrentNotInCatalog("gone:cloud"), old.selectedModelChoice("core"))
+        old.selectModel("core", "hc:cloud")
+        assertEquals(listOf("hc:cloud · hc", "hl:7b"), old.modelOptions("core").filterIsInstance<ModelChoice.Model>().map { it.label }, "no marks without hosting")
+    }
+
+    @Test
+    fun `resolves a tier saved on the host family to its runner, model and effort on reopen`() {
+        // Save on the host family, then reopen over a catalog holding the written tier.
+        val edit = ModelTiersModel(catalog(), hostedDefs)
+        edit.selectRunner("mid", "ollama-claude")
+        edit.selectEffort("mid", "low")
+        val written = (edit.collectWrites().single().op as WriteOp.Set).value as Map<*, *>
+        val reopened = ModelTiersModel(
+            catalog("mid.runner" to written["runner"] as String, "mid.model" to written["model"] as String, "mid.effort" to written["effort"] as String),
+            hostedDefs,
+        )
+        assertEquals(Triple("ollama-claude", "hc:cloud", "low"), current(reopened, "mid"))
+        assertNull(reopened.note("mid"))
+        assertFalse(reopened.isModified())
+        assertEquals(ModelChoice.Model("hc:cloud", "hc:cloud · hc — cloud", current = true), reopened.selectedModelChoice("mid"))
+
+        // An effort the declared model does not take is shown as the CLI default the daemon uses, with a note.
+        val dropped = ModelTiersModel(catalog("mid.runner" to "ollama-claude", "mid.model" to "hl:7b", "mid.effort" to "max"), hostedDefs)
+        assertEquals(Triple("ollama-claude", "hl:7b", ""), current(dropped, "mid"))
+        assertEquals("stored effort 'max' is not accepted by hl:7b — the daemon drops it", dropped.note("mid"))
+        assertFalse(dropped.isModified())
+    }
 }

@@ -47,3 +47,15 @@ const LONG = { timeout: 600_000 };
 test("b220-s5-gradle.test.ts: ModelDefinitionsGatewayTest parses a family's host and its models' hosting, and null when the answer has neither", LONG, () => {
 	junitCase('daemon.ModelDefinitionsGatewayTest', "parses a family's host and its models' hosting, and null when the answer has neither");
 });
+
+test('b220-s5-gradle.test.ts: ModelTiersModelTest offers the host family, labels its models cloud or local, offers efforts only where the model has them and writes the whole tier', LONG, () => {
+	junitCase('settings.ModelTiersModelTest', 'offers the host family, labels its models cloud or local, offers efforts only where the model has them and writes the whole tier');
+});
+
+test("b220-s5-gradle.test.ts: ModelTiersModelTest notes an undeclared host-family model as not supported, the tier will not run, while a vendor or host-less family keeps today's note", LONG, () => {
+	junitCase('settings.ModelTiersModelTest', "notes an undeclared host-family model as not supported, the tier will not run, while a vendor or host-less family keeps today's note");
+});
+
+test('b220-s5-gradle.test.ts: ModelTiersModelTest resolves a tier saved on the host family to its runner, model and effort on reopen', LONG, () => {
+	junitCase('settings.ModelTiersModelTest', 'resolves a tier saved on the host family to its runner, model and effort on reopen');
+});

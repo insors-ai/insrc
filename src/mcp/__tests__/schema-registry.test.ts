@@ -47,7 +47,7 @@ const EXPECTED_PHASES: Record<string, string[]> = {
 	insrc_workflow_step: ['start', 'plan', 'step', 'synthesize', 'resolve_question', 'review_deferred', 'park', 'resume'],
 	insrc_build_step: ['implement', 'validate'],
 	insrc_review_step: ['start', 'claims', 'verdicts', 'findings'],
-	insrc_code_review_step: ['start', 'judgements', 'investigation'],
+	insrc_code_review_step: ['start', 'judgements'],
 	insrc_triage: ['start', 'classify'],
 	insrc_workflow_run: ['start', 'poll', 'abort'],
 };

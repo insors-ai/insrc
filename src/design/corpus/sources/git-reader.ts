@@ -85,7 +85,7 @@ export interface ReaderOptions {
   readonly signal?: AbortSignal | undefined;
 }
 /** Verify Git's own object identity in addition to framing; replacement content cannot pass. */
-export function decodeObject(response: Uint8Array, oid: string, expected: 'commit' | 'tree' | 'blob'): Uint8Array {
+function decodeObject(response: Uint8Array, oid: string, expected: 'commit' | 'tree' | 'blob'): Uint8Array {
   const data = Buffer.from(response), newline = data.indexOf(10);
   if (newline < 0 || newline > 160) throw new SourceReaderError('inventory.invalid', 'Malformed Git object header.');
   const header = data.subarray(0, newline).toString('ascii');
@@ -101,7 +101,7 @@ export function decodeObject(response: Uint8Array, oid: string, expected: 'commi
   if (actual !== oid) throw new SourceReaderError('digest.mismatch', 'Git object bytes do not match their identity.');
   return new Uint8Array(bytes);
 }
-export function treeEntry(tree: Uint8Array, name: string, oidBytes: number): { mode: string; oid: string } {
+function treeEntry(tree: Uint8Array, name: string, oidBytes: number): { mode: string; oid: string } {
   const data = Buffer.from(tree), target = Buffer.from(name); let cursor = 0;
   let found: { mode: string; oid: string } | undefined;
   while (cursor < data.length) {

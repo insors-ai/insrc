@@ -1,5 +1,12 @@
 # Plan-directed code review: opt-in protocol
 
+> **Rolled back on 2026-10-30 by user decision.** This document is historical.
+> The investigation engine, its native adapters, probe tools, configuration
+> catalog entries and IPC/MCP routing have been removed. The commands below are
+> unavailable after deploying the rollback. Existing design, approval, build and
+> failed acceptance records are retained as history, not evidence of an enabled
+> engine. See the epic's `ROLLBACK.md` for the implementation boundary.
+
 ## Live operator probes
 
 Build first with `npm run build`, then update/restart the installed daemon. The

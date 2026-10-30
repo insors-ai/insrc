@@ -85,8 +85,8 @@ test('the src/cli re-export is reference-identical to the src/config definition 
 	assert.equal(FROM_CLI, FROM_CONFIG);
 });
 
-test('the real CONFIG_CATALOG has 52 rows (models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)', () => {
-	assert.equal(FROM_CONFIG.length, 52);
+test('the real CONFIG_CATALOG has 49 rows (models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)', () => {
+	assert.equal(FROM_CONFIG.length, 49);
 	const live = new Set(FROM_CONFIG.map(r => r.path));
 	// the derived + old-nested paths must NOT be live catalog rows
 	for (const p of [
@@ -191,8 +191,8 @@ test('the config catalog declares codeReview.daemonReviewCeilingMs and codeRevie
 	assert.deepEqual([row('codeReview.daemonReviewIdleMs')?.type, row('codeReview.daemonReviewIdleMs')?.default], ['number', 1_200_000]);
 });
 
-test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default '' (52 rows)", () => {
-	assert.equal(FROM_CONFIG.length, 52);
+test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default '' (49 rows)", () => {
+	assert.equal(FROM_CONFIG.length, 49);
 	for (const tier of ['core', 'mid', 'cheap']) {
 		const row = FROM_CONFIG.find(r => r.path === `models.tiers.${tier}.effort`);
 		assert.ok(row, `models.tiers.${tier}.effort is declared`);

@@ -22,10 +22,6 @@
 import { spawn } from 'node:child_process';
 
 export interface ProcessGroupResult {
-  readonly exitSignal?: NodeJS.Signals | undefined;
-  /** Optional bounded-capture/observer failures; partial output is diagnostic only. */
-  readonly outputLimitExceeded?: boolean | undefined;
-  readonly observerFailed?: boolean | undefined;
 	readonly stdout:     string;
 	readonly stderr:     string;
 	/** The child's exit code; -1 when it never ran or exited by signal without a code. */
@@ -42,8 +38,6 @@ export interface ProcessGroupResult {
 }
 
 export interface ProcessGroupOpts {
-  readonly maxOutputBytes?: number | undefined;
-  readonly onSpawn?: (() => void) | undefined;
 	readonly timeoutMs: number;
 	readonly cwd?:      string | undefined;
 	/** Written to the child's stdin, which is then closed. */
@@ -89,8 +83,7 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 		let stalled = false;
 		let aborted = false;
 		let settled = false;
-    let capturedBytes = 0, outputLimitExceeded = false, observerFailed = false;
-		const finish = (exitCode: number, spawnError?: string, exitSignal?: NodeJS.Signals): void => {
+		const finish = (exitCode: number, spawnError?: string): void => {
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
@@ -98,9 +91,6 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 			opts.signal?.removeEventListener('abort', onAbort);
 			resolve({
 				stdout, stderr, exitCode, timedOut, durationMs: Date.now() - start,
-        ...(exitSignal !== undefined ? { exitSignal } : {}),
-        ...(outputLimitExceeded ? { outputLimitExceeded } : {}),
-        ...(observerFailed ? { observerFailed } : {}),
 				...(stalled ? { stalled } : {}),
 				...(aborted ? { aborted } : {}),
 				...(spawnError !== undefined ? { spawnError } : {}),
@@ -127,27 +117,18 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 		const onAbort = (): void => { aborted = true; kill(); };
 		opts.signal?.addEventListener('abort', onAbort, { once: true });
 
-    child.once('spawn', () => { try { opts.onSpawn?.(); } catch { observerFailed = true; kill(); } });
-    const capture = (c: Buffer): boolean => {
-      capturedBytes += c.length;
-      if (opts.maxOutputBytes !== undefined && capturedBytes > opts.maxOutputBytes) {
-        outputLimitExceeded = true; kill(); return false;
-      }
-      return !outputLimitExceeded;
-    };
 		child.stdout.on('data', (c: Buffer) => {
-      if (!capture(c)) return;
 			stdout += c.toString();
 			if (stall?.silence === true && stallTimer !== undefined && !stalled) {
 				clearTimeout(stallTimer);
 				stallTimer = setTimeout(onStall, stall.ms);
 			}
 		});
-		child.stderr.on('data', (c: Buffer) => { if (capture(c)) stderr += c.toString(); });
+		child.stderr.on('data', (c: Buffer) => { stderr += c.toString(); });
 		child.stdin.on('error', () => { /* the child closed stdin early (EPIPE); its exit is reported below */ });
 		child.on('exit', () => { if (child.pid !== undefined) killProcessGroup(child.pid); });
 		child.on('error', err => finish(-1, err.message));
-		child.on('close', (code, signal) => finish(code ?? -1, undefined, signal ?? undefined));
+		child.on('close', code => finish(code ?? -1));
 		child.stdin.end(opts.stdin ?? '');
 	});
 }

@@ -86,10 +86,6 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['claude.models', 'session', false],
 	['codeAnalyzer.diffRuns', 'session', false],
 	['codeReview.freshness', 'session', false],
- ['codeReview.investigation','session',false],
- ['codeReview.investigation.capabilities','session',false],
- ['codeReview.investigation.probe','session',false],
- ['codeReview.diagnostics','session',false],
 	['codeReview.grounding', 'session', false],
 	['config.agents', 'session', false],
 	['config.list', 'session', false],
@@ -281,8 +277,6 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 
 /** These operations own process-local admission and transport lifetimes. */
 export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
- 'codeReview.investigation','codeReview.investigation.capabilities','codeReview.diagnostics',
- 'codeReview.investigation.probe',
  'db.listConnections','db.listDriverKinds','db.saveConnection','db.deleteConnection','db.testConnection',
  'db.connections.v2.capabilities','db.connections.v2.drivers','db.connections.v2.list','db.connections.v2.read',
  'db.connections.v2.ticket','db.connections.v2.mutate','db.connections.v2.status','db.connections.v2.activate',

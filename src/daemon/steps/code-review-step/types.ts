@@ -122,7 +122,7 @@ export interface CodeReviewStepDone {
 	 *  controller reviewed it through this tool's own judgements phase. */
 	readonly reviewedBy?:    'daemon' | undefined;
 	/** How a daemon review was grounded; `degraded` means on the diff. */
-	readonly groundingMode?: 'full' | 'degraded' | 'investigation' | undefined;
+	readonly groundingMode?: 'full' | 'degraded' | undefined;
 	/** Why the review fell back to the diff (ISSUE-1102dc71); absent on a full review. */
 	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 	/** The model the daemon reviewed with. */

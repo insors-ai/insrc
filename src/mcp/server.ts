@@ -1,4 +1,3 @@
-import { investigationEnvelopeInput } from '../shared/review-investigation-wire.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -87,9 +86,8 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
 	},
 	insrc_code_review_step: {
-		phases: ['start', 'judgements', 'investigation'],
+		phases: ['start', 'judgements'],
 		dynamicNote:
-			'Explicit opt-in phase=investigation uses version/engine/command/capabilities and scoped durable progress; it never falls through to legacy. ' +
 			'Multi-turn: the judgements body is a schema the run hands back — ' +
 			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
 	},
@@ -757,11 +755,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				openWorldHint:  false,
 			},
 			inputSchema: {
-				version: investigationEnvelopeInput.version.optional(),
- engine: investigationEnvelopeInput.engine.optional(),
- command: investigationEnvelopeInput.command.optional(),
- capabilities: investigationEnvelopeInput.capabilities.optional(),
- phase: z.enum(['start', 'judgements', 'investigation'])
+				phase: z.enum(['start', 'judgements'])
 					.describe('Which turn of the loop this call carries.'),
 				epicHash: z.string()
 					.describe('Only for phase=start. The Epic hash keying the Story.')

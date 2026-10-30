@@ -2,7 +2,6 @@
 
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
-import { reviewRecordGap } from './record-validation.js';
 
 const record = (value: unknown): Record<string, unknown> =>
 	typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -21,7 +20,6 @@ export function reviewedBuildFingerprint(build: unknown): string {
 
 /** A stale or incomplete review cannot satisfy completion, even with verdict enforcement off. */
 export function reviewBuildGap(build: unknown, review: unknown, repoPath: string): string | undefined {
-	const recordGap=reviewRecordGap(review);if(recordGap)return recordGap;
 	if (build === undefined) return undefined;
 	const b = record(build), r = record(review);
 	const meta = record(b['meta']), body = record(b['body']);

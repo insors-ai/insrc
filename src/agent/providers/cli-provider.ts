@@ -61,17 +61,6 @@ import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } 
 import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars } from './review-budget.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
-import { InvestigationQualificationError } from './investigation-session.js';
-import { runClaudeInvestigationSession, claudeInvestigationAdapter,claudeCompactInvestigationAdapter } from './claude-investigation-session.js';
-import { investigationProbeAdapterVersion } from './investigation-probe-grant.js';
-import { CLAUDE_V3_ADAPTER } from '../../shared/review-isolation-evidence.js';
-import { runCodexInvestigationSession, codexInvestigationAdapter } from './codex-investigation-session.js';
-import { runNativeInvestigationProbe } from './native-investigation-probe.js';
-import { collectClaudeProbeObservations } from './claude-investigation-probe.js';
-import { readClaudeInvestigationResult } from './claude-investigation-events.js';
-import { PROBE_OBSERVATION_BYTES } from '../../shared/review-investigation-probe.js';
-import { collectCodexProbeObservations } from './codex-investigation-probe.js';
-import type { InvestigationProbeOptions, InvestigationProbeExport } from '../../shared/review-investigation-probe.js';
 
 const log = getLogger('cli-provider');
 
@@ -464,21 +453,7 @@ export class CliProvider implements LLMProvider {
 	 * with the time that remains. Passing the deadline throws
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
-  async runInvestigationProbe(options: InvestigationProbeOptions): Promise<InvestigationProbeExport> {
-    return runNativeInvestigationProbe({ options, adapter: this.kind === 'claude' ? investigationProbeAdapterVersion(options.grant)===CLAUDE_V3_ADAPTER?claudeCompactInvestigationAdapter:claudeInvestigationAdapter : codexInvestigationAdapter,
-      binaryPath: resolveBin(this.binPath), modelArgs: this.modelArgs(), profile: this.getReviewBudgetProfile('reviewer-session'),
-      collect: this.kind === 'claude' ? collectClaudeProbeObservations : collectCodexProbeObservations,
-      invoke: (args, prompt, execution) => runInProcessGroup(execution.binaryPath, args, { ...execution, stdin: prompt }) });
-  }
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
-		if (opts.investigationBinding !== undefined) {
-			if (this.kind === 'claude') return await runClaudeInvestigationSession({binding:opts.investigationBinding,prompt,schema,opts,binaryPath:resolveBin(this.binPath),modelArgs:this.modelArgs(),profile:this.getReviewBudgetProfile('reviewer-session'),
-				invoke:async(args,text,execution)=>{const {envelope}=await this.runClaude(args,text,{cwd:execution.cwd,qualifiedBinPath:execution.binaryPath,timeoutMs:execution.timeoutMs,stallMs:execution.stallMs,signal:execution.signal,env:execution.env,nativeInvestigation:true,reviewScoped:true});
-					if(envelope.is_error||envelope.structured_output===undefined)throw new InvestigationQualificationError('Claude investigation returned no accepted structured output');return envelope.structured_output;}}) as T;
-			return await runCodexInvestigationSession({binding:opts.investigationBinding,prompt,schema,opts,binaryPath:resolveBin(this.binPath),modelArgs:this.modelArgs(),profile:this.getReviewBudgetProfile('reviewer-session'),
-				invoke:async(args,text,execution)=>{const {agentText}=await this.runCodex(args,text,{cwd:execution.cwd,qualifiedBinPath:execution.binaryPath,timeoutMs:execution.timeoutMs,stallMs:execution.stallMs,signal:execution.signal,env:execution.env,nativeInvestigation:true,reviewScoped:true});
-					if(agentText===undefined)throw new ModelResponseShapeError('review-answer-invalid');let parsed:unknown;try{parsed=JSON.parse(agentText);}catch{throw new ModelResponseShapeError('review-answer-invalid');}return codexReply(schema,parsed,'Codex investigation reply');}}) as T;
-		}
 		const startedAt = Date.now();
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
 		const maxAttempts = opts.reviewBudget || opts.internalRetry === false ? 1 : 2;
@@ -602,22 +577,13 @@ export class CliProvider implements LLMProvider {
 
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
 		return new Promise((resolve, reject) => {
-			const stall=exec?.nativeInvestigation&&exec.stallMs!==undefined?{ms:exec.stallMs,started:()=>false,silence:true}:undefined;
-			const r = exec?.nativeInvestigation
-        ? runInProcessGroup(exec.qualifiedBinPath ?? resolveBin(this.binPath), args, { stdin: prompt, timeoutMs: exec.timeoutMs ?? this.timeoutMs,
-          cwd: exec.cwd, stall, signal: exec.signal, env: exec.env, maxOutputBytes: PROBE_OBSERVATION_BYTES }).then(out => {
-          if (out.aborted) throw abortError();
-          if (out.outputLimitExceeded || out.observerFailed) throw new ModelResponseShapeError('review-native-output-bound');
-          return { ...out, exitCode: out.timedOut || out.stalled ? -9 : out.exitCode };
-        })
-        : runSubprocess(exec?.qualifiedBinPath??this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal,exec?.env);
+			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal);
 			r.then(out => {
-				if(out.stalled===true&&exec?.nativeInvestigation)return reject(new CliStallError('claude',exec.stallMs??300000,undefined));
 				if (out.exitCode !== 0) {
 					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr, undefined, exec?.reviewScoped));
 				}
 				let envelope: ClaudeEnvelope;
-				try { envelope = (exec?.nativeInvestigation ? readClaudeInvestigationResult(out.stdout) : JSON.parse(out.stdout)) as unknown as ClaudeEnvelope; }
+				try { envelope = JSON.parse(out.stdout) as ClaudeEnvelope; }
 				catch (err) {
 					if (exec?.reviewScoped) return reject(new ModelResponseShapeError('review-envelope-invalid'));
 					return reject(new Error(`claude stdout was not parseable JSON envelope: ${(err as Error).message}. stdout=${out.stdout.slice(0, 500)}`));
@@ -633,7 +599,7 @@ export class CliProvider implements LLMProvider {
 		const stall = exec?.stallMs !== undefined
 			? { ms: exec.stallMs, started: () => false, silence: true }
 			: exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
-		const out = await runSubprocess(exec?.qualifiedBinPath??this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal,exec?.env);
+		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal);
 		if (out.stalled === true) {
 			throw new CliStallError('codex', stall?.ms ?? this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
 		}
@@ -694,9 +660,6 @@ interface SubprocessResult {
  *  working directory (edit sessions run inside the repo) and/or a tighter
  *  timeout. Absent fields fall back to the provider defaults. */
 interface ExecOverride {
-	readonly nativeInvestigation?:boolean|undefined;
-	readonly qualifiedBinPath?:string|undefined;
-	readonly env?:NodeJS.ProcessEnv|undefined;
 	readonly reviewScoped?: boolean | undefined;
 	readonly cwd?:       string | undefined;
 	readonly timeoutMs?: number | undefined;
@@ -933,12 +896,11 @@ async function runSubprocess(
 	cwd?: string,
 	stall?: ProcessGroupOpts['stall'],
 	signal?: AbortSignal,
-	env?:NodeJS.ProcessEnv,
 ): Promise<SubprocessResult> {
-	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal,env);
+	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal);
 	if (result.exitCode === -1 && /ENOENT/.test(result.stderr)) {
 		resolvedBinCache.delete(command);
-		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal,env);
+		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal);
 	}
 	return result;
 }
@@ -954,9 +916,8 @@ async function spawnOnce(
 	cwd?: string,
 	stall?: ProcessGroupOpts['stall'],
 	signal?: AbortSignal,
-	env?:NodeJS.ProcessEnv,
 ): Promise<SubprocessResult> {
-	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd, stall, ...(signal !== undefined ? { signal } : {}),...(env!==undefined?{env}:{}) });
+	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd, stall, ...(signal !== undefined ? { signal } : {}) });
 	// A cancelled run throws at once: its group is already killed (Epic 8315a11f s1).
 	if (r.aborted === true) throw abortError();
 	if (r.spawnError !== undefined) {

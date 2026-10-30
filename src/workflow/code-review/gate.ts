@@ -30,7 +30,6 @@ import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
 import { reviewBuildGap } from './build-freshness.js';
-import { reviewRecordGap } from './record-validation.js';
 import type { ReviewVerdict } from '../review/types.js';
 
 const log = getLogger('code-review:gate');
@@ -101,8 +100,6 @@ export function enforceCodeReviewGate(
 		return { status: 'no-review' };
 	}
 
-	const recordGap=reviewRecordGap(review);
-	if(recordGap)return {status:'blocked',verdict:'block',counts,message:`Code review format is unsupported or invalid: ${recordGap}`};
 	const buildPath = artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId));
 	if (opts?.checkBuildFreshness !== false && existsSync(buildPath)) {
 		let gap: string | undefined;

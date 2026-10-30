@@ -1,4 +1,3 @@
-import { INVESTIGATION_RUNTIME_PATH } from '../../../shared/review-runtime-paths.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -56,7 +55,6 @@ export class NoBuildChangesError extends Error {
  * matched here, so there is one implementation of the glob semantics — git's.
  */
 export const LEDGER_EXCLUDE_GLOBS: readonly string[] = Object.freeze([
- `${INVESTIGATION_RUNTIME_PATH}/**`,
 	'.insrc/artifacts/*.json',
 	'.insrc/artifacts/*.jsonl',
 	'.insrc/build-start/**',

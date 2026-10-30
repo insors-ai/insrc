@@ -21,7 +21,7 @@ import { ARTIFACTS_DIR, artifactJsonPath, prepareArtifactWrite, writeAtomic } fr
 import { getLogger } from '../../shared/logger.js';
 import { codecFor, creationContextProvider } from './codecs.js';
 import type { CreationContextProvider, HeadFile, HeadPayload } from './codecs.js';
-import { decodeArtifactHead, emptyLifecycle, isActor, isAttachment, isBinding } from './decode.js';
+import { decodeArtifactHead, isActor, isAttachment, isBinding } from './decode.js';
 import { validateLogEntry } from './history.js';
 import { checkSidecarEntrySize } from './sidecar.js';
 import type { History } from './history.js';
@@ -53,15 +53,6 @@ export interface ArtifactStoreDeps {
 export interface UpdateResult {
 	readonly next:     Artifact<HeadPayload>;
 	readonly options?: WriteOptions | undefined;
-}
-
-export interface HeadSnapshot {readonly head: HeadFile; readonly revision: number; readonly digest: string;}
-export interface GuardedContentMutation {
- readonly payload: HeadPayload;
- /** Round audit metadata only; identity, envelope and lifecycle remain store-owned. */
- readonly metadata: Readonly<Record<string, unknown>>;
- readonly assertCurrent: () => void;
- readonly options?: WriteOptions | undefined;
 }
 
 /** The prepared head text with its lifecycle status set to completed. */
@@ -113,43 +104,6 @@ export class ArtifactStore {
 
 	/** The history this store writes its log entries through, for a writer that appends a revision-less entry of its own under {@link exclusive}. */
 	get history(): History { return this.deps.history; }
-
-	private headSnapshot(id: string): HeadSnapshot | null {
-	 const path=artifactJsonPath(this.deps.repoPath,id);
-	 let bytes:string;
-	 try{bytes=readFileSync(path,'utf8');}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return null;throw error;}
-	 const decoded=decodeArtifactHead(id,bytes);
-	 return {head:decoded.head,revision:decoded.artifact.lifecycle.revision.number,digest:headHashOf(bytes)};
-	}
-	/** Read canonical bytes and revision after finishing any recoverable pending write. */
-	async readHeadSnapshot(id:string):Promise<HeadSnapshot|null>{
-	 if(ArtifactIds.parse(id)===undefined)throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
-	 return this.enqueue(id,async()=>{await this.completePending(id,artifactJsonPath(this.deps.repoPath,id));return this.headSnapshot(id);});
-	}
-	/** Guard absent creation and updates in the SAME canonical queue. Mutate must not reenter this artifact's queue. */
-	async mutateContentAndLog(id:string,by:Actor,mutate:(current:HeadSnapshot|null)=>Promise<GuardedContentMutation|undefined>):Promise<HeadSnapshot>{
-	 if(ArtifactIds.parse(id)===undefined)throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
-	 return this.enqueue(id,async()=>{
-	  await this.completePending(id,artifactJsonPath(this.deps.repoPath,id));
-	  const current=this.headSnapshot(id);
-	  if(current){
-	   const a=decodeArtifactHead(id,JSON.stringify(current.head)).artifact;
-	   const integrity=checkIntegrity({description:a.description,payload:a.payload,lifecycle:a.lifecycle},await this.deps.history.log(id));
-	   if(!integrity.ok)throw new LifecycleConflictError(id,integrity.reason);
-	  }
-	  const result=await mutate(current);
-	  if(result){
-	   const allowed=['runId','createdAt','model','elapsedMs','repoIndexedAt','schemaVersion','reviewedBy'];
-	   if(Object.keys(result.metadata).some(k=>!allowed.includes(k)))throw new ArtifactShapeError('Guarded content metadata may only update round audit fields.');
-	   const prior=current===null?undefined:decodeArtifactHead(id,JSON.stringify(current.head)).artifact;
-	   const next=prior?{...prior,payload:result.payload}:{id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:result.payload};
-	   await this.writeUnlocked(next,by,result.options??{},{metadata:result.metadata,expectedDigest:current?.digest??'absent',assertCurrent:result.assertCurrent});
-	  }
-	  const stored=this.headSnapshot(id);
-	  if(!stored)throw new ArtifactNotFoundError(`No canonical head for ${id}.`);
-	  return stored;
-	 });
-	}
 
 	/** The envelope of one artifact, every part filled from its head. Writes nothing and calls no History method. */
 	async read(id: string): Promise<Artifact<HeadPayload>> {
@@ -279,8 +233,7 @@ export class ArtifactStore {
 		finally { if (WRITE_QUEUES.get(lockKey) === tail) WRITE_QUEUES.delete(lockKey); }
 	}
 
-	private async writeUnlocked(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions,
-	 guarded?:{readonly metadata:Readonly<Record<string,unknown>>;readonly expectedDigest:string;readonly assertCurrent:()=>void}): Promise<ChangeLogEntry | undefined> {
+	private async writeUnlocked(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions): Promise<ChangeLogEntry | undefined> {
 		const key = ArtifactIds.parse(a.id);
 		if (key === undefined) throw new InvalidArtifactKeyError(`'${a.id}' is not an artifact id`);
 		if (typeof by?.id !== 'string' || !ACTOR_ID.test(by.id) || by.id !== by.id.toLowerCase()) {
@@ -297,7 +250,6 @@ export class ArtifactStore {
 		await this.completePending(a.id, path, options.outcome?.result === 'conflict-resolved');
 
 		const priorBytes = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
-		if(guarded&&headHashOf(priorBytes)!==guarded.expectedDigest)throw new LifecycleConflictError(a.id,'hash-mismatch','Head changed during guarded mutation.');
 		const prior = priorBytes === undefined ? undefined : decodeArtifactHead(a.id, priorBytes);
 		const priorRevision = prior === undefined ? 0 : prior.artifact.lifecycle.revision.number;
 
@@ -342,7 +294,7 @@ export class ArtifactStore {
 		const cascadeFrom = options.cascade === true && operation === 'complete' && prior !== undefined && !TERMINAL.includes(prior.artifact.lifecycle.status)
 			? prior.artifact.lifecycle.status : undefined;
 		const lifecycle = cascadeFrom === undefined ? source.lifecycle : { ...source.lifecycle, status: cascadeFrom };
-		const reconciled = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, ...(guarded?.metadata??{}), envelope, lifecycle } }, 'content', { by, at: timestamp });
+		const reconciled = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, envelope, lifecycle } }, 'content', { by, at: timestamp });
 		// A cascading complete freezes a member as it is: it may not carry a content change, which would have returned the head to draft.
 		if (cascadeFrom !== undefined && reconciled.contentChanged && prior !== undefined) {
 			throw new IllegalTransitionError(`${a.id} cannot be completed with a content change`);
@@ -380,10 +332,6 @@ export class ArtifactStore {
 		decodeArtifactHead(a.id, prepared.bytes);
 		const op: StagedOperation = { operationId, priorRevision, priorHeadHash: headHashOf(priorBytes), bytes: prepared.bytes, entry };
 
-		if(guarded){
-		 guarded.assertCurrent();
-		 if(headHashOf(existsSync(path)?readFileSync(path,'utf8'):undefined)!==guarded.expectedDigest)throw new LifecycleConflictError(a.id,'hash-mismatch','Head changed before guarded commit.');
-		}
 		await this.deps.journal.stage(a.id, op);
 		await this.deps.history.appendLog(a.id, entry);
 		try { (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes); }

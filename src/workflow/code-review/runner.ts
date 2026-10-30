@@ -1,5 +1,3 @@
-import { renderCodeReviewMd } from './rendering.js';
-import { foldCounts, foldVerdict, validateArtifact } from './record-validation.js';
 import { appendReviewRunEvent } from './run-events.js';
 import { ReviewBudgetError } from '../review-pipeline/budget.js';
 import { safeReviewFailure } from '../../shared/review-failure.js';
@@ -33,6 +31,7 @@ import { getLogger } from '../../shared/logger.js';
 import { reviewedBuildFingerprint } from './build-freshness.js';
 import type { ReviewVerdict } from '../review/types.js';
 import {
+	artifactIdMarker,
 	codeReviewArtifactId,
 	codeReviewArtifactPaths,
 	folderIdentityMeta,
@@ -288,6 +287,31 @@ export async function runCodeReview(
 // Fold + build + validate + render
 // ---------------------------------------------------------------------------
 
+/** Count the finding severities across every dimension. */
+function foldCounts(dimensions: readonly DimensionResult[]): { readonly high: number; readonly med: number; readonly low: number } {
+	let high = 0, med = 0, low = 0;
+	for (const dim of dimensions) {
+		for (const f of dim.findings) {
+			if (f.severity === 'HIGH') high += 1;
+			else if (f.severity === 'MED') med += 1;
+			else if (f.severity === 'LOW') low += 1;
+		}
+	}
+	return { high, med, low };
+}
+
+/** The verdict fold — mirrors the artifact-review vocabulary VERBATIM: any HIGH
+ *  → block, else any MED → warn, else pass (LOW neither warns nor blocks). When
+ *  `capAtWarn` is set a would-be `'pass'` is promoted to `'warn'` — the cap NEVER
+ *  lowers a `block`/`warn` (it only raises the floor for a clean fold). */
+function foldVerdict(
+	counts: { readonly high: number; readonly med: number; readonly low: number },
+	capAtWarn = false,
+): ReviewVerdict {
+	const verdict: ReviewVerdict = counts.high > 0 ? 'block' : counts.med > 0 ? 'warn' : 'pass';
+	return capAtWarn && verdict === 'pass' ? 'warn' : verdict;
+}
+
 /** Assemble the sc4 record. `meta` mirrors ArtifactMetaBase (so the storage +
  *  approval machinery is reused); `model` records the resolved high-tier label. */
 function buildArtifact(
@@ -333,9 +357,110 @@ function buildArtifact(
 	return { meta, body };
 }
 
+/** In-memory validation of the assembled record — the last gate before the
+ *  write. Returns a reason string on failure, or null when the record is sound:
+ *  a known kind, the expected dimensions in order, a verdict in the ReviewVerdict
+ *  union, and counts consistent with a re-fold of the findings. */
+function validateArtifact(a: CodeReviewArtifact, expectedDims: readonly ReviewDimension[]): string | null {
+	const b = a.body;
+	if (b.kind !== 'code-review') return `body.kind is '${String(b.kind)}'`;
+	if (b.dimensions.length !== expectedDims.length) {
+		return `expected ${expectedDims.length} dimensions, got ${b.dimensions.length}`;
+	}
+	for (let i = 0; i < expectedDims.length; i += 1) {
+		if (b.dimensions[i]?.dimension !== expectedDims[i]) {
+			return `dimension[${i}] is '${String(b.dimensions[i]?.dimension)}', expected '${String(expectedDims[i])}'`;
+		}
+	}
+	if (b.verdict !== 'pass' && b.verdict !== 'warn' && b.verdict !== 'block') {
+		return `verdict '${String(b.verdict)}' is not in the ReviewVerdict union`;
+	}
+	const refold = foldCounts(b.dimensions);
+	if (refold.high !== b.counts.high || refold.med !== b.counts.med || refold.low !== b.counts.low) {
+		return `counts {${b.counts.high},${b.counts.med},${b.counts.low}} disagree with the folded severities {${refold.high},${refold.med},${refold.low}}`;
+	}
+	// A degraded record is warn-capped: its verdict must never be a bare 'pass'.
+	// Re-fold with the same cap so the check is consistent with what was built.
+	const expectedVerdict = foldVerdict(refold, b.groundingMode === 'degraded');
+	if (b.verdict !== expectedVerdict) {
+		return `verdict '${b.verdict}' disagrees with the counts (expected '${expectedVerdict}')`;
+	}
+	return null;
+}
+
 /** Emit an error frame and return the {ok:false} outcome — no write happens. */
 function fail(error: string, emit: (f: CodeReviewProgress) => void): CodeReviewOutcome {
 	emit({ phase: 'error', detail: error });
 	return { ok: false, error };
 }
 
+/** A minimal, deterministic markdown summary of the record — carries the
+ *  `insrc:artifact` marker (so the slug-named `.md` resolves back to its
+ *  hash-named `.json`), the verdict + counts, and each dimension's findings.
+ *  The `.json` is load-bearing; this `.md` is for humans. */
+/** One line saying why a review fell back to the diff. */
+function describeFallback(r: CodeReviewFallbackReason): string {
+	switch (r.kind) {
+		case 'freshness-timeout':
+			return `the wait for a fresh index timed out after ${Math.round(r.waitedMs / 1000)} s `
+				+ `(code-index job in flight: ${r.inFlight ? 'yes' : 'no'}; queued: ${r.pendingCodeIndexJobs}; `
+				+ `stale files: ${r.staleFiles.length === 0 ? 'none' : r.staleFiles.join(', ')})`;
+		case 'declined':
+			return 'the wait for a fresh index was declined';
+		case 'hollow-grounding':
+			return 'the index was fresh but held no symbols for the changed files';
+	}
+}
+
+function renderCodeReviewMd(a: CodeReviewArtifact): string {
+	const { body, meta } = a;
+	const id   = codeReviewArtifactId(meta.epicHash, meta.storyId);
+	const icon = body.verdict === 'block' ? '⛔' : body.verdict === 'warn' ? '⚠️' : '✅';
+	const lines: string[] = [
+		artifactIdMarker(id),
+		'',
+		`# Code review: ${meta.epicHash}:${meta.storyId}`,
+		'',
+		`${icon} **${body.verdict.toUpperCase()}** — HIGH ${body.counts.high} · MED ${body.counts.med} · LOW ${body.counts.low} · model \`${meta.model ?? 'unknown'}\``,
+		'',
+		`**Changed files:** ${body.subject.changedFiles.length}`,
+		...(body.fallbackReason !== undefined ? ['', `**Reviewed on the diff:** ${describeFallback(body.fallbackReason)}`] : []),
+		'',
+	];
+	// ISSUE-11e4fa88 — findings dropped on scope are SHOWN, never counted. Every
+	// line below is emitted only when something was dropped, so a record with no
+	// drops renders byte-identically to before.
+	const droppedTotal = body.dimensions.reduce((n, d) => n + (d.outOfScope?.length ?? 0), 0);
+	if (droppedTotal > 0) {
+		lines.push(
+			`**Dropped as out of scope:** ${droppedTotal} finding(s) named a file outside the ${body.subject.changedFiles.length} changed file(s). ` +
+			'They are listed under their dimension and are NOT counted in the verdict above.',
+			'',
+		);
+	}
+	const table = (findings: DimensionResult['findings']): void => {
+		lines.push('| Severity | Location | Message |', '| --- | --- | --- |');
+		for (const f of findings) {
+			lines.push(`| ${f.severity} | ${escapeCell(f.location)} | ${escapeCell(f.message)} |`);
+		}
+		lines.push('');
+	};
+	for (const dim of body.dimensions) {
+		const dropped = dim.outOfScope ?? [];
+		const suffix = dropped.length > 0 ? `, ${dropped.length} dropped as out of scope` : '';
+		lines.push(`## ${dim.dimension} — ${dim.findings.length} finding(s)${suffix}`, '');
+		if (dim.findings.length === 0) lines.push(dropped.length > 0 ? '_No findings in scope._' : '_No findings._', '');
+		else table(dim.findings);
+		if (dropped.length > 0) {
+			lines.push('**Dropped as out of scope (not counted):**', '');
+			table(dropped);
+		}
+	}
+	return lines.join('\n') + '\n';
+}
+
+/** Escape a markdown table cell (pipes + newlines) so a finding message can't
+ *  break the table layout. */
+function escapeCell(s: string): string {
+	return s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+}

@@ -381,26 +381,6 @@ require an ERD for isolated class edits. Reviewers inspect actual generated file
 <!-- insrc:guide:code-review:start -->
 ## code-review — post-build code review by the other party (`insrc_code_review_step`)
 
-The default remains the legacy protocol below. For an explicitly enabled
-`plan-investigation-v1` run, call `insrc_schema` for phase `investigation` and
-use its versioned `engine`, `command` and client `capabilities` envelope. Start
-with explicit approved commit/parent/scope selections and canonical BUILD;
-never infer scope from HEAD or a Story trailer. The daemon derives the
-independent reviewer. Controller turns require a fresh declared `reviewBudget`
-on each scoped call. Follow the returned binding, turn, navigation references
-and exact coverage IDs; use only scoped read/impact/progress/reply operations.
-Checkpoint each block durably, retain unresolved evidence/coverage, and finish
-with accepted receipt IDs and no new deltas. Status/detach is not a verdict or
-a retry; resume the same run rather than starting another review. Unsupported
-versions, stale pins or missing readiness refuse without legacy fallback.
-
-Activation additionally requires independently qualified installed adapters,
-approved version-pinned evaluation evidence and separately approved predecessor
-code-only reconciliation. A config switch or scripted fixture alone is
-insufficient. Rollback preserves status/cancel and frozen publication recovery
-while disabling/draining new turns. See `docs/review-investigation.md`.
-
-
 Run this over the changed code AFTER the build produces its changes. DISTINCT
 from `insrc_review_step` (which reviews the design artifact). The same rule
 applies: **the party that did not write the code reviews it**, and the tool

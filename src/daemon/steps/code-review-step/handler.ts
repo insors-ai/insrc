@@ -1,5 +1,3 @@
-import { isInvestigationInput } from '../../../shared/review-investigation-wire.js';
-import { investigationTransport } from '../../review-investigation-gateway.js';
 import { controllerMonotonicNow } from '../../../workflow/review-pipeline/controller.js';
 import { appendReviewRunEvent } from '../../../workflow/code-review/run-events.js';
 import { safeReviewFailure, reviewTimeoutMessage } from '../../../shared/review-failure.js';
@@ -93,7 +91,6 @@ export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewD
  *  (deterministic block-and-poll under test) and `freshnessTimeoutMs` (the poll
  *  bound, from config). */
 export interface CodeReviewStepDeps {
- readonly investigation?: ((input:unknown)=>Promise<Record<string,unknown>>) | undefined;
  readonly monotonicNow?: (() => number) | undefined;
  readonly recordCallEvent?: ((repo: string, runId: string, event: import('../../../workflow/review-pipeline/call-events.js').ReviewCallEvent) => void) | undefined;
 	readonly resolveSubject: typeof resolveCodeReviewSubject;
@@ -219,7 +216,7 @@ export async function handleCodeReviewStep(
 	input: unknown,
 	deps:  CodeReviewStepDeps = DEFAULT_DEPS,
 ): Promise<CodeReviewStepMcpEnvelope> {
-	const result = isInvestigationInput(input) ? await investigationTransport(input,deps.investigation) : await dispatch(input, deps);
+	const result = await dispatch(input, deps);
 	return {
 		content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
 		...(result.next === 'error' ? { isError: true } : {}),

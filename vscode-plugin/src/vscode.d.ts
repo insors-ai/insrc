@@ -139,6 +139,8 @@ declare module 'vscode' {
   }
 
   export namespace window {
+    /** Current text editor, absent when only a webview is active. */
+    export const activeTextEditor: { readonly document: { readonly uri: Uri } } | undefined;
     /** The editor tab model across all groups (chat group lock). */
     export const tabGroups: TabGroups;
     export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
@@ -193,7 +195,7 @@ declare module 'vscode' {
   }
 
   export interface WorkspaceFolder {
-    readonly uri: { readonly fsPath: string };
+    readonly uri: Uri;
   }
 
   /**
@@ -227,6 +229,8 @@ declare module 'vscode' {
   export namespace workspace {
     /** The open workspace folders, or undefined when no folder is open (S004). */
     export const workspaceFolders: readonly WorkspaceFolder[] | undefined;
+    /** The workspace folder containing a resource, including nested roots. */
+    export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | undefined;
     /** A configuration handle; with a `section` its ids are relative to that section (sc8). */
     export function getConfiguration(section?: string): WorkspaceConfiguration;
     /** Subscribe to settings-change events (sc8 live-sync listener). */

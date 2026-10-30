@@ -1,5 +1,6 @@
 /** Workbench-memory view host. Only explicit, checked intents reach privileged owner ports. */
 import { randomUUID } from 'node:crypto';
+import { isAbsolute, relative, sep } from 'node:path';
 import { IpcLaneError } from '../../../src/shared/ipc-client.js';
 import { makeNonce } from '../panels/html.js';
 import { ConnectionsWorkbenchOwner,ConnectionOwnerError } from './session-owner.js';
@@ -24,8 +25,18 @@ export interface ConnectionsHostPorts {
  readonly createPanel:()=>ConnectionPanel;readonly registeredRoots:()=>Promise<readonly string[]>;
  readonly owner:ConnectionsWorkbenchOwner;readonly mutations:ConnectionMutationController;
  readonly tests:ConnectionDraftTests;readonly removals:ConnectionRemovals;
+ readonly openedPath?:(()=>string|undefined)|undefined;
  readonly pickFile?:(()=>Promise<string|undefined>)|undefined;
  readonly nonce?:(()=>string)|undefined;
+}
+/** Choose only an admitted root, preserving its canonical registry spelling. */
+export function connectionRootForPath(roots:readonly string[],path:string|undefined):string|undefined {
+ if(!path||!isAbsolute(path))return undefined;
+ return roots.filter(root=>{
+  if(!isAbsolute(root))return false;
+  const child=relative(root,path);
+  return child!== '..'&&!child.startsWith('..'+sep)&&!isAbsolute(child);
+ }).sort((a,b)=>b.length-a.length)[0];
 }
 const PREFIX='db.connections.v2.';
 export class ConnectionsManagerHost {
@@ -92,6 +103,8 @@ export class ConnectionsManagerHost {
  }
  async open():Promise<void>{
   if(this.#disposed)return;if(this.#panel){this.#panel.reveal();return;}
+  // Capture editor context before creating a webview changes editor focus.
+  let openedPath:string|undefined;try{openedPath=this.#ports.openedPath?.();}catch{/* Context is only a default. */}
   const panel=this.#ports.createPanel();this.#panel=panel;this.#visible=true;this.#viewId=randomUUID();this.#bump();this.#ready=false;
   const viewId=this.#viewId;
   panel.onMessage(raw=>{if(this.#panel!==panel||this.#disposed)return;const intent=parseConnectionIntent(raw);if(intent&&intent.viewId===viewId&&(intent.type==='ready'||intent.generation===this.#generation)&&(this.#visible||intent.type==='ready'||intent.type==='cancel-test'))void this.#handle(intent).catch(()=>{this.#error='The connection action could not complete. Review the current state and retry.';this.#publish();});});
@@ -107,7 +120,9 @@ export class ConnectionsManagerHost {
    const roots=await this.#ports.registeredRoots();if(this.#disposed||this.#panel!==panel)return;
    this.#ports.owner.setRegisteredRoots(roots);this.#dispatch({type:'registered-roots',roots});
    if(this.#draft&&!roots.includes(this.#draft.view.key.repoRoot)){this.#draft.clear();this.#draft=null;this.#bump();this.#bindTest();}
-   if(this.#model.repoRoot)this.#dispatch({type:'refresh'});
+   const preferred=!this.#model.repoRoot&&!this.#draft?connectionRootForPath(roots,openedPath):undefined;
+   if(preferred)this.#dispatch({type:'select-root',repoRoot:preferred});
+   else if(this.#model.repoRoot)this.#dispatch({type:'refresh'});
   }catch{if(this.#disposed||this.#panel!==panel)return;this.#error='Registered repositories are unavailable. Reconnect the daemon and reopen Connections.';this.#dispatch({type:'unavailable',code:'offline'});}
   this.#publish();
  }

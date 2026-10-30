@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { managementFixture } from './fixtures/management.js';
 import { FakeConnectionPanel,RendererHarness } from './fixtures/renderer.js';
-import { ConnectionsManagerHost } from '../host.js';
+import { ConnectionsManagerHost,connectionRootForPath } from '../host.js';
 import { createConnectionsDraftTests } from '../gateway.js';
 import { ConnectionRemovals } from '../../../../src/shared/connection-manager/removal.js';
 import { ConnectionDraft,connectionDriverChoices } from '../../../../src/shared/connection-manager/draft.js';
@@ -163,4 +163,34 @@ test('CM-S5-RENDER-TS: schema-source Path uses a functional icon picker and init
   const v=panel.view;for(const path of [['endpoint'],['credentials','path'],['schemaSource','type']])panel.emit({v:1,viewId:v.viewId,generation:v.generation,type:'browse-file',path});
   assert.equal(calls,2);assert.equal(f.calls.filter(c=>c==='ticket'||c==='mutate').length,0);
  }finally{host.dispose();probes.dispose();removals.dispose();await f.close();}
+});
+
+
+test('Connections repository default matches the deepest registered containing path with directory boundaries',()=>{
+ assert.equal(connectionRootForPath(['/repo','/repo/nested'],'/repo/nested/src/file.ts'),'/repo/nested');
+ assert.equal(connectionRootForPath(['/repo'],'/repo'),'/repo');
+ assert.equal(connectionRootForPath(['/repo/'],'/repo/src'),'/repo/');
+ assert.equal(connectionRootForPath(['/repo'],'/repo-other/file.ts'),undefined);
+ assert.equal(connectionRootForPath(['/repo'],'/repo/../outside/file.ts'),undefined);
+ assert.equal(connectionRootForPath(['/repo'],'relative/file.ts'),undefined);
+ assert.equal(connectionRootForPath(['/repo'],undefined),undefined);
+ assert.equal(connectionRootForPath([],'/repo/file.ts'),undefined);
+});
+
+test('Connections defaults to opened context and preserves manual selection and dirty drafts across reopen',{timeout:30000},async()=>{
+ const f=await managementFixture({multipleRoots:true}),probes=createConnectionsDraftTests(f.owner),removals=new ConnectionRemovals(f.controller),panels:FakeConnectionPanel[]=[];
+ const other=f.roots[1]!;let openedPath=other+'/src/file.ts';
+ const host=new ConnectionsManagerHost({owner:f.owner,mutations:f.controller,tests:probes,removals,registeredRoots:async()=>[f.f.root,other],openedPath:()=>openedPath,createPanel:()=>{const p=new FakeConnectionPanel();panels.push(p);return p;}});
+ try{
+  await host.open();let panel=panels.at(-1)!;await until(()=>panel.view.list.listState==='empty-registry');
+  assert.equal(panel.view.list.repoRoot,other);assert.equal(panel.dom!.el('root').value,other);
+  panel.dom!.choose('root',f.f.root);await until(()=>panel.view.list.listState==='empty-registry');
+  panel.dispose();await host.open();panel=panels.at(-1)!;await until(()=>panel.view.list.listState==='empty-registry');
+  assert.equal(panel.view.list.repoRoot,f.f.root,'manual selection survives a different opened context');
+  panel.dom!.click('add');panel.dom!.choose('kind','parquet');panel.dom!.input('id','retained');input(panel.dom!,['path'],'manual-orders.parquet');
+  assert.equal(panel.view.draft?.key.repoRoot,f.f.root);panel.dispose();
+  await host.open();panel=panels.at(-1)!;await until(()=>panel.view.list.listState==='empty-registry');
+  assert.equal(panel.view.list.repoRoot,f.f.root);assert.equal(panel.view.draft?.key.id,'retained');assert.equal(panel.view.draft?.publicValues['path'],'manual-orders.parquet');
+  openedPath='/unregistered/file.ts';await host.open();assert.equal(panel.view.list.repoRoot,f.f.root);
+ }finally{host.dispose();removals.dispose();probes.dispose();await f.close();}
 });

@@ -320,6 +320,11 @@ export function activate(context: vscode.ExtensionContext): void {
     logger: panelLog,
   });
   const connectionManager = new ConnectionsManagerHost({
+    openedPath: () => {
+      const uri = vscode.window.activeTextEditor?.document.uri;
+      if (uri?.scheme === 'file' && vscode.workspace.getWorkspaceFolder(uri)) return uri.fsPath;
+      return vscode.workspace.workspaceFolders?.find(folder => folder.uri.scheme === 'file')?.uri.fsPath;
+    },
     pickFile: async () => (await vscode.window.showOpenDialog({ canSelectMany: false, openLabel: 'Use file' }))?.[0]?.fsPath,
     owner: connectionsOwner, mutations: connectionMutations,
     tests: connectionTests, removals: connectionRemovals,

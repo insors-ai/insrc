@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -85,3 +85,32 @@ Run at 2026-10-30T08:50:35.361Z on commit `46ac5a0bf`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/agent/providers/__tests__/native-investigation-probe.test.ts` | 0 | 8 | 9.9 s |  |
 | `src/daemon/__tests__/review-investigation-provider-lane.test.ts` | 0 | 2 | 1.6 s |  |
+
+## t4
+
+Run at 2026-10-30T09:06:12.024Z on commit `6693bf60f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+**live: Serial bounded installed control and restricted attempts record startup inventory and canary results honestly for both modes**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/inventory-canaries-live-acceptance.json and /tmp/live-insrc-probe-inventory-canaries-run.json: both actual installed modes executed serially on 6693bf60f; isolation FAILED, diagnostics correctly retained, not an activation pass.
+
+**smoke: Runbook distinguishes verified capabilities diagnostic controls unsupported facts and separate activation signoff**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/inventory-canaries-guidance-smoke.log; docs/review-investigation.md
+
+**integration: Affected native and ordinary provider regressions and build pass**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Native-only terminal result validation preserves ordinary Claude buffered completions | `src/agent/providers/__tests__/claude-investigation-events.test.ts` |
+| pass | Trusted probe executes one control and one restricted phase with exact pins and bounded cancellation | `src/agent/providers/__tests__/native-investigation-probe.test.ts` |
+| pass | Codex probe preserves strict schema cleanup and actual process drain | `src/agent/providers/__tests__/native-investigation-probe.test.ts` |
+| pass | Legacy S005 pre S005 design and installation order partitions remain compatible | `src/daemon/__tests__/review-investigation-adoption.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/claude-investigation-events.test.ts` | 0 | 3 | 0.7 s |  |
+| `src/agent/providers/__tests__/native-investigation-probe.test.ts` | 0 | 8 | 9.7 s |  |
+| `src/daemon/__tests__/review-investigation-adoption.test.ts` | 0 | 8 | 10.9 s |  |

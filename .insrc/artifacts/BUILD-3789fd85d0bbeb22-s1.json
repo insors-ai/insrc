@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "8eea1e0a80efd469174da129874f05030d09535e7b0110f646186456a69bc7df",
-        "at": "2026-10-30T08:54:32.912Z",
+        "number": 4,
+        "contentHash": "e3e0843c4c42f544a41d0e337324b8c49401cbb67e9a8761f798d0b2b694841d",
+        "at": "2026-10-30T09:07:45.423Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "3789fd85d0bbeb22",
     "storyId": "s1",
-    "revision": 3,
-    "updatedAt": "2026-10-30T08:50:35.361Z",
+    "revision": 4,
+    "updatedAt": "2026-10-30T09:06:12.024Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "capture-live-review-inventory-active-isolation"
@@ -48,9 +48,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "Paired control/restricted probes run serially through CliProvider with aggregate budget/deadline/retention bounds and exact phase pins. Strict export validation checks manifests, host receipts and runtime files. All 22 focused tests and TypeScript passed; commit 46ac5a0bf. No real model calls or activation.",
+    "summary": "Implemented bounded native startup inventory and paired active canary diagnostics. All 39 affected regressions and build passed. Installed source-only and indexed-impact probes completed with controls, two durable ACKs and real cancellation; both correctly failed isolation on native builtin plugins/StructuredOutput. Activation remains disabled; no qualification inferred.",
     "testRecord": {
       "md": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/TESTS.md"
     },
@@ -60,94 +64,192 @@
           "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-events.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/agent/providers/native-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-canaries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-export.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
       },
       {
         "target": {
           "file": "src/shared/review-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T08:50:35.361Z"
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-3789fd85d0bbeb22-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-3789fd85d0bbeb22-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-3789fd85d0bbeb22-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-3789fd85d0bbeb22-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-3789fd85d0bbeb22-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-3789fd85d0bbeb22-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": "docs/review-investigation.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/sequence-diagram.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:06:12.024Z"
       }
     ],
-    "commit": "46ac5a0bf"
+    "commit": "6693bf60f"
   },
   "citations": []
 }

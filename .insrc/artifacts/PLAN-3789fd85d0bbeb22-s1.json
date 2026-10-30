@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793346802435-1ehcza",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T07:59:07.692Z",
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 344524,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3789fd85d0bbeb22",
+    "epicSlug": "capture-live-review-inventory-active-isolation",
+    "storyId": "s1",
+    "lldRunId": "wf-1793342352842-seipma",
+    "lldEffectiveHash": "ae55aecf85100b4211645425e734323b31421e50b29f9f7792fdf465d2af410b",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f633aa79b4ec78365d0c90816caca7108897c02541dac829719ca0e90c91f5a",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T08:07:11.021Z"
+      }
+    },
+    "rangeBase": "97f3eb7ec683097ce640130e12b38d758d1331f1"
+  },
+  "body": {
+    "summary": {
+      "prose": "Add native startup-event capture under the actual review launch and active temporary configuration canaries with separately labelled controls. Integrate strict phase evidence and shared execution limits, then verify the installed daemon after deployment. Missing runtime facts remain unsupported, and activation stays a separate signoff.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Capture bounded Claude native startup events",
+        "summary": "Switch shared native investigation args to version-pinned streaming output and add strict native-only terminal parsing. Preserve startup frames through cancellation and collect actual inventory facts. Include production adoption args/digest in parity tests; leave ordinary completions, design review and Codex unchanged.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Restricted probe and production share exact streaming launch and digest derivation; previous qualifications become stale.",
+          "Startup inventory survives cancellation with bounded complete-frame parsing; malformed/conflicting/unknown telemetry cannot pass isolation.",
+          "Native final reply requires one valid terminal result and accepted-reply equality; ordinary buffered completions remain compatible."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only"
+          },
+          {
+            "level": "unit",
+            "name": "Malformed contradictory unknown-version and oversized streams never pass isolation"
+          },
+          {
+            "level": "unit",
+            "name": "Native-only terminal result validation preserves ordinary Claude buffered completions"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Build active temporary canaries with labelled controls",
+        "summary": "Replace shadow marker files with actual private project discovery settings, hooks, CLAUDE.md, MCP and local plugin components. Bind manifest/marker observations to attempt and phase. Provide fixed provider-internal positive-control setup with no real HOME/config changes or credential copies. Unavailable discovery/telemetry stays unverified.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Canaries live in supported discovery paths and positive controls produce capability-specific native/host signals.",
+          "Inactive controls, missing instruction/plugin signals and marker silence never become exclusion evidence.",
+          "Fixture components remain private and harmless; real config/auth/repo untouched, foreign identities rejected and resources cleaned."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Project discovery canaries and labelled positive controls produce attributable host observations"
+          },
+          {
+            "level": "integration",
+            "name": "Inactive controls missing native telemetry and model claims remain unverified"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Integrate bounded paired probes and strict phase exports",
+        "summary": "Run at most one labelled control then one restricted phase through CliProvider under existing lane and aggregate 300-second/128K/output limits. Extend optional bounded diagnostic descriptors and owned-file validation. Keep control facts separate from restricted evidence, observe actual process drain and refuse leaks/tampering/stale pins; preserve canonical authority and no-key activation policy.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "All provider calls are serial with one shared absolute deadline and inclusive budget; UUID replay and interruptions never retry phases.",
+          "Strict export schema validates phase identity/order, manifests, private ownership, file sizes/digests, source/runtime/model/catalog/config/launch pins.",
+          "Positive-control output cannot qualify the production launch; only affirmative supported evidence can establish tested exclusions, with missing facts unsupported and leaks failed.",
+          "Cross-run checks use actual foreign capability refusals. Overall approval isolation stays unverified without reliable native escalation evidence; flags alone cannot pass."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Restricted capability leaks fail and control-phase evidence cannot qualify production"
+          },
+          {
+            "level": "integration",
+            "name": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap"
+          },
+          {
+            "level": "integration",
+            "name": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Verify installed behavior and publish honest handoff",
+        "summary": "Update operator docs, run affected regression suites and build, then after deployment run one explicitly authorized serial pair per selected mode. Record actual startup/canary/checkpoint/cancel results and residual unsupported checks with truthful accounting. Run the mandatory final Story code review once, with no automatic repeated rounds; activation signoff remains separate.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Affected focused regressions and build pass; ordinary/native/Codex compatibility checked within changed boundary.",
+          "Installed verification binds exact deployment and both modes, with one control/restricted pair each and no automatic retry; pending deployment is not reported as executed.",
+          "Report and runbook distinguish verified facts, controls, missing evidence and activation. Unsupported is an honest diagnostic outcome, never a qualification/activation pass; unknown usage stays null."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "Serial bounded installed control and restricted attempts record startup inventory and canary results honestly for both modes"
+          },
+          {
+            "level": "smoke",
+            "name": "Runbook distinguishes verified capabilities diagnostic controls unsupported facts and separate activation signoff"
+          },
+          {
+            "level": "integration",
+            "name": "Affected native and ordinary provider regressions and build pass"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Malformed contradictory unknown-version and oversized streams never pass isolation",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Native-only terminal result validation preserves ordinary Claude buffered completions",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Project discovery canaries and labelled positive controls produce attributable host observations",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Inactive controls missing native telemetry and model claims remain unverified",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Restricted capability leaks fail and control-phase evidence cannot qualify production",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Serial bounded installed control and restricted attempts record startup inventory and canary results honestly for both modes",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Runbook distinguishes verified capabilities diagnostic controls unsupported facts and separate activation signoff",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails 2.1-2.2 and dataModelChanges 3.1",
+      "quotedText": "Shared streaming native launch, version-pinned startup collection and native-only final parsing."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges 3.2 and errorPaths",
+      "quotedText": "Active temporary discovery canaries with attributable positive controls, no real config/auth edits, and unobservable facts unverified."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges 3.3-3.4 and errorPaths",
+      "quotedText": "Strict phase evidence, exact launch pins, aggregate bounds, provider lane, cancellation and no retries; no control promotion."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy and migration",
+      "quotedText": "Focused compatibility regressions, explicitly authorized post-deployment installed probes, honest accounting and no implicit activation."
+    }
+  ]
+}

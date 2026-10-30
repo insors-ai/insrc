@@ -1,0 +1,586 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793342352842-seipma",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T06:43:30.930Z",
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 257445,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3789fd85d0bbeb22",
+    "epicSlug": "capture-live-review-inventory-active-isolation",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793342352842-seipma",
+    "hldEffectiveHash": "ae55aecf85100b4211645425e734323b31421e50b29f9f7792fdf465d2af410b",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive follow-up changes the shared Claude launch/parser, bounded native event collector and per-invocation fixture layout/observations. It fits a single design but crosses daemon/provider and raw evidence compatibility boundaries.",
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "c4a7023b05a6af9731114ae6d78028ae4bc65fb4674c8bbfab1a3c1757b0d843",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 3,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 13
+        },
+        "at": "2026-10-30T06:46:17.159Z",
+        "report": {
+          "entityId": "LLD-3789fd85d0bbeb22-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-ee38283406f0c60491ace16ff433c9e9"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T07:52:31.879Z"
+      }
+    },
+    "rangeBase": "97f3eb7ec683097ce640130e12b38d758d1331f1"
+  },
+  "body": {
+    "summary": {
+      "prose": "Capture actual Claude startup inventory before cancellation and replace inert shadow files with active, temporary isolation canaries. A labelled positive-control phase establishes that each canary is detectable; the restricted phase uses the same pinned native launch as production review. Report observed facts and retain unsupported results where the installed CLI cannot demonstrate exclusion.\n\nAcceptance criteria:\n- ac1: Preserve version-pinned native startup inventory through cancellation while retaining valid native final-reply parsing and unchanged ordinary completion behavior.\n- ac2: Exercise temporary project hook, plugin, instruction and MCP canaries with attributable positive controls; fail observed restricted leakage and retain unsupported for unobservable facts.\n- ac3: Keep control/restricted evidence separate and enforce exact runtime/launch pins, aggregate bounds, serial execution, cancellation and no retries.\n- ac4: Record one authorized installed verification per mode honestly and document residual limits; do not enable the engine or imply activation signoff.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Capture live review inventory and active isolation canaries"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "claudeInvestigationArgs",
+          "signature": "claudeInvestigationArgs(schema: StructuredSchema, modelArgs: readonly string[], cwd: string, indexed: boolean): string[]",
+          "parameters": [
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "Final reply contract",
+              "optional": false
+            },
+            {
+              "name": "modelArgs",
+              "type": "readonly string[]",
+              "purpose": "Selected high-tier model and effort pins",
+              "optional": false
+            },
+            {
+              "name": "cwd",
+              "type": "string",
+              "purpose": "Private invocation directory",
+              "optional": false
+            },
+            {
+              "name": "indexed",
+              "type": "boolean",
+              "purpose": "Exact scoped catalog selection",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string[]",
+            "meaning": "Native Claude invocation with stream-json, verbose and native hook events; no safe-mode, bare or permission bypass"
+          },
+          "errors": [],
+          "preconditions": [
+            "Existing private configuration and exact model pins"
+          ],
+          "postconditions": [
+            "Production and restricted probe use the same adapter args and launch-digest derivation; all previous explicit tool/settings/MCP restrictions remain"
+          ]
+        },
+        {
+          "name": "collectClaudeProbeObservations",
+          "signature": "collectClaudeProbeObservations(result: ProcessGroupResult, identity: NativeProbeInvocationIdentity): readonly InvestigationProbeObservation[]",
+          "parameters": [
+            {
+              "name": "result",
+              "type": "ProcessGroupResult",
+              "purpose": "Bounded actual process output retained through cancellation",
+              "optional": false
+            },
+            {
+              "name": "identity",
+              "type": "NativeProbeInvocationIdentity",
+              "purpose": "Version and immutable invocation provenance",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly InvestigationProbeObservation[]",
+            "meaning": "Version-pinned native facts, explicit leaks or unverified checks; no model-supplied proof"
+          },
+          "errors": [],
+          "preconditions": [
+            "Native bytes are size-bounded and associated with exact phase/launch"
+          ],
+          "postconditions": [
+            "Strictly parse complete JSONL frames; tolerate only an unfinished final frame on actual cancellation; contradictory/duplicate init, malformed interior frames, bounds or observer failure refuse positive evidence",
+            "Native final reply parser in CliProvider applies only to native investigation, requires exactly one valid terminal result and preserves ordinary buffered completion behavior"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Bounded native Claude event capture",
+        "change": "invariant-change",
+        "details": "Shared production/probe launch switches from buffered JSON to version-pinned stream-json. Raw startup frames survive host cancellation. Collector handles native frames only; assistant/result claims and structured-output tools never certify isolation. Actual inventories must have exact scoped tool names and one expected MCP server with required complete typed fields; unknown fields/versions/gaps remain unverified. Unexpected tools/MCP/plugins/hooks/instructions are failures. A complete scoped tool catalog may support individual tool-exposure checks only; it does not prove OS-level network/filesystem denial or absent unreported configuration. Update native-only CliProvider terminal parsing; keep schema validation and accepted-reply equality. Changed args invalidate prior launch fingerprints and require fresh evidence.",
+        "callSites": [
+          "src/agent/providers/claude-investigation-session.ts",
+          "src/agent/providers/cli-provider.ts",
+          "src/agent/providers/claude-investigation-probe.ts",
+          "src/agent/providers/native-investigation-probe.ts",
+          "src/daemon/review-investigation-probe-export.ts",
+          "src/daemon/review-investigation-adoption.ts"
+        ]
+      },
+      {
+        "entity": "Active temporary canary fixture and paired evidence",
+        "change": "new",
+        "details": "One daemon-created private root owns one probe attempt; that attempt owns separately labelled control and restricted phase evidence (0 or 1 each), one hashed canary manifest, and temporary project discovery paths. Place harmless CLAUDE.md, .claude/settings.json SessionStart/InstructionsLoaded hooks, .mcp.json and a local .claude-plugin manifest with local hook/MCP marker components under the root. Do not install into or edit HOME, real repos, settings, plugins or OAuth files; do not copy credentials or override auth. Control loads fixture settings/plugin explicitly through a fixed provider-internal launch template, while restricted launch uses the production template. Each marker is bound to capability, root, probe/attempt/phase and manifest digest. User-level inherited config not safely injectable remains unverified. Plugin fixtures require an actual supported discovery/load path and observable positive control; merely creating a plugin folder or omitting --plugin-dir never proves denial.",
+        "callSites": [
+          "src/daemon/review-investigation-probe-fixtures.ts",
+          "src/agent/providers/native-investigation-probe.ts",
+          "src/agent/providers/cli-provider.ts",
+          "src/daemon/review-investigation-probe.ts"
+        ]
+      },
+      {
+        "entity": "Canary evidence and admission semantics",
+        "change": "field-add",
+        "details": "Add strict bounded optional phase-evidence/manifest descriptors to diagnostic exports, with exact source/runtime/model/catalog/config/launch/version pins, phase start/end/order, control signals and restricted observations. Extend export validation's owned-root/file allowlist narrowly for these files; validate bytes, size, ownership, digests and same attempt. Control output never merges into restricted inventory or qualifies production. Report observed-denied for a tested exclusion only with successful positive control plus affirmative version-supported native exclusion/complete instrumentation for that capability; marker absence, model claims or final text are insufficient. Missing InstructionsLoaded or plugin metadata stays unsupported. Installed NativeIsolationEvidence remains unchanged; no candidate or approval minted unless all existing requirements actually hold. No signing keys.",
+        "callSites": [
+          "src/shared/review-investigation-probe.ts",
+          "src/daemon/review-investigation-probe-export.ts",
+          "src/agent/providers/native-investigation-probe.ts"
+        ]
+      },
+      {
+        "entity": "Probe phase lifecycle and limits",
+        "change": "invariant-change",
+        "details": "All LLM invocations remain serial through CliProvider under the existing daemon global provider lane. Entire attempt retains the current absolute <=300-second deadline, inclusive 128K budget across both phase prompts, schemas/catalogs/native reserves and accumulated traffic, aggregate bounded retained output, and one control plus one restricted subprocess maximum per mode with no automatic retry. Both children drain before release; same UUID replay remains idempotent and interruptions stay interrupted. Usage is per phase when observed; unknown model calls/tokens remain null and subprocess count is not model-call count. All event files are private; revoke and cleanup sockets/processes, retain only bounded diagnostics. Unavailable controls fail qualification honestly.",
+        "callSites": [
+          "src/agent/providers/native-investigation-probe.ts",
+          "src/daemon/review-investigation-probe.ts",
+          "src/shared/review-investigation-probe.ts",
+          "src/daemon/review-investigation-probe-fixtures.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Malformed, oversized or contradictory native stream",
+          "detection": "Bounded JSONL parser rejects invalid complete frames, duplicate/conflicting init/session identities, excess bytes, observer failures or unsupported runtime version",
+          "response": "Keep diagnostic refusal/unsupported reason, no positive isolation observation or candidate",
+          "userImpact": "Correct capture/version support before qualifying",
+          "recoverable": true
+        },
+        {
+          "scenario": "Control canary inactive or unobservable",
+          "detection": "Expected capability-specific native event or host marker missing/mismatched after a valid bounded control phase; no reliable native instructions/plugin signal",
+          "response": "Mark the affected check unverified; never infer denial from missing restricted hits",
+          "userImpact": "Runtime may remain unsupported until it exposes adequate evidence",
+          "recoverable": true
+        },
+        {
+          "scenario": "Restricted phase loads forbidden configuration or capability",
+          "detection": "Recognized native event, loaded inventory or bound host marker exposes unexpected tool/MCP/plugin/hook/instruction",
+          "response": "Fail isolation, retain bounded provenance and stop candidate production",
+          "userImpact": "Launch restrictions need correction; no automatic activation",
+          "recoverable": true
+        },
+        {
+          "scenario": "Foreign/tampered phase evidence or launch drift",
+          "detection": "Strict schema checks phase labels, manifest/file digests, private owned root, exact attempt/source/profile/catalog/config/binary/runtime/launch pins",
+          "response": "Refuse export qualification; a diagnostic control cannot satisfy restricted-phase pins",
+          "userImpact": "Rerun only after corrected code/version and explicit authorization",
+          "recoverable": true
+        },
+        {
+          "scenario": "Budget, deadline, abort or daemon restart during phases",
+          "detection": "Existing absolute deadline/signal and shared inclusive preflight fail, or persisted attempt is interrupted",
+          "response": "Drain child and broker, release lane only after teardown; no retry/rescheduling; keep unknown accounting null",
+          "userImpact": "Incomplete diagnostics stay incomplete",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Host SIGKILL after two durable ACKs leaves complete startup frames and one partial tail",
+          "expected": "Retain valid startup diagnostics, tolerate only that unfinished tail; never treat partial tail as an event or final reply"
+        },
+        {
+          "input": "Production stream finishes naturally without exactly one valid accepted terminal result",
+          "expected": "Native-only final parser refuses; ordinary buffered completions and Codex remain unchanged"
+        },
+        {
+          "input": "Hook control detects startup hook but native runtime cannot report loaded instruction sources",
+          "expected": "Hook observations may be evidenced separately; instruction exclusion stays unverified"
+        },
+        {
+          "input": "Control uses explicit fixture plugin-dir, restricted phase omits it",
+          "expected": "Control proves fixture plugin works, but omission alone does not prove inherited-plugin exclusion; require complete relevant native inventory/config instrumentation"
+        },
+        {
+          "input": "Same probe UUID replay or concurrent review",
+          "expected": "Return same probe without new phases; shared lane serializes all real provider calls"
+        },
+        {
+          "input": "Older export lacks optional paired diagnostic descriptors",
+          "expected": "Read as prior diagnostics; never backfill or synthesize new verification facts"
+        },
+        {
+          "input": "Cross-run and approval checks under paired-canary scheme",
+          "expected": "Cross-run requires actual host-observed rejection of foreign binding/run/generation/attempt identities by the installed scoped bridge; a no-session-persistence flag is insufficient. Approval requires actual rejection of approval/escalation operations through the scoped interface plus reliable native evidence about permission escalation outside that interface. If native evidence is unavailable, the overall approval check stays unverified; --permission-mode dontAsk or launch digest alone cannot pass it. Keep these existing required checks; do not infer them from canary silence."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Bounded raw output, actual two ACKs/cancellation exit, private ownership, no credential copies, actual installed pins and source-mode identity remain required.",
+          "source": "c1"
+        },
+        {
+          "text": "All model calls use CliProvider and existing serial lane; no direct REST, key-based attestation, synthetic authority or automatic activation.",
+          "source": "c1"
+        },
+        {
+          "text": "Requested flags, model claims and marker silence alone cannot establish denied access. Preserve unsupported when facts are unobservable.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx; reuse native investigation and probe-fixture integration suites",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Parse actual bounded event formats without manufacturing evidence",
+          "subjects": [
+            "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only",
+            "Malformed contradictory unknown-version and oversized streams never pass isolation",
+            "Native-only terminal result validation preserves ordinary Claude buffered completions"
+          ],
+          "fixturesNeeded": [
+            "Pinned native-shaped JSONL frames including init, hook, tools/MCP/plugin inventory and one terminal result"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Make active temporary fixtures and phase separation testable without real auth/config changes",
+          "subjects": [
+            "Project discovery canaries and labelled positive controls produce attributable host observations",
+            "Inactive controls missing native telemetry and model claims remain unverified",
+            "Restricted capability leaks fail and control-phase evidence cannot qualify production",
+            "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+            "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion"
+          ],
+          "fixturesNeeded": [
+            "Private temporary project settings/hooks/CLAUDE.md/.mcp.json/local plugin fixture",
+            "Scripted CLI process controls explicitly labelled nonqualifying"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Verify selected actual installed Claude after deployment without automatic rounds",
+          "subjects": [
+            "Serial bounded installed control and restricted attempts record startup inventory and canary results honestly for both modes"
+          ],
+          "fixturesNeeded": [
+            "Explicit live-test authorization, updated installed daemon and existing CLI OAuth; no copied credentials"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Keep operator expectations accurate",
+          "subjects": [
+            "Runbook distinguishes verified capabilities diagnostic controls unsupported facts and separate activation signoff"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only",
+            "Malformed contradictory unknown-version and oversized streams never pass isolation",
+            "Native-only terminal result validation preserves ordinary Claude buffered completions"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Project discovery canaries and labelled positive controls produce attributable host observations",
+            "Inactive controls missing native telemetry and model claims remain unverified",
+            "Restricted capability leaks fail and control-phase evidence cannot qualify production"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+            "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Serial bounded installed control and restricted attempts record startup inventory and canary results honestly for both modes",
+            "Runbook distinguishes verified capabilities diagnostic controls unsupported facts and separate activation signoff"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "c1: Claude native investigation uses buffered output; host cancellation loses startup envelope. Probe fixture writes shadow canaries outside discovery paths. Collector never establishes complete denial evidence; legacy engine remains selected.",
+      "stateAfter": "Native probe and production investigation share a streaming launch with validated native-only final reply parsing. Active temporary project canaries and separately labelled control evidence support host/runtime observations; missing facts remain unsupported and activation remains separate.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Deploy coordinated shared args/native-only parser and optional bounded phase evidence support, with existing engine selection unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "After the installed daemon is updated, run one explicitly authorized serial control/restricted pair per selected mode under shared attempt limits, without retries. Publish honest observations and residual limitations.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Require fresh version-pinned qualification evidence for the changed launch digest; retain old records as historical diagnostics rather than rewriting approvals.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Ordinary Claude completions, design review and Codex transports retain existing behavior. Legacy diagnostic exports without optional phase descriptors remain readable. Changed native launch digest invalidates older installed qualifications and requires fresh evidence; no automatic conversion, key provisioning, credential copies, engine selection or activation.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared streaming launch with controlled temporary canaries",
+        "oneLineSummary": "Capture startup events under the same pinned launch used for real review; pair active canaries with a separate labelled control.",
+        "approach": "Use bounded stream-json for Claude native investigation in both probe and production, with native-only terminal-envelope parsing. Place harmless version-valid project canaries under private temporary discovery paths and validate them with one explicitly labelled positive-control launch before the restricted launch. Keep control and target evidence/identities separate and retain unobservable facts as unsupported.",
+        "pros": [
+          "Preserves exact production/probe launch equivalence",
+          "Reuses CliProvider, budgets, lane, fixture and export lifecycle"
+        ],
+        "cons": [
+          "Requires coordinated native terminal parsing and bounded multi-phase probe handling",
+          "Native telemetry may still leave some isolation facts unsupported"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Probe-only streaming diagnostics",
+        "oneLineSummary": "Switch only diagnostic probes to streaming and leave production buffered.",
+        "approach": "Add streaming output only to probe arguments and collect init events plus canary controls. Keep the distinct launch digest explicit and export the result as diagnostic-only, so it cannot qualify the buffered production launch.",
+        "pros": [
+          "Smaller transport compatibility change"
+        ],
+        "cons": [
+          "Cannot establish qualification for the actual production launch",
+          "Leaves the exact-launch verification gap unresolved"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Useful diagnostics but cannot verify the exact production launch. Rejected because it leaves the identified mismatch."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "paired-isolation-probe",
+      "narrative": "Shows the control and restricted launch ordering under one bounded daemon attempt. Only pinned restricted observations can contribute to qualification; controls validate fixture instrumentation.",
+      "participants": [
+        {
+          "id": "daemon",
+          "label": "Daemon probe owner",
+          "description": "Holds shared provider lane and absolute budget/deadline."
+        },
+        {
+          "id": "fixture",
+          "label": "Private temporary fixture",
+          "description": "Owns real discovery paths and bound canary manifest; no real config edits."
+        },
+        {
+          "id": "provider",
+          "label": "CliProvider / installed Claude",
+          "description": "Executes serial labelled phases through existing CLI OAuth."
+        },
+        {
+          "id": "collector",
+          "label": "Native event collector",
+          "description": "Captures bounded startup frames and observed canary events."
+        },
+        {
+          "id": "export",
+          "label": "Diagnostic export",
+          "description": "Retains phase pins and limitations without granting authority."
+        }
+      ],
+      "messages": [
+        {
+          "from": "daemon",
+          "to": "fixture",
+          "label": "Prepare active canaries and hash manifest",
+          "description": "Private root only, with fixed harmless settings/hooks/MCP/plugin/instruction fixtures."
+        },
+        {
+          "from": "daemon",
+          "to": "provider",
+          "label": "Run one labelled positive control",
+          "description": "Fixed internal control template; uses shared absolute limits and no arbitrary wire args."
+        },
+        {
+          "from": "provider",
+          "to": "collector",
+          "label": "Stream native startup and canary signals",
+          "description": "Control must establish actual capability-specific detection, not model assertions."
+        },
+        {
+          "from": "collector",
+          "to": "daemon",
+          "label": "Record attributable control results",
+          "kind": "return",
+          "description": "Missing or unobservable control means unverified; never infer denial."
+        },
+        {
+          "from": "daemon",
+          "to": "provider",
+          "label": "After control drains, run restricted production template",
+          "description": "Same pinned native args and runtime identity as real review, without safe mode."
+        },
+        {
+          "from": "provider",
+          "to": "collector",
+          "label": "Capture inventory and restriction observations",
+          "description": "Retain complete native frames through cancellation; control signals cannot mix into this phase."
+        },
+        {
+          "from": "fixture",
+          "to": "daemon",
+          "label": "Two durable scoped block ACKs",
+          "kind": "return",
+          "description": "Host journal fsync precedes each ACK."
+        },
+        {
+          "from": "daemon",
+          "to": "provider",
+          "label": "Cancel and await process-group exit",
+          "description": "Actual exit observation required before lane release."
+        },
+        {
+          "from": "collector",
+          "to": "export",
+          "label": "Validate phase/file pins; retain missing facts",
+          "description": "Observed leak fails; absent evidence stays unsupported; no self-certification."
+        },
+        {
+          "from": "daemon",
+          "to": "fixture",
+          "label": "Revoke sockets and clean invocation resources",
+          "description": "Preserve only bounded private diagnostics, no real config/auth changes."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/agent/providers/native-investigation-probe.ts",
+      "quotedText": "Analyzer locates four key entities, but dynamic caller graph incomplete. Direct source confirms CliProvider.runInvestigationProbe shares Claude adapter args with production runReviewSession; private runClaude parses single JSON envelope. Native runner keeps bounded stdout through actual cancellation but buffered output lacks init events. Fixture writes inert shadow files not discovery paths. Reuse process-group bounds, provider/lane, canonical approval and existing evidence identity/export validation; do not bypass runtime qualification. Direct source also confirms adoption constructs production Claude args and launch digest; include it in the coordinated compatibility boundary."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-probe-fixtures.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "https://code.claude.com/docs/en/hooks"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "https://code.claude.com/docs/en/plugins-reference"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "user:2026-10-30",
+      "quotedText": "go ahead with this"
+    }
+  ]
+}

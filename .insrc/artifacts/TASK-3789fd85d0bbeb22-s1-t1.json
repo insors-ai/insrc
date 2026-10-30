@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cef0dc08-d670-4895-b314-4df12880566d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T08:07:11.396Z",
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3789fd85d0bbeb22",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Capture bounded Claude native startup events",
+      "parent": {
+        "entityId": "STORY-3789fd85d0bbeb22-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3789fd85d0bbeb22-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0fd0c01fd3003a4b360592c650f11202a21ea8944cdf6bb320aaac63b6c3f5e7",
+        "at": "2026-10-30T08:07:11.400Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T08:07:11.400Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Capture bounded Claude native startup events",
+    "summary": "Switch shared native investigation args to version-pinned streaming output and add strict native-only terminal parsing. Preserve startup frames through cancellation and collect actual inventory facts. Include production adoption args/digest in parity tests; leave ordinary completions, design review and Codex unchanged.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Restricted probe and production share exact streaming launch and digest derivation; previous qualifications become stale.",
+      "Startup inventory survives cancellation with bounded complete-frame parsing; malformed/conflicting/unknown telemetry cannot pass isolation.",
+      "Native final reply requires one valid terminal result and accepted-reply equality; ordinary buffered completions remain compatible."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only"
+      },
+      {
+        "level": "unit",
+        "name": "Malformed contradictory unknown-version and oversized streams never pass isolation"
+      },
+      {
+        "level": "unit",
+        "name": "Native-only terminal result validation preserves ordinary Claude buffered completions"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

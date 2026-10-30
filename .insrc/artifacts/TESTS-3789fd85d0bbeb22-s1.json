@@ -1,0 +1,280 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "3f67968b149f1989d9536c57d430917841a7a6e9ed95184bb1fbed51c7acd848",
+        "at": "2026-10-30T08:50:35.425Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "3789fd85d0bbeb22",
+    "storyId": "s1",
+    "createdAt": "2026-10-30T08:12:56.225Z",
+    "updatedAt": "2026-10-30T08:50:35.361Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "epicSlug": "capture-live-review-inventory-active-isolation",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "553004628",
+        "ranAt": "2026-10-30T08:12:56.225Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts",
+                "title": "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Malformed contradictory unknown-version and oversized streams never pass isolation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts",
+                "title": "Malformed contradictory unknown-version and oversized streams never pass isolation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Native-only terminal result validation preserves ordinary Claude buffered completions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts",
+                "title": "Native-only terminal result validation preserves ordinary Claude buffered completions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 696,
+            "titles": [
+              {
+                "title": "Native JSONL startup inventory survives cancellation; partial tail is diagnostic only",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed contradictory unknown-version and oversized streams never pass isolation",
+                "result": "pass"
+              },
+              {
+                "title": "Native-only terminal result validation preserves ordinary Claude buffered completions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "565644594",
+        "ranAt": "2026-10-30T08:23:48.018Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Project discovery canaries and labelled positive controls produce attributable host observations",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts",
+                "title": "Project discovery canaries and labelled positive controls produce attributable host observations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Inactive controls missing native telemetry and model claims remain unverified",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts",
+                "title": "Inactive controls missing native telemetry and model claims remain unverified",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 759,
+            "titles": [
+              {
+                "title": "Synthetic probe bridge records ordered durable ACKs and rejects cross-run capabilities",
+                "result": "pass"
+              },
+              {
+                "title": "Private canaries leave real source/config/auth untouched and cleanup on failure",
+                "result": "pass"
+              },
+              {
+                "title": "Project discovery canaries and labelled positive controls produce attributable host observations",
+                "result": "pass"
+              },
+              {
+                "title": "Inactive controls missing native telemetry and model claims remain unverified",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "46ac5a0bf",
+        "ranAt": "2026-10-30T08:50:35.361Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Restricted capability leaks fail and control-phase evidence cannot qualify production",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Restricted capability leaks fail and control-phase evidence cannot qualify production",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-provider-lane.test.ts",
+                "title": "Probe and review across repositories share one lane until actual teardown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+                "title": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9923,
+            "titles": [
+              {
+                "title": "Trusted probe executes one control and one restricted phase with exact pins and bounded cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "Codex probe preserves strict schema cleanup and actual process drain",
+                "result": "pass"
+              },
+              {
+                "title": "Claude probe retains OAuth without credential copies and never fabricates cancellation proof",
+                "result": "pass"
+              },
+              {
+                "title": "Production native session refuses probe grants and unchanged installed-proof checks hold",
+                "result": "pass"
+              },
+              {
+                "title": "Probe capture overflow and spawn observation failure drain the actual process",
+                "result": "pass"
+              },
+              {
+                "title": "Restricted capability leaks fail and control-phase evidence cannot qualify production",
+                "result": "pass"
+              },
+              {
+                "title": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap",
+                "result": "pass"
+              },
+              {
+                "title": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-provider-lane.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1564,
+            "titles": [
+              {
+                "title": "Probe and review across repositories share one lane until actual teardown",
+                "result": "pass"
+              },
+              {
+                "title": "Cancelling queued probe does not invoke provider or release another owner's slot",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-29049779-d927-4e4c-a6a1-313610a57118",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T08:07:11.401Z",
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3789fd85d0bbeb22",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build active temporary canaries with labelled controls",
+      "parent": {
+        "entityId": "STORY-3789fd85d0bbeb22-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3789fd85d0bbeb22-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3789fd85d0bbeb22-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "40c262404842618cfb02b4066c2a966f22f4e1dee94b8804937f8b630f6a6a08",
+        "at": "2026-10-30T08:07:11.404Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T08:07:11.405Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build active temporary canaries with labelled controls",
+    "summary": "Replace shadow marker files with actual private project discovery settings, hooks, CLAUDE.md, MCP and local plugin components. Bind manifest/marker observations to attempt and phase. Provide fixed provider-internal positive-control setup with no real HOME/config changes or credential copies. Unavailable discovery/telemetry stays unverified.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Canaries live in supported discovery paths and positive controls produce capability-specific native/host signals.",
+      "Inactive controls, missing instruction/plugin signals and marker silence never become exclusion evidence.",
+      "Fixture components remain private and harmless; real config/auth/repo untouched, foreign identities rejected and resources cleaned."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Project discovery canaries and labelled positive controls produce attributable host observations"
+      },
+      {
+        "level": "integration",
+        "name": "Inactive controls missing native telemetry and model claims remain unverified"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

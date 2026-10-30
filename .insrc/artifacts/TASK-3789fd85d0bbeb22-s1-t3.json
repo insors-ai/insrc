@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d4a10052-7607-43f2-b3f8-4c6952c87d09",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T08:07:11.405Z",
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3789fd85d0bbeb22",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integrate bounded paired probes and strict phase exports",
+      "parent": {
+        "entityId": "STORY-3789fd85d0bbeb22-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3789fd85d0bbeb22-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3789fd85d0bbeb22-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3789fd85d0bbeb22-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8755288239012348ddfb69211f90af8586a1692eb4737bda50da4d6742d767bd",
+        "at": "2026-10-30T08:07:11.409Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T08:07:11.410Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integrate bounded paired probes and strict phase exports",
+    "summary": "Run at most one labelled control then one restricted phase through CliProvider under existing lane and aggregate 300-second/128K/output limits. Extend optional bounded diagnostic descriptors and owned-file validation. Keep control facts separate from restricted evidence, observe actual process drain and refuse leaks/tampering/stale pins; preserve canonical authority and no-key activation policy.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "All provider calls are serial with one shared absolute deadline and inclusive budget; UUID replay and interruptions never retry phases.",
+      "Strict export schema validates phase identity/order, manifests, private ownership, file sizes/digests, source/runtime/model/catalog/config/launch pins.",
+      "Positive-control output cannot qualify the production launch; only affirmative supported evidence can establish tested exclusions, with missing facts unsupported and leaks failed.",
+      "Cross-run checks use actual foreign capability refusals. Overall approval isolation stays unverified without reliable native escalation evidence; flags alone cannot pass."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Restricted capability leaks fail and control-phase evidence cannot qualify production"
+      },
+      {
+        "level": "integration",
+        "name": "Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap"
+      },
+      {
+        "level": "integration",
+        "name": "Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

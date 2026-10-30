@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c63d67be-3e85-43d1-b719-c7f421fb4af0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T08:07:11.411Z",
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3789fd85d0bbeb22",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify installed behavior and publish honest handoff",
+      "parent": {
+        "entityId": "STORY-3789fd85d0bbeb22-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3789fd85d0bbeb22-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3789fd85d0bbeb22-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1c5f0149e022cd95cccaa6d92197cb959e5872cb3beb3062500600e071035d3a",
+        "at": "2026-10-30T08:07:11.414Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T08:07:11.414Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify installed behavior and publish honest handoff",
+    "summary": "Update operator docs, run affected regression suites and build, then after deployment run one explicitly authorized serial pair per selected mode. Record actual startup/canary/checkpoint/cancel results and residual unsupported checks with truthful accounting. Run the mandatory final Story code review once, with no automatic repeated rounds; activation signoff remains separate.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "Affected focused regressions and build pass; ordinary/native/Codex compatibility checked within changed boundary.",
+      "Installed verification binds exact deployment and both modes, with one control/restricted pair each and no automatic retry; pending deployment is not reported as executed.",
+      "Report and runbook distinguish verified facts, controls, missing evidence and activation. Unsupported is an honest diagnostic outcome, never a qualification/activation pass; unknown usage stays null."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Serial bounded installed control and restricted attempts record startup inventory and canary results honestly for both modes"
+      },
+      {
+        "level": "smoke",
+        "name": "Runbook distinguishes verified capabilities diagnostic controls unsupported facts and separate activation signoff"
+      },
+      {
+        "level": "integration",
+        "name": "Affected native and ordinary provider regressions and build pass"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

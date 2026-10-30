@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "8eea1e0a80efd469174da129874f05030d09535e7b0110f646186456a69bc7df",
+        "at": "2026-10-30T08:54:32.912Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-6a387fed-292c-42bf-b6d7-12088363984e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T08:12:56.225Z",
+    "epicCreatedAt": "2026-10-30T06:17:07.224Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3789fd85d0bbeb22",
+    "storyId": "s1",
+    "revision": 3,
+    "updatedAt": "2026-10-30T08:50:35.361Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "capture-live-review-inventory-active-isolation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Paired control/restricted probes run serially through CliProvider with aggregate budget/deadline/retention bounds and exact phase pins. Strict export validation checks manifests, host receipts and runtime files. All 22 focused tests and TypeScript passed; commit 46ac5a0bf. No real model calls or activation.",
+    "testRecord": {
+      "md": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/native-investigation-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-events.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/native-investigation-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-canaries.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-probe-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-probe-export.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-investigation-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T08:50:35.361Z"
+      }
+    ],
+    "commit": "46ac5a0bf"
+  },
+  "citations": []
+}

@@ -22,6 +22,37 @@ The shared provider lane serializes probes and investigation reviews across
 repositories. A queued cancellation invokes no provider; active cancellation
 retains ownership until the real process and bridge have drained.
 
+Claude native investigation uses bounded `stream-json` with startup and hook
+events, so complete startup frames survive cancellation. The restricted probe
+and production review share the same launch template and digest; ordinary
+buffered completions/design review and the Codex transport keep their existing
+parsers. Changing from the old buffered native launch invalidates its prior
+qualification pins and requires fresh evidence.
+
+Each Claude probe runs at most one labelled **control** and then one
+**restricted** process, serially through CliProvider. Both share one absolute
+300-second deadline, one inclusive 128K admission budget (including both phases'
+reserves and accumulated traffic), and an aggregate 8 MiB retention bound.
+There is no phase retry. A failed control starts no restricted process.
+
+The private fixture contains actual project `.claude/settings.json` hooks,
+`CLAUDE.md`, `.mcp.json` and a local plugin manifest/hook. A fixed control
+template loads the harmless fixture settings, explicit canary MCP and
+session-only plugin. It records host marker signals bound to the probe,
+attempt, manifest and phase. It neither installs a plugin into real user
+configuration nor copies credentials. Control success proves instrumentation;
+omitting `--plugin-dir` or seeing no marker in the restricted phase does not
+prove exclusion. Missing native instruction/plugin metadata remains unsupported.
+
+Exports retain labelled phase timestamps, output hashes and launch/config/catalog
+digests, along with the canary manifest/signals and host-check receipts. Control
+output cannot qualify the production launch. Canary summaries describe raw
+marker activity only; native inventory and overall qualification are separate.
+The host tests foreign capabilities between successful scoped reads, so a dead
+broker cannot masquerade as a denial. A rejected scoped approval operation does
+not prove that native permission escalation is unavailable: that overall check
+remains unverified without reliable native evidence.
+
 The main daemon owns `codeReview.investigation.probe` start/status/cancel/export,
 including worker-originated connections. Its private fsynced status records live
 under `~/.insrc/review-probes`. A restart marks queued/running work interrupted;
@@ -39,14 +70,19 @@ places exported JSON in its own private temporary directory. Do not save these
 temporary reports in the Epic/Story folder. Retain the fixture root while
 independent inspection/qualification requires its pinned configuration files.
 
-The Claude `2.1.310` and Codex `0.164.0` collectors recognize limited runtime
-diagnostics. They deliberately do **not** certify a complete effective inventory:
+The Claude `2.1.310` and Codex `0.164.0` collectors recognize version-pinned runtime
+diagnostics. A complete Claude startup tool list can establish scoped tool
+exposure, but neither collector assumes a complete effective configuration:
 result/agent-message claims, requested flags, absent calls and silence do not
 prove denied access. Observed unwanted capabilities fail isolation; unverifiable
 facts leave the installation unsupported, with no candidate. Actual durable
 ACKs and a host-requested SIGKILL exit are required for progress/cancellation
 observations. A naturally completed process cannot be labelled cancelled.
 Subprocess counts are not model-call counts; unavailable counters remain null.
+Native process durations are observed latency, not measured cloud compute time.
+These restrictions concern model-facing tools and inherited customization;
+the CLI retains its existing OAuth and model-provider connectivity. A tool
+inventory is not an OS filesystem/network sandbox claim.
 
 Activation handoff, in order:
 

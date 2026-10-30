@@ -77,6 +77,16 @@ function groupLabel(c: Criticality): string {
   }
 }
 
+/** Partition roles by criticality. The bucket literal is typed as a total
+ *  Record<Criticality, ...> — a future Criticality member makes this literal
+ *  fail to compile (missing key), so a role can never be silently dropped from
+ *  every group the way a hand-maintained ['critical','peripheral'] list could. */
+function partitionRolesByCriticality(roles: readonly RoleDescriptor[]): Readonly<Record<Criticality, readonly RoleDescriptor[]>> {
+  const buckets: Record<Criticality, RoleDescriptor[]> = { critical: [], peripheral: [] };
+  for (const role of roles) buckets[role.criticality].push(role);
+  return buckets;
+}
+
 /** One <details> section of role rows for a single criticality, open only for 'critical'. */
 function roleGroupSection(criticality: Criticality, roles: readonly RoleDescriptor[], raw: Record<string, unknown>, active: string): string {
   const rows = roles
@@ -134,9 +144,9 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
     // The per-repo form: the tier each role uses (tasks) and the core floor — what a repo
     // may choose. Pre-filled from the daemon's stored value; 'global' = no repo choice.
     const raw = await deps.rawConfig();
-    const allRoles = reasoningRoleTaxonomy().roles;
-    const groups = (['critical', 'peripheral'] as const)
-      .map((c) => roleGroupSection(c, allRoles.filter((r) => r.criticality === c), raw, active))
+    const buckets = partitionRolesByCriticality(reasoningRoleTaxonomy().roles);
+    const groups = (['critical', 'peripheral'] as const satisfies readonly Criticality[])
+      .map((c) => roleGroupSection(c, buckets[c], raw, active))
       .join('');
     const floor = tierRow('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
     const floorSection = `<div class="section"><div class="section-head">Core floor</div><div class="floor-row">${floor}</div></div>`;

@@ -8,7 +8,7 @@ import java.io.File
 
 /**
  * Source-scan guards for the nested Settings pages (Story E2026092157298940:S001 /
- * sc1): the three child applicationConfigurables (Daemon/Workflows/Debug) nested under
+ * sc1): the three operations pages plus S005 Connections nested under
  * the UNCHANGED parent insrc node, built on the shared InsrcOpsConfigurable page-shell
  * base. The Settings dialog is not headlessly bootable, so — the SettingsViewTest /
  * RepoStatusPopupLayoutTest idiom — the load-bearing invariants are asserted against
@@ -23,18 +23,18 @@ class NestedOpsPagesTest {
     }
 
     @Test
-    fun `ac1 - plugin_xml nests exactly three child pages under the unchanged parent`() {
+    fun `ac1 - plugin_xml nests the three operations pages and Connections under the unchanged parent`() {
         val xml = read("src/main/resources/META-INF/plugin.xml")
 
-        // exactly three children point at the parent insrc Settings node
+        // The dedicated native Connections page is a fourth child, not an Ops page.
         val childParent = Regex("parentId=\"ai\\.insors\\.insrc\\.settings\"").findAll(xml).count()
-        assertEquals(3, childParent, "exactly three child applicationConfigurables nest under ai.insors.insrc.settings")
+        assertEquals(4, childParent, "exactly four child applicationConfigurables nest under ai.insors.insrc.settings")
 
         // the three distinct child ids + their instance classes
-        for (id in listOf("ai.insors.insrc.daemon", "ai.insors.insrc.workflows", "ai.insors.insrc.debug")) {
+        for (id in listOf("ai.insors.insrc.daemon", "ai.insors.insrc.workflows", "ai.insors.insrc.debug", "ai.insors.insrc.connections")) {
             assertTrue(xml.contains("id=\"$id\""), "child id $id is registered")
         }
-        for (cls in listOf("ops.DaemonConfigurable", "ops.WorkflowsConfigurable", "ops.DebugConfigurable")) {
+        for (cls in listOf("ops.DaemonConfigurable", "ops.WorkflowsConfigurable", "ops.DebugConfigurable", "settings.ConnectionsConfigurable")) {
             assertTrue(xml.contains(cls), "child instance $cls is wired")
         }
 

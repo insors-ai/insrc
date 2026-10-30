@@ -629,8 +629,8 @@ function shellHtml(title: string, content: string, nonce: string, bootstrap?: st
     .floor-row { display: flex; align-items: center; gap: 10px; }
     .provider-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 8px; border: 1px solid var(--vscode-panel-border, #3c3c3c); border-radius: 6px; margin-bottom: 4px; }
     .status-chip { font-size: 10.5px; border-radius: 9px; padding: 1px 8px; white-space: nowrap; }
-    .status-chip.ok { background: var(--vscode-charts-green, #1e3a24); color: var(--vscode-editor-foreground, #81c995); }
-    .status-chip.warn { background: var(--vscode-charts-yellow, #3a2f12); color: var(--vscode-editor-foreground, #e8b94a); }
+    .status-chip.ok { background: rgba(35, 134, 54, 0.25); color: #81c995; }
+    .status-chip.warn { background: rgba(187, 128, 9, 0.25); color: #e8b94a; }
     .status-chip.off { opacity: 0.7; }
   </style></head><body><h2>${escapeHtml(title)}</h2>${content}${script}</body></html>`;
 }

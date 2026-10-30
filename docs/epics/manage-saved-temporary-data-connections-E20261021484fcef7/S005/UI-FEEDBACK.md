@@ -51,3 +51,10 @@ Status: recorded for implementation. No runtime message-section or popup change 
 Provide an icon for every supported datasource type. Show the matching icon beside the type name in the datasource dropdown, each connection in the list, and the connection edit view. Use the same icon for a given type across these surfaces. Retain readable type names and ensure icons remain legible in light and dark themes.
 
 Status: recorded for implementation. No runtime icons or dropdown changes are claimed by this entry.
+
+
+## Pending manual feedback — 2026-10-31: per-row delete/discard icon
+
+Place an icon-only delete/discard button on each connection row in the list, replacing the shared list-level delete control. Each button targets its own row's connection, independently of the currently selected or edited connection. Provide a tooltip and accessible name appropriate to Saved deletion or Temporary discard. Preserve the existing confirmation, dirty-draft handling, capability checks and exact connection identity safeguards.
+
+Status: recorded for implementation. No runtime row-action change is claimed by this entry.

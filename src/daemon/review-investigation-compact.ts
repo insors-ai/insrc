@@ -40,7 +40,7 @@ export class CompactReviewFacade {
  }); }
  private row(alias: string): CoverageV1 {
   const index = /^r([1-9][0-9]*)$/.exec(alias), row = index ? this.state().ledger.coverage[Number(index[1]) - 1] : undefined;
-  if (!row) refuse('unknown-expectation', 'Use expectation aliases from the latest host view.'); return row;
+  if (!row) refuse('unknown-expectation', `Copy an expectation field exactly (r1, r2, etc.), not its text, category or criterion. Current expectations: ${JSON.stringify(this.status(true).expectations)}`); return row;
  }
  private remaining() {
   const state = this.state(), reviewed = new Set(state.accepted.filter(a => a.progress.disposition === 'reviewed').map(a => a.progress.blockId));

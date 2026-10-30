@@ -18,7 +18,7 @@ export const CompactReadSchema = obj({ target: Type.Union([
 export const CompactProgressSchema = obj({
  blockId: text, disposition: Type.Union([Type.Literal('reviewed'), Type.Literal('needs-followup'), Type.Literal('unverified')]),
  evidence: refs, notes: Type.String({ minLength: 1, maxLength: 16000 }), unresolved: refs,
- assessments: Type.Array(obj({ expectation: text,
+ assessments: Type.Array(obj({ expectation: Type.String({ minLength: 1, maxLength: 4096, description: 'Copy the exact expectation alias (r1, r2, etc.) from the host expectations array. Do not use its category, criterion, text or a new label.' }),
   disposition: Type.Union([Type.Literal('satisfied'), Type.Literal('finding'), Type.Literal('unverified'), Type.Literal('not-applicable')]),
   evidence: refs, findings: Type.Array(Type.Integer({ minimum: 0, maximum: 9999 }), { uniqueItems: true, maxItems: 10000 }),
   rationale: Type.String({ minLength: 1, maxLength: 16000 }) }), { maxItems: 10000 }),

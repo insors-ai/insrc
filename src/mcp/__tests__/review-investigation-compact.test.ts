@@ -80,6 +80,10 @@ test('compact bridge expands explicit members through durable kernel and replays
      assert.equal(foreign.isError, true); assert.equal(f.store.status().blockCheckpoints.length, 0);
      const missing = await client.callTool({ name: 'review_progress', arguments: { progress: { ...input, assessments: [{ ...input.assessments[0], expectation: 'r99999' }] } } });
      assert.equal(missing.isError, true);
+     assert.match(JSON.stringify(missing), /Copy an expectation field exactly/);
+     assert.match(JSON.stringify(missing), /Current expectations/);
+     assert.ok(JSON.stringify(missing).includes(expectation));
+     assert.equal(f.store.status().blockCheckpoints.length, 0, 'invalid aliases provide recovery guidance without accepting coverage');
      const ack = await client.callTool({ name: 'review_progress', arguments: { progress: input } });
      assert.equal(ack.isError, undefined); assert.equal(f.store.status().blockCheckpoints.length, 1, 'ACK follows real durable acceptance');
      const replay = await client.callTool({ name: 'review_progress', arguments: { progress: input } });

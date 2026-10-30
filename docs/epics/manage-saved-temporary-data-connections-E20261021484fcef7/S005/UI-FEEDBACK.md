@@ -26,10 +26,12 @@ The t20 entry/icon validation gate also passed. Task30 inventory checks initiall
 Final tracked results: t18, t20 and t30 validation gates all passed. No independent post-build code review or live UI acceptance is claimed; actual creation on the installed daemon remains unavailable. Runtime package remains pinned to 63966e4ad; subsequent commits contain documentation, inventory and validation evidence only.
 
 
-## Pending manual feedback — 2026-10-31: edit form below the list
+## Pending manual feedback — 2026-10-31: new and edit forms below the list
 
 User feedback: “the edit view of the connection should show below the connection list, not above.”
 
-Required layout depends on the form mode: new connection registration stays above the connections list; editing an existing selected connection appears below the list. Preserve the draft and its validation/actions when placing the form, and keep DOM/keyboard order consistent with the visible order.
+User clarification: “no, keep the new connection also below the list.”
+
+Required layout: the connections list comes first, with both new connection registration and editing an existing selected connection below it. This supersedes the earlier registration-above-list requirement. Preserve the draft and its validation/actions when placing the form, and keep DOM/keyboard order consistent with the visible order.
 
 Status: recorded for implementation. No runtime layout change or UI verification is claimed by this entry.

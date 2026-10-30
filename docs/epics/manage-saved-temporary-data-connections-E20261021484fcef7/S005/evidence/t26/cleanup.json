@@ -1,0 +1,24 @@
+{
+  "closedOwnedIdePids": [
+    49965,
+    51458
+  ],
+  "installedDaemonRestarted": false,
+  "userIdeClosed": false,
+  "stoppedOwnedProcesses": [
+    {
+      "pid": 44098,
+      "command": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node --require /Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/preflight.cjs --import file:///Users/subhagho/work/projects/insors/insrc/node_modules/tsx/dist/loader.mjs src/shared/__tests__/fixtures/connection-mutation-server.ts /private/tmp/s5-live-j5jogfty/home/.insrc live-ui",
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 49678,
+      "command": "node --import tsx/esm /private/tmp/s5-live-j5jogfty/home/.insrc/daemon/out/daemon/index.js",
+      "signal": "SIGTERM"
+    }
+  ],
+  "sourceUnchanged": true,
+  "sourceHash": "b557f7ad27e6b90a55a2ca6d34165e43f02873938738d01bdd28256ebf1d5efc",
+  "completeLiveDrainVerified": false,
+  "stdinStopUnavailable": true
+}

@@ -1,0 +1,12 @@
+{
+  "id": 3,
+  "result": {
+    "version": 2,
+    "daemonEpoch": "85de436e-58f6-4b5b-bc8a-59248449af8b",
+    "features": [
+      "safe-read",
+      "driver-descriptors"
+    ],
+    "receiptRetentionDays": 30
+  }
+}

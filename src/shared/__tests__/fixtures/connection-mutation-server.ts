@@ -16,7 +16,10 @@ import { _setKeystoreForTests } from '../../../daemon/db/secrets.js';
 import { listConnectionsRpc, listDriverKindsRpc } from '../../../daemon/db-rpc.js';
 import { connectionTestSupervisor } from '../../../daemon/db/draft-test.js';
 
+// Explicit test entry only; never imported by a packaged client or daemon.
+const liveUi=process.argv[3]==='live-ui';
 const dir=process.argv[2]!,env=await environment(),f=await env.rootFixture('managed');_setPoolForTests(f.root,f.pool);
+if(liveUi)Object.defineProperty(f.clock,'value',{get:()=>Date.now()});
 const other=await env.rootFixture('other');_setPoolForTests(other.root,other.pool);const roots=[f.root,other.root];
 const previousKeystore=_setKeystoreForTests(f.keystore),sourcePath=join(f.root,'source.csv');writeFileSync(sourcePath,'id,name\n1,preserved\n');const sourceBytes=readFileSync(sourcePath);
 let credentialFail=false,resourceFail=false,builds=0,oldCloses=0,newCloses=0,removeStateCalls=0,cleanupCalls=0,ticketOnlyCleanup=true,originalCleanup=true;
@@ -24,6 +27,7 @@ let originalRemoval:MutationRequest['ticket']|null=null,removeFieldsValid=true,l
 const deleteKey=f.keystore.deleteKey;f.keystore.deleteKey=async ref=>{if(credentialFail)throw new Error('fixture credential cleanup failure');await deleteKey(ref);};
 f.hooks.factory=async config=>{const generation=++builds;return{id:config.id,kind:config.kind,family:'rdbms',close:async()=>{if(generation===1){oldCloses++;if(resourceFail)throw new Error('fixture runtime cleanup failure');}else newCloses++;}} as Driver;};
 let now=0,fault='none',refreshFail=false,activationFail=false,cleanupFail=false,afterCommit=false;
+const monotonicNow=()=>liveUi?performance.now():now;
 let tickets=0,mutations=0,statuses=0,activations=0,lists=0,identicalReplay=true;
 const firstRequests=new Map<string,string>(),held=new Set<Promise<unknown>>();
 let release:(()=>void)|undefined;
@@ -31,7 +35,7 @@ const recover=f.generations.recover.bind(f.generations);
 f.generations.recover=async()=>{if(cleanupFail&&afterCommit)throw new Error('fixture cleanup failure');return await recover();};
 f.hooks.writer=async stage=>{if(stage==='after-rename')afterCommit=true;};
 f.hooks.activate=async()=>{if(activationFail)throw new Error('fixture activation failure');};
-const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,monotonicNow:()=>now,isRegistered:async root=>roots.includes(root),
+const runtime=new ConnectionSessionRpc({enabled:async()=>true,removalEnabled:async()=>true,monotonicNow,isRegistered:async root=>roots.includes(root),
  createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{},describe:async()=>({columns:[]})}) as Driver)}),dropOverlay:overlay=>overlay.close()});
 const P='db.connections.v2.',handlers=connectionManagementHandlers({sessionRuntime:runtime,enabled:async()=>true,removalEnabled:async()=>true,isRegistered:async root=>roots.includes(root)});
 let capabilityMode='normal',omittedFeatures:string[]=[],readRows:unknown=null,legacyMutations=0;
@@ -72,6 +76,12 @@ for(const method of ['removalState','retryRemovalCleanup']){
  };
 }
 handlers['fixture.info']=async()=>({roots,wallNow:f.clock.value});
+if(liveUi){
+ // Only incidental IDE startup reads: no install/update/register handlers.
+ handlers['repo.list']=async()=>roots.map((path,i)=>({path,name:i?'Other acceptance repository':'Managed acceptance repository',status:'ready'}));
+ handlers['daemon.status']=async()=>({pid:process.pid,uptime:process.uptime(),repos:[],queueLength:0,indexing:null,installedCommit:''});
+ writeFileSync(join(dir,'live-info.json'),JSON.stringify({roots,socket:join(dir,'daemon.sock'),sourcePath,testOnlyPrerequisites:true,productionGatesChanged:false})+'\n');
+}
 handlers['fixture.stats']=async()=>({tickets,mutations,statuses,activations,lists,probeActive:connectionTestSupervisor.activeCount,legacyMutations,identicalReplay,savedRows:f.store.snapshot.file.connections.length,registryWrites:f.counts.writes,credentialSets:f.counts.sets,credentialDeletes:f.counts.deletes,removeStateCalls,cleanupCalls,ticketOnlyCleanup,originalCleanup,removeFieldsValid,oldCloses,newCloses,sourcePreserved:readFileSync(sourcePath).equals(sourceBytes)});
 handlers['fixture.fault']=async params=>{
  const p=params as Record<string,unknown>;
@@ -89,7 +99,7 @@ handlers['fixture.commitOriginalRemoval']=async()=>{
  if(!originalRemoval)return{committed:false};const request=firstRequests.get(originalRemoval.operationId);if(!request)return{committed:false};
  const result=await f.service.mutate(f.context,JSON.parse(request) as MutationRequest);return{committed:result.status==='committed'};
 };
-const server=new IpcServer(runtime.forward(directDispatch(handlers)),()=>now,join(dir,'daemon.sock'));
+const server=new IpcServer(runtime.forward(directDispatch(handlers)),monotonicNow,join(dir,'daemon.sock'));
 server.onConnectionClose(context=>runtime.disconnect(context));await server.listen();
 process.stdout.write('INSRC_PROJECT_FIXTURE_READY\n');
 createInterface({input:process.stdin}).on('line',line=>{if(line==='stop')void(async()=>{

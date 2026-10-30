@@ -1,0 +1,16 @@
+{
+  "pid": 45248,
+  "argv": [
+    "/Applications/Visual Studio Code.app/Contents/MacOS/Code",
+    "--new-window",
+    "--user-data-dir",
+    "/private/tmp/s5-live-j5jogfty/profile",
+    "--extensions-dir",
+    "/private/tmp/s5-live-j5jogfty/extensions",
+    "--extensionDevelopmentPath=/Users/subhagho/work/projects/insors/insrc/vscode-plugin",
+    "--skip-welcome",
+    "--skip-release-notes",
+    "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-DUJBvq/managed"
+  ],
+  "isolatedHome": "/private/tmp/s5-live-j5jogfty/home"
+}

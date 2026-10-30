@@ -1,0 +1,1 @@
+2026-10-30 09:29:09.505 [info] ExtensionService#_doActivateExtension insors.insrc-vscode, startup: false, activationEvent: 'onStartupFinished'

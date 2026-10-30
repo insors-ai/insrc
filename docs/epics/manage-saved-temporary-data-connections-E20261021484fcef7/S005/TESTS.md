@@ -302,22 +302,21 @@ Run at 2026-10-29T18:07:35.864Z on commit `8f1861afd`. Tests check: **passed**. 
 
 ## t18
 
-Run at 2026-10-30T14:53:35.204Z on commit `edf10ffe1`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T16:43:16.460Z on commit `f5f0eafd0`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-RENDER-TS: schema-source Path uses a functional icon picker and initializes its fixed format | `vscode-plugin/src/connections/__tests__/host.test.ts` |
 | pass | CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input | `vscode-plugin/src/connections/__tests__/host.test.ts` |
-| pass | CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused | `vscode-plugin/src/connections/__tests__/compatibility.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/compatibility.test.ts` | 0 | 5 | 11.4 s |  |
-| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 6 | 10.9 s |  |
+| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 7 | 10.3 s |  |
 
 ## t19
 

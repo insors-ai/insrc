@@ -63,5 +63,6 @@
   },
   "runtimePolicy": "Enabled by default by explicit user instruction 2026-10-30; pending audit evidence is not runtime authorization.",
   "runtimeEnabled": true,
-  "releaseAuditStatus": "pending; independent of runtime availability by explicit user decision"
+  "releaseAuditStatus": "pending; independent of runtime availability by explicit user decision",
+  "sourceCommit": "f5f0eafd0"
 }

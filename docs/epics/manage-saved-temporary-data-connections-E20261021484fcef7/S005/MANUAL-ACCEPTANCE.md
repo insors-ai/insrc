@@ -44,3 +44,10 @@ Details: UI-FEEDBACK.md. Earlier acceptance results remain historical.
 The user explicitly enabled this feature by default. After updating/restarting the daemon, a fresh registered repository should advertise sessions, Test and Saved creation/update/removal; completed inputs should enable Test and Save. No special test daemon or release-evidence flag is required. Existing legacy registries still require their offline migration, and corrupt/partial state still requires recovery. Earlier acceptance failures and pending service coverage remain historical evidence.
 
 For the insrc repository, use `test-fixtures/connection-management/v1/manual-orders.parquet` (five synthetic rows). The existing source policy requires a path within the selected registered repository; the earlier ~/work/temp absolute path is outside that boundary.
+
+
+## Path icon correction (VS Code 0.5.18)
+
+- Install 0.5.18 and Reload Window. Source File path and database Schema Source → Schema file path each have a file-open icon with a specific tooltip and accessible name; no Use default button stands in for file selection.
+- Click the icon, select/cancel a file, and verify only that field changes. Both manual and selected schema-file paths must validate without a hidden-format error.
+- For the Parquet sample select Driver = parquet and use its File path. A database Schema Source field is for its schema (for example a Prisma file), not the Parquet data file.

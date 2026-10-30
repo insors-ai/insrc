@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T15:46:04.211Z",
+    "updatedAt": "2026-10-30T16:43:16.460Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -826,8 +826,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "edf10ffe1",
-        "ranAt": "2026-10-30T14:53:35.204Z",
+        "commit": "f5f0eafd0",
+        "ranAt": "2026-10-30T16:43:16.460Z",
         "testsPassed": true,
         "tests": [
           {
@@ -842,12 +842,12 @@
               },
               {
                 "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
-                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
+                "title": "CM-S5-RENDER-TS: schema-source Path uses a functional icon picker and initializes its fixed format",
                 "result": "pass"
               },
               {
-                "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
-                "title": "CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused",
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
                 "result": "pass"
               }
             ],
@@ -856,39 +856,10 @@
         ],
         "files": [
           {
-            "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 11404,
-            "titles": [
-              {
-                "title": "CM-S5-COMPAT-TS: old missing malformed and base-incomplete handshakes show upgrade without legacy writes",
-                "result": "pass"
-              },
-              {
-                "title": "CM-S5-COMPAT-TS: per-action feature admission preserves optional Test independence and refuses disabled Save and Remove intents",
-                "result": "pass"
-              },
-              {
-                "title": "CM-S5-COMPAT-TS: capability loss retains original unknown attempts and recovery resumes without another mutation",
-                "result": "pass"
-              },
-              {
-                "title": "CM-S5-COMPAT-TS: shared capability decisions pinned read-only metadata and actual legacy Saved projection remain unchanged",
-                "result": "pass"
-              },
-              {
-                "title": "CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused",
-                "result": "pass"
-              }
-            ],
-            "otherFailures": []
-          },
-          {
             "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10854,
+            "durationMs": 10344,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
@@ -912,6 +883,10 @@
               },
               {
                 "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: schema-source Path uses a functional icon picker and initializes its fixed format",
                 "result": "pass"
               }
             ],

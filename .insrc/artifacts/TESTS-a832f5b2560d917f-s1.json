@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "0c57a8ffefa1b5db832551c3ec02b78a4ded2d19584231e538e5dfbf81ff2ae7",
-        "at": "2026-10-30T04:34:24.479Z",
+        "number": 2,
+        "contentHash": "1eaa1cf42c6377ff341601e6e2eb4fa3c988879369148ad0062d8b927062535d",
+        "at": "2026-10-30T04:38:43.487Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a832f5b2560d917f",
     "storyId": "s1",
     "createdAt": "2026-10-30T04:34:24.430Z",
-    "updatedAt": "2026-10-30T04:34:24.430Z",
+    "updatedAt": "2026-10-30T04:38:43.440Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T04:20:27.493Z",
     "epicSlug": "remove-signing-keys-from-review-activation",
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "tasks": [
@@ -140,6 +140,135 @@
               },
               {
                 "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "fd31793e7",
+        "ranAt": "2026-10-30T04:38:43.440Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Operator prerequisites and runbook omit signer/trust-key provisioning and preserve runtime isolation and explicit signoff",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/remove-review-signing-guidance-smoke.log; docs/review-investigation.md activation handoff and scripts/review-investigation-probe.mjs prerequisites; operator regression test passed."
+            }
+          },
+          {
+            "name": "Affected activation and native qualification regressions and build pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Approved installed probe without signature is accepted without trust-key provisioning",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Draft stale and tampered evidence remain refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Legacy signature metadata is inert and bounded",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts",
+                "title": "IPC-only operator client reports runtime isolation and approval prerequisites without signing keys",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 718,
+            "titles": [
+              {
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9386,
+            "titles": [
+              {
+                "title": "Approved installed probe without signature is accepted without trust-key provisioning",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy signature metadata is inert and bounded",
+                "result": "pass"
+              },
+              {
+                "title": "Draft stale and tampered evidence remain refused",
+                "result": "pass"
+              },
+              {
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              },
+              {
+                "title": "An exact start replay never schedules another completed or paused attempt",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 688,
+            "titles": [
+              {
+                "title": "Unsigned export validates every required observation and never signs, approves or changes config",
+                "result": "pass"
+              },
+              {
+                "title": "Unsigned raw evidence export rejects changed bytes and foreign fixture roots",
+                "result": "pass"
+              },
+              {
+                "title": "IPC-only operator client reports runtime isolation and approval prerequisites without signing keys",
                 "result": "pass"
               }
             ],

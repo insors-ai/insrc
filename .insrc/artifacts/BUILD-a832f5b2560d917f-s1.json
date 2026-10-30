@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "1f61c7fc264c3148be1866d8340ed01ac85c4ffaf186815f5ecd7322c311d1b5",
-        "at": "2026-10-30T04:36:00.588Z",
+        "number": 2,
+        "contentHash": "394641257277c052375444bf9562047e54baaeb449803790a39685a732cc7ed7",
+        "at": "2026-10-30T04:39:43.146Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "a832f5b2560d917f",
     "storyId": "s1",
-    "revision": 1,
-    "updatedAt": "2026-10-30T04:34:24.430Z",
+    "revision": 2,
+    "updatedAt": "2026-10-30T04:38:43.440Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "remove-signing-keys-from-review-activation"
@@ -40,9 +40,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Removed cryptographic installed-probe signature/key verification. Canonical approved reference and digest are revalidated on qualification use; native isolation checks remain. Nine focused tests and typecheck passed; commit d106c6883.",
+    "summary": "Updated operator prerequisites and runbook to require approved installed runtime evidence without signer/key provisioning. Twelve affected tests, TypeScript and npm run build pass. No activation or default flip. Commits d106c6883 and fd31793e7.",
     "testRecord": {
       "md": "docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/TESTS.md"
     },
@@ -52,24 +56,115 @@
           "file": "src/agent/providers/__tests__/investigation-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:34:24.430Z"
+        "timestamp": "2026-10-30T04:38:43.440Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/review-investigation-adoption.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:34:24.430Z"
+        "timestamp": "2026-10-30T04:38:43.440Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-adoption.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:34:24.430Z"
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-a832f5b2560d917f-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-a832f5b2560d917f-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-a832f5b2560d917f-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-a832f5b2560d917f-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a832f5b2560d917f-s1-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a832f5b2560d917f-s1-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-a832f5b2560d917f-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-a832f5b2560d917f-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": "docs/review-investigation.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": "scripts/review-investigation-probe.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:38:43.440Z"
       }
     ],
-    "commit": "d106c6883"
+    "commit": "fd31793e7"
   },
   "citations": []
 }

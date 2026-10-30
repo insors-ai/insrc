@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T14:57:55.805Z",
+    "updatedAt": "2026-10-30T15:00:03.874Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1303,8 +1303,8 @@
       },
       {
         "taskId": "t30",
-        "commit": "341b98a7b",
-        "ranAt": "2026-10-30T12:07:23.111Z",
+        "commit": "b9c5bc2ea",
+        "ranAt": "2026-10-30T15:00:03.874Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1339,7 +1339,7 @@
             "file": "src/shared/__tests__/connection-manager-release.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 400,
+            "durationMs": 435,
             "titles": [
               {
                 "title": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",

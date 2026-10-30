@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -487,3 +487,13 @@ Run at 2026-10-30T04:33:47.080Z on commit `2c35eb1aa`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-packaging.test.ts` | 0 | 1 | 36.3 s |  |
+
+## t32
+
+Run at 2026-10-30T05:27:43.361Z on commit `ffaf014af`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: CM-S5-SWEEP: after all implementation freeze commit/tree/test manifests; fresh Node22 builds plus full backend and explicit extension suites, JDK21 Gradle test/build and applicable verifyPlugin; retain original results and20subject acceptance matrix
+
+**smoke: CM-S5-SWEEP: after all implementation freeze commit/tree/test manifests; fresh Node22 builds plus full backend and explicit extension suites, JDK21 Gradle test/build and applicable verifyPlugin; retain original results and20subject acceptance matrix**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/BUILD-REPORT.md; evidence/t32/summary.json and run-b4f7a82cb preserve all original raw results, source/test manifests and zero drift. Native full revalidation passes after a test-only descriptor fix; legacy TS corrections27/27 and logging diagnostics8/8 pass separately. Broader unresolved failures/cancellations and unavailable newer-IDE verifier keep the required full-sweep test failed. Packages are ready for manual installation/testing, not release.

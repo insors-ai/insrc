@@ -377,61 +377,61 @@
           "insrc.models.tiers.core.runner": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The core tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe core tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.core.model": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The core tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe core tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.core.effort": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The core tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe core tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.runner": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The mid tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe mid tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.model": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The mid tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe mid tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.effort": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The mid tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe mid tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.runner": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The cheap tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe cheap tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.model": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The cheap tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe cheap tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.effort": {
             "type": "string",
             "default": "",
-            "markdownDescription": "The cheap tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe cheap tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.coreFloor": {
             "type": "string",
             "default": "mid",
-            "markdownDescription": "min tier for critical tasks: 'core' | 'mid' | 'cheap'",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nmin tier for critical tasks: 'core' | 'mid' | 'cheap'",
             "scope": "machine",
             "enum": [
               "core",

@@ -34,6 +34,9 @@ const TIER_FIELD = { runner: 'model family (runner)', model: 'model', effort: 'r
 /** A tier row's description, naming no family, model or effort (those are the daemon's). */
 const tierDescription = (row) => { const [, tier, field] = TIER_ROW.exec(row.path); return `The ${tier} tier's ${TIER_FIELD[field]}.`; };
 const TIER_NOTE = ' Valid values come from the daemon\'s model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.';
+/** A doorway from these flat fields into the grouped Model Tiers panel (Story S001) — VS Code
+ *  markdown command links only work in the manifest, so this stays local to the sync script. */
+const MODEL_TIERS_PANEL_LINK = '[Open the grouped Model Tiers editor →](command:insrc.status.modelTiers)\n\n';
 const jsonType = (t) => (t === 'enum' ? 'string' : t);
 
 /** The manifest with every catalog-backed key regenerated from `catalog`. */
@@ -63,11 +66,12 @@ export function syncManifest(pkg, catalog) {
 /** A key's schema from its catalog row, keeping the existing key order. */
 function schemaOf(existing, row) {
 	if (isTierRow(row)) {
-		const tier = { ...existing, type: 'string', default: '', markdownDescription: tierDescription(row) + TIER_NOTE, scope: 'machine' };
+		const tier = { ...existing, type: 'string', default: '', markdownDescription: MODEL_TIERS_PANEL_LINK + tierDescription(row) + TIER_NOTE, scope: 'machine' };
 		delete tier.enum;
 		return tier;
 	}
-	const next = { ...existing, type: jsonType(row.type), default: row.default, markdownDescription: row.desc, scope: 'machine' };
+	const desc = row.path === 'models.coreFloor' ? MODEL_TIERS_PANEL_LINK + row.desc : row.desc;
+	const next = { ...existing, type: jsonType(row.type), default: row.default, markdownDescription: desc, scope: 'machine' };
 	if (row.type === 'enum') next.enum = [...row.enumValues];
 	else delete next.enum;
 	return next;

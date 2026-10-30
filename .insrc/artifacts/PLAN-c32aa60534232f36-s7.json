@@ -1,0 +1,459 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793371684732-g4rtj2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T14:53:58.964Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 352778,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s7",
+    "lldRunId": "wf-1793366644372-45hxaj",
+    "lldEffectiveHash": "8d3fcf641c6694ae3fba2e64afa8f2d93e38cea397d57100324728a8beb0bb58",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4fd4c10c3b527559377b5c9feabdcdbefc7cca5110f3a48bf0106facc6147bd8",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T15:02:02.532Z"
+      }
+    },
+    "rangeBase": "5215de36d2f6a4225f5e0b122d6f12596d60a69e"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build a compact reviewer interface over the existing scoped review kernel, with host-owned bookkeeping and prompt durable progress. Prove one real installed-Claude checkpoint early, then complete concise reporting, exact build/test provenance, recovery and real acceptance. Keep default activation and legacy deletion behind separate user decisions.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the compact native assessment bridge",
+        "size": "L",
+        "order": 1,
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "summary": "Add strictly versioned compact-v1 read/progress/reply inputs at the existing native MCP boundary. Host resolves short aliases, supplies bound identities/sequences, translates explicit member assessments into existing domain operations and returns durable ACKs. Add valid change/context targets, safe typed errors, minimal focused view and accepted terminal acknowledgement without altering authoritative kernel contracts.",
+        "acceptanceChecks": [
+          "Catalog, child MCP validation, parent authorization and translation agree on one pinned private protocol; existing bound-v1 path remains readable and explicitly routed.",
+          "Insertion/deletion absent sides never fabricate spans; wider/cross-file context uses pinned context reads. Refusals include safe corrective hints without raw private log content.",
+          "A real domain-backed integration test performs read -> semantic assessment -> journal commit -> ACK; a lost ACK does not duplicate accepted work.",
+          "Host expands only explicitly assessed members and retains unknown/unresolved dispositions. Foreign evidence, fabricated aliases, malformed compact messages and final CLI ACK without accepted reply cannot grant completion.",
+          "Prompt includes detailed tasks/checks, exact selected packet metadata and one focus block; remaining time and accepted progress are returned without repeating protocol hashes/full empty ledger. All catalog/schema/history/output reserves remain within existing inclusive budget."
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "compact bridge: strict protocol, exact changed/context targets and safe errors"
+          },
+          {
+            "level": "integration",
+            "name": "compact bridge: explicit member expansion, bound evidence and journal-before-ACK"
+          },
+          {
+            "level": "integration",
+            "name": "compact bridge: final acknowledgement cannot bypass host-accepted reply"
+          },
+          {
+            "level": "unit",
+            "name": "compact prompt/catalog: full scope discoverability and inclusive budget accounting"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Qualify and prove an early live block checkpoint",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "summary": "Separate availability/kill switch from default routing, admit explicit qualified pilots, and version the changed compact adapter boundary. Reuse installed qualification collection/replay and current authorization checks. Deploy the reviewed build to the daemon and obtain one actual Claude/source-only durable block ACK on an exact existing canonical subject before continuing downstream work.",
+        "acceptanceChecks": [
+          "A reviewed explicit manifest covers CLI/runtime images, adapter/catalog/final schema, resolved launch/config permissions, broker/binding/auth/isolation code and security-relevant dependencies; unknown closure fails closed. Boundary changes invalidate proof; unrelated report changes do not bypass current deterministic authorization checks.",
+          "Capture fresh installed compact-boundary qualification with actual inventory and active instruction/plugin/hook canaries. Old v2 proof is retained as historical, never relabelled; Codex/indexed mode are not inferred qualified.",
+          "Explicit pilot requires normal user-authorized execution plus availability, valid exact scope and qualification, while default remains legacy. Default activation cannot be granted by caller booleans or fixture labels.",
+          "Run serial installed-Claude/source-only pilot against the same deployed boundary using already provable canonical scope and TESTS identity; record actual read and durable block receipt, run/source/boundary IDs and actual or unavailable consumption. A mock ACK or CLI exit is insufficient.",
+          "If installation/restart is required, stop at that concrete operational prerequisite and resume this pilot after daemon update. If pilot fails, preserve the same run/diagnostics and fix the failing slice; do not mark Task passed or continue t3 without a real ACK.",
+          "Early pilot uses a separately complete canonical subject with an existing approved ISSUE scope and valid TESTS repo/history identity, independent of t3's new BUILD manifest and writer corrections. It proves compact execution/progress, not the later writer changes."
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "compact admission: pilot versus default activation, mode separation and fail-closed boundary manifest"
+          },
+          {
+            "level": "integration",
+            "name": "compact qualification: changed execution boundary invalidates proof; report-only changes preserve matching isolation proof"
+          },
+          {
+            "level": "live",
+            "name": "installed Claude compact boundary: inventory and active hook/plugin/instruction canaries"
+          },
+          {
+            "level": "live",
+            "name": "installed Claude early pilot: real scoped read and durable block ACK with legacy default"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Finish concise coverage, exact scope and honest result reporting",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "summary": "Complete grouped expectation presentation and accepted-state inconclusive reports, capture canonical BUILD reviewScope from tracked changes, preserve BUILD/TESTS identity/history and original test outcomes, and wire configured default routing for new starts. Keep old engine-bound sessions and approved ISSUE scope readers.",
+        "acceptanceChecks": [
+          "Grouping preserves explicit member applicability, evidence and all authoritative obligations; no omitted member inherits a pass. Missing coverage produces a useful regenerable /tmp report, never a complete CR or automatic BUILD approval.",
+          "Canonical BUILD reviewScope pins full source/commit/parent/block/task provenance from daemon-tracked changes. Mixed/unprovable attribution requires explicit selection; no trailer-only or generic HEAD inference is accepted.",
+          "TESTS regeneration preserves repo identity, lifecycle/history and original per-Task commit/ranAt/results. Uniquely resolved abbreviated IDs must identify the same Git object.",
+          "Reuse existing derived TrustedInspectionReceipt.testResult unknown with partial completeness and limitation for source-unbound results. Never add unknown to persisted TESTS case outcomes or turn metadata repair into passing evidence.",
+          "New normal review starts honor configured engine and admission policy; old tokens retain admitted engine/protocol. Legacy/design-review routes and status readers remain compatible. Default stays legacy during build."
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "compact groups: explicit member applicability, provenance and unresolved coverage"
+          },
+          {
+            "level": "integration",
+            "name": "inconclusive finish: useful temporary report without complete CR or BUILD approval"
+          },
+          {
+            "level": "integration",
+            "name": "canonical BUILD scope: exact daemon-captured commits/parents/blocks; ambiguous attribution refuses"
+          },
+          {
+            "level": "integration",
+            "name": "canonical TESTS regeneration: repo/history and original results preserved; unbound derived receipt remains unknown"
+          },
+          {
+            "level": "integration",
+            "name": "review entrypoint routing: configured new starts, bound old tokens and legacy/design compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Verify checkpoint recovery, yield and owner isolation",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "summary": "Integrate the compact facade with existing durable recovery, ownership, source freshness and cancellation. Add bounded focus/yield behavior and deterministic compatibility/rollback regressions while reusing the existing journal and completion assessor.",
+        "acceptanceChecks": [
+          "Accepted blocks survive lost replies, daemon restart and cancellation and are not replayed on resume; stale generations and late replies cannot mutate accepted state.",
+          "At 60 seconds remaining, new focus is withheld but current assessment and yield can complete until the unchanged hard cap. No timer invents findings, coverage or success; actual elapsed consumption survives pause.",
+          "Same-subject ownership contention and independent-subject dispatch follow existing configured admission without cross-run evidence leakage; model/provider calls remain serial.",
+          "Stale subject/contracts or changed boundary refuse accurately. Hard-disable stops new turns and cancels/drains active ownership; default rollback selects legacy for new runs while accepted history remains readable.",
+          "Incomplete/native-failed sessions cannot publish successful CR; only the unchanged complete-coverage assessor and independent-party publisher may do so. Historical failed acceptance remains failed."
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "compact recovery: lost ACK, restart, cancellation, fencing and no accepted-block replay"
+          },
+          {
+            "level": "unit",
+            "name": "compact yield: 60-second focus threshold, current assessment accepted until hard cap"
+          },
+          {
+            "level": "integration",
+            "name": "compact isolation: source freshness, concurrent ownership and cross-run evidence refusal"
+          },
+          {
+            "level": "integration",
+            "name": "compact rollback: hard-disable cancellation/drain and retained readable history"
+          },
+          {
+            "level": "integration",
+            "name": "compact completion: unchanged complete-coverage and independent-party gates"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Run real review acceptance and prepare one activation handoff",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "summary": "Prove useful complete reviews through installed Claude/source-only, then durable cancel/resume and actual session contention behavior. Assemble one existing-kind canonical ISSUE activation decision draft with real receipts and limitations. Final Story code review, human BUILD completion and default activation follow Task validation as separate workflow actions. The post-Task final independent Story review uses explicit qualified Claude/source-only pilot admission; it does not require default activation.",
+        "acceptanceChecks": [
+          "Use exact preselected clean, known-defect and cross-file subjects with expected outcomes recorded independently of reviewer outputs. Actual scoped review must detect the known defect, investigate required cross-file context and complete the clean case honestly; fixture-only success is insufficient.",
+          "Cancel after an actual durable ACK, restart/resume and demonstrate accepted work retained without rerunning it. Exercise same-subject contention and two-session independent-subject admission; distinguish actual provider scheduling from ownership assertions.",
+          "Record run/source/boundary/receipt IDs, complete versus inconclusive status, elapsed time and available usage. Unknown model calls/tokens remain unknown; do not claim savings without comparable measurement.",
+          "Reuse matching qualification and accepted checkpoints when valid; rerun live checks only after a relevant change or failure. Reports stay in /tmp; canonical evidence/history uses existing storage.",
+          "Prepare one canonical ISSUE activation decision draft referencing qualification, real acceptance, recovery/ownership results and prior reconciliation, with final Story review/BUILD approval evidence explicitly pending until those later gates finish. No per-probe/oracle approval chain, new artifact kind or signing keys.",
+          "npm run build and focused affected suites pass. Task acceptance does not require its own final Story code review, BUILD approval, default activation or legacy deletion. After all Tasks validate, perform independent Story review, request BUILD approval, complete the activation evidence and present the separate activation decision.",
+          "The activation draft records this later review route: explicit qualified pilot admission after all S7 Tasks validate, with normal independence/scope checks; no silent legacy fallback or completion stamp if that review fails. This route is documented here, not required to execute before t5 validation."
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "installed Claude acceptance: known-defect, clean and cross-file exact-commit reviews"
+          },
+          {
+            "level": "live",
+            "name": "installed Claude acceptance: cancel-after-ACK, restart/resume and two-session contention"
+          },
+          {
+            "level": "live",
+            "name": "installed Claude acceptance: hard-disable/default rollback retains checkpoints"
+          },
+          {
+            "level": "integration",
+            "name": "activation handoff: one canonical decision draft, historical failure preservation and post-Task review ordering"
+          },
+          {
+            "level": "smoke",
+            "name": "build and affected-suite smoke: deployable output, normal routing and honest partial/final status"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "compact target validation: insertion/deletion absent sides, pinned context reads and safe actionable typed errors",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "compact progress expansion: explicit assessments per applicable member, evidence aliases resolved only by host",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "compact native final acknowledgement cannot publish without an accepted reply",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "focus view and 60-second soft yield preserve cross-file reads and current-block acknowledgement",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/__tests__/review-investigation-bridge.test.ts: binding checks precede compact translation; no alternate ledger writes",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/review-investigation-evidence.test.ts: malformed refs, foreign evidence, unsupported assessments and incomplete coverage remain rejected",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "catalog used by launch, budget, native bridge and qualification is identical for a given wire version",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/review-investigation-recovery.test.ts: accepted block survives lost acknowledgement, restart, cancellation and single-owner resume",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/review-investigation-adoption.test.ts: bounded pilot admission, default-engine routing, single canonical activation approval and hard-disable rollback",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "canonical BUILD reviewScope is exact and daemon-written; mixed attribution cannot silently widen selection",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/runners/build/__tests__/test-record.test.ts and test-record-revision.test.ts: regeneration preserves repo identity/history and requires actual source binding for test evidence",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "incomplete finish produces regenerable /tmp report and no complete CR or BUILD approval",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "old bound protocol tokens retain their admitted route; new default selection cannot hijack them",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "boundary manifest covers security-relevant launch/adapter/broker dependencies; changed boundary invalidates qualification, ordinary report changes do not",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "workflow ordering permits validated Tasks -> final Story code review -> human BUILD completion, with activation later",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "First pilot after compact bridge and mode qualification: real read -> assessment -> durable block ACK before expanding the remaining work",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Known-defect and clean scoped review: actual independently recorded finding/clean result with complete provenance; clean is not proof that the defect fixture was detected",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cross-file defect review: reviewer follows required caller/context evidence rather than receiving preselected answer text",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cancellation after a durable ACK and restart/resume: accepted block reused, unfinished work completed without replay of accepted work",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Two sessions contend for one subject and independent subjects: owner fencing and actual dispatch behavior match configured admission, with no cross-run evidence leakage",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Hard-disable and default rollback: cancel/drain live work, retain readable checkpoints, require explicit later activation",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "npm run build",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Normal code-review entrypoint honors configured engine for new runs and bound engine for existing runs",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Partial/final report distinguishes accepted, unresolved, inconclusive and complete states",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S007/LLD.md:40-227",
+      "quotedText": "Contract details and data model changes: compact facade, exact scope and preserved domain authority."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S007/LLD.md:232-295",
+      "quotedText": "Consume sc7; preserve existing validation/recovery/completion and safe error behavior."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S007/LLD.md:328-347",
+      "quotedText": "Ordered rollout: minimal bridge, early qualified real ACK, integration, recovery, real acceptance; final review and activation are post-Task gates."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S007/LLD.md:297-327",
+      "quotedText": "All test levels and ac1-ac7 mapping; focused deterministic checks and actual live quality evidence."
+    }
+  ]
+}

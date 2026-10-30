@@ -28,7 +28,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 8,
         "contentHash": "7a7fd40e7a2bb11167366f834c58179081f8bfb252705116cd56f6451f6b4645",
@@ -63,13 +63,16 @@
         }
       },
       "approval": {
-        "revision": 6,
+        "revision": 8,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-28T07:45:28.431Z"
+        "at": "2026-10-30T13:23:48.601Z",
+        "override": {
+          "reason": "User explicitly approved S7 simplification scope and a citation-only review override. Independent daemon review completed on revision 7; its three blocking citation/probe findings were corrected or directly verified. Revision 8 changes only citation anchor/provenance; all Story outcomes and policy text are unchanged. Avoid another full legacy definition-review cycle for these citation-only corrections."
+        }
       }
     }
   },

@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b327f721-2a12-4845-90c9-3cca10633702",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T15:02:02.958Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Run real review acceptance and prepare one activation handoff",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s7-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f8590b2caa79bf7814b3275ca87696eff331b46929826a3a1fda258f24ce4c0c",
+        "at": "2026-10-30T15:02:02.958Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T15:02:02.959Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run real review acceptance and prepare one activation handoff",
+    "summary": "Prove useful complete reviews through installed Claude/source-only, then durable cancel/resume and actual session contention behavior. Assemble one existing-kind canonical ISSUE activation decision draft with real receipts and limitations. Final Story code review, human BUILD completion and default activation follow Task validation as separate workflow actions. The post-Task final independent Story review uses explicit qualified Claude/source-only pilot admission; it does not require default activation.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "Use exact preselected clean, known-defect and cross-file subjects with expected outcomes recorded independently of reviewer outputs. Actual scoped review must detect the known defect, investigate required cross-file context and complete the clean case honestly; fixture-only success is insufficient.",
+      "Cancel after an actual durable ACK, restart/resume and demonstrate accepted work retained without rerunning it. Exercise same-subject contention and two-session independent-subject admission; distinguish actual provider scheduling from ownership assertions.",
+      "Record run/source/boundary/receipt IDs, complete versus inconclusive status, elapsed time and available usage. Unknown model calls/tokens remain unknown; do not claim savings without comparable measurement.",
+      "Reuse matching qualification and accepted checkpoints when valid; rerun live checks only after a relevant change or failure. Reports stay in /tmp; canonical evidence/history uses existing storage.",
+      "Prepare one canonical ISSUE activation decision draft referencing qualification, real acceptance, recovery/ownership results and prior reconciliation, with final Story review/BUILD approval evidence explicitly pending until those later gates finish. No per-probe/oracle approval chain, new artifact kind or signing keys.",
+      "npm run build and focused affected suites pass. Task acceptance does not require its own final Story code review, BUILD approval, default activation or legacy deletion. After all Tasks validate, perform independent Story review, request BUILD approval, complete the activation evidence and present the separate activation decision.",
+      "The activation draft records this later review route: explicit qualified pilot admission after all S7 Tasks validate, with normal independence/scope checks; no silent legacy fallback or completion stamp if that review fails. This route is documented here, not required to execute before t5 validation."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "installed Claude acceptance: known-defect, clean and cross-file exact-commit reviews"
+      },
+      {
+        "level": "live",
+        "name": "installed Claude acceptance: cancel-after-ACK, restart/resume and two-session contention"
+      },
+      {
+        "level": "live",
+        "name": "installed Claude acceptance: hard-disable/default rollback retains checkpoints"
+      },
+      {
+        "level": "integration",
+        "name": "activation handoff: one canonical decision draft, historical failure preservation and post-Task review ordering"
+      },
+      {
+        "level": "smoke",
+        "name": "build and affected-suite smoke: deployable output, normal routing and honest partial/final status"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

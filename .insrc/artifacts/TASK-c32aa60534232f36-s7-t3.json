@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fd4ead23-c4d6-4ab1-a328-b6e33f183eb6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T15:02:02.955Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Finish concise coverage, exact scope and honest result reporting",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6f78f07c5d8d7951e585fb8dbf72d726070d16838c90861f885021f3a339ccbd",
+        "at": "2026-10-30T15:02:02.955Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T15:02:02.956Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Finish concise coverage, exact scope and honest result reporting",
+    "summary": "Complete grouped expectation presentation and accepted-state inconclusive reports, capture canonical BUILD reviewScope from tracked changes, preserve BUILD/TESTS identity/history and original test outcomes, and wire configured default routing for new starts. Keep old engine-bound sessions and approved ISSUE scope readers.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Grouping preserves explicit member applicability, evidence and all authoritative obligations; no omitted member inherits a pass. Missing coverage produces a useful regenerable /tmp report, never a complete CR or automatic BUILD approval.",
+      "Canonical BUILD reviewScope pins full source/commit/parent/block/task provenance from daemon-tracked changes. Mixed/unprovable attribution requires explicit selection; no trailer-only or generic HEAD inference is accepted.",
+      "TESTS regeneration preserves repo identity, lifecycle/history and original per-Task commit/ranAt/results. Uniquely resolved abbreviated IDs must identify the same Git object.",
+      "Reuse existing derived TrustedInspectionReceipt.testResult unknown with partial completeness and limitation for source-unbound results. Never add unknown to persisted TESTS case outcomes or turn metadata repair into passing evidence.",
+      "New normal review starts honor configured engine and admission policy; old tokens retain admitted engine/protocol. Legacy/design-review routes and status readers remain compatible. Default stays legacy during build."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "compact groups: explicit member applicability, provenance and unresolved coverage"
+      },
+      {
+        "level": "integration",
+        "name": "inconclusive finish: useful temporary report without complete CR or BUILD approval"
+      },
+      {
+        "level": "integration",
+        "name": "canonical BUILD scope: exact daemon-captured commits/parents/blocks; ambiguous attribution refuses"
+      },
+      {
+        "level": "integration",
+        "name": "canonical TESTS regeneration: repo/history and original results preserved; unbound derived receipt remains unknown"
+      },
+      {
+        "level": "integration",
+        "name": "review entrypoint routing: configured new starts, bound old tokens and legacy/design compatibility"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-262ed251-6d5d-4947-ac2c-168af6101aab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T13:53:06.567Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7949a9b7586ff30ab1584675bd9b337d7344d288545d7d2be94edabc9e7b98c3",
+        "at": "2026-10-30T13:53:06.567Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T14:21:00.689Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-c32aa60534232f36-3",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "amendment": {
+      "type": "storyBoundary.addConsumer",
+      "contractId": "sc7",
+      "consumer": "s7"
+    },
+    "rationale": "Declare the already-approved S7 remediation as a consumer of S6's public integration boundary. No shared signature or ownership changes; the facade reuses the existing subject/evidence/recovery/completion machinery through that boundary.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1793366644372-45hxaj",
+      "storyId": "s7",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-30T13:53:06.566Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/HLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S007/EXT.md"
+    }
+  ]
+}

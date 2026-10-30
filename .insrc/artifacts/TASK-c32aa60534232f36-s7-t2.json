@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1641e946-138c-4086-8982-62e2bb687fa9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T15:02:02.953Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Qualify and prove an early live block checkpoint",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "114f24bbd35f3fde13d3a9f5ffcab4403cdb0b2c6bf5277a4b2cc41c4d64ad8c",
+        "at": "2026-10-30T15:02:02.953Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T15:02:02.954Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify and prove an early live block checkpoint",
+    "summary": "Separate availability/kill switch from default routing, admit explicit qualified pilots, and version the changed compact adapter boundary. Reuse installed qualification collection/replay and current authorization checks. Deploy the reviewed build to the daemon and obtain one actual Claude/source-only durable block ACK on an exact existing canonical subject before continuing downstream work.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "A reviewed explicit manifest covers CLI/runtime images, adapter/catalog/final schema, resolved launch/config permissions, broker/binding/auth/isolation code and security-relevant dependencies; unknown closure fails closed. Boundary changes invalidate proof; unrelated report changes do not bypass current deterministic authorization checks.",
+      "Capture fresh installed compact-boundary qualification with actual inventory and active instruction/plugin/hook canaries. Old v2 proof is retained as historical, never relabelled; Codex/indexed mode are not inferred qualified.",
+      "Explicit pilot requires normal user-authorized execution plus availability, valid exact scope and qualification, while default remains legacy. Default activation cannot be granted by caller booleans or fixture labels.",
+      "Run serial installed-Claude/source-only pilot against the same deployed boundary using already provable canonical scope and TESTS identity; record actual read and durable block receipt, run/source/boundary IDs and actual or unavailable consumption. A mock ACK or CLI exit is insufficient.",
+      "If installation/restart is required, stop at that concrete operational prerequisite and resume this pilot after daemon update. If pilot fails, preserve the same run/diagnostics and fix the failing slice; do not mark Task passed or continue t3 without a real ACK.",
+      "Early pilot uses a separately complete canonical subject with an existing approved ISSUE scope and valid TESTS repo/history identity, independent of t3's new BUILD manifest and writer corrections. It proves compact execution/progress, not the later writer changes."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "compact admission: pilot versus default activation, mode separation and fail-closed boundary manifest"
+      },
+      {
+        "level": "integration",
+        "name": "compact qualification: changed execution boundary invalidates proof; report-only changes preserve matching isolation proof"
+      },
+      {
+        "level": "live",
+        "name": "installed Claude compact boundary: inventory and active hook/plugin/instruction canaries"
+      },
+      {
+        "level": "live",
+        "name": "installed Claude early pilot: real scoped read and durable block ACK with legacy default"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

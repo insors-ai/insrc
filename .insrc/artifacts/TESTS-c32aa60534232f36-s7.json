@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2870f3d3f117d491aa89e25717c3cf261205c9cc27ea46ebdce1c7c28dbc61a0",
+        "at": "2026-10-30T15:17:01.082Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s7",
+    "createdAt": "2026-10-30T15:17:01.015Z",
+    "updatedAt": "2026-10-30T15:17:01.015Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "df7c076c5",
+        "ranAt": "2026-10-30T15:17:01.015Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "compact bridge: strict protocol, exact changed/context targets and safe errors",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-investigation-compact.test.ts",
+                "title": "compact targets distinguish absent sides, bounded changes and pinned context with safe errors",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/review-investigation-compact.test.ts",
+                "title": "compact native socket pins private protocol and preserves actionable safe errors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "compact bridge: explicit member expansion, bound evidence and journal-before-ACK",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-investigation-compact.test.ts",
+                "title": "compact bridge expands explicit members through durable kernel and replays a lost ACK once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "compact bridge: final acknowledgement cannot bypass host-accepted reply",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-investigation-compact.test.ts",
+                "title": "compact CLI acknowledgement never substitutes for accepted reply and old bindings cannot launch it",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/review-investigation-compact.test.ts",
+                "title": "compact bridge expands explicit members through durable kernel and replays a lost ACK once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "compact prompt/catalog: full scope discoverability and inclusive budget accounting",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-investigation-compact.test.ts",
+                "title": "compact frame retains tasks and every packet while inclusive budget admits actual catalog and acknowledgement schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/review-investigation-compact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1842,
+            "titles": [
+              {
+                "title": "compact targets distinguish absent sides, bounded changes and pinned context with safe errors",
+                "result": "pass"
+              },
+              {
+                "title": "compact bridge expands explicit members through durable kernel and replays a lost ACK once",
+                "result": "pass"
+              },
+              {
+                "title": "compact native socket pins private protocol and preserves actionable safe errors",
+                "result": "pass"
+              },
+              {
+                "title": "compact frame retains tasks and every packet while inclusive budget admits actual catalog and acknowledgement schema",
+                "result": "pass"
+              },
+              {
+                "title": "compact CLI acknowledgement never substitutes for accepted reply and old bindings cannot launch it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

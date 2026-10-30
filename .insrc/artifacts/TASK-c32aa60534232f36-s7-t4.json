@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd953aa1-c661-44e8-be60-a130da10fb75",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T15:02:02.956Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Verify checkpoint recovery, yield and owner isolation",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s7-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5230f68e25eb2fec51c231ca336dbddf42c2230562220d4f007aaa31638a1526",
+        "at": "2026-10-30T15:02:02.957Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T15:02:02.957Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify checkpoint recovery, yield and owner isolation",
+    "summary": "Integrate the compact facade with existing durable recovery, ownership, source freshness and cancellation. Add bounded focus/yield behavior and deterministic compatibility/rollback regressions while reusing the existing journal and completion assessor.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Accepted blocks survive lost replies, daemon restart and cancellation and are not replayed on resume; stale generations and late replies cannot mutate accepted state.",
+      "At 60 seconds remaining, new focus is withheld but current assessment and yield can complete until the unchanged hard cap. No timer invents findings, coverage or success; actual elapsed consumption survives pause.",
+      "Same-subject ownership contention and independent-subject dispatch follow existing configured admission without cross-run evidence leakage; model/provider calls remain serial.",
+      "Stale subject/contracts or changed boundary refuse accurately. Hard-disable stops new turns and cancels/drains active ownership; default rollback selects legacy for new runs while accepted history remains readable.",
+      "Incomplete/native-failed sessions cannot publish successful CR; only the unchanged complete-coverage assessor and independent-party publisher may do so. Historical failed acceptance remains failed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "compact recovery: lost ACK, restart, cancellation, fencing and no accepted-block replay"
+      },
+      {
+        "level": "unit",
+        "name": "compact yield: 60-second focus threshold, current assessment accepted until hard cap"
+      },
+      {
+        "level": "integration",
+        "name": "compact isolation: source freshness, concurrent ownership and cross-run evidence refusal"
+      },
+      {
+        "level": "integration",
+        "name": "compact rollback: hard-disable cancellation/drain and retained readable history"
+      },
+      {
+        "level": "integration",
+        "name": "compact completion: unchanged complete-coverage and independent-party gates"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

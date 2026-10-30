@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ab406c91-84d8-4239-9a72-dea08fabf433",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T15:02:02.951Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Add the compact native assessment bridge",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e8f81f110988056681350d1ef3af350ced83a104d7aead29213ca118b2aff2e6",
+        "at": "2026-10-30T15:02:02.951Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T15:02:02.952Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the compact native assessment bridge",
+    "summary": "Add strictly versioned compact-v1 read/progress/reply inputs at the existing native MCP boundary. Host resolves short aliases, supplies bound identities/sequences, translates explicit member assessments into existing domain operations and returns durable ACKs. Add valid change/context targets, safe typed errors, minimal focused view and accepted terminal acknowledgement without altering authoritative kernel contracts.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "Catalog, child MCP validation, parent authorization and translation agree on one pinned private protocol; existing bound-v1 path remains readable and explicitly routed.",
+      "Insertion/deletion absent sides never fabricate spans; wider/cross-file context uses pinned context reads. Refusals include safe corrective hints without raw private log content.",
+      "A real domain-backed integration test performs read -> semantic assessment -> journal commit -> ACK; a lost ACK does not duplicate accepted work.",
+      "Host expands only explicitly assessed members and retains unknown/unresolved dispositions. Foreign evidence, fabricated aliases, malformed compact messages and final CLI ACK without accepted reply cannot grant completion.",
+      "Prompt includes detailed tasks/checks, exact selected packet metadata and one focus block; remaining time and accepted progress are returned without repeating protocol hashes/full empty ledger. All catalog/schema/history/output reserves remain within existing inclusive budget."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "compact bridge: strict protocol, exact changed/context targets and safe errors"
+      },
+      {
+        "level": "integration",
+        "name": "compact bridge: explicit member expansion, bound evidence and journal-before-ACK"
+      },
+      {
+        "level": "integration",
+        "name": "compact bridge: final acknowledgement cannot bypass host-accepted reply"
+      },
+      {
+        "level": "unit",
+        "name": "compact prompt/catalog: full scope discoverability and inclusive budget accounting"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "172f76726d19d32816fd86a1ae2112d79bb54e4c84d286997b6800d3de6d1601",
+        "at": "2026-10-30T15:18:32.792Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-7022b1fc-858e-4fc3-a886-1d17253b850d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T15:17:01.015Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s7",
+    "revision": 1,
+    "updatedAt": "2026-10-30T15:17:01.015Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-planned-changes-through-agent-investigation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Task1 adds compact private native inputs, host-owned evidence/expectation aliases, strict protocol binding and translation through the existing durable kernel. Existing native sessions and default selection remain unchanged. Build and affected fixture-only tests pass; full sweep stalled in unrelated suites and was stopped, not certified passing. Production compact qualification and real ACK pilot remain Task2 work.",
+    "testRecord": {
+      "md": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S007/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/native-investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-review-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-compact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-investigation-compact.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/review-investigation-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/review-investigation-native.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-investigation-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-investigation-compact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:17:01.015Z"
+      }
+    ],
+    "commit": "df7c076c5"
+  },
+  "citations": []
+}

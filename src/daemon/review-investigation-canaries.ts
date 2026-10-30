@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { mkdirSync, writeFileSync, readFileSync, realpathSync, lstatSync, openSync, closeSync, fstatSync, constants } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync, readFileSync, realpathSync, lstatSync, openSync, closeSync, fstatSync, ftruncateSync, constants } from 'node:fs';
+import { join, dirname, relative, basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { digestValue, freezeValue } from '../workflow/code-review/investigation/identity.js';
@@ -8,7 +8,6 @@ import { investigationFileDigest } from '../agent/providers/investigation-sessio
 
 export const CANARY_CAPABILITIES = ['hooks', 'plugins', 'repository-instructions', 'project-mcp'] as const;
 export const CANARY_SIGNAL_BYTES = 32 * 1024;
-export const CANARY_PHASE_ENV = 'INSRC_PROBE_CANARY_PHASE';
 export type CanaryPhase = 'control' | 'restricted';
 const signalSchema = z.object({ version: z.literal(1), probeId: z.uuid(), attemptId: z.uuid(),
   bindingDigest: z.string().regex(/^[a-f0-9]{64}$/), phase: z.enum(['control', 'restricted']),
@@ -16,6 +15,47 @@ const signalSchema = z.object({ version: z.literal(1), probeId: z.uuid(), attemp
 }).strict();
 export type ProbeCanarySignal = z.infer<typeof signalSchema>;
 const shellQuote = (s: string) => `'${s.replaceAll("'", "'\\''")}'`;
+const manifestSchema = z.object({ version: z.literal(1), probeId: z.uuid(), attemptId: z.uuid(), marker: z.uuid(), cwd: z.string(),
+  bindingDigest: z.string().regex(/^[a-f0-9]{64}$/), files: z.array(z.object({ path: z.string(), digest: z.string().regex(/^[a-f0-9]{64}$/) }).strict()).length(10),
+}).strict();
+function privateText(path: string, bound: number): string {
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile() || stat.nlink !== 1 || (stat.mode & 0o077) || (process.getuid && stat.uid !== process.getuid()) || stat.size > bound || realpathSync(path) !== path)
+      throw Error('Unsafe canary evidence');
+    const text = readFileSync(fd, 'utf8'); if (Buffer.byteLength(text) > bound) throw Error('Canary observation bound'); return text;
+  } finally { closeSync(fd); }
+}
+function parseSignals(text: string, binding: { probeId: string; attemptId: string; bindingDigest: string }, phase: CanaryPhase) {
+  const values = text.split('\n').filter(Boolean); if (values.length > 128) throw Error('Canary signal count bound');
+  return values.map(line => {
+    const signal = signalSchema.parse(JSON.parse(line));
+    if (signal.phase !== phase || signal.probeId !== binding.probeId || signal.attemptId !== binding.attemptId || signal.bindingDigest !== binding.bindingDigest) throw Error('Foreign canary observation');
+    return signal;
+  });
+}
+
+/** Read-only revalidation after export/restart. No path chosen by the model. */
+export function readProbeCanaryEvidence(manifestPath: string) {
+  const root = dirname(manifestPath), stat = lstatSync(root);
+  if (basename(manifestPath) !== 'canary-manifest.json' || !basename(root).startsWith('insrc-p-') ||
+    !stat.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o077) || realpathSync(root) !== root) throw Error('Unsafe canary root');
+  const manifest = manifestSchema.parse(JSON.parse(privateText(manifestPath, 65536)));
+  if (manifest.cwd !== join(root, 'cwd') || manifest.bindingDigest !== digestValue({ version: manifest.version, probeId: manifest.probeId,
+    attemptId: manifest.attemptId, marker: manifest.marker, cwd: manifest.cwd })) throw Error('Foreign canary manifest');
+  const allowed = new Set(['synthetic-config/canary-record.mjs','synthetic-config/canary-marker.mjs','cwd/.claude/settings.json','cwd/CLAUDE.md',
+    'synthetic-config/canary-mcp.mjs','cwd/.mcp.json','synthetic-config/synthetic-mcp.json',
+    'synthetic-config/plugin-canary/.claude-plugin/plugin.json','synthetic-config/plugin-canary/hooks/hooks.json','canary-control-settings.json']);
+  for (const file of manifest.files) {
+    if (!allowed.delete(relative(root, file.path))) throw Error('Foreign or duplicate canary file');
+    privateText(file.path, 65536);
+    if (investigationFileDigest(file.path) !== file.digest) throw Error('Canary fixture changed');
+  }
+  const control = parseSignals(privateText(join(root, 'canary-control.jsonl'), CANARY_SIGNAL_BYTES), manifest, 'control');
+  const restricted = parseSignals(privateText(join(root, 'canary-restricted.jsonl'), CANARY_SIGNAL_BYTES), manifest, 'restricted');
+  return { manifest, manifestDigest: digestValue(manifest), control, restricted, checks: assessProbeCanaries(control, restricted) };
+}
 
 /** No actual user configuration, plugin installation or OAuth data is touched. */
 export function createProbeCanaries(root: string, cwd: string, probeId: string, attemptId: string) {
@@ -27,11 +67,17 @@ export function createProbeCanaries(root: string, cwd: string, probeId: string, 
   const put = (path: string, text: string) => { writeFileSync(path, text, { mode: 0o600, flag: 'wx' }); files.push({ path, digest: investigationFileDigest(path) }); };
   const signalPaths = { control: join(root, 'canary-control.jsonl'), restricted: join(root, 'canary-restricted.jsonl') };
   for (const path of Object.values(signalPaths)) writeFileSync(path, '', { mode: 0o600, flag: 'wx' });
+  // Host-owned phase state keeps the restricted launch environment identical
+  // to production. The runner switches it only after the prior child drains.
+  const phasePath = join(root, 'canary-active-phase.json');
+  writeFileSync(phasePath, JSON.stringify('restricted'), { mode: 0o600, flag: 'wx' });
   const recorder = join(directory, 'canary-record.mjs'), markerScript = join(directory, 'canary-marker.mjs');
   const instructionPath = join(cwd, 'CLAUDE.md');
-  put(recorder, `import {openSync,closeSync,writeFileSync,fstatSync,constants} from 'node:fs';
+  put(recorder, `import {openSync,closeSync,writeFileSync,readFileSync,fstatSync,constants} from 'node:fs';
 export function record(capability,input){
- const phase=process.env[${JSON.stringify(CANARY_PHASE_ENV)}];if(!['control','restricted'].includes(phase))throw Error('Canary phase missing');
+ const phaseFd=openSync(${JSON.stringify(phasePath)},constants.O_RDONLY|constants.O_NOFOLLOW);let phase;
+ try{if(fstatSync(phaseFd).size>64)throw Error('Canary phase bound');phase=JSON.parse(readFileSync(phaseFd,'utf8'));}finally{closeSync(phaseFd);}
+ if(!['control','restricted'].includes(phase))throw Error('Canary phase missing');
  if(!${JSON.stringify(CANARY_CAPABILITIES)}.includes(capability))throw Error('Canary capability invalid');
  const event=capability==='project-mcp'?'mcp-start':input?.hook_event_name;
  if(capability==='repository-instructions'&&(event!=='InstructionsLoaded'||input?.file_path!==${JSON.stringify(instructionPath)}))return;
@@ -67,24 +113,18 @@ record('project-mcp',null);createInterface({input:process.stdin}).on('line',line
     }
   }
   const investigationFileDigestFromManifest = investigationFileDigest(manifestPath);
-  function signals(phase: CanaryPhase): readonly ProbeCanarySignal[] {
-    assertCurrent(); const fd = openSync(signalPaths[phase], constants.O_RDONLY | constants.O_NOFOLLOW);
-    let text: string;
+  function activate(phase: CanaryPhase) {
+    assertCurrent(); if (!['control', 'restricted'].includes(phase)) throw Error('Invalid canary phase');
+    const fd = openSync(phasePath, constants.O_WRONLY | constants.O_NOFOLLOW);
     try {
-      const stat = fstatSync(fd);
-      if (!stat.isFile() || stat.nlink !== 1 || (stat.mode & 0o077) || stat.size > CANARY_SIGNAL_BYTES) throw Error('Unsafe canary observation');
-      text = readFileSync(fd, 'utf8');
-      if (Buffer.byteLength(text) > CANARY_SIGNAL_BYTES) throw Error('Canary observation bound');
+      const stat = fstatSync(fd); if (!stat.isFile() || stat.nlink !== 1 || (stat.mode & 0o077)) throw Error('Unsafe canary phase');
+      ftruncateSync(fd, 0); writeFileSync(fd, JSON.stringify(phase));
     } finally { closeSync(fd); }
-    const values = text.split('\n').filter(Boolean);
-    if (values.length > 128) throw Error('Canary signal count bound');
-    return values.map(line => {
-      const signal = signalSchema.parse(JSON.parse(line));
-      if (signal.phase !== phase || signal.probeId !== probeId || signal.attemptId !== attemptId || signal.bindingDigest !== bindingDigest) throw Error('Foreign canary observation');
-      return signal;
-    });
   }
-  return { directory, pluginDir, controlSettings, manifestPath, manifest, manifestDigest, markerScript, fakeMcp, signalPaths, assertCurrent, signals };
+  function signals(phase: CanaryPhase): readonly ProbeCanarySignal[] {
+    assertCurrent(); return parseSignals(privateText(signalPaths[phase], CANARY_SIGNAL_BYTES), manifest, phase);
+  }
+  return { directory, pluginDir, controlSettings, manifestPath, manifest, manifestDigest, markerScript, fakeMcp, signalPaths, assertCurrent, activate, signals };
 }
 
 /** Control activity validates instrumentation; silence never proves exclusion. */

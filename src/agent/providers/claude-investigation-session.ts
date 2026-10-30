@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import type { StructuredSchema } from '../../shared/types.js';
 import { scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
 import { digestValue } from '../../workflow/code-review/investigation/identity.js';
@@ -17,6 +17,17 @@ export function claudeInvestigationArgs(schema:StructuredSchema,modelArgs:readon
   '--no-session-persistence','--system-prompt',INVESTIGATION_SYSTEM_PROMPT,...modelArgs];
 }
 export const claudeInvestigationLaunchDigest=(args:readonly string[],cwd:string)=>digestValue({adapter:CLAUDE_INVESTIGATION_ADAPTER,args,cwd,environment:nativeInvestigationEnvironment(),auth:'existing-cli-oauth'});
+export const CLAUDE_PROBE_CONTROL_SCHEMA: StructuredSchema = Object.freeze({type:'object',properties:{control:{type:'boolean'}},required:['control'],additionalProperties:false});
+export const CLAUDE_PROBE_CONTROL_CATALOG = JSON.stringify([{name:'mcp__inert-probe__canary_unscoped',description:'Harmless isolation marker',inputSchema:{type:'object',properties:{}}}]);
+/** Fixed probe-only template. Never a configurable wire argument surface. */
+export function claudeInvestigationControlArgs(modelArgs:readonly string[],cwd:string,indexed:boolean):string[]{
+ const args=claudeInvestigationArgs(CLAUDE_PROBE_CONTROL_SCHEMA,modelArgs,cwd,indexed),root=dirname(cwd);
+ for(const [flag,value] of [['--settings',join(root,'canary-control-settings.json')],['--mcp-config',join(root,'synthetic-config','synthetic-mcp.json')],
+  ['--setting-sources','project,local'],['--allowedTools','mcp__inert-probe__canary_unscoped']] as const){
+  const i=args.indexOf(flag);if(i<0)throw Error('Control template flag missing');args[i+1]=value;
+ }
+ return [...args,'--plugin-dir',join(root,'synthetic-config','plugin-canary')];
+}
 const adapter:NativeInvestigationAdapter={kind:'claude',version:CLAUDE_INVESTIGATION_ADAPTER,args:claudeInvestigationArgs,launchDigest:claudeInvestigationLaunchDigest,
  configuration:(cwd,indexed)=>({[join(cwd,'investigation-settings.json')]:{},[join(cwd,'investigation-mcp.json')]:nativeReviewMcpConfiguration(cwd,indexed)})};
 export { adapter as claudeInvestigationAdapter };

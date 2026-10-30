@@ -10,7 +10,7 @@ import { readNativeReviewBridgeConfig, forwardNativeReviewCommand } from '../../
 import { PROBE_OBSERVATION_BYTES } from '../../shared/review-investigation-probe.js';
 import { continuationFixture, progressFor } from '../../workflow/code-review/investigation/__tests__/continuation-fixtures.js';
 import { admitInvestigationRequest } from '../../workflow/code-review/investigation/continuation-policy.js';
-import { assessProbeCanaries, CANARY_PHASE_ENV } from '../review-investigation-canaries.js';
+import { assessProbeCanaries } from '../review-investigation-canaries.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 
 function options(repo: string, signal: AbortSignal) {
@@ -89,15 +89,16 @@ test('Project discovery canaries and labelled positive controls produce attribut
     assert.ok(JSON.parse(readFileSync(join(f.canaries.pluginDir, 'hooks', 'hooks.json'), 'utf8')).hooks.SessionStart.length);
     // Actual fixture programs, driven by a deterministic host. These validate
     // instrumentation only; they do not certify a real CLI's loading policy.
+    f.canaries.activate('control');
     for (const capability of ['hooks', 'plugins', 'repository-instructions']) {
       const input = capability === 'repository-instructions'
         ? { hook_event_name: 'InstructionsLoaded', file_path: join(f.cwd, 'CLAUDE.md') } : { hook_event_name: 'SessionStart' };
       const result = await runInProcessGroup(process.execPath, [f.canaries.markerScript, capability], {
-        cwd: f.cwd, timeoutMs: 2000, stdin: JSON.stringify(input), env: { [CANARY_PHASE_ENV]: 'control' }, maxOutputBytes: 4096 });
+        cwd: f.cwd, timeoutMs: 2000, stdin: JSON.stringify(input), maxOutputBytes: 4096 });
       assert.equal(result.exitCode, 0, result.stderr);
     }
     const mcp = await runInProcessGroup(process.execPath, [f.canaries.fakeMcp], { cwd: f.cwd, timeoutMs: 2000,
-      env: { [CANARY_PHASE_ENV]: 'control' }, stdin: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) + '\n', maxOutputBytes: 4096 });
+      stdin: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) + '\n', maxOutputBytes: 4096 });
     assert.equal(mcp.exitCode, 0, mcp.stderr); assert.match(mcp.stdout, /canary_unscoped/);
     const signals = f.canaries.signals('control');
     assert.deepEqual(new Set(signals.map(s => s.capability)), new Set(['hooks', 'plugins', 'repository-instructions', 'project-mcp']));

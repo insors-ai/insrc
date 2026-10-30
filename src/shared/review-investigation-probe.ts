@@ -72,13 +72,43 @@ export const probeStatusSchema = z.object({
 }).strict();
 export type InvestigationProbeStatus = z.infer<typeof probeStatusSchema>;
 
+export const probePhaseSchema = z.object({
+  phase: z.enum(['control', 'restricted']), probeId: id, attemptId: id,
+  launchDigest: digest, effectiveDigest: digest, catalogDigest: digest, manifestDigest: digest,
+  startedAt: time, endedAt: time, outputPath: text.nullable(), outputBytes: time,
+  exitCode: z.number().int(), exitSignal: text.nullable(), aborted: z.boolean(), timedOut: z.boolean(),
+  usage: probeUsageSchema,
+}).strict();
+export type InvestigationProbePhase = z.infer<typeof probePhaseSchema>;
+
 export const probeExportSchema = z.object({
   version: z.literal(1), kind: z.literal('review-investigation-probe-observations'),
   origin: z.literal('unsigned-installed-observations'),
   sourceCommit: z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/), sourceDigest: digest,
   status: probeStatusSchema, candidate: probeCandidateSchema.optional(),
-  evidenceFiles: z.array(z.object({kind:z.enum(['native-output','checkpoint-journal','configuration']),path:text,digest,bytes:time}).strict()).max(8).optional(),
+  evidenceFiles: z.array(z.object({kind:z.enum(['native-output','control-output','checkpoint-journal','configuration','canary-manifest','canary-signals','host-checks']),path:text,digest,bytes:time}).strict()).max(16).optional(),
+  phases: z.array(probePhaseSchema).min(1).max(2).optional(),
+  canaries: z.object({ manifestPath: text, manifestDigest: digest,
+    checks: z.array(z.object({ capability: z.enum(['hooks','plugins','repository-instructions','project-mcp']),
+      controlObserved: z.boolean(), restrictedObserved: z.boolean(),
+      verdict: z.enum(['unverifiable','observed-allowed']) }).strict()).length(4),
+  }).strict().optional(),
 }).strict().superRefine((value, ctx) => {
+  if (value.phases) {
+    const phases = value.phases;
+    if (phases[0]?.phase !== 'control' || (phases[1] && phases[1].phase !== 'restricted') ||
+      phases.some(p => p.probeId !== value.status.probeId || p.attemptId !== value.status.attemptId || p.endedAt < p.startedAt || p.manifestDigest !== value.canaries?.manifestDigest) ||
+      (phases[1] && (phases[1].startedAt < phases[0]!.endedAt || phases[1].launchDigest !== value.status.identity?.launchDigest || phases[1].catalogDigest !== value.status.identity?.catalogDigest)) ||
+      (value.status.startedAt !== null && phases[0]!.startedAt < value.status.startedAt) ||
+      phases.at(-1)!.endedAt - phases[0]!.startedAt > PROBE_ATTEMPT_MS)
+      ctx.addIssue({ code: 'custom', message: 'Foreign, out-of-order or unbounded probe phases' });
+    if (value.canaries?.checks.some(c => (c.restrictedObserved ? c.verdict !== 'observed-allowed' : c.verdict !== 'unverifiable')))
+      ctx.addIssue({ code: 'custom', message: 'Canary silence is not exclusion evidence' });
+    if (new Set(value.canaries?.checks.map(c => c.capability)).size !== 4)
+      ctx.addIssue({ code: 'custom', message: 'Canary capabilities must be unique and complete' });
+    if (value.candidate && (phases.length !== 2 || value.status.identity?.launchDigest !== phases[1]?.launchDigest))
+      ctx.addIssue({ code: 'custom', message: 'Control evidence cannot qualify production' });
+  } else if (value.canaries) ctx.addIssue({ code: 'custom', message: 'Canary evidence requires labelled phases' });
   const checks = value.status.observations.map(o => o.check);
   if (new Set(checks).size !== checks.length)
     ctx.addIssue({ code: 'custom', message: 'Duplicate probe observation checks' });

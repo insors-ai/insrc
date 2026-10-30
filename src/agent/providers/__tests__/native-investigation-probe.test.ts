@@ -20,13 +20,24 @@ import { scopedReviewCatalogDigest } from '../../../shared/review-investigation-
 import { digestValue } from '../../../workflow/code-review/investigation/identity.js';
 import { runInProcessGroup } from '../../../shared/process-group.js';
 import type { QualifiedInvestigationSessionBinding } from '../../../shared/types.js';
+import { validateUnsignedProbeExport } from '../../../daemon/review-investigation-probe-export.js';
 
 const actor = `import {readFileSync,appendFileSync,writeFileSync,existsSync} from 'node:fs';
 import {createConnection} from 'node:net';
 appendFileSync(new URL('./calls.txt',import.meta.url),'called\\n');
 let input='';for await(const c of process.stdin)input+=c;
+const argv=process.argv.slice(2);
+if(argv.includes('--plugin-dir')){
+ if(existsSync(new URL('./control-fail',import.meta.url)))process.exit(3);
+ if(existsSync(new URL('./slow-control',import.meta.url)))await new Promise(r=>setTimeout(r,500));
+ const {record}=await import(process.cwd()+'/../synthetic-config/canary-record.mjs');
+ if(!existsSync(new URL('./control-claims',import.meta.url))){record('hooks',{hook_event_name:'SessionStart'});record('plugins',{hook_event_name:'SessionStart'});record('repository-instructions',{hook_event_name:'InstructionsLoaded',file_path:process.cwd()+'/CLAUDE.md'});record('project-mcp',null);}
+ process.stdout.write(JSON.stringify({type:'system',subtype:'init',session_id:'control',tools:['mcp__inert-probe__canary_unscoped'],plugins:['insrc-isolation-canary']})+'\\n'+JSON.stringify({type:'result',is_error:false,result:'All isolation claims passed',structured_output:{control:true}})+'\\n');process.exit(0);
+}
 const {turn}=JSON.parse(input.split('\\n').at(-1));
-const argv=process.argv.slice(2),schemaPath=argv[argv.indexOf('--output-schema')+1];
+const schemaPath=argv[argv.indexOf('--output-schema')+1];
+if(existsSync(new URL('./restricted-leak',import.meta.url))){const {record}=await import(process.cwd()+'/../synthetic-config/canary-record.mjs');record('hooks',{hook_event_name:'SessionStart'});}
+
 writeFileSync(new URL('./observed.json',import.meta.url),JSON.stringify({args:argv,home:process.env.HOME,codexHome:process.env.CODEX_HOME,schema:argv.includes('--output-schema')?JSON.parse(readFileSync(schemaPath,'utf8')):null,hasApiKey:process.env.ANTHROPIC_API_KEY!==undefined,hasNodeOptions:process.env.NODE_OPTIONS!==undefined}));
 if(existsSync(new URL('./early-exit',import.meta.url))){process.stdout.write(JSON.stringify({type:'result',result:'I denied everything',structured_output:{tools:[],hooks:[],plugins:[]}}));process.exit(0);}
 const config=JSON.parse(readFileSync(process.cwd()+'/investigation-binding-'+process.env.INSRC_REVIEW_NATIVE_BINDING_ID+'.json','utf8'));
@@ -67,13 +78,13 @@ async function fixture(kind: 'claude' | 'codex' = 'claude') {
   return { repo, provider, probe, abort, context, close: async () => { await probe.dispose(); rmSync(repo, { recursive: true, force: true }); } };
 }
 
-test('Trusted probe executes once with exact pinned launch, inclusive budget and bounded cancellation', async () => {
+test('Trusted probe executes one control and one restricted phase with exact pins and bounded cancellation', async () => {
   const f = await fixture();
   try {
     const grant = issueInvestigationProbeGrant(f.context);
     const result = await f.provider.runInvestigationProbe({ grant, signal: f.abort.signal });
-    assert.equal(readFileSync(join(f.repo, 'calls.txt'), 'utf8'), 'called\n');
-    assert.deepEqual(result.status.observations.filter(o => o.verdict !== 'unverifiable').map(o => o.check), ['durable-progress', 'cancellation-exit']);
+    assert.equal(readFileSync(join(f.repo, 'calls.txt'), 'utf8'), 'called\ncalled\n');
+    assert.deepEqual(result.status.observations.filter(o => o.verdict !== 'unverifiable').map(o => o.check), ['durable-progress', 'cancellation-exit', 'cross-run']);
     assert.equal(result.status.state, 'unsupported', 'scripted actor did not establish native effective inventory');
     assert.equal(result.candidate, undefined);
     assert.equal(result.status.usage.modelCalls, null, 'subprocess count is not actual model-call telemetry');
@@ -158,4 +169,76 @@ test('Probe capture overflow and spawn observation failure drain the actual proc
     { timeoutMs: 5000, onSpawn: () => { throw Error('observer failed'); } });
   assert.equal(failed.observerFailed, true);
   assert.equal(failed.timedOut, false);
+});
+
+test('Restricted capability leaks fail and control-phase evidence cannot qualify production', async () => {
+  const leak = await fixture();
+  try {
+    writeFileSync(join(leak.repo, 'restricted-leak'), 'fixture');
+    const report = await leak.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant(leak.context), signal: leak.abort.signal });
+    assert.equal(report.status.state, 'failed'); assert.equal(report.candidate, undefined);
+    assert.ok(report.status.observations.some(o => o.check === 'hooks' && o.verdict === 'observed-allowed'));
+    assert.ok(report.canaries?.checks.find(c => c.capability === 'hooks')?.restrictedObserved);
+    assert.deepEqual(report.phases?.map(p => p.phase), ['control', 'restricted']);
+    assert.notEqual(report.phases?.[0]?.launchDigest, report.phases?.[1]?.launchDigest);
+    assert.equal(report.phases?.[1]?.launchDigest, report.status.identity?.launchDigest);
+  } finally { await leak.close(); }
+  const claims = await fixture();
+  try {
+    writeFileSync(join(claims.repo, 'control-claims'), 'fixture');
+    const report = await claims.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant(claims.context), signal: claims.abort.signal });
+    assert.equal(report.candidate, undefined); assert.equal(report.status.state, 'unsupported');
+    assert.ok(report.canaries?.checks.every(c => !c.controlObserved && c.verdict === 'unverifiable'));
+    assert.equal(report.status.observations.find(o => o.check === 'approval')?.verdict, 'unverifiable');
+    assert.equal(report.status.observations.find(o => o.check === 'cross-run')?.verdict, 'observed-denied');
+  } finally { await claims.close(); }
+});
+
+test('Combined phase deadline budget capture bounds and shared provider lane prevent retries or overlap', async () => {
+  const f = await fixture();
+  try {
+    const report = await f.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant(f.context), signal: f.abort.signal });
+    assert.equal(readFileSync(join(f.repo, 'calls.txt'), 'utf8'), 'called\ncalled\n');
+    assert.ok(report.phases![1]!.startedAt >= report.phases![0]!.endedAt);
+    assert.ok(report.evidenceFiles!.reduce((n, file) => n + file.bytes, 0) <= 8 * 1024 * 1024);
+    assert.equal(report.status.usage.modelCalls, null);
+  } finally { await f.close(); }
+  const large = await fixture();
+  try {
+    (large.probe.tools.seed as Record<string, unknown>)['extra'] = 'x'.repeat(120_000);
+    await assert.rejects(() => large.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant(large.context), signal: large.abort.signal }), /Inclusive paired probe budget/);
+    assert.equal(existsSync(join(large.repo, 'calls.txt')), false);
+  } finally { await large.close(); }
+  const slow = await fixture();
+  try {
+    writeFileSync(join(slow.repo, 'slow-control'), 'fixture');
+    const grant = issueInvestigationProbeGrant({ ...slow.context, deadlineAt: Date.now() + 250 });
+    await assert.rejects(() => slow.provider.runInvestigationProbe({ grant, signal: slow.abort.signal }), /control failed|deadline elapsed/i);
+    assert.equal(existsSync(join(slow.repo, 'observed.json')), false, 'restricted child never starts after failed control');
+    if (existsSync(join(slow.repo, 'calls.txt'))) assert.equal(readFileSync(join(slow.repo, 'calls.txt'), 'utf8'), 'called\n');
+    await assert.rejects(() => slow.provider.runInvestigationProbe({ grant, signal: slow.abort.signal }), /consumed/);
+  } finally { await slow.close(); }
+});
+
+test('Raw phase export rejects tampering foreign roots stale pins and control-to-production promotion', async () => {
+  const f = await fixture();
+  try {
+    const report = await f.provider.runInvestigationProbe({ grant: issueInvestigationProbeGrant(f.context), signal: f.abort.signal });
+    assert.equal(validateUnsignedProbeExport(report).candidate, undefined);
+    const clone = () => JSON.parse(JSON.stringify(report)) as typeof report;
+    const promoted = clone(); promoted.phases![1]!.outputPath = promoted.phases![0]!.outputPath;
+    assert.throws(() => validateUnsignedProbeExport(promoted));
+    const overlap = clone(); overlap.phases![1]!.startedAt = overlap.phases![0]!.startedAt - 1;
+    assert.throws(() => validateUnsignedProbeExport(overlap));
+    const foreign = clone(); foreign.phases![1]!.attemptId = randomUUID();
+    assert.throws(() => validateUnsignedProbeExport(foreign));
+    const outside = clone(); outside.canaries!.manifestPath = '/etc/passwd';
+    assert.throws(() => validateUnsignedProbeExport(outside));
+    const path = report.phases![0]!.outputPath!, before = readFileSync(path, 'utf8');
+    writeFileSync(path, before + ' '); assert.throws(() => validateUnsignedProbeExport(report)); writeFileSync(path, before);
+    const settings = join(f.probe.cwd, '.claude', 'settings.json'), original = readFileSync(settings, 'utf8');
+    writeFileSync(settings, '{}'); assert.throws(() => validateUnsignedProbeExport(report), /changed/); writeFileSync(settings, original);
+    writeFileSync(f.context.identity.binary.path, 'changed runtime');
+    assert.throws(() => validateUnsignedProbeExport(report), /stale/);
+  } finally { await f.close(); }
 });

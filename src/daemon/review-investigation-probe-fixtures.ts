@@ -11,7 +11,7 @@ import type { InvestigationTools, InvestigationState, InvestigationTurnV1 } from
 import { digestValue, snapshotValue } from '../workflow/code-review/investigation/identity.js';
 import { ScopedReviewBridge } from './review-investigation-bridge.js';
 import { startNativeReviewBroker } from '../mcp/review-investigation-native.js';
-import { createProbeCanaries } from './review-investigation-canaries.js';
+import { createProbeCanaries, CANARY_SIGNAL_BYTES } from './review-investigation-canaries.js';
 import { nativeReviewMcpConfiguration } from '../agent/providers/native-investigation-session.js';
 
 interface ProbeFixtureOptions {
@@ -42,12 +42,14 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
   });
   let failure: unknown, closing: Promise<void> | undefined;
   let trafficChars = 0, trafficGuard: ((chars: number) => void) | undefined;
+  let diagnosticBytes = 0;
+  const journalLimit = () => PROBE_OBSERVATION_BYTES - diagnosticBytes - 2 * CANARY_SIGNAL_BYTES - 65536;
   const bridge = new ScopedReviewBridge(`probe-${randomUUID()}`, options.assertCurrent);
   function append(value: unknown) {
     signal.throwIfAborted(); options.assertCurrent();
     if (journal === undefined) throw Error('Probe journal closed');
     const line = JSON.stringify({ version: 1, probeId: options.probeId, attemptId: options.attemptId, value }) + '\n';
-    if (Buffer.byteLength(line) + fstatSync(journal).size > PROBE_OBSERVATION_BYTES) {
+    if (Buffer.byteLength(line) + fstatSync(journal).size > journalLimit()) {
       failure = new Error('Probe observation limit exceeded'); abort.abort(); throw failure;
     }
     writeFileSync(journal, line); fsyncSync(journal);
@@ -139,6 +141,11 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     return { root, cwd, turn, tools, binding: grant.binding, bindingPath: broker.bindingPath,
       journalPath, canaryPath, canaries, syntheticConfig: shadow, networkUrl: `http://127.0.0.1:${address.port}/`,
       state: () => snapshotValue(state), error: () => failure,
+      reserveDiagnosticBytes: (bytes: number) => {
+        if (!Number.isSafeInteger(bytes) || bytes < 0 || journal === undefined ||
+          bytes + fstatSync(journal).size > journalLimit()) throw Error('Aggregate probe retention bound');
+        diagnosticBytes += bytes;
+      },
       setTrafficGuard: (guard: (chars: number) => void) => {
         if (trafficGuard || trafficChars) throw Error('Probe traffic guard must be installed before use');
         guard(0); trafficGuard = guard;

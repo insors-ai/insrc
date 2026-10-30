@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { z } from 'zod';
 import { reviewBudgetDeclarationSchema } from './review-controller-budget-schema.js';
-import { ISOLATION_CHECKS, boundaryEvidenceFields, boundaryEvidenceValid } from './review-isolation-evidence.js';
+import { ISOLATION_CHECKS, boundaryEvidenceFields, boundaryEvidenceValid, CLAUDE_V2_ADAPTER } from './review-isolation-evidence.js';
 
 export const PROBE_ATTEMPT_MS = 300_000;
 export const PROBE_CONTEXT_TOKENS = 128_000;
@@ -95,6 +95,8 @@ export const probeExportSchema = z.object({
       verdict: z.enum(['unverifiable','observed-allowed']) }).strict()).length(4),
   }).strict().optional(),
 }).strict().superRefine((value, ctx) => {
+  if (value.status.identity?.adapterVersion === CLAUDE_V2_ADAPTER && value.status.state === 'completed' && !value.candidate)
+    ctx.addIssue({ code: 'custom', message: 'Completed v2 qualification requires its candidate' });
   if (value.phases) {
     const phases = value.phases;
     if (phases[0]?.phase !== 'control' || (phases[1] && phases[1].phase !== 'restricted') ||

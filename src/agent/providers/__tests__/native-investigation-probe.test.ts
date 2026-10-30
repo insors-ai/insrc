@@ -163,6 +163,41 @@ test('Oversized native diagnostics drain the process and are discarded without a
   }finally{await f.close();}
 });
 
+test('Deleting changing or swapping any evidence basis raw phase pin or candidate refuses qualification', async () => {
+  const f=await fixture('claude',true);
+  try{
+    const report=await f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal});
+    assert.equal(report.status.state,'completed');validateUnsignedProbeExport(report);
+    const copy=()=>structuredClone(report);
+    let changed=copy();delete changed.candidate;assert.throws(()=>validateUnsignedProbeExport(changed));
+    changed=copy();delete changed.candidate;changed.status.state='unsupported';assert.throws(()=>validateUnsignedProbeExport(changed));
+    changed=copy();changed.candidate!.validUntil++;assert.throws(()=>validateUnsignedProbeExport(changed));
+    changed=copy();changed.candidate!.effective.evidenceBasis![0]!.rawDigests=['0'.repeat(64)];
+    changed.candidate!.trace.effectiveDigest=digestValue(changed.candidate!.effective);
+    for(const observation of changed.status.observations)observation.effectiveDigest=changed.candidate!.trace.effectiveDigest;
+    changed.phases![1]!.effectiveDigest=changed.candidate!.trace.effectiveDigest;
+    assert.throws(()=>validateUnsignedProbeExport(changed));
+    changed=copy();changed.status.observations[0]!.at++;assert.throws(()=>validateUnsignedProbeExport(changed));
+    changed=copy();changed.evidenceFiles=changed.evidenceFiles!.filter(f=>f.kind!=='source-policy');assert.throws(()=>validateUnsignedProbeExport(changed));
+    changed=copy();changed.phases![1]!.outputPath=changed.phases![0]!.outputPath;assert.throws(()=>validateUnsignedProbeExport(changed));
+    const host=report.evidenceFiles!.find(f=>f.kind==='source-policy')!,original=readFileSync(host.path,'utf8');
+    try{const forged=JSON.parse(original);forged.before[0].state='present';const text=JSON.stringify(forged);writeFileSync(host.path,text);
+      changed=copy();const descriptor=changed.evidenceFiles!.find(f=>f.kind==='source-policy')!;descriptor.bytes=Buffer.byteLength(text);descriptor.digest=investigationFileDigest(host.path);
+      assert.throws(()=>validateUnsignedProbeExport(changed),'even rehashed host data must satisfy source policy');
+    }finally{writeFileSync(host.path,original);}
+    const native=report.evidenceFiles!.find(f=>f.kind==='native-output')!,originalNative=readFileSync(native.path,'utf8');
+    try{const raw=JSON.parse(originalNative);raw.stdout=raw.stdout.split('\n').map((line:string)=>{if(!line)return line;const event=JSON.parse(line);if(event.type==='system'&&event.subtype==='init')event.tools.push('Bash');return JSON.stringify(event);}).join('\n');
+      const text=JSON.stringify(raw);writeFileSync(native.path,text);changed=copy();const descriptor=changed.evidenceFiles!.find(f=>f.kind==='native-output')!;
+      descriptor.bytes=Buffer.byteLength(text);descriptor.digest=investigationFileDigest(native.path);changed.phases![1]!.outputBytes=descriptor.bytes;
+      assert.throws(()=>validateUnsignedProbeExport(changed),'native leak cannot be hidden by rehashed file/phase metadata');
+    }finally{writeFileSync(native.path,originalNative);}
+    const binary=f.context.identity.binary.path,originalBinary=readFileSync(binary,'utf8');
+    try{writeFileSync(binary,originalBinary+'\n// changed runtime');assert.throws(()=>validateUnsignedProbeExport(report));}
+    finally{writeFileSync(binary,originalBinary);}
+    validateUnsignedProbeExport(report);
+  }finally{await f.close();}
+});
+
 test('Codex probe preserves strict schema cleanup and actual process drain', async () => {
   const f = await fixture('codex');
   try {

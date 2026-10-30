@@ -9,6 +9,7 @@ import { digestValue,snapshotValue,freezeValue } from '../../workflow/code-revie
 import { scopedReviewCatalogDigest } from '../../shared/review-investigation-catalog.js';
 import { boundaryEvidenceValid, CLAUDE_V2_ADAPTER, REVIEW_PROTOCOL_SCHEMA_DIGEST } from '../../shared/review-isolation-evidence.js';
 import type { CapabilityBoundaryEvidence } from '../../shared/review-isolation-evidence.js';
+import { managedPolicySnapshot } from './claude-investigation-diagnostics.js';
 
 export class InvestigationQualificationError extends Error {
  constructor(message:string){super(message);this.name='InvestigationQualificationError';}
@@ -75,6 +76,7 @@ export function investigationFileDigest(path:string):string{
  }finally{closeSync(fd);}
 }
 function checkFiles(q:Pick<NativeInvestigationQualification,'identity'|'effective'>,repo:string){
+ if(q.identity.adapterVersion===CLAUDE_V2_ADAPTER&&managedPolicySnapshot().some(p=>p.state!=='absent'))refuse('Managed policy changed or cannot be verified');
  const cwd=realpathSync(q.effective.cwd),stat=lstatSync(q.effective.cwd);
  if(!stat.isDirectory()||stat.isSymbolicLink()||(stat.mode&0o077)!==0||inside(repo,cwd)||inside(cwd,repo))refuse('Reviewer working directory is not isolated from the repository');
  for(const f of [q.identity.binary,...q.identity.runtimeFiles,...q.effective.configFiles]){

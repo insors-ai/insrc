@@ -18,6 +18,34 @@ import { readProbeCanaryEvidence } from './review-investigation-canaries.js';
 import { claudeInvestigationControlArgs, CLAUDE_PROBE_CONTROL_CATALOG, CLAUDE_PROBE_CONTROL_SCHEMA } from '../agent/providers/claude-investigation-session.js';
 import { scopedReviewCatalogDigest } from '../shared/review-investigation-catalog.js';
 import { inspectInstalledInvestigation, assertInstalledImagesPinned } from '../agent/providers/native-investigation-installation.js';
+import { reconstructClaudeQualification, sourcePolicyHostSchema } from '../agent/providers/claude-investigation-qualification.js';
+import { readClaudeDiagnostic } from '../agent/providers/claude-investigation-diagnostics.js';
+import { CLAUDE_V2_ADAPTER } from '../shared/review-isolation-evidence.js';
+import type { ProcessGroupResult } from '../shared/process-group.js';
+
+function replayClaudeV2(report:InvestigationProbeExport) {
+ const identity=report.status.identity;
+ if(identity?.adapterVersion!==CLAUDE_V2_ADAPTER)return;
+ if(report.phases?.length!==2||!report.canaries||report.status.endedAt===null)throw Error('Incomplete v2 phase proof');
+ const root=dirname(report.canaries.manifestPath),cwd=join(root,'cwd'),files=report.evidenceFiles??[];
+ const required=(kind:NonNullable<InvestigationProbeExport['evidenceFiles']>[number]['kind'],name:string)=>{
+  const matches=files.filter(f=>f.kind===kind);if(matches.length!==1||matches[0]!.path!==join(root,name))throw Error('Missing or promoted v2 raw evidence');return matches[0]!;
+ };
+ const output=required('native-output','native-output.json'),debug=required('native-diagnostic','native-restricted-debug.log');
+ readClaudeDiagnostic(required('control-diagnostic','native-control-debug.log').path);
+ const source=required('source-policy','source-policy-host.json'),brokerFile=required('host-checks','host-checks.json');
+ const host=sourcePolicyHostSchema.parse(JSON.parse(readFileSync(source.path,'utf8')));
+ if(host.probeId!==report.status.probeId||host.attemptId!==report.status.attemptId)throw Error('Foreign v2 policy observation');
+ for(const [path,value]of Object.entries(claudeInvestigationAdapter.configuration(cwd,report.status.sourceMode==='indexed-impact')))
+  if(!files.some(f=>f.kind==='configuration'&&f.path===path)||digestValue(JSON.parse(readFileSync(path,'utf8')))!==digestValue(value))throw Error('V2 source policy configuration changed');
+ const broker=JSON.parse(readFileSync(brokerFile.path,'utf8')) as {positiveBefore:boolean;positiveAfter:boolean;crossRunRejected:number;approvalRejected:boolean};
+ const proof=reconstructClaudeQualification({identity,sourceMode:report.status.sourceMode,cwd,endedAt:report.status.endedAt,
+  raw:JSON.parse(readFileSync(output.path,'utf8')) as ProcessGroupResult,diagnostics:readClaudeDiagnostic(debug.path).text,host,broker,canaries:report.canaries,files});
+ if(report.candidate){
+  if(!proof||digestValue(proof.candidate)!==digestValue(report.candidate)||digestValue(proof.observations)!==digestValue(report.status.observations)||
+   report.phases[1]!.effectiveDigest!==proof.candidate.trace.effectiveDigest)throw Error('V2 qualification differs from independently replayed evidence');
+ }else if(proof&&report.status.state!=='cancelled')throw Error('Supported v2 proof was dropped from its result');
+}
 
 /** Read-only validation. No signer, lifecycle writer or qualification issuer. */
 export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExport{
@@ -28,7 +56,7 @@ export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExp
   const path=realpathSync(file.path),stat=lstatSync(file.path),temp=realpathSync(tmpdir()),rel=relative(temp,path);
   const root=rel.split('/')[0];
   if(path!==file.path||isAbsolute(rel)||rel.startsWith('../')||!root?.startsWith('insrc-p-')||!stat.isFile()||stat.isSymbolicLink()||stat.nlink!==1||
-   (stat.mode&0o077)||stat.size>PROBE_OBSERVATION_BYTES||stat.size!==file.bytes||investigationFileDigest(path)!==file.digest)throw Error('Probe evidence file is stale or unsafe');
+   (stat.mode&0o077)||(process.getuid&&stat.uid!==process.getuid())||stat.size>PROBE_OBSERVATION_BYTES||stat.size!==file.bytes||investigationFileDigest(path)!==file.digest)throw Error('Probe evidence file is stale or unsafe');
   const owner=lstatSync(dirname(path));if(!owner.isDirectory()||(owner.mode&0o077))throw Error('Unsafe evidence directory');
   if(!['native-output.json','native-control-output.json','observations.jsonl','investigation-mcp.json','investigation-settings.json','canary-manifest.json','canary-control.jsonl','canary-restricted.jsonl','host-checks.json','native-control-debug.log','native-restricted-debug.log','source-policy-host.json'].includes(basename(path)))throw Error('Unsupported probe evidence file');
   if(fixtureRoot&&fixtureRoot!==root)throw Error('Probe evidence spans different fixture roots');fixtureRoot=root;
@@ -74,6 +102,7 @@ export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExp
   if(!report.status.identity)throw Error('Missing phase installation identity');
   for(const pin of [report.status.identity.binary,...report.status.identity.runtimeFiles])if(realpathSync(pin.path)!==pin.path||investigationFileDigest(pin.path)!==pin.digest)throw Error('Phase runtime pin is stale');
  }
+ replayClaudeV2(report);
  if(report.candidate){
   if(!report.status.identity)throw Error('Missing pinned probe identity');
   inspectUnsignedIsolationEvidence(report.candidate,report.status.identity,report.status.repo,report.status.sourceMode==='indexed-impact',

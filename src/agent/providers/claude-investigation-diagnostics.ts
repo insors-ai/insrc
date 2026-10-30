@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { constants, openSync, closeSync, fstatSync, lstatSync, readSync, realpathSync } from 'node:fs';
+import { constants, openSync, closeSync, fstatSync, lstatSync, readSync, realpathSync, ftruncateSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 
@@ -12,11 +12,14 @@ export function managedPolicySnapshot() {
     return { path, state };
   });
 }
-export function prepareClaudeDiagnostic(path: string) {
+export function prepareClaudeDiagnostic(path: string, reset = false) {
   const parent = lstatSync(dirname(path));
   if (!parent.isDirectory() || parent.isSymbolicLink() || (parent.mode & 0o077) || realpathSync(dirname(path)) !== dirname(path)) throw Error('Unsafe diagnostic directory');
-  const fd = openSync(path, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
-  closeSync(fd);
+  let fd:number;
+  try{fd=openSync(path, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);}
+  catch(cause){if(!reset||(cause as NodeJS.ErrnoException).code!=='EEXIST')throw cause;fd=openSync(path,constants.O_WRONLY|constants.O_NOFOLLOW);}
+  try{const stat=fstatSync(fd);if(!stat.isFile()||stat.nlink!==1||(stat.mode&0o077)||(process.getuid&&stat.uid!==process.getuid())||realpathSync(path)!==path)throw Error('Unsafe diagnostic file');ftruncateSync(fd,0);}
+  finally{closeSync(fd);}
 }
 /** Read only after actual process drain. A growing/unsafe/oversized log refuses. */
 export function readClaudeDiagnostic(path: string) {

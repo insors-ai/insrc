@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: TURN_EVENT_KINDS reserves 'approval-request' alongside every prior kind (additive)
+ok 1 - TURN_EVENT_KINDS reserves 'approval-request' alongside every prior kind (additive)
+  ---
+  duration_ms: 0.642625
+  type: 'test'
+  ...
+# Subtest: ToolCallEvent accepts an optional command; a command-less tool-call is still valid (additive)
+ok 2 - ToolCallEvent accepts an optional command; a command-less tool-call is still valid (additive)
+  ---
+  duration_ms: 0.068209
+  type: 'test'
+  ...
+# Subtest: every existing TurnEvent kind still constructs with its original shape (no shape drift, k2)
+ok 3 - every existing TurnEvent kind still constructs with its original shape (no shape drift, k2)
+  ---
+  duration_ms: 0.054292
+  type: 'test'
+  ...
+# Subtest: S004: ApprovalRequestEvent is a valid TurnEvent member with its reserved kind + correlation fields
+ok 4 - S004: ApprovalRequestEvent is a valid TurnEvent member with its reserved kind + correlation fields
+  ---
+  duration_ms: 0.059042
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): ApprovalRequestEvent admits an optional command field; other kinds unaffected
+ok 5 - S001 (bugfix): ApprovalRequestEvent admits an optional command field; other kinds unaffected
+  ---
+  duration_ms: 0.052417
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): 'tool-result' is reserved in TURN_EVENT_KINDS alongside every prior kind (additive)
+ok 6 - S001 (ux polish): 'tool-result' is reserved in TURN_EVENT_KINDS alongside every prior kind (additive)
+  ---
+  duration_ms: 0.106375
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): ToolResultEvent constructs with output + optional command/exitCode
+ok 7 - S001 (ux polish): ToolResultEvent constructs with output + optional command/exitCode
+  ---
+  duration_ms: 0.050917
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 159.574791

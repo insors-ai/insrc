@@ -1,0 +1,192 @@
+TAP version 13
+# (node:17643) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [12:03:52] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/daemon.sock[39m
+#     [35mmodule[39m: "ipc"
+# [12:03:52] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:52] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:53] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:53] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:53] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:53] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# [12:03:53] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-zFWnq0/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots
+ok 1 - CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots
+  ---
+  duration_ms: 516.368166
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1870.352

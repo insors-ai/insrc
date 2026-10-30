@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -302,22 +302,22 @@ Run at 2026-10-29T18:07:35.864Z on commit `8f1861afd`. Tests check: **passed**. 
 
 ## t18
 
-Run at 2026-10-29T18:42:25.291Z on commit `7298b13b8`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T12:02:26.206Z on commit `63966e4ad`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close | `vscode-plugin/src/connections/__tests__/host.test.ts` |
-| pass | CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view | `vscode-plugin/src/connections/__tests__/host.test.ts` |
-| pass | CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC | `vscode-plugin/src/connections/__tests__/host.test.ts` |
-| pass | CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused | `vscode-plugin/src/connections/__tests__/compatibility.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 4 | 4.1 s |  |
+| `vscode-plugin/src/connections/__tests__/compatibility.test.ts` | 0 | 5 | 9.4 s |  |
+| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 5 | 7.2 s |  |
 
 ## t19
 
@@ -337,7 +337,7 @@ Run at 2026-10-29T19:25:47.753Z on commit `f59019245`. Tests check: **passed**. 
 
 ## t20
 
-Run at 2026-10-29T19:36:06.685Z on commit `27898dddd`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T12:05:19.268Z on commit `63966e4ad`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots**
 
@@ -349,7 +349,7 @@ Run at 2026-10-29T19:36:06.685Z on commit `27898dddd`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/entry.test.ts` | 0 | 1 | 1.7 s |  |
+| `vscode-plugin/src/connections/__tests__/entry.test.ts` | 0 | 1 | 2 s |  |
 
 ## t21
 

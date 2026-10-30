@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T05:27:43.361Z",
+    "updatedAt": "2026-10-30T12:05:19.268Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -826,8 +826,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "7298b13b8",
-        "ranAt": "2026-10-29T18:42:25.291Z",
+        "commit": "63966e4ad",
+        "ranAt": "2026-10-30T12:02:26.206Z",
         "testsPassed": true,
         "tests": [
           {
@@ -842,17 +842,12 @@
               },
               {
                 "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
-                "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
+                "title": "CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names",
                 "result": "pass"
               },
               {
-                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
-                "title": "CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC",
-                "result": "pass"
-              },
-              {
-                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
-                "title": "CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON",
+                "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
+                "title": "CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused",
                 "result": "pass"
               }
             ],
@@ -861,10 +856,39 @@
         ],
         "files": [
           {
+            "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9429,
+            "titles": [
+              {
+                "title": "CM-S5-COMPAT-TS: old missing malformed and base-incomplete handshakes show upgrade without legacy writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: per-action feature admission preserves optional Test independence and refuses disabled Save and Remove intents",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: capability loss retains original unknown attempts and recovery resumes without another mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: shared capability decisions pinned read-only metadata and actual legacy Saved projection remain unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4076,
+            "durationMs": 7221,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
@@ -880,6 +904,10 @@
               },
               {
                 "title": "CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names",
                 "result": "pass"
               }
             ],
@@ -925,8 +953,8 @@
       },
       {
         "taskId": "t20",
-        "commit": "27898dddd",
-        "ranAt": "2026-10-29T19:36:06.685Z",
+        "commit": "63966e4ad",
+        "ranAt": "2026-10-30T12:05:19.268Z",
         "testsPassed": true,
         "tests": [
           {
@@ -948,7 +976,7 @@
             "file": "vscode-plugin/src/connections/__tests__/entry.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1714,
+            "durationMs": 1962,
             "titles": [
               {
                 "title": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",

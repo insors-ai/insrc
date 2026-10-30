@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: key-map.test.ts: buildConfigKeyMap over a manifest fixture takes type / enum / default from the manifest, maps tier keys as plain strings, skips plugin-local keys, and key-map.ts does not import the settings catalog
+ok 1 - key-map.test.ts: buildConfigKeyMap over a manifest fixture takes type / enum / default from the manifest, maps tier keys as plain strings, skips plugin-local keys, and key-map.ts does not import the settings catalog
+  ---
+  duration_ms: 1.55225
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 171.663959

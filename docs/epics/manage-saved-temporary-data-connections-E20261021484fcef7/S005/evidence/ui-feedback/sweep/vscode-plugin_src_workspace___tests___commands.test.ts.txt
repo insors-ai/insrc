@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: registerWorkspaceCommands registers the insrc.workspace.register command into the registry
+ok 1 - registerWorkspaceCommands registers the insrc.workspace.register command into the registry
+  ---
+  duration_ms: 1.291083
+  type: 'test'
+  ...
+# Subtest: offerWorkspaceRegistration shows NO prompt when no root is open, when already registered, or when previously dismissed (lc1)
+ok 2 - offerWorkspaceRegistration shows NO prompt when no root is open, when already registered, or when previously dismissed (lc1)
+  ---
+  duration_ms: 0.222583
+  type: 'test'
+  ...
+# Subtest: on accepted offerWorkspaceRegistration calls registrar.register(root) exactly once and pushes the outcome to StatusSurface.set
+ok 3 - on accepted offerWorkspaceRegistration calls registrar.register(root) exactly once and pushes the outcome to StatusSurface.set
+  ---
+  duration_ms: 0.148542
+  type: 'test'
+  ...
+# Subtest: on declined/dismissed it calls markDismissed(root), NEVER registers, and writes nothing to the registry (k4)
+ok 4 - on declined/dismissed it calls markDismissed(root), NEVER registers, and writes nothing to the registry (k4)
+  ---
+  duration_ms: 0.101542
+  type: 'test'
+  ...
+# Subtest: on an accepted-but-register-fails path it does NOT markDismissed (retryable) and reflects an errored status
+ok 5 - on an accepted-but-register-fails path it does NOT markDismissed (retryable) and reflects an errored status
+  ---
+  duration_ms: 0.19675
+  type: 'test'
+  ...
+# Subtest: the durable command offers even when previously dismissed (k6 — a dismissed prompt stays actionable)
+ok 6 - the durable command offers even when previously dismissed (k6 — a dismissed prompt stays actionable)
+  ---
+  duration_ms: 0.093625
+  type: 'test'
+  ...
+# Subtest: source-scan: vscode-plugin/src/workspace/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)
+ok 7 - source-scan: vscode-plugin/src/workspace/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)
+  ---
+  duration_ms: 0.774583
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 157.1945

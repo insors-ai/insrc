@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey
+ok 1 - applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey
+  ---
+  duration_ms: 1.690167
+  type: 'test'
+  ...
+# Subtest: applyChanges rejects an invalid per-role tier without calling writeKeyPath, and reports a reason
+ok 2 - applyChanges rejects an invalid per-role tier without calling writeKeyPath, and reports a reason
+  ---
+  duration_ms: 0.239584
+  type: 'test'
+  ...
+# Subtest: applyChanges on a per-role {ok:false}/reject reports a rejected write and does not advance the snapshot
+ok 3 - applyChanges on a per-role {ok:false}/reject reports a rejected write and does not advance the snapshot
+  ---
+  duration_ms: 0.113
+  type: 'test'
+  ...
+# Subtest: pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)
+ok 4 - pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)
+  ---
+  duration_ms: 0.148083
+  type: 'test'
+  ...
+# Subtest: pullFromDaemon on a rawConfig() rejection writes no per-role keys and notifies without throwing
+ok 5 - pullFromDaemon on a rawConfig() rejection writes no per-role keys and notifies without throwing
+  ---
+  duration_ms: 0.148417
+  type: 'test'
+  ...
+# Subtest: per-role idempotent no-op: re-applying the pulled value calls no writeKeyPath
+ok 6 - per-role idempotent no-op: re-applying the pulled value calls no writeKeyPath
+  ---
+  duration_ms: 0.160667
+  type: 'test'
+  ...
+# Subtest: the daemon gateway sends writeKeyPath as the config.write ARRAY form and rawConfig as config.show
+ok 7 - the daemon gateway sends writeKeyPath as the config.write ARRAY form and rawConfig as config.show
+  ---
+  duration_ms: 0.280458
+  type: 'test'
+  ...
+# Subtest: the per-role key-map + engine + gateway modules import no 'vscode'
+ok 8 - the per-role key-map + engine + gateway modules import no 'vscode'
+  ---
+  duration_ms: 0.881958
+  type: 'test'
+  ...
+# Subtest: the gateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)
+ok 9 - the gateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)
+  ---
+  duration_ms: 1.182916
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 164.485958

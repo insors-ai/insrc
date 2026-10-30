@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path
+ok 1 - pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path
+  ---
+  duration_ms: 1.08725
+  type: 'test'
+  ...
+# Subtest: pullFromDaemon on a catalog() rejection writes nothing and notifies without throwing
+ok 2 - pullFromDaemon on a catalog() rejection writes nothing and notifies without throwing
+  ---
+  duration_ms: 0.216667
+  type: 'test'
+  ...
+# Subtest: pullFromDaemon captures the last-synced snapshot so a re-apply of the same value is a no-op
+ok 3 - pullFromDaemon captures the last-synced snapshot so a re-apply of the same value is a no-op
+  ---
+  duration_ms: 0.153041
+  type: 'test'
+  ...
+# Subtest: pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)
+ok 4 - pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)
+  ---
+  duration_ms: 0.140625
+  type: 'test'
+  ...
+# Subtest: applyChanges on a valid change maps native key -> path and writes exactly once
+ok 5 - applyChanges on a valid change maps native key -> path and writes exactly once
+  ---
+  duration_ms: 0.7865
+  type: 'test'
+  ...
+# Subtest: applyChanges rejects an invalid enum value without calling writeKey and reports a reason
+ok 6 - applyChanges rejects an invalid enum value without calling writeKey and reports a reason
+  ---
+  duration_ms: 0.127583
+  type: 'test'
+  ...
+# Subtest: applyChanges rejects a wrong-typed number without writing
+ok 7 - applyChanges rejects a wrong-typed number without writing
+  ---
+  duration_ms: 0.211083
+  type: 'test'
+  ...
+# Subtest: applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot
+ok 8 - applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot
+  ---
+  duration_ms: 0.276541
+  type: 'test'
+  ...
+# Subtest: applyChanges on a writeKey rejection reports a rejected write without throwing
+ok 9 - applyChanges on a writeKey rejection reports a rejected write without throwing
+  ---
+  duration_ms: 0.5245
+  type: 'test'
+  ...
+# Subtest: applyChanges ignores an unknown native key (drift-safe) — no write, no notify
+ok 10 - applyChanges ignores an unknown native key (drift-safe) — no write, no notify
+  ---
+  duration_ms: 0.356792
+  type: 'test'
+  ...
+# Subtest: applyChanges advances the snapshot on a successful write so an immediate re-apply is a no-op
+ok 11 - applyChanges advances the snapshot on a successful write so an immediate re-apply is a no-op
+  ---
+  duration_ms: 0.122542
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 178.746

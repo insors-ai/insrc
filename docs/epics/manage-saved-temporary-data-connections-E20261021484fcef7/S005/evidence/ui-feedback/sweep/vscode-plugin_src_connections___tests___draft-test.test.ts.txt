@@ -1,0 +1,26 @@
+TAP version 13
+# [12:03:43] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/s5t-gL4YP3/d.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior
+ok 1 - CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior
+  ---
+  duration_ms: 3411.9365
+  type: 'test'
+  ...
+# [12:03:46] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/s5t-hrWsyP/d.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S5-TEST-TS: real supervisor timeout keeps its transport and never treats the result as drain
+ok 2 - CM-S5-TEST-TS: real supervisor timeout keeps its transport and never treats the result as drain
+  ---
+  duration_ms: 10443.681292
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14142.98675

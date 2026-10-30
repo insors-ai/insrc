@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified
+ok 1 - model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified
+  ---
+  duration_ms: 4.117958
+  type: 'test'
+  ...
+# Subtest: model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config
+ok 2 - model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config
+  ---
+  duration_ms: 1.918125
+  type: 'test'
+  ...
+# Subtest: model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve
+ok 3 - model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve
+  ---
+  duration_ms: 1.372
+  type: 'test'
+  ...
+# Subtest: model-tier-picker.test.ts: the host family is offered next to today's; its models carry cloud/local marks, no 'Enter another model id', efforts only where the model has them, one whole-tier write
+ok 4 - model-tier-picker.test.ts: the host family is offered next to today's; its models carry cloud/local marks, no 'Enter another model id', efforts only where the model has them, one whole-tier write
+  ---
+  duration_ms: 0.251833
+  type: 'test'
+  ...
+# Subtest: model-tier-picker.test.ts: an undeclared current model on the host family is 'not supported — the tier will not run'; a vendor family and a host-less answer keep today's items
+ok 5 - model-tier-picker.test.ts: an undeclared current model on the host family is 'not supported — the tier will not run'; a vendor family and a host-less answer keep today's items
+  ---
+  duration_ms: 0.239959
+  type: 'test'
+  ...
+# Subtest: model-tier-picker.test.ts: reopening the picker after a save on the host family marks the saved family, model and effort as current
+ok 6 - model-tier-picker.test.ts: reopening the picker after a save on the host family marks the saved family, model and effort as current
+  ---
+  duration_ms: 0.17675
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 174.882791

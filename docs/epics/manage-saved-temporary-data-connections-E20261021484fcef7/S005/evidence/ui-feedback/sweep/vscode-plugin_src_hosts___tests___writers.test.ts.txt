@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent
+ok 1 - writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent
+  ---
+  duration_ms: 1.91025
+  type: 'test'
+  ...
+# Subtest: writeInsrcServer throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)
+ok 2 - writeInsrcServer throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)
+  ---
+  duration_ms: 0.279709
+  type: 'test'
+  ...
+# Subtest: removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent
+ok 3 - removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent
+  ---
+  duration_ms: 0.098583
+  type: 'test'
+  ...
+# Subtest: SteeringWriter.upsert: no-markers→append; markers→replace; malformed/duplicate→untouched; idempotent; remove deletes/absent no-op
+ok 4 - SteeringWriter.upsert: no-markers→append; markers→replace; malformed/duplicate→untouched; idempotent; remove deletes/absent no-op
+  ---
+  duration_ms: 0.289375
+  type: 'test'
+  ...
+# Subtest: SteeringWriter.remove deletes the marker block (restoring prior content) and is a no-op when no markers exist
+ok 5 - SteeringWriter.remove deletes the marker block (restoring prior content) and is a no-op when no markers exist
+  ---
+  duration_ms: 0.15975
+  type: 'test'
+  ...
+# Subtest: both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)
+ok 6 - both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)
+  ---
+  duration_ms: 0.098959
+  type: 'test'
+  ...
+# Subtest: composeMcpEntry(path) = { command:node, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)
+ok 7 - composeMcpEntry(path) = { command:node, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)
+  ---
+  duration_ms: 0.136333
+  type: 'test'
+  ...
+# Subtest: toml writeInsrcServer creates the [[mcp_servers]] insrc section in an absent file
+ok 8 - toml writeInsrcServer creates the [[mcp_servers]] insrc section in an absent file
+  ---
+  duration_ms: 0.134584
+  type: 'test'
+  ...
+# Subtest: toml writeInsrcServer appends to an existing config preserving every other table/key/comment
+ok 9 - toml writeInsrcServer appends to an existing config preserving every other table/key/comment
+  ---
+  duration_ms: 0.499416
+  type: 'test'
+  ...
+# Subtest: toml writeInsrcServer replaces an existing insrc section (new args), keeping the header line, and is idempotent
+ok 10 - toml writeInsrcServer replaces an existing insrc section (new args), keeping the header line, and is idempotent
+  ---
+  duration_ms: 0.365875
+  type: 'test'
+  ...
+# Subtest: toml writer refuses duplicate insrc sections (never guesses) and leaves the file unchanged
+ok 11 - toml writer refuses duplicate insrc sections (never guesses) and leaves the file unchanged
+  ---
+  duration_ms: 0.175917
+  type: 'test'
+  ...
+# Subtest: toml removeInsrcServer drops the insrc section and its [mcp_servers.auth] sub-table, preserving everything else; no-op when absent
+ok 12 - toml removeInsrcServer drops the insrc section and its [mcp_servers.auth] sub-table, preserving everything else; no-op when absent
+  ---
+  duration_ms: 0.079083
+  type: 'test'
+  ...
+# Subtest: toml writer escapes quotes/backslashes in the launch path (TOML basic string)
+ok 13 - toml writer escapes quotes/backslashes in the launch path (TOML basic string)
+  ---
+  duration_ms: 0.042334
+  type: 'test'
+  ...
+# Subtest: toml writer surfaces fs failures as HostFileAccessError with no partial write
+ok 14 - toml writer surfaces fs failures as HostFileAccessError with no partial write
+  ---
+  duration_ms: 0.04825
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 165.072458

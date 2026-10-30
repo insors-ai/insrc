@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: an epic with five stories, two complete, reads 2 of 5 stories complete, and every epic is a row, by stage and then snapshot order
+ok 1 - an epic with five stories, two complete, reads 2 of 5 stories complete, and every epic is a row, by stage and then snapshot order
+  ---
+  duration_ms: 2.577125
+  type: 'test'
+  ...
+# Subtest: a standalone issue correcting a story of an epic counts towards no epic, and the epic's Epics row equals its board header
+ok 2 - a standalone issue correcting a story of an epic counts towards no epic, and the epic's Epics row equals its board header
+  ---
+  duration_ms: 0.963333
+  type: 'test'
+  ...
+# Subtest: the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel
+ok 3 - the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel
+  ---
+  duration_ms: 0.450916
+  type: 'test'
+  ...
+# Subtest: epic rows count the planned tasks of the epic's stories and an issue's count separately
+ok 4 - epic rows count the planned tasks of the epic's stories and an issue's count separately
+  ---
+  duration_ms: 0.178958
+  type: 'test'
+  ...
+# Subtest: attentionLabel is 'No open gates' at 0, '1 needs attention' at 1, 'N need attention' otherwise
+ok 5 - attentionLabel is 'No open gates' at 0, '1 needs attention' at 1, 'N need attention' otherwise
+  ---
+  duration_ms: 0.148459
+  type: 'test'
+  ...
+# Subtest: an epic row's compactId is the epic's compact id
+ok 6 - an epic row's compactId is the epic's compact id
+  ---
+  duration_ms: 0.10175
+  type: 'test'
+  ...
+# Subtest: the Issues body lists issues in stage order with their parent, parent notice and fix stories
+ok 7 - the Issues body lists issues in stage order with their parent, parent notice and fix stories
+  ---
+  duration_ms: 0.60075
+  type: 'test'
+  ...
+# Subtest: with a search and a scope, the Issues list holds the same issues as the board screen
+ok 8 - with a search and a scope, the Issues list holds the same issues as the board screen
+  ---
+  duration_ms: 1.406042
+  type: 'test'
+  ...
+# Subtest: the Issues body groups issues into stage sections with the board screens' defaults and fold
+ok 9 - the Issues body groups issues into stage sections with the board screens' defaults and fold
+  ---
+  duration_ms: 0.582709
+  type: 'test'
+  ...
+# Subtest: the Epics body places each epic at the stage of its least-advanced story, by the board screens' section rule, and epics with no stories after the sections
+ok 10 - the Epics body places each epic at the stage of its least-advanced story, by the board screens' section rule, and epics with no stories after the sections
+  ---
+  duration_ms: 0.435083
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 269.409792

@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "63966e4ad",
+  "archive": "vscode-plugin/insrc-vscode-0.5.16-s005-63966e4ad.vsix",
+  "sha256": "6bb08fe332e734e1752aa47d145a75ff1491fb07f01176f00bbff4b8416dad51",
+  "zipCRC": "pass",
+  "themedIcons": "pass",
+  "updatedBundle": "pass",
+  "noSourceOrNodeModules": "pass",
+  "isolatedSnapshot": true,
+  "liveUI": "pending user manual validation",
+  "productionCreation": "unavailable: daemon advertises safe-read and driver-descriptors only"
+}

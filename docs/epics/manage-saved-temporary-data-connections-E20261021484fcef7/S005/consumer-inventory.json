@@ -26,12 +26,14 @@
     "src/shared/connection-manager/wire.ts": "5ce1aee76bab3ea7be696b4ec8a0454217c42243d5a9df6d7edaee1500215820",
     "src/shared/ipc-client.ts": "a06f7a2ca4ec1604c515f08b0eff028c5d32fb79bdffdf6bd4f315e0a25e9617",
     "vscode-plugin/src/connections/gateway.ts": "df8de3e005eb0f48c71abfaeab02e7986a9cfe17becc44889aebaf81bb660042",
-    "vscode-plugin/src/connections/host.ts": "2aa0cc11fc9e10df0cc0b7ceb14c68e29909611b4ec1a95220a9e1890900459d",
-    "vscode-plugin/src/connections/renderer.ts": "21905e6dfcf45bc6e435c62f94275ab7372e4f17fe173dbd976e2b6ea3537fde",
+    "vscode-plugin/src/connections/host.ts": "64c2e9afefb6fccef9d64e664d734a542cfc77f7b0fd9d1c3794578a080e318d",
+    "vscode-plugin/src/connections/renderer.ts": "7a207242eb18266ed2cdb7f555dd593d671c8947b1c164a99e135264490ef430",
     "vscode-plugin/src/connections/session-owner.ts": "1b46559ccc3a9bd99ae661072de5f7f932395f7922ae75dd81744294ec3aafde",
-    "vscode-plugin/src/connections/types.ts": "e06b2fcddf7c5b9393e1c515a5cd35f0712674957964974e85d0903ec2b9ec40",
+    "vscode-plugin/src/connections/types.ts": "bbd77a75454fb59dc166b4bb391c2d60cd7233d6fd45d1fdadf5e44b30c51097",
     "vscode-plugin/src/connections/wiring.ts": "e43a2a9537568838c1f81a14d1f25ac5c883d8ad5a793f77513261a84fc5f455",
-    "vscode-plugin/src/extension.ts": "29b65309e242ea94bb05d3ba7aa73391d12edbc9896ca154599984fd0c9e661f"
+    "vscode-plugin/src/extension.ts": "544aa6f1bf3705727ce1912de8d1bba76241523c74a1e1b3fd00b0c01d4e43eb",
+    "vscode-plugin/media/connections-icon.svg": "906740fece600ce9bb10456432eb63d4ccb8eabef4bdecaa5fe497c0e8d4d586",
+    "vscode-plugin/media/connections-icon-dark.svg": "156c869eb89f36a1a52e04761ea31fdf0846dc3414d14e822067c8c338321579"
   },
   "externalPrerequisites": {
     "S001": "pending",
@@ -52,5 +54,6 @@
       "skipped": 134,
       "todo": 3
     }
-  }
+  },
+  "sourceCommit": "63966e4ad"
 }

@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: the host opens a valid http url externally and refuses a non-http url
+ok 1 - the host opens a valid http url externally and refuses a non-http url
+  ---
+  duration_ms: 2.952042
+  type: 'test'
+  ...
+# Subtest: the host opens an existing in-workspace path with the line selected
+ok 2 - the host opens an existing in-workspace path with the line selected
+  ---
+  duration_ms: 9.122958
+  type: 'test'
+  ...
+# Subtest: the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder
+ok 3 - the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder
+  ---
+  duration_ms: 2.434666
+  type: 'test'
+  ...
+# Subtest: the host refuses a symlink inside the workspace that points outside it
+ok 4 - the host refuses a symlink inside the workspace that points outside it
+  ---
+  duration_ms: 2.244292
+  type: 'test'
+  ...
+# Subtest: the host logs and survives an open that rejects or resolves false
+ok 5 - the host logs and survives an open that rejects or resolves false
+  ---
+  duration_ms: 3.278917
+  type: 'test'
+  ...
+# Subtest: the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none
+ok 6 - the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none
+  ---
+  duration_ms: 0.478834
+  type: 'test'
+  ...
+# Subtest: the chat host and the review host hand a clicked link and code reference to the opener
+ok 7 - the chat host and the review host hand a clicked link and code reference to the opener
+  ---
+  duration_ms: 3.371125
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.293917

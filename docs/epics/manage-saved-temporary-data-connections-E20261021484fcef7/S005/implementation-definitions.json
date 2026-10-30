@@ -2,7 +2,7 @@
   "uxDefinition": {
     "type": "AdaptiveCard",
     "version": "1.5",
-    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove still require their advertised features and daemon authorization. Live UI validation belongs to the user; this schematic is not execution evidence.",
+    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence.",
     "body": [
       {
         "type": "TextBlock",

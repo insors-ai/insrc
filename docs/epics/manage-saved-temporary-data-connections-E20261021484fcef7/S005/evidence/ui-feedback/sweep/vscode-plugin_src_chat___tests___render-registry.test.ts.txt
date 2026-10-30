@@ -1,0 +1,460 @@
+TAP version 13
+# Subtest: renderRow dispatches to a registered renderer for its kind
+ok 1 - renderRow dispatches to a registered renderer for its kind
+  ---
+  duration_ms: 2.054916
+  type: 'test'
+  ...
+# Subtest: renderRow falls back to line() for an unmapped kind (incl. the reserved 'approval-request')
+ok 2 - renderRow falls back to line() for an unmapped kind (incl. the reserved 'approval-request')
+  ---
+  duration_ms: 0.4675
+  type: 'test'
+  ...
+# Subtest: the fallback renderer applies the vm cssClass (byte-identical to line(s,cls))
+ok 3 - the fallback renderer applies the vm cssClass (byte-identical to line(s,cls))
+  ---
+  duration_ms: 0.078625
+  type: 'test'
+  ...
+# Subtest: a renderer that throws is caught and the row falls back to line() (per-row isolation)
+ok 4 - a renderer that throws is caught and the row falls back to line() (per-row isolation)
+  ---
+  duration_ms: 0.119416
+  type: 'test'
+  ...
+# Subtest: collapsible: default-collapsed wraps with the collapsed class + a ▸ icon-only chevron
+ok 5 - collapsible: default-collapsed wraps with the collapsed class + a ▸ icon-only chevron
+  ---
+  duration_ms: 0.232
+  type: 'test'
+  ...
+# Subtest: collapsible: clicking the chevron toggles collapsed<->expanded and swaps ▸/▾
+ok 6 - collapsible: clicking the chevron toggles collapsed<->expanded and swaps ▸/▾
+  ---
+  duration_ms: 0.100875
+  type: 'test'
+  ...
+# Subtest: collapsible: defaultCollapsed=false starts expanded with a ▾ chevron
+ok 7 - collapsible: defaultCollapsed=false starts expanded with a ▾ chevron
+  ---
+  duration_ms: 0.116542
+  type: 'test'
+  ...
+# Subtest: renderRegistryWebviewSource() is CSP-safe: no import/remote/vscode; innerHTML only via guarded marked
+ok 8 - renderRegistryWebviewSource() is CSP-safe: no import/remote/vscode; innerHTML only via guarded marked
+  ---
+  duration_ms: 0.211917
+  type: 'test'
+  ...
+# Subtest: RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview
+ok 9 - RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview
+  ---
+  duration_ms: 0.232042
+  type: 'test'
+  ...
+# Subtest: toViewModel maps transcript rows: user/assistant/marker to the right kind + role
+ok 10 - toViewModel maps transcript rows: user/assistant/marker to the right kind + role
+  ---
+  duration_ms: 0.498042
+  type: 'test'
+  ...
+# Subtest: toViewModel maps live events: assistant-delta -> assistant-text (ac2), tool-call -> tool-command (ac3)
+ok 11 - toViewModel maps live events: assistant-delta -> assistant-text (ac2), tool-call -> tool-command (ac3)
+  ---
+  duration_ms: 0.111458
+  type: 'test'
+  ...
+# Subtest: toViewModel is total: an unrecognised event maps to a fallback row
+ok 12 - toViewModel is total: an unrecognised event maps to a fallback row
+  ---
+  duration_ms: 0.102875
+  type: 'test'
+  ...
+# Subtest: parity: eval(webview toViewModel) equals host toViewModel for every sample (drift fails build)
+ok 13 - parity: eval(webview toViewModel) equals host toViewModel for every sample (drift fails build)
+  ---
+  duration_ms: 0.596167
+  type: 'test'
+  ...
+# Subtest: integration: an assistant multi-step turn renders each step's actual text (ac2)
+ok 14 - integration: an assistant multi-step turn renders each step's actual text (ac2)
+  ---
+  duration_ms: 7.244
+  type: 'test'
+  ...
+# Subtest: integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)
+ok 15 - integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)
+  ---
+  duration_ms: 0.292
+  type: 'test'
+  ...
+# Subtest: the tool-command renderer never wraps its content in the collapse primitive (k6 d)
+ok 16 - the tool-command renderer never wraps its content in the collapse primitive (k6 d)
+  ---
+  duration_ms: 0.070083
+  type: 'test'
+  ...
+# Subtest: lc1: appendKeyed renders once per key — a live echo and its replay twin reconcile to one row
+ok 17 - lc1: appendKeyed renders once per key — a live echo and its replay twin reconcile to one row
+  ---
+  duration_ms: 0.072458
+  type: 'test'
+  ...
+# Subtest: lc1: distinct keys render distinct rows (two identical prompts -> two rows)
+ok 18 - lc1: distinct keys render distinct rows (two identical prompts -> two rows)
+  ---
+  duration_ms: 0.052667
+  type: 'test'
+  ...
+# Subtest: lc1: resetKeys() clears the map so a fresh replay re-renders (restore after a live echo)
+ok 19 - lc1: resetKeys() clears the map so a fresh replay re-renders (restore after a live echo)
+  ---
+  duration_ms: 0.049375
+  type: 'test'
+  ...
+# Subtest: appendKeyed(vm, null) always renders (unkeyed rows are never reconciled)
+ok 20 - appendKeyed(vm, null) always renders (unkeyed rows are never reconciled)
+  ---
+  duration_ms: 0.171
+  type: 'test'
+  ...
+# Subtest: S003 ac1: the user and assistant-text renderers emit distinct role tones
+ok 21 - S003 ac1: the user and assistant-text renderers emit distinct role tones
+  ---
+  duration_ms: 0.444708
+  type: 'test'
+  ...
+# Subtest: S003 ac2: a >3-line USER message is wrapped in the collapse primitive (default-collapsed); a short one is not
+ok 22 - S003 ac2: a >3-line USER message is wrapped in the collapse primitive (default-collapsed); a short one is not
+  ---
+  duration_ms: 0.084042
+  type: 'test'
+  ...
+# Subtest: S003 k6 d: the tool-command renderer stays inline, never wrapped in collapse
+ok 23 - S003 k6 d: the tool-command renderer stays inline, never wrapped in collapse
+  ---
+  duration_ms: 0.053917
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): a top-level JSON value renders as a formatted json code block (via marked)
+ok 24 - S001 (bugfix): a top-level JSON value renders as a formatted json code block (via marked)
+  ---
+  duration_ms: 0.529833
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): markdown renders via marked (heading + list + inline code) as HTML
+ok 25 - S001 (bugfix): markdown renders via marked (heading + list + inline code) as HTML
+  ---
+  duration_ms: 1.007792
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): plain prose renders as a paragraph (marked), text preserved
+ok 26 - S001 (bugfix): plain prose renders as a paragraph (marked), text preserved
+  ---
+  duration_ms: 0.196625
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): malformed JSON does not throw — it renders as markdown text
+ok 27 - S001 (bugfix): malformed JSON does not throw — it renders as markdown text
+  ---
+  duration_ms: 0.224042
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): the render source uses marked + sanitizes with guardMd (no unsanitized innerHTML)
+ok 28 - S001 (bugfix): the render source uses marked + sanitizes with guardMd (no unsanitized innerHTML)
+  ---
+  duration_ms: 0.062625
+  type: 'test'
+  ...
+# Subtest: S003 k6 c: inline-diff wraps its body in the collapse primitive with a caption
+ok 29 - S003 k6 c: inline-diff wraps its body in the collapse primitive with a caption
+  ---
+  duration_ms: 0.080208
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): toViewModel maps a live tool-result event and its replayed twin to the SAME view-model (dual-input)
+ok 30 - S001 (ux polish): toViewModel maps a live tool-result event and its replayed twin to the SAME view-model (dual-input)
+  ---
+  duration_ms: 0.062584
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): the tool-result renderer shows the command + a separator, and collapses ONLY the output
+ok 31 - S001 (ux polish): the tool-result renderer shows the command + a separator, and collapses ONLY the output
+  ---
+  duration_ms: 0.1365
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): a command-less tool-result renders no command line and its output
+ok 32 - S001 (ux polish): a command-less tool-result renders no command line and its output
+  ---
+  duration_ms: 0.688833
+  type: 'test'
+  ...
+# Subtest: tool result: a short output is drawn with no chevron and a long one folds
+ok 33 - tool result: a short output is drawn with no chevron and a long one folds
+  ---
+  duration_ms: 0.380916
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines; it has the chevron and the user can fold it
+ok 34 - S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines; it has the chevron and the user can fold it
+  ---
+  duration_ms: 0.153458
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — long single line
+ok 35 - S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — long single line
+  ---
+  duration_ms: 0.14075
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): a short assistant row still renders in full, uncollapsed
+ok 36 - S001 (ux polish): a short assistant row still renders in full, uncollapsed
+  ---
+  duration_ms: 0.074959
+  type: 'test'
+  ...
+# Subtest: ISSUE-b1c7c1bc (counterpart): the assistant carve-out does NOT disable collapsing for tool rows
+ok 37 - ISSUE-b1c7c1bc (counterpart): the assistant carve-out does NOT disable collapsing for tool rows
+  ---
+  duration_ms: 0.055583
+  type: 'test'
+  ...
+# Subtest: S004 t6: the 'approval' renderer builds an icon-only approve/deny card via className/textContent
+ok 38 - S004 t6: the 'approval' renderer builds an icon-only approve/deny card via className/textContent
+  ---
+  duration_ms: 0.127167
+  type: 'test'
+  ...
+# Subtest: S004 t6: card buttons invoke the registered decision sink with (requestId, decision)
+ok 39 - S004 t6: card buttons invoke the registered decision sink with (requestId, decision)
+  ---
+  duration_ms: 0.111583
+  type: 'test'
+  ...
+# Subtest: S003 ac1: approving the card adds the resolved (approved) class and REMOVES the actions element
+ok 40 - S003 ac1: approving the card adds the resolved (approved) class and REMOVES the actions element
+  ---
+  duration_ms: 0.057
+  type: 'test'
+  ...
+# Subtest: S003 ac1: denying the card adds the resolved (rejected) class and REMOVES the actions element
+ok 41 - S003 ac1: denying the card adds the resolved (rejected) class and REMOVES the actions element
+  ---
+  duration_ms: 0.046334
+  type: 'test'
+  ...
+# Subtest: S003 t1: toViewModel maps a live permission-outcome event and its replayed twin to the SAME vm (dual-input)
+ok 42 - S003 t1: toViewModel maps a live permission-outcome event and its replayed twin to the SAME vm (dual-input)
+  ---
+  duration_ms: 0.04
+  type: 'test'
+  ...
+# Subtest: S003 t1: the permission-outcome renderer draws a non-actionable tool + decided badge chip (green approved)
+ok 43 - S003 t1: the permission-outcome renderer draws a non-actionable tool + decided badge chip (green approved)
+  ---
+  duration_ms: 0.096625
+  type: 'test'
+  ...
+# Subtest: S003 t1: a rejected permission-outcome reuses the red deny tint
+ok 44 - S003 t1: a rejected permission-outcome reuses the red deny tint
+  ---
+  duration_ms: 0.046375
+  type: 'test'
+  ...
+# Subtest: S004 t6: an approval card with no decision sink registered does not throw on click
+ok 45 - S004 t6: an approval card with no decision sink registered does not throw on click
+  ---
+  duration_ms: 0.048583
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): marked renders GFM tables (thead/tbody/th/td), ordered lists, and blockquotes
+ok 46 - S001 (bugfix): marked renders GFM tables (thead/tbody/th/td), ordered lists, and blockquotes
+  ---
+  duration_ms: 0.669584
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): a table-only response still renders as a table (marked GFM)
+ok 47 - S001 (bugfix): a table-only response still renders as a table (marked GFM)
+  ---
+  duration_ms: 0.101291
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): toViewModel maps a live selection-request event to the card view-model (prompt/options/multi/requestId on meta)
+ok 48 - S004 (ux polish): toViewModel maps a live selection-request event to the card view-model (prompt/options/multi/requestId on meta)
+  ---
+  duration_ms: 0.04925
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): toViewModel maps a live selection-outcome event and its replayed twin to the SAME vm (dual-input)
+ok 49 - S004 (ux polish): toViewModel maps a live selection-outcome event and its replayed twin to the SAME vm (dual-input)
+  ---
+  duration_ms: 0.048417
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): the selection-request renderer draws radio controls for single-select
+ok 50 - S004 (ux polish): the selection-request renderer draws radio controls for single-select
+  ---
+  duration_ms: 0.168125
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): the selection-request renderer draws checkbox controls for multi-select
+ok 51 - S004 (ux polish): the selection-request renderer draws checkbox controls for multi-select
+  ---
+  duration_ms: 0.062792
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): confirm is disabled until >=1 is chosen; a single pick posts exactly one selection-decision with the id
+ok 52 - S004 (ux polish): confirm is disabled until >=1 is chosen; a single pick posts exactly one selection-decision with the id
+  ---
+  duration_ms: 0.158459
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): single-select — picking a second option replaces the first (radio semantics)
+ok 53 - S004 (ux polish): single-select — picking a second option replaces the first (radio semantics)
+  ---
+  duration_ms: 0.074042
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): multi-select — two checkboxes both submit; a zero-chosen confirm posts nothing
+ok 54 - S004 (ux polish): multi-select — two checkboxes both submit; a zero-chosen confirm posts nothing
+  ---
+  duration_ms: 0.074167
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): duplicate option ids still render distinctly (keyed by index) and both are selectable
+ok 55 - S004 (ux polish): duplicate option ids still render distinctly (keyed by index) and both are selectable
+  ---
+  duration_ms: 0.112875
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a selection-request card with no decision sink registered does not throw on confirm
+ok 56 - S004 (ux polish): a selection-request card with no decision sink registered does not throw on confirm
+  ---
+  duration_ms: 0.069084
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): the selection-outcome renderer draws a non-actionable chip listing the chosen labels
+ok 57 - S004 (ux polish): the selection-outcome renderer draws a non-actionable chip listing the chosen labels
+  ---
+  duration_ms: 0.07225
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a session-restored replay renders the resolved chip; the pending selection-request card does NOT re-surface
+ok 58 - S004 (ux polish): a session-restored replay renders the resolved chip; the pending selection-request card does NOT re-surface
+  ---
+  duration_ms: 0.066417
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: a tool-result attaches to its tool row — the command is drawn ONCE
+ok 59 - ISSUE-1163888072faa9f2: a tool-result attaches to its tool row — the command is drawn ONCE
+  ---
+  duration_ms: 0.127917
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: results pair by command; a command-less result takes the oldest pending row
+ok 60 - ISSUE-1163888072faa9f2: results pair by command; a command-less result takes the oldest pending row
+  ---
+  duration_ms: 0.063125
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: an unpaired tool-result (no pending row) still renders its standalone row
+ok 61 - ISSUE-1163888072faa9f2: an unpaired tool-result (no pending row) still renders its standalone row
+  ---
+  duration_ms: 0.040584
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: a long command collapses via the chevron; a short one stays inline
+ok 62 - ISSUE-1163888072faa9f2: a long command collapses via the chevron; a short one stays inline
+  ---
+  duration_ms: 0.058333
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: a replayed tool marker + tool-result reconcile to ONE row showing the real command
+ok 63 - ISSUE-1163888072faa9f2: a replayed tool marker + tool-result reconcile to ONE row showing the real command
+  ---
+  duration_ms: 0.067417
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: resetKeys drops pending tool rows so a new replay never attaches to a cleared row
+ok 64 - ISSUE-1163888072faa9f2: resetKeys drops pending tool rows so a new replay never attaches to a cleared row
+  ---
+  duration_ms: 0.043542
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: an id-carrying result pairs ONLY with its call — an Edit result (no tool row) stays standalone
+ok 65 - ISSUE-1163888072faa9f2: an id-carrying result pairs ONLY with its call — an Edit result (no tool row) stays standalone
+  ---
+  duration_ms: 0.055042
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: a done/error marker settles pending rows so a later turn's result never attaches upstream
+ok 66 - ISSUE-1163888072faa9f2: a done/error marker settles pending rows so a later turn's result never attaches upstream
+  ---
+  duration_ms: 0.070791
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: the stacked-result rule outranks the base .insrc-toolrow rule emitted after it
+ok 67 - ISSUE-1163888072faa9f2: the stacked-result rule outranks the base .insrc-toolrow rule emitted after it
+  ---
+  duration_ms: 0.046625
+  type: 'test'
+  ...
+# Subtest: ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, replay) so results never attach across turns
+ok 68 - ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, replay) so results never attach across turns
+  ---
+  duration_ms: 0.054834
+  type: 'test'
+  ...
+# Subtest: approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before
+ok 69 - approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before
+  ---
+  duration_ms: 0.08575
+  type: 'test'
+  ...
+# Subtest: registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards
+ok 70 - registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards
+  ---
+  duration_ms: 0.40275
+  type: 'test'
+  ...
+# Subtest: registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row
+ok 71 - registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row
+  ---
+  duration_ms: 0.099875
+  type: 'test'
+  ...
+# Subtest: render registry: a user row with attachments renders a chip per attachment with textContent only, a click calls the open sink with the attachment's id, and a row without attachments renders as today
+ok 72 - render registry: a user row with attachments renders a chip per attachment with textContent only, a click calls the open sink with the attachment's id, and a row without attachments renders as today
+  ---
+  duration_ms: 0.378667
+  type: 'test'
+  ...
+# Subtest: toViewModel: a diff row maps to the diff kind in the host and in the webview mirror
+ok 73 - toViewModel: a diff row maps to the diff kind in the host and in the webview mirror
+  ---
+  duration_ms: 0.060792
+  type: 'test'
+  ...
+# Subtest: diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used
+ok 74 - diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used
+  ---
+  duration_ms: 0.789375
+  type: 'test'
+  ...
+# Subtest: diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing
+ok 75 - diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing
+  ---
+  duration_ms: 1.689125
+  type: 'test'
+  ...
+1..75
+# tests 75
+# suites 0
+# pass 75
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 202.8355

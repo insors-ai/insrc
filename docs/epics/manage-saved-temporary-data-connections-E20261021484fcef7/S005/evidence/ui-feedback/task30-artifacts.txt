@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission
+not ok 1 - CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission
+  ---
+  duration_ms: 8.261833
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-release.test.ts:1:651'
+  failureType: 'testCodeFailure'
+  error: |-
+    vscode-plugin/src/connections/host.ts
+    + actual - expected
+    
+    + '64c2e9afefb6fccef9d64e664d734a542cfc77f7b0fd9d1c3794578a080e318d'
+    - '2aa0cc11fc9e10df0cc0b7ceb14c68e29909611b4ec1a95220a9e1890900459d'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '2aa0cc11fc9e10df0cc0b7ceb14c68e29909611b4ec1a95220a9e1890900459d'
+  actual: '64c2e9afefb6fccef9d64e664d734a542cfc77f7b0fd9d1c3794578a080e318d'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-release.test.ts:19:53)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits
+not ok 2 - CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits
+  ---
+  duration_ms: 0.94775
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-release.test.ts:1:2104'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /independent advertised-capability/. Input:
+    
+    'VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove still require their advertised features and daemon authorization. Live UI validation belongs to the user; this schematic is not execution evidence.'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove still require their advertised features and daemon authorization. Live UI validation belongs to the user; this schematic is not execution evidence.'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-release.test.ts:34:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 221.106792

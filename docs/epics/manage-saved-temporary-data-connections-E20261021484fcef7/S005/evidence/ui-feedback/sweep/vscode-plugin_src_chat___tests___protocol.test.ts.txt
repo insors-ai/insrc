@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)
+ok 1 - WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)
+  ---
+  duration_ms: 1.6875
+  type: 'test'
+  ...
+# Subtest: a { type: 'cancel-turn' } WebviewToHost message typechecks and carries no other field
+ok 2 - a { type: 'cancel-turn' } WebviewToHost message typechecks and carries no other field
+  ---
+  duration_ms: 0.701416
+  type: 'test'
+  ...
+# Subtest: every existing WebviewToHost message still constructs with its original shape (no drift, k2)
+ok 3 - every existing WebviewToHost message still constructs with its original shape (no drift, k2)
+  ---
+  duration_ms: 0.069334
+  type: 'test'
+  ...
+# Subtest: S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)
+ok 4 - S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)
+  ---
+  duration_ms: 0.126458
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (additive, exhaustiveness passes, k2)
+ok 5 - S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (additive, exhaustiveness passes, k2)
+  ---
+  duration_ms: 0.105292
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a selection-decision message typechecks with requestId + selected ids
+ok 6 - S004 (ux polish): a selection-decision message typechecks with requestId + selected ids
+  ---
+  duration_ms: 0.068292
+  type: 'test'
+  ...
+# Subtest: S004: permission-decision typechecks with optional accepted-but-inert scope; set-permission-mode carries a PermissionMode
+ok 7 - S004: permission-decision typechecks with optional accepted-but-inert scope; set-permission-mode carries a PermissionMode
+  ---
+  duration_ms: 0.200792
+  type: 'test'
+  ...
+# Subtest: WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind
+ok 8 - WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind
+  ---
+  duration_ms: 0.096875
+  type: 'test'
+  ...
+# Subtest: protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments
+ok 9 - protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments
+  ---
+  duration_ms: 0.431458
+  type: 'test'
+  ...
+# Subtest: protocol: transcript-row is a host message and edit-prompt is not
+ok 10 - protocol: transcript-row is a host message and edit-prompt is not
+  ---
+  duration_ms: 0.327416
+  type: 'test'
+  ...
+# Subtest: plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list
+ok 11 - plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list
+  ---
+  duration_ms: 0.191333
+  type: 'test'
+  ...
+# Subtest: protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions
+ok 12 - protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions
+  ---
+  duration_ms: 0.061625
+  type: 'test'
+  ...
+# Subtest: protocol allowlist includes open-link and open-code-ref
+ok 13 - protocol allowlist includes open-link and open-code-ref
+  ---
+  duration_ms: 0.0465
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 155.435709

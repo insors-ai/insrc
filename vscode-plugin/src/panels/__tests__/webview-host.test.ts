@@ -81,6 +81,7 @@ function makeHost(opts: {
   onRepoRegisterProviders?: WebviewPanelHostDeps['onRepoRegisterProviders'];
   modelTiersRenderer?: WebviewPanelHostDeps['modelTiersRenderer'];
   onModelTiersWrite?: WebviewPanelHostDeps['onModelTiersWrite'];
+  onOpenConnections?: WebviewPanelHostDeps['onOpenConnections'];
 } = {}): {
   host: ReturnType<typeof createWebviewPanelHost>;
   created: FakePanel[];
@@ -110,6 +111,7 @@ function makeHost(opts: {
     onRepoRegisterProviders: opts.onRepoRegisterProviders,
     modelTiersRenderer: opts.modelTiersRenderer,
     onModelTiersWrite: opts.onModelTiersWrite,
+    onOpenConnections: opts.onOpenConnections,
   };
   return { host: createWebviewPanelHost(deps), created, offered, warns };
 }
@@ -117,13 +119,13 @@ function makeHost(opts: {
 /** Flush pending microtasks/timers so the host's async render lands. */
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
-test('showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel', async () => {
+test("showStatusMenu offers EXACTLY four items, including Manage Connections, and routes each choice to the matching panel", async () => {
   // Detailed Status choice → opens the detailed panel.
   const detailed = makeHost({ pick: { label: 'Detailed Status', action: 'detailed' } });
   await detailed.host.showStatusMenu();
   await tick();
   assert.equal(detailed.offered.length, 1);
-  assert.deepEqual(detailed.offered[0]!.map((i) => i.label), ['Detailed Status', 'Repo Configuration', 'Model Tiers']);
+  assert.deepEqual(detailed.offered[0]!.map((i) => i.label), ['Detailed Status', 'Repo Configuration', 'Model Tiers', 'Manage Connections']);
   assert.equal(detailed.created.length, 1, 'the detailed panel was created');
   assert.equal(detailed.created[0]!.viewType, 'insrc.detailedStatus');
 
@@ -139,6 +141,32 @@ test('showStatusMenu offers EXACTLY three items, including Model Tiers, and rout
   await tick();
   assert.equal(tiers.created.length, 1);
   assert.equal(tiers.created[0]!.viewType, 'insrc.modelTiers');
+
+  // Manage Connections choice → invokes the injected onOpenConnections sink,
+  // not a panel created by THIS host (the Connections panel is externally owned).
+  let opened = 0;
+  const connections = makeHost({ pick: { label: 'Manage Connections', action: 'connections' }, onOpenConnections: () => { opened += 1; } });
+  await connections.host.showStatusMenu();
+  assert.equal(opened, 1, 'the connections sink was invoked exactly once');
+  assert.equal(connections.created.length, 0, 'no panel is created by this host for Connections');
+});
+
+test('openConnections(): unwired onOpenConnections logs a warning and opens nothing (no throw)', () => {
+  const { host, warns } = makeHost();
+  host.openConnections();
+  assert.equal(warns.length, 1, 'a warning is logged when onOpenConnections is not wired');
+  assert.match(warns[0]!, /onOpenConnections is not wired/);
+});
+
+test('openConnections(): a synchronous throw from a wired onOpenConnections fake is caught and logged, matching the onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite sink precedent', () => {
+  const { host, warns } = makeHost({
+    onOpenConnections: () => {
+      throw new Error('boom');
+    },
+  });
+  assert.doesNotThrow(() => host.openConnections(), 'a sink throw must not surface (never-throw)');
+  assert.equal(warns.length, 1, 'the throw is logged, not swallowed silently');
+  assert.match(warns[0]!, /opening Connections failed.*boom/);
 });
 
 test('Cancel path: a dismissed menu (undefined) opens no panel (ac1)', async () => {

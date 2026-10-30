@@ -485,6 +485,16 @@ export function activate(context: vscode.ExtensionContext): void {
       logger: panelLog,
       refresh: () => panelHost.openModelTiers(),
     }),
+    // Story S001 (E202610302ab0484d): the Manage Connections menu entry delegates
+    // to the already-complete connections panel (connectionManager.open(), the
+    // same method registerConnectionCommands binds the 5 insrc.connections.*
+    // commands to). .catch is defense-in-depth: open() is async and not proven
+    // never to reject (see the LLD's errorPaths).
+    onOpenConnections: () => {
+      connectionManager.open().catch((err: unknown) => {
+        panelLog.warn(`opening Connections failed — ${err instanceof Error ? err.message : String(err)}`);
+      });
+    },
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2
   // StatusBarHandle carries no `command` field and is left untouched).

@@ -39,7 +39,9 @@ export interface WebviewPanelHost {
   openRepoConfiguration(): void;
   /** Create-or-reveal the separate Model Tiers panel (Story S001). */
   openModelTiers(): void;
-  /** Show the status-bar 2-item menu and route the choice to the matching open method. */
+  /** Open the separate, already-complete Connections panel (Story S001, E202610302ab0484d). */
+  openConnections(): void;
+  /** Show the status-bar menu and route the choice to the matching open method. */
   showStatusMenu(): Promise<void>;
 }
 
@@ -224,7 +226,7 @@ export interface RepoProviderRegistration {
 export interface MenuItem {
   readonly label: string;
   /** Which host action this item maps to (kept out of the visible label). */
-  readonly action: 'detailed' | 'repoConfig' | 'modelTiers';
+  readonly action: 'detailed' | 'repoConfig' | 'modelTiers' | 'connections';
 }
 
 /**
@@ -307,6 +309,14 @@ export interface WebviewPanelHostDeps {
    * config.write — no per-repo consent, k6); the host performs no write itself.
    */
   readonly onModelTiersWrite?: ((write: ModelTiersWrite) => void) | undefined;
+  /**
+   * OPTIONAL sink for the Manage Connections menu entry (Story S001,
+   * E202610302ab0484d). The Connections panel is a separate, already-complete
+   * webview owned by extension.ts's own ConnectionsManagerHost — this host
+   * renders no body for it. A host built without it logs a warning instead of
+   * opening anything (no placeholder exists for an externally-owned panel).
+   */
+  readonly onOpenConnections?: (() => void) | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

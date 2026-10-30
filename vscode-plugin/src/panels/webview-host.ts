@@ -48,11 +48,12 @@ const MODEL_TIERS_VIEW_TYPE = 'insrc.modelTiers';
 /** The fixed tab order of the Detailed Status panel (daemon first — ac2 default). */
 const DETAIL_TABS: readonly DetailTab[] = ['daemon', 'workflows', 'debug'];
 
-/** The three menu choices, in order. */
+/** The four menu choices, in order. */
 const MENU_ITEMS: readonly MenuItem[] = [
   { label: 'Detailed Status', action: 'detailed' },
   { label: 'Repo Configuration', action: 'repoConfig' },
   { label: 'Model Tiers', action: 'modelTiers' },
+  { label: 'Manage Connections', action: 'connections' },
 ];
 
 /** The tier/core-floor value set a Model Tiers write message is validated against. */
@@ -524,6 +525,23 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       void renderModelTiersPanel(panel);
     },
 
+    openConnections(): void {
+      // The Connections panel is a separate, already-complete webview owned by
+      // extension.ts's own ConnectionsManagerHost — this host renders no body
+      // for it, so there is no placeholder fallback (unlike repoRenderer /
+      // modelTiersRenderer). A sink throw must not surface (never-throw),
+      // matching onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite.
+      if (deps.onOpenConnections === undefined) {
+        logger.warn('insrc: Manage Connections is unavailable — onOpenConnections is not wired');
+        return;
+      }
+      try {
+        deps.onOpenConnections();
+      } catch (err) {
+        logger.warn(`insrc: opening Connections failed — ${errText(err)}`);
+      }
+    },
+
     async showStatusMenu(): Promise<void> {
       let chosen: MenuItem | undefined;
       try {
@@ -536,7 +554,8 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       if (chosen === undefined) return; // dismissed (Esc) — no-op (ac1).
       if (chosen.action === 'detailed') this.openDetailedStatus();
       else if (chosen.action === 'repoConfig') this.openRepoConfiguration();
-      else this.openModelTiers();
+      else if (chosen.action === 'modelTiers') this.openModelTiers();
+      else this.openConnections();
     },
   };
 }

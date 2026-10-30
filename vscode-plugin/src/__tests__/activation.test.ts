@@ -44,7 +44,10 @@ test('runReachabilityProbe pushes the derived running/stopped/errored state into
   }
 });
 
-test('runReachabilityProbe degrades a hung probe to errored within the bounded deadline', async () => {
+test('runReachabilityProbe degrades a hung probe to errored within the bounded deadline', async (t) => {
+  // Production correctly unrefs its deadline. This test owns a ref while it
+  // waits, so a standalone test worker cannot exit before observing the result.
+  const keepAlive=setInterval(()=>{},1000);t.after(()=>clearInterval(keepAlive));
   const status = new FakeStatus();
   // A reachability() that never settles — the bounded timeout must win.
   const hung = clientReturning(() => new Promise<DaemonReachability>(() => {}));

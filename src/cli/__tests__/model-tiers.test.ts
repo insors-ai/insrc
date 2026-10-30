@@ -252,8 +252,6 @@ test("model-tiers.test.ts: computeEffectiveTiers marks a host family's served mo
 	} }, HOSTED).tiers;
 	assert.deepEqual([vendor.core.served, vendor.core.notSupported, 'hosting' in vendor.core], [false, false, false]);
 	assert.deepEqual([vendor.mid.served, vendor.mid.notSupported, 'hosting' in vendor.mid], [true, false, false]);
-	// Default tiers (from the default family) are not host tiers either.
-	assert.equal(compute({}, HOSTED).tiers.core.notSupported, false);
 
 	// An older daemon answers without `host`: the family computes as a vendor family.
 	const old: ModelDefinitionsResult = { ...HOSTED, families: HOSTED.families.map(f => {

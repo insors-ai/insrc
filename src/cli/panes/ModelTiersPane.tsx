@@ -189,7 +189,12 @@ export function ModelTiersPane(): ReactElement {
 				if (tier.notSupported) { ui.toast(`${tier.model} is not supported by ${family?.displayName ?? tier.runner}: pick a listed model with m`); return; }
 				if (!tier.served) { ui.toast(`${tier.model} is not a listed model: pick one with m, or check it with n`); return; }
 				const choices = effortChoices(defs, tier);
-				if (hosted && choices.length <= 1) { ui.toast('this model takes no effort setting'); return; }
+				if (hosted && choices.length <= 1) {
+					// A leftover effort (hand-edited) is cleared; otherwise there is nothing to set.
+					if ((tier.effort ?? '') !== '') saveTier(cur.tier, { ...tier, effort: '' });
+					else ui.toast('this model takes no effort setting');
+					return;
+				}
 				const next = nextInCycle(choices, tier.effort ?? '');
 				if (next !== undefined) saveTier(cur.tier, { ...tier, effort: next });
 				return;

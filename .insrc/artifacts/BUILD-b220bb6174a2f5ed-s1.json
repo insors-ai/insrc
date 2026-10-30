@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s1",
     "createdAt": "2026-10-29T19:58:32.650Z",
-    "updatedAt": "2026-10-30T04:07:05.302Z",
+    "updatedAt": "2026-10-30T04:10:44.122Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "The definitions answer gains host on an Ollama-hosted family and hosting on each of its models; rejectedModels is decided by 'vendor CLI family' (a CLI kind and no host), so the host family carries neither rejectedModels nor installed.",
+    "summary": "The ollama-claude shipped entry (landed with t1 in ef850d10d, because the loader requires every family) is now pinned by the asset, real-daemon and derived-defaults tests; a FamilyHost type keeps the 'ollama' literal inside the definitions owner so the literal scan stays green.",
     "testRecord": {
       "md": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S001/TESTS.md"
     },
@@ -38,366 +42,373 @@
           "file": ".insrc/artifacts/PLAN-b220bb6174a2f5ed-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "AGENTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "docs/daemon.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/cli-vibe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/agent/providers/bounded-input.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/provider-from-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/assets/models/cloud-model-catalog.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/tui.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/cli/panes/ReposPane.tsx"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/cli/services/debug-types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/cli/services/debug.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/settings-cache-reset.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/tier-resolution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/boot-model-catalog.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/claude-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/client-family.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/config-write-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/list-models.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/mcp-register.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-catalog.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-check.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-definitions.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/model-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/models-definitions-daemon.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/models-resolve-role.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/code-review-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/mcp-register.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/model-catalog.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/model-check.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/model-definitions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/model-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/workflow-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/mcp/daemon-stream.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/mcp/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/shared/review-stream.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/shared/step-context.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-b220bb6174a2f5ed-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/config/analyze.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/phases/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/daemon/config-write.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/attribution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:07:05.302Z"
+        "timestamp": "2026-10-30T04:10:44.122Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-defs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:10:44.122Z"
       }
     ],
-    "commit": "2b0806e86"
+    "commit": "474c1a85c"
   }
 }

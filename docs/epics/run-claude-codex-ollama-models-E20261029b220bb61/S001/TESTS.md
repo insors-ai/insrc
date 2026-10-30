@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -165,3 +165,43 @@ Run at 2026-10-30T04:07:05.302Z on commit `2b0806e86`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/model-definitions.test.ts` | 0 | 7 | 0.6 s |  |
+
+## t5
+
+Run at 2026-10-30T04:10:44.122Z on commit `474c1a85c`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts | `src/daemon/__tests__/model-catalog-asset.test.ts` |
+
+**integration: models-definitions-daemon.test.ts: models.definitions returns the host family with host and hosting**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | models-definitions-daemon.test.ts: models.definitions returns the host family with host and hosting | `src/daemon/__tests__/models-definitions-daemon.test.ts` |
+
+**unit: tier-defaults.test.ts and config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family | `src/config/__tests__/config-catalog-defs.test.ts` |
+| pass | src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS | `src/config/__tests__/tier-defaults.test.ts` |
+
+**integration: model-literal-scan.test.ts stays green**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story | `src/daemon/__tests__/model-literal-scan.test.ts` |
+| pass | model-literal-scan.test.ts: the scan covers src/cli and the recommender | `src/daemon/__tests__/model-literal-scan.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/config/__tests__/config-catalog-defs.test.ts` | 0 | 3 | 1.7 s |  |
+| `src/config/__tests__/tier-defaults.test.ts` | 0 | 5 | 0.6 s |  |
+| `src/daemon/__tests__/model-catalog-asset.test.ts` | 0 | 4 | 0.7 s |  |
+| `src/daemon/__tests__/model-literal-scan.test.ts` | 0 | 2 | 2.1 s |  |
+| `src/daemon/__tests__/models-definitions-daemon.test.ts` | 0 | 2 | 5.9 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s1",
     "createdAt": "2026-10-29T19:58:32.650Z",
-    "updatedAt": "2026-10-30T04:07:05.302Z",
+    "updatedAt": "2026-10-30T04:10:44.122Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -704,6 +704,187 @@
               },
               {
                 "title": "model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "474c1a85c",
+        "ranAt": "2026-10-30T04:10:44.122Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "title": "model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "models-definitions-daemon.test.ts: models.definitions returns the host family with host and hosting",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/models-definitions-daemon.test.ts",
+                "title": "models-definitions-daemon.test.ts: models.definitions returns the host family with host and hosting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tier-defaults.test.ts and config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/config-catalog-defs.test.ts",
+                "title": "config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/tier-defaults.test.ts",
+                "title": "src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-literal-scan.test.ts stays green",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan covers src/cli and the recommender",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/config-catalog-defs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1679,
+            "titles": [
+              {
+                "title": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+                "result": "pass"
+              },
+              {
+                "title": "config-catalog-defs.test.ts: model-defaults and config-catalog import no logger, registry or file-I/O module and derive without throwing from a fixture missing fields",
+                "result": "pass"
+              },
+              {
+                "title": "config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/tier-defaults.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 589,
+            "titles": [
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the summariser follows the cheap tier and pins its model for a CLI, so the built-in default runs the Claude CLI on haiku",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the installer takes the claude and codex tier defaults from the model definitions file (installer-defs.test.ts runs it)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the plugin's copy of the installer is identical to the script",
+                "result": "pass"
+              },
+              {
+                "title": "a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 669,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2120,
+            "titles": [
+              {
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              },
+              {
+                "title": "model-literal-scan.test.ts: the scan covers src/cli and the recommender",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/models-definitions-daemon.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5932,
+            "titles": [
+              {
+                "title": "models-definitions-daemon.test.ts: a real daemon answers models.definitions with the shipped families and providers.listModels('cli-claude') agrees with it",
+                "result": "pass"
+              },
+              {
+                "title": "models-definitions-daemon.test.ts: models.definitions returns the host family with host and hosting",
                 "result": "pass"
               }
             ],

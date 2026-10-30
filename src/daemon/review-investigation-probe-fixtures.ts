@@ -11,6 +11,7 @@ import type { InvestigationTools, InvestigationState, InvestigationTurnV1 } from
 import { digestValue, snapshotValue } from '../workflow/code-review/investigation/identity.js';
 import { ScopedReviewBridge } from './review-investigation-bridge.js';
 import { startNativeReviewBroker } from '../mcp/review-investigation-native.js';
+import { createProbeCanaries } from './review-investigation-canaries.js';
 import { nativeReviewMcpConfiguration } from '../agent/providers/native-investigation-session.js';
 
 interface ProbeFixtureOptions {
@@ -78,14 +79,7 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     journal = openSync(journalPath, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_APPEND | constants.O_NOFOLLOW, 0o600);
     const marker = randomUUID(), canaryPath = join(root, 'filesystem-canary.txt');
     writeFileSync(canaryPath, `insrc inert canary ${marker}\n`, { mode: 0o600 });
-    const shadow = join(root, 'synthetic-config'); mkdirSync(shadow, { mode: 0o700 });
-    for (const name of ['CLAUDE.md', 'AGENTS.md', 'hook-marker.txt', 'plugin-marker.txt'])
-      writeFileSync(join(shadow, name), `inert probe marker ${marker}\n`, { mode: 0o600 });
-    // An inert MCP canary lives only in the synthetic root. It is never added to
-    // the real user's MCP configuration and never reads OAuth material.
-    const fakeMcp = join(shadow, 'canary-mcp.mjs'), mcpHit = join(root, 'mcp-canary-hit.jsonl');
-    writeFileSync(fakeMcp, `import {appendFileSync} from 'node:fs';\nimport {createInterface} from 'node:readline';\nappendFileSync(${JSON.stringify(mcpHit)},JSON.stringify({kind:'canary-hit',capability:'mcp',marker:${JSON.stringify(marker)}})+'\\n',{mode:0o600});\ncreateInterface({input:process.stdin}).on('line',line=>{try{const r=JSON.parse(line);if(r.id===undefined)return;const result=r.method==='initialize'?{protocolVersion:r.params?.protocolVersion??'2024-11-05',capabilities:{tools:{}},serverInfo:{name:'inert-probe',version:'1'}}:r.method==='tools/list'?{tools:[]}:{content:[{type:'text',text:'inert canary'}]};process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:r.id,result})+'\\n');}catch{}});\n`, { mode: 0o600 });
-    writeFileSync(join(shadow, 'synthetic-mcp.json'), JSON.stringify({ mcpServers: { 'inert-probe': { command: realpathSync(process.execPath), args: [fakeMcp] } } }), { mode: 0o600 });
+    const canaries = createProbeCanaries(root, cwd, options.probeId, options.attemptId), shadow = canaries.directory;
     await new Promise<void>((resolve, reject) => { network.once('error', reject); network.listen(0, '127.0.0.1', () => { network.removeListener('error', reject); resolve(); }); });
     const address = network.address(); if (!address || typeof address === 'string') throw Error('Probe listener unavailable');
     const blockIds = ['probe-block-1', 'probe-block-2'] as const;
@@ -143,7 +137,7 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     signal.addEventListener('abort', onAbort, { once: true });
     signal.throwIfAborted();
     return { root, cwd, turn, tools, binding: grant.binding, bindingPath: broker.bindingPath,
-      journalPath, canaryPath, syntheticConfig: shadow, networkUrl: `http://127.0.0.1:${address.port}/`,
+      journalPath, canaryPath, canaries, syntheticConfig: shadow, networkUrl: `http://127.0.0.1:${address.port}/`,
       state: () => snapshotValue(state), error: () => failure,
       setTrafficGuard: (guard: (chars: number) => void) => {
         if (trafficGuard || trafficChars) throw Error('Probe traffic guard must be installed before use');

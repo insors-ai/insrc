@@ -130,7 +130,7 @@ test('CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays op
   assert.match(fields.textContent,/Label \(optional\)/);assert.match(dom.el('save-guidance').textContent,/Connection ID/);assert.match(dom.el('test-guidance').textContent,/source file/);
   dom.click('save');dom.click('test');assert.equal(f.calls.filter(c=>c==='ticket'||c==='mutate').length,0);
   const browse=()=>dom.all(fields).find(e=>e.getAttribute('data-file-picker')==='true')!;
-  assert.equal(browse().textContent,'Browse…');browse().fire('click');assert.equal(browse().disabled,true);
+  assert.equal(browse().textContent,'');assert.equal(browse().getAttribute('aria-label'),'Select source file');assert.equal(browse().getAttribute('title'),'Select source file');assert.equal(browse().children[0]?.tag,'svg');browse().fire('click');assert.equal(browse().disabled,true);
   resolve('/fixture/orders.parquet');await until(()=>panel.view.draft?.publicValues['path']==='/fixture/orders.parquet');
   assert.equal(dom.el('save').disabled,true);assert.match(dom.el('save-guidance').textContent,/Connection ID/);
   dom.input('id','orders');input(dom,['label'],'');assert.equal(panel.view.valid,true);assert.equal(dom.el('save').disabled,false);assert.equal(dom.el('test').disabled,false);assert.equal(dom.el('save-guidance').textContent,'');
@@ -142,5 +142,25 @@ test('CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays op
   browse().fire('click');panel.visibility(false);resolve('/fixture/hidden.parquet');await new Promise(r=>setTimeout(r,10));panel.visibility(true);assert.equal(panel.view.draft?.publicValues['path'],'/fixture/typed.parquet');
   dom.click('save');await until(()=>panel.view.list.counts.saved===1&&panel.view.draft===null);
   assert.equal(f.calls.filter(c=>c==='mutate').length,1);assert.equal(f.legacyWrites(),0);assert.equal(panel.view.rows[0]?.label,'orders');
+ }finally{host.dispose();probes.dispose();removals.dispose();await f.close();}
+});
+
+test('CM-S5-RENDER-TS: schema-source Path uses a functional icon picker and initializes its fixed format',async()=>{
+ const f=await managementFixture(),probes=createConnectionsDraftTests(f.owner),removals=new ConnectionRemovals(f.controller),panel=new FakeConnectionPanel();
+ let resolve!:(path:string|undefined)=>void,calls=0;
+ const host=new ConnectionsManagerHost({owner:f.owner,mutations:f.controller,tests:probes,removals,registeredRoots:async()=>[f.f.root],createPanel:()=>panel,pickFile:()=>{calls++;return new Promise(r=>{resolve=r;});}});
+ try{
+  await host.open();const dom=panel.dom!;dom.choose('root',f.f.root);await until(()=>panel.view.list.listState==='empty-registry');dom.click('add');dom.choose('kind','postgres');dom.input('id','schema-picker');input(dom,['endpoint'],'postgresql://fixture.invalid/database');
+  const field=()=>dom.all(dom.el('fields')).find(e=>e.getAttribute('data-field')==='["schemaSource","path"]')!;
+  const browse=()=>field().parent!.children.find(e=>e.getAttribute('data-file-picker')==='true')!;
+  assert.equal(browse().textContent,'');assert.equal(browse().getAttribute('aria-label'),'Select schema file');assert.equal(browse().getAttribute('title'),'Select schema file');assert.equal(browse().children[0]?.tag,'svg');
+  assert.ok(!field().parent!.children.some(e=>e.tag==='button'&&e.textContent==='Use default'));
+  browse().fire('click');resolve(undefined);await until(()=>panel.view.canBrowseFile);assert.equal(panel.view.draft?.publicValues['schemaSource'],undefined);
+  browse().fire('click');resolve('/fixture/schema.prisma');await until(()=>!!panel.view.draft?.publicValues['schemaSource']);
+  assert.deepEqual(panel.view.draft?.publicValues['schemaSource'],{type:'prisma',path:'/fixture/schema.prisma'});assert.equal(panel.view.draft?.publicValues['path'],undefined);assert.equal(field().value,'/fixture/schema.prisma');assert.equal(panel.view.valid,true);
+  input(dom,['schemaSource','path'],'');assert.equal(panel.view.draft?.publicValues['schemaSource'],undefined);
+  input(dom,['schemaSource','path'],'/fixture/manual.prisma');assert.deepEqual(panel.view.draft?.publicValues['schemaSource'],{type:'prisma',path:'/fixture/manual.prisma'});assert.equal(panel.view.valid,true);
+  const v=panel.view;for(const path of [['endpoint'],['credentials','path'],['schemaSource','type']])panel.emit({v:1,viewId:v.viewId,generation:v.generation,type:'browse-file',path});
+  assert.equal(calls,2);assert.equal(f.calls.filter(c=>c==='ticket'||c==='mutate').length,0);
  }finally{host.dispose();probes.dispose();removals.dispose();await f.close();}
 });

@@ -128,6 +128,20 @@ export class ConnectionsManagerHost {
    this.#panel.postMessage({type:'render',view});
   }finally{this.#publishing=false;}
  }
+ #setField(draft:ConnectionDraft,path:readonly string[],value:unknown):void{
+  // The fixed schema-source format is hidden in the form; populate it with its path.
+  if(path.length===2&&path[0]==='schemaSource'&&path[1]==='path'){
+   const properties=draft.view.publicInputSchema['properties'] as Record<string,Record<string,unknown>>;
+   const nested=properties['schemaSource']?.['properties'] as Record<string,Record<string,unknown>>|undefined;
+   const type=nested?.['type']?.['const'];
+   if(typeof type==='string'){
+    if(value===''){draft.resetField(['schemaSource']);return;}
+    const current=draft.view.publicValues['schemaSource'] as Record<string,unknown>|undefined;
+    draft.setField(['schemaSource'],{...current,type,path:value});return;
+   }
+  }
+  draft.setField(path,value);
+ }
  #validationMessages(draft:ConnectionDraft):string[]{
   const view=draft.view,messages:string[]=[];
   if(!view.key.id.trim())messages.push('Enter a Connection ID. Label is optional.');
@@ -183,14 +197,15 @@ export class ConnectionsManagerHost {
      this.#navigate({type:'kind',value:first.kind},()=>this.#newDraft(first.kind,this.#model.filter==='temporary'?'temporary':'saved'));break;
     }
     case 'browse-file':{
-     const draft=this.#editable(),view=draft.view,properties=view.publicInputSchema['properties'] as Record<string,unknown>;
-     if(!this.#ports.pickFile||this.#picking||view.family!=='file'||!Object.hasOwn(properties,'path'))break;
+     const draft=this.#editable(),view=draft.view;let schema=view.publicInputSchema as Record<string,unknown>;
+     for(const part of intent.path)schema=((schema?.['properties']??{}) as Record<string,Record<string,unknown>>)[part]??{};
+     if(!this.#ports.pickFile||this.#picking||schema['type']!=='string')break;
      const panel=this.#panel,generation=this.#generation,epoch=this.#model.daemonEpoch,revision=view.draftRevision;
      this.#picking=true;this.#publish();
      try{
       const path=await this.#ports.pickFile();
       if(path===undefined||this.#disposed||!this.#visible||this.#panel!==panel||this.#generation!==generation||this.#model.daemonEpoch!==epoch||this.#draft!==draft||draft.view.draftRevision!==revision||this.#pending)break;
-      if(this.#editable()!==draft)break;draft.setField(['path'],path);
+      if(this.#editable()!==draft)break;this.#setField(draft,intent.path,path);
      }finally{this.#picking=false;}
      break;
     }
@@ -199,7 +214,7 @@ export class ConnectionsManagerHost {
      const {kind,key}=draft.view;this.#navigate(intent.type==='scope'?{type:'scope',value:intent.value}:{type:'kind',value:intent.value},()=>this.#newDraft(intent.type==='kind'?intent.value:kind,intent.type==='scope'?intent.value:key.scope,key.id));break;
     }
     case 'id':this.#editable().setId(intent.value);this.#bindTest();break;
-    case 'field':this.#editable().setField(intent.path,intent.value);break;
+    case 'field':this.#setField(this.#editable(),intent.path,intent.value);break;
     case 'reset-field':this.#editable().resetField(intent.path);break;
     case 'credential':{
      const draft=this.#editable();try{draft.setCredential(intent.slot,intent.action,intent.value);}catch(error){if(intent.action==='replace'&&draft.view.credentials.some(c=>c.slot===intent.slot))try{draft.setCredential(intent.slot,'replace','');}catch{/* Read-only forms remain unchanged. */}throw error;}break;

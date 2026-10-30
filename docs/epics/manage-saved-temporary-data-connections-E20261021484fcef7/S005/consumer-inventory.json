@@ -26,10 +26,10 @@
     "src/shared/connection-manager/wire.ts": "5ce1aee76bab3ea7be696b4ec8a0454217c42243d5a9df6d7edaee1500215820",
     "src/shared/ipc-client.ts": "a06f7a2ca4ec1604c515f08b0eff028c5d32fb79bdffdf6bd4f315e0a25e9617",
     "vscode-plugin/src/connections/gateway.ts": "df8de3e005eb0f48c71abfaeab02e7986a9cfe17becc44889aebaf81bb660042",
-    "vscode-plugin/src/connections/host.ts": "33202622088adf98b9fb8bee13cac23bb1851dc18e3ee4358be0499c7fb5256e",
-    "vscode-plugin/src/connections/renderer.ts": "ad388b39d26550c5f53d3047a4e2df79c638781ee79a78916067c1e8a95a696b",
+    "vscode-plugin/src/connections/host.ts": "9af165cac5d6e205d5d487079f3f433066d1cbac30a40750c46f4ded6c435c38",
+    "vscode-plugin/src/connections/renderer.ts": "e87c6ee1a110ac04bc5800b307b30f907bcd050168620e5870f4b4b803f18b6f",
     "vscode-plugin/src/connections/session-owner.ts": "1b46559ccc3a9bd99ae661072de5f7f932395f7922ae75dd81744294ec3aafde",
-    "vscode-plugin/src/connections/types.ts": "744abe5ad564f94be55d4bc18f7dda95c2507cfc73cef65315d4bc22a466f8e2",
+    "vscode-plugin/src/connections/types.ts": "103433775701ba95792340567fe8a24223c80ef55b9de08132a6ef33a63e886b",
     "vscode-plugin/src/connections/wiring.ts": "e43a2a9537568838c1f81a14d1f25ac5c883d8ad5a793f77513261a84fc5f455",
     "vscode-plugin/src/extension.ts": "f32f1aa08161bc9b41618dc853e33fb9a45304466968c91f86a57740f290e4e7",
     "vscode-plugin/media/connections-icon.svg": "906740fece600ce9bb10456432eb63d4ccb8eabef4bdecaa5fe497c0e8d4d586",
@@ -63,6 +63,5 @@
   },
   "runtimePolicy": "Enabled by default by explicit user instruction 2026-10-30; pending audit evidence is not runtime authorization.",
   "runtimeEnabled": true,
-  "releaseAuditStatus": "pending; independent of runtime availability by explicit user decision",
-  "sourceCommit": "19e6110fd"
+  "releaseAuditStatus": "pending; independent of runtime availability by explicit user decision"
 }

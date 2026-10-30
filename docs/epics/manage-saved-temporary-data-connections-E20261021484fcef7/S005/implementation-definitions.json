@@ -2,7 +2,7 @@
   "uxDefinition": {
     "type": "AdaptiveCard",
     "version": "1.5",
-    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence. File sources put File path first, explain optional Label, and use a native Browse dialog. Separate persistent Save/Test messages distinguish missing inputs from disabled daemon capabilities; delayed picker results cannot replace an edited or hidden draft. User policy correction: the daemon enables connection management by default; pending release-audit evidence no longer controls runtime capabilities. Real authorization, registry recovery, signed revisions/tickets and session ownership still apply. Existing unavailable-state examples remain compatibility/recovery alternatives.",
+    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence. File sources put File path first, explain optional Label, and use a native Browse dialog. Separate persistent Save/Test messages distinguish missing inputs from disabled daemon capabilities; delayed picker results cannot replace an edited or hidden draft. User policy correction: the daemon enables connection management by default; pending release-audit evidence no longer controls runtime capabilities. Real authorization, registry recovery, signed revisions/tickets and session ownership still apply. Existing unavailable-state examples remain compatibility/recovery alternatives. File selection now uses an accessible icon-only file-open button for both primary data paths and database Schema Source paths; path reset buttons are not used as file selectors. The native selection targets the exact allowlisted field, and a schema-source selection populates its fixed format before validation.",
     "body": [
       {
         "type": "TextBlock",
@@ -86,8 +86,8 @@
             "actions": [
               {
                 "type": "Action.Submit",
-                "title": "Browse\u2026",
-                "description": "Choose a source file; only its path is sent to the current local draft."
+                "title": "Open file (icon)",
+                "description": "Icon-only file-open control with tooltip and accessible name. Root data path and nested database schema path target distinct checked fields."
               }
             ]
           },
@@ -151,6 +151,12 @@
             "type": "TextBlock",
             "text": "Save unavailable: Enter a Connection ID.\nTest unavailable: The connected daemon has not enabled connection creation or testing.",
             "description": "Alternative disabled action explanations, not simultaneous successful state; optional Label is never required.",
+            "wrap": true
+          },
+          {
+            "type": "TextBlock",
+            "text": "Database form alternative: Schema Source \u2192 Schema file path has a file-open icon, with Select schema file tooltip. This schema file describes the database; it is separate from a Parquet data source.",
+            "description": "Schematic alternative state; both forms are not displayed simultaneously in the implementation.",
             "wrap": true
           }
         ]

@@ -11,11 +11,12 @@ import { parseConnectionKey } from '../../../src/shared/connection-management-wi
 
 type Header={readonly v:1;readonly viewId:string;readonly generation:number};
 export type ConnectionIntent=Header&(
- | {readonly type:'ready'|'refresh'|'add'|'save'|'test'|'cancel-test'|'remove'|'close'|'clear-filter'|'browse-file'}
+ | {readonly type:'ready'|'refresh'|'add'|'save'|'test'|'cancel-test'|'remove'|'close'|'clear-filter'}
  | {readonly type:'root'|'search'|'id'|'kind';readonly value:string}
  | {readonly type:'filter';readonly value:ScopeFilter}
  | {readonly type:'scope';readonly value:ConnectionScope}
  | {readonly type:'select';readonly key:ConnectionKey;readonly revision:string}
+ | {readonly type:'browse-file';readonly path:readonly string[]}
  | {readonly type:'field';readonly path:readonly string[];readonly value:unknown}
  | {readonly type:'reset-field';readonly path:readonly string[]}
  | {readonly type:'credential';readonly slot:string;readonly action:'keep'|'replace'|'clear';readonly value?:string|undefined}
@@ -36,7 +37,7 @@ export interface ConnectionRenderView {
  readonly test:DraftTestView;readonly operations:readonly MutationView[];
  readonly confirmation:RemovalConfirmation|null;readonly dirty:boolean;readonly error:string;readonly notice:string;
 }
-const simple=new Set(['ready','refresh','add','save','test','cancel-test','remove','close','clear-filter','browse-file']);
+const simple=new Set(['ready','refresh','add','save','test','cancel-test','remove','close','clear-filter']);
 const text=(v:unknown):v is string=>typeof v==='string'&&v.length<=16384&&!/[\u0000-\u001f]/.test(v);
 /** Safe data-descriptor copy rejects getters/prototypes/cycles/private references before field access. */
 export function parseConnectionIntent(value:unknown):ConnectionIntent|null {
@@ -48,7 +49,9 @@ export function parseConnectionIntent(value:unknown):ConnectionIntent|null {
   else if(['root','search','id','kind'].includes(type)){if(!text(o['value']))return null;fields=['value'];}
   else if(type==='filter'||type==='scope'){if(!(type==='filter'?['all','saved','temporary']:['saved','temporary']).includes(o['value'] as string))return null;fields=['value'];}
   else if(type==='select'){parseConnectionKey(o['key']);if(!text(o['revision'])||!o['revision'])return null;fields=['key','revision'];}
-  else if(type==='field'||type==='reset-field'){
+  else if(type==='browse-file'){
+   if(!Array.isArray(o['path'])||!['[\"path\"]','[\"schemaSource\",\"path\"]'].includes(JSON.stringify(o['path'])))return null;fields=['path'];
+  }else if(type==='field'||type==='reset-field'){
    if(!Array.isArray(o['path'])||!o['path'].length||o['path'].length>32||o['path'].some(v=>!text(v)||!v||['__proto__','prototype','constructor'].includes(v)))return null;
    fields=type==='field'?['path','value']:['path'];
   }else if(type==='credential'){

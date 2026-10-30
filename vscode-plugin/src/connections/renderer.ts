@@ -54,7 +54,7 @@ function buildFields(schema,path,parent,required){
   const add=button('Add '+name.toLowerCase()+' item',()=>send({type:'field',path:path,value:array.concat([sample(schema.items)])}));add.setAttribute('data-limit',String(array.length>=(schema.maxItems||16384)));add.disabled=!!model.blocked||!!model.draft.readOnly||array.length>=(schema.maxItems||16384);group.appendChild(add);
   if(!path.some(p=>/^\d+$/.test(p)))group.appendChild(button(model.draft.mode==='update'?'Keep original':'Use default',()=>send({type:'reset-field',path:path})));return;
  }
- const filePath=path.length===1&&part==='path'&&model.draft.family==='file';
+ const filePath=schema.type==='string'&&part==='path'&&(path.length===1||path.length===2&&path[0]==='schemaSource'),schemaFile=path.length===2&&path[0]==='schemaSource';
  const row=make('div');row.className=filePath?'field file-path':'field';let input;
  if(schema.enum||schema.type==='boolean'){
   input=make('select');const choices=[{value:'',label:model.draft.mode==='update'?'Keep original':'Use default'}].concat((schema.enum||[true,false]).map(v=>({value:String(v),label:String(v)})));
@@ -66,13 +66,16 @@ function buildFields(schema,path,parent,required){
   input.addEventListener('input',()=>{if(!input.isConnected)return;let value=input.value;if(input.type==='number'){if(value===''){send({type:'reset-field',path:path});return;}value=Number(value);if(!Number.isFinite(value))return;}send({type:'field',path:path,value:value});});
  }
  input.setAttribute('data-field',JSON.stringify(path));input.setAttribute('aria-required',required?'true':'false');
- label(row,filePath?'File path *':part==='label'&&path.length===1?'Label (optional)':name+(required?' *':''),input);
+ label(row,filePath?(schemaFile?'Schema file path':'File path')+(required||model.draft.family==='file'?' *':''):part==='label'&&path.length===1?'Label (optional)':name+(required?' *':''),input);
  if(filePath){
-  input.setAttribute('aria-required','true');input.placeholder='/path/to/source.'+model.draft.kind;
-  const browse=button('Browse…',()=>send({type:'browse-file'}));browse.setAttribute('data-file-picker','true');browse.title='Select a source file';row.appendChild(browse);
-  const help=make('small','Select the source file to read, or enter its path. This is the file location; Label is an optional name shown in the list.');help.id='file-path-help';row.appendChild(help);input.setAttribute('aria-describedby',help.id);
+  input.setAttribute('aria-required',required||model.draft.family==='file'?'true':'false');input.placeholder=schemaFile?'schema.prisma':'/path/to/source.'+model.draft.kind;
+  const title=schemaFile?'Select schema file':'Select source file';
+  const browse=button('',()=>send({type:'browse-file',path:path}));browse.className='icon-button';browse.setAttribute('data-file-picker','true');browse.setAttribute('aria-label',title);browse.setAttribute('title',title);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
+  const icon=document.createElementNS('http://www.w3.org/2000/svg','path');icon.setAttribute('d','M3 7V4h6l2 3h9v3M3 7h6l2 3h11l-4 10H3z');svg.appendChild(icon);browse.appendChild(svg);row.appendChild(browse);
+  const help=make('small',schemaFile?'Select the schema file used to describe this database. The file must be inside the selected repository.':'Select the source file to read, or enter its path inside the selected repository. Label is an optional list name.');help.id=schemaFile?'schema-file-help':'file-path-help';row.appendChild(help);input.setAttribute('aria-describedby',help.id);
  }else if(part==='label'&&path.length===1)row.appendChild(make('small','Optional friendly name in the connections list. Leave blank to use the Connection ID.'));
- if(!path.some(p=>/^\d+$/.test(p)))row.appendChild(button(model.draft.mode==='update'?'Keep original':'Use default',()=>send({type:'reset-field',path:path})));
+ if(!filePath&&!path.some(p=>/^\d+$/.test(p)))row.appendChild(button(model.draft.mode==='update'?'Keep original':'Use default',()=>send({type:'reset-field',path:path})));
  if(schema.description)row.appendChild(make('small',schema.description));parent.appendChild(row);fieldInputs.set(JSON.stringify(path),{input:input,schema:schema,path:path});
 }
 function buildSecrets(){

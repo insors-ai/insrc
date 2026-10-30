@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: markerFor maps every sc2 status phase to the right class + label
+ok 1 - markerFor maps every sc2 status phase to the right class + label
+  ---
+  duration_ms: 1.399167
+  type: 'test'
+  ...
+# Subtest: markerFor(tool-call): bare ev.tool with no mcp, `${server} · ${name}` with mcp (ac2)
+ok 2 - markerFor(tool-call): bare ev.tool with no mcp, `${server} · ${name}` with mcp (ac2)
+  ---
+  duration_ms: 0.138459
+  type: 'test'
+  ...
+# Subtest: markerFor: file-edit/done(ok true+false)/error map to the right class + label
+ok 3 - markerFor: file-edit/done(ok true+false)/error map to the right class + label
+  ---
+  duration_ms: 0.111208
+  type: 'test'
+  ...
+# Subtest: markerFor(assistant-delta) -> null; an unknown/forward kind -> null (no throw)
+ok 4 - markerFor(assistant-delta) -> null; an unknown/forward kind -> null (no throw)
+  ---
+  duration_ms: 0.147584
+  type: 'test'
+  ...
+# Subtest: S004: markerFor(approval-request) -> null (live-only card, never a durable marker, k4)
+ok 5 - S004: markerFor(approval-request) -> null (live-only card, never a durable marker, k4)
+  ---
+  duration_ms: 0.229875
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): markerFor(tool-result) -> null (persisted structurally, not a flat marker, k2)
+ok 6 - S001 (ux polish): markerFor(tool-result) -> null (persisted structurally, not a flat marker, k2)
+  ---
+  duration_ms: 0.076541
+  type: 'test'
+  ...
+# Subtest: S003 (ux polish): markerFor(permission-outcome) -> null (persisted structurally, not a flat marker, k2)
+ok 7 - S003 (ux polish): markerFor(permission-outcome) -> null (persisted structurally, not a flat marker, k2)
+  ---
+  duration_ms: 0.14775
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): markerFor(selection-request) + markerFor(selection-outcome) -> null (persisted structurally / live-only, k4)
+ok 8 - S004 (ux polish): markerFor(selection-request) + markerFor(selection-outcome) -> null (persisted structurally / live-only, k4)
+  ---
+  duration_ms: 0.071167
+  type: 'test'
+  ...
+# Subtest: every markerFor cssClass is one of the five sc1 insrc-term__marker--* stems
+ok 9 - every markerFor cssClass is one of the five sc1 insrc-term__marker--* stems
+  ---
+  duration_ms: 0.279583
+  type: 'test'
+  ...
+# Subtest: parity: eval(markerWebviewSource()) computes {cssClass,label} deepEqual to markerFor for every sample (drift fails build)
+ok 10 - parity: eval(markerWebviewSource()) computes {cssClass,label} deepEqual to markerFor for every sample (drift fails build)
+  ---
+  duration_ms: 0.4095
+  type: 'test'
+  ...
+# Subtest: markerWebviewSource() is CSP-safe: only the five marker classes, no import/remote/asWebviewUri/vscode
+ok 11 - markerWebviewSource() is CSP-safe: only the five marker classes, no import/remote/asWebviewUri/vscode
+  ---
+  duration_ms: 0.160291
+  type: 'test'
+  ...
+# Subtest: phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror
+ok 12 - phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror
+  ---
+  duration_ms: 0.07575
+  type: 'test'
+  ...
+# Subtest: the declared list is not written into the saved transcript
+ok 13 - the declared list is not written into the saved transcript
+  ---
+  duration_ms: 0.048
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 206.32875

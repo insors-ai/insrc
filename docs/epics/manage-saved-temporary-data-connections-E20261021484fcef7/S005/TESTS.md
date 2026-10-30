@@ -302,22 +302,22 @@ Run at 2026-10-29T18:07:35.864Z on commit `8f1861afd`. Tests check: **passed**. 
 
 ## t18
 
-Run at 2026-10-30T12:02:26.206Z on commit `63966e4ad`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T14:53:35.204Z on commit `edf10ffe1`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close | `vscode-plugin/src/connections/__tests__/host.test.ts` |
-| pass | CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input | `vscode-plugin/src/connections/__tests__/host.test.ts` |
 | pass | CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused | `vscode-plugin/src/connections/__tests__/compatibility.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/compatibility.test.ts` | 0 | 5 | 9.4 s |  |
-| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 5 | 7.2 s |  |
+| `vscode-plugin/src/connections/__tests__/compatibility.test.ts` | 0 | 5 | 11.4 s |  |
+| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 6 | 10.9 s |  |
 
 ## t19
 
@@ -337,7 +337,7 @@ Run at 2026-10-29T19:25:47.753Z on commit `f59019245`. Tests check: **passed**. 
 
 ## t20
 
-Run at 2026-10-30T12:05:19.268Z on commit `63966e4ad`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T14:57:55.805Z on commit `edf10ffe1`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots**
 
@@ -349,7 +349,7 @@ Run at 2026-10-30T12:05:19.268Z on commit `63966e4ad`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/entry.test.ts` | 0 | 1 | 2 s |  |
+| `vscode-plugin/src/connections/__tests__/entry.test.ts` | 0 | 1 | 2.3 s |  |
 
 ## t21
 

@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: extension.ts gates the chat command on insrc.chat.enabled (config read)
+ok 1 - extension.ts gates the chat command on insrc.chat.enabled (config read)
+  ---
+  duration_ms: 1.027916
+  type: 'test'
+  ...
+# Subtest: extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store
+ok 2 - extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store
+  ---
+  duration_ms: 1.383708
+  type: 'test'
+  ...
+# Subtest: the chat host + protocol + store modules are vscode-free
+ok 3 - the chat host + protocol + store modules are vscode-free
+  ---
+  duration_ms: 0.857625
+  type: 'test'
+  ...
+# Subtest: package.json contributes the chat command + the insrc.chat.enabled config (default on)
+ok 4 - package.json contributes the chat command + the insrc.chat.enabled config (default on)
+  ---
+  duration_ms: 0.330292
+  type: 'test'
+  ...
+# Subtest: S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)
+ok 5 - S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)
+  ---
+  duration_ms: 1.760084
+  type: 'test'
+  ...
+# Subtest: S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams
+ok 6 - S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams
+  ---
+  duration_ms: 0.472292
+  type: 'test'
+  ...
+# Subtest: chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment
+ok 7 - chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment
+  ---
+  duration_ms: 0.427375
+  type: 'test'
+  ...
+# Subtest: S006: the edit-governor module is vscode-free
+ok 8 - S006: the edit-governor module is vscode-free
+  ---
+  duration_ms: 0.314125
+  type: 'test'
+  ...
+# Subtest: group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)
+ok 9 - group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)
+  ---
+  duration_ms: 0.419792
+  type: 'test'
+  ...
+# Subtest: group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter
+ok 10 - group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter
+  ---
+  duration_ms: 0.964708
+  type: 'test'
+  ...
+# Subtest: group-lock: the module is vscode-free
+ok 11 - group-lock: the module is vscode-free
+  ---
+  duration_ms: 0.237709
+  type: 'test'
+  ...
+# Subtest: S007: package.json contributes the insrc.chat.docsReview command
+ok 12 - S007: package.json contributes the insrc.chat.docsReview command
+  ---
+  duration_ms: 0.391084
+  type: 'test'
+  ...
+# Subtest: S007: extension.ts wires the docs-review host inside the chat gate over the shared client
+ok 13 - S007: extension.ts wires the docs-review host inside the chat gate over the shared client
+  ---
+  duration_ms: 0.308667
+  type: 'test'
+  ...
+# Subtest: S007: the docs-review host + client modules are vscode-free
+ok 14 - S007: the docs-review host + client modules are vscode-free
+  ---
+  duration_ms: 0.456417
+  type: 'test'
+  ...
+# Subtest: editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container
+ok 15 - editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container
+  ---
+  duration_ms: 0.176334
+  type: 'test'
+  ...
+# Subtest: editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix
+ok 16 - editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix
+  ---
+  duration_ms: 0.231375
+  type: 'test'
+  ...
+# Subtest: editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact
+ok 17 - editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact
+  ---
+  duration_ms: 0.249459
+  type: 'test'
+  ...
+# Subtest: the extension passes a file-backed lock registry and the turnLockTimeoutMs setting
+ok 18 - the extension passes a file-backed lock registry and the turnLockTimeoutMs setting
+  ---
+  duration_ms: 0.178291
+  type: 'test'
+  ...
+# Subtest: package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)
+ok 19 - package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)
+  ---
+  duration_ms: 0.149416
+  type: 'test'
+  ...
+# Subtest: the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep
+ok 20 - the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep
+  ---
+  duration_ms: 0.192291
+  type: 'test'
+  ...
+# Subtest: extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids
+ok 21 - extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids
+  ---
+  duration_ms: 0.434042
+  type: 'test'
+  ...
+# Subtest: extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set
+ok 22 - extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set
+  ---
+  duration_ms: 2.668
+  type: 'test'
+  ...
+# Subtest: extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are
+ok 23 - extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are
+  ---
+  duration_ms: 0.419375
+  type: 'test'
+  ...
+# Subtest: extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready
+ok 24 - extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready
+  ---
+  duration_ms: 0.187708
+  type: 'test'
+  ...
+# Subtest: extension wiring: a restored chat tab gets the chat's current title, since VS Code keeps the title a tab was saved with
+ok 25 - extension wiring: a restored chat tab gets the chat's current title, since VS Code keeps the title a tab was saved with
+  ---
+  duration_ms: 1.316125
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 236.060291

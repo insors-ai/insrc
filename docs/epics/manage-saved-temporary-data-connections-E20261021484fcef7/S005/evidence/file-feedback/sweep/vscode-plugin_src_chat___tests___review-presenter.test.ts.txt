@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing
+ok 1 - a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing
+  ---
+  duration_ms: 47.892333
+  type: 'test'
+  ...
+# Subtest: the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist
+ok 2 - the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist
+  ---
+  duration_ms: 1.200125
+  type: 'test'
+  ...
+# Subtest: a name that matches more than one pending document opens nothing and is reported, and a full repo-relative path or an id opens one
+ok 3 - a name that matches more than one pending document opens nothing and is reported, and a full repo-relative path or an id opens one
+  ---
+  duration_ms: 0.209333
+  type: 'test'
+  ...
+# Subtest: docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before
+ok 4 - docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before
+  ---
+  duration_ms: 81.082875
+  type: 'test'
+  ...
+# Subtest: a declared artifact id and a declared path each open the matching pending document once, in order
+ok 5 - a declared artifact id and a declared path each open the matching pending document once, in order
+  ---
+  duration_ms: 0.258666
+  type: 'test'
+  ...
+# Subtest: a declared name that is not pending opens nothing and is reported by name
+ok 6 - a declared name that is not pending opens nothing and is reported by name
+  ---
+  duration_ms: 0.2015
+  type: 'test'
+  ...
+# Subtest: the same document declared twice in a turn opens once
+ok 7 - the same document declared twice in a turn opens once
+  ---
+  duration_ms: 0.17775
+  type: 'test'
+  ...
+# Subtest: an unreadable pending list and a failing open are logged and never thrown
+ok 8 - an unreadable pending list and a failing open are logged and never thrown
+  ---
+  duration_ms: 34.421791
+  type: 'test'
+  ...
+# Subtest: declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable
+ok 9 - declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable
+  ---
+  duration_ms: 0.552833
+  type: 'test'
+  ...
+# Subtest: a declared artifact id matches the pending list's id without regard to the case of its story part
+ok 10 - a declared artifact id matches the pending list's id without regard to the case of its story part
+  ---
+  duration_ms: 0.340875
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 379.742833

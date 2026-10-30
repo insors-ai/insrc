@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: governor: check passes the reconciled operations to showSections and calls nothing when nothing changed
+ok 1 - governor: check passes the reconciled operations to showSections and calls nothing when nothing changed
+  ---
+  duration_ms: 3.020583
+  type: 'test'
+  ...
+# Subtest: governor: checks run one at a time, a call made during a check causes exactly one more, and its promise resolves after that one
+ok 2 - governor: checks run one at a time, a call made during a check causes exactly one more, and its promise resolves after that one
+  ---
+  duration_ms: 8.820458
+  type: 'test'
+  ...
+# Subtest: governor: an unreadable check calls sectionsUnreadable once per turn and a later check still shows sections
+ok 3 - governor: an unreadable check calls sectionsUnreadable once per turn and a later check still shows sections
+  ---
+  duration_ms: 0.619625
+  type: 'test'
+  ...
+# Subtest: governor: sectionPaths holds the path of every known section, shown or hidden, and is empty after beginTurn
+ok 4 - governor: sectionPaths holds the path of every known section, shown or hidden, and is empty after beginTurn
+  ---
+  duration_ms: 0.302292
+  type: 'test'
+  ...
+# Subtest: governor: no snapshot or the editor view means sectionsActive is false and check does nothing; in the chat view observe does nothing
+ok 5 - governor: no snapshot or the editor view means sectionsActive is false and check does nothing; in the chat view observe does nothing
+  ---
+  duration_ms: 0.257375
+  type: 'test'
+  ...
+# Subtest: governor: a check that ends after a newer turn began shows nothing, and resolveTurn runs a last check then releases the snapshot
+ok 6 - governor: a check that ends after a newer turn began shows nothing, and resolveTurn runs a last check then releases the snapshot
+  ---
+  duration_ms: 1.143333
+  type: 'test'
+  ...
+# Subtest: governor: abandonTurn makes sectionsActive false at once, releases the snapshot without a last check, and a check in flight shows nothing
+ok 7 - governor: abandonTurn makes sectionsActive false at once, releases the snapshot without a last check, and a check in flight shows nothing
+  ---
+  duration_ms: 1.565958
+  type: 'test'
+  ...
+# Subtest: S006 governor: review decide(reject) restores the pre-turn baseline; decide(accept) keeps disk
+ok 8 - S006 governor: review decide(reject) restores the pre-turn baseline; decide(accept) keeps disk
+  ---
+  duration_ms: 0.266541
+  type: 'test'
+  ...
+# Subtest: S006 governor: same path observed twice keeps the FIRST baseline (revert = true pre-turn)
+ok 9 - S006 governor: same path observed twice keeps the FIRST baseline (revert = true pre-turn)
+  ---
+  duration_ms: 0.416375
+  type: 'test'
+  ...
+# Subtest: S006 governor: a NEW file (no baseline) opens with no baseline; reject removes it
+ok 10 - S006 governor: a NEW file (no baseline) opens with no baseline; reject removes it
+  ---
+  duration_ms: 0.38825
+  type: 'test'
+  ...
+# Subtest: S006 governor: non-git -> no-baseline visualize-only; reject is a no-op with a note, never throws
+ok 11 - S006 governor: non-git -> no-baseline visualize-only; reject is a no-op with a note, never throws
+  ---
+  duration_ms: 0.110459
+  type: 'test'
+  ...
+# Subtest: S006 governor: diffView=editor routes to showEditor (no sections)
+ok 12 - S006 governor: diffView=editor routes to showEditor (no sections)
+  ---
+  duration_ms: 0.15
+  type: 'test'
+  ...
+# Subtest: S006 governor: a stale/unknown edit-decision is a no-op
+ok 13 - S006 governor: a stale/unknown edit-decision is a no-op
+  ---
+  duration_ms: 0.117833
+  type: 'test'
+  ...
+# Subtest: S006 governor: a late observe from a SUPERSEDED turn does not render into the new turn (cross-turn guard)
+ok 14 - S006 governor: a late observe from a SUPERSEDED turn does not render into the new turn (cross-turn guard)
+  ---
+  duration_ms: 0.221458
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 229.541

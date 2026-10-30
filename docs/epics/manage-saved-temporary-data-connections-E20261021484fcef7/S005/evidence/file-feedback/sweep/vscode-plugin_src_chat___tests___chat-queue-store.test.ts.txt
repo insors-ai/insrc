@@ -1,0 +1,140 @@
+TAP version 13
+# (node:2939) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows
+ok 1 - chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows
+  ---
+  duration_ms: 43.586541
+  type: 'test'
+  ...
+# (node:2944) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2943) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2949) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2948) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2951) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2950) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2952) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2953) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2954) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:2955) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once
+ok 2 - chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once
+  ---
+  duration_ms: 755.398459
+  type: 'test'
+  ...
+# Subtest: schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting
+ok 3 - schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting
+  ---
+  duration_ms: 2.896583
+  type: 'test'
+  ...
+# Subtest: schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused
+ok 4 - schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused
+  ---
+  duration_ms: 5.215166
+  type: 'test'
+  ...
+# Subtest: markWaiting sets and clears waitingOn on a processing row only
+ok 5 - markWaiting sets and clears waitingOn on a processing row only
+  ---
+  duration_ms: 2.524667
+  type: 'test'
+  ...
+# Subtest: resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused
+ok 6 - resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused
+  ---
+  duration_ms: 3.133291
+  type: 'test'
+  ...
+# Subtest: presenceOf returns the row, and undefined when there is none
+ok 7 - presenceOf returns the row, and undefined when there is none
+  ---
+  duration_ms: 2.021291
+  type: 'test'
+  ...
+# Subtest: markNotDeliveredIfHead marks the head, the next row becomes the head, and a row acknowledged first by another connection is not marked
+ok 8 - markNotDeliveredIfHead marks the head, the next row becomes the head, and a row acknowledged first by another connection is not marked
+  ---
+  duration_ms: 2.748917
+  type: 'test'
+  ...
+# Subtest: markNotDeliveredIfHead marks a retrying head whose window closed and the next row becomes the head
+ok 9 - markNotDeliveredIfHead marks a retrying head whose window closed and the next row becomes the head
+  ---
+  duration_ms: 2.654125
+  type: 'test'
+  ...
+# Subtest: takeOver takes a stale lease of another windowKey only after LEASE_TAKEOVER_MS and fails its message, and refuses when holderGone is false, absent or the heartbeat is fresh
+ok 10 - takeOver takes a stale lease of another windowKey only after LEASE_TAKEOVER_MS and fails its message, and refuses when holderGone is false, absent or the heartbeat is fresh
+  ---
+  duration_ms: 3.625834
+  type: 'test'
+  ...
+# Subtest: takeOver takes a lease of the claim's own windowKey at once when holderGone is true
+ok 11 - takeOver takes a lease of the claim's own windowKey at once when holderGone is true
+  ---
+  duration_ms: 2.804792
+  type: 'test'
+  ...
+# Subtest: two connections racing takeOver on one stale lease, exactly one returns true
+ok 12 - two connections racing takeOver on one stale lease, exactly one returns true
+  ---
+  duration_ms: 2.509125
+  type: 'test'
+  ...
+# Subtest: reclaim rewrites pid and keeps seq and cliPid for the same windowKey, and refuses another windowKey
+ok 13 - reclaim rewrites pid and keeps seq and cliPid for the same windowKey, and refuses another windowKey
+  ---
+  duration_ms: 2.362667
+  type: 'test'
+  ...
+# Subtest: at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost
+ok 14 - at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost
+  ---
+  duration_ms: 41.241375
+  type: 'test'
+  ...
+# Subtest: an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease
+ok 15 - an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease
+  ---
+  duration_ms: 2.382708
+  type: 'test'
+  ...
+# Subtest: attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error
+ok 16 - attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error
+  ---
+  duration_ms: 2.380916
+  type: 'test'
+  ...
+# Subtest: acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying
+ok 17 - acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying
+  ---
+  duration_ms: 8.374292
+  type: 'test'
+  ...
+# Subtest: retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row
+ok 18 - retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row
+  ---
+  duration_ms: 2.561416
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1067.819166

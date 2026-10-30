@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: manifest-key-map-engine.test.ts: native tier edits over the real merged key map are validated against the definitions and written whole; invalid edits revert; restartRequired calls onRestartRequired once
+ok 1 - manifest-key-map-engine.test.ts: native tier edits over the real merged key map are validated against the definitions and written whole; invalid edits revert; restartRequired calls onRestartRequired once
+  ---
+  duration_ms: 7.521125
+  type: 'test'
+  ...
+# Subtest: manifest-key-map-engine.test.ts: an undeclared model for the host family is refused with 'only listed models can be used' and reverted; a vendor or host-less family keeps 'check and approve it'; a daemon refusal reverts
+ok 2 - manifest-key-map-engine.test.ts: an undeclared model for the host family is refused with 'only listed models can be used' and reverted; a vendor or host-less family keeps 'check and approve it'; a daemon refusal reverts
+  ---
+  duration_ms: 0.877125
+  type: 'test'
+  ...
+# Subtest: manifest-key-map-engine.test.ts: a runner-only switch to the host family writes its first declared model as the whole tier and mirrors the native keys; an alias is written canonically; an effort the model does not take is refused
+ok 3 - manifest-key-map-engine.test.ts: a runner-only switch to the host family writes its first declared model as the whole tier and mirrors the native keys; an alias is written canonically; an effort the model does not take is refused
+  ---
+  duration_ms: 0.715542
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 216.379625

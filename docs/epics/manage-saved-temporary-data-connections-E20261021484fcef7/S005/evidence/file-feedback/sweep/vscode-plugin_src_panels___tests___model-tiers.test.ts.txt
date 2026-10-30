@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: renderModelTiers: one labelled card per tier (core/mid/cheap), not a flat field list
+ok 1 - renderModelTiers: one labelled card per tier (core/mid/cheap), not a flat field list
+  ---
+  duration_ms: 1.011958
+  type: 'test'
+  ...
+# Subtest: renderModelTiers: a tier resolved to the host-set family shows its cloud/local hosting badge; an unresolved model is flagged not-supported inline
+ok 2 - renderModelTiers: a tier resolved to the host-set family shows its cloud/local hosting badge; an unresolved model is flagged not-supported inline
+  ---
+  duration_ms: 0.329417
+  type: 'test'
+  ...
+# Subtest: renderModelTiers: an open vendor family with a model it no longer lists renders the not-listed styling inline (distinct from not-supported)
+ok 3 - renderModelTiers: an open vendor family with a model it no longer lists renders the not-listed styling inline (distinct from not-supported)
+  ---
+  duration_ms: 0.588791
+  type: 'test'
+  ...
+# Subtest: renderModelTiers: three identically-configured tiers (all resolving to the same default) render as three independent, separately-editable cards
+ok 4 - renderModelTiers: three identically-configured tiers (all resolving to the same default) render as three independent, separately-editable cards
+  ---
+  duration_ms: 0.140209
+  type: 'test'
+  ...
+# Subtest: renderModelTiers: the panel-foot Core-floor <select> is bound to the current insrc.models.coreFloor value
+ok 5 - renderModelTiers: the panel-foot Core-floor <select> is bound to the current insrc.models.coreFloor value
+  ---
+  duration_ms: 0.132584
+  type: 'test'
+  ...
+# Subtest: createModelTiersWriteHandler: a {kind:'tierField'} write maps to ['models','tiers',tier,field]; a {kind:'coreFloor'} write maps to ['models','coreFloor']
+ok 6 - createModelTiersWriteHandler: a {kind:'tierField'} write maps to ['models','tiers',tier,field]; a {kind:'coreFloor'} write maps to ['models','coreFloor']
+  ---
+  duration_ms: 0.684625
+  type: 'test'
+  ...
+# Subtest: createModelTiersWriteHandler: refresh() runs on an accepted write and on a refused write, never on a rejected one
+ok 7 - createModelTiersWriteHandler: refresh() runs on an accepted write and on a refused write, never on a rejected one
+  ---
+  duration_ms: 0.153875
+  type: 'test'
+  ...
+# Subtest: createModelTiersWriteHandler: refresh wired exactly as extension.ts does (refresh: () => panelHost.openModelTiers()) invokes openModelTiers after a resolved write
+ok 8 - createModelTiersWriteHandler: refresh wired exactly as extension.ts does (refresh: () => panelHost.openModelTiers()) invokes openModelTiers after a resolved write
+  ---
+  duration_ms: 0.064958
+  type: 'test'
+  ...
+# Subtest: createModelTiersWriteHandler: two rapid writes to the same control are each forwarded and handled independently, in arrival order, with no debouncing
+ok 9 - createModelTiersWriteHandler: two rapid writes to the same control are each forwarded and handled independently, in arrival order, with no debouncing
+  ---
+  duration_ms: 0.249416
+  type: 'test'
+  ...
+# Subtest: renderModelTiers: every daemon-sourced field (family displayName, model id/displayName, hosting) is HTML-escaped — a stored script tag is never echoed raw
+ok 10 - renderModelTiers: every daemon-sourced field (family displayName, model id/displayName, hosting) is HTML-escaped — a stored script tag is never echoed raw
+  ---
+  duration_ms: 0.333917
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 298.282709

@@ -11,3 +11,11 @@ Current production capability read: v2 with safe-read and driver-descriptors onl
 Extension version raised to 0.5.17 so the corrected UI is distinguishable from 0.5.16. A daemon update alone does not replace the VS Code extension. No plugin installed, daemon restarted, release prerequisite promoted or deprecated IDE work added.
 
 Validation so far: 32 Connections tests passed; after the blank-label display correction, all 6 host tests passed again. Extension TypeScript noEmit passed. Regression coverage includes picker cancel/late edits/hidden view, missing-input refusal, explicit blank Label, enabled Save/Test, signed Saved creation, and per-action disabled reasons against metadata-only capabilities. Canonical implementation definitions and generated UX preview were updated; live rendering remains user acceptance work.
+
+
+Runtime source commit: `edf10ffe1`. The installable archive is `vscode-plugin/insrc-vscode-0.5.17-s005-edf10ffe1.vsix`, built from a clean temporary git archive of that commit. SHA256: `43097bc3d4caa9c1cfd2ce15d22d33cdbc7a2cc1eb55f7ccc7f6b3d5e85a742f`. Prepublish, typecheck and bundle passed; archive CRC, version, native picker/new form text and source/node_modules exclusion passed. Both release/artifact guard tests passed. No installed extension or daemon was changed.
+
+
+Final extension sweep on the committed snapshot: 116 files attempted with 60-second per-file deadlines. Completed-file TAP totals: 1332 tests, 1317 passed, 3 failed, 12 skipped. The chat-panel file timed out and has no final totals; partial cases are excluded. Failures remain in the same unrelated areas recorded for the previous feedback sweep: macOS /proc assumptions in cli-adapter, stale repoRegisterProviders message expectations in detail-renderers, and a stale repo-config import assertion in workspace/activation. This sweep is not green. Package boundary tests passed 11/11. Exact per-file outcomes and raw output: evidence/file-feedback/sweep/. No backend/native product code changed; their prior full-sweep results remain historical.
+
+The tracked t18 validation passed all checks, root/extension typechecks, the host suite and compatibility suite. This is task validation, not independent code-review approval or live UI acceptance.

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: follow emits the maxLines-bounded initial tail then follows appended lines on a watch event
+ok 1 - follow emits the maxLines-bounded initial tail then follows appended lines on a watch event
+  ---
+  duration_ms: 1.259958
+  type: 'test'
+  ...
+# Subtest: a rotation (active segment roll) is tracked — appends emit from the new segment without drop/duplicate
+ok 2 - a rotation (active segment roll) is tracked — appends emit from the new segment without drop/duplicate
+  ---
+  duration_ms: 0.097333
+  type: 'test'
+  ...
+# Subtest: dispose() is idempotent and guarantees no onLines fires after dispose
+ok 3 - dispose() is idempotent and guarantees no onLines fires after dispose
+  ---
+  duration_ms: 0.113083
+  type: 'test'
+  ...
+# Subtest: a missing dir / readLines throw / watch throw is swallowed — follow never throws
+ok 4 - a missing dir / readLines throw / watch throw is swallowed — follow never throws
+  ---
+  duration_ms: 0.173959
+  type: 'test'
+  ...
+# Subtest: source-scan: log-tail.ts imports no vscode, no cloud, and NOT the daemon-side src/cli/services/debug.ts (k5)
+ok 5 - source-scan: log-tail.ts imports no vscode, no cloud, and NOT the daemon-side src/cli/services/debug.ts (k5)
+  ---
+  duration_ms: 0.464208
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 299.88075

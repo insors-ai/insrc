@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent
+ok 1 - chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent
+  ---
+  duration_ms: 8.619958
+  type: 'test'
+  ...
+# Subtest: chat theme: every name used in the shell style, the row renderer style and the chat's markdown rules is defined in the named layer
+ok 2 - chat theme: every name used in the shell style, the row renderer style and the chat's markdown rules is defined in the named layer
+  ---
+  duration_ms: 2.862541
+  type: 'test'
+  ...
+# Subtest: chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable
+ok 3 - chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable
+  ---
+  duration_ms: 1.15875
+  type: 'test'
+  ...
+# Subtest: chat theme: each component uses the name the mapping gives it (bars, transcript, user and assistant bubbles, tool row, markers, diff lines, approval card and buttons, decided badge, selection card, input, selects, pill, attachment chips, progress, markdown)
+ok 4 - chat theme: each component uses the name the mapping gives it (bars, transcript, user and assistant bubbles, tool row, markers, diff lines, approval card and buttons, decided badge, selection card, input, selects, pill, attachment chips, progress, markdown)
+  ---
+  duration_ms: 1.951959
+  type: 'test'
+  ...
+# Subtest: chat theme: the history chip is one wrapper around the select with a masked icon in the current text colour; the select keeps its id and options, and every image source the shell declares is allowed by its content security policy
+ok 5 - chat theme: the history chip is one wrapper around the select with a masked icon in the current text colour; the select keeps its id and options, and every image source the shell declares is allowed by its content security policy
+  ---
+  duration_ms: 1.36125
+  type: 'test'
+  ...
+# Subtest: chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy
+ok 6 - chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy
+  ---
+  duration_ms: 2.675417
+  type: 'test'
+  ...
+# Subtest: chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources
+ok 7 - chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources
+  ---
+  duration_ms: 2.474792
+  type: 'test'
+  ...
+# Subtest: chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet
+ok 8 - chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet
+  ---
+  duration_ms: 1.007709
+  type: 'test'
+  ...
+# Subtest: chat theme: the progress widget keeps its colours, and its idle variant has its own slower animation that reduced motion stops
+ok 9 - chat theme: the progress widget keeps its colours, and its idle variant has its own slower animation that reduced motion stops
+  ---
+  duration_ms: 0.561375
+  type: 'test'
+  ...
+# Subtest: the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged
+ok 10 - the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged
+  ---
+  duration_ms: 22.510583
+  type: 'test'
+  ...
+# Subtest: the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly
+ok 11 - the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly
+  ---
+  duration_ms: 1.150917
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 295.383875

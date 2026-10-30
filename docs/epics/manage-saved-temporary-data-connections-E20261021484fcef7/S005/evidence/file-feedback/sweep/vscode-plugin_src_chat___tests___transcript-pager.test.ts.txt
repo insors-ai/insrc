@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held
+ok 1 - a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held
+  ---
+  duration_ms: 29.000208
+  type: 'test'
+  ...
+# Subtest: a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom
+ok 2 - a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom
+  ---
+  duration_ms: 8.354959
+  type: 'test'
+  ...
+# Subtest: one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row
+ok 3 - one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row
+  ---
+  duration_ms: 13.09825
+  type: 'test'
+  ...
+# Subtest: pager reset: a restore sets the first held index and total and ends at the bottom
+ok 4 - pager reset: a restore sets the first held index and total and ends at the bottom
+  ---
+  duration_ms: 14.369875
+  type: 'test'
+  ...
+# Subtest: pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders
+ok 5 - pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders
+  ---
+  duration_ms: 9.527
+  type: 'test'
+  ...
+# Subtest: pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row
+ok 6 - pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row
+  ---
+  duration_ms: 7.761208
+  type: 'test'
+  ...
+# Subtest: trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes
+ok 7 - trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes
+  ---
+  duration_ms: 17.651458
+  type: 'test'
+  ...
+# Subtest: pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds
+ok 8 - pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds
+  ---
+  duration_ms: 4.387
+  type: 'test'
+  ...
+# Subtest: returning to the bottom with more than 300 rows held runs the trim from the scroll listener
+ok 9 - returning to the bottom with more than 300 rows held runs the trim from the scroll listener
+  ---
+  duration_ms: 12.066708
+  type: 'test'
+  ...
+# Subtest: a row that throws while an older page renders falls back, and following is switched back on afterwards
+ok 10 - a row that throws while an older page renders falls back, and following is switched back on afterwards
+  ---
+  duration_ms: 4.442459
+  type: 'test'
+  ...
+# Subtest: the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim
+ok 11 - the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim
+  ---
+  duration_ms: 47.3235
+  type: 'test'
+  ...
+# Subtest: rows that are appended empty and filled afterwards are still followed: the view stays at the bottom through a long run and a restore, the trim still runs, and a reader who scrolls up is left alone until they return
+ok 12 - rows that are appended empty and filled afterwards are still followed: the view stays at the bottom through a long run and a restore, the trim still runs, and a reader who scrolls up is left alone until they return
+  ---
+  duration_ms: 22.515375
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 448.075459

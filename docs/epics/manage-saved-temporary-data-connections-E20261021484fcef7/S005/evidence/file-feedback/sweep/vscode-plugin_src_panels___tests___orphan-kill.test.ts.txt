@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: a live pid -> SIGTERM->SIGKILL 'forced'; a pid dying on SIGTERM -> 'terminated'
+ok 1 - a live pid -> SIGTERM->SIGKILL 'forced'; a pid dying on SIGTERM -> 'terminated'
+  ---
+  duration_ms: 2.519542
+  type: 'test'
+  ...
+# Subtest: the managed daemon pid is never signalled even if passed in ('not-found'); only non-managed pids targeted
+ok 2 - the managed daemon pid is never signalled even if passed in ('not-found'); only non-managed pids targeted
+  ---
+  duration_ms: 0.323125
+  type: 'test'
+  ...
+# Subtest: a per-pid kill throw is caught as 'error', the others proceed, the fn never throws
+ok 3 - a per-pid kill throw is caught as 'error', the others proceed, the fn never throws
+  ---
+  duration_ms: 0.341542
+  type: 'test'
+  ...
+# Subtest: non-POSIX no-ops/reports 'error'; readManagedPid parses to number|undefined and never throws
+ok 4 - non-POSIX no-ops/reports 'error'; readManagedPid parses to number|undefined and never throws
+  ---
+  duration_ms: 46.376834
+  type: 'test'
+  ...
+# Subtest: source-scan: orphan-kill.ts imports no vscode, no cloud, and is NOT a gateway method
+ok 5 - source-scan: orphan-kill.ts imports no vscode, no cloud, and is NOT a gateway method
+  ---
+  duration_ms: 2.795084
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 452.015291

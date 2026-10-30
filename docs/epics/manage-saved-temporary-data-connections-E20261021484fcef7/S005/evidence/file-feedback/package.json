@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "edf10ffe1",
+  "version": "0.5.17",
+  "path": "vscode-plugin/insrc-vscode-0.5.17-s005-edf10ffe1.vsix",
+  "sha256": "43097bc3d4caa9c1cfd2ce15d22d33cdbc7a2cc1eb55f7ccc7f6b3d5e85a742f",
+  "CRC": "pass",
+  "newPickerAndActionMessages": "pass",
+  "noSourceOrNodeModules": "pass",
+  "cleanCommittedSnapshot": true,
+  "installed": false,
+  "productionAdmissionChanged": false
+}

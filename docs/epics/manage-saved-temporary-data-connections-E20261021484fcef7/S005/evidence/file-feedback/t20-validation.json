@@ -1,0 +1,80 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t20",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Searching insrc connections exposes Manage Connections; command links and palette actions open same retained manager state.",
+        "satisfied": true,
+        "evidence": "vscode-plugin/package.json:171 markdownDescription contains 'For insrc connections, [Manage Connections](command:insrc.openDataSources) opens the Saved and Temporary connection manager.' The same command id 'insrc.openDataSources' is registered via registerConnectionCommands(..., connectionManager) in extension.ts:339-340, routing both the palette command and the markdown link to the single ConnectionsManagerHost instance (host.open()), which reveals the existing panel if already open (host.ts:93-94: 'if(this.#panel){this.#panel.reveal();return;}')."
+      },
+      {
+        "check": "No/multiple registered roots explicit, actual workbench selected; command args only selection hints validated against fresh daemon state.",
+        "satisfied": true,
+        "evidence": "wiring.ts ignores all command arguments (register(id, () => host.open())) and host.open() always re-fetches registeredRoots() from the daemon on each open (host.ts:107). The test (entry.test.ts:28-47) opens with zero registered roots (listState 'no-repository', roots []), then with two roots, and confirms every CONNECTION_COMMAND invoked with forged args ({repoRoot:'/unregistered', ...}) cannot change the draft or selected root, and registeredRoots is freshly read each open (reads===2)."
+      },
+      {
+        "check": "Only extension.ts imports vscode; dedicated connections types instead of unrelated panels/types.ts; preserve live registered command IDs.",
+        "satisfied": true,
+        "evidence": "Grep for \"from 'vscode'\" under vscode-plugin/src/connections found no matches — host.ts, wiring.ts, types.ts, renderer.ts, etc. are vscode-free. types.ts (vscode-plugin/src/connections/types.ts) defines its own ConnectionIntent/ConnectionRenderView/ConnectionPanel rather than reusing panels/types.ts. Command ids ('insrc.openDataSources', 'insrc.connections.add/edit/test/remove') are identical across package.json, wiring.ts, packaging.test.ts and truthful-sync.test.ts — no renaming."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Manifest commands/configuration, extension.ts activation wiring, and the dedicated connections/wiring.ts module all match the Task's stated surface; the required integration test genuinely exercises manifest discovery, command-id uniqueness, palette/editor route equivalence, and fresh-daemon-state validation against forged args, and the daemon's typecheck and test runs both passed.</reason>\n</invoke>\n",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd vscode-plugin && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 17730,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd vscode-plugin && npx tsc --noEmit): clean\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-mLJmlZ/report.tap vscode-plugin/src/connections/__tests__/entry.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 2258,
+        "outputTail": "TAP version 13\n# Subtest: CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots\nok 1 - CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots\n  ---\n  duration_ms: 472.099458\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 475.183542\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/entry.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-mLJmlZ/report.tap vscode-plugin/src/connections/__tests__/entry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2258,
+            "titles": [
+              {
+                "title": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/vscode-plugin_src_connections___tests___entry.test.ts.1793372275803.82686.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/entry.test.ts",
+                "title": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/TESTS.md"
+    }
+  },
+  "passed": true
+}

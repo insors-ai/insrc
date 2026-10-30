@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: renderTerminalStyle: opens/closes <style>, contains every token + var(--vscode-*,<fallback>), CSP-safe
+ok 1 - renderTerminalStyle: opens/closes <style>, contains every token + var(--vscode-*,<fallback>), CSP-safe
+  ---
+  duration_ms: 1.575584
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: deterministic (two calls byte-identical)
+ok 2 - renderTerminalStyle: deterministic (two calls byte-identical)
+  ---
+  duration_ms: 0.14425
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: emits a rule for every SurfaceKind class
+ok 3 - renderTerminalStyle: emits a rule for every SurfaceKind class
+  ---
+  duration_ms: 0.073792
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: throws TerminalThemeError on an empty token, naming the path
+ok 4 - renderTerminalStyle: throws TerminalThemeError on an empty token, naming the path
+  ---
+  duration_ms: 0.18925
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: throws TerminalThemeError on a token with angle brackets (style-breaking)
+ok 5 - renderTerminalStyle: throws TerminalThemeError on a token with angle brackets (style-breaking)
+  ---
+  duration_ms: 0.068958
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects color injection (closes var() + rule) with no angle brackets
+ok 6 - renderTerminalStyle: rejects color injection (closes var() + rule) with no angle brackets
+  ---
+  duration_ms: 0.093334
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects color injection (semicolon + selector) with no angle brackets
+ok 7 - renderTerminalStyle: rejects color injection (semicolon + selector) with no angle brackets
+  ---
+  duration_ms: 0.118834
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects color injection (url() beacon) with no angle brackets
+ok 8 - renderTerminalStyle: rejects color injection (url() beacon) with no angle brackets
+  ---
+  duration_ms: 0.04225
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects color injection (double-quote break) with no angle brackets
+ok 9 - renderTerminalStyle: rejects color injection (double-quote break) with no angle brackets
+  ---
+  duration_ms: 0.179125
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects color injection (brace break) with no angle brackets
+ok 10 - renderTerminalStyle: rejects color injection (brace break) with no angle brackets
+  ---
+  duration_ms: 0.33025
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects marker-glyph injection (quote + selector)
+ok 11 - renderTerminalStyle: rejects marker-glyph injection (quote + selector)
+  ---
+  duration_ms: 0.161333
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects marker-glyph injection (brace break)
+ok 12 - renderTerminalStyle: rejects marker-glyph injection (brace break)
+  ---
+  duration_ms: 0.110541
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: rejects marker-glyph injection (backslash escape)
+ok 13 - renderTerminalStyle: rejects marker-glyph injection (backslash escape)
+  ---
+  duration_ms: 0.042958
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: still accepts the legitimate quoted font stack + rgba/hex colors
+ok 14 - renderTerminalStyle: still accepts the legitimate quoted font stack + rgba/hex colors
+  ---
+  duration_ms: 0.081875
+  type: 'test'
+  ...
+# Subtest: renderTerminalStyle: light-theme variant renders a valid deterministic <style> with light values
+ok 15 - renderTerminalStyle: light-theme variant renders a valid deterministic <style> with light values
+  ---
+  duration_ms: 0.071333
+  type: 'test'
+  ...
+# Subtest: surfaceClass: total over all five SurfaceKind members; each class appears in the rendered output
+ok 16 - surfaceClass: total over all five SurfaceKind members; each class appears in the rendered output
+  ---
+  duration_ms: 0.159375
+  type: 'test'
+  ...
+# Subtest: terminalTheme: carries the tui.css values and is frozen
+ok 17 - terminalTheme: carries the tui.css values and is frozen
+  ---
+  duration_ms: 0.050917
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 187.571625

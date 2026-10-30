@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: extension.ts fires runDaemonFreshnessCheck WITHOUT await (fire-and-forget)
+ok 1 - extension.ts fires runDaemonFreshnessCheck WITHOUT await (fire-and-forget)
+  ---
+  duration_ms: 1.615
+  type: 'test'
+  ...
+# Subtest: extension.ts wires the notify seam to showInformationMessage(message, {}, ...actions) (no modal, k7)
+ok 2 - extension.ts wires the notify seam to showInformationMessage(message, {}, ...actions) (no modal, k7)
+  ---
+  duration_ms: 0.631375
+  type: 'test'
+  ...
+# Subtest: extension.ts wires the versionState seam over globalState + packageJSON.version
+ok 3 - extension.ts wires the versionState seam over globalState + packageJSON.version
+  ---
+  duration_ms: 0.317625
+  type: 'test'
+  ...
+# Subtest: extension.ts wires gitLsRemote to a child_process git ls-remote (no pull, k1)
+ok 4 - extension.ts wires gitLsRemote to a child_process git ls-remote (no pull, k1)
+  ---
+  duration_ms: 0.512375
+  type: 'test'
+  ...
+# Subtest: extension.ts consumes the daemon-owned sc1 IPC (client), never a controller.run('update') shell-out (k2)
+ok 5 - extension.ts consumes the daemon-owned sc1 IPC (client), never a controller.run('update') shell-out (k2)
+  ---
+  duration_ms: 0.316
+  type: 'test'
+  ...
+# Subtest: extension.ts wires the reloadWindow seam to workbench.action.reloadWindow (S001 post-update nudge)
+ok 6 - extension.ts wires the reloadWindow seam to workbench.action.reloadWindow (S001 post-update nudge)
+  ---
+  duration_ms: 0.221125
+  type: 'test'
+  ...
+# Subtest: the new globalState key constant is defined and referenced for lastSeen persistence
+ok 7 - the new globalState key constant is defined and referenced for lastSeen persistence
+  ---
+  duration_ms: 0.356625
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 401.034042

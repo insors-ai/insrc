@@ -1,5 +1,7 @@
 # S005 full build and test report
 
+Latest VS Code file-form correction: runtime commit `edf10ffe1`, extension **0.5.17**. Installable package: [insrc-vscode-0.5.17-s005-edf10ffe1.vsix](/Users/subhagho/work/projects/insors/insrc/vscode-plugin/insrc-vscode-0.5.17-s005-edf10ffe1.vsix). Native Browse, prominent File path, optional Label fallback and per-action disabled reasons are implemented. See FILE-FEEDBACK.md for current evidence and remaining daemon restrictions. Production Save/Test is still unavailable; no release prerequisite was promoted. The frozen full-build results below remain historical.
+
 Frozen source: `b4f7a82cb44550ef55e522966c2237417bd15307`; tree `38ff9012a5dcbd6ec88b5a1c2cbad79c2c2234ad`. Node v22.23.2, JDK21. Source drift: 0 tracked files.
 
 The user owns live UI validation after installation. Tasks26–29 remain pending; the earlier failed UI attempt is retained. No production release gate was enabled. No automated code-review workflow ran; builder manual inspection is recorded separately.

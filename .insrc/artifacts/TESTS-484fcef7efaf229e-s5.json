@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T12:07:23.111Z",
+    "updatedAt": "2026-10-30T14:57:55.805Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -826,8 +826,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "63966e4ad",
-        "ranAt": "2026-10-30T12:02:26.206Z",
+        "commit": "edf10ffe1",
+        "ranAt": "2026-10-30T14:53:35.204Z",
         "testsPassed": true,
         "tests": [
           {
@@ -842,7 +842,7 @@
               },
               {
                 "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
-                "title": "CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names",
+                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
                 "result": "pass"
               },
               {
@@ -859,7 +859,7 @@
             "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9429,
+            "durationMs": 11404,
             "titles": [
               {
                 "title": "CM-S5-COMPAT-TS: old missing malformed and base-incomplete handshakes show upgrade without legacy writes",
@@ -888,7 +888,7 @@
             "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 7221,
+            "durationMs": 10854,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
@@ -908,6 +908,10 @@
               },
               {
                 "title": "CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
                 "result": "pass"
               }
             ],
@@ -953,8 +957,8 @@
       },
       {
         "taskId": "t20",
-        "commit": "63966e4ad",
-        "ranAt": "2026-10-30T12:05:19.268Z",
+        "commit": "edf10ffe1",
+        "ranAt": "2026-10-30T14:57:55.805Z",
         "testsPassed": true,
         "tests": [
           {
@@ -976,7 +980,7 @@
             "file": "vscode-plugin/src/connections/__tests__/entry.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1962,
+            "durationMs": 2258,
             "titles": [
               {
                 "title": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",

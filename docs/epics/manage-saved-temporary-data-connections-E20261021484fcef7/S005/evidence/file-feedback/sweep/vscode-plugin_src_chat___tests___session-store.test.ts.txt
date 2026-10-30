@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: draft(): an in-memory session NOT persisted until saved (no empty chats in history)
+ok 1 - draft(): an in-memory session NOT persisted until saved (no empty chats in history)
+  ---
+  duration_ms: 4.474083
+  type: 'test'
+  ...
+# Subtest: round-trip: create/append/save then get/list reflect it
+ok 2 - round-trip: create/append/save then get/list reflect it
+  ---
+  duration_ms: 0.25125
+  type: 'test'
+  ...
+# Subtest: corrupt/missing entry degrades to undefined / [] (no throw)
+ok 3 - corrupt/missing entry degrades to undefined / [] (no throw)
+  ---
+  duration_ms: 0.121792
+  type: 'test'
+  ...
+# Subtest: append to a missing session is a no-op (never throws)
+ok 4 - append to a missing session is a no-op (never throws)
+  ---
+  duration_ms: 0.048458
+  type: 'test'
+  ...
+# Subtest: k3: writes go ONLY to the injected memento, under the insrc.chat.* namespace
+ok 5 - k3: writes go ONLY to the injected memento, under the insrc.chat.* namespace
+  ---
+  duration_ms: 0.113958
+  type: 'test'
+  ...
+# Subtest: list sorts by updatedAt descending
+ok 6 - list sorts by updatedAt descending
+  ---
+  duration_ms: 1.818042
+  type: 'test'
+  ...
+# Subtest: S005: save() with maxSessions=N keeps at most N; oldest evicted, blob gone
+ok 7 - S005: save() with maxSessions=N keeps at most N; oldest evicted, blob gone
+  ---
+  duration_ms: 0.213291
+  type: 'test'
+  ...
+# Subtest: S005: eviction never removes the id being saved / active session even when oldest
+ok 8 - S005: eviction never removes the id being saved / active session even when oldest
+  ---
+  duration_ms: 0.139542
+  type: 'test'
+  ...
+# Subtest: S005: unset maxSessions preserves the unbounded S003 behaviour
+ok 9 - S005: unset maxSessions preserves the unbounded S003 behaviour
+  ---
+  duration_ms: 0.241125
+  type: 'test'
+  ...
+# Subtest: S005: an updated (first-prompt) title round-trips through get()/list()
+ok 10 - S005: an updated (first-prompt) title round-trips through get()/list()
+  ---
+  duration_ms: 0.305167
+  type: 'test'
+  ...
+# Subtest: S005: maxSessions <= 0 is treated as unbounded (never wipes the active session)
+ok 11 - S005: maxSessions <= 0 is treated as unbounded (never wipes the active session)
+  ---
+  duration_ms: 0.075542
+  type: 'test'
+  ...
+# Subtest: S008: a marker row cssClass round-trips through append/save -> get() (ac2)
+ok 12 - S008: a marker row cssClass round-trips through append/save -> get() (ac2)
+  ---
+  duration_ms: 0.056958
+  type: 'test'
+  ...
+# Subtest: S008: an older session whose marker rows lack cssClass still validates + restores unchanged (ac3, no migration)
+ok 13 - S008: an older session whose marker rows lack cssClass still validates + restores unchanged (ac3, no migration)
+  ---
+  duration_ms: 0.054292
+  type: 'test'
+  ...
+# Subtest: S008: user/assistant rows never carry a cssClass
+ok 14 - S008: user/assistant rows never carry a cssClass
+  ---
+  duration_ms: 0.04975
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): a tool-result row (command + output) round-trips through the memento store intact
+ok 15 - S001 (ux polish): a tool-result row (command + output) round-trips through the memento store intact
+  ---
+  duration_ms: 0.04525
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): a command-less tool-result row round-trips (command absent) in the in-memory store
+ok 16 - S001 (ux polish): a command-less tool-result row round-trips (command absent) in the in-memory store
+  ---
+  duration_ms: 0.043875
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): a tool-result row does not disturb a mixed transcript replay (order + other rows intact)
+ok 17 - S001 (ux polish): a tool-result row does not disturb a mixed transcript replay (order + other rows intact)
+  ---
+  duration_ms: 0.050625
+  type: 'test'
+  ...
+# Subtest: S003 (ux polish): a permission-outcome row (toolName + decision) round-trips through the memento store intact
+ok 18 - S003 (ux polish): a permission-outcome row (toolName + decision) round-trips through the memento store intact
+  ---
+  duration_ms: 0.041791
+  type: 'test'
+  ...
+# Subtest: S003 (ux polish): a rejected permission-outcome round-trips through the in-memory store
+ok 19 - S003 (ux polish): a rejected permission-outcome round-trips through the in-memory store
+  ---
+  duration_ms: 0.034958
+  type: 'test'
+  ...
+# Subtest: S003 (ux polish): a permission-outcome row does not disturb a mixed transcript replay (order intact)
+ok 20 - S003 (ux polish): a permission-outcome row does not disturb a mixed transcript replay (order intact)
+  ---
+  duration_ms: 0.041375
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a selection-outcome row (chosen labels) round-trips through the memento store intact
+ok 21 - S004 (ux polish): a selection-outcome row (chosen labels) round-trips through the memento store intact
+  ---
+  duration_ms: 0.098417
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a single-choice selection-outcome round-trips through the in-memory store
+ok 22 - S004 (ux polish): a single-choice selection-outcome round-trips through the in-memory store
+  ---
+  duration_ms: 0.072292
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a selection-outcome row does not disturb a mixed transcript replay (order intact)
+ok 23 - S004 (ux polish): a selection-outcome row does not disturb a mixed transcript replay (order intact)
+  ---
+  duration_ms: 0.04175
+  type: 'test'
+  ...
+# Subtest: S006: editMode defaults to auto on create and a review update round-trips through save()/get()
+ok 24 - S006: editMode defaults to auto on create and a review update round-trips through save()/get()
+  ---
+  duration_ms: 0.04525
+  type: 'test'
+  ...
+# Subtest: liveTurn round-trips through the store, a session without it loads unchanged, and eviction calls onEvict with the evicted id
+ok 25 - liveTurn round-trips through the store, a session without it loads unchanged, and eviction calls onEvict with the evicted id
+  ---
+  duration_ms: 0.099541
+  type: 'test'
+  ...
+# Subtest: INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses
+ok 26 - INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses
+  ---
+  duration_ms: 0.285125
+  type: 'test'
+  ...
+# Subtest: run config: draft/create carry model+effort; save/get round-trips them; absent stays absent (back-compat)
+ok 27 - run config: draft/create carry model+effort; save/get round-trips them; absent stays absent (back-compat)
+  ---
+  duration_ms: 0.073042
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 241.096375

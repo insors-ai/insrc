@@ -44,7 +44,7 @@ function replayClaudeV2(report:InvestigationProbeExport) {
  if(report.candidate){
   if(!proof||digestValue(proof.candidate)!==digestValue(report.candidate)||digestValue(proof.observations)!==digestValue(report.status.observations)||
    report.phases[1]!.effectiveDigest!==proof.candidate.trace.effectiveDigest)throw Error('V2 qualification differs from independently replayed evidence');
- }else if(proof&&report.status.state!=='cancelled')throw Error('Supported v2 proof was dropped from its result');
+ }else if(proof&&report.status.state==='unsupported')throw Error('Supported v2 proof was dropped from its result');
 }
 
 /** Read-only validation. No signer, lifecycle writer or qualification issuer. */

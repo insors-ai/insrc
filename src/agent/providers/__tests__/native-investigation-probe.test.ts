@@ -40,6 +40,7 @@ const schemaPath=argv[argv.indexOf('--output-schema')+1];
 if(existsSync(new URL('./v2-native',import.meta.url))){
  const diagnostics=['Broken symlink or missing file encountered for settings.json at path: /etc/claude-code/managed-settings.json','Found 4 plugins (0 enabled, 4 disabled)','cc-plugin-sec-default@builtin not seated: no managed settings and not a Team or Enterprise organization (max)','Registered 0 hooks from 0 plugins','Initialized versioned plugins system with 0 plugins'];
  if(existsSync(new URL('./policy-missing',import.meta.url)))diagnostics.pop();
+ if(existsSync(new URL('./metadata-only',import.meta.url)))diagnostics.push('Host diagnostic metadata '+ 'x'.repeat(100000));
  if(existsSync(new URL('./diagnostic-flood',import.meta.url))){writeFileSync(argv[argv.indexOf('--debug-file')+1],'x'.repeat(1024*1024));setInterval(()=>{},1000);await new Promise(()=>{});}
  writeFileSync(argv[argv.indexOf('--debug-file')+1],diagnostics.map(m=>'2026-10-30T09:33:20.000Z [DEBUG] '+m).join('\\n')+'\\n');
  process.stdout.write(JSON.stringify({type:'system',subtype:'init',session_id:'scripted-v2',claude_code_version:'2.1.310',tools:['StructuredOutput','mcp__insrc-scoped-review__review_read','mcp__insrc-scoped-review__review_progress','mcp__insrc-scoped-review__review_reply'],plugins:[],skills:[],slash_commands:[],permissionMode:'dontAsk',mcp_servers:[{name:'insrc-scoped-review',status:'connected',source:'dynamic'}]})+'\\n');
@@ -160,6 +161,16 @@ test('Oversized native diagnostics drain the process and are discarded without a
     await assert.rejects(()=>f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal}),/diagnostic|Diagnostic/);
     assert.equal(readFileSync(join(f.repo,'calls.txt'),'utf8'),'called\ncalled\n');
     assert.equal(existsSync(join(f.probe.cwd,'investigation-debug.log')),false);
+  }finally{await f.close();}
+});
+
+test('Host-only diagnostic metadata consumes retained bytes but never model context budget', async () => {
+  const f=await fixture('claude',true);
+  try{writeFileSync(join(f.repo,'metadata-only'),'synthetic host metadata');
+    const report=await f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal});
+    assert.equal(f.context.budget.policy.totalTokens,128000);assert.equal(report.status.state,'completed');assert.ok(report.candidate);
+    const debug=report.evidenceFiles!.find(f=>f.kind==='native-diagnostic')!;assert.ok(debug.bytes>100000&&debug.bytes<=256*1024);
+    assert.ok(report.evidenceFiles!.reduce((n,f)=>n+f.bytes,0)<=8*1024*1024);validateUnsignedProbeExport(report);
   }finally{await f.close();}
 });
 

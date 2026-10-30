@@ -138,7 +138,9 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
         throw Error('Probe control failed; no restricted retry or fallback');
       // Count both phases' reserves and the actual control transcript before
       // allowing any restricted traffic, rather than reusing a per-call 128K cap.
-      reservedControl = controlCost(control.stdout.length + control.stderr.length + (captured.diagnostic?.text.length??0)); admit(0);
+      // Debug files are host observations, never model input. They count toward
+      // byte retention, not the inclusive model-context admission estimate.
+      reservedControl = controlCost(control.stdout.length + control.stderr.length); admit(0);
       fixture.canaries.activate('restricted');
     }
     const timeoutMs = Math.min(PROBE_ATTEMPT_MS, context.deadlineAt - Date.now());
@@ -170,7 +172,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
     const raw = JSON.stringify(result), rawOverflow = Buffer.byteLength(raw) + controlBytes > PROBE_OBSERVATION_BYTES;
     if (!rawOverflow) { fixture.reserveDiagnosticBytes(Buffer.byteLength(raw)); writeFileSync(join(fixture.root, 'native-output.json'), raw, { mode: 0o600, flag: 'wx' }); }
     let exceededBudget = false;
-    if (!rawOverflow && !result.outputLimitExceeded) try { admit(trafficChars + result.stdout.length + result.stderr.length + restrictedDiagnostic.length); } catch { exceededBudget = true; }
+    if (!rawOverflow && !result.outputLimitExceeded) try { admit(trafficChars + result.stdout.length + result.stderr.length); } catch { exceededBudget = true; }
     // ProcessGroupResult is returned only after actual process-group teardown.
     const state = fixture.state(), effectiveDigest = digestValue(input.adapter.configuration(fixture.cwd, indexed));
     if (paired) phases.push({ phase: 'restricted', probeId: context.probeId, attemptId: context.attemptId,
@@ -238,7 +240,8 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
       cwd:fixture.cwd,endedAt,raw:result,diagnostics:restrictedDiagnostic,host:sourceHost,broker:hostBoundary,canaries,files:evidenceFiles}):undefined;
     if(proof){observations.splice(0,observations.length,...proof.observations);if(phases[1])phases[1]={...phases[1],effectiveDigest:proof.candidate.trace.effectiveDigest};}
     const observed = new Set(observations.filter(o => o.verdict === expected(o.check)).map(o => o.check));
-    const missingEvidence = PROBE_REQUIRED_CHECKS.filter(check => !observed.has(check));
+    const missingEvidence:string[] = PROBE_REQUIRED_CHECKS.filter(check => !observed.has(check));
+    if(exceededBudget)missingEvidence.push('inclusive-budget-exceeded');
     for (const observation of observations) await context.observe(observation);
     if(input.options.signal.aborted)proof=undefined;
     return probeExportSchema.parse({ version: 1, kind: 'review-investigation-probe-observations', origin: 'unsigned-installed-observations',

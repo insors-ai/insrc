@@ -66,8 +66,10 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
  for(const path of [command.command,command.args.find(p=>p.endsWith('/insrc-review-bridge.ts')||p.endsWith('/insrc-review-bridge.js'))!])if(!pinned.runtimeFiles.some(f=>f.path===realpathSync(path)))throw new InvestigationQualificationError('MCP runtime is not pinned by qualification');
  if(activeDirectories.has(cwd))throw new InvestigationQualificationError('Qualified isolated directory already has an active session');
  const prompt=`${input.prompt}\n\n${JSON.stringify({turn:verified.turn,seed:binding.tools.seed,coverage:runtime.state().ledger.coverage,navigation:runtime.navigation??null})}`,wireSchema=reviewWireSchemaJson(input.profile,input.schema),catalog=JSON.stringify(scopedReviewToolCatalog(indexed));
- let extraChars=0,diagnosticChars=0;
- const admit=()=>{try{const value=preflightProviderReviewBudget(opts.reviewBudget!,input.profile,prompt.length+INVESTIGATION_SYSTEM_PROMPT.length+extraChars+diagnosticChars,wireSchema,undefined,catalog);runtime.onPreflight?.(value);return value;}catch(cause){throw new InvestigationError('budget-refused','Inclusive native prompt, schema, tools and inspection history exceed admission.',{cause});}};admit();
+ let extraChars=0;
+ // Native debug files are bounded host evidence; their contents are never
+ // appended to this model prompt or tool conversation.
+ const admit=()=>{try{const value=preflightProviderReviewBudget(opts.reviewBudget!,input.profile,prompt.length+INVESTIGATION_SYSTEM_PROMPT.length+extraChars,wireSchema,undefined,catalog);runtime.onPreflight?.(value);return value;}catch(cause){throw new InvestigationError('budget-refused','Inclusive native prompt, schema, tools and inspection history exceed admission.',{cause});}};admit();
  activeDirectories.add(cwd);const abort=new AbortController(),onAbort=()=>abort.abort();opts.signal.addEventListener('abort',onAbort,{once:true});if(opts.signal.aborted)abort.abort();
  const bridge=new ScopedReviewBridge(runtime.processEpoch,runtime.assertProcessOwner);let broker:Awaited<ReturnType<typeof startNativeReviewBroker>>|undefined,reply:InvestigationReplyV1|undefined,budgetFailure:unknown,policyFailure:unknown,launchCleanup:(()=>void)|undefined;
  // Scripted fixtures retain their explicit non-production partition. Every
@@ -77,7 +79,7 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
  let diagnosticWatch:ReturnType<typeof setInterval>|undefined;
  const checkNativePolicy=()=>{
   if(!debugPath)return;
-  const diagnostic=readClaudeDiagnostic(debugPath);diagnosticChars=diagnostic.text.length;
+  const diagnostic=readClaudeDiagnostic(debugPath);
   if(managedPolicySnapshot().some(p=>p.state!=='absent')||!readClaudeSourcePolicyDiagnostics(diagnostic.text,actual.binaryVersion))throw new InvestigationQualificationError('Native session startup policy is missing or changed');
  };
  try{

@@ -94,7 +94,10 @@ phase uses the production template.
 The v2 host combines native inventory, pinned source-policy diagnostics,
 active controls, real broker refusals, journal ACKs and process exit into an
 explicit `review-agent-capabilities-v1` proof. Each native diagnostic file is
-limited to 256 KiB within the pair's aggregate 8 MiB retention bound. Known
+limited to 256 KiB within the pair's aggregate 8 MiB retention bound.
+Host-only debug log text is not sent to the model and is not charged as model
+context; prompts, schema, tools, inspection history and native/output reserves
+still share the unchanged 128K admission cap. Known
 managed-policy paths must be absent, and native diagnostics must confirm the
 supported unmanaged consumer-account policy; missing, changed or unsupported
 organization/source facts remain unsupported. A raw silent canary remains

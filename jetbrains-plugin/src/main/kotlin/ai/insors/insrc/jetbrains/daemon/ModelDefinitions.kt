@@ -18,6 +18,8 @@ data class DefinedModelDto(
     val source: String,
     /** Local family only; null when Ollama did not answer. */
     val installed: Boolean?,
+    /** 'cloud' or 'local' on a model of a family with a host (Epic b220bb61, s5); null otherwise. */
+    val hosting: String? = null,
 )
 
 /** A family's default for one tier. */
@@ -32,6 +34,8 @@ data class DefinedFamilyDto(
     val tierDefaults: Map<String, TierDefaultDto>,
     val toolLoopModel: String?,
     val models: List<DefinedModelDto>,
+    /** 'ollama' when the family runs its CLI on a host (Epic b220bb61, s5): its models are a closed list. */
+    val host: String? = null,
 )
 
 /** The `models.definitions` answer. */
@@ -121,6 +125,7 @@ internal fun parseModelDefinitions(data: Map<String, Any?>): ModelDefinitionsDto
                 efforts = strings(mm["efforts"]),
                 source = nonBlank(mm["source"]) ?: "shipped",
                 installed = mm["installed"] as? Boolean,
+                hosting = nonBlank(mm["hosting"]),
             )
         }
         val defaults = (f["tierDefaults"] as? Map<*, *>).orEmpty().mapNotNull { (tier, d) ->
@@ -135,6 +140,7 @@ internal fun parseModelDefinitions(data: Map<String, Any?>): ModelDefinitionsDto
             tierDefaults = defaults,
             toolLoopModel = nonBlank(f["toolLoopModel"]),
             models = models,
+            host = nonBlank(f["host"]),
         )
     }
     if (families.isEmpty()) return null

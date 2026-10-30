@@ -145,4 +145,29 @@ class ModelDefinitionsGatewayTest {
         assertTrue(src.contains("delegate.checkModel(family, modelId, claimedEfforts)"))
         assertTrue(src.contains("delegate.decideModel(checkId, approve, efforts)"))
     }
+
+    @Test
+    fun `parses a family's host and its models' hosting, and null when the answer has neither`() {
+        // Epic b220bb61, Story s5: a family running its CLI on Ollama, with a cloud and a local model.
+        val hosted = answer + ("families" to (answer["families"] as List<*>) + mapOf(
+            "id" to "ollama-claude", "cliKind" to "claude", "host" to "ollama", "displayName" to "FakeH",
+            "models" to listOf(
+                mapOf("id" to "hc:cloud", "aliases" to listOf("hc"), "efforts" to listOf("low", "max"), "source" to "shipped", "hosting" to "cloud"),
+                mapOf("id" to "hl:7b", "aliases" to emptyList<String>(), "efforts" to emptyList<String>(), "source" to "shipped", "hosting" to "local"),
+                mapOf("id" to "hb:1", "aliases" to emptyList<String>(), "efforts" to emptyList<String>(), "source" to "shipped", "hosting" to " "),
+            ),
+        ))
+        val defs = assertInstanceOf(ModelDefinitionsResult.Loaded::class.java, DaemonGatewayImpl(ok(hosted)).modelDefinitions()).definitions
+        assertEquals(listOf("cli-codex", "ollama", "ollama-claude"), defs.families.map { it.id }, "malformed entries still skipped")
+        val h = defs.families[2]
+        assertEquals("ollama", h.host)
+        assertEquals("claude", h.cliKind)
+        assertEquals(listOf("cloud", "local", null), h.models.map { it.hosting }, "a blank hosting reads as none")
+
+        // Today's families, and an answer from an older daemon, carry neither mark.
+        assertEquals(listOf(null, null), defs.families.take(2).map { it.host })
+        assertTrue(defs.families.take(2).flatMap { it.models }.all { it.hosting == null })
+        val older = assertInstanceOf(ModelDefinitionsResult.Loaded::class.java, DaemonGatewayImpl(ok(answer)).modelDefinitions()).definitions
+        assertTrue(older.families.all { it.host == null } && older.families.flatMap { it.models }.all { it.hosting == null })
+    }
 }

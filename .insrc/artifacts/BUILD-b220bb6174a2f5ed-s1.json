@@ -4,10 +4,15 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s1",
     "createdAt": "2026-10-29T19:58:32.650Z",
-    "updatedAt": "2026-10-30T04:10:44.122Z",
+    "updatedAt": "2026-10-30T04:58:27.433Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
-    "epicSlug": "run-claude-codex-ollama-models"
+    "epicSlug": "run-claude-codex-ollama-models",
+    "approvedAt": "2026-10-30T04:58:28.967Z",
+    "reviewOverride": {
+      "reason": "Manual code review (code-review tool being rewritten): 2 MED and 1 LOW fixed in ccae14700, 2 LOW accepted; full sweep failures are outside s1 (user approval 2026-10-30).",
+      "at": "2026-10-30T04:58:28.967Z"
+    }
   },
   "body": {
     "tasks": [
@@ -89,13 +94,6 @@
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T04:10:44.122Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/context/__tests__/provider-from-registry.test.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-30T04:10:44.122Z"
@@ -200,13 +198,6 @@
       },
       {
         "target": {
-          "file": "src/daemon/__tests__/model-catalog.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T04:10:44.122Z"
-      },
-      {
-        "target": {
           "file": "src/daemon/__tests__/model-check.test.ts"
         },
         "author": "insrc-build",
@@ -249,13 +240,6 @@
       },
       {
         "target": {
-          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T04:10:44.122Z"
-      },
-      {
-        "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
@@ -270,13 +254,6 @@
       },
       {
         "target": {
-          "file": "src/daemon/model-catalog.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T04:10:44.122Z"
-      },
-      {
-        "target": {
           "file": "src/daemon/model-check.ts"
         },
         "author": "insrc-build",
@@ -285,13 +262,6 @@
       {
         "target": {
           "file": "src/daemon/model-definitions.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T04:10:44.122Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/model-registry.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-30T04:10:44.122Z"
@@ -396,19 +366,76 @@
       },
       {
         "target": {
-          "file": "src/workflow/__tests__/attribution.test.ts"
+          "file": "src/config/__tests__/config-catalog-defs.test.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-30T04:10:44.122Z"
       },
       {
         "target": {
-          "file": "src/config/__tests__/config-catalog-defs.test.ts"
+          "file": "src/analyze/context/__tests__/provider-from-registry.test.ts",
+          "version": "ccae14700"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:10:44.122Z"
+        "timestamp": "2026-10-30T04:58:27.433Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog.test.ts",
+          "version": "ccae14700"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:58:27.433Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+          "version": "ccae14700"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:58:27.433Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-catalog.ts",
+          "version": "ccae14700"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:58:27.433Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-registry.ts",
+          "version": "ccae14700"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:58:27.433Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/attribution.test.ts",
+          "version": "ccae14700"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:58:27.433Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/shaper-provider.ts",
+          "version": "ccae14700"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:58:27.433Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/attribution.ts",
+          "version": "ccae14700"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:58:27.433Z"
       }
     ],
-    "commit": "474c1a85c"
+    "commit": "ccae14700"
   }
 }

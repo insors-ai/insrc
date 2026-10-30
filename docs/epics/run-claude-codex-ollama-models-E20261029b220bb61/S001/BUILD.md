@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-29T19:58:32.650Z  ·  **Updated:** 2026-10-30T04:10:44.122Z
+**Standalone:** no  ·  **Created:** 2026-10-29T19:58:32.650Z  ·  **Updated:** 2026-10-30T04:58:27.433Z
 
-**Commit:** 474c1a85c
+**Commit:** ccae14700
 
 ## Summary
 
@@ -30,7 +30,6 @@ The ollama-claude shipped entry (landed with t1 in ef850d10d, because the loader
 - `src/agent/providers/__tests__/cli-vibe.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/agent/providers/bounded-input.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
-- `src/analyze/context/__tests__/provider-from-registry.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/assets/models/cloud-model-catalog.json` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/cli/__tests__/tui.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/cli/panes/ReposPane.tsx` — **insrc-build** (2026-10-30T04:10:44.122Z)
@@ -45,20 +44,16 @@ The ollama-claude shipped entry (landed with t1 in ef850d10d, because the loader
 - `src/daemon/__tests__/list-models.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/mcp-register.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/model-catalog-asset.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
-- `src/daemon/__tests__/model-catalog.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/model-check.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/model-definitions.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/model-registry.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/models-definitions-daemon.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/models-resolve-role.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/code-review-rpc.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
-- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/handler-runtime.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/mcp-register.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
-- `src/daemon/model-catalog.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/model-check.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/model-definitions.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
-- `src/daemon/model-registry.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/steps/code-review-step/handler.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/steps/host.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/workflow-rpc.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
@@ -73,5 +68,12 @@ The ollama-claude shipped entry (landed with t1 in ef850d10d, because the loader
 - `src/daemon/steps/build-step/phases/validate.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/__tests__/handler-runtime.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/daemon/config-write.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
-- `src/workflow/__tests__/attribution.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
 - `src/config/__tests__/config-catalog-defs.test.ts` — **insrc-build** (2026-10-30T04:10:44.122Z)
+- `src/analyze/context/__tests__/provider-from-registry.test.ts` — **insrc-build** (2026-10-30T04:58:27.433Z)
+- `src/daemon/__tests__/model-catalog.test.ts` — **insrc-build** (2026-10-30T04:58:27.433Z)
+- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-30T04:58:27.433Z)
+- `src/daemon/model-catalog.ts` — **insrc-build** (2026-10-30T04:58:27.433Z)
+- `src/daemon/model-registry.ts` — **insrc-build** (2026-10-30T04:58:27.433Z)
+- `src/workflow/__tests__/attribution.test.ts` — **insrc-build** (2026-10-30T04:58:27.433Z)
+- `src/analyze/context/shaper-provider.ts` — **insrc-build** (2026-10-30T04:58:27.433Z)
+- `src/workflow/attribution.ts` — **insrc-build** (2026-10-30T04:58:27.433Z)

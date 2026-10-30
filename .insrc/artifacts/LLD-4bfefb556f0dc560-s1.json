@@ -27,7 +27,39 @@
     "standalone": true,
     "sizeClass": "bugfix",
     "authoredBy": "controller",
-    "revision": 2
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "6a79560ea5597dca5445b4af3a9a5bbddc1030dbbc3ca150ab39960b3f3444cc",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:38:20.781Z",
+        "override": {
+          "reason": "User explicitly approved the LLD with a review override and requested planning. The mandatory daemon design review failed checklist semantic validation after two internal attempts and recorded no verdict; no clean review is claimed. One actual bounded startup diagnostic confirmed session-local plugin disabling and functioning schema output, with native no-managed/no-Team-Enterprise diagnostics. Approved design requires strict versioned capability evidence replay, completed installed candidates for both modes and a real new-engine review; no diagnostic-only completion, automatic activation or legacy deletion."
+        }
+      }
+    },
+    "rangeBase": "879bc166ab3bdf57bc4d1239922410d5fbb8226c"
   },
   "body": {
     "summary": {

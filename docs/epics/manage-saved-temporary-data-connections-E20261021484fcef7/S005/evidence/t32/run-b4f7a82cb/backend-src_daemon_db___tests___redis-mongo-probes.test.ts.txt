@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S2-A5: Redis aliases and MongoDB authenticate real readonly probes and reject bad credentials or closed ports
+ok 1 - CM-S2-A5: Redis aliases and MongoDB authenticate real readonly probes and reject bad credentials or closed ports
+  ---
+  duration_ms: 18595.235459
+  type: 'test'
+  ...
+# Subtest: CM-S2-A5: an established silent Redis endpoint cannot hang PING or QUIT cleanup
+ok 2 - CM-S2-A5: an established silent Redis endpoint cannot hang PING or QUIT cleanup
+  ---
+  duration_ms: 10015.063
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29101.473292

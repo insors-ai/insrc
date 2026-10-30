@@ -1,0 +1,56 @@
+TAP version 13
+# Subtest: a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread
+ok 1 - a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread
+  ---
+  duration_ms: 715.389666
+  type: 'test'
+  ...
+# Subtest: no module outside src/daemon and src/db calls declareLiveStoreOwner
+ok 2 - no module outside src/daemon and src/db calls declareLiveStoreOwner
+  ---
+  duration_ms: 306.659625
+  type: 'test'
+  ...
+# Subtest: a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row
+ok 3 - a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row
+  ---
+  duration_ms: 959.835541
+  type: 'test'
+  ...
+# Subtest: two workers' artifact-vector and config writes are read back from a third thread
+ok 4 - two workers' artifact-vector and config writes are read back from a third thread
+  ---
+  duration_ms: 1084.49725
+  type: 'test'
+  ...
+# Subtest: a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread
+ok 5 - a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread
+  ---
+  duration_ms: 287.460666
+  type: 'test'
+  ...
+# Subtest: a daemon worker and the main thread contend for the same named lock
+ok 6 - a daemon worker and the main thread contend for the same named lock
+  ---
+  duration_ms: 252.837917
+  type: 'test'
+  ...
+# Subtest: src/daemon/threads/__tests__/worker-stores.test.ts
+not ok 1 - src/daemon/threads/__tests__/worker-stores.test.ts
+  ---
+  duration_ms: 600047.4185
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/worker-stores.test.ts:1:1'
+  failureType: 'testTimeoutFailure'
+  error: 'test timed out after 600000ms'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 0
+# cancelled 1
+# skipped 0
+# todo 0
+# duration_ms 600056.070208

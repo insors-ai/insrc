@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionDraftTestsTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:12:52" hostname="subho-office-mac" time="15.97">
+  <properties/>
+  <testcase name="testExactTupleLateAbaAndNativeEdtViewDelivery" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTestsTest" time="3.703"/>
+  <testcase name="testActualProjectDisposalSuppressesQueuedStatusAndClosesOwnedLanes" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTestsTest" time="0.366"/>
+  <testcase name="testSameSerializerOptionalTestRepeatedClickEditAndCloseRetainOriginalSource" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTestsTest" time="1.133"/>
+  <testcase name="testTemporaryRootSwitchCancelsOriginalLaneAndRealTimeoutNeverCertifiesDrain" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTestsTest" time="10.767"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

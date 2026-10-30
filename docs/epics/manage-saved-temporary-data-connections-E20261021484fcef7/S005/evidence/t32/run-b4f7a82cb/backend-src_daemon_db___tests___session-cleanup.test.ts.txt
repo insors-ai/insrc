@@ -1,0 +1,42 @@
+TAP version 13
+# (node:8076) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+ok 1 - CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+  ---
+  duration_ms: 20547.443583
+  type: 'test'
+  ...
+# Subtest: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+ok 2 - CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+  ---
+  duration_ms: 0.134958
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+ok 3 - CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+  ---
+  duration_ms: 5.757
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+ok 4 - CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+  ---
+  duration_ms: 0.296
+  type: 'test'
+  ...
+# Subtest: CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation
+ok 5 - CM-S4-STATE: temporary cleanup retry survives resume privately but cannot reply through a revoked generation
+  ---
+  duration_ms: 123.261916
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21577.428125

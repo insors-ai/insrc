@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: requireApprovedLld: returns the LLD when approved + non-stale
+ok 1 - requireApprovedLld: returns the LLD when approved + non-stale
+  ---
+  duration_ms: 7.918625
+  type: 'test'
+  ...
+# Subtest: requireApprovedLld: throws ArtifactNotApprovedError when approvedAt is missing
+ok 2 - requireApprovedLld: throws ArtifactNotApprovedError when approvedAt is missing
+  ---
+  duration_ms: 3.225291
+  type: 'test'
+  ...
+# Subtest: requireApprovedLld: throws when rejectedAt is set
+ok 3 - requireApprovedLld: throws when rejectedAt is set
+  ---
+  duration_ms: 2.453667
+  type: 'test'
+  ...
+# Subtest: requireApprovedLld: throws when effective hash differs and no stale-ack
+ok 4 - requireApprovedLld: throws when effective hash differs and no stale-ack
+  ---
+  duration_ms: 2.472292
+  type: 'test'
+  ...
+# Subtest: requireApprovedLld: returns the LLD when stale but stale-acked
+ok 5 - requireApprovedLld: returns the LLD when stale but stale-acked
+  ---
+  duration_ms: 2.217375
+  type: 'test'
+  ...
+# Subtest: requireApprovedLld: throws ArtifactMissingError when no LLD exists
+ok 6 - requireApprovedLld: throws ArtifactMissingError when no LLD exists
+  ---
+  duration_ms: 1.636125
+  type: 'test'
+  ...
+# Subtest: readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approved artifacts
+ok 7 - readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approved artifacts
+  ---
+  duration_ms: 2.849333
+  type: 'test'
+  ...
+# Subtest: readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice null, no throw (no HLD/DEF present)
+ok 8 - readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice null, no throw (no HLD/DEF present)
+  ---
+  duration_ms: 1.09825
+  type: 'test'
+  ...
+# Subtest: readPlanUpstream: an epic-scoped LLD (standalone unset) still requires the HLD — throws when it is absent
+ok 9 - readPlanUpstream: an epic-scoped LLD (standalone unset) still requires the HLD — throws when it is absent
+  ---
+  duration_ms: 0.928792
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 309.473083

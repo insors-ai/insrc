@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: review wiring: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none, it is given a readCompanion, and neither host module imports the other
+ok 1 - review wiring: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none, it is given a readCompanion, and neither host module imports the other
+  ---
+  duration_ms: 3.908666
+  type: 'test'
+  ...
+# Subtest: review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB
+ok 2 - review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB
+  ---
+  duration_ms: 20.550583
+  type: 'test'
+  ...
+# Subtest: review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder
+ok 3 - review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder
+  ---
+  duration_ms: 1.230917
+  type: 'test'
+  ...
+# Subtest: extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in an open editor group that holds no chat tab and otherwise in the active column without quiet, or beside the chat without focus with it; there is no presenter when the review pane is not created
+ok 4 - extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in an open editor group that holds no chat tab and otherwise in the active column without quiet, or beside the chat without focus with it; there is no presenter when the review pane is not created
+  ---
+  duration_ms: 0.696917
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 218.738041

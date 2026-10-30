@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.005">
+  <properties/>
+  <testcase name="update maps an unreachable daemon to Failed, never throwing()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.001"/>
+  <testcase name="daemonStatus still maps an unreachable daemon to Stopped (installedCommit read does not change the contract)()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.0"/>
+  <testcase name="updateOutcome maps an empty (no-state) reply to None()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.0"/>
+  <testcase name="daemonStatus defaults installedCommit to empty when absent (pre-S002 daemon)()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.0"/>
+  <testcase name="updateOutcome maps an unreachable daemon to Unavailable, never throwing()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.001"/>
+  <testcase name="daemonStatus extracts installedCommit when present()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.0"/>
+  <testcase name="update maps a framed error to Failed with the reason()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.0"/>
+  <testcase name="update sends daemon-update and maps an ok reply to Ok (never a shell-out)()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.0"/>
+  <testcase name="updateOutcome maps a record to Loaded with state, error and finishedAt()" classname="ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

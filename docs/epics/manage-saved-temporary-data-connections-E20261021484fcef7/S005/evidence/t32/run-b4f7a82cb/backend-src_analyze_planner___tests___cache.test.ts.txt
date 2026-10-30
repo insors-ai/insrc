@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: planDirFor: root plan -> ~/.insrc/analyze/<runId>
+ok 1 - planDirFor: root plan -> ~/.insrc/analyze/<runId>
+  ---
+  duration_ms: 0.914041
+  type: 'test'
+  ...
+# Subtest: planDirFor: child plan for t02 -> tasks/t02
+ok 2 - planDirFor: child plan for t02 -> tasks/t02
+  ---
+  duration_ms: 0.140875
+  type: 'test'
+  ...
+# Subtest: planDirFor: nested child plan for t02.t05 -> tasks/t02/tasks/t02.t05
+ok 3 - planDirFor: nested child plan for t02.t05 -> tasks/t02/tasks/t02.t05
+  ---
+  duration_ms: 0.071584
+  type: 'test'
+  ...
+# Subtest: planDirFor: deeply nested t02.t05.t01 -> three nested tasks/ dirs
+ok 4 - planDirFor: deeply nested t02.t05.t01 -> three nested tasks/ dirs
+  ---
+  duration_ms: 0.065375
+  type: 'test'
+  ...
+# Subtest: planFinalPathFor: root -> plan.json under run dir
+ok 5 - planFinalPathFor: root -> plan.json under run dir
+  ---
+  duration_ms: 0.215375
+  type: 'test'
+  ...
+# Subtest: planAttemptPathFor + planFeedbackPathFor: zero-padded N-digit naming
+ok 6 - planAttemptPathFor + planFeedbackPathFor: zero-padded N-digit naming
+  ---
+  duration_ms: 0.143208
+  type: 'test'
+  ...
+# Subtest: planAttemptPathFor: 10 doesn't zero-pad
+ok 7 - planAttemptPathFor: 10 doesn't zero-pad
+  ---
+  duration_ms: 0.114583
+  type: 'test'
+  ...
+# Subtest: readPlanFinal: miss returns null
+ok 8 - readPlanFinal: miss returns null
+  ---
+  duration_ms: 0.122375
+  type: 'test'
+  ...
+# Subtest: writePlanFinal then readPlanFinal round-trips an identical plan
+ok 9 - writePlanFinal then readPlanFinal round-trips an identical plan
+  ---
+  duration_ms: 5.549542
+  type: 'test'
+  ...
+# Subtest: writePlanFinal overwrites a prior final (resume case)
+ok 10 - writePlanFinal overwrites a prior final (resume case)
+  ---
+  duration_ms: 7.068708
+  type: 'test'
+  ...
+# Subtest: writeAttempt + writeFeedback land at zero-padded paths
+ok 11 - writeAttempt + writeFeedback land at zero-padded paths
+  ---
+  duration_ms: 4.477542
+  type: 'test'
+  ...
+# Subtest: multiple attempts persist independently (no overwriting between attempts)
+ok 12 - multiple attempts persist independently (no overwriting between attempts)
+  ---
+  duration_ms: 2.504666
+  type: 'test'
+  ...
+# Subtest: child plan persists under tasks/<parentTaskPath>/
+ok 13 - child plan persists under tasks/<parentTaskPath>/
+  ---
+  duration_ms: 3.2855
+  type: 'test'
+  ...
+# Subtest: nested child plan (t02.t05) lands at the right depth
+ok 14 - nested child plan (t02.t05) lands at the right depth
+  ---
+  duration_ms: 1.829833
+  type: 'test'
+  ...
+# Subtest: writePlanFinal leaves no .tmp- file behind
+ok 15 - writePlanFinal leaves no .tmp- file behind
+  ---
+  duration_ms: 1.883708
+  type: 'test'
+  ...
+# Subtest: purgePlan removes plan.json + plan.attempts/ for the given slot
+ok 16 - purgePlan removes plan.json + plan.attempts/ for the given slot
+  ---
+  duration_ms: 1.637916
+  type: 'test'
+  ...
+# Subtest: purgePlan: child plan purge does NOT affect root plan
+ok 17 - purgePlan: child plan purge does NOT affect root plan
+  ---
+  duration_ms: 0.979916
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 377.901

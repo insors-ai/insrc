@@ -1,0 +1,136 @@
+TAP version 13
+# [2026-10-30T04:40:55.321Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: 'e7048d7b-c1ed-4bb5-9a34-295af5f328e1',
+#   query_id: '06577191-af8d-480f-bed8-a3218c959de8',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: Error: socket hang up
+#     at Socket.socketOnEnd (node:_http_client:599:25)
+#     at Socket.emit (node:events:531:35)
+#     at endReadableNT (node:internal/streams/readable:1698:12)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'ECONNRESET'
+# }
+# [2026-10-30T04:40:55.830Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: '1acf0b14-bf34-4b4c-8c15-2abc4825ea4b',
+#   query_id: '4a47b92a-a864-4c06-aab8-7c0d75c96127',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: Error: socket hang up
+#     at Socket.socketOnEnd (node:_http_client:599:25)
+#     at Socket.emit (node:events:531:35)
+#     at endReadableNT (node:internal/streams/readable:1698:12)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'ECONNRESET'
+# }
+# [2026-10-30T04:40:56.340Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: 'fd0eb5a3-ee83-4592-adcf-868c29f9d295',
+#   query_id: 'b9d91171-9c00-4541-a6a7-b3dc5247f1d5',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: Error: socket hang up
+#     at Socket.socketOnEnd (node:_http_client:599:25)
+#     at Socket.emit (node:events:531:35)
+#     at endReadableNT (node:internal/streams/readable:1698:12)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'ECONNRESET'
+# }
+# [2026-10-30T04:40:56.852Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: 'b203b796-c46b-468d-9649-3f4ffa3bf3df',
+#   query_id: '07e51bdd-a2b0-447f-88ff-1eed3bc62575',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: Error: socket hang up
+#     at Socket.socketOnEnd (node:_http_client:599:25)
+#     at Socket.emit (node:events:531:35)
+#     at endReadableNT (node:internal/streams/readable:1698:12)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'ECONNRESET'
+# }
+# [2026-10-30T04:40:57.360Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: 'c85a1dc9-8cfb-441d-ba08-1a87fe8bc6ff',
+#   query_id: 'ecd04504-c95d-44c2-84de-762e8d5e3f83',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: Error: socket hang up
+#     at Socket.socketOnEnd (node:_http_client:599:25)
+#     at Socket.emit (node:events:531:35)
+#     at endReadableNT (node:internal/streams/readable:1698:12)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'ECONNRESET'
+# }
+# [2026-10-30T04:40:58.558Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: 'bc371b8c-748e-4f50-8cdc-3898d075aded',
+#   query_id: 'cc8a9036-b20c-40f2-af55-7aaaab4a241a',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: ClickHouseError: fixture: Authentication failed: password is incorrect, or there is no user with such name. 
+#     at parseError (/Users/subhagho/work/projects/insors/insrc/node_modules/@clickhouse/client/src/common/error/error.ts:45:12)
+#     at ClientRequest.onResponse (/Users/subhagho/work/projects/insors/insrc/node_modules/@clickhouse/client/src/connection/socket_pool.ts:333:25)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+#   code: '516',
+#   type: 'AUTHENTICATION_FAILED'
+# }
+# [2026-10-30T04:40:59.826Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: 'b421b764-d9d6-46d8-862a-0bfa0c2a9cef',
+#   query_id: '734c2d4b-bb16-49a0-925f-6651c397807e',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: Error: connect ECONNREFUSED 127.0.0.1:32869
+#     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+#   errno: -61,
+#   code: 'ECONNREFUSED',
+#   syscall: 'connect',
+#   address: '127.0.0.1',
+#   port: 32869
+# }
+# Subtest: CM-S2-A4: ClickHouse actual service authenticates SELECT1 and rejects invalid or unavailable connections
+ok 1 - CM-S2-A4: ClickHouse actual service authenticates SELECT1 and rejects invalid or unavailable connections
+  ---
+  duration_ms: 6959.857041
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7247.771125

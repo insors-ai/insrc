@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: getEffectiveHld with no amendments returns base unchanged
+ok 1 - getEffectiveHld with no amendments returns base unchanged
+  ---
+  duration_ms: 3.330125
+  type: 'test'
+  ...
+# Subtest: getEffectiveHld applies approved amendments to body
+ok 2 - getEffectiveHld applies approved amendments to body
+  ---
+  duration_ms: 2.347791
+  type: 'test'
+  ...
+# Subtest: getEffectiveHash changes when an amendment is approved
+ok 3 - getEffectiveHash changes when an amendment is approved
+  ---
+  duration_ms: 2.178334
+  type: 'test'
+  ...
+# Subtest: scanLldStaleness reports up-to-date when LLD hash matches current effective
+ok 4 - scanLldStaleness reports up-to-date when LLD hash matches current effective
+  ---
+  duration_ms: 1.458167
+  type: 'test'
+  ...
+# Subtest: scanLldStaleness reports amendment-<id> when a new amendment lands
+ok 5 - scanLldStaleness reports amendment-<id> when a new amendment lands
+  ---
+  duration_ms: 1.685958
+  type: 'test'
+  ...
+# Subtest: scanLldStaleness reports hld-rerun when base runId changed
+ok 6 - scanLldStaleness reports hld-rerun when base runId changed
+  ---
+  duration_ms: 1.258459
+  type: 'test'
+  ...
+# Subtest: scanLldStaleness returns [] when no LLDs exist
+ok 7 - scanLldStaleness returns [] when no LLDs exist
+  ---
+  duration_ms: 2.055792
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 284.130083

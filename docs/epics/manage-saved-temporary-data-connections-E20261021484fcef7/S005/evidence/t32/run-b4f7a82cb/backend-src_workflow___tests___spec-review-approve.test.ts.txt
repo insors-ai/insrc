@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: ac1: reviewArtifactFile reviews a SPEC md generically (stage = meta.workflow = brainstorm)
+ok 1 - ac1: reviewArtifactFile reviews a SPEC md generically (stage = meta.workflow = brainstorm)
+  ---
+  duration_ms: 148.326083
+  type: 'test'
+  ...
+# Subtest: ac2: approve refuses a block-verdict SPEC without an override, approves with one
+ok 2 - ac2: approve refuses a block-verdict SPEC without an override, approves with one
+  ---
+  duration_ms: 3.676333
+  type: 'test'
+  ...
+# Subtest: ac4: resolveApprovedSpec maps unapproved → not-approved, missing → not-found, approved → { spec }
+ok 3 - ac4: resolveApprovedSpec maps unapproved → not-approved, missing → not-found, approved → { spec }
+  ---
+  duration_ms: 2.915667
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 444.677292

@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: a review is current or stale only where a recorded field settles it, and unknown otherwise
+ok 1 - a review is current or stale only where a recorded field settles it, and unknown otherwise
+  ---
+  duration_ms: 10.242292
+  type: 'test'
+  ...
+# Subtest: amendments are hashed in approvedAt order and listed in amendmentId order with their status
+ok 2 - amendments are hashed in approvedAt order and listed in amendmentId order with their status
+  ---
+  duration_ms: 1.207541
+  type: 'test'
+  ...
+# Subtest: a review stamped before its record, a standalone design and malformed fields never throw and invent no currency
+ok 3 - a review stamped before its record, a standalone design and malformed fields never throw and invent no currency
+  ---
+  duration_ms: 0.504
+  type: 'test'
+  ...
+# Subtest: an extension story stays in the view and its extension newer than the epic framing is reported
+ok 4 - an extension story stays in the view and its extension newer than the epic framing is reported
+  ---
+  duration_ms: 0.205041
+  type: 'test'
+  ...
+# Subtest: an item no record gives a title stays in the view with an incomplete-evidence notice
+ok 5 - an item no record gives a title stays in the view with an incomplete-evidence notice
+  ---
+  duration_ms: 0.13075
+  type: 'test'
+  ...
+# Subtest: the real-shape fixtures give every record a currency entry, deterministically
+ok 6 - the real-shape fixtures give every record a currency entry, deterministically
+  ---
+  duration_ms: 0.80775
+  type: 'test'
+  ...
+# Subtest: a malformed file leaves every other item in place and is named with the coverage it leaves unknown
+ok 7 - a malformed file leaves every other item in place and is named with the coverage it leaves unknown
+  ---
+  duration_ms: 0.455917
+  type: 'test'
+  ...
+# Subtest: producing the currency annotation changes no file in the artifact store
+ok 8 - producing the currency annotation changes no file in the artifact store
+  ---
+  duration_ms: 4.15525
+  type: 'test'
+  ...
+# Subtest: the staleness hash uses each amendment record's own id, and a missing hldBaseRunId is not called a re-run
+ok 9 - the staleness hash uses each amendment record's own id, and a missing hldBaseRunId is not called a re-run
+  ---
+  duration_ms: 0.511916
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 359.384459

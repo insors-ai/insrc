@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionDraftTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.021">
+  <properties/>
+  <testcase name="public percent decoding rejects malformed UTF8 without changing valid plus or percent text()" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTest" time="0.005"/>
+  <testcase name="unsafe fields read only shapes pinned family and defensive projections()" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTest" time="0.002"/>
+  <testcase name="dirty exits cancel without changing inputs while discard clears only unsaved form()" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTest" time="0.001"/>
+  <testcase name="all current descriptor fields and nine common drafts match TypeScript serializer()" classname="ai.insors.insrc.jetbrains.connections.ConnectionDraftTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

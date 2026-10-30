@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.McpDebugStatusGatewayTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="debugStatus maps an unreachable daemon to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.McpDebugStatusGatewayTest" time="0.001"/>
+  <testcase name="debugStatus maps a framed error reply to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.McpDebugStatusGatewayTest" time="0.0"/>
+  <testcase name="debugStatus returns an empty-but-Loaded snapshot for a reachable daemon with zero sessions()" classname="ai.insors.insrc.jetbrains.daemon.McpDebugStatusGatewayTest" time="0.001"/>
+  <testcase name="debugStatus sends METHOD_DEBUG_STATUS with empty params and coerces a Gson-Double reply to Loaded sorted by connectedAtMs()" classname="ai.insors.insrc.jetbrains.daemon.McpDebugStatusGatewayTest" time="0.001"/>
+  <testcase name="debugStatus tolerates a malformed non-array clients as an empty Loaded without throwing()" classname="ai.insors.insrc.jetbrains.daemon.McpDebugStatusGatewayTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

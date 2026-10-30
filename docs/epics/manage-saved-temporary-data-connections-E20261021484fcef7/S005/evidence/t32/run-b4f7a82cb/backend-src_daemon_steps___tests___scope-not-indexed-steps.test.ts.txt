@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: insrc_analyze_step start on a scope the index does not hold (in no registered repository, or in one with no stored entities), for code and docs, is refused with code 'scope-not-indexed' and the run's message, with no size announced and no state minted
+ok 1 - insrc_analyze_step start on a scope the index does not hold (in no registered repository, or in one with no stored entities), for code and docs, is refused with code 'scope-not-indexed' and the run's message, with no size announced and no state minted
+  ---
+  duration_ms: 202.323292
+  type: 'test'
+  ...
+# Subtest: insrc_analyze_step start on an indexed repository is answered; data, infra and generic requests on an unregistered directory are not refused for it
+ok 2 - insrc_analyze_step start on an indexed repository is answered; data, infra and generic requests on an unregistered directory are not refused for it
+  ---
+  duration_ms: 138.254333
+  type: 'test'
+  ...
+# Subtest: insrc_analyze_step plan on a run whose repository is no longer held by the index is refused with code 'scope-not-indexed' before its lookups run
+ok 3 - insrc_analyze_step plan on a run whose repository is no longer held by the index is refused with code 'scope-not-indexed' before its lookups run
+  ---
+  duration_ms: 389.597042
+  type: 'test'
+  ...
+# Subtest: insrc_analyze_step replies to every scope error with the code and message of the one mapping (scopeErrorMapping); only a repository under index is retryable; any other error is not a scope error
+ok 4 - insrc_analyze_step replies to every scope error with the code and message of the one mapping (scopeErrorMapping); only a repository under index is retryable; any other error is not a scope error
+  ---
+  duration_ms: 203.546208
+  type: 'test'
+  ...
+# Subtest: insrc_analyze_step (ISSUE-fb584b48): a 'repo-indexing' refusal is retryable only while the repository is being indexed; one for a repository whose last index failed is not
+ok 5 - insrc_analyze_step (ISSUE-fb584b48): a 'repo-indexing' refusal is retryable only while the repository is being indexed; one for a repository whose last index failed is not
+  ---
+  duration_ms: 138.688708
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1856.580459

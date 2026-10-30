@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: purge: session.delete on a session worker drops the chat from the shared-state pool and its todos cleanup events reach an open todos.subscribe
+ok 1 - purge: session.delete on a session worker drops the chat from the shared-state pool and its todos cleanup events reach an open todos.subscribe
+  ---
+  duration_ms: 429.27225
+  type: 'test'
+  ...
+# Subtest: purge: chat.dropSession over the socket answers unknown method; threads off purges as today
+ok 2 - purge: chat.dropSession over the socket answers unknown method; threads off purges as today
+  ---
+  duration_ms: 51.857709
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1207.109709

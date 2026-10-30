@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: every DocGenOutcome variant validates against the mirrored schema
+ok 1 - every DocGenOutcome variant validates against the mirrored schema
+  ---
+  duration_ms: 0.83925
+  type: 'test'
+  ...
+# Subtest: malformed outcomes are rejected
+ok 2 - malformed outcomes are rejected
+  ---
+  duration_ms: 0.45425
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 281.253375

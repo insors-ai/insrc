@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: fallbackFreeformPlan emits exactly one freeform.probe step
+ok 1 - fallbackFreeformPlan emits exactly one freeform.probe step
+  ---
+  duration_ms: 0.628833
+  type: 'test'
+  ...
+# Subtest: fallbackFreeformPlan maps shaperId->answerType so logs stay readable
+ok 2 - fallbackFreeformPlan maps shaperId->answerType so logs stay readable
+  ---
+  duration_ms: 0.084083
+  type: 'test'
+  ...
+# Subtest: fallbackFreeformPlan preserves intent.focus in the step purpose
+ok 3 - fallbackFreeformPlan preserves intent.focus in the step purpose
+  ---
+  duration_ms: 0.094917
+  type: 'test'
+  ...
+# Subtest: free-form replacement's purpose for an unfocused intent is the broad survey
+ok 4 - free-form replacement's purpose for an unfocused intent is the broad survey
+  ---
+  duration_ms: 0.088625
+  type: 'test'
+  ...
+# Subtest: extractSoleFreeformResult returns the bundle when freeform.probe is the only step
+ok 5 - extractSoleFreeformResult returns the bundle when freeform.probe is the only step
+  ---
+  duration_ms: 0.173875
+  type: 'test'
+  ...
+# Subtest: extractSoleFreeformResult returns null when the freeform bundle is all-empty
+ok 6 - extractSoleFreeformResult returns null when the freeform bundle is all-empty
+  ---
+  duration_ms: 0.050541
+  type: 'test'
+  ...
+# Subtest: extractSoleFreeformResult returns null on a mixed plan
+ok 7 - extractSoleFreeformResult returns null on a mixed plan
+  ---
+  duration_ms: 0.106833
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 553.147708

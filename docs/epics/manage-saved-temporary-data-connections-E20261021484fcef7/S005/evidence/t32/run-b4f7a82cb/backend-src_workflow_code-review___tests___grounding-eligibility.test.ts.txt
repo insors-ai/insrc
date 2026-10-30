@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are
+ok 1 - sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are
+  ---
+  duration_ms: 2.427709
+  type: 'test'
+  ...
+# Subtest: every judge slot receives the run's groundingMode and the non-coverage judges see every symbol
+ok 2 - every judge slot receives the run's groundingMode and the non-coverage judges see every symbol
+  ---
+  duration_ms: 8.6455
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 473.540625

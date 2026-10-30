@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: boot-model-catalog.test.ts: daemon entry in a temp home with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy exits non-zero with the error naming the entry, writes no config.json and never creates the socket
+ok 1 - boot-model-catalog.test.ts: daemon entry in a temp home with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy exits non-zero with the error naming the entry, writes no config.json and never creates the socket
+  ---
+  duration_ms: 1349.791042
+  type: 'test'
+  ...
+# Subtest: boot-model-catalog.test.ts: with the shipped asset the daemon boots and listens
+ok 2 - boot-model-catalog.test.ts: with the shipped asset the daemon boots and listens
+  ---
+  duration_ms: 3465.296625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5175.737708

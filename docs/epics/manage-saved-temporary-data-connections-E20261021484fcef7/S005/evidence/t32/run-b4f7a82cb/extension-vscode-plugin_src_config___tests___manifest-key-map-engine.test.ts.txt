@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: manifest-key-map-engine.test.ts: native tier edits over the real merged key map are validated against the definitions and written whole; invalid edits revert; restartRequired calls onRestartRequired once
+ok 1 - manifest-key-map-engine.test.ts: native tier edits over the real merged key map are validated against the definitions and written whole; invalid edits revert; restartRequired calls onRestartRequired once
+  ---
+  duration_ms: 6.580792
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.677708

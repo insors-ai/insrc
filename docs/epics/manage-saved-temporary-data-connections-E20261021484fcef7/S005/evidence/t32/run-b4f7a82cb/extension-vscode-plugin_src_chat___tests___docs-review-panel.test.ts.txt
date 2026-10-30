@@ -1,0 +1,1378 @@
+TAP version 13
+# Subtest: open() posts the pending list from client.pending()
+ok 1 - open() posts the pending list from client.pending()
+  ---
+  duration_ms: 11.696917
+  type: 'test'
+  ...
+# Subtest: open-doc for a known id posts docs-content mapped from the client
+ok 2 - open-doc for a known id posts docs-content mapped from the client
+  ---
+  duration_ms: 4.457041
+  type: 'test'
+  ...
+# Subtest: open-doc for a stale/unknown id does NOT fetch content — it refreshes the list
+ok 3 - open-doc for a stale/unknown id does NOT fetch content — it refreshes the list
+  ---
+  duration_ms: 2.82725
+  type: 'test'
+  ...
+# Subtest: docs-decision approve records the decision through client.decide by the document's path and re-fetches pending
+ok 4 - docs-decision approve records the decision through client.decide by the document's path and re-fetches pending
+  ---
+  duration_ms: 3.23875
+  type: 'test'
+  ...
+# Subtest: a docs-decision in the earlier accept/note shape, or for a document that was never opened, reaches no daemon call
+ok 5 - a docs-decision in the earlier accept/note shape, or for a document that was never opened, reaches no daemon call
+  ---
+  duration_ms: 4.268208
+  type: 'test'
+  ...
+# Subtest: a withheld approval surfaces the reason non-lossily and stays pending
+ok 6 - a withheld approval surfaces the reason non-lossily and stays pending
+  ---
+  duration_ms: 3.97525
+  type: 'test'
+  ...
+# Subtest: docs-decision reject and feedback send their comments through the same client.decide call and re-fetch
+ok 7 - docs-decision reject and feedback send their comments through the same client.decide call and re-fetch
+  ---
+  duration_ms: 5.420667
+  type: 'test'
+  ...
+# Subtest: a stale decision (id no longer pending) is dropped, not sent to the client
+ok 8 - a stale decision (id no longer pending) is dropped, not sent to the client
+  ---
+  duration_ms: 2.892166
+  type: 'test'
+  ...
+# Subtest: client.pending() throwing yields an empty list + an inline unavailable notice (never a blank pane)
+ok 9 - client.pending() throwing yields an empty list + an inline unavailable notice (never a blank pane)
+  ---
+  duration_ms: 1.7665
+  type: 'test'
+  ...
+# Subtest: HIGH-1: a content-fetch failure posts blocked:true so approve is suppressed (review not defeated)
+ok 10 - HIGH-1: a content-fetch failure posts blocked:true so approve is suppressed (review not defeated)
+  ---
+  duration_ms: 2.832584
+  type: 'test'
+  ...
+# Subtest: MED-4: commentable is true for LLD/HLD/DEF and false for other pending kinds (PLAN)
+ok 11 - MED-4: commentable is true for LLD/HLD/DEF and false for other pending kinds (PLAN)
+  ---
+  duration_ms: 4.927
+  type: 'test'
+  ...
+# Subtest: MED-3: a slow refresh response cannot overwrite a newer one (sequence guard)
+ok 12 - MED-3: a slow refresh response cannot overwrite a newer one (sequence guard)
+  ---
+  duration_ms: 5.039458
+  type: 'test'
+  ...
+# Subtest: ISSUE-605c7057: a slow earlier open cannot overwrite a newer one (newer wins, either completion order)
+ok 13 - ISSUE-605c7057: a slow earlier open cannot overwrite a newer one (newer wins, either completion order)
+  ---
+  duration_ms: 12.517333
+  type: 'test'
+  ...
+# Subtest: ISSUE-605c7057: a superseded open that FAILS does not replace the current document with its error
+ok 14 - ISSUE-605c7057: a superseded open that FAILS does not replace the current document with its error
+  ---
+  duration_ms: 6.3335
+  type: 'test'
+  ...
+# Subtest: ISSUE-605c7057: a failure of the CURRENT open still posts blocked:true (fail-closed kept)
+ok 15 - ISSUE-605c7057: a failure of the CURRENT open still posts blocked:true (fail-closed kept)
+  ---
+  duration_ms: 4.865833
+  type: 'test'
+  ...
+# Subtest: ISSUE-605c7057: a list refresh does not discard an in-flight open
+ok 16 - ISSUE-605c7057: a list refresh does not discard an in-flight open
+  ---
+  duration_ms: 3.885667
+  type: 'test'
+  ...
+# Subtest: rendered shell: one nonce, unwidened CSP, the review pane body, guardMd present, no remote origin
+ok 17 - rendered shell: one nonce, unwidened CSP, the review pane body, guardMd present, no remote origin
+  ---
+  duration_ms: 0.676292
+  type: 'test'
+  ...
+# Subtest: t4: the body container is NOT preformatted, and the shell carries markdown element rules for it
+ok 18 - t4: the body container is NOT preformatted, and the shell carries markdown element rules for it
+  ---
+  duration_ms: 0.295625
+  type: 'test'
+  ...
+# Subtest: the docs-review host + client modules are vscode-free
+ok 19 - the docs-review host + client modules are vscode-free
+  ---
+  duration_ms: 0.77025
+  type: 'test'
+  ...
+# Subtest: t4: the happy path parses through the vendored renderer and scrubs with guardMd
+ok 20 - t4: the happy path parses through the vendored renderer and scrubs with guardMd
+  ---
+  duration_ms: 0.45875
+  type: 'test'
+  ...
+# Subtest: t4: a PARSE FAILURE falls back to textContent with the FULL body present and degradation { degraded: true, notice }
+ok 21 - t4: a PARSE FAILURE falls back to textContent with the FULL body present and degradation { degraded: true, notice }
+  ---
+  duration_ms: 0.180334
+  type: 'test'
+  ...
+# Subtest: t4: a MISSING vendored global takes the SAME fallback path as a parse throw — one code path, one message
+ok 22 - t4: a MISSING vendored global takes the SAME fallback path as a parse throw — one code path, one message
+  ---
+  duration_ms: 0.156833
+  type: 'test'
+  ...
+# Subtest: t4: guardMd strips a non-http href and an image src from the rendered body, and moves an http(s) address to data-url
+ok 23 - t4: guardMd strips a non-http href and an image src from the rendered body, and moves an http(s) address to data-url
+  ---
+  duration_ms: 0.170375
+  type: 'test'
+  ...
+# Subtest: t6 (contract): StructuredRenderer is still exported and now implemented in exactly ONE named place — a DELIBERATE narrowing at the first implementer, not an eroded invariant
+ok 24 - t6 (contract): StructuredRenderer is still exported and now implemented in exactly ONE named place — a DELIBERATE narrowing at the first implementer, not an eroded invariant
+  ---
+  duration_ms: 4.14125
+  type: 'test'
+  ...
+# Subtest: the file builds no fake DOM and declares no tree flatten of its own — both come from fake-dom.ts
+ok 25 - the file builds no fake DOM and declares no tree flatten of its own — both come from fake-dom.ts
+  ---
+  duration_ms: 3.275583
+  type: 'test'
+  ...
+# Subtest: there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads
+ok 26 - there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads
+  ---
+  duration_ms: 9.369042
+  type: 'test'
+  ...
+# Subtest: t5: opening a document posts docs-content carrying BOTH the markdown and a sections index derived from it
+ok 27 - t5: opening a document posts docs-content carrying BOTH the markdown and a sections index derived from it
+  ---
+  duration_ms: 2.611833
+  type: 'test'
+  ...
+# Subtest: t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two cannot be paired across documents
+ok 28 - t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two cannot be paired across documents
+  ---
+  duration_ms: 5.228542
+  type: 'test'
+  ...
+# Subtest: t5: a document with NO headings posts an empty anchors array
+ok 29 - t5: a document with NO headings posts an empty anchors array
+  ---
+  duration_ms: 2.637458
+  type: 'test'
+  ...
+# Subtest: t5: a degraded index posts degradation and does NOT set blocked; a fetch failure sets blocked and claims NO degradation
+ok 30 - t5: a degraded index posts degradation and does NOT set blocked; a fetch failure sets blocked and claims NO degradation
+  ---
+  duration_ms: 5.007541
+  type: 'test'
+  ...
+# Subtest: t5: source-scan — the index rides the EXISTING docs-content variant; no new message type
+ok 31 - t5: source-scan — the index rides the EXISTING docs-content variant; no new message type
+  ---
+  duration_ms: 0.51025
+  type: 'test'
+  ...
+# Subtest: t5: the pre-existing SIX members of the docs-content variant keep their meaning
+ok 32 - t5: the pre-existing SIX members of the docs-content variant keep their meaning
+  ---
+  duration_ms: 2.494334
+  type: 'test'
+  ...
+# Subtest: t6: rendered headings carry the slugs derived for the SAME markdown — every target matches a posted anchor
+ok 33 - t6: rendered headings carry the slugs derived for the SAME markdown — every target matches a posted anchor
+  ---
+  duration_ms: 0.262458
+  type: 'test'
+  ...
+# Subtest: t6: a heading the deriver never indexed is left UNSTAMPED rather than mis-targeted
+ok 34 - t6: a heading the deriver never indexed is left UNSTAMPED rather than mis-targeted
+  ---
+  duration_ms: 0.088459
+  type: 'test'
+  ...
+# Subtest: t6: a document with NO headings renders no chooser AT ALL — not an empty control
+ok 35 - t6: a document with NO headings renders no chooser AT ALL — not an empty control
+  ---
+  duration_ms: 0.079792
+  type: 'test'
+  ...
+# Subtest: t6: the chooser labels each entry with the heading VERBATIM and jumps to the chosen slug
+ok 36 - t6: the chooser labels each entry with the heading VERBATIM and jumps to the chosen slug
+  ---
+  duration_ms: 0.178541
+  type: 'test'
+  ...
+# Subtest: t6: the chooser placeholder selection does NOT fire a jump
+ok 37 - t6: the chooser placeholder selection does NOT fire a jump
+  ---
+  duration_ms: 0.05125
+  type: 'test'
+  ...
+# Subtest: t6: the ac3 notice appears when degraded and is ABSENT when not
+ok 38 - t6: the ac3 notice appears when degraded and is ABSENT when not
+  ---
+  duration_ms: 0.070375
+  type: 'test'
+  ...
+# Subtest: t6: the shell still has exactly ONE markup-injection site after the chooser and notice
+ok 39 - t6: the shell still has exactly ONE markup-injection site after the chooser and notice
+  ---
+  duration_ms: 0.667
+  type: 'test'
+  ...
+# Subtest: t6: approve and send feedback reach the daemon through client.decide, and the COMMENTABLE_KINDS gate holds
+ok 40 - t6: approve and send feedback reach the daemon through client.decide, and the COMMENTABLE_KINDS gate holds
+  ---
+  duration_ms: 18.823375
+  type: 'test'
+  ...
+# Subtest: t5: a DEGRADED index posts degradation and does NOT set blocked — the branch the earlier test never reached
+ok 41 - t5: a DEGRADED index posts degradation and does NOT set blocked — the branch the earlier test never reached
+  ---
+  duration_ms: 2.657542
+  type: 'test'
+  ...
+# Subtest: t6: a DEGRADED body renders NO chooser — entries whose targets do not exist are worse than none
+ok 42 - t6: a DEGRADED body renders NO chooser — entries whose targets do not exist are worse than none
+  ---
+  duration_ms: 0.240542
+  type: 'test'
+  ...
+# Subtest: t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped
+ok 43 - t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped
+  ---
+  duration_ms: 2.94625
+  type: 'test'
+  ...
+# Subtest: t1: a client returning no record posts a message with NO functionalDefinition key ('functionalDefinition' in payload === false)
+ok 44 - t1: a client returning no record posts a message with NO functionalDefinition key ('functionalDefinition' in payload === false)
+  ---
+  duration_ms: 2.786042
+  type: 'test'
+  ...
+# Subtest: t1: a content() rejection still posts blocked:true and carries no record
+ok 45 - t1: a content() rejection still posts blocked:true and carries no record
+  ---
+  duration_ms: 2.797792
+  type: 'test'
+  ...
+# Subtest: t1 (contract): protocol.ts types functionalDefinition by indexing off DocsContent, not as a restated shape
+ok 46 - t1 (contract): protocol.ts types functionalDefinition by indexing off DocsContent, not as a restated shape
+  ---
+  duration_ms: 0.713417
+  type: 'test'
+  ...
+# Subtest: t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere
+ok 47 - t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere
+  ---
+  duration_ms: 0.733334
+  type: 'test'
+  ...
+# Subtest: t2: one discrete element per requirement, every string via textContent, id + statement + rationale present, doc-level first then itemRef groups
+ok 48 - t2: one discrete element per requirement, every string via textContent, id + statement + rationale present, doc-level first then itemRef groups
+  ---
+  duration_ms: 0.485166
+  type: 'test'
+  ...
+# Subtest: t2: hostile content — an id with * _ ` [ and a statement with <script> come back character-for-character identical and create no child element
+ok 49 - t2: hostile content — an id with * _ ` [ and a statement with <script> come back character-for-character identical and create no child element
+  ---
+  duration_ms: 0.171666
+  type: 'test'
+  ...
+# Subtest: t2: malformed record table — non-array requirements, non-object entry, non-string id/statement, scope:'item' with no itemRef, and two entries sharing one FrId
+ok 50 - t2: malformed record table — non-array requirements, non-object entry, non-string id/statement, scope:'item' with no itemRef, and two entries sharing one FrId
+  ---
+  duration_ms: 0.352375
+  type: 'test'
+  ...
+# Subtest: t2 (contract): DOCS_FR_SOURCE contains no markup assignment (comments stripped first) and the shell's injection-site count is still exactly one
+ok 51 - t2 (contract): DOCS_FR_SOURCE contains no markup assignment (comments stripped first) and the shell's injection-site count is still exactly one
+  ---
+  duration_ms: 0.446791
+  type: 'test'
+  ...
+# Subtest: t2: the item CSS fragment references only --it-* variables
+ok 52 - t2: the item CSS fragment references only --it-* variables
+  ---
+  duration_ms: 0.333958
+  type: 'test'
+  ...
+# Subtest: t3: frAnchorSlug matches the numeric-prefixed title by tail, ignores case and whitespace, returns the first of two matches, and returns undefined for undefined/empty/renamed
+ok 53 - t3: frAnchorSlug matches the numeric-prefixed title by tail, ignores case and whitespace, returns the first of two matches, and returns undefined for undefined/empty/renamed
+  ---
+  duration_ms: 0.243542
+  type: 'test'
+  ...
+# Subtest: t3: a heading inside a fenced code block produces no anchor in the posted index and therefore no match
+ok 54 - t3: a heading inside a fenced code block produces no anchor in the posted index and therefore no match
+  ---
+  duration_ms: 0.157542
+  type: 'test'
+  ...
+# Subtest: t3 (contract): docs-sections.ts is unchanged and still has zero imports
+ok 55 - t3 (contract): docs-sections.ts is unchanged and still has zero imports
+  ---
+  duration_ms: 42.128167
+  type: 'test'
+  ...
+# Subtest: t4: all three placement outcomes asserted through the returned discriminator AND the resulting stub tree, including the degradation returned and withheld
+ok 56 - t4: all three placement outcomes asserted through the returned discriminator AND the resulting stub tree, including the degradation returned and withheld
+  ---
+  duration_ms: 1.202041
+  type: 'test'
+  ...
+# Subtest: t4: bounded removal — an FR section followed by two further sections keeps both, and no heading element at any level is removed
+ok 57 - t4: bounded removal — an FR section followed by two further sections keeps both, and no heading element at any level is removed
+  ---
+  duration_ms: 0.204708
+  type: 'test'
+  ...
+# Subtest: t4: removal to end — an FR section that is the last section removes to the end of the container without throwing
+ok 58 - t4: removal to end — an FR section that is the last section removes to the end of the container without throwing
+  ---
+  duration_ms: 0.113583
+  type: 'test'
+  ...
+# Subtest: t4: heading preservation — the heading element, its text and its stamped id are identical before and after
+ok 59 - t4: heading preservation — the heading element, its text and its stamped id are identical before and after
+  ---
+  duration_ms: 0.165459
+  type: 'test'
+  ...
+# Subtest: t4: build-before-mutate — a record that makes construction throw leaves the body completely unmodified
+ok 60 - t4: build-before-mutate — a record that makes construction throw leaves the body completely unmodified
+  ---
+  duration_ms: 0.217334
+  type: 'test'
+  ...
+# Subtest: t4: the slug lookup is scoped to the body container, so a same-id element elsewhere on the surface is never touched
+ok 61 - t4: the slug lookup is scoped to the body container, so a same-id element elsewhere on the surface is never touched
+  ---
+  duration_ms: 0.242125
+  type: 'test'
+  ...
+# Subtest: t5: DOCS_FR_SOURCE is inlined into the single nonce'd script and the placement call sits after stampSlugs and before the chooser / notice
+ok 62 - t5: DOCS_FR_SOURCE is inlined into the single nonce'd script and the placement call sits after stampSlugs and before the chooser / notice
+  ---
+  duration_ms: 0.346958
+  type: 'test'
+  ...
+# Subtest: t5: notice precedence — host-posted beats body beats placement, and exactly one notice is ever rendered
+ok 63 - t5: notice precedence — host-posted beats body beats placement, and exactly one notice is ever rendered
+  ---
+  duration_ms: 4.347584
+  type: 'test'
+  ...
+# Subtest: t5: the renderContent try/catch backstop — a forced throw inside placement still renders the chooser, notice, open questions and controls
+ok 64 - t5: the renderContent try/catch backstop — a forced throw inside placement still renders the chooser, notice, open questions and controls
+  ---
+  duration_ms: 1.474875
+  type: 'test'
+  ...
+# Subtest: t5: opening a document with no record yields a body byte-identical to the S001 rendering of the same markdown
+ok 65 - t5: opening a document with no record yields a body byte-identical to the S001 rendering of the same markdown
+  ---
+  duration_ms: 1.079083
+  type: 'test'
+  ...
+# Subtest: t5: idempotence — two consecutive docs-content messages with the same record leave exactly one container; a third with no record leaves none
+ok 66 - t5: idempotence — two consecutive docs-content messages with the same record leave exactly one container; a third with no record leaves none
+  ---
+  duration_ms: 0.82825
+  type: 'test'
+  ...
+# Subtest: t5: approve and feedback reach the daemon, and the COMMENTABLE_KINDS gate and the blocked banner behave as before
+ok 67 - t5: approve and feedback reach the daemon, and the COMMENTABLE_KINDS gate and the blocked banner behave as before
+  ---
+  duration_ms: 8.7825
+  type: 'test'
+  ...
+# Subtest: t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed
+ok 68 - t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed
+  ---
+  duration_ms: 1.176958
+  type: 'test'
+  ...
+# Subtest: ac3: the same record rendered twice yields identical identifiers — the cross-document guarantee
+ok 69 - ac3: the same record rendered twice yields identical identifiers — the cross-document guarantee
+  ---
+  duration_ms: 0.269583
+  type: 'test'
+  ...
+# Subtest: a very large record renders every requirement — no pagination, no virtualisation, no truncation
+ok 70 - a very large record renders every requirement — no pagination, no virtualisation, no truncation
+  ---
+  duration_ms: 16.48575
+  type: 'test'
+  ...
+# Subtest: the functional-requirement items carry LIST semantics, not just visual separation
+ok 71 - the functional-requirement items carry LIST semantics, not just visual separation
+  ---
+  duration_ms: 0.262083
+  type: 'test'
+  ...
+# Subtest: t2: all three records are forwarded by REFERENCE on the existing docs-content message
+ok 72 - t2: all three records are forwarded by REFERENCE on the existing docs-content message
+  ---
+  duration_ms: 4.821167
+  type: 'test'
+  ...
+# Subtest: t2: openDoc posts exactly ONE docs-content message per open — no second round trip
+ok 73 - t2: openDoc posts exactly ONE docs-content message per open — no second round trip
+  ---
+  duration_ms: 1.932666
+  type: 'test'
+  ...
+# Subtest: t2: an absent record stays an ABSENT KEY ('erDefinition' in payload === false)
+ok 74 - t2: an absent record stays an ABSENT KEY ('erDefinition' in payload === false)
+  ---
+  duration_ms: 3.752667
+  type: 'test'
+  ...
+# Subtest: t2: a document carrying ONLY a sequence record leaves erDefinition absent — the real S002 shape
+ok 75 - t2: a document carrying ONLY a sequence record leaves erDefinition absent — the real S002 shape
+  ---
+  duration_ms: 3.293583
+  type: 'test'
+  ...
+# Subtest: t2: the fail-closed arm posts blocked:true and carries NONE of the three records
+ok 76 - t2: the fail-closed arm posts blocked:true and carries NONE of the three records
+  ---
+  duration_ms: 2.326208
+  type: 'test'
+  ...
+# Subtest: t2 (contract): protocol.ts indexes all three off DocsContent rather than restating them
+ok 77 - t2 (contract): protocol.ts indexes all three off DocsContent rather than restating them
+  ---
+  duration_ms: 0.5295
+  type: 'test'
+  ...
+# Subtest: t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime
+ok 78 - t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime
+  ---
+  duration_ms: 16845.57625
+  type: 'test'
+  ...
+# Subtest: t3: companionVisualKind maps the closed union TOTALLY — both diagram kinds to diagram, the mock to experience
+ok 79 - t3: companionVisualKind maps the closed union TOTALLY — both diagram kinds to diagram, the mock to experience
+  ---
+  duration_ms: 0.096708
+  type: 'test'
+  ...
+# Subtest: t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot
+ok 80 - t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot
+  ---
+  duration_ms: 1733.788709
+  type: 'test'
+  ...
+# Subtest: t3: linkOut is reachable on BOTH non-absent states — the failure state most of all
+ok 81 - t3: linkOut is reachable on BOTH non-absent states — the failure state most of all
+  ---
+  duration_ms: 0.155709
+  type: 'test'
+  ...
+# Subtest: t3: body is `unknown`, matching the shipped StructuredRenderer<T> return shape
+ok 82 - t3: body is `unknown`, matching the shipped StructuredRenderer<T> return shape
+  ---
+  duration_ms: 0.573792
+  type: 'test'
+  ...
+# Subtest: t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet
+ok 83 - t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet
+  ---
+  duration_ms: 0.545292
+  type: 'test'
+  ...
+# Subtest: t4 PARITY: the client derivation matches erDefinitionToIr over shared fixtures, with the daemon as the authority
+ok 84 - t4 PARITY: the client derivation matches erDefinitionToIr over shared fixtures, with the daemon as the authority
+  ---
+  duration_ms: 87.204917
+  type: 'test'
+  ...
+# Subtest: t4: a class-ranged slot becomes an edge; scalar, rangeless and unknown-shaped slots become attributes
+ok 85 - t4: a class-ranged slot becomes an edge; scalar, rangeless and unknown-shaped slots become attributes
+  ---
+  duration_ms: 0.491709
+  type: 'test'
+  ...
+# Subtest: t4: a DANGLING range loses only its relationship — every box and every other edge still draw
+ok 86 - t4: a DANGLING range loses only its relationship — every box and every other edge still draw
+  ---
+  duration_ms: 0.938083
+  type: 'test'
+  ...
+# Subtest: t4: cardinality flags produce the daemon's crow's-foot token in every combination
+ok 87 - t4: cardinality flags produce the daemon's crow's-foot token in every combination
+  ---
+  duration_ms: 0.211416
+  type: 'test'
+  ...
+# Subtest: t4: a self-reference and a 3-cycle both terminate and draw — layout iterates the sorted class list
+ok 88 - t4: a self-reference and a 3-cycle both terminate and draw — layout iterates the sorted class list
+  ---
+  duration_ms: 0.442167
+  type: 'test'
+  ...
+# Subtest: t4: determinism — the same record renders an identical element tree every time
+ok 89 - t4: determinism — the same record renders an identical element tree every time
+  ---
+  duration_ms: 0.28325
+  type: 'test'
+  ...
+# Subtest: t4 ac4: every element is createElementNS in the SVG namespace and every label is textContent
+ok 90 - t4 ac4: every element is createElementNS in the SVG namespace and every label is textContent
+  ---
+  duration_ms: 0.152375
+  type: 'test'
+  ...
+# Subtest: t4 ac4: hostile class and slot names survive character-for-character and reach no attribute
+ok 91 - t4 ac4: hostile class and slot names survive character-for-character and reach no attribute
+  ---
+  duration_ms: 0.315917
+  type: 'test'
+  ...
+# Subtest: t4 contract: DOCS_DIAGRAM_SOURCE assigns no markup, and the shell still has EXACTLY ONE innerHTML
+ok 92 - t4 contract: DOCS_DIAGRAM_SOURCE assigns no markup, and the shell still has EXACTLY ONE innerHTML
+  ---
+  duration_ms: 0.276459
+  type: 'test'
+  ...
+# Subtest: t4 gate: the four-combination table, asserted through the discriminator AND what was built
+ok 93 - t4 gate: the four-combination table, asserted through the discriminator AND what was built
+  ---
+  duration_ms: 0.25475
+  type: 'test'
+  ...
+# Subtest: t4 gate: absent does ZERO DOM work — no element is created at all
+ok 94 - t4 gate: absent does ZERO DOM work — no element is created at all
+  ---
+  duration_ms: 0.089667
+  type: 'test'
+  ...
+# Subtest: t4 gate: a diagram ref with no drawable record is UNSHOWABLE and NAMES what was referenced
+ok 95 - t4 gate: a diagram ref with no drawable record is UNSHOWABLE and NAMES what was referenced
+  ---
+  duration_ms: 0.071834
+  type: 'test'
+  ...
+# Subtest: t4 gate: diagram-html routes to unshowable naming the kind (lc1), never a silent nothing
+ok 96 - t4 gate: diagram-html routes to unshowable naming the kind (lc1), never a silent nothing
+  ---
+  duration_ms: 0.062042
+  type: 'test'
+  ...
+# Subtest: t4 gate: a ux-mock ref is not this factory's business — the experience slot stays s4's
+ok 97 - t4 gate: a ux-mock ref is not this factory's business — the experience slot stays s4's
+  ---
+  duration_ms: 0.323
+  type: 'test'
+  ...
+# Subtest: t4 gate: linkOut is present on rendered AND unshowable whenever a ref exists, absent without one
+ok 98 - t4 gate: linkOut is present on rendered AND unshowable whenever a ref exists, absent without one
+  ---
+  duration_ms: 0.228375
+  type: 'test'
+  ...
+# Subtest: t4 layout: no row escapes its box, and no two boxes overlap — the defects the first visual read caught
+ok 99 - t4 layout: no row escapes its box, and no two boxes overlap — the defects the first visual read caught
+  ---
+  duration_ms: 2.304916
+  type: 'test'
+  ...
+# Subtest: t4 layout: a box grows to fit its longest row rather than clipping it
+ok 100 - t4 layout: a box grows to fit its longest row rather than clipping it
+  ---
+  duration_ms: 0.18525
+  type: 'test'
+  ...
+# Subtest: t5 PARITY: the client sequence derivation matches sequenceDefinitionToIr, daemon as the authority
+ok 101 - t5 PARITY: the client sequence derivation matches sequenceDefinitionToIr, daemon as the authority
+  ---
+  duration_ms: 3.046875
+  type: 'test'
+  ...
+# Subtest: t5 PARITY: ordering, labels and the :repeat suffix over constructed shapes
+ok 102 - t5 PARITY: ordering, labels and the :repeat suffix over constructed shapes
+  ---
+  duration_ms: 0.466209
+  type: 'test'
+  ...
+# Subtest: t5: a message naming an undeclared participant is DROPPED, not fatal — the deliberate divergence
+ok 103 - t5: a message naming an undeclared participant is DROPPED, not fatal — the deliberate divergence
+  ---
+  duration_ms: 0.334834
+  type: 'test'
+  ...
+# Subtest: t5: every participant and every message from the REAL record is rendered, in order
+ok 104 - t5: every participant and every message from the REAL record is rendered, in order
+  ---
+  duration_ms: 0.946625
+  type: 'test'
+  ...
+# Subtest: t5: the sequence renderer reuses t4 primitives — SVG namespace, textContent, no markup
+ok 105 - t5: the sequence renderer reuses t4 primitives — SVG namespace, textContent, no markup
+  ---
+  duration_ms: 1.169625
+  type: 'test'
+  ...
+# Subtest: t5: an empty or malformed sequence record is ABSENT and creates no element
+ok 106 - t5: an empty or malformed sequence record is ABSENT and creates no element
+  ---
+  duration_ms: 0.344041
+  type: 'test'
+  ...
+# Subtest: t5: determinism — the same sequence record renders an identical tree every time
+ok 107 - t5: determinism — the same sequence record renders an identical tree every time
+  ---
+  duration_ms: 1.669
+  type: 'test'
+  ...
+# Subtest: t5: the factory dispatches on the RECORD present, never on the ref kind
+ok 108 - t5: the factory dispatches on the RECORD present, never on the ref kind
+  ---
+  duration_ms: 1.737666
+  type: 'test'
+  ...
+# Subtest: t5: a sequence record with no ref is labelled from the record, not left blank
+ok 109 - t5: a sequence record with no ref is labelled from the record, not left blank
+  ---
+  duration_ms: 2.276625
+  type: 'test'
+  ...
+# Subtest: t5 layout: no caption escapes the canvas and no two participant heads overlap
+ok 110 - t5 layout: no caption escapes the canvas and no two participant heads overlap
+  ---
+  duration_ms: 0.916833
+  type: 'test'
+  ...
+# Subtest: t6 gate: the four-combination table, driven through the SHIPPED bootstrap
+ok 111 - t6 gate: the four-combination table, driven through the SHIPPED bootstrap
+  ---
+  duration_ms: 3.30675
+  type: 'test'
+  ...
+# Subtest: t6 ac2: the dominant path does ZERO DOM work and leaves the body region untouched
+ok 112 - t6 ac2: the dominant path does ZERO DOM work and leaves the body region untouched
+  ---
+  duration_ms: 1.608375
+  type: 'test'
+  ...
+# Subtest: t6: `classes: {}` and an empty sequence record are ABSENT, not an empty frame
+ok 113 - t6: `classes: {}` and an empty sequence record are ABSENT, not an empty frame
+  ---
+  duration_ms: 0.619917
+  type: 'test'
+  ...
+# Subtest: t6: diagram-html routes to the stated failure (lc1), never a silent nothing
+ok 114 - t6: diagram-html routes to the stated failure (lc1), never a silent nothing
+  ---
+  duration_ms: 0.244584
+  type: 'test'
+  ...
+# Subtest: t6: the link-out is offered in the FAILURE state, where it matters most
+ok 115 - t6: the link-out is offered in the FAILURE state, where it matters most
+  ---
+  duration_ms: 0.22775
+  type: 'test'
+  ...
+# Subtest: t6: the slot build runs AFTER stampSlugs — every heading id is undisturbed
+ok 116 - t6: the slot build runs AFTER stampSlugs — every heading id is undisturbed
+  ---
+  duration_ms: 0.509167
+  type: 'test'
+  ...
+# Subtest: t6 placement: a resolving anchor mounts beside that heading; a stale one falls back rather than dropping
+ok 117 - t6 placement: a resolving anchor mounts beside that heading; a stale one falls back rather than dropping
+  ---
+  duration_ms: 0.779083
+  type: 'test'
+  ...
+# Subtest: t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none
+ok 118 - t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none
+  ---
+  duration_ms: 5.2865
+  type: 'test'
+  ...
+# Subtest: t6 resilience: a forced throw in the slot build leaves all five other surfaces intact
+ok 119 - t6 resilience: a forced throw in the slot build leaves all five other surfaces intact
+  ---
+  duration_ms: 3.174667
+  type: 'test'
+  ...
+# Subtest: t6 regression: the decision controls and the blocked state are the same with a diagram present
+ok 120 - t6 regression: the decision controls and the blocked state are the same with a diagram present
+  ---
+  duration_ms: 0.670875
+  type: 'test'
+  ...
+# Subtest: t6 regression: the HOST decision path still reaches the daemon
+ok 121 - t6 regression: the HOST decision path still reaches the daemon
+  ---
+  duration_ms: 9.060791
+  type: 'test'
+  ...
+# Subtest: t6: the fail-closed arm shows the blocked banner and NO slot
+ok 122 - t6: the fail-closed arm shows the blocked banner and NO slot
+  ---
+  duration_ms: 0.511792
+  type: 'test'
+  ...
+# Subtest: t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce'd script and the call sits between stampSlugs and the chooser
+ok 123 - t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce'd script and the call sits between stampSlugs and the chooser
+  ---
+  duration_ms: 0.380042
+  type: 'test'
+  ...
+# Subtest: t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity
+ok 124 - t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity
+  ---
+  duration_ms: 38.7455
+  type: 'test'
+  ...
+# Subtest: t7 (updated by S004/t6): a document carrying BOTH refs now shows TWO slots, diagram FIRST
+ok 125 - t7 (updated by S004/t6): a document carrying BOTH refs now shows TWO slots, diagram FIRST
+  ---
+  duration_ms: 0.971375
+  type: 'test'
+  ...
+# Subtest: t7 (updated by S004/t6): a ux-mock ref ALONE now routes to the stated failure, not to nothing
+ok 126 - t7 (updated by S004/t6): a ux-mock ref ALONE now routes to the stated failure, not to nothing
+  ---
+  duration_ms: 0.572708
+  type: 'test'
+  ...
+# Subtest: t7: every committed evidence image exists at the path its commit claims
+ok 127 - t7: every committed evidence image exists at the path its commit claims
+  ---
+  duration_ms: 0.248667
+  type: 'test'
+  ...
+# Subtest: t6 FIX: the anchor resolves on a NUMBERED heading — the format every real insrc document uses
+ok 128 - t6 FIX: the anchor resolves on a NUMBERED heading — the format every real insrc document uses
+  ---
+  duration_ms: 0.510917
+  type: 'test'
+  ...
+# Subtest: CR/coverage: all four webview source strings PARSE together in one scope
+ok 129 - CR/coverage: all four webview source strings PARSE together in one scope
+  ---
+  duration_ms: 0.692958
+  type: 'test'
+  ...
+# Subtest: t1: uxDefinition is forwarded by REFERENCE on the existing docs-content message
+ok 130 - t1: uxDefinition is forwarded by REFERENCE on the existing docs-content message
+  ---
+  duration_ms: 4.155625
+  type: 'test'
+  ...
+# Subtest: t1: openDoc posts exactly ONE docs-content message per open — no second round trip
+ok 131 - t1: openDoc posts exactly ONE docs-content message per open — no second round trip
+  ---
+  duration_ms: 2.998083
+  type: 'test'
+  ...
+# Subtest: t1: an absent record stays an ABSENT KEY ('uxDefinition' in payload === false)
+ok 132 - t1: an absent record stays an ABSENT KEY ('uxDefinition' in payload === false)
+  ---
+  duration_ms: 2.738458
+  type: 'test'
+  ...
+# Subtest: t1: a ux-mock ref's ofSectionId resolves HOST-side to experienceAnchorSlug over THIS markdown's index
+ok 133 - t1: a ux-mock ref's ofSectionId resolves HOST-side to experienceAnchorSlug over THIS markdown's index
+  ---
+  duration_ms: 1.410375
+  type: 'test'
+  ...
+# Subtest: t1: an ofSectionId naming no section posts NO experienceAnchorSlug key — not an empty string
+ok 134 - t1: an ofSectionId naming no section posts NO experienceAnchorSlug key — not an empty string
+  ---
+  duration_ms: 1.921709
+  type: 'test'
+  ...
+# Subtest: t1: the two pickers PARTITION the companions array — the ux ref is not the diagram ref
+ok 135 - t1: the two pickers PARTITION the companions array — the ux ref is not the diagram ref
+  ---
+  duration_ms: 3.142125
+  type: 'test'
+  ...
+# Subtest: t1: a companions array of DIAGRAM refs only yields no experienceAnchorSlug
+ok 136 - t1: a companions array of DIAGRAM refs only yields no experienceAnchorSlug
+  ---
+  duration_ms: 1.62625
+  type: 'test'
+  ...
+# Subtest: t1: the fail-closed arm posts blocked:true and carries NO uxDefinition
+ok 137 - t1: the fail-closed arm posts blocked:true and carries NO uxDefinition
+  ---
+  duration_ms: 2.971084
+  type: 'test'
+  ...
+# Subtest: t1 (contract): protocol.ts indexes uxDefinition off DocsContent rather than restating it
+ok 138 - t1 (contract): protocol.ts indexes uxDefinition off DocsContent rather than restating it
+  ---
+  duration_ms: 0.648333
+  type: 'test'
+  ...
+# Subtest: t1/t2: the shell matches the pin, and NOTHING reads either new field yet
+ok 139 - t1/t2: the shell matches the pin, and NOTHING reads either new field yet
+  ---
+  duration_ms: 0.637916
+  type: 'test'
+  ...
+# Subtest: the shell inlines each of its source strings verbatim and exactly once, with the ux CSS fragment
+ok 140 - the shell inlines each of its source strings verbatim and exactly once, with the ux CSS fragment
+  ---
+  duration_ms: 0.488792
+  type: 'test'
+  ...
+# Subtest: t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild
+ok 141 - t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild
+  ---
+  duration_ms: 183.519542
+  type: 'test'
+  ...
+# Subtest: t2: TextBlock renders as <p class="ux-text"> with its text via textContent
+ok 142 - t2: TextBlock renders as <p class="ux-text"> with its text via textContent
+  ---
+  duration_ms: 0.429166
+  type: 'test'
+  ...
+# Subtest: t2: every TextBlock modifier maps to the daemon class, including all four colour roles
+ok 143 - t2: every TextBlock modifier maps to the daemon class, including all four colour roles
+  ---
+  duration_ms: 0.263875
+  type: 'test'
+  ...
+# Subtest: t2: Container renders as ux-container and recurses over items
+ok 144 - t2: Container renders as ux-container and recurses over items
+  ---
+  duration_ms: 0.088542
+  type: 'test'
+  ...
+# Subtest: t2: ColumnSet renders as ux-columnset with its Columns as children, in order
+ok 145 - t2: ColumnSet renders as ux-columnset with its Columns as children, in order
+  ---
+  duration_ms: 0.076584
+  type: 'test'
+  ...
+# Subtest: t2: Column honours a numeric width as the flex grow factor, a keyword falls back to 1, absent sets no style
+ok 146 - t2: Column honours a numeric width as the flex grow factor, a keyword falls back to 1, absent sets no style
+  ---
+  duration_ms: 0.240166
+  type: 'test'
+  ...
+# Subtest: t2: Image shows its url as TEXT — no img element, no src, nothing fetchable
+ok 147 - t2: Image shows its url as TEXT — no img element, no src, nothing fetchable
+  ---
+  duration_ms: 0.094458
+  type: 'test'
+  ...
+# Subtest: t2: Image with no altText falls back to the daemon’s literal "image"
+ok 148 - t2: Image with no altText falls back to the daemon’s literal "image"
+  ---
+  duration_ms: 0.049
+  type: 'test'
+  ...
+# Subtest: t2: Input.Text is a non-interactive affordance — a label and a styled span, never an input
+ok 149 - t2: Input.Text is a non-interactive affordance — a label and a styled span, never an input
+  ---
+  duration_ms: 0.05525
+  type: 'test'
+  ...
+# Subtest: t2: Input.Text multiline adds ux-input--multi; a missing label falls back to the id
+ok 150 - t2: Input.Text multiline adds ux-input--multi; a missing label falls back to the id
+  ---
+  duration_ms: 0.061667
+  type: 'test'
+  ...
+# Subtest: t2: Input.ChoiceSet renders each choice as text with a mark — no select, no option
+ok 151 - t2: Input.ChoiceSet renders each choice as text with a mark — no select, no option
+  ---
+  duration_ms: 0.157542
+  type: 'test'
+  ...
+# Subtest: t2: a multi-select ChoiceSet uses the daemon’s box mark, single-select its circle
+ok 152 - t2: a multi-select ChoiceSet uses the daemon’s box mark, single-select its circle
+  ---
+  duration_ms: 0.067
+  type: 'test'
+  ...
+# Subtest: t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART, with no anchor and no href
+ok 153 - t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART, with no anchor and no href
+  ---
+  duration_ms: 0.111125
+  type: 'test'
+  ...
+# Subtest: t2: the stated parity divergence fires on LINK chips and only link chips
+ok 154 - t2: the stated parity divergence fires on LINK chips and only link chips
+  ---
+  duration_ms: 3.4705
+  type: 'test'
+  ...
+# Subtest: t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY
+ok 155 - t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY
+  ---
+  duration_ms: 3.6195
+  type: 'test'
+  ...
+# Subtest: t2: an unknown element type renders a VISIBLE ux-unknown NAMING the type
+ok 156 - t2: an unknown element type renders a VISIBLE ux-unknown NAMING the type
+  ---
+  duration_ms: 0.161791
+  type: 'test'
+  ...
+# Subtest: t2: a malformed element, a missing text and a non-array child list each degrade IN PLACE
+ok 157 - t2: a malformed element, a missing text and a non-array child list each degrade IN PLACE
+  ---
+  duration_ms: 0.115625
+  type: 'test'
+  ...
+# Subtest: t2: a non-array body yields an empty card rather than throwing
+ok 158 - t2: a non-array body yields an empty card rather than throwing
+  ---
+  duration_ms: 0.091167
+  type: 'test'
+  ...
+# Subtest: t2: every element is created with createElement and every string written without parsing
+ok 159 - t2: every element is created with createElement and every string written without parsing
+  ---
+  duration_ms: 0.283875
+  type: 'test'
+  ...
+# Subtest: t2: hostile text renders character-for-character and creates no element and no attribute
+ok 160 - t2: hostile text renders character-for-character and creates no element and no attribute
+  ---
+  duration_ms: 0.227333
+  type: 'test'
+  ...
+# Subtest: t2: no attribute value anywhere is built from record text
+ok 161 - t2: no attribute value anywhere is built from record text
+  ---
+  duration_ms: 0.2205
+  type: 'test'
+  ...
+# Subtest: t2: the renderer emits NO node/edge construct — the uxDefinitionToIr regression guard
+ok 162 - t2: the renderer emits NO node/edge construct — the uxDefinitionToIr regression guard
+  ---
+  duration_ms: 0.121042
+  type: 'test'
+  ...
+# Subtest: t2 PARITY: the daemon tree and the client tree are structurally IDENTICAL over every shared fixture
+ok 163 - t2 PARITY: the daemon tree and the client tree are structurally IDENTICAL over every shared fixture
+  ---
+  duration_ms: 1.75375
+  type: 'test'
+  ...
+# Subtest: t2 PARITY POSITIVE CONTROL: a re-nested variant makes the structural diff FAIL
+ok 164 - t2 PARITY POSITIVE CONTROL: a re-nested variant makes the structural diff FAIL
+  ---
+  duration_ms: 10.036209
+  type: 'test'
+  ...
+# Subtest: t2 PARITY of vocabulary: every ux-* class the client emits is one the daemon’s stylesheet defines
+ok 165 - t2 PARITY of vocabulary: every ux-* class the client emits is one the daemon’s stylesheet defines
+  ---
+  duration_ms: 0.890625
+  type: 'test'
+  ...
+# Subtest: t2 PARITY of coverage: the client handles exactly the union members the daemon’s elementHtml handles
+ok 166 - t2 PARITY of coverage: the client handles exactly the union members the daemon’s elementHtml handles
+  ---
+  duration_ms: 0.435167
+  type: 'test'
+  ...
+# Subtest: t2 PARITY of degradation: the client renders ux-unknown for the same inputs the daemon does
+ok 167 - t2 PARITY of degradation: the client renders ux-unknown for the same inputs the daemon does
+  ---
+  duration_ms: 0.341542
+  type: 'test'
+  ...
+# Subtest: t2 PARITY, the ONE stated asymmetry: the daemon THROWS on a null element, the client degrades
+ok 168 - t2 PARITY, the ONE stated asymmetry: the daemon THROWS on a null element, the client degrades
+  ---
+  duration_ms: 0.165666
+  type: 'test'
+  ...
+# Subtest: t2 THEME: the ux CSS fragment carries NO literal colour and no var() that can resolve to nothing
+ok 169 - t2 THEME: the ux CSS fragment carries NO literal colour and no var() that can resolve to nothing
+  ---
+  duration_ms: 1.129292
+  type: 'test'
+  ...
+# Subtest: t2: DOCS_UX_SOURCE contains no markup sink, scanned with comments stripped first
+ok 170 - t2: DOCS_UX_SOURCE contains no markup sink, scanned with comments stripped first
+  ---
+  duration_ms: 0.069084
+  type: 'test'
+  ...
+# Subtest: t2: the emitted shell still contains EXACTLY ONE .innerHTML= after a FIFTH source string joins
+ok 171 - t2: the emitted shell still contains EXACTLY ONE .innerHTML= after a FIFTH source string joins
+  ---
+  duration_ms: 0.227292
+  type: 'test'
+  ...
+# Subtest: t2: ALL FIVE source strings parse together in one scope — the dgEl-collision guard, extended
+ok 172 - t2: ALL FIVE source strings parse together in one scope — the dgEl-collision guard, extended
+  ---
+  duration_ms: 0.773708
+  type: 'test'
+  ...
+# Subtest: t2: the FULL emitted script parses — including the bootstrap consts the five strings share scope with
+ok 173 - t2: the FULL emitted script parses — including the bootstrap consts the five strings share scope with
+  ---
+  duration_ms: 3.229459
+  type: 'test'
+  ...
+# Subtest: t3/t7: every committed S004 evidence artefact exists at the path its commit claims
+ok 174 - t3/t7: every committed S004 evidence artefact exists at the path its commit claims
+  ---
+  duration_ms: 1.791291
+  type: 'test'
+  ...
+# Subtest: t4: the bound is a SINGLE named constant with no second hard-coded copy
+ok 175 - t4: the bound is a SINGLE named constant with no second hard-coded copy
+  ---
+  duration_ms: 0.124041
+  type: 'test'
+  ...
+# Subtest: t4: the chosen value is strictly greater than the plan floor AND than the measured real maximum
+ok 176 - t4: the chosen value is strictly greater than the plan floor AND than the measured real maximum
+  ---
+  duration_ms: 0.224083
+  type: 'test'
+  ...
+# Subtest: t4: EVERY one of the four real records renders UNTRUNCATED — the bound never fires on authored content
+ok 177 - t4: EVERY one of the four real records renders UNTRUNCATED — the bound never fires on authored content
+  ---
+  duration_ms: 1.583708
+  type: 'test'
+  ...
+# Subtest: t4: a synthetic over-deep structure TRIPS the guard, names depth as the reason, and TERMINATES
+ok 178 - t4: a synthetic over-deep structure TRIPS the guard, names depth as the reason, and TERMINATES
+  ---
+  duration_ms: 0.286792
+  type: 'test'
+  ...
+# Subtest: t4: a CYCLIC structure terminates — the case that would hang without a bound
+ok 179 - t4: a CYCLIC structure terminates — the case that would hang without a bound
+  ---
+  duration_ms: 0.120333
+  type: 'test'
+  ...
+# Subtest: t4 MUTATION: removing the bound makes the pathological case diverge
+ok 180 - t4 MUTATION: removing the bound makes the pathological case diverge
+  ---
+  duration_ms: 5.251791
+  type: 'test'
+  ...
+# Subtest: t5 PICKER PARTITION: uxPickRef takes the ux-mock ref and ONLY it, across all FOUR diagram refs
+ok 181 - t5 PICKER PARTITION: uxPickRef takes the ux-mock ref and ONLY it, across all FOUR diagram refs
+  ---
+  duration_ms: 0.449542
+  type: 'test'
+  ...
+# Subtest: t5: a companions array of DIAGRAM refs only yields NO ux ref
+ok 182 - t5: a companions array of DIAGRAM refs only yields NO ux ref
+  ---
+  duration_ms: 0.077125
+  type: 'test'
+  ...
+# Subtest: t5: the three sc4 states come back correctly from the factory in isolation
+ok 183 - t5: the three sc4 states come back correctly from the factory in isolation
+  ---
+  duration_ms: 0.15175
+  type: 'test'
+  ...
+# Subtest: t5: `body: []` and a malformed record are treated as ABSENT, not as a broken card
+ok 184 - t5: `body: []` and a malformed record are treated as ABSENT, not as a broken card
+  ---
+  duration_ms: 0.108708
+  type: 'test'
+  ...
+# Subtest: t5: a record with NO ref still renders — the record gates content, the ref gates label and link
+ok 185 - t5: a record with NO ref still renders — the record gates content, the ref gates label and link
+  ---
+  duration_ms: 0.12425
+  type: 'test'
+  ...
+# Subtest: t5: the label comes from the REF, never hard-coded per call
+ok 186 - t5: the label comes from the REF, never hard-coded per call
+  ---
+  duration_ms: 0.097958
+  type: 'test'
+  ...
+# Subtest: t5: ac3’s dominant path is ZERO DOM ACTIVITY — the absent gate returns before anything is created
+ok 187 - t5: ac3’s dominant path is ZERO DOM ACTIVITY — the absent gate returns before anything is created
+  ---
+  duration_ms: 0.05025
+  type: 'test'
+  ...
+# Subtest: t5: a renderer throw degrades to the stated failure rather than escaping the factory
+ok 188 - t5: a renderer throw degrades to the stated failure rather than escaping the factory
+  ---
+  duration_ms: 0.115791
+  type: 'test'
+  ...
+# Subtest: t5: the bound is PASSED IN, not re-declared — still one named constant after the factory lands
+ok 189 - t5: the bound is PASSED IN, not re-declared — still one named constant after the factory lands
+  ---
+  duration_ms: 0.131125
+  type: 'test'
+  ...
+# Subtest: t5/t6: the factory is inlined and called at EXACTLY ONE site
+ok 190 - t5/t6: the factory is inlined and called at EXACTLY ONE site
+  ---
+  duration_ms: 0.280167
+  type: 'test'
+  ...
+# Subtest: t6 GATE: the four-combination table, driven through the SHIPPED bootstrap
+ok 191 - t6 GATE: the four-combination table, driven through the SHIPPED bootstrap
+  ---
+  duration_ms: 1.220875
+  type: 'test'
+  ...
+# Subtest: t6: ac3’s dominant path is ZERO DOM ACTIVITY from the experience path
+ok 192 - t6: ac3’s dominant path is ZERO DOM ACTIVITY from the experience path
+  ---
+  duration_ms: 0.603583
+  type: 'test'
+  ...
+# Subtest: t6: `body: []` and a malformed record are ABSENT through the real bootstrap
+ok 193 - t6: `body: []` and a malformed record are ABSENT through the real bootstrap
+  ---
+  duration_ms: 4.420667
+  type: 'test'
+  ...
+# Subtest: t6: adding the experience slot leaves the DIAGRAM slot BYTE-IDENTICAL to what S003 renders
+ok 194 - t6: adding the experience slot leaves the DIAGRAM slot BYTE-IDENTICAL to what S003 renders
+  ---
+  duration_ms: 0.915542
+  type: 'test'
+  ...
+# Subtest: t6: the two slots are PEERS — diagram first, experience second, in the emitted markup
+ok 195 - t6: the two slots are PEERS — diagram first, experience second, in the emitted markup
+  ---
+  duration_ms: 0.144291
+  type: 'test'
+  ...
+# Subtest: t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none
+ok 196 - t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none
+  ---
+  duration_ms: 0.507333
+  type: 'test'
+  ...
+# Subtest: t6: a forced throw in the experience slot build leaves SIX other surfaces intact — including the diagram
+ok 197 - t6: a forced throw in the experience slot build leaves SIX other surfaces intact — including the diagram
+  ---
+  duration_ms: 2.476625
+  type: 'test'
+  ...
+# Subtest: t6: a resolvable anchor places the slot beside its heading; a stale one falls back rather than dropping it
+ok 198 - t6: a resolvable anchor places the slot beside its heading; a stale one falls back rather than dropping it
+  ---
+  duration_ms: 1.016334
+  type: 'test'
+  ...
+# Subtest: t6: a DIGIT-LEADING anchor slug places the EXPERIENCE slot without throwing
+ok 199 - t6: a DIGIT-LEADING anchor slug places the EXPERIENCE slot without throwing
+  ---
+  duration_ms: 0.609458
+  type: 'test'
+  ...
+# Subtest: t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is inherited and not re-implemented
+ok 200 - t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is inherited and not re-implemented
+  ---
+  duration_ms: 0.262458
+  type: 'test'
+  ...
+# Subtest: t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity
+ok 201 - t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity
+  ---
+  duration_ms: 161.503041
+  type: 'test'
+  ...
+# Subtest: openArtifact opens a non-pending artifact with feedback only, and a pending one as its list row does
+ok 202 - openArtifact opens a non-pending artifact with feedback only, and a pending one as its list row does
+  ---
+  duration_ms: 12.892625
+  type: 'test'
+  ...
+# Subtest: openArtifact on a cold pane decides pending from its own pending read, even when the boot ping's refresh is superseded
+ok 203 - openArtifact on a cold pane decides pending from its own pending read, even when the boot ping's refresh is superseded
+  ---
+  duration_ms: 9.856667
+  type: 'test'
+  ...
+# Subtest: history and compiler checks skip with a stated reason when what they need is missing, and never run on an empty window
+ok 204 - history and compiler checks skip with a stated reason when what they need is missing, and never run on an empty window
+  ---
+  duration_ms: 357.698834
+  type: 'test'
+  ...
+# Subtest: docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch
+ok 205 - docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch
+  ---
+  duration_ms: 8.317458
+  type: 'test'
+  ...
+# Subtest: docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing
+ok 206 - docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing
+  ---
+  duration_ms: 2.54275
+  type: 'test'
+  ...
+# Subtest: docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw
+ok 207 - docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw
+  ---
+  duration_ms: 0.586334
+  type: 'test'
+  ...
+# Subtest: docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell
+ok 208 - docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell
+  ---
+  duration_ms: 1.416042
+  type: 'test'
+  ...
+# Subtest: docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text
+ok 209 - docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text
+  ---
+  duration_ms: 0.856958
+  type: 'test'
+  ...
+# Subtest: docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor
+ok 210 - docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor
+  ---
+  duration_ms: 1.077292
+  type: 'test'
+  ...
+# Subtest: docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button
+ok 211 - docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button
+  ---
+  duration_ms: 3.256959
+  type: 'test'
+  ...
+# Subtest: docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing
+ok 212 - docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing
+  ---
+  duration_ms: 4.299
+  type: 'test'
+  ...
+# Subtest: docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt
+ok 213 - docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt
+  ---
+  duration_ms: 3.630209
+  type: 'test'
+  ...
+# Subtest: docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order
+ok 214 - docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order
+  ---
+  duration_ms: 3.356792
+  type: 'test'
+  ...
+# Subtest: docs review shell: a document that is not awaiting review shows its history and offers send feedback only
+ok 215 - docs review shell: a document that is not awaiting review shows its history and offers send feedback only
+  ---
+  duration_ms: 6.031875
+  type: 'test'
+  ...
+# Subtest: docs review shell: author, comment and quote text are set as text, never as markup
+ok 216 - docs review shell: author, comment and quote text are set as text, never as markup
+  ---
+  duration_ms: 1.046333
+  type: 'test'
+  ...
+# Subtest: docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown
+ok 217 - docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown
+  ---
+  duration_ms: 2.207625
+  type: 'test'
+  ...
+# Subtest: docs review shell: no comment button is offered while no document is open
+ok 218 - docs review shell: no comment button is offered while no document is open
+  ---
+  duration_ms: 0.493541
+  type: 'test'
+  ...
+# Subtest: docs review shell: the list view shows 25 rows a page ordered by type then title, and the pager moves between pages and is disabled at the ends
+ok 219 - docs review shell: the list view shows 25 rows a page ordered by type then title, and the pager moves between pages and is disabled at the ends
+  ---
+  duration_ms: 6.789208
+  type: 'test'
+  ...
+# Subtest: docs review shell: the search matches every word in the title, id or work item id without regard to case, the type select filters with counts, and either change goes to page 1
+ok 220 - docs review shell: the search matches every word in the title, id or work item id without regard to case, the type select filters with counts, and either change goes to page 1
+  ---
+  duration_ms: 10.672041
+  type: 'test'
+  ...
+# Subtest: docs review shell: the datalist offers at most 50 titles and ids of the chosen type
+ok 221 - docs review shell: the datalist offers at most 50 titles and ids of the chosen type
+  ---
+  duration_ms: 2.925417
+  type: 'test'
+  ...
+# Subtest: docs review shell: pressing a row's title posts open-doc, a content with reveal switches to the document view (an unavailable one too), a content without it never changes the view, and the back button returns to the list with the document and its drafts kept
+ok 222 - docs review shell: pressing a row's title posts open-doc, a content with reveal switches to the document view (an unavailable one too), a content without it never changes the view, and the back button returns to the list with the document and its drafts kept
+  ---
+  duration_ms: 3.982792
+  type: 'test'
+  ...
+# Subtest: docs review shell: the search, type, page and the view on show are restored from the saved state when the shell is rebuilt, a re-post to the rebuilt shell does not leave the list view, a draft saved after the list state keeps it and the reverse, and a saved state of another shape gives the defaults
+ok 223 - docs review shell: the search, type, page and the view on show are restored from the saved state when the shell is rebuilt, a re-post to the rebuilt shell does not leave the list view, a draft saved after the list state keeps it and the reverse, and a saved state of another shape gives the defaults
+  ---
+  duration_ms: 22.88975
+  type: 'test'
+  ...
+# Subtest: docs review shell: the list view's table is its own scrolling region, the toolbar and pager are outside it, titles and ids are set as text, and the recorded baseline is that of the new shell
+ok 224 - docs review shell: the list view's table is its own scrolling region, the toolbar and pager are outside it, titles and ids are set as text, and the recorded baseline is that of the new shell
+  ---
+  duration_ms: 0.975584
+  type: 'test'
+  ...
+# Subtest: docs review shell: the host's notice of a failed read is shown in the list view's notice line, does not change the view, and is cleared by the next list that carries documents
+ok 225 - docs review shell: the host's notice of a failed read is shown in the list view's notice line, does not change the view, and is cleared by the next list that carries documents
+  ---
+  duration_ms: 3.668459
+  type: 'test'
+  ...
+# Subtest: docs review shell: a reload marked changed keeps the scroll position and the drafts and says the document changed; a reload after the shell's own decision keeps the decision's result line
+ok 226 - docs review shell: a reload marked changed keeps the scroll position and the drafts and says the document changed; a reload after the shell's own decision keeps the decision's result line
+  ---
+  duration_ms: 7.396
+  type: 'test'
+  ...
+# Subtest: docs review shell: a diagram or mock that has its own tab is not also drawn inside the markdown; one with no tab still is
+ok 227 - docs review shell: a diagram or mock that has its own tab is not also drawn inside the markdown; one with no tab still is
+  ---
+  duration_ms: 3.075166
+  type: 'test'
+  ...
+# Subtest: docs review shell: a BUILD row is listed between ISSUE and CR, counted in the type select, and opens like any other row
+ok 228 - docs review shell: a BUILD row is listed between ISSUE and CR, counted in the type select, and opens like any other row
+  ---
+  duration_ms: 0.535333
+  type: 'test'
+  ...
+1..228
+# tests 228
+# suites 0
+# pass 228
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20238.221708

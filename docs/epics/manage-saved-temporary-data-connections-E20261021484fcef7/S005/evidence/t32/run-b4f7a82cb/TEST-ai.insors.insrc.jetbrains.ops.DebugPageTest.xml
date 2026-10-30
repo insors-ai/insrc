@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.ops.DebugPageTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="ac2 - k3 - the orphan Kill is the ONLY mutation, confirm-gated and run off the EDT()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.001"/>
+  <testcase name="s5 ac1 - sections() appends the MCP section after Status and Orphans()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.001"/>
+  <testcase name="k4 - the page does not touch the parent settings page()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.0"/>
+  <testcase name="s6 - sections() appends the Logs section after Status, Orphans and Mcp()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.0"/>
+  <testcase name="sc3 - the DebugSection + DebugPageHost interfaces exist matching the HLD sketch()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.0"/>
+  <testcase name="ac1 - the page consumes sc1 + implements sc3 and renders the status card from the reader via InsrcCollapsible()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.0"/>
+  <testcase name="s5 ac1 - the MCP section is a DebugSection that reads the gateway + registration and renders an unavailable line()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.0"/>
+  <testcase name="s5 ac2 - k3 - the MCP section exposes no mutating control and no daemon-mutating IPC()" classname="ai.insors.insrc.jetbrains.ops.DebugPageTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

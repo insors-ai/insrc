@@ -1,0 +1,1 @@
+bundled -> out/extension.js + out/uninstall.js (CJS)

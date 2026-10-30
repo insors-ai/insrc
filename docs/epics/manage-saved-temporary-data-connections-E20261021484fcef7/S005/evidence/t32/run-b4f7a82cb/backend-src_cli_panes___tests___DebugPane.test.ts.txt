@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: initial render shows all three section tabs with daemon active
+ok 1 - initial render shows all three section tabs with daemon active
+  ---
+  duration_ms: 47.367667
+  type: 'test'
+  ...
+# Subtest: a right-arrow keypress switches the active section without unmounting
+ok 2 - a right-arrow keypress switches the active section without unmounting
+  ---
+  duration_ms: 62.7895
+  type: 'test'
+  ...
+# Subtest: inner-section navigation is suppressed while captured
+ok 3 - inner-section navigation is suppressed while captured
+  ---
+  duration_ms: 57.471542
+  type: 'test'
+  ...
+# Subtest: cycling on a single-section registry is an idempotent no-op
+ok 4 - cycling on a single-section registry is an idempotent no-op
+  ---
+  duration_ms: 56.706083
+  type: 'test'
+  ...
+# Subtest: an unknown active section id renders the inline fallback, not a throw
+ok 5 - an unknown active section id renders the inline fallback, not a throw
+  ---
+  duration_ms: 28.591334
+  type: 'test'
+  ...
+# Subtest: an empty section list renders the pane frame without throwing
+ok 6 - an empty section list renders the pane frame without throwing
+  ---
+  duration_ms: 27.459875
+  type: 'test'
+  ...
+# Subtest: selecting the Daemon section renders DaemonSection's running card from the debug facade
+ok 7 - selecting the Daemon section renders DaemonSection's running card from the debug facade
+  ---
+  duration_ms: 28.948708
+  type: 'test'
+  ...
+# Subtest: with an unreachable daemonStatus() the Daemon section shows the stopped/unreachable line
+ok 8 - with an unreachable daemonStatus() the Daemon section shows the stopped/unreachable line
+  ---
+  duration_ms: 28.336542
+  type: 'test'
+  ...
+# Subtest: navigating to the logs section renders LogsSection (the s1 placeholder is gone)
+ok 9 - navigating to the logs section renders LogsSection (the s1 placeholder is gone)
+  ---
+  duration_ms: 85.202
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 980.062666

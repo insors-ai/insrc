@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: d9f85b3c t3 — Header, Narrative, View and Description appear in that order
+ok 1 - d9f85b3c t3 — Header, Narrative, View and Description appear in that order
+  ---
+  duration_ms: 1.625083
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User
+ok 2 - d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User
+  ---
+  duration_ms: 0.221542
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page
+ok 3 - d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page
+  ---
+  duration_ms: 0.298708
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init
+ok 4 - d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init
+  ---
+  duration_ms: 0.247209
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn
+ok 5 - d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn
+  ---
+  duration_ms: 0.120083
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS
+ok 6 - d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS
+  ---
+  duration_ms: 0.144375
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — an inlined runtime cannot close its script element early
+ok 7 - d9f85b3c t3 — an inlined runtime cannot close its script element early
+  ---
+  duration_ms: 0.066083
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — every header, narrative and table string is escaped
+ok 8 - d9f85b3c t3 — every header, narrative and table string is escaped
+  ---
+  duration_ms: 0.121583
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge
+ok 9 - d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge
+  ---
+  duration_ms: 0.257541
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs
+ok 10 - d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs
+  ---
+  duration_ms: 0.38425
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only
+ok 11 - d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only
+  ---
+  duration_ms: 5.007541
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError
+ok 12 - d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError
+  ---
+  duration_ms: 1.749792
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 325.968541

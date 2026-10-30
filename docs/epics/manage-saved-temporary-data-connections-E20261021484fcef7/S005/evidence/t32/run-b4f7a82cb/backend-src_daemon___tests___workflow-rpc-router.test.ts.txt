@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: prepareWorkflowRun exposes a router + cfg + repoPath alongside the back-compat scalar provider
+ok 1 - prepareWorkflowRun exposes a router + cfg + repoPath alongside the back-compat scalar provider
+  ---
+  duration_ms: 3.287
+  type: 'test'
+  ...
+# Subtest: prep.router resolves a provider per role (distinct roles → distinct resolutions)
+ok 2 - prep.router resolves a provider per role (distinct roles → distinct resolutions)
+  ---
+  duration_ms: 0.328417
+  type: 'test'
+  ...
+# Subtest: prepareWorkflowRun still throws "no repo" before any router is built
+ok 3 - prepareWorkflowRun still throws "no repo" before any router is built
+  ---
+  duration_ms: 0.200458
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 856.539167

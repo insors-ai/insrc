@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.review.ResolveCommentTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="SubmitDecision clears the buffer ONLY on a full success (recorded == submitted)()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.001"/>
+  <testcase name="over the real parse, a daemon structured error maps to Unavailable, not a silent success()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.0"/>
+  <testcase name="resolveComment omits null anchor fields from the wire map()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.001"/>
+  <testcase name="over the real parse, a recorded payload maps to Recorded with the fields()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.0"/>
+  <testcase name="resolveComment maps DaemonUnavailableException to Unavailable()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.0"/>
+  <testcase name="resolveComment degrades a malformed payload safely (not a throw)()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.001"/>
+  <testcase name="resolveComment maps ok to Recorded, forwarding recorded + resolutions verbatim()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.0"/>
+  <testcase name="resolveComment maps ok=false to Unavailable, never a silent success()" classname="ai.insors.insrc.jetbrains.review.ResolveCommentTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

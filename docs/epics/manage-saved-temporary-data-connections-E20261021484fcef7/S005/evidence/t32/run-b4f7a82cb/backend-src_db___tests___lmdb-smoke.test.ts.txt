@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: lmdb native binding loads
+ok 1 - lmdb native binding loads
+  ---
+  duration_ms: 3.34575
+  type: 'test'
+  ...
+# Subtest: put and get round-trip with default msgpack codec
+ok 2 - put and get round-trip with default msgpack codec
+  ---
+  duration_ms: 12.056416
+  type: 'test'
+  ...
+# Subtest: binary keys (Buffer) round-trip
+ok 3 - binary keys (Buffer) round-trip
+  ---
+  duration_ms: 7.081625
+  type: 'test'
+  ...
+# Subtest: cursor range scan returns sorted keys
+ok 4 - cursor range scan returns sorted keys
+  ---
+  duration_ms: 12.6415
+  type: 'test'
+  ...
+# Subtest: sub-databases (named) are independent keyspaces
+ok 5 - sub-databases (named) are independent keyspaces
+  ---
+  duration_ms: 15.157583
+  type: 'test'
+  ...
+# Subtest: msgpack codec preserves nested objects
+ok 6 - msgpack codec preserves nested objects
+  ---
+  duration_ms: 6.462917
+  type: 'test'
+  ...
+# Subtest: write transaction is atomic (all-or-nothing)
+ok 7 - write transaction is atomic (all-or-nothing)
+  ---
+  duration_ms: 8.1045
+  type: 'test'
+  ...
+# Subtest: reopened env retains data (file-backed persistence)
+ok 8 - reopened env retains data (file-backed persistence)
+  ---
+  duration_ms: 7.707958
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 271.305125

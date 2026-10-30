@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: upsertEntry with embedding persists to Lance
+ok 1 - upsertEntry with embedding persists to Lance
+  ---
+  duration_ms: 567.200833
+  type: 'test'
+  ...
+# Subtest: upsertEntry with empty embedding skips Lance write
+ok 2 - upsertEntry with empty embedding skips Lance write
+  ---
+  duration_ms: 230.30575
+  type: 'test'
+  ...
+# Subtest: upsertEntry that changes scope replaces the Lance row
+ok 3 - upsertEntry that changes scope replaces the Lance row
+  ---
+  duration_ms: 291.537584
+  type: 'test'
+  ...
+# Subtest: vectorSearch returns hydrated ConfigEntry objects with distances
+ok 4 - vectorSearch returns hydrated ConfigEntry objects with distances
+  ---
+  duration_ms: 250.525167
+  type: 'test'
+  ...
+# Subtest: vectorSearch where-filter narrows results
+ok 5 - vectorSearch where-filter narrows results
+  ---
+  duration_ms: 351.29975
+  type: 'test'
+  ...
+# Subtest: vectorSearch returns [] on dim mismatch (legacy silent-error contract)
+ok 6 - vectorSearch returns [] on dim mismatch (legacy silent-error contract)
+  ---
+  duration_ms: 297.416834
+  type: 'test'
+  ...
+# Subtest: vectorSearch on empty query returns []
+ok 7 - vectorSearch on empty query returns []
+  ---
+  duration_ms: 245.161292
+  type: 'test'
+  ...
+# Subtest: deleteEntry cascades the Lance row
+ok 8 - deleteEntry cascades the Lance row
+  ---
+  duration_ms: 350.140125
+  type: 'test'
+  ...
+# Subtest: deleteByScope cascades all matching Lance rows
+ok 9 - deleteByScope cascades all matching Lance rows
+  ---
+  duration_ms: 441.646125
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3510.869792

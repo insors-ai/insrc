@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: repo row round-trip
+ok 1 - repo row round-trip
+  ---
+  duration_ms: 2.594125
+  type: 'test'
+  ...
+# Subtest: registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined
+ok 2 - registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined
+  ---
+  duration_ms: 0.435958
+  type: 'test'
+  ...
+# Subtest: repo row round-trip -- shared-modules kind with namespace
+ok 3 - repo row round-trip -- shared-modules kind with namespace
+  ---
+  duration_ms: 0.108417
+  type: 'test'
+  ...
+# Subtest: entity row round-trip including all flag fields
+ok 4 - entity row round-trip including all flag fields
+  ---
+  duration_ms: 0.117416
+  type: 'test'
+  ...
+# Subtest: entity row preserves empty-string sentinel defaults
+ok 5 - entity row preserves empty-string sentinel defaults
+  ---
+  duration_ms: 0.078958
+  type: 'test'
+  ...
+# Subtest: edge props: empty payload encodes to zero-byte buffer
+ok 6 - edge props: empty payload encodes to zero-byte buffer
+  ---
+  duration_ms: 0.068167
+  type: 'test'
+  ...
+# Subtest: edge props: CALLS shape round-trips
+ok 7 - edge props: CALLS shape round-trips
+  ---
+  duration_ms: 0.157458
+  type: 'test'
+  ...
+# Subtest: edge props: READS shape round-trips
+ok 8 - edge props: READS shape round-trips
+  ---
+  duration_ms: 0.085125
+  type: 'test'
+  ...
+# Subtest: edge props: IMPORTS shape round-trips
+ok 9 - edge props: IMPORTS shape round-trips
+  ---
+  duration_ms: 0.932458
+  type: 'test'
+  ...
+# Subtest: unresolved row round-trip
+ok 10 - unresolved row round-trip
+  ---
+  duration_ms: 0.430875
+  type: 'test'
+  ...
+# Subtest: plan row round-trip
+ok 11 - plan row round-trip
+  ---
+  duration_ms: 0.098792
+  type: 'test'
+  ...
+# Subtest: plan_step row round-trip with sentinel timestamps + dependsOn
+ok 12 - plan_step row round-trip with sentinel timestamps + dependsOn
+  ---
+  duration_ms: 0.093667
+  type: 'test'
+  ...
+# Subtest: session row round-trip with all status / tier values
+ok 13 - session row round-trip with all status / tier values
+  ---
+  duration_ms: 0.070208
+  type: 'test'
+  ...
+# Subtest: turn row round-trip with all enum values
+ok 14 - turn row round-trip with all enum values
+  ---
+  duration_ms: 0.059458
+  type: 'test'
+  ...
+# Subtest: todo_list row round-trip
+ok 15 - todo_list row round-trip
+  ---
+  duration_ms: 0.064417
+  type: 'test'
+  ...
+# Subtest: todo_item row round-trip with tags + meta
+ok 16 - todo_item row round-trip with tags + meta
+  ---
+  duration_ms: 0.103
+  type: 'test'
+  ...
+# Subtest: todo_comment row round-trip
+ok 17 - todo_comment row round-trip
+  ---
+  duration_ms: 0.053458
+  type: 'test'
+  ...
+# Subtest: config_entry row round-trip
+ok 18 - config_entry row round-trip
+  ---
+  duration_ms: 0.061958
+  type: 'test'
+  ...
+# Subtest: msgpack encoding is more compact than JSON for typical entity
+ok 19 - msgpack encoding is more compact than JSON for typical entity
+  ---
+  duration_ms: 0.096542
+  type: 'test'
+  ...
+# Subtest: large body in entity row round-trips correctly
+ok 20 - large body in entity row round-trips correctly
+  ---
+  duration_ms: 0.207041
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 244.675125

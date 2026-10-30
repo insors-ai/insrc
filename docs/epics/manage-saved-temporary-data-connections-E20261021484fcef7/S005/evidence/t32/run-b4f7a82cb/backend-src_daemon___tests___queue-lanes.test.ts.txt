@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: an index job enqueued while a summary job is running completes before that summary job finishes
+ok 1 - an index job enqueued while a summary job is running completes before that summary job finishes
+  ---
+  duration_ms: 7.845458
+  type: 'test'
+  ...
+# Subtest: each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it
+ok 2 - each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it
+  ---
+  duration_ms: 4.229375
+  type: 'test'
+  ...
+# Subtest: a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it
+ok 3 - a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it
+  ---
+  duration_ms: 0.941667
+  type: 'test'
+  ...
+# Subtest: depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane
+ok 4 - depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane
+  ---
+  duration_ms: 1.371375
+  type: 'test'
+  ...
+# Subtest: stop ends both lanes after their current jobs, and start resolves only then
+ok 5 - stop ends both lanes after their current jobs, and start resolves only then
+  ---
+  duration_ms: 0.61775
+  type: 'test'
+  ...
+# Subtest: waitForIndexIdle resolves at once when the index lane is idle, after its code work otherwise, and on stop(); a summary lane waiting for code work ends on stop()
+ok 6 - waitForIndexIdle resolves at once when the index lane is idle, after its code work otherwise, and on stop(); a summary lane waiting for code work ends on stop()
+  ---
+  duration_ms: 1.8385
+  type: 'test'
+  ...
+# Subtest: a summary never starts after a code job was queued: with the index lane idle at start it starts at once, and a code job queued just after runs beside that one summary only
+ok 7 - a summary never starts after a code job was queued: with the index lane idle at start it starts at once, and a code job queued just after runs beside that one summary only
+  ---
+  duration_ms: 0.717792
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 351.831375

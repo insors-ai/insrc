@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: startWorkflowRun returns a runId synchronously and poll transitions running → done
+ok 1 - startWorkflowRun returns a runId synchronously and poll transitions running → done
+  ---
+  duration_ms: 16.305542
+  type: 'test'
+  ...
+# Subtest: poll with the returned cursor yields only NEW frames (append-only)
+ok 2 - poll with the returned cursor yields only NEW frames (append-only)
+  ---
+  duration_ms: 10.497875
+  type: 'test'
+  ...
+# Subtest: unknown runId polls as status:unknown with an error
+ok 3 - unknown runId polls as status:unknown with an error
+  ---
+  duration_ms: 0.282333
+  type: 'test'
+  ...
+# Subtest: abortWorkflowRun flips a running run to aborted; unknown runId → ok:false
+ok 4 - abortWorkflowRun flips a running run to aborted; unknown runId → ok:false
+  ---
+  duration_ms: 23.141125
+  type: 'test'
+  ...
+# Subtest: workflow run registry: poll from the board returns frames since cursor, model, result and error; unknown after forgetRun
+ok 5 - workflow run registry: poll from the board returns frames since cursor, model, result and error; unknown after forgetRun
+  ---
+  duration_ms: 33.55
+  type: 'test'
+  ...
+# Subtest: workflow run registry: with threads disabled start/poll/abort answer as today
+ok 6 - workflow run registry: with threads disabled start/poll/abort answer as today
+  ---
+  duration_ms: 18.459
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 927.08925

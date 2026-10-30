@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: worker-model-registry.test.ts: a worker started with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy fails its start with ModelCatalogValidationError
+ok 1 - worker-model-registry.test.ts: a worker started with INSRC_MODEL_CATALOG_DIR pointing at a corrupted copy fails its start with ModelCatalogValidationError
+  ---
+  duration_ms: 330.3965
+  type: 'test'
+  ...
+# Subtest: worker-model-registry.test.ts: a worker started after the asset copy and store changed reports the new models while the main thread's registry keeps the old ones
+ok 2 - worker-model-registry.test.ts: a worker started after the asset copy and store changed reports the new models while the main thread's registry keeps the old ones
+  ---
+  duration_ms: 221.065583
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 828.669333

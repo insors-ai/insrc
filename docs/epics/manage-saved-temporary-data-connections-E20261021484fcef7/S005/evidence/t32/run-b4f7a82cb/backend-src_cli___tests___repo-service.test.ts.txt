@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: toAbsPath: bare ~ expands to the home directory
+ok 1 - toAbsPath: bare ~ expands to the home directory
+  ---
+  duration_ms: 0.626542
+  type: 'test'
+  ...
+# Subtest: toAbsPath: ~/x expands to home/x (the reported bug)
+ok 2 - toAbsPath: ~/x expands to home/x (the reported bug)
+  ---
+  duration_ms: 0.088083
+  type: 'test'
+  ...
+# Subtest: toAbsPath: a ../ relative resolves against cwd (unchanged behaviour)
+ok 3 - toAbsPath: a ../ relative resolves against cwd (unchanged behaviour)
+  ---
+  duration_ms: 0.068083
+  type: 'test'
+  ...
+# Subtest: toAbsPath: a . relative resolves to cwd
+ok 4 - toAbsPath: a . relative resolves to cwd
+  ---
+  duration_ms: 0.037209
+  type: 'test'
+  ...
+# Subtest: toAbsPath: an already-absolute path is returned normalized + unchanged
+ok 5 - toAbsPath: an already-absolute path is returned normalized + unchanged
+  ---
+  duration_ms: 0.09175
+  type: 'test'
+  ...
+# Subtest: toAbsPath: a ~-prefixed username form (no slash) is NOT tilde-expanded
+ok 6 - toAbsPath: a ~-prefixed username form (no slash) is NOT tilde-expanded
+  ---
+  duration_ms: 0.039833
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 192.479542

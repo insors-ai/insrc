@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: upsertArtifactVec + queryArtifactVec round-trip
+ok 1 - upsertArtifactVec + queryArtifactVec round-trip
+  ---
+  duration_ms: 61.030042
+  type: 'test'
+  ...
+# Subtest: queryArtifactVec scopes by sessionId
+ok 2 - queryArtifactVec scopes by sessionId
+  ---
+  duration_ms: 30.206
+  type: 'test'
+  ...
+# Subtest: queryArtifactVec scopes by intent when provided
+ok 3 - queryArtifactVec scopes by intent when provided
+  ---
+  duration_ms: 37.147583
+  type: 'test'
+  ...
+# Subtest: getArtifactById returns the row by exact id (no ANN)
+ok 4 - getArtifactById returns the row by exact id (no ANN)
+  ---
+  duration_ms: 27.389208
+  type: 'test'
+  ...
+# Subtest: deleteArtifactsForSession removes all rows for a session and returns count
+ok 5 - deleteArtifactsForSession removes all rows for a session and returns count
+  ---
+  duration_ms: 71.99675
+  type: 'test'
+  ...
+# Subtest: upsert: writing the same id replaces
+ok 6 - upsert: writing the same id replaces
+  ---
+  duration_ms: 54.750208
+  type: 'test'
+  ...
+# Subtest: returns [] for empty query / empty session / k=0
+ok 7 - returns [] for empty query / empty session / k=0
+  ---
+  duration_ms: 1.239292
+  type: 'test'
+  ...
+# Subtest: deleteArtifactsForSession on empty session returns 0 cleanly
+ok 8 - deleteArtifactsForSession on empty session returns 0 cleanly
+  ---
+  duration_ms: 15.877
+  type: 'test'
+  ...
+# Subtest: default summary on a freshly-spilled row is empty string
+ok 9 - default summary on a freshly-spilled row is empty string
+  ---
+  duration_ms: 35.2205
+  type: 'test'
+  ...
+# Subtest: upsertArtifactVec persists explicit summary verbatim
+ok 10 - upsertArtifactVec persists explicit summary verbatim
+  ---
+  duration_ms: 67.992541
+  type: 'test'
+  ...
+# Subtest: updateArtifactSummary overwrites only the summary column
+ok 11 - updateArtifactSummary overwrites only the summary column
+  ---
+  duration_ms: 167.11
+  type: 'test'
+  ...
+# Subtest: updateArtifactSummary returns false for unknown id (soft-fail)
+ok 12 - updateArtifactSummary returns false for unknown id (soft-fail)
+  ---
+  duration_ms: 18.829917
+  type: 'test'
+  ...
+# Subtest: updateArtifactSummary refuses empty id + the seed sentinel
+ok 13 - updateArtifactSummary refuses empty id + the seed sentinel
+  ---
+  duration_ms: 0.455291
+  type: 'test'
+  ...
+# Subtest: listArtifactsForSession returns rows newest-first
+ok 14 - listArtifactsForSession returns rows newest-first
+  ---
+  duration_ms: 32.825791
+  type: 'test'
+  ...
+# Subtest: listArtifactsForSession scopes by session and excludes seed
+ok 15 - listArtifactsForSession scopes by session and excludes seed
+  ---
+  duration_ms: 31.363375
+  type: 'test'
+  ...
+# Subtest: listArtifactsForSession honours skillIdPrefix filter
+ok 16 - listArtifactsForSession honours skillIdPrefix filter
+  ---
+  duration_ms: 39.11725
+  type: 'test'
+  ...
+# Subtest: listArtifactsForSession honours afterTimestamp lower bound (exclusive)
+ok 17 - listArtifactsForSession honours afterTimestamp lower bound (exclusive)
+  ---
+  duration_ms: 41.065917
+  type: 'test'
+  ...
+# Subtest: listArtifactsForSession returns [] for empty sessionId
+ok 18 - listArtifactsForSession returns [] for empty sessionId
+  ---
+  duration_ms: 0.450208
+  type: 'test'
+  ...
+# Subtest: listArtifactsForSession defaults summary to empty string for rows without one
+ok 19 - listArtifactsForSession defaults summary to empty string for rows without one
+  ---
+  duration_ms: 24.203708
+  type: 'test'
+  ...
+# Subtest: queryArtifactVec results carry the summary field
+ok 20 - queryArtifactVec results carry the summary field
+  ---
+  duration_ms: 30.170916
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1100.285583

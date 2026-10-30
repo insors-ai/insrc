@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: buildCompleteness computes complete and rejects contradictory facts with RangeError
+ok 1 - buildCompleteness computes complete and rejects contradictory facts with RangeError
+  ---
+  duration_ms: 1.695083
+  type: 'test'
+  ...
+# Subtest: buildCompleteness accepts several reached limits and a per-group limit below the returned count
+ok 2 - buildCompleteness accepts several reached limits and a per-group limit below the returned count
+  ---
+  duration_ms: 0.075167
+  type: 'test'
+  ...
+# Subtest: a limit on a result's sources is not compared with the returned count
+ok 3 - a limit on a result's sources is not compared with the returned count
+  ---
+  duration_ms: 0.116625
+  type: 'test'
+  ...
+# Subtest: an overall limit is compared with the returned count even beside per-group limits
+ok 4 - an overall limit is compared with the returned count even beside per-group limits
+  ---
+  duration_ms: 0.055917
+  type: 'test'
+  ...
+# Subtest: deriveAnswerReport: all complete, one incomplete, one failed, and a source with neither is rejected
+ok 5 - deriveAnswerReport: all complete, one incomplete, one failed, and a source with neither is rejected
+  ---
+  duration_ms: 0.376792
+  type: 'test'
+  ...
+# Subtest: renderCompletenessLine names every incomplete and failed source and repeats a shared basis note once
+ok 6 - renderCompletenessLine names every incomplete and failed source and repeats a shared basis note once
+  ---
+  duration_ms: 0.260333
+  type: 'test'
+  ...
+# Subtest: the completeness line is one line even when a reason, a source id or a note spans lines; the report keeps them as given
+ok 7 - the completeness line is one line even when a reason, a source id or a note spans lines; the report keeps them as given
+  ---
+  duration_ms: 0.149459
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 184.181291

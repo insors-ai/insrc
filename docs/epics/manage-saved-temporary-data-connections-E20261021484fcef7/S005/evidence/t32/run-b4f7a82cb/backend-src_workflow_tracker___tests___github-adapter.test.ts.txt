@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: runGh classifies ENOENT, authentication failure, timeout and other failures
+ok 1 - runGh classifies ENOENT, authentication failure, timeout and other failures
+  ---
+  duration_ms: 1.213084
+  type: 'test'
+  ...
+# Subtest: runGh passes the 10 s timeout option to the exec seam
+ok 2 - runGh passes the 10 s timeout option to the exec seam
+  ---
+  duration_ms: 0.790166
+  type: 'test'
+  ...
+# Subtest: compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected
+ok 3 - compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected
+  ---
+  duration_ms: 0.486083
+  type: 'test'
+  ...
+# Subtest: a typed create rejected as an unknown issue type is retried once untyped and reports typed false
+ok 4 - a typed create rejected as an unknown issue type is retried once untyped and reports typed false
+  ---
+  duration_ms: 0.296416
+  type: 'test'
+  ...
+# Subtest: compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable
+ok 5 - compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable
+  ---
+  duration_ms: 0.450208
+  type: 'test'
+  ...
+# Subtest: whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable
+ok 6 - whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable
+  ---
+  duration_ms: 0.37975
+  type: 'test'
+  ...
+# Subtest: findIssue returns the first of several matches and separates failure from not found
+ok 7 - findIssue returns the first of several matches and separates failure from not found
+  ---
+  duration_ms: 0.264416
+  type: 'test'
+  ...
+# Subtest: signoff methods return rejected without running gh
+ok 8 - signoff methods return rejected without running gh
+  ---
+  duration_ms: 0.10175
+  type: 'test'
+  ...
+# Subtest: readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference
+ok 9 - readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference
+  ---
+  duration_ms: 1.323375
+  type: 'test'
+  ...
+# Subtest: setAssignee from zero, one and several assignees ends with exactly the requested user
+ok 10 - setAssignee from zero, one and several assignees ends with exactly the requested user
+  ---
+  duration_ms: 0.768625
+  type: 'test'
+  ...
+# Subtest: setAssignee makes no change call when already right and clears for null
+ok 11 - setAssignee makes no change call when already right and clears for null
+  ---
+  duration_ms: 0.15425
+  type: 'test'
+  ...
+# Subtest: setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out
+ok 12 - setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out
+  ---
+  duration_ms: 0.203291
+  type: 'test'
+  ...
+# Subtest: Epic create parity with ghCreateIssueTyped
+ok 13 - Epic create parity with ghCreateIssueTyped
+  ---
+  duration_ms: 0.269458
+  type: 'test'
+  ...
+# Subtest: Story create and Epic parent link parity
+ok 14 - Story create and Epic parent link parity
+  ---
+  duration_ms: 0.567375
+  type: 'test'
+  ...
+# Subtest: Task create and Story parent link parity
+ok 15 - Task create and Story parent link parity
+  ---
+  duration_ms: 0.135291
+  type: 'test'
+  ...
+# Subtest: each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper
+ok 16 - each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper
+  ---
+  duration_ms: 0.556584
+  type: 'test'
+  ...
+# Subtest: ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds
+ok 17 - ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds
+  ---
+  duration_ms: 0.135291
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 338.777333

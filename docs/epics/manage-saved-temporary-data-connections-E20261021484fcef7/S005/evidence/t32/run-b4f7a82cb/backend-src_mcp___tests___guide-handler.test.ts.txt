@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: handleInsrcGuide({workflow}) forwards to guide.get and wraps Ok (ac1)
+ok 1 - handleInsrcGuide({workflow}) forwards to guide.get and wraps Ok (ac1)
+  ---
+  duration_ms: 13.534125
+  type: 'test'
+  ...
+# Subtest: handleInsrcGuide({}) forwards to guide.list and returns a structured Error (ac2)
+ok 2 - handleInsrcGuide({}) forwards to guide.list and returns a structured Error (ac2)
+  ---
+  duration_ms: 1.477583
+  type: 'test'
+  ...
+# Subtest: handleInsrcGuide passes through an unknown-workflow error from guide.get
+ok 3 - handleInsrcGuide passes through an unknown-workflow error from guide.get
+  ---
+  duration_ms: 1.217542
+  type: 'test'
+  ...
+# Subtest: handleInsrcGuide surfaces a daemon-unreachable transport failure as an isError envelope (never throws)
+ok 4 - handleInsrcGuide surfaces a daemon-unreachable transport failure as an isError envelope (never throws)
+  ---
+  duration_ms: 0.644625
+  type: 'test'
+  ...
+# Subtest: handleInsrcGuide treats a whitespace-only workflow as omitted (ac2)
+ok 5 - handleInsrcGuide treats a whitespace-only workflow as omitted (ac2)
+  ---
+  duration_ms: 0.943459
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 281.819334

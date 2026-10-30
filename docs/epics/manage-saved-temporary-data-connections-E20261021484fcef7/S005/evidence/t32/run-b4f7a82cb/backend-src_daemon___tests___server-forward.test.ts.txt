@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback
+ok 1 - new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback
+  ---
+  duration_ms: 18.11725
+  type: 'test'
+  ...
+# Subtest: closing the socket aborts a stream request and drops a unary request's late reply while its handler completes
+ok 2 - closing the socket aborts a stream request and drops a unary request's late reply while its handler completes
+  ---
+  duration_ms: 1.047292
+  type: 'test'
+  ...
+# Subtest: the registry hook fires on connect, close and each message before the request is forwarded
+ok 3 - the registry hook fires on connect, close and each message before the request is forwarded
+  ---
+  duration_ms: 0.364666
+  type: 'test'
+  ...
+# Subtest: a method named like an inherited property (toString, constructor) is an unknown method, unary or stream, and never runs Object.prototype
+ok 4 - a method named like an inherited property (toString, constructor) is an unknown method, unary or stream, and never runs Object.prototype
+  ---
+  duration_ms: 45.261667
+  type: 'test'
+  ...
+# Subtest: a request line of valid JSON that is not an object (null, a number, an array) is answered, and the server keeps serving
+ok 5 - a request line of valid JSON that is not an object (null, a number, an array) is answered, and the server keeps serving
+  ---
+  duration_ms: 15.602458
+  type: 'test'
+  ...
+# Subtest: a request whose method is not a string (an object with no toString, a number) is answered invalid, and the server keeps serving
+ok 6 - a request whose method is not a string (an object with no toString, a number) is answered invalid, and the server keeps serving
+  ---
+  duration_ms: 19.989833
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 359.456

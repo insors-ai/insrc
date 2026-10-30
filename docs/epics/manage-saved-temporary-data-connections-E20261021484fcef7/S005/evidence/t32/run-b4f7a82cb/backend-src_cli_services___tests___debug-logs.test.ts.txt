@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: tailLogWith: resolves the active segment (highest-N) and emits its last-N lines on start
+ok 1 - tailLogWith: resolves the active segment (highest-N) and emits its last-N lines on start
+  ---
+  duration_ms: 1.745375
+  type: 'test'
+  ...
+# Subtest: tailLogWith: a watch 'change' event emits the newly-appended lines (live follow)
+ok 2 - tailLogWith: a watch 'change' event emits the newly-appended lines (live follow)
+  ---
+  duration_ms: 0.132542
+  type: 'test'
+  ...
+# Subtest: tailLogWith: a newer higher-N segment appearing re-resolves+follows it (rotation follow, lc2)
+ok 3 - tailLogWith: a newer higher-N segment appearing re-resolves+follows it (rotation follow, lc2)
+  ---
+  duration_ms: 0.151166
+  type: 'test'
+  ...
+# Subtest: tailLogWith: non-JSON line -> raw-only; valid pino JSON -> time/level/module/msg
+ok 4 - tailLogWith: non-JSON line -> raw-only; valid pino JSON -> time/level/module/msg
+  ---
+  duration_ms: 0.1585
+  type: 'test'
+  ...
+# Subtest: tailLogWith: empty/missing dir or no segment emits [] and never throws (k4)
+ok 5 - tailLogWith: empty/missing dir or no segment emits [] and never throws (k4)
+  ---
+  duration_ms: 0.060875
+  type: 'test'
+  ...
+# Subtest: tailLogWith: a readLines throw is swallowed and the subscription survives
+ok 6 - tailLogWith: a readLines throw is swallowed and the subscription survives
+  ---
+  duration_ms: 0.128292
+  type: 'test'
+  ...
+# Subtest: tailLogWith: dispose() removes the watcher and suppresses any post-dispose emit (idempotent)
+ok 7 - tailLogWith: dispose() removes the watcher and suppresses any post-dispose emit (idempotent)
+  ---
+  duration_ms: 0.120625
+  type: 'test'
+  ...
+# Subtest: matchesFilter: minLevel keeps level>=; a non-JSON (no level) line is dropped under an active minLevel
+ok 8 - matchesFilter: minLevel keeps level>=; a non-JSON (no level) line is dropped under an active minLevel
+  ---
+  duration_ms: 0.074209
+  type: 'test'
+  ...
+# Subtest: matchesFilter: module ci-match on module; text ci-substring over raw
+ok 9 - matchesFilter: module ci-match on module; text ci-substring over raw
+  ---
+  duration_ms: 0.181833
+  type: 'test'
+  ...
+# Subtest: matchesFilter: unset fields impose no constraint; level+module+text are ANDed
+ok 10 - matchesFilter: unset fields impose no constraint; level+module+text are ANDed
+  ---
+  duration_ms: 0.298208
+  type: 'test'
+  ...
+# Subtest: matchesFilter: free-text still matches a non-JSON line via raw (level/module cannot)
+ok 11 - matchesFilter: free-text still matches a non-JSON line via raw (level/module cannot)
+  ---
+  duration_ms: 0.042458
+  type: 'test'
+  ...
+# Subtest: logCategories() returns exactly [daemon, agent] and opens no stream
+ok 12 - logCategories() returns exactly [daemon, agent] and opens no stream
+  ---
+  duration_ms: 0.047125
+  type: 'test'
+  ...
+# Subtest: makeServices().debug exposes logCategories + tailLog bound to the real impls
+ok 13 - makeServices().debug exposes logCategories + tailLog bound to the real impls
+  ---
+  duration_ms: 0.169333
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 630.221666

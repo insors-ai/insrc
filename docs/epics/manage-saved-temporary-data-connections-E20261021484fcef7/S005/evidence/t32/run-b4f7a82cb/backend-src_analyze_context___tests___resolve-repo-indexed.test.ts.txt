@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: scope path: classification input returns scopeRef.value
+ok 1 - scope path: classification input returns scopeRef.value
+  ---
+  duration_ms: 2.032083
+  type: 'test'
+  ...
+# Subtest: scope path: run input with kind=repo returns scopeRef.value
+ok 2 - scope path: run input with kind=repo returns scopeRef.value
+  ---
+  duration_ms: 0.7285
+  type: 'test'
+  ...
+# Subtest: scope path: run input with kind=file returns scopeRef.value
+ok 3 - scope path: run input with kind=file returns scopeRef.value
+  ---
+  duration_ms: 0.76775
+  type: 'test'
+  ...
+# Subtest: scope path: run input with kind=connection returns empty string
+ok 4 - scope path: run input with kind=connection returns empty string
+  ---
+  duration_ms: 0.593166
+  type: 'test'
+  ...
+# Subtest: scope path: a symbol yields its FILE, without the name
+ok 5 - scope path: a symbol yields its FILE, without the name
+  ---
+  duration_ms: 0.522167
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: empty path returns undefined
+ok 6 - resolveRepoLastIndexedAt: empty path returns undefined
+  ---
+  duration_ms: 0.404709
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: no registered repo matching the path returns undefined
+ok 7 - resolveRepoLastIndexedAt: no registered repo matching the path returns undefined
+  ---
+  duration_ms: 141.34675
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: registered repo with lastIndexed returns ms epoch
+ok 8 - resolveRepoLastIndexedAt: registered repo with lastIndexed returns ms epoch
+  ---
+  duration_ms: 127.113542
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: registered repo without lastIndexed returns undefined
+ok 9 - resolveRepoLastIndexedAt: registered repo without lastIndexed returns undefined
+  ---
+  duration_ms: 122.98225
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: scope path nested under registered repo matches the parent
+ok 10 - resolveRepoLastIndexedAt: scope path nested under registered repo matches the parent
+  ---
+  duration_ms: 112.557958
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: longest-prefix match wins when multiple repos overlap
+ok 11 - resolveRepoLastIndexedAt: longest-prefix match wins when multiple repos overlap
+  ---
+  duration_ms: 133.454208
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: false-prefix is rejected (boundary at "/")
+ok 12 - resolveRepoLastIndexedAt: false-prefix is rejected (boundary at "/")
+  ---
+  duration_ms: 116.708125
+  type: 'test'
+  ...
+# Subtest: resolveRepoLastIndexedAt: a later updateRepoStatus advances the watermark
+ok 13 - resolveRepoLastIndexedAt: a later updateRepoStatus advances the watermark
+  ---
+  duration_ms: 125.014916
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1417.779416

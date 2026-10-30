@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.host.RegistrationCompositionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.001">
+  <properties/>
+  <testcase name="missingLaunchTarget_skipsComposition_logged()" classname="ai.insors.insrc.jetbrains.host.RegistrationCompositionTest" time="0.0"/>
+  <testcase name="scopesToActiveProjectViaCwd_twoRootsScopeIndependently_notInsrcRepoEnv_notRepoArgv()" classname="ai.insors.insrc.jetbrains.host.RegistrationCompositionTest" time="0.0"/>
+  <testcase name="composedEntryIsValidJson_launchesOnlyStdioInsrcMcp_noCloudEndpoint()" classname="ai.insors.insrc.jetbrains.host.RegistrationCompositionTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[  56208]   WARN - #ai.insors.insrc.jetbrains.host.InsrcMcpRegistration - insrc: insrc-mcp launch target not resolved — skipping mcp registration for /home/dev/project-a
+]]></system-err>
+</testsuite>

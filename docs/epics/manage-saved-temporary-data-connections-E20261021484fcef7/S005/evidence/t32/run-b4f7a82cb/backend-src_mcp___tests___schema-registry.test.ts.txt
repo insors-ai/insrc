@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: registry key set == registered tool set (all 13 incl. insrc_schema)
+ok 1 - registry key set == registered tool set (all 13 incl. insrc_schema)
+  ---
+  duration_ms: 10.5405
+  type: 'test'
+  ...
+# Subtest: validTools (from an omitted-tool lookup) equals the registry key set (ac4)
+ok 2 - validTools (from an omitted-tool lookup) equals the registry key set (ac4)
+  ---
+  duration_ms: 10.73475
+  type: 'test'
+  ...
+# Subtest: every recorded rawShape converts to JSON Schema without throwing (k1)
+ok 3 - every recorded rawShape converts to JSON Schema without throwing (k1)
+  ---
+  duration_ms: 6.87
+  type: 'test'
+  ...
+# Subtest: a real registered shape is served, not a stub (insrc_workflow_step)
+ok 4 - a real registered shape is served, not a stub (insrc_workflow_step)
+  ---
+  duration_ms: 4.947083
+  type: 'test'
+  ...
+# Subtest: each multi-turn record phases[] equals its handler accepted set (lockstep)
+ok 5 - each multi-turn record phases[] equals its handler accepted set (lockstep)
+  ---
+  duration_ms: 8.458083
+  type: 'test'
+  ...
+# Subtest: phaseless tools carry no phases
+ok 6 - phaseless tools carry no phases
+  ---
+  duration_ms: 4.028167
+  type: 'test'
+  ...
+# Subtest: readWorkflowGuide over the REAL steering asset resolves every WorkflowKey to a non-empty section
+ok 7 - readWorkflowGuide over the REAL steering asset resolves every WorkflowKey to a non-empty section
+  ---
+  duration_ms: 0.598459
+  type: 'test'
+  ...
+# Subtest: the injected skeleton (stripGuideSections) drops all guide markers, stays shorter, and still names every tool
+ok 8 - the injected skeleton (stripGuideSections) drops all guide markers, stays shorter, and still names every tool
+  ---
+  duration_ms: 0.431625
+  type: 'test'
+  ...
+# Subtest: the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present
+ok 9 - the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present
+  ---
+  duration_ms: 6.523042
+  type: 'test'
+  ...
+# Subtest: c00559b7 — insrc_triage start serves the optional specHash field, so an MCP client can send it
+ok 10 - c00559b7 — insrc_triage start serves the optional specHash field, so an MCP client can send it
+  ---
+  duration_ms: 7.225041
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 496.704291

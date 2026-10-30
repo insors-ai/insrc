@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: ac1: publish + subscribe to the SAME topic => ONE node, TWO edges (direction on the edge)
+ok 1 - ac1: publish + subscribe to the SAME topic => ONE node, TWO edges (direction on the edge)
+  ---
+  duration_ms: 896.184459
+  type: 'test'
+  ...
+# Subtest: ac1 dedup: three producers to one topic => one node, three PUBLISHES_TO edges; sc2 called once
+ok 2 - ac1 dedup: three producers to one topic => one node, three PUBLISHES_TO edges; sc2 called once
+  ---
+  duration_ms: 408.317125
+  type: 'test'
+  ...
+# Subtest: ac2: a config-built topic resolves to an identity; an un-pinnable one still mints a resolved:false node
+ok 3 - ac2: a config-built topic resolves to an identity; an un-pinnable one still mints a resolved:false node
+  ---
+  duration_ms: 223.652917
+  type: 'test'
+  ...
+# Subtest: idempotency: re-running over identical rows yields the identical node set and GC deletes nothing
+ok 4 - idempotency: re-running over identical rows yields the identical node set and GC deletes nothing
+  ---
+  duration_ms: 218.352792
+  type: 'test'
+  ...
+# Subtest: cross-protocol GC: the messaging pass GCs an orphan messaging node but NEVER an HTTP node
+ok 5 - cross-protocol GC: the messaging pass GCs an orphan messaging node but NEVER an HTTP node
+  ---
+  duration_ms: 333.895167
+  type: 'test'
+  ...
+# Subtest: cross-protocol GC (symmetric): the HTTP pass never deletes a messaging endpoint
+ok 6 - cross-protocol GC (symmetric): the HTTP pass never deletes a messaging endpoint
+  ---
+  duration_ms: 284.74275
+  type: 'test'
+  ...
+# Subtest: no-op: a repo with no messaging rows produces no endpoints
+ok 7 - no-op: a repo with no messaging rows produces no endpoints
+  ---
+  duration_ms: 289.682834
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2994.698333

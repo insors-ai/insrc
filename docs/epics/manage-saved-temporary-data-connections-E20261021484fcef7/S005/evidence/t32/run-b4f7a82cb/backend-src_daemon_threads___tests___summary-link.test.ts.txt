@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: the code-indexing end: a job in flight fails when the summary worker goes, the next waits for the replacement, and stop fails a waiting job
+ok 1 - the code-indexing end: a job in flight fails when the summary worker goes, the next waits for the replacement, and stop fails a waiting job
+  ---
+  duration_ms: 78.278083
+  type: 'test'
+  ...
+# Subtest: the summary end: the code-indexing worker going stops the job and answers a pending edit with none; a job from the new one runs
+ok 2 - the summary end: the code-indexing worker going stops the job and answers a pending edit with none; a job from the new one runs
+  ---
+  duration_ms: 1.692416
+  type: 'test'
+  ...
+# Subtest: both ends speak the shared sc3 envelopes: a job is a streaming request with sweep frames and a reply, an edit is a unary request and its reply
+ok 3 - both ends speak the shared sc3 envelopes: a job is a streaming request with sweep frames and a reply, an edit is a unary request and its reply
+  ---
+  duration_ms: 252.108541
+  type: 'test'
+  ...
+# Subtest: a replacement code-indexing worker's job waits for the job the exited one handed over: never two at once
+ok 4 - a replacement code-indexing worker's job waits for the job the exited one handed over: never two at once
+  ---
+  duration_ms: 137.781083
+  type: 'test'
+  ...
+# Subtest: rebinding before the old port's close is seen settles what waited on it: the code end's job fails, the summary end's edit gets none
+ok 5 - rebinding before the old port's close is seen settles what waited on it: the code end's job fails, the summary end's edit gets none
+  ---
+  duration_ms: 10.762791
+  type: 'test'
+  ...
+# Subtest: a summary job runs under the summary worker's own shared maintenance hold, not only its sender's
+ok 6 - a summary job runs under the summary worker's own shared maintenance hold, not only its sender's
+  ---
+  duration_ms: 2.475625
+  type: 'test'
+  ...
+# Subtest: a summary job queued on the code-indexing worker while maintenance becomes pending does not stall it: the code end takes no hold of its own, maintenance runs, then the job
+ok 7 - a summary job queued on the code-indexing worker while maintenance becomes pending does not stall it: the code end takes no hold of its own, maintenance runs, then the job
+  ---
+  duration_ms: 152.756292
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 854.028917

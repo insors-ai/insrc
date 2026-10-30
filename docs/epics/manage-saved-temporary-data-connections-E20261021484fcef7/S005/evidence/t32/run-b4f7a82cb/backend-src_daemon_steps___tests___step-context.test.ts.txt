@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: resolveRepoPath inside a step call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults
+ok 1 - resolveRepoPath inside a step call uses the context's cwd and envRepo, not the process's; outside one it keeps process defaults
+  ---
+  duration_ms: 1.793
+  type: 'test'
+  ...
+# Subtest: the code-review handler's repo fallback reads the context's INSRC_REPO inside a step call and the process's outside one
+ok 2 - the code-review handler's repo fallback reads the context's INSRC_REPO inside a step call and the process's outside one
+  ---
+  duration_ms: 0.378125
+  type: 'test'
+  ...
+# Subtest: scope directoryOf: a bare file name inside a step call resolves against the context's cwd, and outside one against process.cwd()
+ok 3 - scope directoryOf: a bare file name inside a step call resolves against the context's cwd, and outside one against process.cwd()
+  ---
+  duration_ms: 0.299833
+  type: 'test'
+  ...
+# Subtest: client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze runs in the family it implies ('cli-claude' / 'cli-codex')
+ok 4 - client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze runs in the family it implies ('cli-claude' / 'cli-codex')
+  ---
+  duration_ms: 1.95175
+  type: 'test'
+  ...
+# Subtest: step context isolation: two concurrent contexts each see their own cwd and client
+ok 5 - step context isolation: two concurrent contexts each see their own cwd and client
+  ---
+  duration_ms: 49.225625
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 784.160916

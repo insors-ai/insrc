@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: embedder.ts derives its keep_alive from the models.local.embeddingKeepAlive config
+ok 1 - embedder.ts derives its keep_alive from the models.local.embeddingKeepAlive config
+  ---
+  duration_ms: 0.528625
+  type: 'test'
+  ...
+# Subtest: every ollama.embed(...) call in the indexer embedder passes keep_alive
+ok 2 - every ollama.embed(...) call in the indexer embedder passes keep_alive
+  ---
+  duration_ms: 0.187584
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 172.468083

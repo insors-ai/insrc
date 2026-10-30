@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: DIFF-REFUSAL-SPAN: singleton refusal restarts only the dimension with lossless descendant ownership and fixed initial time
+ok 1 - DIFF-REFUSAL-SPAN: singleton refusal restarts only the dimension with lossless descendant ownership and fixed initial time
+  ---
+  duration_ms: 186.954625
+  type: 'test'
+  ...
+# Subtest: DIFF-REFUSAL-SPAN: an initially single-call dimension with empty carries rebuilds complete diff evidence after a lower refusal
+ok 2 - DIFF-REFUSAL-SPAN: an initially single-call dimension with empty carries rebuilds complete diff evidence after a lower refusal
+  ---
+  duration_ms: 41.503666
+  type: 'test'
+  ...
+# Subtest: DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result
+ok 3 - DIFF-REFUSAL-SPAN: repeated irreducible refusals and time exhausted during replacement fail without a dimension result
+  ---
+  duration_ms: 183.101167
+  type: 'test'
+  ...
+# Subtest: DIFF-REFUSAL-SPAN: unfragmented text singleton is splittable after a lower refusal and retains original parent attribution
+ok 4 - DIFF-REFUSAL-SPAN: unfragmented text singleton is splittable after a lower refusal and retains original parent attribution
+  ---
+  duration_ms: 11.446792
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 689.638125

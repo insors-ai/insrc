@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: lmdb behaviour pin: after a reopen in a fresh process, root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it
+ok 1 - lmdb behaviour pin: after a reopen in a fresh process, root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it
+  ---
+  duration_ms: 119.598125
+  type: 'test'
+  ...
+# Subtest: the store opens without writemap mode, so child transactions are available
+ok 2 - the store opens without writemap mode, so child transactions are available
+  ---
+  duration_ms: 211.335541
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 652.783625

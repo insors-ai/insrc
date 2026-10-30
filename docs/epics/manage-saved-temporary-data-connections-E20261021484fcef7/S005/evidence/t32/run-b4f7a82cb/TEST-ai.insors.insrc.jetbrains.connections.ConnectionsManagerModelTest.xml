@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.012">
+  <properties/>
+  <testcase name="same sixteen sc7 transcripts match state projections and effects()" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest" time="0.01"/>
+  <testcase name="root snapshots rows and public projections are defensive and pure()" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

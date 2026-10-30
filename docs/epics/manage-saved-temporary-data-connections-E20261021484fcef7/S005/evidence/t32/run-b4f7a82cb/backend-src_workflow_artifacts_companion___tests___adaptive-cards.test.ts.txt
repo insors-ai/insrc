@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: validateAdaptiveCardsAsset: present + parseable → returns silently
+ok 1 - validateAdaptiveCardsAsset: present + parseable → returns silently
+  ---
+  duration_ms: 5.749125
+  type: 'test'
+  ...
+# Subtest: validateAdaptiveCardsAsset: missing schema → throws with one copy-assets Fix: line (t1)
+ok 2 - validateAdaptiveCardsAsset: missing schema → throws with one copy-assets Fix: line (t1)
+  ---
+  duration_ms: 1.147792
+  type: 'test'
+  ...
+# Subtest: validateAdaptiveCardsAsset: empty file → reason "file is empty"
+ok 3 - validateAdaptiveCardsAsset: empty file → reason "file is empty"
+  ---
+  duration_ms: 1.325084
+  type: 'test'
+  ...
+# Subtest: validateAdaptiveCardsAsset: malformed JSON → unparseable schema
+ok 4 - validateAdaptiveCardsAsset: malformed JSON → unparseable schema
+  ---
+  duration_ms: 0.945208
+  type: 'test'
+  ...
+# Subtest: the shipped Adaptive Cards schema validates + records the version comment
+ok 5 - the shipped Adaptive Cards schema validates + records the version comment
+  ---
+  duration_ms: 1.629958
+  type: 'test'
+  ...
+# Subtest: the shipped schema compiles under the shared ajv, accepts a good UxDefinition + rejects a malformed one
+ok 6 - the shipped schema compiles under the shared ajv, accepts a good UxDefinition + rejects a malformed one
+  ---
+  duration_ms: 25.534
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 305.717709

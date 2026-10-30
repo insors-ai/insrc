@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: buildSettingsCatalog({}) returns all options + groups + roles + tierNames with values = {}
+ok 1 - buildSettingsCatalog({}) returns all options + groups + roles + tierNames with values = {}
+  ---
+  duration_ms: 1.648
+  type: 'test'
+  ...
+# Subtest: buildSettingsCatalog resolves current values from a config: set paths present, unset/absent omitted, non-catalog keys excluded
+ok 2 - buildSettingsCatalog resolves current values from a config: set paths present, unset/absent omitted, non-catalog keys excluded
+  ---
+  duration_ms: 0.19925
+  type: 'test'
+  ...
+# Subtest: buildSettingsCatalog is total: a garbage/array-shaped rawConfig never throws
+ok 3 - buildSettingsCatalog is total: a garbage/array-shaped rawConfig never throws
+  ---
+  duration_ms: 0.157958
+  type: 'test'
+  ...
+# Subtest: config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads
+ok 4 - config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads
+  ---
+  duration_ms: 0.474416
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 212.703708

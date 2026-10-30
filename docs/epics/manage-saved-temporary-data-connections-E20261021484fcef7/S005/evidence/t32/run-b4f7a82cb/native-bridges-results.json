@@ -1,0 +1,640 @@
+[
+  {
+    "name": "native-bridges-src_config___tests___jetbrains-catalog-fixture.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/config/__tests__/jetbrains-catalog-fixture.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.45,
+    "output": "native-bridges-src_config___tests___jetbrains-catalog-fixture.test.ts.txt",
+    "sha256": "471faf31234e1e54ff20fb7e18c5951731f87950c2b068ed4ed9151d2d0246c6",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/config/__tests__/jetbrains-catalog-fixture.test.ts"
+  },
+  {
+    "name": "native-bridges-src_indexer___tests___manifest-jvm.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/indexer/__tests__/manifest-jvm.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "native-bridges-src_indexer___tests___manifest-jvm.test.ts.txt",
+    "sha256": "6ebb560ee807cecf7b4e6b625f896cb7434e692c279c7249a6e74371e133d1c4",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/indexer/__tests__/manifest-jvm.test.ts"
+  },
+  {
+    "name": "native-bridges-src_indexer___tests___source-roots.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/indexer/__tests__/source-roots.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "native-bridges-src_indexer___tests___source-roots.test.ts.txt",
+    "sha256": "231b4025cd1000df958387db6921e59ac4c8f4b0c9c868078d83ac49d95e5a88",
+    "counts": {
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/indexer/__tests__/source-roots.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-compatibility.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-compatibility.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 78.87,
+    "output": "native-bridges-src_shared___tests___connection-manager-compatibility.test.ts.txt",
+    "sha256": "7e3651eba68dbb5648b2789737c336f4c55f099c26107e255c954e338c296689",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-compatibility.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-corpus.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-corpus.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 9.68,
+    "output": "native-bridges-src_shared___tests___connection-manager-corpus.test.ts.txt",
+    "sha256": "80b2f3e7dc19562d36858722965ad98a325c0eb801e685622a2bb1d911ef983a",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-corpus.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-isolation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-isolation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 13.35,
+    "output": "native-bridges-src_shared___tests___connection-manager-isolation.test.ts.txt",
+    "sha256": "cc545ab908ed04c0cc05be23dbd5a863b750006fffad23caabf80f9ac655cca3",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-isolation.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-draft.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-draft.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 9.36,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-draft.test.ts.txt",
+    "sha256": "9920a5fde66881eaaa01739592700865a5859f1cddc9e2114e80d384417ca785",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-draft.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-entry.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-entry.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 13.72,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-entry.test.ts.txt",
+    "sha256": "0df3b368716bc8fcb46f2245b9384caeffb5e9f4438e3b9e84f5b9b4c3c1cb5c",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-entry.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-model.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-model.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 9.67,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-model.test.ts.txt",
+    "sha256": "5f27819be7ea029b2c55a0605d37065997157671eef7b0f1fd349eeaae7a73ae",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-model.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-mutation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 18.63,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-mutation.test.ts.txt",
+    "sha256": "364ffca1a8e84cf490d9b1bc999224ee71b3a2278bd65693a349c4283330a4a4",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-owner.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-owner.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 17.57,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-owner.test.ts.txt",
+    "sha256": "2ce9aa0901a8e864e1d51c75b9dce98ae167bc025eac59ee8d2db88689254173",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-owner.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-removal.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-removal.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 23.93,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-removal.test.ts.txt",
+    "sha256": "5a92ec0ff9a8fdd06ec58a099b4ba9873bd2d5d1b3cee23666a42b7fe65d3c3a",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-removal.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-render.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-render.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 26.49,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-render.test.ts.txt",
+    "sha256": "94ec6ce3f8203114d0f6c3da1fa853d5f15aaf29a210f47e8e89f1857577dde7",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-render.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-test.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-test.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 31.57,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-test.test.ts.txt",
+    "sha256": "5573122fdd8229b36a5e5d153b7a20377b1adeb4eec1e4f88f51f2b44202ec23",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-test.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-transport.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-transport.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 21.4,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-transport.test.ts.txt",
+    "sha256": "2e85ed6efc5ab0c2ecebf3adb920a89f7110e177abb7b93178641b67a5abddd7",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-transport.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-kotlin-wire.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-kotlin-wire.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 11.47,
+    "output": "native-bridges-src_shared___tests___connection-manager-kotlin-wire.test.ts.txt",
+    "sha256": "0aa98e8f4f3cb621e7ca5275b183b0f167a92841d96d80c8993368ae92905af9",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-packaging.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-packaging.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 32.07,
+    "output": "native-bridges-src_shared___tests___connection-manager-packaging.test.ts.txt",
+    "sha256": "b68facc06bf705f2d921d8665c7e9eef135e1f9107bef44fb182158003dbc4d6",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-packaging.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-parity.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-parity.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 52.58,
+    "output": "native-bridges-src_shared___tests___connection-manager-parity.test.ts.txt",
+    "sha256": "3873e5848f37f16b8a61e786cddaf6ada43bff8bbabf77e4666dbb058f071e23",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-parity.test.ts"
+  },
+  {
+    "name": "native-bridges-src_shared___tests___connection-manager-privacy.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/shared/__tests__/connection-manager-privacy.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 20.86,
+    "output": "native-bridges-src_shared___tests___connection-manager-privacy.test.ts.txt",
+    "sha256": "ad73cb783c8a79c5b91a8386777f3e54cd1ab3fe4b007002d7b874751b306190",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/shared/__tests__/connection-manager-privacy.test.ts"
+  },
+  {
+    "name": "native-bridges-src_workflow___tests___artifact-content.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/workflow/__tests__/artifact-content.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.72,
+    "output": "native-bridges-src_workflow___tests___artifact-content.test.ts.txt",
+    "sha256": "c75cdf8f123a3500c324507292094d148b44e49339ccb8afd8c4bb7a7cb3b7af",
+    "counts": {
+      "tests": 23,
+      "pass": 23,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/workflow/__tests__/artifact-content.test.ts"
+  },
+  {
+    "name": "native-bridges-src_workflow___tests___pending.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/workflow/__tests__/pending.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.39,
+    "output": "native-bridges-src_workflow___tests___pending.test.ts.txt",
+    "sha256": "3ca448ecad6e2ad9911c3d26d01ef09f76767f0dc140bd9d8d1a124b8dcfaede",
+    "counts": {
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/workflow/__tests__/pending.test.ts"
+  },
+  {
+    "name": "native-bridges-src_workflow___tests___resolve-comment.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "src/workflow/__tests__/resolve-comment.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.5,
+    "output": "native-bridges-src_workflow___tests___resolve-comment.test.ts.txt",
+    "sha256": "21badedc7d2c7833c12625a714b57b92d97e6b9d6ebb13cef5fe951adebd08bd",
+    "counts": {
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "src/workflow/__tests__/resolve-comment.test.ts"
+  }
+]

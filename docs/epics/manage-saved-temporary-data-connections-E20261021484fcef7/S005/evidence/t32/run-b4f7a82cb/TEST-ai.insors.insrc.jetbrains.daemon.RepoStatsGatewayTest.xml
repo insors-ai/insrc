@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.007">
+  <properties/>
+  <testcase name="registerProject classification is unchanged - ok-true registered, ok-false reason, unreachable throws()" classname="ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest" time="0.002"/>
+  <testcase name="registerProject forwards steering when present and omits it entirely when null()" classname="ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest" time="0.0"/>
+  <testcase name="repoStats maps a framed error, an unreachable daemon, and a malformed reply to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest" time="0.001"/>
+  <testcase name="repoStats sends the repoPath key and maps a Gson-Double reply to Loaded with coerced numbers()" classname="ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest" time="0.001"/>
+  <testcase name="repoStats decodes a recorded repo-stats reply - one complete repository, one incomplete with its reasons and counts, and one without the field (unknown)()" classname="ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest" time="0.001"/>
+  <testcase name="parseRepoStats coerces Double to Int-Long, leaves absent optionals null, forwards unknown status, empty maps()" classname="ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

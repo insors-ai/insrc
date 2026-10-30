@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: the sighting key comes from the real path so repositories and symlinks are distinct
+ok 1 - the sighting key comes from the real path so repositories and symlinks are distinct
+  ---
+  duration_ms: 24.781625
+  type: 'test'
+  ...
+# Subtest: a damaged sighting reads as damaged evidence, branchSource remote or user is validated
+ok 2 - a damaged sighting reads as damaged evidence, branchSource remote or user is validated
+  ---
+  duration_ms: 14.127
+  type: 'test'
+  ...
+# Subtest: create-only publish never overwrites an existing or damaged sighting
+ok 3 - create-only publish never overwrites an existing or damaged sighting
+  ---
+  duration_ms: 10.037375
+  type: 'test'
+  ...
+# Subtest: a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one
+ok 4 - a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one
+  ---
+  duration_ms: 0.087334
+  type: 'test'
+  ...
+# Subtest: the lock refuses a second holder and takes over a lock older than 30 seconds
+ok 5 - the lock refuses a second holder and takes over a lock older than 30 seconds
+  ---
+  duration_ms: 14.091875
+  type: 'test'
+  ...
+# Subtest: safe ref names accept what git accepts and refuse what could be read as an option or break a ref
+ok 6 - safe ref names accept what git accepts and refuse what could be read as an option or break a ref
+  ---
+  duration_ms: 0.175875
+  type: 'test'
+  ...
+# Subtest: a subdirectory of a repository shares the repository root's sighting key and lock
+ok 7 - a subdirectory of a repository shares the repository root's sighting key and lock
+  ---
+  duration_ms: 39.3435
+  type: 'test'
+  ...
+# Subtest: a lock that fails while being initialised is removed, not left behind
+ok 8 - a lock that fails while being initialised is removed, not left behind
+  ---
+  duration_ms: 7.881958
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 308.575834

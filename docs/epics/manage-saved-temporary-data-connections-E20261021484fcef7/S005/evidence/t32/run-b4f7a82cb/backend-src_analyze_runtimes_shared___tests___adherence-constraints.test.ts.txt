@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: inline params.constraints pass through untouched
+ok 1 - inline params.constraints pass through untouched
+  ---
+  duration_ms: 162.9725
+  type: 'test'
+  ...
+# Subtest: constraintIds hydrate keyConstraints from summarised docs
+ok 2 - constraintIds hydrate keyConstraints from summarised docs
+  ---
+  duration_ms: 256.091208
+  type: 'test'
+  ...
+# Subtest: constraintIds skip ids that do not resolve to summarised docs
+ok 3 - constraintIds skip ids that do not resolve to summarised docs
+  ---
+  duration_ms: 316.850042
+  type: 'test'
+  ...
+# Subtest: a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at
+ok 4 - a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at
+  ---
+  duration_ms: 315.903667
+  type: 'test'
+  ...
+# Subtest: an inline list wins over ids; an empty inline list counts as not given and the ids are used
+ok 5 - an inline list wins over ids; an empty inline list counts as not given and the ids are used
+  ---
+  duration_ms: 275.641042
+  type: 'test'
+  ...
+# Subtest: with no source of constraints the check throws, naming constraintTopic, constraints and constraintIds
+ok 6 - with no source of constraints the check throws, naming constraintTopic, constraints and constraintIds
+  ---
+  duration_ms: 223.122416
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2177.512541

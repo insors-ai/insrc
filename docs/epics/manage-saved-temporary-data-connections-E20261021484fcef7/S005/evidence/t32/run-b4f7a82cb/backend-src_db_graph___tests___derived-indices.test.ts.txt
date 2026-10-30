@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: entityIdByU64 finds the string id via the reverse index
+ok 1 - entityIdByU64 finds the string id via the reverse index
+  ---
+  duration_ms: 259.181958
+  type: 'test'
+  ...
+# Subtest: entityIdsByU64s bulk-resolves O(K) via point lookups
+ok 2 - entityIdsByU64s bulk-resolves O(K) via point lookups
+  ---
+  duration_ms: 200.7215
+  type: 'test'
+  ...
+# Subtest: entity_string_by_u64 is removed when an entity is deleted
+ok 3 - entity_string_by_u64 is removed when an entity is deleted
+  ---
+  duration_ms: 265.988375
+  type: 'test'
+  ...
+# Subtest: name_index returns ALL entities sharing (repo, kind, name)
+ok 4 - name_index returns ALL entities sharing (repo, kind, name)
+  ---
+  duration_ms: 193.570667
+  type: 'test'
+  ...
+# Subtest: name_index drops only the deleted entity from the dup set
+ok 5 - name_index drops only the deleted entity from the dup set
+  ---
+  duration_ms: 304.887125
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName respects kind filter via name_index
+ok 6 - findEntitiesByName respects kind filter via name_index
+  ---
+  duration_ms: 265.730208
+  type: 'test'
+  ...
+# Subtest: v1->v2 migration backfills entity_string_by_u64 + name_index
+ok 7 - v1->v2 migration backfills entity_string_by_u64 + name_index
+  ---
+  duration_ms: 312.0095
+  type: 'test'
+  ...
+# Subtest: schema_version pre-flight runs the v1->v2 migration on env open
+ok 8 - schema_version pre-flight runs the v1->v2 migration on env open
+  ---
+  duration_ms: 307.24375
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2452.657584

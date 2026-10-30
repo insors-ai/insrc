@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: six stage sections in workflow order hold every story and issue exactly once, in the column the snapshot assigns
+ok 1 - six stage sections in workflow order hold every story and issue exactly once, in the column the snapshot assigns
+  ---
+  duration_ms: 3.2005
+  type: 'test'
+  ...
+# Subtest: with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set
+ok 2 - with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set
+  ---
+  duration_ms: 2.09025
+  type: 'test'
+  ...
+# Subtest: the same snapshot and filters give an identical model, including items with equal timestamps
+ok 3 - the same snapshot and filters give an identical model, including items with equal timestamps
+  ---
+  duration_ms: 0.502542
+  type: 'test'
+  ...
+# Subtest: unknownStages counts every stage id outside the six, and those items are in no column
+ok 4 - unknownStages counts every stage id outside the six, and those items are in no column
+  ---
+  duration_ms: 0.67175
+  type: 'test'
+  ...
+# Subtest: an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge
+ok 5 - an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge
+  ---
+  duration_ms: 0.513709
+  type: 'test'
+  ...
+# Subtest: a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column
+ok 6 - a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column
+  ---
+  duration_ms: 0.20175
+  type: 'test'
+  ...
+# Subtest: a failed story-level result shows Validation failed, badges never repeat a label, and the accessible label names every badge
+ok 7 - a failed story-level result shows Validation failed, badges never repeat a label, and the accessible label names every badge
+  ---
+  duration_ms: 0.27075
+  type: 'test'
+  ...
+# Subtest: selectMatches returns the board's matches in snapshot order, each with its epic and card
+ok 8 - selectMatches returns the board's matches in snapshot order, each with its epic and card
+  ---
+  duration_ms: 0.282292
+  type: 'test'
+  ...
+# Subtest: compactId is 'ABCDEF01 / S001' for 'E20261009abcdef01:S001', 'ABCDEF01' for an epic-level 'E20261009abcdef01', 'ABCDEF01 / S002' for the H-form 'Habcdef0123456789:S002', and the full id for a ':R(<raw>)' fallback id
+ok 9 - compactId is 'ABCDEF01 / S001' for 'E20261009abcdef01:S001', 'ABCDEF01' for an epic-level 'E20261009abcdef01', 'ABCDEF01 / S002' for the H-form 'Habcdef0123456789:S002', and the full id for a ':R(<raw>)' fallback id
+  ---
+  duration_ms: 0.458292
+  type: 'test'
+  ...
+# Subtest: taskSummary is 'n/N tasks passed' from validation and null when validation is null or has no recorded tasks
+ok 10 - taskSummary is 'n/N tasks passed' from validation and null when validation is null or has no recorded tasks
+  ---
+  duration_ms: 0.538833
+  type: 'test'
+  ...
+# Subtest: accessibleLabel carries the compactId and task summary, and badges are unchanged
+ok 11 - accessibleLabel carries the compactId and task summary, and badges are unchanged
+  ---
+  duration_ms: 0.121042
+  type: 'test'
+  ...
+# Subtest: an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label
+ok 12 - an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label
+  ---
+  duration_ms: 0.126875
+  type: 'test'
+  ...
+# Subtest: stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on
+ok 13 - stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on
+  ---
+  duration_ms: 0.185625
+  type: 'test'
+  ...
+# Subtest: totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention
+ok 14 - totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention
+  ---
+  duration_ms: 0.121542
+  type: 'test'
+  ...
+# Subtest: idParts reads the hash and story number of a published id, and nothing from any other id
+ok 15 - idParts reads the hash and story number of a published id, and nothing from any other id
+  ---
+  duration_ms: 0.042458
+  type: 'test'
+  ...
+# Subtest: sectionDefaults and foldOf give the board screens' existing section models
+ok 16 - sectionDefaults and foldOf give the board screens' existing section models
+  ---
+  duration_ms: 0.126042
+  type: 'test'
+  ...
+# Subtest: screenKindOf opens an epic as its board, a story or issue at one of the six stages as its own screen, and nothing else
+ok 17 - screenKindOf opens an epic as its board, a story or issue at one of the six stages as its own screen, and nothing else
+  ---
+  duration_ms: 0.054417
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.205917

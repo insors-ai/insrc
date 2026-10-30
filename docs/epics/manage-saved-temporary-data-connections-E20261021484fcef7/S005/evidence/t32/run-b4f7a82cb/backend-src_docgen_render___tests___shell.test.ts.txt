@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: documentIRToMermaid: classDiagram with class decls + inherit/implement arrows
+ok 1 - documentIRToMermaid: classDiagram with class decls + inherit/implement arrows
+  ---
+  duration_ms: 0.667417
+  type: 'test'
+  ...
+# Subtest: documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped
+ok 2 - documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped
+  ---
+  duration_ms: 0.078333
+  type: 'test'
+  ...
+# Subtest: assembleShell: offline self-contained shell — runtime INLINED, no external fetch
+ok 3 - assembleShell: offline self-contained shell — runtime INLINED, no external fetch
+  ---
+  duration_ms: 16.51825
+  type: 'test'
+  ...
+# Subtest: assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw
+ok 4 - assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw
+  ---
+  duration_ms: 1.269167
+  type: 'test'
+  ...
+# Subtest: assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)
+ok 5 - assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)
+  ---
+  duration_ms: 4.4895
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 209.685417

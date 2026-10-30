@@ -1,0 +1,239 @@
+TAP version 13
+# [04:45:22] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "admin"
+#     [35mthreadId[39m: 7
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:22] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "indexing"
+#     [35mthreadId[39m: 3
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:24] [31mERROR[39m: [36m[queue] job failed[39m
+#     [35mmodule[39m: "queue"
+#     err: {
+#       "type": "Error",
+#       "message": "summary job abandoned: the document-summary worker is gone",
+#       "stack":
+#           Error: summary job abandoned: the document-summary worker is gone
+#               at SummaryRunner.abandon (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/summary-link.ts:148:13)
+#               at MessagePort.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/summary-link.ts:118:9)
+#               at [nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)
+#               at MessagePort.dispatchEvent (node:internal/event_target:776:26)
+#               at MessagePort.onclose (node:internal/worker/io:173:8)
+#               at MessagePort.callbackTrampoline (node:internal/async_hooks:130:17)
+#     }
+# [04:45:24] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "document-summary"
+#     [35mthreadId[39m: 4
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 1
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# Subtest: admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving
+ok 1 - admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving
+  ---
+  duration_ms: 5106.366333
+  type: 'test'
+  ...
+# [04:45:25] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "flaky"
+#     [35mthreadId[39m: 15
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:26] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "flaky"
+#     [35mthreadId[39m: 18
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:26] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "flaky"
+#     [35mthreadId[39m: 20
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:26] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "flaky"
+#     [35mthreadId[39m: 22
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:27] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "flaky"
+#     [35mthreadId[39m: 24
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:27] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "flaky"
+#     [35mthreadId[39m: 26
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:27] [41mFATAL[49m: [36m[supervisor] supervisor: workers keep exiting; shutting the daemon down[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "flaky"
+#     [35mrestarts[39m: 5
+#     [35mwindowMs[39m: 60000
+# [04:45:28] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 28
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:28] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 30
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:29] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 32
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:29] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 34
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:29] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 36
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:30] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 38
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:30] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 40
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# [04:45:30] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "spread"
+#     [35mthreadId[39m: 42
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 0
+#     [35mstores[39m: {
+#       "released": [],
+#       "unhealthy": []
+#     }
+# Subtest: a sixth restart within 60 s shuts the daemon down
+ok 2 - a sixth restart within 60 s shuts the daemon down
+  ---
+  duration_ms: 5615.904083
+  type: 'test'
+  ...
+# [04:45:31] [31mERROR[39m: [36m[supervisor] supervisor: a worker exited; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "holder"
+#     [35mthreadId[39m: 46
+#     [35mcode[39m: 1
+#     [35mlocks[39m: 1
+#     [35mstores[39m: {
+#       "released": [
+#         "duckdb"
+#       ],
+#       "unhealthy": []
+#     }
+# Subtest: a dead worker's store-guard permits and named locks are reclaimed before its replacement starts
+ok 3 - a dead worker's store-guard permits and named locks are reclaimed before its replacement starts
+  ---
+  duration_ms: 627.156958
+  type: 'test'
+  ...
+# [04:45:32] [31mERROR[39m: [36m[supervisor] supervisor: a worker did not start; replacing it[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "fail-first"
+#     err: "the fail-first worker did not start: it exited with code 1"
+# Subtest: a worker whose first start fails is replaced like one that exited (startOrReplace), not given up on
+ok 4 - a worker whose first start fails is replaced like one that exited (startOrReplace), not given up on
+  ---
+  duration_ms: 733.63425
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12591.4555

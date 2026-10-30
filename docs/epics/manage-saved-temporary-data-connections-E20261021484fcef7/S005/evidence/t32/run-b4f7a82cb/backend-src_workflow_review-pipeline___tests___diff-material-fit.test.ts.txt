@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span
+ok 1 - DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span
+  ---
+  duration_ms: 26.047791
+  type: 'test'
+  ...
+# Subtest: DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence
+ok 2 - DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence
+  ---
+  duration_ms: 3.113167
+  type: 'test'
+  ...
+# Subtest: DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom
+ok 3 - DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom
+  ---
+  duration_ms: 0.562208
+  type: 'test'
+  ...
+# Subtest: DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls
+ok 4 - DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls
+  ---
+  duration_ms: 323.118417
+  type: 'test'
+  ...
+# Subtest: DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered
+ok 5 - DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered
+  ---
+  duration_ms: 392.599791
+  type: 'test'
+  ...
+# Subtest: DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments
+ok 6 - DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments
+  ---
+  duration_ms: 3.069667
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1032.311541

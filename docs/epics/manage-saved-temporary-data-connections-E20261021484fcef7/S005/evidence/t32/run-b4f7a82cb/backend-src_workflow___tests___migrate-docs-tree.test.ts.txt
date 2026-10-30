@@ -1,0 +1,191 @@
+TAP version 13
+# fatal: bad source, source=docs/defines/DOES-NOT-EXIST.md, destination=docs/epics/my-feature-E2026071712345678/S001/BUILD.md
+# Subtest: planMigration: every member of the epic resolves to ONE folder; story artifacts under S<nnn>/; DEF-anchored (no split)
+ok 1 - planMigration: every member of the epic resolves to ONE folder; story artifacts under S<nnn>/; DEF-anchored (no split)
+  ---
+  duration_ms: 8.884708
+  type: 'test'
+  ...
+# Subtest: planMigration: both locate paths — slug-named md via marker, markerless BUILD via hash filename
+ok 2 - planMigration: both locate paths — slug-named md via marker, markerless BUILD via hash filename
+  ---
+  duration_ms: 5.808
+  type: 'test'
+  ...
+# Subtest: planMigration: a hand-written non-artifact doc is never enumerated (not moved, not unmappable)
+ok 3 - planMigration: a hand-written non-artifact doc is never enumerated (not moved, not unmappable)
+  ---
+  duration_ms: 4.883167
+  type: 'test'
+  ...
+# Subtest: planMigration: a standalone item resolves under docs/standalone/ with the LLD createdAt as anchor
+ok 4 - planMigration: a standalone item resolves under docs/standalone/ with the LLD createdAt as anchor
+  ---
+  duration_ms: 2.284375
+  type: 'test'
+  ...
+# Subtest: planMigration: an artifact already at its nested destination is SKIPPED (idempotent)
+ok 5 - planMigration: an artifact already at its nested destination is SKIPPED (idempotent)
+  ---
+  duration_ms: 6.099083
+  type: 'test'
+  ...
+# Subtest: planMigration: a work item with NO slug source is placed under its HASH, mirroring the writer
+ok 6 - planMigration: a work item with NO slug source is placed under its HASH, mirroring the writer
+  ---
+  duration_ms: 2.19075
+  type: 'test'
+  ...
+# Subtest: planMigration: a work item with no ANCHOR is still fail-loud unmappable
+ok 7 - planMigration: a work item with no ANCHOR is still fail-loud unmappable
+  ---
+  duration_ms: 2.201
+  type: 'test'
+  ...
+# Subtest: applyMigration: git mv relocates each md (history followed), no flat md remains, a consistent member's JSON byte-identical
+ok 8 - applyMigration: git mv relocates each md (history followed), no flat md remains, a consistent member's JSON byte-identical
+  ---
+  duration_ms: 244.929041
+  type: 'test'
+  ...
+# Subtest: applyMigration: a plan with a non-empty unmappable[] is REFUSED (throws, names files) before any move
+ok 9 - applyMigration: a plan with a non-empty unmappable[] is REFUSED (throws, names files) before any move
+  ---
+  duration_ms: 94.420666
+  type: 'test'
+  ...
+# Subtest: applyMigration: a commit failing on a LATER epic chunk rolls the WHOLE run back to the pre-run commit (no partial mix)
+ok 10 - applyMigration: a commit failing on a LATER epic chunk rolls the WHOLE run back to the pre-run commit (no partial mix)
+  ---
+  duration_ms: 665.087334
+  type: 'test'
+  ...
+# Subtest: applyMigration: a git-mv failure rolls the run back and leaves no partial mix
+ok 11 - applyMigration: a git-mv failure rolls the run back and leaves no partial mix
+  ---
+  duration_ms: 172.702
+  type: 'test'
+  ...
+# Subtest: t6 — a pre-seeded FOUR-folder work item converges onto ONE
+ok 12 - t6 — a pre-seeded FOUR-folder work item converges onto ONE
+  ---
+  duration_ms: 154.356083
+  type: 'test'
+  ...
+# Subtest: t6 — the raw-hash-labelled folder and the wrong-top-level folder are both handled
+ok 13 - t6 — the raw-hash-labelled folder and the wrong-top-level folder are both handled
+  ---
+  duration_ms: 148.7435
+  type: 'test'
+  ...
+# Subtest: converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)
+ok 14 - converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)
+  ---
+  duration_ms: 212.772916
+  type: 'test'
+  ...
+# Subtest: t6 — planMigration is READ-ONLY: planning leaves the docs tree BYTE-IDENTICAL
+ok 15 - t6 — planMigration is READ-ONLY: planning leaves the docs tree BYTE-IDENTICAL
+  ---
+  duration_ms: 75.892375
+  type: 'test'
+  ...
+# Subtest: t6 — convergence is idempotent: a second plan after applying has nothing left to move
+ok 16 - t6 — convergence is idempotent: a second plan after applying has nothing left to move
+  ---
+  duration_ms: 152.869958
+  type: 'test'
+  ...
+# Subtest: t6 — an artifact whose md is missing entirely is reported UNMAPPABLE, not guessed at
+ok 17 - t6 — an artifact whose md is missing entirely is reported UNMAPPABLE, not guessed at
+  ---
+  duration_ms: 78.341333
+  type: 'test'
+  ...
+# Subtest: t6a — the ISSUE is enumerated as the work item definition head (not discarded as a non-artifact)
+ok 18 - t6a — the ISSUE is enumerated as the work item definition head (not discarded as a non-artifact)
+  ---
+  duration_ms: 76.21825
+  type: 'test'
+  ...
+# Subtest: t6a — the definition head WINS the slug vote over a sorted-earlier ledger slug
+ok 19 - t6a — the definition head WINS the slug vote over a sorted-earlier ledger slug
+  ---
+  duration_ms: 75.978
+  type: 'test'
+  ...
+# Subtest: t6a — a MARKERLESS nested BUILD md is located by its (kind, hash8, story) shape, not reported missing
+ok 20 - t6a — a MARKERLESS nested BUILD md is located by its (kind, hash8, story) shape, not reported missing
+  ---
+  duration_ms: 81.267209
+  type: 'test'
+  ...
+# Subtest: t6a — end to end: the disagreeing work item converges onto exactly ONE folder
+ok 21 - t6a — end to end: the disagreeing work item converges onto exactly ONE folder
+  ---
+  duration_ms: 228.795541
+  type: 'test'
+  ...
+# Subtest: t8 — a link in an UNMOVED file pointing at a moved path is rewritten
+ok 22 - t8 — a link in an UNMOVED file pointing at a moved path is rewritten
+  ---
+  duration_ms: 186.183291
+  type: 'test'
+  ...
+# Subtest: t8 — a file never rewrites a reference to its OWN old path
+ok 23 - t8 — a file never rewrites a reference to its OWN old path
+  ---
+  duration_ms: 73.191083
+  type: 'test'
+  ...
+# Subtest: t9 — a companion moves WITH its artifact, so no folder survives on an orphaned html
+ok 24 - t9 — a companion moves WITH its artifact, so no folder survives on an orphaned html
+  ---
+  duration_ms: 156.193125
+  type: 'test'
+  ...
+# Subtest: t9 — a companion is never overwritten at its destination
+ok 25 - t9 — a companion is never overwritten at its destination
+  ---
+  duration_ms: 220.978833
+  type: 'test'
+  ...
+# Subtest: t9 — a DUPLICATE render is skipped, not moved and not refused, and neither copy is lost
+ok 26 - t9 — a DUPLICATE render is skipped, not moved and not refused, and neither copy is lost
+  ---
+  duration_ms: 177.676583
+  type: 'test'
+  ...
+# Subtest: t9 — an ORPHANED companion is placed from its work item, with no sibling md move to follow
+ok 27 - t9 — an ORPHANED companion is placed from its work item, with no sibling md move to follow
+  ---
+  duration_ms: 241.631667
+  type: 'test'
+  ...
+# Subtest: c00559b7 — planMigration consolidates an anchorless split item's PLAN/BUILD/CR/TESTS into its LLD's folder
+ok 28 - c00559b7 — planMigration consolidates an anchorless split item's PLAN/BUILD/CR/TESTS into its LLD's folder
+  ---
+  duration_ms: 4.75625
+  type: 'test'
+  ...
+# Subtest: c00559b7 — planMigration groups an unflagged LLD-headed item as standalone
+ok 29 - c00559b7 — planMigration groups an unflagged LLD-headed item as standalone
+  ---
+  duration_ms: 2.870583
+  type: 'test'
+  ...
+# Subtest: c00559b7 — the head LLD's label wins over a downstream member's own; a DEF or ISSUE still outranks any LLD
+ok 30 - c00559b7 — the head LLD's label wins over a downstream member's own; a DEF or ISSUE still outranks any LLD
+  ---
+  duration_ms: 6.039458
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3845.880958

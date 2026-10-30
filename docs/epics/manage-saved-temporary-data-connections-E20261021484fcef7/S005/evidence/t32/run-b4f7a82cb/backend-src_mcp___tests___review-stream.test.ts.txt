@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: T11 reviewArtifactStream: sends one stream request, forwards progress, resolves on done
+ok 1 - T11 reviewArtifactStream: sends one stream request, forwards progress, resolves on done
+  ---
+  duration_ms: 9.973542
+  type: 'test'
+  ...
+# Subtest: T11 reviewArtifactStream: rejects on an error frame and carries the daemon's reason
+ok 2 - T11 reviewArtifactStream: rejects on an error frame and carries the daemon's reason
+  ---
+  duration_ms: 2.484959
+  type: 'test'
+  ...
+# Subtest: T11 reviewArtifactStream: rejects when the daemon is not running
+ok 3 - T11 reviewArtifactStream: rejects when the daemon is not running
+  ---
+  duration_ms: 0.532833
+  type: 'test'
+  ...
+# Subtest: T11 reviewArtifactStream: rejects when the connection closes before a final frame
+ok 4 - T11 reviewArtifactStream: rejects when the connection closes before a final frame
+  ---
+  duration_ms: 0.954167
+  type: 'test'
+  ...
+# Subtest: T11 reviewArtifactStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer
+ok 5 - T11 reviewArtifactStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer
+  ---
+  duration_ms: 1.219667
+  type: 'test'
+  ...
+# Subtest: T11 reviewArtifactStream: any other plain error line is a final daemon error; a plain result is a protocol error
+ok 6 - T11 reviewArtifactStream: any other plain error line is a final daemon error; a plain result is a protocol error
+  ---
+  duration_ms: 1.378166
+  type: 'test'
+  ...
+# Subtest: T11 reviewArtifactStream: with a daemon that never answers, it fails at its wait limit and drops the connection
+ok 7 - T11 reviewArtifactStream: with a daemon that never answers, it fails at its wait limit and drops the connection
+  ---
+  duration_ms: 0.690291
+  type: 'test'
+  ...
+# Subtest: T11 reviewArtifactStream: an invalid line is a protocol error; an abort rejects
+ok 8 - T11 reviewArtifactStream: an invalid line is a protocol error; an abort rejects
+  ---
+  duration_ms: 1.674917
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: sends one stream request, forwards progress, resolves on done
+ok 9 - T11 codeReviewStream: sends one stream request, forwards progress, resolves on done
+  ---
+  duration_ms: 0.704584
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: rejects on an error frame and carries the daemon's reason
+ok 10 - T11 codeReviewStream: rejects on an error frame and carries the daemon's reason
+  ---
+  duration_ms: 0.807875
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: rejects when the daemon is not running
+ok 11 - T11 codeReviewStream: rejects when the daemon is not running
+  ---
+  duration_ms: 0.340417
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: rejects when the connection closes before a final frame
+ok 12 - T11 codeReviewStream: rejects when the connection closes before a final frame
+  ---
+  duration_ms: 0.727375
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer
+ok 13 - T11 codeReviewStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer
+  ---
+  duration_ms: 0.474167
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: any other plain error line is a final daemon error; a plain result is a protocol error
+ok 14 - T11 codeReviewStream: any other plain error line is a final daemon error; a plain result is a protocol error
+  ---
+  duration_ms: 1.074708
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: with a daemon that never answers, it fails at its wait limit and drops the connection
+ok 15 - T11 codeReviewStream: with a daemon that never answers, it fails at its wait limit and drops the connection
+  ---
+  duration_ms: 0.539625
+  type: 'test'
+  ...
+# Subtest: T11 codeReviewStream: an invalid line is a protocol error; an abort rejects
+ok 16 - T11 codeReviewStream: an invalid line is a protocol error; an abort rejects
+  ---
+  duration_ms: 1.117208
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 293.313958

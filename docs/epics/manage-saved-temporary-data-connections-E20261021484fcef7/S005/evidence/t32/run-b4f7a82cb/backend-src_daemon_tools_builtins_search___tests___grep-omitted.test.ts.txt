@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: the Node backend reports a file skipped for its size, an unreadable file and a shortened line with its full length
+ok 1 - the Node backend reports a file skipped for its size, an unreadable file and a shortened line with its full length
+  ---
+  duration_ms: 58.061625
+  type: 'test'
+  ...
+# Subtest: on the real primitive an unreadable root throws and an unreadable directory below it is skipped (mutation: restore the catch that returns)
+ok 2 - on the real primitive an unreadable root throws and an unreadable directory below it is skipped (mutation: restore the catch that returns)
+  ---
+  duration_ms: 15.978042
+  type: 'test'
+  ...
+# Subtest: the Node backend's rule text names dot-named entries and non-regular files, against a fixture holding both
+ok 3 - the Node backend's rule text names dot-named entries and non-regular files, against a fixture holding both
+  ---
+  duration_ms: 23.28325
+  type: 'test'
+  ...
+# Subtest: the ripgrep backend reports shortened lines, the per-file limit, discarded output and its exclusion rule
+ok 4 - the ripgrep backend reports shortened lines, the per-file limit, discarded output and its exclusion rule
+  ---
+  duration_ms: 629.778167
+  type: 'test'
+  ...
+# Subtest: a ripgrep run that exits with another code or times out is recorded as backendFallback, and output past the cap sets outputDiscarded
+ok 5 - a ripgrep run that exits with another code or times out is recorded as backendFallback, and output past the cap sets outputDiscarded
+  ---
+  duration_ms: 32209.766916
+  type: 'test'
+  ...
+# Subtest: the shell helper says when stdout passed its cap, and not otherwise
+ok 6 - the shell helper says when stdout passed its cap, and not otherwise
+  ---
+  duration_ms: 22.994333
+  type: 'test'
+  ...
+# Subtest: the search tool on an unreadable root fails with 'search-failed' and still says 'bad regex' for an invalid regex
+ok 7 - the search tool on an unreadable root fails with 'search-failed' and still says 'bad regex' for an invalid regex
+  ---
+  duration_ms: 49.670417
+  type: 'test'
+  ...
+# Subtest: the search's hits and limits are unchanged for its other callers
+ok 8 - the search's hits and limits are unchanged for its other callers
+  ---
+  duration_ms: 50.336292
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33313.81425

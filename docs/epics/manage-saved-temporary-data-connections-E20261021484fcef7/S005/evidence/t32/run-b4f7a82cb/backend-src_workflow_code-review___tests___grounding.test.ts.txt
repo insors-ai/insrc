@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: assembleCodeReviewGrounding: emits ChangedSymbolSummary rows with callers/callees/testsReaching and no file text
+ok 1 - assembleCodeReviewGrounding: emits ChangedSymbolSummary rows with callers/callees/testsReaching and no file text
+  ---
+  duration_ms: 1.616375
+  type: 'test'
+  ...
+# Subtest: assembleCodeReviewGrounding: a changed file with no indexed entities yields no rows (omitted, not error)
+ok 2 - assembleCodeReviewGrounding: a changed file with no indexed entities yields no rows (omitted, not error)
+  ---
+  duration_ms: 0.204042
+  type: 'test'
+  ...
+# Subtest: assembleCodeReviewGrounding: one row per entity, multiple entities in a file share the file path
+ok 3 - assembleCodeReviewGrounding: one row per entity, multiple entities in a file share the file path
+  ---
+  duration_ms: 0.097292
+  type: 'test'
+  ...
+# Subtest: assembleCodeReviewGrounding: empty changed set yields empty grounding
+ok 4 - assembleCodeReviewGrounding: empty changed set yields empty grounding
+  ---
+  duration_ms: 0.048833
+  type: 'test'
+  ...
+# Subtest: isTestFile recognises __tests__ dirs and .test/.spec suffixes only
+ok 5 - isTestFile recognises __tests__ dirs and .test/.spec suffixes only
+  ---
+  duration_ms: 0.042875
+  type: 'test'
+  ...
+# Subtest: isTestFile accepts the Python, Go and JVM test conventions and every path it accepted before, and rejects ordinary source files
+ok 6 - isTestFile accepts the Python, Go and JVM test conventions and every path it accepted before, and rejects ordinary source files
+  ---
+  duration_ms: 0.058458
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 290.266375

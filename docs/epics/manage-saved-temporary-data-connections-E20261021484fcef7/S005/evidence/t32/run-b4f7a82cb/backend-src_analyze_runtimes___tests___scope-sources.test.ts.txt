@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path
+ok 1 - the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path
+  ---
+  duration_ms: 4.811833
+  type: 'test'
+  ...
+# Subtest: the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path
+ok 2 - the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path
+  ---
+  duration_ms: 1.551708
+  type: 'test'
+  ...
+# Subtest: the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)
+ok 3 - the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)
+  ---
+  duration_ms: 0.492625
+  type: 'test'
+  ...
+# Subtest: the source scan asserts the new form for structure-module-tree.ts
+ok 4 - the source scan asserts the new form for structure-module-tree.ts
+  ---
+  duration_ms: 0.359459
+  type: 'test'
+  ...
+# Subtest: the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path
+ok 5 - the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path
+  ---
+  duration_ms: 0.333917
+  type: 'test'
+  ...
+# Subtest: no docs runtime uses the scope's value as a repo path
+ok 6 - no docs runtime uses the scope's value as a repo path
+  ---
+  duration_ms: 0.537708
+  type: 'test'
+  ...
+# Subtest: the unrelated resolveRepoPath under src/mcp is untouched
+ok 7 - the unrelated resolveRepoPath under src/mcp is untouched
+  ---
+  duration_ms: 0.220916
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 215.142291

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionsIsolationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:28" hostname="subho-office-mac" time="1.085">
+  <properties/>
+  <testcase name="testActualProjectsSameRootIdIndependentRepliesRootRetentionAndOwnedDisposal" classname="ai.insors.insrc.jetbrains.connections.ConnectionsIsolationTest" time="1.085"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

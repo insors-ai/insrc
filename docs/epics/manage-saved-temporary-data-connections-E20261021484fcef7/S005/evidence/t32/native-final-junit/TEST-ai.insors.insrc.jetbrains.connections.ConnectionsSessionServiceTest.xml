@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionsSessionServiceTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:02" hostname="subho-office-mac" time="3.529">
+  <properties/>
+  <testcase name="testTwoActualProjectsWithSameRegisteredRootHaveIndependentOwnersAndProjectTeardown" classname="ai.insors.insrc.jetbrains.connections.ConnectionsSessionServiceTest" time="0.888"/>
+  <testcase name="testPendingRequestDoesNotBlockCancellationOrOtherCallsAndDisposalKeepsWriteTruth" classname="ai.insors.insrc.jetbrains.connections.ConnectionsSessionServiceTest" time="0.915"/>
+  <testcase name="testActualProjectContainerOwnsServiceAndViewDisposalLeavesSessionAlive" classname="ai.insors.insrc.jetbrains.connections.ConnectionsSessionServiceTest" time="0.838"/>
+  <testcase name="testBackgroundHeartbeatSameEpochResumeAndAuthoritativeLeaseExpiry" classname="ai.insors.insrc.jetbrains.connections.ConnectionsSessionServiceTest" time="0.887"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

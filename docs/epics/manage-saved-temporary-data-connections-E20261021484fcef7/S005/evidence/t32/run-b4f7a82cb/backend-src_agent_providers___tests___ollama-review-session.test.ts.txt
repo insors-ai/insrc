@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline
+ok 1 - an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline
+  ---
+  duration_ms: 1481.381875
+  type: 'test'
+  ...
+# Subtest: a tool input is anchored at the session repo: relative paths resolve there and an absent optional root defaults to it
+ok 2 - a tool input is anchored at the session repo: relative paths resolve there and an absent optional root defaults to it
+  ---
+  duration_ms: 0.324667
+  type: 'test'
+  ...
+# Subtest: every read-only tool argument that looks like a path is classified as a filesystem location or not
+ok 3 - every read-only tool argument that looks like a path is classified as a filesystem location or not
+  ---
+  duration_ms: 0.340709
+  type: 'test'
+  ...
+# Subtest: a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed
+ok 4 - a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed
+  ---
+  duration_ms: 8.725666
+  type: 'test'
+  ...
+# Subtest: cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn
+ok 5 - cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn
+  ---
+  duration_ms: 879.303875
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10983.982041

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: DIFF-BUDGET: the actual schema changes planning and every issued call includes it in its budget
+ok 1 - DIFF-BUDGET: the actual schema changes planning and every issued call includes it in its budget
+  ---
+  duration_ms: 4.0755
+  type: 'test'
+  ...
+# Subtest: DIFF-BUDGET: irreducible schema and explicit history are never omitted to fit
+ok 2 - DIFF-BUDGET: irreducible schema and explicit history are never omitted to fit
+  ---
+  duration_ms: 17.775709
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 335.494958

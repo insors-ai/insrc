@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: pinned-reader preserves binary commit bytes despite worktree and branch changes
+ok 1 - pinned-reader preserves binary commit bytes despite worktree and branch changes
+  ---
+  duration_ms: 650.101208
+  type: 'test'
+  ...
+# Subtest: pinned-reader rejects missing commits paths and corrupt object framing
+ok 2 - pinned-reader rejects missing commits paths and corrupt object framing
+  ---
+  duration_ms: 320.129375
+  type: 'test'
+  ...
+# Subtest: reader-safety rejects selected unsafe paths before I/O and ignores unselected paths
+ok 3 - reader-safety rejects selected unsafe paths before I/O and ignores unselected paths
+  ---
+  duration_ms: 215.873375
+  type: 'test'
+  ...
+# Subtest: reader-safety rejects symlinks and submodules and leaves LFS unresolved
+ok 4 - reader-safety rejects symlinks and submodules and leaves LFS unresolved
+  ---
+  duration_ms: 397.275625
+  type: 'test'
+  ...
+# Subtest: reader-safety prevents replacement filters lazy fetch and config-driven commands
+ok 5 - reader-safety prevents replacement filters lazy fetch and config-driven commands
+  ---
+  duration_ms: 526.51875
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2804.941584

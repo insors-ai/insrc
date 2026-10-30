@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: Daemon pane shows running status + uptime
+ok 1 - Daemon pane shows running status + uptime
+  ---
+  duration_ms: 65.802667
+  type: 'test'
+  ...
+# Subtest: Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise
+ok 2 - Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise
+  ---
+  duration_ms: 74.2385
+  type: 'test'
+  ...
+# Subtest: Daemon pane renders the down state when the daemon is unreachable
+ok 3 - Daemon pane renders the down state when the daemon is unreachable
+  ---
+  duration_ms: 30.052333
+  type: 'test'
+  ...
+# Subtest: number keys switch panes (Daemon → Repos)
+ok 4 - number keys switch panes (Daemon → Repos)
+  ---
+  duration_ms: 63.242125
+  type: 'test'
+  ...
+# Subtest: Repos add flow drives repo.add with the entered path (+ per-file steering)
+ok 5 - Repos add flow drives repo.add with the entered path (+ per-file steering)
+  ---
+  duration_ms: 230.030875
+  type: 'test'
+  ...
+# Subtest: Workflows pane lists epics and opens the chain detail
+ok 6 - Workflows pane lists epics and opens the chain detail
+  ---
+  duration_ms: 88.972
+  type: 'test'
+  ...
+# Subtest: Setup pane renders system + recommendation without crashing
+ok 7 - Setup pane renders system + recommendation without crashing
+  ---
+  duration_ms: 57.56975
+  type: 'test'
+  ...
+# Subtest: bottom box: Setup model-pull streams ollama progress into the message box
+ok 8 - bottom box: Setup model-pull streams ollama progress into the message box
+  ---
+  duration_ms: 86.654458
+  type: 'test'
+  ...
+# Subtest: Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config
+ok 9 - Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config
+  ---
+  duration_ms: 58.931333
+  type: 'test'
+  ...
+# Subtest: Repos pane: `t` runs tracker setup for the selected repo and shows the report
+ok 10 - Repos pane: `t` runs tracker setup for the selected repo and shows the report
+  ---
+  duration_ms: 84.170792
+  type: 'test'
+  ...
+# Subtest: Repos pane: a throwing tracker setup renders a failed row instead of crashing
+ok 11 - Repos pane: a throwing tracker setup renders a failed row instead of crashing
+  ---
+  duration_ms: 85.617292
+  type: 'test'
+  ...
+# Subtest: Repos pane: `t` with no repos registered is a no-op
+ok 12 - Repos pane: `t` with no repos registered is a no-op
+  ---
+  duration_ms: 83.389875
+  type: 'test'
+  ...
+# Subtest: Repos pane: the tracker modal dismisses on any key back to the list
+ok 13 - Repos pane: the tracker modal dismisses on any key back to the list
+  ---
+  duration_ms: 112.317916
+  type: 'test'
+  ...
+# Subtest: bottom box: a daemon op streams into the message box; DaemonPane body stays stable
+ok 14 - bottom box: a daemon op streams into the message box; DaemonPane body stays stable
+  ---
+  duration_ms: 59.918583
+  type: 'test'
+  ...
+# Subtest: bottom box: a failing daemon op surfaces its error line; pane body untouched
+ok 15 - bottom box: a failing daemon op surfaces its error line; pane body untouched
+  ---
+  duration_ms: 59.324834
+  type: 'test'
+  ...
+# Subtest: bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)
+ok 16 - bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)
+  ---
+  duration_ms: 59.672542
+  type: 'test'
+  ...
+# Subtest: bottom box: ui.toast (r refresh) lands in the message box
+ok 17 - bottom box: ui.toast (r refresh) lands in the message box
+  ---
+  duration_ms: 56.962542
+  type: 'test'
+  ...
+# Subtest: ':' opens the command bar and runs a typed command
+ok 18 - ':' opens the command bar and runs a typed command
+  ---
+  duration_ms: 109.678625
+  type: 'test'
+  ...
+# Subtest: the tab bar renders a 6th 6:Debug peer tab
+ok 19 - the tab bar renders a 6th 6:Debug peer tab
+  ---
+  duration_ms: 28.805625
+  type: 'test'
+  ...
+# Subtest: pressing '6' opens the Debug pane and hides the previously active pane
+ok 20 - pressing '6' opens the Debug pane and hides the previously active pane
+  ---
+  duration_ms: 87.107583
+  type: 'test'
+  ...
+# Subtest: Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)
+ok 21 - Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)
+  ---
+  duration_ms: 86.25125
+  type: 'test'
+  ...
+# Subtest: the TUI tests run with fakeServices carrying the team entry
+ok 22 - the TUI tests run with fakeServices carrying the team entry
+  ---
+  duration_ms: 0.159625
+  type: 'test'
+  ...
+# Subtest: TUI ModelTiersPane shows the model definitions' tier defaults for an unset config
+ok 23 - TUI ModelTiersPane shows the model definitions' tier defaults for an unset config
+  ---
+  duration_ms: 57.301166
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2482.178584

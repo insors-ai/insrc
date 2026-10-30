@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.005">
+  <properties/>
+  <testcase name="daemonStatus does not disturb probe classification()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.001"/>
+  <testcase name="daemonStatus sends METHOD_STATUS with empty params and coerces a Gson-Double reply to Loaded()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.0"/>
+  <testcase name="daemonStatus defaults modelPullStatus, nulls absent optionals, and zeroes an empty repos array()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.0"/>
+  <testcase name="daemonStatus coerces a junk-but-ok reply to a zeroed Loaded without throwing()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.001"/>
+  <testcase name="daemonStatus carries the store failure cause when the payload has storeFailure, and null without it()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.001"/>
+  <testcase name="a storeFailure object without a usable cause is still shown as a failure()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.0"/>
+  <testcase name="daemonStatus maps an unreachable daemon to the distinct Stopped state()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.0"/>
+  <testcase name="daemonStatus maps a framed error reply to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid
+ok 1 - feedback: appendFeedbackBatch writes every entry in one write with ids and one timestamp, changes no other key, and writes nothing when any entry is invalid
+  ---
+  duration_ms: 4.912833
+  type: 'test'
+  ...
+# Subtest: feedback: appendFeedback stores an entry's anchor, decision and batchId when the request has them and stores a request without them exactly as before
+ok 2 - feedback: appendFeedback stores an entry's anchor, decision and batchId when the request has them and stores a request without them exactly as before
+  ---
+  duration_ms: 1.683959
+  type: 'test'
+  ...
+# Subtest: feedback: the tool's input schema, coerceRequest and the stored list's schema accept an entry with an anchor, a decision and a batchId, and an entry without them is still valid
+ok 3 - feedback: the tool's input schema, coerceRequest and the stored list's schema accept an entry with an anchor, a decision and a batchId, and an entry without them is still valid
+  ---
+  duration_ms: 21.203208
+  type: 'test'
+  ...
+# Subtest: feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically
+ok 4 - feedback: feedbackBodyLines shows the decision and the quoted text of an entry that has them and renders an old entry byte-identically
+  ---
+  duration_ms: 0.227916
+  type: 'test'
+  ...
+# Subtest: feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact
+ok 5 - feedback: priorFeedback returns the stored list, and an empty list for a missing, unreadable or feedback-less artifact
+  ---
+  duration_ms: 4.38975
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 335.543417

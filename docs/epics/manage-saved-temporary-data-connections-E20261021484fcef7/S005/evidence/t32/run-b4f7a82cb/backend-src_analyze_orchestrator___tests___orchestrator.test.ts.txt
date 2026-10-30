@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: classifyClassifierError: typed errors map to stable codes
+ok 1 - classifyClassifierError: typed errors map to stable codes
+  ---
+  duration_ms: 0.864375
+  type: 'test'
+  ...
+# Subtest: plan tree's classify mapping returns the inner code and passes context errors on; the table-test row rewritten
+ok 2 - plan tree's classify mapping returns the inner code and passes context errors on; the table-test row rewritten
+  ---
+  duration_ms: 1.051916
+  type: 'test'
+  ...
+# Subtest: classifyClassifierError: unrecognized error -> internal-error
+ok 3 - classifyClassifierError: unrecognized error -> internal-error
+  ---
+  duration_ms: 1.947375
+  type: 'test'
+  ...
+# Subtest: classifyClassifierError: non-Error throws are stringified into internal-error
+ok 4 - classifyClassifierError: non-Error throws are stringified into internal-error
+  ---
+  duration_ms: 0.16975
+  type: 'test'
+  ...
+# Subtest: classifyShaperError: ScopeNotIndexedError populates data
+ok 5 - classifyShaperError: ScopeNotIndexedError populates data
+  ---
+  duration_ms: 0.119709
+  type: 'test'
+  ...
+# Subtest: classifyShaperError: typed shaper errors map to stable codes
+ok 6 - classifyShaperError: typed shaper errors map to stable codes
+  ---
+  duration_ms: 0.286542
+  type: 'test'
+  ...
+# Subtest: classifyShaperError: unrecognized error -> internal-error
+ok 7 - classifyShaperError: unrecognized error -> internal-error
+  ---
+  duration_ms: 0.089917
+  type: 'test'
+  ...
+# Subtest: classifyPlannerError: MaxPlanDepthExceededError populates data
+ok 8 - classifyPlannerError: MaxPlanDepthExceededError populates data
+  ---
+  duration_ms: 0.156417
+  type: 'test'
+  ...
+# Subtest: classifyPlannerError: PlanBuilderExhausted -> plan-invariant-failed with lastFailure
+ok 9 - classifyPlannerError: PlanBuilderExhausted -> plan-invariant-failed with lastFailure
+  ---
+  duration_ms: 0.293833
+  type: 'test'
+  ...
+# Subtest: classifyPlannerError: typed planner errors map to stable codes
+ok 10 - classifyPlannerError: typed planner errors map to stable codes
+  ---
+  duration_ms: 0.372
+  type: 'test'
+  ...
+# Subtest: classifyPlannerError: unrecognized error -> internal-error
+ok 11 - classifyPlannerError: unrecognized error -> internal-error
+  ---
+  duration_ms: 0.056083
+  type: 'test'
+  ...
+# Subtest: writeRunRecord + readRunRecord: round-trip preserves the record
+ok 12 - writeRunRecord + readRunRecord: round-trip preserves the record
+  ---
+  duration_ms: 23.546375
+  type: 'test'
+  ...
+# Subtest: readRunRecord: miss returns null
+ok 13 - readRunRecord: miss returns null
+  ---
+  duration_ms: 0.327209
+  type: 'test'
+  ...
+# Subtest: runRecordPathFor: lands under ~/.insrc/analyze/<runId>/run.json
+ok 14 - runRecordPathFor: lands under ~/.insrc/analyze/<runId>/run.json
+  ---
+  duration_ms: 0.128667
+  type: 'test'
+  ...
+# Subtest: purgeRunForTests on a missing slot is a silent no-op
+ok 15 - purgeRunForTests on a missing slot is a silent no-op
+  ---
+  duration_ms: 0.24975
+  type: 'test'
+  ...
+# Subtest: purgeRun: missing run dir -> { ok:true, purged:false }
+ok 16 - purgeRun: missing run dir -> { ok:true, purged:false }
+  ---
+  duration_ms: 0.072
+  type: 'test'
+  ...
+# Subtest: purgeRun: status=ok run -> removes dir
+ok 17 - purgeRun: status=ok run -> removes dir
+  ---
+  duration_ms: 19.496458
+  type: 'test'
+  ...
+# Subtest: purgeRun: status=failed run -> removes dir (no protection on failed)
+ok 18 - purgeRun: status=failed run -> removes dir (no protection on failed)
+  ---
+  duration_ms: 7.608458
+  type: 'test'
+  ...
+# Subtest: purgeRun: status=in-progress without force -> refused
+ok 19 - purgeRun: status=in-progress without force -> refused
+  ---
+  duration_ms: 11.578292
+  type: 'test'
+  ...
+# Subtest: onEvent: resume cache hit emits a single done event with the cached result
+ok 20 - onEvent: resume cache hit emits a single done event with the cached result
+  ---
+  duration_ms: 10.074167
+  type: 'test'
+  ...
+# Subtest: onEvent: aborted signal -> done event with code="aborted"
+ok 21 - onEvent: aborted signal -> done event with code="aborted"
+  ---
+  duration_ms: 23.807542
+  type: 'test'
+  ...
+# Subtest: onEvent: missing onEvent option -> no exception (no-op)
+ok 22 - onEvent: missing onEvent option -> no exception (no-op)
+  ---
+  duration_ms: 9.137042
+  type: 'test'
+  ...
+# Subtest: onEvent: throwing callback does not crash the run
+ok 23 - onEvent: throwing callback does not crash the run
+  ---
+  duration_ms: 6.755208
+  type: 'test'
+  ...
+# Subtest: purgeRun: status=in-progress with force=true -> removes dir
+ok 24 - purgeRun: status=in-progress with force=true -> removes dir
+  ---
+  duration_ms: 6.422917
+  type: 'test'
+  ...
+# Subtest: resume: status=ok + stage=done -> cached RunAnalyzeOk returned without re-running
+ok 25 - resume: status=ok + stage=done -> cached RunAnalyzeOk returned without re-running
+  ---
+  duration_ms: 5.430708
+  type: 'test'
+  ...
+# Subtest: resume: status=failed -> NOT short-circuited (would re-run)
+ok 26 - resume: status=failed -> NOT short-circuited (would re-run)
+  ---
+  duration_ms: 8.340958
+  type: 'test'
+  ...
+# Subtest: resume: status=in-progress -> NOT short-circuited (stale record from crash)
+ok 27 - resume: status=in-progress -> NOT short-circuited (stale record from crash)
+  ---
+  duration_ms: 8.434292
+  type: 'test'
+  ...
+# Subtest: resume: missing run.json -> NOT short-circuited (cold cache)
+ok 28 - resume: missing run.json -> NOT short-circuited (cold cache)
+  ---
+  duration_ms: 0.305458
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 847.128292

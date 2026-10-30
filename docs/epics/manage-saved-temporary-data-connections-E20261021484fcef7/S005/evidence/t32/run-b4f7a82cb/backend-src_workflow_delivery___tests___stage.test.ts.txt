@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan
+ok 1 - a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan
+  ---
+  duration_ms: 9.22675
+  type: 'test'
+  ...
+# Subtest: a story with an unapproved build whose tasks all passed is build-recorded
+ok 2 - a story with an unapproved build whose tasks all passed is build-recorded
+  ---
+  duration_ms: 0.450875
+  type: 'test'
+  ...
+# Subtest: a story with an approved build is complete whatever its task results and review verdict
+ok 3 - a story with an approved build is complete whatever its task results and review verdict
+  ---
+  duration_ms: 0.435084
+  type: 'test'
+  ...
+# Subtest: a story with no design, plan or build record is scoped
+ok 4 - a story with no design, plan or build record is scoped
+  ---
+  duration_ms: 0.437208
+  type: 'test'
+  ...
+# Subtest: the issue magnitude decides a fix story's route ahead of its build stamp
+ok 5 - the issue magnitude decides a fix story's route ahead of its build stamp
+  ---
+  duration_ms: 0.424292
+  type: 'test'
+  ...
+# Subtest: a story under an epic never takes its route from an ISSUE that shares its hash
+ok 6 - a story under an epic never takes its route from an ISSUE that shares its hash
+  ---
+  duration_ms: 0.132
+  type: 'test'
+  ...
+# Subtest: a non-standalone build stamp is never read and an epic story is full-chain
+ok 7 - a non-standalone build stamp is never read and an epic story is full-chain
+  ---
+  duration_ms: 0.14825
+  type: 'test'
+  ...
+# Subtest: a sized-bugfix or full-chain story with an approved design and no plan is design-plan
+ok 8 - a sized-bugfix or full-chain story with an approved design and no plan is design-plan
+  ---
+  duration_ms: 0.185
+  type: 'test'
+  ...
+# Subtest: an unknown or disagreeing stamp gives the unknown route, never a guess
+ok 9 - an unknown or disagreeing stamp gives the unknown route, never a guess
+  ---
+  duration_ms: 2.6365
+  type: 'test'
+  ...
+# Subtest: a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice
+ok 10 - a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice
+  ---
+  duration_ms: 0.978417
+  type: 'test'
+  ...
+# Subtest: a code review with no build leaves the stage and raises review-without-build
+ok 11 - a code review with no build leaves the stage and raises review-without-build
+  ---
+  duration_ms: 0.433166
+  type: 'test'
+  ...
+# Subtest: an item with no recorded route keeps its records' stage and raises unknown-route
+ok 12 - an item with no recorded route keeps its records' stage and raises unknown-route
+  ---
+  duration_ms: 0.2975
+  type: 'test'
+  ...
+# Subtest: a story or issue with no design, plan or build is scoped
+ok 13 - a story or issue with no design, plan or build is scoped
+  ---
+  duration_ms: 0.348333
+  type: 'test'
+  ...
+# Subtest: an issue takes the least advanced stage of its fix stories
+ok 14 - an issue takes the least advanced stage of its fix stories
+  ---
+  duration_ms: 3.070292
+  type: 'test'
+  ...
+# Subtest: missing evidence records and wrongly typed fields never throw
+ok 15 - missing evidence records and wrongly typed fields never throw
+  ---
+  duration_ms: 0.441125
+  type: 'test'
+  ...
+# Subtest: every story and issue in the real-shape fixtures gets exactly one stage, deterministically
+ok 16 - every story and issue in the real-shape fixtures gets exactly one stage, deterministically
+  ---
+  duration_ms: 1.117875
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 293.188417

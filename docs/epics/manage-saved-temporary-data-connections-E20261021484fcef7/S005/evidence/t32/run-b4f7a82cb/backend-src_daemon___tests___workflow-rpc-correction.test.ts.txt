@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: finalizeArtifact: s8 sbdry4 hard-fail is now CORRECTABLE and carries structured findings
+ok 1 - finalizeArtifact: s8 sbdry4 hard-fail is now CORRECTABLE and carries structured findings
+  ---
+  duration_ms: 1.472708
+  type: 'test'
+  ...
+# Subtest: finalizeArtifact: a CLEAN s8 (all passed) yields no boundary failure
+ok 2 - finalizeArtifact: a CLEAN s8 (all passed) yields no boundary failure
+  ---
+  duration_ms: 13.886458
+  type: 'test'
+  ...
+# Subtest: correctionDirective: names each finding + demands change-nothing-else + grounding
+ok 3 - correctionDirective: names each finding + demands change-nothing-else + grounding
+  ---
+  duration_ms: 0.17125
+  type: 'test'
+  ...
+# Subtest: reAuditBoundary: audits the CORRECTED artifact for the flagged items + returns fresh verdicts
+ok 4 - reAuditBoundary: audits the CORRECTED artifact for the flagged items + returns fresh verdicts
+  ---
+  duration_ms: 0.135042
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 944.527958

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: handleDocgen: missing docType → isError, no daemon call
+ok 1 - handleDocgen: missing docType → isError, no daemon call
+  ---
+  duration_ms: 1.240875
+  type: 'test'
+  ...
+# Subtest: handleDocgen: ok outcome → JSON content; forwards docType+repo+per-type fields to docgen.generate (ac1)
+ok 2 - handleDocgen: ok outcome → JSON content; forwards docType+repo+per-type fields to docgen.generate (ac1)
+  ---
+  duration_ms: 6.341084
+  type: 'test'
+  ...
+# Subtest: handleDocgen: non-ok outcome (source-not-ready) → isError carrying the reason (ac3)
+ok 3 - handleDocgen: non-ok outcome (source-not-ready) → isError carrying the reason (ac3)
+  ---
+  duration_ms: 0.539083
+  type: 'test'
+  ...
+# Subtest: handleDocgen: not-found outcome → isError naming the unknown type
+ok 4 - handleDocgen: not-found outcome → isError naming the unknown type
+  ---
+  duration_ms: 0.361041
+  type: 'test'
+  ...
+# Subtest: handleDocgen: daemon unreachable → actionable isError, never a fabricated document
+ok 5 - handleDocgen: daemon unreachable → actionable isError, never a fabricated document
+  ---
+  duration_ms: 2.371167
+  type: 'test'
+  ...
+# Subtest: handler module imports only the daemon IPC seam — never generateDocument or an extractor
+ok 6 - handler module imports only the daemon IPC seam — never generateDocument or an extractor
+  ---
+  duration_ms: 0.327833
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 386.97875

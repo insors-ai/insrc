@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: assessDiagramNeed: empty when the model says no visual is warranted (one serial call)
+ok 1 - assessDiagramNeed: empty when the model says no visual is warranted (one serial call)
+  ---
+  duration_ms: 14.199541
+  type: 'test'
+  ...
+# Subtest: assessDiagramNeed: a type:"er" need when warranted
+ok 2 - assessDiagramNeed: a type:"er" need when warranted
+  ---
+  duration_ms: 0.163542
+  type: 'test'
+  ...
+# Subtest: assessDiagramNeed: warranted:true but no diagrams → treated as no-need
+ok 3 - assessDiagramNeed: warranted:true but no diagrams → treated as no-need
+  ---
+  duration_ms: 0.077084
+  type: 'test'
+  ...
+# Subtest: assessDiagramNeed: fail-safe to no-diagram on a provider error (never throws)
+ok 4 - assessDiagramNeed: fail-safe to no-diagram on a provider error (never throws)
+  ---
+  duration_ms: 0.2625
+  type: 'test'
+  ...
+# Subtest: assessDiagramNeed: fail-safe on an unparseable/invalid provider output (schema violation)
+ok 5 - assessDiagramNeed: fail-safe on an unparseable/invalid provider output (schema violation)
+  ---
+  duration_ms: 0.242916
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 342.389042

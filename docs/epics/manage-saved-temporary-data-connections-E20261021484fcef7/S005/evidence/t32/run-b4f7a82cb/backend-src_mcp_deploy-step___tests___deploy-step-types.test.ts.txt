@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: DeployStepProtocol envelope matches the flat a1 interfaceSketch (compiles under strict)
+ok 1 - DeployStepProtocol envelope matches the flat a1 interfaceSketch (compiles under strict)
+  ---
+  duration_ms: 0.504334
+  type: 'test'
+  ...
+# Subtest: DeploymentContextBundle quartet is independent of AnalyzeContextBundle; entityId optional
+ok 2 - DeploymentContextBundle quartet is independent of AnalyzeContextBundle; entityId optional
+  ---
+  duration_ms: 0.077625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 182.229625

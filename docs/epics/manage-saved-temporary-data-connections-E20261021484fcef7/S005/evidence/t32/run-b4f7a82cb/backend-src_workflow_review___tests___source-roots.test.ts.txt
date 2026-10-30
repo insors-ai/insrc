@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: mind/-only layout → single mind root, fallbackUsed=false (the core AFM bug)
+ok 1 - mind/-only layout → single mind root, fallbackUsed=false (the core AFM bug)
+  ---
+  duration_ms: 1.461833
+  type: 'test'
+  ...
+# Subtest: src/-only layout → single src root, no regression
+ok 2 - src/-only layout → single src root, no regression
+  ---
+  duration_ms: 0.105625
+  type: 'test'
+  ...
+# Subtest: multi-root src/+mind/ → one root each, densest-first by fileCount
+ok 3 - multi-root src/+mind/ → one root each, densest-first by fileCount
+  ---
+  duration_ms: 0.091792
+  type: 'test'
+  ...
+# Subtest: all files at repo root → single repoPath root, fallbackUsed=false
+ok 4 - all files at repo root → single repoPath root, fallbackUsed=false
+  ---
+  duration_ms: 0.122125
+  type: 'test'
+  ...
+# Subtest: mixed root-level + subdir files → collapse to repoPath (subsumes subdirs)
+ok 5 - mixed root-level + subdir files → collapse to repoPath (subsumes subdirs)
+  ---
+  duration_ms: 0.064042
+  type: 'test'
+  ...
+# Subtest: non-file entities are ignored when bucketing
+ok 6 - non-file entities are ignored when bucketing
+  ---
+  duration_ms: 0.133625
+  type: 'test'
+  ...
+# Subtest: empty graph (zero entities) → repo-root fallback, fallbackUsed=true
+ok 7 - empty graph (zero entities) → repo-root fallback, fallbackUsed=true
+  ---
+  duration_ms: 0.084042
+  type: 'test'
+  ...
+# Subtest: graph with only non-file entities → repo-root fallback (no file roots)
+ok 8 - graph with only non-file entities → repo-root fallback (no file roots)
+  ---
+  duration_ms: 0.046042
+  type: 'test'
+  ...
+# Subtest: a rejecting graph reader → repo-root fallback, never throws
+ok 9 - a rejecting graph reader → repo-root fallback, never throws
+  ---
+  duration_ms: 0.389416
+  type: 'test'
+  ...
+# Subtest: rootPrefix: subdir root → its segment; repo root → empty
+ok 10 - rootPrefix: subdir root → its segment; repo root → empty
+  ---
+  duration_ms: 0.329
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 356.376667

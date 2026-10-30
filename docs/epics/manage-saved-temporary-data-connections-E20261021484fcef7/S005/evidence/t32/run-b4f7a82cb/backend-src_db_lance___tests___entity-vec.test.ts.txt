@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: writeEntityEmbedding stores a single row
+ok 1 - writeEntityEmbedding stores a single row
+  ---
+  duration_ms: 55.000208
+  type: 'test'
+  ...
+# Subtest: writeEntityEmbedding upsert: same id replaces row
+ok 2 - writeEntityEmbedding upsert: same id replaces row
+  ---
+  duration_ms: 34.07175
+  type: 'test'
+  ...
+# Subtest: writeEntityEmbeddings bulk upsert
+ok 3 - writeEntityEmbeddings bulk upsert
+  ---
+  duration_ms: 17.995208
+  type: 'test'
+  ...
+# Subtest: writeEntityEmbeddings on empty array is a no-op
+ok 4 - writeEntityEmbeddings on empty array is a no-op
+  ---
+  duration_ms: 0.45025
+  type: 'test'
+  ...
+# Subtest: searchEntityVecs returns ANN hits ordered by distance
+ok 5 - searchEntityVecs returns ANN hits ordered by distance
+  ---
+  duration_ms: 14.4385
+  type: 'test'
+  ...
+# Subtest: searchEntityVecs respects closure-repo scope
+ok 6 - searchEntityVecs respects closure-repo scope
+  ---
+  duration_ms: 15.73325
+  type: 'test'
+  ...
+# Subtest: searchEntityVecs filter=code excludes artifacts
+ok 7 - searchEntityVecs filter=code excludes artifacts
+  ---
+  duration_ms: 14.516834
+  type: 'test'
+  ...
+# Subtest: searchEntityVecs filter=artifact returns only artifacts
+ok 8 - searchEntityVecs filter=artifact returns only artifacts
+  ---
+  duration_ms: 16.523125
+  type: 'test'
+  ...
+# Subtest: searchEntityVecs returns [] for empty query vector
+ok 9 - searchEntityVecs returns [] for empty query vector
+  ---
+  duration_ms: 13.778208
+  type: 'test'
+  ...
+# Subtest: searchEntityVecs returns [] for empty closureRepos
+ok 10 - searchEntityVecs returns [] for empty closureRepos
+  ---
+  duration_ms: 12.663708
+  type: 'test'
+  ...
+# Subtest: searchEntityVecs excludes the seed sentinel row
+ok 11 - searchEntityVecs excludes the seed sentinel row
+  ---
+  duration_ms: 8.962334
+  type: 'test'
+  ...
+# Subtest: the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before
+ok 12 - the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before
+  ---
+  duration_ms: 456.993958
+  type: 'test'
+  ...
+# Subtest: deleteEntityVec removes a single row
+ok 13 - deleteEntityVec removes a single row
+  ---
+  duration_ms: 26.48075
+  type: 'test'
+  ...
+# Subtest: deleteEntityVecsByIds bulk drop
+ok 14 - deleteEntityVecsByIds bulk drop
+  ---
+  duration_ms: 23.563541
+  type: 'test'
+  ...
+# Subtest: deleteEntityVecsForRepo removes all rows for a repo
+ok 15 - deleteEntityVecsForRepo removes all rows for a repo
+  ---
+  duration_ms: 26.376708
+  type: 'test'
+  ...
+# Subtest: delete on empty input is a silent no-op
+ok 16 - delete on empty input is a silent no-op
+  ---
+  duration_ms: 0.354958
+  type: 'test'
+  ...
+# Subtest: strings with single quotes are escaped in delete + search
+ok 17 - strings with single quotes are escaped in delete + search
+  ---
+  duration_ms: 20.582083
+  type: 'test'
+  ...
+# Subtest: rows survive close + reopen
+ok 18 - rows survive close + reopen
+  ---
+  duration_ms: 19.547417
+  type: 'test'
+  ...
+# Subtest: compactEntityVecTable reduces on-disk fragment count
+ok 19 - compactEntityVecTable reduces on-disk fragment count
+  ---
+  duration_ms: 203.665375
+  type: 'test'
+  ...
+# Subtest: compactEntityVecTable preserves all rows + searchability
+ok 20 - compactEntityVecTable preserves all rows + searchability
+  ---
+  duration_ms: 357.698458
+  type: 'test'
+  ...
+# Subtest: compactEntityVecTable on a fresh / single-fragment table is a cheap no-op
+ok 21 - compactEntityVecTable on a fresh / single-fragment table is a cheap no-op
+  ---
+  duration_ms: 11.207333
+  type: 'test'
+  ...
+# Subtest: compactEntityVecTable result survives close + reopen
+ok 22 - compactEntityVecTable result survives close + reopen
+  ---
+  duration_ms: 122.792542
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1839.521667

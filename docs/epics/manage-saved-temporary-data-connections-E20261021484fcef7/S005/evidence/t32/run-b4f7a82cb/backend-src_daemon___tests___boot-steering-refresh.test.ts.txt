@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: runBootSteeringRefresh re-stamps a MARKED repo file to the stripped skeleton
+ok 1 - runBootSteeringRefresh re-stamps a MARKED repo file to the stripped skeleton
+  ---
+  duration_ms: 0.808959
+  type: 'test'
+  ...
+# Subtest: runBootSteeringRefresh leaves an UNMARKED / absent file untouched (REPLACE-ONLY opt-out)
+ok 2 - runBootSteeringRefresh leaves an UNMARKED / absent file untouched (REPLACE-ONLY opt-out)
+  ---
+  duration_ms: 0.160667
+  type: 'test'
+  ...
+# Subtest: runBootSteeringRefresh is idempotent — an already-current marked file reports unchanged, no write
+ok 3 - runBootSteeringRefresh is idempotent — an already-current marked file reports unchanged, no write
+  ---
+  duration_ms: 0.16475
+  type: 'test'
+  ...
+# Subtest: runBootSteeringRefresh swallows a readBlock throw (missing/empty asset) and returns undefined
+ok 4 - runBootSteeringRefresh swallows a readBlock throw (missing/empty asset) and returns undefined
+  ---
+  duration_ms: 0.244167
+  type: 'test'
+  ...
+# Subtest: runBootSteeringRefresh swallows a listRepos rejection and returns undefined (never throws)
+ok 5 - runBootSteeringRefresh swallows a listRepos rejection and returns undefined (never throws)
+  ---
+  duration_ms: 0.143291
+  type: 'test'
+  ...
+# Subtest: runBootSteeringRefresh over an empty registry returns an empty report, no writes
+ok 6 - runBootSteeringRefresh over an empty registry returns an empty report, no writes
+  ---
+  duration_ms: 1.602833
+  type: 'test'
+  ...
+# Subtest: src/daemon/index.ts imports and calls runBootSteeringRefresh AFTER the reconcile, guarded
+ok 7 - src/daemon/index.ts imports and calls runBootSteeringRefresh AFTER the reconcile, guarded
+  ---
+  duration_ms: 0.504833
+  type: 'test'
+  ...
+# Subtest: STEERING markers are exported for fixtures
+ok 8 - STEERING markers are exported for fixtures
+  ---
+  duration_ms: 0.060791
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 373.303417

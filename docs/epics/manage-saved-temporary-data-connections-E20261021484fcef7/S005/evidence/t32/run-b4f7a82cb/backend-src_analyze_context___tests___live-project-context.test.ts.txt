@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: assembleLiveProjectContext returns zero-doc context for a repo with no summaries
+ok 1 - assembleLiveProjectContext returns zero-doc context for a repo with no summaries
+  ---
+  duration_ms: 223.178042
+  type: 'test'
+  ...
+# Subtest: familyBreakdown counts summaries per family
+ok 2 - familyBreakdown counts summaries per family
+  ---
+  duration_ms: 252.868417
+  type: 'test'
+  ...
+# Subtest: decisions + constraints roll up with citations
+ok 3 - decisions + constraints roll up with citations
+  ---
+  duration_ms: 273.6065
+  type: 'test'
+  ...
+# Subtest: decisions cap respects maxDecisions option
+ok 4 - decisions cap respects maxDecisions option
+  ---
+  duration_ms: 252.540208
+  type: 'test'
+  ...
+# Subtest: topSubjects tallies + sorts by document count desc
+ok 5 - topSubjects tallies + sorts by document count desc
+  ---
+  duration_ms: 317.856542
+  type: 'test'
+  ...
+# Subtest: recentActivity sorts by summarisedAt desc + populates file path
+ok 6 - recentActivity sorts by summarisedAt desc + populates file path
+  ---
+  duration_ms: 287.055875
+  type: 'test'
+  ...
+# Subtest: totalCodeEntities excludes artefacts
+ok 7 - totalCodeEntities excludes artefacts
+  ---
+  duration_ms: 224.505916
+  type: 'test'
+  ...
+# Subtest: placeholder rows count into placeholderCount but not decisions/constraints
+ok 8 - placeholder rows count into placeholderCount but not decisions/constraints
+  ---
+  duration_ms: 232.1125
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2311.845958

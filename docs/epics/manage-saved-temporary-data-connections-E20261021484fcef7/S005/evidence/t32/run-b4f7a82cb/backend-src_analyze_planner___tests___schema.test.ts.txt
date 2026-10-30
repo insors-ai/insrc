@@ -1,0 +1,208 @@
+TAP version 13
+# Subtest: PLAN_SCHEMA_VERSION is a positive integer
+ok 1 - PLAN_SCHEMA_VERSION is a positive integer
+  ---
+  duration_ms: 0.87425
+  type: 'test'
+  ...
+# Subtest: PLAN_TARGET_ENUM matches the four documented targets
+ok 2 - PLAN_TARGET_ENUM matches the four documented targets
+  ---
+  duration_ms: 0.735209
+  type: 'test'
+  ...
+# Subtest: PLAN_SCOPE_BUCKET_ENUM matches the five buckets in size order
+ok 3 - PLAN_SCOPE_BUCKET_ENUM matches the five buckets in size order
+  ---
+  duration_ms: 0.062334
+  type: 'test'
+  ...
+# Subtest: TASK_KIND_ENUM is exactly leaf | planner
+ok 4 - TASK_KIND_ENUM is exactly leaf | planner
+  ---
+  duration_ms: 0.046875
+  type: 'test'
+  ...
+# Subtest: TASK_ID_PATTERN matches t01 / t99 / t100 / t999 but not t1 / tabc / T01
+ok 5 - TASK_ID_PATTERN matches t01 / t99 / t100 / t999 but not t1 / tabc / T01
+  ---
+  duration_ms: 0.199
+  type: 'test'
+  ...
+# Subtest: validatePlanShape accepts a minimal valid plan
+ok 6 - validatePlanShape accepts a minimal valid plan
+  ---
+  duration_ms: 19.431791
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape accepts a minimal valid task
+ok 7 - validatePlannedTaskShape accepts a minimal valid task
+  ---
+  duration_ms: 2.11375
+  type: 'test'
+  ...
+# Subtest: validatePlanShape accepts a plan with parentTaskPath (child plan)
+ok 8 - validatePlanShape accepts a plan with parentTaskPath (child plan)
+  ---
+  duration_ms: 0.083666
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape accepts a task with consumes + taskPath
+ok 9 - validatePlannedTaskShape accepts a task with consumes + taskPath
+  ---
+  duration_ms: 0.20875
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects a plan missing 'planId'
+ok 10 - validatePlanShape rejects a plan missing 'planId'
+  ---
+  duration_ms: 0.365375
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects a plan missing 'goal'
+ok 11 - validatePlanShape rejects a plan missing 'goal'
+  ---
+  duration_ms: 0.326709
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects a plan missing 'target'
+ok 12 - validatePlanShape rejects a plan missing 'target'
+  ---
+  duration_ms: 0.050167
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects a plan missing 'scope'
+ok 13 - validatePlanShape rejects a plan missing 'scope'
+  ---
+  duration_ms: 0.035166
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects a plan missing 'tasks'
+ok 14 - validatePlanShape rejects a plan missing 'tasks'
+  ---
+  duration_ms: 0.032292
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects a plan missing 'reasoning'
+ok 15 - validatePlanShape rejects a plan missing 'reasoning'
+  ---
+  duration_ms: 0.030833
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects a task missing 'taskId'
+ok 16 - validatePlannedTaskShape rejects a task missing 'taskId'
+  ---
+  duration_ms: 0.037625
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects a task missing 'template'
+ok 17 - validatePlannedTaskShape rejects a task missing 'template'
+  ---
+  duration_ms: 0.025875
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects a task missing 'kind'
+ok 18 - validatePlannedTaskShape rejects a task missing 'kind'
+  ---
+  duration_ms: 0.024833
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects a task missing 'params'
+ok 19 - validatePlannedTaskShape rejects a task missing 'params'
+  ---
+  duration_ms: 0.169125
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects a task missing 'produces'
+ok 20 - validatePlannedTaskShape rejects a task missing 'produces'
+  ---
+  duration_ms: 0.029417
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects a task missing 'rationale'
+ok 21 - validatePlannedTaskShape rejects a task missing 'rationale'
+  ---
+  duration_ms: 0.026625
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects unknown target
+ok 22 - validatePlanShape rejects unknown target
+  ---
+  duration_ms: 0.046792
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects unknown scope
+ok 23 - validatePlanShape rejects unknown scope
+  ---
+  duration_ms: 0.047458
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects taskId not matching the pattern
+ok 24 - validatePlannedTaskShape rejects taskId not matching the pattern
+  ---
+  duration_ms: 0.043667
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects kind outside leaf|planner
+ok 25 - validatePlannedTaskShape rejects kind outside leaf|planner
+  ---
+  duration_ms: 0.030708
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects unknown top-level properties
+ok 26 - validatePlanShape rejects unknown top-level properties
+  ---
+  duration_ms: 0.040625
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects unknown task properties
+ok 27 - validatePlannedTaskShape rejects unknown task properties
+  ---
+  duration_ms: 0.032584
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects empty tasks array (minItems:1)
+ok 28 - validatePlanShape rejects empty tasks array (minItems:1)
+  ---
+  duration_ms: 0.03625
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects empty produces array (minItems:1)
+ok 29 - validatePlannedTaskShape rejects empty produces array (minItems:1)
+  ---
+  duration_ms: 0.066667
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects duplicate produces entries (uniqueItems)
+ok 30 - validatePlannedTaskShape rejects duplicate produces entries (uniqueItems)
+  ---
+  duration_ms: 0.041458
+  type: 'test'
+  ...
+# Subtest: validatePlannedTaskShape rejects too-short rationale (minLength 20)
+ok 31 - validatePlannedTaskShape rejects too-short rationale (minLength 20)
+  ---
+  duration_ms: 0.035209
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects too-short plan reasoning (minLength 50)
+ok 32 - validatePlanShape rejects too-short plan reasoning (minLength 50)
+  ---
+  duration_ms: 0.027292
+  type: 'test'
+  ...
+# Subtest: validatePlanShape rejects too-long goal (maxLength 200)
+ok 33 - validatePlanShape rejects too-long goal (maxLength 200)
+  ---
+  duration_ms: 0.032708
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 563.264458

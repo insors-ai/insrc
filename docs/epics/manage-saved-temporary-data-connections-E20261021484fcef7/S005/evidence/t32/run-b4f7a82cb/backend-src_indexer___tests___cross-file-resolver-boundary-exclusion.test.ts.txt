@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: S003 t2 — code-symbol resolver excludes CALLS_HTTP
+    # Subtest: lists the four boundary kinds as excluded
+    ok 1 - lists the four boundary kinds as excluded
+      ---
+      duration_ms: 0.390625
+      type: 'test'
+      ...
+    # Subtest: leaves a CALLS_HTTP row unresolved (never re-pointed at a code entity) while a sibling CALLS resolves
+    ok 2 - leaves a CALLS_HTTP row unresolved (never re-pointed at a code entity) while a sibling CALLS resolves
+      ---
+      duration_ms: 266.218542
+      type: 'test'
+      ...
+    1..2
+ok 1 - S003 t2 — code-symbol resolver excludes CALLS_HTTP
+  ---
+  duration_ms: 267.029417
+  type: 'suite'
+  ...
+1..1
+# tests 2
+# suites 1
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 669.105916

@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them
+ok 1 - in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them
+  ---
+  duration_ms: 2.79875
+  type: 'test'
+  ...
+# Subtest: in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run
+ok 2 - in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run
+  ---
+  duration_ms: 12.261166
+  type: 'test'
+  ...
+# Subtest: in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run
+ok 3 - in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run
+  ---
+  duration_ms: 2.51225
+  type: 'test'
+  ...
+# Subtest: in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause
+ok 4 - in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause
+  ---
+  duration_ms: 0.784709
+  type: 'test'
+  ...
+# Subtest: no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself
+ok 5 - no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself
+  ---
+  duration_ms: 3.109709
+  type: 'test'
+  ...
+# Subtest: in-daemon client: a stream handler that throws synchronously settles the request as daemon-error and releases its wait
+ok 6 - in-daemon client: a stream handler that throws synchronously settles the request as daemon-error and releases its wait
+  ---
+  duration_ms: 0.337875
+  type: 'test'
+  ...
+# Subtest: in-daemon client: the wait limit is named in whole minutes when it is one, otherwise in seconds, never more than the limit
+ok 7 - in-daemon client: the wait limit is named in whole minutes when it is one, otherwise in seconds, never more than the limit
+  ---
+  duration_ms: 0.141417
+  type: 'test'
+  ...
+# Subtest: in-daemon review client: the codeReview.freshness reply keeps inFlight and pendingCodeIndexJobs (ISSUE-1102dc71)
+ok 8 - in-daemon review client: the codeReview.freshness reply keeps inFlight and pendingCodeIndexJobs (ISSUE-1102dc71)
+  ---
+  duration_ms: 0.174208
+  type: 'test'
+  ...
+# Subtest: the in-daemon client treats a method named like an inherited property (toString, constructor) as an unknown method, as directDispatch does
+ok 9 - the in-daemon client treats a method named like an inherited property (toString, constructor) as an unknown method, as directDispatch does
+  ---
+  duration_ms: 0.419834
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 503.05725

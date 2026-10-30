@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: maintenance metadata is protected and partial adoption blocks legacy writers
+ok 1 - maintenance metadata is protected and partial adoption blocks legacy writers
+  ---
+  duration_ms: 75.371333
+  type: 'test'
+  ...
+# Subtest: exclusive owner lease rejects live or unknown owners and reclaims only dead or reused identities
+ok 2 - exclusive owner lease rejects live or unknown owners and reclaims only dead or reused identities
+  ---
+  duration_ms: 141.739292
+  type: 'test'
+  ...
+# Subtest: target filesystem denies legacy subprocess writes and isolates detached descriptors
+ok 3 - target filesystem denies legacy subprocess writes and isolates detached descriptors
+  ---
+  duration_ms: 211.55575
+  type: 'test'
+  ...
+# Subtest: release evidence remains disabled until the completed build supplies verified gates
+ok 4 - release evidence remains disabled until the completed build supplies verified gates
+  ---
+  duration_ms: 123.976583
+  type: 'test'
+  ...
+# Subtest: signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys
+ok 5 - signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys
+  ---
+  duration_ms: 178.101292
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 942.68925

@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row
+ok 1 - REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row
+  ---
+  duration_ms: 1.477916
+  type: 'test'
+  ...
+# Subtest: the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap
+ok 2 - the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap
+  ---
+  duration_ms: 0.681792
+  type: 'test'
+  ...
+# Subtest: every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap
+ok 3 - every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap
+  ---
+  duration_ms: 1.331542
+  type: 'test'
+  ...
+# Subtest: verifyClaim sends stallMs 90 s and timeoutMs 600 s
+ok 4 - verifyClaim sends stallMs 90 s and timeoutMs 600 s
+  ---
+  duration_ms: 0.2025
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 363.621417

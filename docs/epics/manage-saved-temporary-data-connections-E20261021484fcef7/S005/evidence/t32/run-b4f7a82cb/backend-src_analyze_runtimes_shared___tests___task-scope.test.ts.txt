@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)
+ok 1 - a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)
+  ---
+  duration_ms: 4.310709
+  type: 'test'
+  ...
+# Subtest: a kind added to a row of a stand-in table is accepted
+ok 2 - a kind added to a row of a stand-in table is accepted
+  ---
+  duration_ms: 0.245833
+  type: 'test'
+  ...
+# Subtest: a module, a file, a symbol and a connection scope resolve to the registered repo and the area
+ok 3 - a module, a file, a symbol and a connection scope resolve to the registered repo and the area
+  ---
+  duration_ms: 0.386333
+  type: 'test'
+  ...
+# Subtest: a scope in no registered repo is not indexed for code and docs and resolves for infra and data
+ok 4 - a scope in no registered repo is not indexed for code and docs and resolves for infra and data
+  ---
+  duration_ms: 0.860667
+  type: 'test'
+  ...
+# Subtest: an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)
+ok 5 - an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)
+  ---
+  duration_ms: 1.363042
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 455.835667

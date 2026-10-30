@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none
+ok 1 - renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none
+  ---
+  duration_ms: 0.891459
+  type: 'test'
+  ...
+# Subtest: renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global
+ok 2 - renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global
+  ---
+  duration_ms: 0.562625
+  type: 'test'
+  ...
+# Subtest: renderRepoConfig: an unregistered selected repo falls back to picker-only
+ok 3 - renderRepoConfig: an unregistered selected repo falls back to picker-only
+  ---
+  duration_ms: 0.080667
+  type: 'test'
+  ...
+# Subtest: renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates
+ok 4 - renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates
+  ---
+  duration_ms: 0.482083
+  type: 'test'
+  ...
+# Subtest: createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)
+ok 5 - createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)
+  ---
+  duration_ms: 3.973083
+  type: 'test'
+  ...
+# Subtest: createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent
+ok 6 - createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent
+  ---
+  duration_ms: 8.060708
+  type: 'test'
+  ...
+# Subtest: createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws
+ok 7 - createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws
+  ---
+  duration_ms: 3.15375
+  type: 'test'
+  ...
+# Subtest: source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)
+ok 8 - source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)
+  ---
+  duration_ms: 0.3645
+  type: 'test'
+  ...
+# Subtest: source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed
+ok 9 - source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed
+  ---
+  duration_ms: 0.349292
+  type: 'test'
+  ...
+# Subtest: repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart
+ok 10 - repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart
+  ---
+  duration_ms: 5.988625
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 205.613708

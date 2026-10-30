@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: mock round-trip: each mock's <style> equals renderTerminalStyle(terminalTheme) byte-for-byte
+ok 1 - mock round-trip: each mock's <style> equals renderTerminalStyle(terminalTheme) byte-for-byte
+  ---
+  duration_ms: 2.872209
+  type: 'test'
+  ...
+# Subtest: mock files are up to date with the generator (regenerating produces no diff)
+ok 2 - mock files are up to date with the generator (regenerating produces no diff)
+  ---
+  duration_ms: 0.530291
+  type: 'test'
+  ...
+# Subtest: mock coverage: exactly five surfaces, each referencing its surfaceClass root class
+ok 3 - mock coverage: exactly five surfaces, each referencing its surfaceClass root class
+  ---
+  duration_ms: 0.301667
+  type: 'test'
+  ...
+# Subtest: VS-Code-webview-only: mock files reference no remote origin / asWebviewUri (ac2)
+ok 4 - VS-Code-webview-only: mock files reference no remote origin / asWebviewUri (ac2)
+  ---
+  duration_ms: 0.23
+  type: 'test'
+  ...
+# Subtest: anti-chat-bubble: mock markup uses the terminal vocabulary and no bubble constructs (ac1)
+ok 5 - anti-chat-bubble: mock markup uses the terminal vocabulary and no bubble constructs (ac1)
+  ---
+  duration_ms: 0.263
+  type: 'test'
+  ...
+# Subtest: design-tokens.ts is vscode-free (source scan)
+ok 6 - design-tokens.ts is vscode-free (source scan)
+  ---
+  duration_ms: 0.109625
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 197.553584

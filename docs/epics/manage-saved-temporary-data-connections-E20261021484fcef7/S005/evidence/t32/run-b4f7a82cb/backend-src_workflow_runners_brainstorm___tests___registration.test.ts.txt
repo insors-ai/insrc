@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: t1: StandaloneBrainstormContext accepts a bare focus string
+ok 1 - t1: StandaloneBrainstormContext accepts a bare focus string
+  ---
+  duration_ms: 1.311417
+  type: 'test'
+  ...
+# Subtest: t2: brainstormElicitSchema is a valid, ajv-compilable JSON Schema stub
+ok 2 - t2: brainstormElicitSchema is a valid, ajv-compilable JSON Schema stub
+  ---
+  duration_ms: 19.934125
+  type: 'test'
+  ...
+# Subtest: t3: registerBrainstormRunners is idempotent and resolves the elicit runner
+ok 3 - t3: registerBrainstormRunners is idempotent and resolves the elicit runner
+  ---
+  duration_ms: 0.125125
+  type: 'test'
+  ...
+# Subtest: t3: a duplicate runnerId under workflow brainstorm reproduces executor's duplicate-runner throw
+ok 4 - t3: a duplicate runnerId under workflow brainstorm reproduces executor's duplicate-runner throw
+  ---
+  duration_ms: 0.203583
+  type: 'test'
+  ...
+# Subtest: t3: k10 — the brainstorm runner module never IMPORTS the daemon layer or CALLS the addIdea stub
+ok 5 - t3: k10 — the brainstorm runner module never IMPORTS the daemon layer or CALLS the addIdea stub
+  ---
+  duration_ms: 0.498042
+  type: 'test'
+  ...
+# Subtest: t4: brainstorm is a member of the WORKFLOW_NAMES union
+ok 6 - t4: brainstorm is a member of the WORKFLOW_NAMES union
+  ---
+  duration_ms: 0.048917
+  type: 'test'
+  ...
+# Subtest: t4: prepareDecompose recognizes brainstorm (not "not yet supported") and yields a one-step plan schema
+ok 7 - t4: prepareDecompose recognizes brainstorm (not "not yet supported") and yields a one-step plan schema
+  ---
+  duration_ms: 0.1725
+  type: 'test'
+  ...
+# Subtest: t4: registerWorkflowRunners() wires registerBrainstormRunners beside the existing register*Runners
+ok 8 - t4: registerWorkflowRunners() wires registerBrainstormRunners beside the existing register*Runners
+  ---
+  duration_ms: 0.405084
+  type: 'test'
+  ...
+# Subtest: t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)
+ok 9 - t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)
+  ---
+  duration_ms: 1.133167
+  type: 'test'
+  ...
+# Subtest: t4: the triage route table (classify.ts) is not modified to insert brainstorm (ac5)
+ok 10 - t4: the triage route table (classify.ts) is not modified to insert brainstorm (ac5)
+  ---
+  duration_ms: 0.580667
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 370.874959

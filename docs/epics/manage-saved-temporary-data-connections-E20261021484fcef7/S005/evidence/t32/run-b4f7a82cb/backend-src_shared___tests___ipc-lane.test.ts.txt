@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility
+ok 1 - CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility
+  ---
+  duration_ms: 17.119375
+  type: 'test'
+  ...
+# (node:88065) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane
+ok 2 - CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane
+  ---
+  duration_ms: 1.565167
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth
+ok 3 - CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth
+  ---
+  duration_ms: 1.945875
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely
+ok 4 - CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely
+  ---
+  duration_ms: 4.807042
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests
+ok 5 - CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests
+  ---
+  duration_ms: 64.578667
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners
+ok 6 - CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners
+  ---
+  duration_ms: 140.013125
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 450.121083

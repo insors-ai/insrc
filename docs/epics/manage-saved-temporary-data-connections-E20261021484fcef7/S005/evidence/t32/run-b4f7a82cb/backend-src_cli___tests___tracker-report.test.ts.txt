@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: trackerStatusGlyph maps each of the 5 statuses to a glyph + colour
+ok 1 - trackerStatusGlyph maps each of the 5 statuses to a glyph + colour
+  ---
+  duration_ms: 1.522417
+  type: 'test'
+  ...
+# Subtest: trackerStatusGlyph never returns a blank glyph for any valid status
+ok 2 - trackerStatusGlyph never returns a blank glyph for any valid status
+  ---
+  duration_ms: 0.109
+  type: 'test'
+  ...
+# Subtest: trackerReportSummary says 'all set' when nothing is manual and nothing failed
+ok 3 - trackerReportSummary says 'all set' when nothing is manual and nothing failed
+  ---
+  duration_ms: 0.1235
+  type: 'test'
+  ...
+# Subtest: trackerReportSummary names the manual count when manualRemaining > 0
+ok 4 - trackerReportSummary names the manual count when manualRemaining > 0
+  ---
+  duration_ms: 0.051375
+  type: 'test'
+  ...
+# Subtest: trackerReportSummary singularises one manual step
+ok 5 - trackerReportSummary singularises one manual step
+  ---
+  duration_ms: 0.052417
+  type: 'test'
+  ...
+# Subtest: trackerReportSummary flags failures even when manualRemaining is 0 (not 'all set')
+ok 6 - trackerReportSummary flags failures even when manualRemaining is 0 (not 'all set')
+  ---
+  duration_ms: 0.040666
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 238.376209

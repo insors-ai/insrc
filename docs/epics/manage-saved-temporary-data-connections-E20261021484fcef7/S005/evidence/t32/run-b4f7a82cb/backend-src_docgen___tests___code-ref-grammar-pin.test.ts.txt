@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: src/docgen/__tests__/code-ref-grammar-pin.test.ts: the page script's reference grammar equals the chat page's CREF_EXT and CREF_CORE except that it requires a directory part
+ok 1 - src/docgen/__tests__/code-ref-grammar-pin.test.ts: the page script's reference grammar equals the chat page's CREF_EXT and CREF_CORE except that it requires a directory part
+  ---
+  duration_ms: 1.971291
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 433.044541

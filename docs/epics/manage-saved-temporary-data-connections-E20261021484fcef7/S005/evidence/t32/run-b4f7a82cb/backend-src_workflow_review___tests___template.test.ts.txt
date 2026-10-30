@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: T1 each template has an id, a threshold and its check items
+ok 1 - T1 each template has an id, a threshold and its check items
+  ---
+  duration_ms: 0.747541
+  type: 'test'
+  ...
+# Subtest: T1 only an HLD or an LLD is a design stage
+ok 2 - T1 only an HLD or an LLD is a design stage
+  ---
+  duration_ms: 0.077875
+  type: 'test'
+  ...
+# Subtest: T2 intent and complexity come from the artifact store
+ok 3 - T2 intent and complexity come from the artifact store
+  ---
+  duration_ms: 5.69325
+  type: 'test'
+  ...
+# Subtest: T15 with no setting present the defaults are used
+ok 4 - T15 with no setting present the defaults are used
+  ---
+  duration_ms: 0.706375
+  type: 'test'
+  ...
+# Subtest: T15 a changed setting changes the threshold or the limit used
+ok 5 - T15 a changed setting changes the threshold or the limit used
+  ---
+  duration_ms: 0.39725
+  type: 'test'
+  ...
+# Subtest: T15 a value that is not a positive whole number falls back to its default
+ok 6 - T15 a value that is not a positive whole number falls back to its default
+  ---
+  duration_ms: 0.363792
+  type: 'test'
+  ...
+# Subtest: T15 a limit above 30 minutes is reduced to 30; the hard cap cannot be raised
+ok 7 - T15 a limit above 30 minutes is reduced to 30; the hard cap cannot be raised
+  ---
+  duration_ms: 0.412708
+  type: 'test'
+  ...
+# Subtest: T15 the settings are declared in the config catalog with the same defaults
+ok 8 - T15 the settings are declared in the config catalog with the same defaults
+  ---
+  duration_ms: 0.103834
+  type: 'test'
+  ...
+# Subtest: the prompt gives instructions, then the checklist, then the design last
+ok 9 - the prompt gives instructions, then the checklist, then the design last
+  ---
+  duration_ms: 0.319833
+  type: 'test'
+  ...
+# Subtest: T3 a complete answer is accepted and becomes findings
+ok 10 - T3 a complete answer is accepted and becomes findings
+  ---
+  duration_ms: 0.532708
+  type: 'test'
+  ...
+# Subtest: T3 `not applicable` with a reason counts as answered and is not a finding
+ok 11 - T3 `not applicable` with a reason counts as answered and is not a finding
+  ---
+  duration_ms: 0.141542
+  type: 'test'
+  ...
+# Subtest: T3 an unanswered item is rejected
+ok 12 - T3 an unanswered item is rejected
+  ---
+  duration_ms: 0.067708
+  type: 'test'
+  ...
+# Subtest: T3 an item with neither a premise nor a reason is rejected
+ok 13 - T3 an item with neither a premise nor a reason is rejected
+  ---
+  duration_ms: 0.054375
+  type: 'test'
+  ...
+# Subtest: T3 more premises than the threshold is rejected; exactly the threshold is accepted
+ok 14 - T3 more premises than the threshold is rejected; exactly the threshold is accepted
+  ---
+  duration_ms: 0.102708
+  type: 'test'
+  ...
+# Subtest: T3 an invalid outcome is rejected
+ok 15 - T3 an invalid outcome is rejected
+  ---
+  duration_ms: 0.055542
+  type: 'test'
+  ...
+# Subtest: T3 a premise that does not hold must name the file it rests on
+ok 16 - T3 a premise that does not hold must name the file it rests on
+  ---
+  duration_ms: 0.066458
+  type: 'test'
+  ...
+# Subtest: T3 an unverified premise must say what was tried
+ok 17 - T3 an unverified premise must say what was tried
+  ---
+  duration_ms: 0.038542
+  type: 'test'
+  ...
+# Subtest: T3 an unknown or repeated item, and a missing items array, are rejected
+ok 18 - T3 an unknown or repeated item, and a missing items array, are rejected
+  ---
+  duration_ms: 0.066709
+  type: 'test'
+  ...
+# Subtest: T3 every error in an answer is reported, not just the first
+ok 19 - T3 every error in an answer is reported, not just the first
+  ---
+  duration_ms: 0.037792
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 218.413709

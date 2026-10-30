@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: search request contract: each guarded search request accepts its existing params and answers
+ok 1 - search request contract: each guarded search request accepts its existing params and answers
+  ---
+  duration_ms: 3255.262917
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3903.558083

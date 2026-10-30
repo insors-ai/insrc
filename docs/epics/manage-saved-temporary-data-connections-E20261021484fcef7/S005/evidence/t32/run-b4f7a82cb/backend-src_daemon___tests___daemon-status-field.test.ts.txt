@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: t2: the status object includes installedCommit populated from the reader
+ok 1 - t2: the status object includes installedCommit populated from the reader
+  ---
+  duration_ms: 0.724584
+  type: 'test'
+  ...
+# Subtest: t2: a reader returning '' yields installedCommit:'' with the rest of the status intact (never throws)
+ok 2 - t2: a reader returning '' yields installedCommit:'' with the rest of the status intact (never throws)
+  ---
+  duration_ms: 0.135333
+  type: 'test'
+  ...
+# Subtest: t2: sc1 (daemon.update/updateOutcome) surface is untouched by the status change
+ok 3 - t2: sc1 (daemon.update/updateOutcome) surface is untouched by the status change
+  ---
+  duration_ms: 40.525834
+  type: 'test'
+  ...
+# Subtest: t2: end-to-end — readInstalledCommit() with the default git exec returns this repo's real HEAD sha
+ok 4 - t2: end-to-end — readInstalledCommit() with the default git exec returns this repo's real HEAD sha
+  ---
+  duration_ms: 9.792
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 369.508458

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: effectiveJudges keeps functional-coverage only for a subject with FRs
+ok 1 - effectiveJudges keeps functional-coverage only for a subject with FRs
+  ---
+  duration_ms: 1.37025
+  type: 'test'
+  ...
+# Subtest: runCodeReview: an FR subject runs five dimensions and a functional-coverage HIGH folds to block
+ok 2 - runCodeReview: an FR subject runs five dimensions and a functional-coverage HIGH folds to block
+  ---
+  duration_ms: 1.798375
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a no-FR subject runs exactly the four base dimensions (absent-safe)
+ok 3 - runCodeReview: a no-FR subject runs exactly the four base dimensions (absent-safe)
+  ---
+  duration_ms: 0.343541
+  type: 'test'
+  ...
+# Subtest: DEFAULT_DEPS carries the functional-coverage slot (conditional at run time)
+ok 4 - DEFAULT_DEPS carries the functional-coverage slot (conditional at run time)
+  ---
+  duration_ms: 0.197583
+  type: 'test'
+  ...
+# Subtest: expectedDimensions appends functional-coverage only with FRs; schema enum + arity follow
+ok 5 - expectedDimensions appends functional-coverage only with FRs; schema enum + arity follow
+  ---
+  duration_ms: 0.224625
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 376.429292

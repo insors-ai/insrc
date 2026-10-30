@@ -1,0 +1,114 @@
+TAP version 13
+# Subtest: messaging-client-shapes helper — stable contract
+    # Subtest: exposes a per-language shape table for all six parser languages
+    ok 1 - exposes a per-language shape table for all six parser languages
+      ---
+      duration_ms: 0.579166
+      type: 'test'
+      ...
+    # Subtest: matchMessagingClient resolves method shapes with direction + topicArg (positional and object-field)
+    ok 2 - matchMessagingClient resolves method shapes with direction + topicArg (positional and object-field)
+      ---
+      duration_ms: 0.86075
+      type: 'test'
+      ...
+    # Subtest: matchMessagingClient DROPS the generic positional verbs that collide with non-messaging APIs
+    ok 3 - matchMessagingClient DROPS the generic positional verbs that collide with non-messaging APIs
+      ---
+      duration_ms: 0.054375
+      type: 'test'
+      ...
+    # Subtest: matchMessagingClient rejects unknown callees / languages
+    ok 4 - matchMessagingClient rejects unknown callees / languages
+      ---
+      duration_ms: 0.047458
+      type: 'test'
+      ...
+    # Subtest: fileImportsMessagingLibrary gates every language (no messaging import => false)
+    ok 5 - fileImportsMessagingLibrary gates every language (no messaging import => false)
+      ---
+      duration_ms: 0.133458
+      type: 'test'
+      ...
+    # Subtest: emitMessaging pushes one PUBLISHES_TO/SUBSCRIBES_TO per direction, and skips an empty topic
+    ok 6 - emitMessaging pushes one PUBLISHES_TO/SUBSCRIBES_TO per direction, and skips an empty topic
+      ---
+      duration_ms: 0.204166
+      type: 'test'
+      ...
+    1..6
+ok 1 - messaging-client-shapes helper — stable contract
+  ---
+  duration_ms: 2.358708
+  type: 'suite'
+  ...
+# Subtest: TypeScript/JS messaging recognizer
+    # Subtest: kafkajs object-field send/subscribe emit PUBLISHES_TO / SUBSCRIBES_TO to the topic
+    ok 1 - kafkajs object-field send/subscribe emit PUBLISHES_TO / SUBSCRIBES_TO to the topic
+      ---
+      duration_ms: 4.160584
+      type: 'test'
+      ...
+    # Subtest: AWS SNS/SQS object-field publish/sendMessage/receiveMessage extract the arn/url field
+    ok 2 - AWS SNS/SQS object-field publish/sendMessage/receiveMessage extract the arn/url field
+      ---
+      duration_ms: 0.832542
+      type: 'test'
+      ...
+    # Subtest: PRECISION: a positional redis/nats publish(channel) is a documented recall gap (no object literal => no emit)
+    ok 3 - PRECISION: a positional redis/nats publish(channel) is a documented recall gap (no object literal => no emit)
+      ---
+      duration_ms: 0.849417
+      type: 'test'
+      ...
+    # Subtest: PRECISION: an RxJS observable.subscribe() in a file with NO messaging import emits nothing
+    ok 4 - PRECISION: an RxJS observable.subscribe() in a file with NO messaging import emits nothing
+      ---
+      duration_ms: 0.565459
+      type: 'test'
+      ...
+    # Subtest: PRECISION: RxJS obs.subscribe(cb) even in a MESSAGING-imported file emits nothing (no object literal)
+    ok 5 - PRECISION: RxJS obs.subscribe(cb) even in a MESSAGING-imported file emits nothing (no object literal)
+      ---
+      duration_ms: 0.325875
+      type: 'test'
+      ...
+    # Subtest: PRECISION: Express res.send(string) in a redis-session file emits nothing
+    ok 6 - PRECISION: Express res.send(string) in a redis-session file emits nothing
+      ---
+      duration_ms: 0.241
+      type: 'test'
+      ...
+    # Subtest: PRECISION: AWS SDK v3 client.send(new PublishCommand({...})) emits nothing (command is not an object literal)
+    ok 7 - PRECISION: AWS SDK v3 client.send(new PublishCommand({...})) emits nothing (command is not an object literal)
+      ---
+      duration_ms: 0.272292
+      type: 'test'
+      ...
+    # Subtest: PRECISION: a bare send()/publish() local call (not a receiver.verb) emits nothing even in a messaging file
+    ok 8 - PRECISION: a bare send()/publish() local call (not a receiver.verb) emits nothing even in a messaging file
+      ---
+      duration_ms: 1.616667
+      type: 'test'
+      ...
+    # Subtest: an object arg WITHOUT the topic field yields no PUBLISHES_TO (no empty-to node)
+    ok 9 - an object arg WITHOUT the topic field yields no PUBLISHES_TO (no empty-to node)
+      ---
+      duration_ms: 0.390042
+      type: 'test'
+      ...
+    1..9
+ok 2 - TypeScript/JS messaging recognizer
+  ---
+  duration_ms: 9.618459
+  type: 'suite'
+  ...
+1..2
+# tests 15
+# suites 2
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 219.088792

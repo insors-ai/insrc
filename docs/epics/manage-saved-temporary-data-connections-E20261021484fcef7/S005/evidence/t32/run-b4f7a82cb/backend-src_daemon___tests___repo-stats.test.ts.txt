@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket
+ok 1 - buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket
+  ---
+  duration_ms: 2.463333
+  type: 'test'
+  ...
+# Subtest: buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind
+ok 2 - buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind
+  ---
+  duration_ms: 0.35425
+  type: 'test'
+  ...
+# Subtest: buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored
+ok 3 - buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored
+  ---
+  duration_ms: 0.551666
+  type: 'test'
+  ...
+# Subtest: buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present)
+ok 4 - buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present)
+  ---
+  duration_ms: 0.583416
+  type: 'test'
+  ...
+# Subtest: buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor
+ok 5 - buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor
+  ---
+  duration_ms: 0.556292
+  type: 'test'
+  ...
+# Subtest: buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo
+ok 6 - buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo
+  ---
+  duration_ms: 0.310375
+  type: 'test'
+  ...
+# Subtest: collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size
+ok 7 - collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size
+  ---
+  duration_ms: 147.024833
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 448.162375

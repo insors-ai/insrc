@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)
+ok 1 - judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)
+  ---
+  duration_ms: 23.890583
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: serializes the approvedPlan promised tests into the trailing payload (ac1)
+ok 2 - buildCoveragePrompt: serializes the approvedPlan promised tests into the trailing payload (ac1)
+  ---
+  duration_ms: 0.232333
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (ac2)
+ok 3 - judgeCoverage: a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (ac2)
+  ---
+  duration_ms: 0.575875
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised finding (ac2)
+ok 4 - judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised finding (ac2)
+  ---
+  duration_ms: 0.868459
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: a present-but-failing/unverified test (observation) is distinct from a wholly-missing test (breach) (ac3)
+ok 5 - judgeCoverage: a present-but-failing/unverified test (observation) is distinct from a wholly-missing test (breach) (ac3)
+  ---
+  duration_ms: 0.547625
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: charge distinguishes present-failing from no-test and forbids an unsupported pass-state (ac3)
+ok 6 - buildCoveragePrompt: charge distinguishes present-failing from no-test and forbids an unsupported pass-state (ac3)
+  ---
+  duration_ms: 0.149375
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: a finding whose location file is outside changedFiles is dropped (ac4)
+ok 7 - judgeCoverage: a finding whose location file is outside changedFiles is dropped (ac4)
+  ---
+  duration_ms: 0.713542
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: charge instructs excluding pre-existing gaps in touched-but-unchanged neighbours (ac4)
+ok 8 - buildCoveragePrompt: charge instructs excluding pre-existing gaps in touched-but-unchanged neighbours (ac4)
+  ---
+  duration_ms: 0.088709
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: issues exactly ONE completeStructured call, no other provider method (k3/k4)
+ok 9 - judgeCoverage: issues exactly ONE completeStructured call, no other provider method (k3/k4)
+  ---
+  duration_ms: 0.466791
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 10 - judgeCoverage: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+  ---
+  duration_ms: 1.287459
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: empty grounding + no promised tests yields a valid empty result (edge)
+ok 11 - judgeCoverage: empty grounding + no promised tests yields a valid empty result (edge)
+  ---
+  duration_ms: 0.62475
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: all-covered => empty findings, no manufactured finding (edge)
+ok 12 - judgeCoverage: all-covered => empty findings, no manufactured finding (edge)
+  ---
+  duration_ms: 0.687292
+  type: 'test'
+  ...
+# Subtest: judgeCoverage: runs and returns a valid result with subject.buildRecord===null
+ok 13 - judgeCoverage: runs and returns a valid result with subject.buildRecord===null
+  ---
+  duration_ms: 0.419375
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: a null test record degrades the pass-state to unverified in the prompt
+ok 14 - buildCoveragePrompt: a null test record degrades the pass-state to unverified in the prompt
+  ---
+  duration_ms: 0.064583
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: plan present keeps the promised-tests section + the missing-promised-test HIGH rule
+ok 15 - buildCoveragePrompt: plan present keeps the promised-tests section + the missing-promised-test HIGH rule
+  ---
+  duration_ms: 0.065166
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: plan null emits an empty promised-tests list + softened testsReaching-only framing (no throw)
+ok 16 - buildCoveragePrompt: plan null emits an empty promised-tests list + softened testsReaching-only framing (no throw)
+  ---
+  duration_ms: 0.075917
+  type: 'test'
+  ...
+# Subtest: COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional
+ok 17 - COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional
+  ---
+  duration_ms: 0.083125
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: symbols, then promised tests, then the output-shape reminder are TRAILING (in order)
+ok 18 - buildCoveragePrompt: symbols, then promised tests, then the output-shape reminder are TRAILING (in order)
+  ---
+  duration_ms: 0.065958
+  type: 'test'
+  ...
+# Subtest: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'
+ok 19 - the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'
+  ---
+  duration_ms: 2.010958
+  type: 'test'
+  ...
+# Subtest: buildCoveragePrompt: a testsReaching entry is joined to its test FILE in the test record, never to a title by its caller name (ISSUE-1102dc71)
+ok 20 - buildCoveragePrompt: a testsReaching entry is joined to its test FILE in the test record, never to a title by its caller name (ISSUE-1102dc71)
+  ---
+  duration_ms: 0.128917
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 327.103792

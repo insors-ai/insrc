@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: upsertResponseSegmentVec + queryResponseSegmentVec round-trip
+ok 1 - upsertResponseSegmentVec + queryResponseSegmentVec round-trip
+  ---
+  duration_ms: 82.475459
+  type: 'test'
+  ...
+# Subtest: queryResponseSegmentVec scopes hits to a single session
+ok 2 - queryResponseSegmentVec scopes hits to a single session
+  ---
+  duration_ms: 54.010583
+  type: 'test'
+  ...
+# Subtest: queryResponseSegmentVec respects the k limit
+ok 3 - queryResponseSegmentVec respects the k limit
+  ---
+  duration_ms: 38.594125
+  type: 'test'
+  ...
+# Subtest: queryResponseSegmentVec returns [] for empty query vector or empty sessionId
+ok 4 - queryResponseSegmentVec returns [] for empty query vector or empty sessionId
+  ---
+  duration_ms: 33.655333
+  type: 'test'
+  ...
+# Subtest: upsert is idempotent on the same id (mergeInsert overwrite)
+ok 5 - upsert is idempotent on the same id (mergeInsert overwrite)
+  ---
+  duration_ms: 64.049125
+  type: 'test'
+  ...
+# Subtest: deleteResponseSegmentsForSession removes all rows for a session and returns the count
+ok 6 - deleteResponseSegmentsForSession removes all rows for a session and returns the count
+  ---
+  duration_ms: 61.432458
+  type: 'test'
+  ...
+# Subtest: deleteResponseSegmentsForSession on an empty session returns 0
+ok 7 - deleteResponseSegmentsForSession on an empty session returns 0
+  ---
+  duration_ms: 17.236791
+  type: 'test'
+  ...
+# Subtest: deleteResponseSegmentsForTurn removes only the rows for that turn
+ok 8 - deleteResponseSegmentsForTurn removes only the rows for that turn
+  ---
+  duration_ms: 56.268625
+  type: 'test'
+  ...
+# Subtest: seed row never appears in query results
+ok 9 - seed row never appears in query results
+  ---
+  duration_ms: 2.530042
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 818.876958

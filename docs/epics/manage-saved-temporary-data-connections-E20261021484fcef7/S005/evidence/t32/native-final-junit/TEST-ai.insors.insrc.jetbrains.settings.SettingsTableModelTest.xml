@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.SettingsTableModelTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="setValueAt on the Value column routes to editField and a boolean round-trips as a Boolean()" classname="ai.insors.insrc.jetbrains.settings.SettingsTableModelTest" time="0.002"/>
+  <testcase name="controlKind reflects the option type per row()" classname="ai.insors.insrc.jetbrains.settings.SettingsTableModelTest" time="0.0"/>
+  <testcase name="resetToDefault maps to markResetToDefault so a set field clears on apply()" classname="ai.insors.insrc.jetbrains.settings.SettingsTableModelTest" time="0.0"/>
+  <testcase name="getValueAt reads path, controlValue, and the default via renderScalar()" classname="ai.insors.insrc.jetbrains.settings.SettingsTableModelTest" time="0.0"/>
+  <testcase name="three columns Key Value Default and only Value is editable()" classname="ai.insors.insrc.jetbrains.settings.SettingsTableModelTest" time="0.0"/>
+  <testcase name="setValueAt on a non-Value column is ignored()" classname="ai.insors.insrc.jetbrains.settings.SettingsTableModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

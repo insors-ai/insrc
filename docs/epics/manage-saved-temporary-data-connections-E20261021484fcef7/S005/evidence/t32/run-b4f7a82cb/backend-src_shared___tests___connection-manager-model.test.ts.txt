@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S5-STATE-TS: authenticated temporary revocation erases rows and refuses a pending old read
+ok 1 - CM-S5-STATE-TS: authenticated temporary revocation erases rows and refuses a pending old read
+  ---
+  duration_ms: 1.613208
+  type: 'test'
+  ...
+# Subtest: CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal
+ok 2 - CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal
+  ---
+  duration_ms: 5.799375
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 207.024084

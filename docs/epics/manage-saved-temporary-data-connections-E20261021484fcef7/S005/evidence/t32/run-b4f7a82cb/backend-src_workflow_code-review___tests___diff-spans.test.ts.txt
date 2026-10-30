@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: DIFF-SPANS: large text is a deterministic lossless ordered partition; small and binary rows keep legacy identity
+ok 1 - DIFF-SPANS: large text is a deterministic lossless ordered partition; small and binary rows keep legacy identity
+  ---
+  duration_ms: 11.118458
+  type: 'test'
+  ...
+# Subtest: DIFF-COORDS: continuation spans preserve UTF16 diff/source coordinates and renamed-file ownership
+ok 2 - DIFF-COORDS: continuation spans preserve UTF16 diff/source coordinates and renamed-file ownership
+  ---
+  duration_ms: 0.523
+  type: 'test'
+  ...
+# Subtest: DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered spans/coordinates are rejected
+ok 3 - DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered spans/coordinates are rejected
+  ---
+  duration_ms: 7.589
+  type: 'test'
+  ...
+# Subtest: DIFF-SPANS: staging rows retain original file order and unique changed paths
+ok 4 - DIFF-SPANS: staging rows retain original file order and unique changed paths
+  ---
+  duration_ms: 1.462125
+  type: 'test'
+  ...
+# Subtest: DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid
+ok 5 - DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid
+  ---
+  duration_ms: 0.194833
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 296.618708

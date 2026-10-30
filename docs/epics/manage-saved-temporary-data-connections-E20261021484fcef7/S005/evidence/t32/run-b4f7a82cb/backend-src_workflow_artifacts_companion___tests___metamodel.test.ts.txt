@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: validateLinkmlMetamodelAsset: present + parseable → returns silently
+ok 1 - validateLinkmlMetamodelAsset: present + parseable → returns silently
+  ---
+  duration_ms: 5.560042
+  type: 'test'
+  ...
+# Subtest: validateLinkmlMetamodelAsset: missing schema → throws with one copy-assets Fix: line (t2)
+ok 2 - validateLinkmlMetamodelAsset: missing schema → throws with one copy-assets Fix: line (t2)
+  ---
+  duration_ms: 1.024458
+  type: 'test'
+  ...
+# Subtest: validateLinkmlMetamodelAsset: empty file → reason "file is empty"
+ok 3 - validateLinkmlMetamodelAsset: empty file → reason "file is empty"
+  ---
+  duration_ms: 1.509125
+  type: 'test'
+  ...
+# Subtest: validateLinkmlMetamodelAsset: malformed JSON → unparseable schema
+ok 4 - validateLinkmlMetamodelAsset: malformed JSON → unparseable schema
+  ---
+  duration_ms: 1.379667
+  type: 'test'
+  ...
+# Subtest: the shipped LinkML metamodel schema validates + records the LinkML version
+ok 5 - the shipped LinkML metamodel schema validates + records the LinkML version
+  ---
+  duration_ms: 1.097084
+  type: 'test'
+  ...
+# Subtest: the shipped schema accepts a known-good ErDefinition and rejects a malformed one via ajv (ac4)
+ok 6 - the shipped schema accepts a known-good ErDefinition and rejects a malformed one via ajv (ac4)
+  ---
+  duration_ms: 13.649583
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 287.72475

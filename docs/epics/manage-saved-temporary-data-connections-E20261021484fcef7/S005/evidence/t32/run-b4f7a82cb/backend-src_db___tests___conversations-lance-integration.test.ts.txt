@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: saveTurn persists vector to Lance
+ok 1 - saveTurn persists vector to Lance
+  ---
+  duration_ms: 516.554875
+  type: 'test'
+  ...
+# Subtest: saveTurn with empty vector skips Lance write
+ok 2 - saveTurn with empty vector skips Lance write
+  ---
+  duration_ms: 586.648
+  type: 'test'
+  ...
+# Subtest: addCompactedTurns persists batch to Lance with type=merged tier=cold defaults
+ok 3 - addCompactedTurns persists batch to Lance with type=merged tier=cold defaults
+  ---
+  duration_ms: 736.544959
+  type: 'test'
+  ...
+# Subtest: saveSession with vector persists summary to Lance
+ok 4 - saveSession with vector persists summary to Lance
+  ---
+  duration_ms: 715.336125
+  type: 'test'
+  ...
+# Subtest: closeSession persists summary embedding to Lance
+ok 5 - closeSession persists summary embedding to Lance
+  ---
+  duration_ms: 789.912333
+  type: 'test'
+  ...
+# Subtest: searchTurnsByRepo returns hydrated TurnRecord objects
+ok 6 - searchTurnsByRepo returns hydrated TurnRecord objects
+  ---
+  duration_ms: 261.392917
+  type: 'test'
+  ...
+# Subtest: searchTurnsByRepo returns [] on dim mismatch (legacy silent-error contract)
+ok 7 - searchTurnsByRepo returns [] on dim mismatch (legacy silent-error contract)
+  ---
+  duration_ms: 254.17125
+  type: 'test'
+  ...
+# Subtest: seedFromPrior returns sessions sorted by recency
+ok 8 - seedFromPrior returns sessions sorted by recency
+  ---
+  duration_ms: 273.19925
+  type: 'test'
+  ...
+# Subtest: seedFromPrior returns [] on dim mismatch
+ok 9 - seedFromPrior returns [] on dim mismatch
+  ---
+  duration_ms: 236.711917
+  type: 'test'
+  ...
+# Subtest: deleteSession cascades Lance session + turn rows
+ok 10 - deleteSession cascades Lance session + turn rows
+  ---
+  duration_ms: 331.2295
+  type: 'test'
+  ...
+# Subtest: deleteTurnsForSession cascades only the turn Lance rows
+ok 11 - deleteTurnsForSession cascades only the turn Lance rows
+  ---
+  duration_ms: 288.097333
+  type: 'test'
+  ...
+# Subtest: deleteSessionsForRepo cascades all Lance rows for that repo
+ok 12 - deleteSessionsForRepo cascades all Lance rows for that repo
+  ---
+  duration_ms: 356.175125
+  type: 'test'
+  ...
+# Subtest: deleteTurnsForRepo cascades Lance turn rows but leaves sessions
+ok 13 - deleteTurnsForRepo cascades Lance turn rows but leaves sessions
+  ---
+  duration_ms: 312.4695
+  type: 'test'
+  ...
+# Subtest: deleteTurnsByIds cascades the corresponding Lance rows
+ok 14 - deleteTurnsByIds cascades the corresponding Lance rows
+  ---
+  duration_ms: 289.199584
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6272.727625

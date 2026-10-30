@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: isTrackerPushRefs accepts valid push refs
+ok 1 - isTrackerPushRefs accepts valid push refs
+  ---
+  duration_ms: 0.525375
+  type: 'test'
+  ...
+# Subtest: isTrackerPushRefs rejects missing epicRef
+ok 2 - isTrackerPushRefs rejects missing epicRef
+  ---
+  duration_ms: 0.049667
+  type: 'test'
+  ...
+# Subtest: isTrackerSyncRefs accepts valid sync refs
+ok 3 - isTrackerSyncRefs accepts valid sync refs
+  ---
+  duration_ms: 0.089542
+  type: 'test'
+  ...
+# Subtest: isTrackerPostRefs accepts valid post refs
+ok 4 - isTrackerPostRefs accepts valid post refs
+  ---
+  duration_ms: 0.040833
+  type: 'test'
+  ...
+# Subtest: isTrackerChecklistResult validates shape
+ok 5 - isTrackerChecklistResult validates shape
+  ---
+  duration_ms: 0.045959
+  type: 'test'
+  ...
+# Subtest: renderTrackerMarkdown for push shows refs + labels + all-passed checklist
+ok 6 - renderTrackerMarkdown for push shows refs + labels + all-passed checklist
+  ---
+  duration_ms: 0.167541
+  type: 'test'
+  ...
+# Subtest: renderTrackerMarkdown for sync shows per-story status
+ok 7 - renderTrackerMarkdown for sync shows per-story status
+  ---
+  duration_ms: 0.099708
+  type: 'test'
+  ...
+# Subtest: renderTrackerMarkdown surfaces failed checklist items with notes
+ok 8 - renderTrackerMarkdown surfaces failed checklist items with notes
+  ---
+  duration_ms: 0.053
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180.86025

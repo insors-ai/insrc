@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: driver.live: skipped (set INSRC_LIVE_TESTS=1 to run)
+ok 1 - driver.live: skipped (set INSRC_LIVE_TESTS=1 to run) # SKIP
+  ---
+  duration_ms: 0.693292
+  type: 'test'
+  ...
+# Subtest: runShaper produces a schema-valid bundle from a minimal prompt
+ok 2 - runShaper produces a schema-valid bundle from a minimal prompt # SKIP
+  ---
+  duration_ms: 0.113583
+  type: 'test'
+  ...
+# Subtest: runShaper hits the run-bundle cache on identical re-invocation
+ok 3 - runShaper hits the run-bundle cache on identical re-invocation # SKIP
+  ---
+  duration_ms: 0.046292
+  type: 'test'
+  ...
+# Subtest: runShaper records meta.toolCalls > 0 when the prompt drives a tool call
+ok 4 - runShaper records meta.toolCalls > 0 when the prompt drives a tool call # SKIP
+  ---
+  duration_ms: 0.038417
+  type: 'test'
+  ...
+# Subtest: runShaper handles a forced all-empty bundle
+ok 5 - runShaper handles a forced all-empty bundle # SKIP
+  ---
+  duration_ms: 0.035167
+  type: 'test'
+  ...
+# Subtest: runShaper throws ShaperLlmUnavailableError when the provider host is bad
+ok 6 - runShaper throws ShaperLlmUnavailableError when the provider host is bad # SKIP
+  ---
+  duration_ms: 0.028917
+  type: 'test'
+  ...
+# Subtest: runShaper throws ShaperToolLoopExhausted when prompt forces tool calls past the cap
+ok 7 - runShaper throws ShaperToolLoopExhausted when prompt forces tool calls past the cap # SKIP
+  ---
+  duration_ms: 0.104666
+  type: 'test'
+  ...
+# Subtest: cleanup: remove the per-test tmp directory
+ok 8 - cleanup: remove the per-test tmp directory # SKIP
+  ---
+  duration_ms: 0.036333
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 8
+# todo 0
+# duration_ms 646.925708

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: freeform.probe rejects empty params
+ok 1 - freeform.probe rejects empty params
+  ---
+  duration_ms: 0.865792
+  type: 'test'
+  ...
+# Subtest: freeform.probe rejects whitespace-only purpose
+ok 2 - freeform.probe rejects whitespace-only purpose
+  ---
+  duration_ms: 0.0875
+  type: 'test'
+  ...
+# Subtest: freeform.probe rejects missing shaperId
+ok 3 - freeform.probe rejects missing shaperId
+  ---
+  duration_ms: 0.136333
+  type: 'test'
+  ...
+# Subtest: freeform.probe rejects unknown shaperId
+ok 4 - freeform.probe rejects unknown shaperId
+  ---
+  duration_ms: 0.074625
+  type: 'test'
+  ...
+# Subtest: freeform.probe rejects non-string shaperId
+ok 5 - freeform.probe rejects non-string shaperId
+  ---
+  duration_ms: 0.1335
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 590.907375

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs
+ok 1 - forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs
+  ---
+  duration_ms: 25.047
+  type: 'test'
+  ...
+# Subtest: forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged
+ok 2 - forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged
+  ---
+  duration_ms: 37.025375
+  type: 'test'
+  ...
+# Subtest: MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame
+ok 3 - MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame
+  ---
+  duration_ms: 14.182292
+  type: 'test'
+  ...
+# Subtest: MCP tool surface: the thirteen tools keep their names, descriptions and input schemas
+ok 4 - MCP tool surface: the thirteen tools keep their names, descriptions and input schemas
+  ---
+  duration_ms: 21.490417
+  type: 'test'
+  ...
+# Subtest: the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen
+ok 5 - the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen
+  ---
+  duration_ms: 0.617
+  type: 'test'
+  ...
+# Subtest: forwarder: a multi-byte character split across two socket chunks arrives whole
+ok 6 - forwarder: a multi-byte character split across two socket chunks arrives whole
+  ---
+  duration_ms: 33.678208
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 915.2925

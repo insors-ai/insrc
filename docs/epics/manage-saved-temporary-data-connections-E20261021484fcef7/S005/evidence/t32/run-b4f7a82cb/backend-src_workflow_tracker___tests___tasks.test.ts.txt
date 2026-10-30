@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels)
+ok 1 - queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels)
+  ---
+  duration_ms: 2.068667
+  type: 'test'
+  ...
+# Subtest: queryTasks: surfaces hasNextPage/endCursor + total (no silent truncation)
+ok 2 - queryTasks: surfaces hasNextPage/endCursor + total (no silent truncation)
+  ---
+  duration_ms: 0.133375
+  type: 'test'
+  ...
+# Subtest: queryTasks: first page omits `after`; a cursor page passes it
+ok 3 - queryTasks: first page omits `after`; a cursor page passes it
+  ---
+  duration_ms: 0.222292
+  type: 'test'
+  ...
+# Subtest: queryTasks: default state is open; repo + is:issue always scoped
+ok 4 - queryTasks: default state is open; repo + is:issue always scoped
+  ---
+  duration_ms: 0.16425
+  type: 'test'
+  ...
+# Subtest: queryTasks: state:all emits no state qualifier
+ok 5 - queryTasks: state:all emits no state qualifier
+  ---
+  duration_ms: 0.301375
+  type: 'test'
+  ...
+# Subtest: queryTasks: owner → assignee:, epic/story → label qualifiers
+ok 6 - queryTasks: owner → assignee:, epic/story → label qualifiers
+  ---
+  duration_ms: 0.115875
+  type: 'test'
+  ...
+# Subtest: queryTasks: bare story id is normalised to a story: label
+ok 7 - queryTasks: bare story id is normalised to a story: label
+  ---
+  duration_ms: 0.114375
+  type: 'test'
+  ...
+# Subtest: ghCurrentLogin: reads gh api user .login
+ok 8 - ghCurrentLogin: reads gh api user .login
+  ---
+  duration_ms: 0.081833
+  type: 'test'
+  ...
+# Subtest: ghCurrentLogin still throws the returned-no-login Error for empty output
+ok 9 - ghCurrentLogin still throws the returned-no-login Error for empty output
+  ---
+  duration_ms: 0.37025
+  type: 'test'
+  ...
+# Subtest: listMyOpenTasks: resolves the current login → assignee:<me> is:open
+ok 10 - listMyOpenTasks: resolves the current login → assignee:<me> is:open
+  ---
+  duration_ms: 0.310792
+  type: 'test'
+  ...
+# Subtest: listMyOpenTasks propagates a classified or empty login failure before any search call
+ok 11 - listMyOpenTasks propagates a classified or empty login failure before any search call
+  ---
+  duration_ms: 0.406125
+  type: 'test'
+  ...
+# Subtest: queryTasks keeps its current execution path and results
+ok 12 - queryTasks keeps its current execution path and results
+  ---
+  duration_ms: 0.196416
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 200.12125

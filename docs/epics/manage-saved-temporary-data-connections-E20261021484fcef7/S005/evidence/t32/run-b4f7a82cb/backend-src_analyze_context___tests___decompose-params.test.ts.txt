@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: the codex strict copy of DECOMPOSE_SCHEMA contains no object without properties and no object whose additionalProperties is not false
+ok 1 - the codex strict copy of DECOMPOSE_SCHEMA contains no object without properties and no object whose additionalProperties is not false
+  ---
+  duration_ms: 3.4825
+  type: 'test'
+  ...
+# Subtest: decompose and finalizeDecompose remove null params, so the executor receives today's params
+ok 2 - decompose and finalizeDecompose remove null params, so the executor receives today's params
+  ---
+  duration_ms: 27.037
+  type: 'test'
+  ...
+# Subtest: an exploration carrying a key its type does not declare fails with DecomposerSchemaUnrecoverable at decompose and at finalizeDecompose
+ok 3 - an exploration carrying a key its type does not declare fails with DecomposerSchemaUnrecoverable at decompose and at finalizeDecompose
+  ---
+  duration_ms: 0.548042
+  type: 'test'
+  ...
+# Subtest: empty params, a placeholder string where an array is expected, and a plan omitting optional params validate against DECOMPOSE_SCHEMA
+ok 4 - empty params, a placeholder string where an array is expected, and a plan omitting optional params validate against DECOMPOSE_SCHEMA
+  ---
+  duration_ms: 1.344083
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 470.208208

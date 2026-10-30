@@ -12,8 +12,12 @@
         "src/shared/__tests__/connection-manager-model.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-model.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-DIRTY",
@@ -26,8 +30,13 @@
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTest.kt",
         "vscode-plugin/src/connections/__tests__/host.test.ts"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-draft.test.ts",
+        "vscode-plugin/src/connections/__tests__/host.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-FORM",
@@ -39,8 +48,12 @@
         "src/shared/__tests__/connection-manager-draft.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-draft.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-TEST",
@@ -52,8 +65,12 @@
         "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/draft-test.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-WIRE",
@@ -65,8 +82,12 @@
         "src/shared/__tests__/connection-manager-wire.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-wire.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-SYNC",
@@ -77,8 +98,12 @@
       "consumerTestFiles": [
         "src/shared/__tests__/connection-manager-parity.test.ts"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-parity.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-COMPAT",
@@ -92,8 +117,14 @@
         "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
         "src/shared/__tests__/connection-manager-compatibility.test.ts"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final sweep t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-wire.test.ts",
+        "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+        "src/shared/__tests__/connection-manager-compatibility.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-TRANSPORT",
@@ -105,8 +136,12 @@
         "src/shared/__tests__/ipc-client.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLaneTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/ipc-client.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-OWNER",
@@ -118,8 +153,12 @@
         "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/session-owner.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-WINDOW",
@@ -131,8 +170,12 @@
         "vscode-plugin/src/connections/__tests__/isolation.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/isolation.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-OUTCOME",
@@ -144,8 +187,12 @@
         "vscode-plugin/src/connections/__tests__/mutation.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/mutation.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-REMOVE",
@@ -157,8 +204,12 @@
         "vscode-plugin/src/connections/__tests__/removal.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/removal.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-ENTRY",
@@ -170,8 +221,12 @@
         "vscode-plugin/src/connections/__tests__/entry.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final frozen sweep t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final frozen sweep t32",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/entry.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-UI",
@@ -183,8 +238,12 @@
         "vscode-plugin/src/connections/__tests__/host.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt"
       ],
-      "evidenceStatus": "Pending user manual acceptance after installation; historical failed UI attempt retained.",
-      "remainingTask": "t26/t27"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "t26/t27",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/host.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-LIFETIME",
@@ -196,8 +255,12 @@
         "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt"
       ],
-      "evidenceStatus": "Pending user manual acceptance after installation; historical failed UI attempt retained.",
-      "remainingTask": "t28"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "t28",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/session-owner.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-SOURCE",
@@ -209,8 +272,12 @@
         "vscode-plugin/src/connections/__tests__/removal.test.ts",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt"
       ],
-      "evidenceStatus": "Pending user manual acceptance after installation; historical failed UI attempt retained.",
-      "remainingTask": "t29; SQL Server pending by user instruction"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "t29; SQL Server pending by user instruction",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/removal.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-PRIVACY",
@@ -224,8 +291,14 @@
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt",
         "src/shared/__tests__/connection-manager-privacy.test.ts"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "final sweep t32; live privacy manual acceptance pending"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "final sweep t32; live privacy manual acceptance pending",
+      "automatedFilesExecuted": [
+        "vscode-plugin/src/connections/__tests__/host.test.ts",
+        "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+        "src/shared/__tests__/connection-manager-privacy.test.ts"
+      ],
+      "automatedVerification": "passed"
     },
     {
       "subject": "CM-S5-BUILD",
@@ -236,8 +309,12 @@
       "consumerTestFiles": [
         "src/shared/__tests__/connection-manager-parity.test.ts"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "t31/t32"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "t31/t32",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-parity.test.ts"
+      ],
+      "automatedVerification": "failed"
     },
     {
       "subject": "CM-S5-SWEEP",
@@ -246,12 +323,14 @@
       "fixtureEvidenceOnly": true,
       "requiredEvidence": "native/live",
       "consumerTestFiles": [],
-      "evidenceStatus": "Per-task actual consumer test logs retained; frozen full sweep intentionally pending t32.",
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
       "remainingTask": "t32",
       "existingEvidence": [
         "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/TESTS.md",
         "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t22/attempt1.tap"
-      ]
+      ],
+      "automatedFilesExecuted": [],
+      "automatedVerification": "failed"
     },
     {
       "subject": "CM-S5-GATE",
@@ -264,8 +343,14 @@
         "src/daemon/db/__tests__/connection-management-rpc.test.ts",
         "src/daemon/db/__tests__/connection-session-rpc.test.ts"
       ],
-      "evidenceStatus": "consumer tests exist; final acceptance pending",
-      "remainingTask": "t30"
+      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "remainingTask": "t30",
+      "automatedFilesExecuted": [
+        "src/shared/__tests__/connection-manager-corpus.test.ts",
+        "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+        "src/daemon/db/__tests__/connection-session-rpc.test.ts"
+      ],
+      "automatedVerification": "passed"
     }
   ],
   "limits": "Coverage pointers do not convert fixtures or headless tests into live acceptance. Original 12 conceptual transcripts remain reference examples; the 16 production-model scenarios and 18 wire decisions are compared directly across actual consumers.",
@@ -279,5 +364,13 @@
       "t28",
       "t29"
     ]
-  }
+  },
+  "frozenSourceCommit": "b4f7a82cb44550ef55e522966c2237417bd15307",
+  "frozenSourceDrift": [],
+  "postSweepRevalidation": {
+    "native": "468 tests:467 passed,1 skipped; full test/build passed",
+    "legacyTypeScript": "27 focused tests passed; only tests changed",
+    "pluginVerifier": "pending-offline-IDE-unavailable"
+  },
+  "packagesReadyForManualInstallation": true
 }

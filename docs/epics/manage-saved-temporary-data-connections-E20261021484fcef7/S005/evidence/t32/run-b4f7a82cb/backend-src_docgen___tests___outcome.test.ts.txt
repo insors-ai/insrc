@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: map transforms the ok payload
+ok 1 - map transforms the ok payload
+  ---
+  duration_ms: 1.595084
+  type: 'test'
+  ...
+# Subtest: map passes non-ok variants through UNCHANGED (field-for-field)
+ok 2 - map passes non-ok variants through UNCHANGED (field-for-field)
+  ---
+  duration_ms: 0.204875
+  type: 'test'
+  ...
+# Subtest: flatMap chains the ok arm through a fallible stage
+ok 3 - flatMap chains the ok arm through a fallible stage
+  ---
+  duration_ms: 0.171125
+  type: 'test'
+  ...
+# Subtest: flatMap short-circuits a non-ok input WITHOUT invoking f
+ok 4 - flatMap short-circuits a non-ok input WITHOUT invoking f
+  ---
+  duration_ms: 0.183334
+  type: 'test'
+  ...
+# Subtest: flatMap surfaces a non-ok result produced by f
+ok 5 - flatMap surfaces a non-ok result produced by f
+  ---
+  duration_ms: 0.103167
+  type: 'test'
+  ...
+# Subtest: a reason raised deep survives two flatMap hops verbatim (k11)
+ok 6 - a reason raised deep survives two flatMap hops verbatim (k11)
+  ---
+  duration_ms: 0.062083
+  type: 'test'
+  ...
+# Subtest: isOk narrows the ok arm
+ok 7 - isOk narrows the ok arm
+  ---
+  duration_ms: 0.136292
+  type: 'test'
+  ...
+# Subtest: constructors build the exact variant shapes
+ok 8 - constructors build the exact variant shapes
+  ---
+  duration_ms: 0.120125
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 338.089416

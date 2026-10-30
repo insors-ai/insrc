@@ -1,0 +1,114 @@
+TAP version 13
+# (node:73132) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: tiny-multi-lang-repo has index.ts, compute.py, user.go, README.md
+ok 1 - tiny-multi-lang-repo has index.ts, compute.py, user.go, README.md
+  ---
+  duration_ms: 0.625709
+  type: 'test'
+  ...
+# Subtest: tiny-multi-lang-repo total LOC is in the documented ballpark
+ok 2 - tiny-multi-lang-repo total LOC is in the documented ballpark
+  ---
+  duration_ms: 0.25975
+  type: 'test'
+  ...
+# Subtest: tiny-multi-lang-repo TS exports the documented surface
+ok 3 - tiny-multi-lang-repo TS exports the documented surface
+  ---
+  duration_ms: 0.113584
+  type: 'test'
+  ...
+# Subtest: tiny-multi-lang-repo Python module has helper + 2 public functions
+ok 4 - tiny-multi-lang-repo Python module has helper + 2 public functions
+  ---
+  duration_ms: 0.117917
+  type: 'test'
+  ...
+# Subtest: tiny-multi-lang-repo Go exports the documented type + methods
+ok 5 - tiny-multi-lang-repo Go exports the documented type + methods
+  ---
+  duration_ms: 0.074958
+  type: 'test'
+  ...
+# Subtest: seeded.sqlite is openable + has the 3 documented tables
+ok 6 - seeded.sqlite is openable + has the 3 documented tables
+  ---
+  duration_ms: 0.951041
+  type: 'test'
+  ...
+# Subtest: seeded.sqlite has the documented FK from orders.user_id to users.id
+ok 7 - seeded.sqlite has the documented FK from orders.user_id to users.id
+  ---
+  duration_ms: 0.335375
+  type: 'test'
+  ...
+# Subtest: seeded.sqlite has FK on order_items.order_id to orders.id
+ok 8 - seeded.sqlite has FK on order_items.order_id to orders.id
+  ---
+  duration_ms: 0.273084
+  type: 'test'
+  ...
+# Subtest: seeded.sqlite row counts: users=3, orders=3, order_items=4
+ok 9 - seeded.sqlite row counts: users=3, orders=3, order_items=4
+  ---
+  duration_ms: 0.489541
+  type: 'test'
+  ...
+# Subtest: seeded-csv-dir: 5 consistent CSVs + 1 divergent under hive partitions
+ok 10 - seeded-csv-dir: 5 consistent CSVs + 1 divergent under hive partitions
+  ---
+  duration_ms: 0.450958
+  type: 'test'
+  ...
+# Subtest: seeded-manifests/k8s: 3 Deployments + 2 Services + 1 ConfigMap
+ok 11 - seeded-manifests/k8s: 3 Deployments + 2 Services + 1 ConfigMap
+  ---
+  duration_ms: 0.7385
+  type: 'test'
+  ...
+# Subtest: seeded-manifests/tf: main.tf + variables.tf with aws resources
+ok 12 - seeded-manifests/tf: main.tf + variables.tf with aws resources
+  ---
+  duration_ms: 0.136792
+  type: 'test'
+  ...
+# Subtest: seeded-manifests/.github/workflows: one CI workflow
+ok 13 - seeded-manifests/.github/workflows: one CI workflow
+  ---
+  duration_ms: 0.104917
+  type: 'test'
+  ...
+# Subtest: empty-repo: has .git marker + README, no source
+ok 14 - empty-repo: has .git marker + README, no source
+  ---
+  duration_ms: 0.056167
+  type: 'test'
+  ...
+# Subtest: unindexed-repo: has .git marker + README + a TS source file
+ok 15 - unindexed-repo: has .git marker + README + a TS source file
+  ---
+  duration_ms: 0.435791
+  type: 'test'
+  ...
+# Subtest: teardownFixtures removes the entire root tree (smoke)
+ok 16 - teardownFixtures removes the entire root tree (smoke)
+  ---
+  duration_ms: 14.033375
+  type: 'test'
+  ...
+# Subtest: setupFixturesAt is idempotent on a populated root
+ok 17 - setupFixturesAt is idempotent on a populated root
+  ---
+  duration_ms: 18.408542
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 253.641083

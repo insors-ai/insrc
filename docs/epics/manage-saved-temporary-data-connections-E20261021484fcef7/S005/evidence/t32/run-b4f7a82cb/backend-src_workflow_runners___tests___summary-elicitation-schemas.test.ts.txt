@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: define epic.frame: omitting summary still validates (absent-safe)
+ok 1 - define epic.frame: omitting summary still validates (absent-safe)
+  ---
+  duration_ms: 20.297083
+  type: 'test'
+  ...
+# Subtest: define epic.frame: a { prose, audience } summary validates
+ok 2 - define epic.frame: a { prose, audience } summary validates
+  ---
+  duration_ms: 0.240125
+  type: 'test'
+  ...
+# Subtest: define epic.frame: a summary without prose is REJECTED
+ok 3 - define epic.frame: a summary without prose is REJECTED
+  ---
+  duration_ms: 0.091125
+  type: 'test'
+  ...
+# Subtest: define epic.frame: an out-of-set audience is REJECTED
+ok 4 - define epic.frame: an out-of-set audience is REJECTED
+  ---
+  duration_ms: 0.058291
+  type: 'test'
+  ...
+# Subtest: define epic.frame: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 5 - define epic.frame: an unknown key inside summary is REJECTED (additionalProperties:false)
+  ---
+  duration_ms: 0.054042
+  type: 'test'
+  ...
+# Subtest: design.epic framework.write: omitting summary still validates (absent-safe)
+ok 6 - design.epic framework.write: omitting summary still validates (absent-safe)
+  ---
+  duration_ms: 6.284
+  type: 'test'
+  ...
+# Subtest: design.epic framework.write: a { prose, audience } summary validates
+ok 7 - design.epic framework.write: a { prose, audience } summary validates
+  ---
+  duration_ms: 0.153084
+  type: 'test'
+  ...
+# Subtest: design.epic framework.write: a summary without prose is REJECTED
+ok 8 - design.epic framework.write: a summary without prose is REJECTED
+  ---
+  duration_ms: 0.057333
+  type: 'test'
+  ...
+# Subtest: design.epic framework.write: an out-of-set audience is REJECTED
+ok 9 - design.epic framework.write: an out-of-set audience is REJECTED
+  ---
+  duration_ms: 0.227417
+  type: 'test'
+  ...
+# Subtest: design.epic framework.write: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 10 - design.epic framework.write: an unknown key inside summary is REJECTED (additionalProperties:false)
+  ---
+  duration_ms: 0.32725
+  type: 'test'
+  ...
+# Subtest: design.story contract.detail: omitting summary still validates (absent-safe)
+ok 11 - design.story contract.detail: omitting summary still validates (absent-safe)
+  ---
+  duration_ms: 9.935
+  type: 'test'
+  ...
+# Subtest: design.story contract.detail: a { prose, audience } summary validates
+ok 12 - design.story contract.detail: a { prose, audience } summary validates
+  ---
+  duration_ms: 0.0615
+  type: 'test'
+  ...
+# Subtest: design.story contract.detail: a summary without prose is REJECTED
+ok 13 - design.story contract.detail: a summary without prose is REJECTED
+  ---
+  duration_ms: 0.045458
+  type: 'test'
+  ...
+# Subtest: design.story contract.detail: an out-of-set audience is REJECTED
+ok 14 - design.story contract.detail: an out-of-set audience is REJECTED
+  ---
+  duration_ms: 0.032
+  type: 'test'
+  ...
+# Subtest: design.story contract.detail: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 15 - design.story contract.detail: an unknown key inside summary is REJECTED (additionalProperties:false)
+  ---
+  duration_ms: 0.027417
+  type: 'test'
+  ...
+# Subtest: plan test-strategy.write: omitting summary still validates (absent-safe)
+ok 16 - plan test-strategy.write: omitting summary still validates (absent-safe)
+  ---
+  duration_ms: 2.848291
+  type: 'test'
+  ...
+# Subtest: plan test-strategy.write: a { prose, audience } summary validates
+ok 17 - plan test-strategy.write: a { prose, audience } summary validates
+  ---
+  duration_ms: 0.078833
+  type: 'test'
+  ...
+# Subtest: plan test-strategy.write: a summary without prose is REJECTED
+ok 18 - plan test-strategy.write: a summary without prose is REJECTED
+  ---
+  duration_ms: 0.048792
+  type: 'test'
+  ...
+# Subtest: plan test-strategy.write: an out-of-set audience is REJECTED
+ok 19 - plan test-strategy.write: an out-of-set audience is REJECTED
+  ---
+  duration_ms: 0.429542
+  type: 'test'
+  ...
+# Subtest: plan test-strategy.write: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 20 - plan test-strategy.write: an unknown key inside summary is REJECTED (additionalProperties:false)
+  ---
+  duration_ms: 0.043334
+  type: 'test'
+  ...
+# Subtest: contract.detail: omitting contextRefs still validates (engine derives the HLD ref)
+ok 21 - contract.detail: omitting contextRefs still validates (engine derives the HLD ref)
+  ---
+  duration_ms: 0.042625
+  type: 'test'
+  ...
+# Subtest: contract.detail: an explicit contextRefs entry validates
+ok 22 - contract.detail: an explicit contextRefs entry validates
+  ---
+  duration_ms: 0.041916
+  type: 'test'
+  ...
+# Subtest: contract.detail: a contextRefs entry missing sectionId is REJECTED
+ok 23 - contract.detail: a contextRefs entry missing sectionId is REJECTED
+  ---
+  duration_ms: 0.902042
+  type: 'test'
+  ...
+# Subtest: defineSynthesizer body schema: admits body.summary
+ok 24 - defineSynthesizer body schema: admits body.summary
+  ---
+  duration_ms: 4.230666
+  type: 'test'
+  ...
+# Subtest: defineSynthesizer body schema: still rejects an unknown body key (additionalProperties:false retained)
+ok 25 - defineSynthesizer body schema: still rejects an unknown body key (additionalProperties:false retained)
+  ---
+  duration_ms: 3.940333
+  type: 'test'
+  ...
+# Subtest: designEpicSynthesizer body schema: admits body.summary
+ok 26 - designEpicSynthesizer body schema: admits body.summary
+  ---
+  duration_ms: 11.239125
+  type: 'test'
+  ...
+# Subtest: designEpicSynthesizer body schema: still rejects an unknown body key (additionalProperties:false retained)
+ok 27 - designEpicSynthesizer body schema: still rejects an unknown body key (additionalProperties:false retained)
+  ---
+  duration_ms: 10.631791
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 389.372542

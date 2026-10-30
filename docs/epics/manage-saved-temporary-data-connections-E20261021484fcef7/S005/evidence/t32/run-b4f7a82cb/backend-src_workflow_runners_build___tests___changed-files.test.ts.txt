@@ -1,0 +1,268 @@
+TAP version 13
+# Subtest: changedFiles: derives the staged changed set from a real git repo (extraction is behaviour-preserving)
+ok 1 - changedFiles: derives the staged changed set from a real git repo (extraction is behaviour-preserving)
+  ---
+  duration_ms: 50.515834
+  type: 'test'
+  ...
+# Subtest: changedFiles: throws NoBuildChangesError on a non-git directory
+ok 2 - changedFiles: throws NoBuildChangesError on a non-git directory
+  ---
+  duration_ms: 9.011709
+  type: 'test'
+  ...
+# Subtest: collectBuildChangeLog: one file-level entry per changed path (segment omitted), stamped author/timestamp
+ok 3 - collectBuildChangeLog: one file-level entry per changed path (segment omitted), stamped author/timestamp
+  ---
+  duration_ms: 0.89725
+  type: 'test'
+  ...
+# Subtest: collectBuildChangeLog: version is threaded onto target when supplied
+ok 4 - collectBuildChangeLog: version is threaded onto target when supplied
+  ---
+  duration_ms: 0.188041
+  type: 'test'
+  ...
+# Subtest: collectBuildChangeLog: an empty changed set → []
+ok 5 - collectBuildChangeLog: an empty changed set → []
+  ---
+  duration_ms: 0.106583
+  type: 'test'
+  ...
+# Subtest: collectBuildChangeLog: a git derivation failure is SWALLOWED → [] (never throws out)
+ok 6 - collectBuildChangeLog: a git derivation failure is SWALLOWED → [] (never throws out)
+  ---
+  duration_ms: 0.11525
+  type: 'test'
+  ...
+# Subtest: t3: collectBuildChangeLog with NO base/exclude forwards `undefined` — the seam sees exactly what it sees today
+ok 7 - t3: collectBuildChangeLog with NO base/exclude forwards `undefined` — the seam sees exactly what it sees today
+  ---
+  duration_ms: 0.167083
+  type: 'test'
+  ...
+# Subtest: t3: a base on the ctx REACHES the seam as opts.base
+ok 8 - t3: a base on the ctx REACHES the seam as opts.base
+  ---
+  duration_ms: 0.061458
+  type: 'test'
+  ...
+# Subtest: t3: an exclude list on the ctx REACHES the seam as opts.exclude
+ok 9 - t3: an exclude list on the ctx REACHES the seam as opts.exclude
+  ---
+  duration_ms: 0.223209
+  type: 'test'
+  ...
+# Subtest: t3: existing TWO-ARGUMENT call sites and ONE-PARAMETER seam stubs still compile and behave identically
+ok 10 - t3: existing TWO-ARGUMENT call sites and ONE-PARAMETER seam stubs still compile and behave identically
+  ---
+  duration_ms: 4.206375
+  type: 'test'
+  ...
+# Subtest: t3: collectBuildChangeLog STILL never throws and STILL logs — a seam that throws yields [] (ac6 regression guard)
+ok 11 - t3: collectBuildChangeLog STILL never throws and STILL logs — a seam that throws yields [] (ac6 regression guard)
+  ---
+  duration_ms: 0.367916
+  type: 'test'
+  ...
+# Subtest: t4: `exclude` is forwarded to the seam, and the COLLECTOR itself still does no filtering (the filter lives in changedFiles)
+ok 12 - t4: `exclude` is forwarded to the seam, and the COLLECTOR itself still does no filtering (the filter lives in changedFiles)
+  ---
+  duration_ms: 0.069083
+  type: 'test'
+  ...
+# Subtest: t3: a CLEAN tree + base derives the COMMITTED range — the base reaches git_diff as `from`
+ok 13 - t3: a CLEAN tree + base derives the COMMITTED range — the base reaches git_diff as `from`
+  ---
+  duration_ms: 182.172458
+  type: 'test'
+  ...
+# Subtest: with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds
+ok 14 - with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds
+  ---
+  duration_ms: 185.627958
+  type: 'test'
+  ...
+# Subtest: t3: an UNRESOLVABLE base on a clean tree throws out of changedFiles (the caller swallows it — ac6 is enforced one level up)
+ok 15 - t3: an UNRESOLVABLE base on a clean tree throws out of changedFiles (the caller swallows it — ac6 is enforced one level up)
+  ---
+  duration_ms: 107.696042
+  type: 'test'
+  ...
+# Subtest: t3: an empty-string base behaves as ABSENT (contract pinned; the guard itself is defence-in-depth)
+ok 16 - t3: an empty-string base behaves as ABSENT (contract pinned; the guard itself is defence-in-depth)
+  ---
+  duration_ms: 110.890042
+  type: 'test'
+  ...
+# Subtest: t4 (WORKING-TREE derivation): the record's own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives
+ok 17 - t4 (WORKING-TREE derivation): the record's own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives
+  ---
+  duration_ms: 142.542625
+  type: 'test'
+  ...
+# Subtest: t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving base..HEAD — asserted separately from the working-tree case
+ok 18 - t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving base..HEAD — asserted separately from the working-tree case
+  ---
+  duration_ms: 187.372458
+  type: 'test'
+  ...
+# Subtest: CR-1: a tree dirty with ONLY the record's own paths still derives the COMMITTED range — the exclusion is applied BEFORE the emptiness gate
+ok 19 - CR-1: a tree dirty with ONLY the record's own paths still derives the COMMITTED range — the exclusion is applied BEFORE the emptiness gate
+  ---
+  duration_ms: 195.105833
+  type: 'test'
+  ...
+# Subtest: CR-1: a tree dirty with unrelated work plus the record's own paths still derives the Story's committed range; the unrelated file is reported, the record's own paths are not
+ok 20 - CR-1: a tree dirty with unrelated work plus the record's own paths still derives the Story's committed range; the unrelated file is reported, the record's own paths are not
+  ---
+  duration_ms: 146.6685
+  type: 'test'
+  ...
+# Subtest: t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones
+ok 21 - t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones
+  ---
+  duration_ms: 115.792125
+  type: 'test'
+  ...
+# Subtest: t4: a Story that changed ONLY artifact files still yields a NON-EMPTY change set (docs-only edge case)
+ok 22 - t4: a Story that changed ONLY artifact files still yields a NON-EMPTY change set (docs-only edge case)
+  ---
+  duration_ms: 125.716875
+  type: 'test'
+  ...
+# Subtest: t4: an exclusion path OUTSIDE the repo is left alone rather than relativised into something that might match
+ok 23 - t4: an exclusion path OUTSIDE the repo is left alone rather than relativised into something that might match
+  ---
+  duration_ms: 119.437875
+  type: 'test'
+  ...
+# Subtest: T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)
+ok 24 - T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)
+  ---
+  duration_ms: 239.066209
+  type: 'test'
+  ...
+# Subtest: T26: the constant is exactly the four globs, and frozen
+ok 25 - T26: the constant is exactly the four globs, and frozen
+  ---
+  duration_ms: 0.122417
+  type: 'test'
+  ...
+# Subtest: T27: the globs give the SAME result when git_diff runs from a subdirectory of the repo
+ok 26 - T27: the globs give the SAME result when git_diff runs from a subdirectory of the repo
+  ---
+  duration_ms: 176.480542
+  type: 'test'
+  ...
+# Subtest: T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is clean under excludeGlobs, so the range is derived
+ok 27 - T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is clean under excludeGlobs, so the range is derived
+  ---
+  duration_ms: 233.354083
+  type: 'test'
+  ...
+# Subtest: T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs
+ok 28 - T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs
+  ---
+  duration_ms: 158.262625
+  type: 'test'
+  ...
+# Subtest: T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today's — no `exclude` key at all
+ok 29 - T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today's — no `exclude` key at all
+  ---
+  duration_ms: 247.779959
+  type: 'test'
+  ...
+# Subtest: T29: WITH excludeGlobs every one of the three diffs carries them
+ok 30 - T29: WITH excludeGlobs every one of the three diffs carries them
+  ---
+  duration_ms: 134.814084
+  type: 'test'
+  ...
+# Subtest: T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers are unaffected
+ok 31 - T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers are unaffected
+  ---
+  duration_ms: 0.153125
+  type: 'test'
+  ...
+# Subtest: a clean tree with a base reports only the Story's own files, not files a merge brought in
+ok 32 - a clean tree with a base reports only the Story's own files, not files a merge brought in
+  ---
+  duration_ms: 307.057167
+  type: 'test'
+  ...
+# Subtest: without a base the derivation is unchanged
+ok 33 - without a base the derivation is unchanged
+  ---
+  duration_ms: 268.82
+  type: 'test'
+  ...
+# Subtest: collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge
+ok 34 - collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge
+  ---
+  duration_ms: 301.177084
+  type: 'test'
+  ...
+# Subtest: a committed ledger file stays out of the range result after a mid-build merge
+ok 35 - a committed ledger file stays out of the range result after a mid-build merge
+  ---
+  duration_ms: 286.950584
+  type: 'test'
+  ...
+# Subtest: an uncommitted edit to a file the Story's commits changed is part of the Story's set
+ok 36 - an uncommitted edit to a file the Story's commits changed is part of the Story's set
+  ---
+  duration_ms: 192.857792
+  type: 'test'
+  ...
+# Subtest: a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike
+ok 37 - a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike
+  ---
+  duration_ms: 290.123292
+  type: 'test'
+  ...
+# Subtest: a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree
+ok 38 - a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree
+  ---
+  duration_ms: 115.959334
+  type: 'test'
+  ...
+# Subtest: a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change
+ok 39 - a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change
+  ---
+  duration_ms: 262.777791
+  type: 'test'
+  ...
+# Subtest: a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set
+ok 40 - a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set
+  ---
+  duration_ms: 189.585958
+  type: 'test'
+  ...
+# Subtest: a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change
+ok 41 - a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change
+  ---
+  duration_ms: 263.017459
+  type: 'test'
+  ...
+# Subtest: rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included
+ok 42 - rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included
+  ---
+  duration_ms: 400.926542
+  type: 'test'
+  ...
+# Subtest: on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits
+ok 43 - on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits
+  ---
+  duration_ms: 305.913125
+  type: 'test'
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6319.703042

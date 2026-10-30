@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: mintFrId emits the doc-level canonical form
+ok 1 - mintFrId emits the doc-level canonical form
+  ---
+  duration_ms: 0.797584
+  type: 'test'
+  ...
+# Subtest: mintFrId emits the per-item canonical form nested under a story
+ok 2 - mintFrId emits the per-item canonical form nested under a story
+  ---
+  duration_ms: 0.10425
+  type: 'test'
+  ...
+# Subtest: mintFrId is byte-stable for identical inputs
+ok 3 - mintFrId is byte-stable for identical inputs
+  ---
+  duration_ms: 0.047583
+  type: 'test'
+  ...
+# Subtest: mintFrId keeps full width for an ordinal >= 1000 (padOrdinal not truncated)
+ok 4 - mintFrId keeps full width for an ordinal >= 1000 (padOrdinal not truncated)
+  ---
+  duration_ms: 0.043416
+  type: 'test'
+  ...
+# Subtest: mintFrId throws via the shared guards on a bad epicHash or invalid date
+ok 5 - mintFrId throws via the shared guards on a bad epicHash or invalid date
+  ---
+  duration_ms: 0.181291
+  type: 'test'
+  ...
+# Subtest: mintFrId throws on a non-positive ordinal
+ok 6 - mintFrId throws on a non-positive ordinal
+  ---
+  duration_ms: 0.047416
+  type: 'test'
+  ...
+# Subtest: parseFrId round-trips every mintFrId output (doc-level and per-item)
+ok 7 - parseFrId round-trips every mintFrId output (doc-level and per-item)
+  ---
+  duration_ms: 0.83025
+  type: 'test'
+  ...
+# Subtest: parseFrId accepts the dash slug form
+ok 8 - parseFrId accepts the dash slug form
+  ---
+  duration_ms: 0.13175
+  type: 'test'
+  ...
+# Subtest: parseFrId returns null on non-FR strings
+ok 9 - parseFrId returns null on non-FR strings
+  ---
+  duration_ms: 0.207584
+  type: 'test'
+  ...
+# Subtest: isFrId is the boolean guard over parseFrId
+ok 10 - isFrId is the boolean guard over parseFrId
+  ---
+  duration_ms: 0.32675
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.726792

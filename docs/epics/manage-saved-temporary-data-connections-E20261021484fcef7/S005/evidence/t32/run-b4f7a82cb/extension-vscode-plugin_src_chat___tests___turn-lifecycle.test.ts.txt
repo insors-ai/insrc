@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: start waits for the session lease, reports waiting, runs, and releases the lease when the process exits
+ok 1 - start waits for the session lease, reports waiting, runs, and releases the lease when the process exits
+  ---
+  duration_ms: 34.964708
+  type: 'test'
+  ...
+# Subtest: a start made while another waits for its lease runs after it instead of dropping it
+ok 2 - a start made while another waits for its lease runs after it instead of dropping it
+  ---
+  duration_ms: 17.785792
+  type: 'test'
+  ...
+# Subtest: a turn being read when another start is made keeps reporting to its end and clears its cursor
+ok 3 - a turn being read when another start is made keeps reporting to its end and clears its cursor
+  ---
+  duration_ms: 17.287334
+  type: 'test'
+  ...
+# Subtest: a lease granted after the turn stopped being current is released
+ok 4 - a lease granted after the turn stopped being current is released
+  ---
+  duration_ms: 11.447917
+  type: 'test'
+  ...
+# Subtest: a lock failure and a missing adapter are reported through onError
+ok 5 - a lock failure and a missing adapter are reported through onError
+  ---
+  duration_ms: 0.538666
+  type: 'test'
+  ...
+# Subtest: a beforeRun failure is reported, the session saved and the lease released
+ok 6 - a beforeRun failure is reported, the session saved and the lease released
+  ---
+  duration_ms: 16.559417
+  type: 'test'
+  ...
+# Subtest: the cursor is saved on spawn, throttled on progress and cleared before onTerminal
+ok 7 - the cursor is saved on spawn, throttled on progress and cleared before onTerminal
+  ---
+  duration_ms: 537.745625
+  type: 'test'
+  ...
+# Subtest: invalidate and a closed panel suppress all sink calls; live names the turn being read
+ok 8 - invalidate and a closed panel suppress all sink calls; live names the turn being read
+  ---
+  duration_ms: 33.632083
+  type: 'test'
+  ...
+# Subtest: a panel closed while a turn is read is told nothing more
+ok 9 - a panel closed while a turn is read is told nothing more
+  ---
+  duration_ms: 5.203
+  type: 'test'
+  ...
+# Subtest: stop cancels the provider turn and stops the live process; idempotent with nothing running
+ok 10 - stop cancels the provider turn and stops the live process; idempotent with nothing running
+  ---
+  duration_ms: 11.046333
+  type: 'test'
+  ...
+# Subtest: stop and detach drop a turn waiting for its lease
+ok 11 - stop and detach drop a turn waiting for its lease
+  ---
+  duration_ms: 138.842125
+  type: 'test'
+  ...
+# Subtest: detach leaves a session-file turn running with its cursor saved and stops a pipe turn
+ok 12 - detach leaves a session-file turn running with its cursor saved and stops a pipe turn
+  ---
+  duration_ms: 29.443416
+  type: 'test'
+  ...
+# Subtest: stop continues past a failing cancel or process stop
+ok 13 - stop continues past a failing cancel or process stop
+  ---
+  duration_ms: 12.195542
+  type: 'test'
+  ...
+# Subtest: follow skips a running turn, a turn already followed and a turn owned by a live host
+ok 14 - follow skips a running turn, a turn already followed and a turn owned by a live host
+  ---
+  duration_ms: 38.431041
+  type: 'test'
+  ...
+# Subtest: follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd
+ok 15 - follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd
+  ---
+  duration_ms: 6.516833
+  type: 'test'
+  ...
+# Subtest: a failing resume keeps the cursor saved
+ok 16 - a failing resume keeps the cursor saved
+  ---
+  duration_ms: 11.631209
+  type: 'test'
+  ...
+# Subtest: stop ends a followed turn's process; detach leaves it running
+ok 17 - stop ends a followed turn's process; detach leaves it running
+  ---
+  duration_ms: 22.11025
+  type: 'test'
+  ...
+# Subtest: a detached session-file turn is resumed by follow
+ok 18 - a detached session-file turn is resumed by follow
+  ---
+  duration_ms: 18.145291
+  type: 'test'
+  ...
+# Subtest: trySaveSession logs a failing save and never throws
+ok 19 - trySaveSession logs a failing save and never throws
+  ---
+  duration_ms: 0.253542
+  type: 'test'
+  ...
+# Subtest: a generator whose cleanup throws when the turn finishes it is not an unhandled rejection
+ok 20 - a generator whose cleanup throws when the turn finishes it is not an unhandled rejection
+  ---
+  duration_ms: 21.575083
+  type: 'test'
+  ...
+# Subtest: a start made while beforeRun runs waits for that turn; a turn stopped while beforeRun runs starts no CLI
+ok 21 - a start made while beforeRun runs waits for that turn; a turn stopped while beforeRun runs starts no CLI
+  ---
+  duration_ms: 50.19475
+  type: 'test'
+  ...
+# Subtest: a turn's end with another start waiting saves its cleared cursor and keeps its native session; Stop drops the waiting start
+ok 22 - a turn's end with another start waiting saves its cleared cursor and keeps its native session; Stop drops the waiting start
+  ---
+  duration_ms: 12.159708
+  type: 'test'
+  ...
+# Subtest: a throwing onTerminal is logged, still finishes the generator and is not a turn error
+ok 23 - a throwing onTerminal is logged, still finishes the generator and is not a turn error
+  ---
+  duration_ms: 11.537417
+  type: 'test'
+  ...
+# Subtest: an aborted follow unwinding late does not drop the next follow's process, so Stop still ends it
+ok 24 - an aborted follow unwinding late does not drop the next follow's process, so Stop still ends it
+  ---
+  duration_ms: 11.849292
+  type: 'test'
+  ...
+# Subtest: a throwing onEvent is reported and the turn's generator is finished
+ok 25 - a throwing onEvent is reported and the turn's generator is finished
+  ---
+  duration_ms: 10.915375
+  type: 'test'
+  ...
+# Subtest: a failing onError report is logged and start never rejects
+ok 26 - a failing onError report is logged and start never rejects
+  ---
+  duration_ms: 0.317583
+  type: 'test'
+  ...
+# Subtest: a failing follow onEvent is logged and the follow still ends the turn
+ok 27 - a failing follow onEvent is logged and the follow still ends the turn
+  ---
+  duration_ms: 6.149042
+  type: 'test'
+  ...
+# Subtest: a turn whose output ends without a done or error event ends as an error
+ok 28 - a turn whose output ends without a done or error event ends as an error
+  ---
+  duration_ms: 29.121917
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a chained turn keeps it true
+ok 29 - turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a chained turn keeps it true
+  ---
+  duration_ms: 156.902292
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called
+ok 30 - turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called
+  ---
+  duration_ms: 86.78525
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: busy is false when a turn's error is reported
+ok 31 - turn lifecycle: busy is false when a turn's error is reported
+  ---
+  duration_ms: 0.550167
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach
+ok 32 - turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach
+  ---
+  duration_ms: 126.921834
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1680.87575

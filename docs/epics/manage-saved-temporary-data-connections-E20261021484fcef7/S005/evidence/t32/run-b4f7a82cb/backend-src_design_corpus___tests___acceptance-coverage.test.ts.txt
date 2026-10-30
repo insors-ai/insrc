@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: ac1 incomplete or stale guidance cannot pass the record to manifest preflight
+ok 1 - ac1 incomplete or stale guidance cannot pass the record to manifest preflight
+  ---
+  duration_ms: 22.858167
+  type: 'test'
+  ...
+# Subtest: ac2 exact evidence preserves complete records and pins independently calculated digest vectors
+ok 2 - ac2 exact evidence preserves complete records and pins independently calculated digest vectors
+  ---
+  duration_ms: 4.564041
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 542.284375

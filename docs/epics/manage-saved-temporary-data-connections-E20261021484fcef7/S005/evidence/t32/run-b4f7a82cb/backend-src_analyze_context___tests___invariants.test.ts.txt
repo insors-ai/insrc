@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: ensureNonEmptyClosure: pristine registry -> skipped silently, returns undefined
+ok 1 - ensureNonEmptyClosure: pristine registry -> skipped silently, returns undefined
+  ---
+  duration_ms: 130.60325
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: connection-kind scope is skipped silently
+ok 2 - ensureNonEmptyClosure: connection-kind scope is skipped silently
+  ---
+  duration_ms: 129.2645
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: registered repo with entities -> returns repo path
+ok 3 - ensureNonEmptyClosure: registered repo with entities -> returns repo path
+  ---
+  duration_ms: 111.446208
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: scope nested under registered repo with entities -> match
+ok 4 - ensureNonEmptyClosure: scope nested under registered repo with entities -> match
+  ---
+  duration_ms: 194.3825
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: registered repo with ZERO entities -> ScopeNotIndexedError
+ok 5 - ensureNonEmptyClosure: registered repo with ZERO entities -> ScopeNotIndexedError
+  ---
+  duration_ms: 198.818125
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: scope outside every registered repo -> ScopeNotIndexedError
+ok 6 - ensureNonEmptyClosure: scope outside every registered repo -> ScopeNotIndexedError
+  ---
+  duration_ms: 239.526416
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: longest-prefix repo wins when nested
+ok 7 - ensureNonEmptyClosure: longest-prefix repo wins when nested
+  ---
+  duration_ms: 274.16225
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: false-prefix is rejected (requires / boundary)
+ok 8 - ensureNonEmptyClosure: false-prefix is rejected (requires / boundary)
+  ---
+  duration_ms: 244.436084
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: given readers it reads the registry and the entities through them, not the real store
+ok 9 - ensureNonEmptyClosure: given readers it reads the registry and the entities through them, not the real store
+  ---
+  duration_ms: 250.361334
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo
+ok 10 - ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo
+  ---
+  duration_ms: 4.3585
+  type: 'test'
+  ...
+# Subtest: ScopeNotIndexedError carries scopePath + registeredAs on the instance
+ok 11 - ScopeNotIndexedError carries scopePath + registeredAs on the instance
+  ---
+  duration_ms: 3.092042
+  type: 'test'
+  ...
+# Subtest: ScopeNotIndexedError handles undefined registeredAs
+ok 12 - ScopeNotIndexedError handles undefined registeredAs
+  ---
+  duration_ms: 3.681958
+  type: 'test'
+  ...
+# Subtest: symbol exception: a symbol in a registered repo with ZERO entities -> ScopeNotIndexedError, not "no entity of that name"
+ok 13 - symbol exception: a symbol in a registered repo with ZERO entities -> ScopeNotIndexedError, not "no entity of that name"
+  ---
+  duration_ms: 226.758542
+  type: 'test'
+  ...
+# Subtest: symbol exception: a symbol outside every registered repo, and with a pristine registry -> ScopeNotIndexedError
+ok 14 - symbol exception: a symbol outside every registered repo, and with a pristine registry -> ScopeNotIndexedError
+  ---
+  duration_ms: 218.964083
+  type: 'test'
+  ...
+# Subtest: symbol exception: in an indexed repo a symbol resolves to its stored entity; an unknown name is unresolved
+ok 15 - symbol exception: in an indexed repo a symbol resolves to its stored entity; an unknown name is unresolved
+  ---
+  duration_ms: 226.890208
+  type: 'test'
+  ...
+# Subtest: ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message
+ok 16 - ensureNonEmptyClosure: status 'indexing' (with and without entities) throws RepoIndexingError with the running record's figures; 'indexing' with no record says the figures are not known; 'error' with lastRun.outcome 'failed' throws with lastRun's figures and error; 'pending' and 'ready' with no entities keep ScopeNotIndexedError and its message
+  ---
+  duration_ms: 143.12425
+  type: 'test'
+  ...
+# Subtest: ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg
+ok 17 - ensureRepoQueryable: a docs / data / infra / generic run on a repository under index is refused; an 'error' row without lastRun is refused with figures unknown and its errorMsg
+  ---
+  duration_ms: 120.388667
+  type: 'test'
+  ...
+# Subtest: ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)
+ok 18 - ensureRepoQueryable: a registry read that throws, and a pristine registry, skip the check (no refusal, no raw error)
+  ---
+  duration_ms: 122.080209
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3181.338459

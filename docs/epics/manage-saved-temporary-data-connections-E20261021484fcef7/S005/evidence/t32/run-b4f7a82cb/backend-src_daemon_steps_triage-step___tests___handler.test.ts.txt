@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: start: returns emit_classification with a schema, prompt, and state token
+ok 1 - start: returns emit_classification with a schema, prompt, and state token
+  ---
+  duration_ms: 1.307292
+  type: 'test'
+  ...
+# Subtest: start: errors without a focus
+ok 2 - start: errors without a focus
+  ---
+  duration_ms: 0.327209
+  type: 'test'
+  ...
+# Subtest: feature → standalone design.story with plan; nextCall pre-fills standalone params
+ok 3 - feature → standalone design.story with plan; nextCall pre-fills standalone params
+  ---
+  duration_ms: 18.382459
+  type: 'test'
+  ...
+# Subtest: small → standalone design.story, no plan
+ok 4 - small → standalone design.story, no plan
+  ---
+  duration_ms: 0.296125
+  type: 'test'
+  ...
+# Subtest: trivial → build (no LLD), routed to insrc_build_step standalone
+ok 5 - trivial → build (no LLD), routed to insrc_build_step standalone
+  ---
+  duration_ms: 0.261125
+  type: 'test'
+  ...
+# Subtest: epic → define, full chain, no standalone params
+ok 6 - epic → define, full chain, no standalone params
+  ---
+  duration_ms: 0.209375
+  type: 'test'
+  ...
+# Subtest: bugfix (small) → issue → build; nextCall enters the issue workflow with the magnitude
+ok 7 - bugfix (small) → issue → build; nextCall enters the issue workflow with the magnitude
+  ---
+  duration_ms: 0.380583
+  type: 'test'
+  ...
+# Subtest: bugfix (sized) → issue → design → plan → build
+ok 8 - bugfix (sized) → issue → design → plan → build
+  ---
+  duration_ms: 0.161416
+  type: 'test'
+  ...
+# Subtest: classify: rejects a bugfix emitted WITHOUT a magnitude (no unhandled throw)
+ok 9 - classify: rejects a bugfix emitted WITHOUT a magnitude (no unhandled throw)
+  ---
+  duration_ms: 0.390125
+  type: 'test'
+  ...
+# Subtest: classify: rejects an unknown sizeClass emitted by the controller
+ok 10 - classify: rejects an unknown sizeClass emitted by the controller
+  ---
+  duration_ms: 0.358209
+  type: 'test'
+  ...
+# Subtest: classify: rejects a tampered/undecodable state token
+ok 11 - classify: rejects a tampered/undecodable state token
+  ---
+  duration_ms: 0.078375
+  type: 'test'
+  ...
+# Subtest: c00559b7 — start with an approved specHash forwards it into the design.story nextCall
+ok 12 - c00559b7 — start with an approved specHash forwards it into the design.story nextCall
+  ---
+  duration_ms: 3.986875
+  type: 'test'
+  ...
+# Subtest: c00559b7 — an epic routed with an approved specHash forwards it into the define call
+ok 13 - c00559b7 — an epic routed with an approved specHash forwards it into the define call
+  ---
+  duration_ms: 3.476208
+  type: 'test'
+  ...
+# Subtest: c00559b7 — start with an UNAPPROVED spec errors and hands back no state
+ok 14 - c00559b7 — start with an UNAPPROVED spec errors and hands back no state
+  ---
+  duration_ms: 1.311
+  type: 'test'
+  ...
+# Subtest: c00559b7 — start with a MISSING spec errors and hands back no state
+ok 15 - c00559b7 — start with a MISSING spec errors and hands back no state
+  ---
+  duration_ms: 1.075667
+  type: 'test'
+  ...
+# Subtest: c00559b7 — without a specHash the nextCall is unchanged (no specHash key anywhere)
+ok 16 - c00559b7 — without a specHash the nextCall is unchanged (no specHash key anywhere)
+  ---
+  duration_ms: 0.348625
+  type: 'test'
+  ...
+# Subtest: c00559b7 — the triage state token round-trips specHash, and omits it when absent
+ok 17 - c00559b7 — the triage state token round-trips specHash, and omits it when absent
+  ---
+  duration_ms: 0.280709
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 418.27175

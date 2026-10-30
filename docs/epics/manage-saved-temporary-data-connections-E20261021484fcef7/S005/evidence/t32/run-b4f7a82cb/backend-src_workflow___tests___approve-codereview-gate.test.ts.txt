@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: ac1: enforce on + CR block + no override → skipped, no approvedAt, codeReview[] blocked
+ok 1 - ac1: enforce on + CR block + no override → skipped, no approvedAt, codeReview[] blocked
+  ---
+  duration_ms: 51.389375
+  type: 'test'
+  ...
+# Subtest: ac2: enforce on + CR block + overrideReview → approved, codeReview[] overridden + overrideReason
+ok 2 - ac2: enforce on + CR block + overrideReview → approved, codeReview[] overridden + overrideReason
+  ---
+  duration_ms: 45.933875
+  type: 'test'
+  ...
+# Subtest: ac3: CR warn → approved, codeReview[] warn + counts
+ok 3 - ac3: CR warn → approved, codeReview[] warn + counts
+  ---
+  duration_ms: 45.935166
+  type: 'test'
+  ...
+# Subtest: ac3: CR pass → approved, codeReview[] pass + counts
+ok 4 - ac3: CR pass → approved, codeReview[] pass + counts
+  ---
+  duration_ms: 44.915083
+  type: 'test'
+  ...
+# Subtest: ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[] no-review
+ok 5 - ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[] no-review
+  ---
+  duration_ms: 1.845667
+  type: 'test'
+  ...
+# Subtest: ac5: DEF/HLD artifact (no storyId) → gate never runs, codeReview empty, approved
+ok 6 - ac5: DEF/HLD artifact (no storyId) → gate never runs, codeReview empty, approved
+  ---
+  duration_ms: 2.145875
+  type: 'test'
+  ...
+# Subtest: ac5: enforce OFF + CR block → approved (demoted advisory), codeReview[] warn/advisory
+ok 7 - ac5: enforce OFF + CR block → approved (demoted advisory), codeReview[] warn/advisory
+  ---
+  duration_ms: 50.954125
+  type: 'test'
+  ...
+# Subtest: batch: story A CR block + story B CR pass (enforce on) → A skipped, B approved
+ok 8 - batch: story A CR block + story B CR pass (enforce on) → A skipped, B approved
+  ---
+  duration_ms: 5.233667
+  type: 'test'
+  ...
+# Subtest: ac6: clean meta.review + CR block → withheld ONLY by the code-review gate
+ok 9 - ac6: clean meta.review + CR block → withheld ONLY by the code-review gate
+  ---
+  duration_ms: 48.411291
+  type: 'test'
+  ...
+# Subtest: ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved
+ok 10 - ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved
+  ---
+  duration_ms: 2.531541
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 535.881416

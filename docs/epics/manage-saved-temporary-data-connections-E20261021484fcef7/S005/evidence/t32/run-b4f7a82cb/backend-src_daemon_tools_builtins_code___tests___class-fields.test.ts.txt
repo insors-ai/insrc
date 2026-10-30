@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: parseModifiers: returns leading mod tokens, stops at type
+ok 1 - parseModifiers: returns leading mod tokens, stops at type
+  ---
+  duration_ms: 152.594708
+  type: 'test'
+  ...
+# Subtest: parseModifiers: skips leading annotations
+ok 2 - parseModifiers: skips leading annotations
+  ---
+  duration_ms: 140.292625
+  type: 'test'
+  ...
+# Subtest: parseTypeFromSignature: java shape extracts type
+ok 3 - parseTypeFromSignature: java shape extracts type
+  ---
+  duration_ms: 136.479416
+  type: 'test'
+  ...
+# Subtest: parseTypeFromSignature: scala shape uses colon
+ok 4 - parseTypeFromSignature: scala shape uses colon
+  ---
+  duration_ms: 147.1615
+  type: 'test'
+  ...
+# Subtest: parseTypeFromSignature: returns undefined when no type
+ok 5 - parseTypeFromSignature: returns undefined when no type
+  ---
+  duration_ms: 155.48275
+  type: 'test'
+  ...
+# Subtest: parseDefaultFromBody: extracts simple = expr
+ok 6 - parseDefaultFromBody: extracts simple = expr
+  ---
+  duration_ms: 141.61225
+  type: 'test'
+  ...
+# Subtest: parseDefaultFromBody: caps very long defaults
+ok 7 - parseDefaultFromBody: caps very long defaults
+  ---
+  duration_ms: 137.993166
+  type: 'test'
+  ...
+# Subtest: parseNullable: detects @Nullable annotation
+ok 8 - parseNullable: detects @Nullable annotation
+  ---
+  duration_ms: 134.188667
+  type: 'test'
+  ...
+# Subtest: parseNullable: detects @NotNull annotation
+ok 9 - parseNullable: detects @NotNull annotation
+  ---
+  duration_ms: 114.132083
+  type: 'test'
+  ...
+# Subtest: parseNullable: detects Optional<>, Option[], X | null, X | None
+ok 10 - parseNullable: detects Optional<>, Option[], X | null, X | None
+  ---
+  duration_ms: 106.171
+  type: 'test'
+  ...
+# Subtest: parseNullable: returns undefined for non-nullable types
+ok 11 - parseNullable: returns undefined for non-nullable types
+  ---
+  duration_ms: 120.66675
+  type: 'test'
+  ...
+# Subtest: extractTsFields: typed + optional + default
+ok 12 - extractTsFields: typed + optional + default
+  ---
+  duration_ms: 104.553542
+  type: 'test'
+  ...
+# Subtest: extractTsFields: skips method-shaped lines
+ok 13 - extractTsFields: skips method-shaped lines
+  ---
+  duration_ms: 105.097334
+  type: 'test'
+  ...
+# Subtest: extractTsFields: declaredAt line tracks body offset
+ok 14 - extractTsFields: declaredAt line tracks body offset
+  ---
+  duration_ms: 122.65225
+  type: 'test'
+  ...
+# Subtest: extractPyFields: type-annotated dataclass-style fields
+ok 15 - extractPyFields: type-annotated dataclass-style fields
+  ---
+  duration_ms: 109.266542
+  type: 'test'
+  ...
+# Subtest: extractPyFields: skips bare indented identifiers (likely method body)
+ok 16 - extractPyFields: skips bare indented identifiers (likely method body)
+  ---
+  duration_ms: 204.877583
+  type: 'test'
+  ...
+# Subtest: extractGoFields: simple struct fields with types
+ok 17 - extractGoFields: simple struct fields with types
+  ---
+  duration_ms: 124.598708
+  type: 'test'
+  ...
+# Subtest: extractGoFields: handles struct tags
+ok 18 - extractGoFields: handles struct tags
+  ---
+  duration_ms: 114.664791
+  type: 'test'
+  ...
+# Subtest: extractGoFields: comma-separated names share a type
+ok 19 - extractGoFields: comma-separated names share a type
+  ---
+  duration_ms: 105.015541
+  type: 'test'
+  ...
+# Subtest: execute: empty entityId returns 400-shape error
+ok 20 - execute: empty entityId returns 400-shape error
+  ---
+  duration_ms: 95.729583
+  type: 'test'
+  ...
+# Subtest: execute: entity not found returns success: false
+ok 21 - execute: entity not found returns success: false
+  ---
+  duration_ms: 113.297333
+  type: 'test'
+  ...
+# Subtest: execute: non-class entity returns success: false
+ok 22 - execute: non-class entity returns success: false
+  ---
+  duration_ms: 104.765292
+  type: 'test'
+  ...
+# Subtest: execute: Java class walks DEFINES edges to variable children
+ok 23 - execute: Java class walks DEFINES edges to variable children
+  ---
+  duration_ms: 112.698708
+  type: 'test'
+  ...
+# Subtest: execute: TypeScript class regex-parses body fields
+ok 24 - execute: TypeScript class regex-parses body fields
+  ---
+  duration_ms: 92.13675
+  type: 'test'
+  ...
+# Subtest: execute: Python class regex-parses body fields
+ok 25 - execute: Python class regex-parses body fields
+  ---
+  duration_ms: 90.831292
+  type: 'test'
+  ...
+# Subtest: execute: Go struct regex-parses fields
+ok 26 - execute: Go struct regex-parses fields
+  ---
+  duration_ms: 100.967791
+  type: 'test'
+  ...
+# Subtest: execute: empty class returns fields: []
+ok 27 - execute: empty class returns fields: []
+  ---
+  duration_ms: 111.816583
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3808.70175

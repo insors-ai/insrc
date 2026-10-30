@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="ioFailure_surfacesHostFileAccessException_noPartialWrite()" classname="ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest" time="0.0"/>
+  <testcase name="writesValidJson_underMcpServersInsrc_preservingOtherServersAndKeys()" classname="ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest" time="0.001"/>
+  <testcase name="removeStripsOnlyInsrc_preservesOthers_noopWhenAbsent()" classname="ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest" time="0.0"/>
+  <testcase name="nonObjectMcpServers_isRefusedAsHostFileAccessException_notClobbered()" classname="ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest" time="0.002"/>
+  <testcase name="nonJsonConfig_isRefused_notClobbered()" classname="ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest" time="0.001"/>
+  <testcase name="createsConfigWhenAbsent_andIsIdempotent()" classname="ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

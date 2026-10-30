@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: private pipeline refuses missing authority before reading request data
+ok 1 - private pipeline refuses missing authority before reading request data
+  ---
+  duration_ms: 2.577625
+  type: 'test'
+  ...
+# Subtest: focused request on a repo: stand-in arguments and bundle equal the recorded baseline
+ok 2 - focused request on a repo: stand-in arguments and bundle equal the recorded baseline
+  ---
+  duration_ms: 1.091958
+  type: 'test'
+  ...
+# Subtest: pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in
+ok 3 - pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in
+  ---
+  duration_ms: 1.238916
+  type: 'test'
+  ...
+# Subtest: a planning call that fails for another reason is replaced by the free-form lookup, as before
+ok 4 - a planning call that fails for another reason is replaced by the free-form lookup, as before
+  ---
+  duration_ms: 0.335
+  type: 'test'
+  ...
+# Subtest: a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead
+ok 5 - a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead
+  ---
+  duration_ms: 1.744542
+  type: 'test'
+  ...
+# Subtest: pipeline returns 'not-applicable' for classification and task modes
+ok 6 - pipeline returns 'not-applicable' for classification and task modes
+  ---
+  duration_ms: 0.102709
+  type: 'test'
+  ...
+# Subtest: pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace
+ok 7 - pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace
+  ---
+  duration_ms: 0.373458
+  type: 'test'
+  ...
+# Subtest: an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose
+ok 8 - an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose
+  ---
+  duration_ms: 0.109917
+  type: 'test'
+  ...
+# Subtest: pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path
+ok 9 - pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path
+  ---
+  duration_ms: 0.728
+  type: 'test'
+  ...
+# Subtest: module scope: lookup path and cache key unchanged
+ok 10 - module scope: lookup path and cache key unchanged
+  ---
+  duration_ms: 0.488542
+  type: 'test'
+  ...
+# Subtest: cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call
+ok 11 - cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call
+  ---
+  duration_ms: 0.387542
+  type: 'test'
+  ...
+# Subtest: error messages state the cause, name the failed call, and never say retries or Ollama for another provider
+ok 12 - error messages state the cause, name the failed call, and never say retries or Ollama for another provider
+  ---
+  duration_ms: 0.514542
+  type: 'test'
+  ...
+# Subtest: CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline
+ok 13 - CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline
+  ---
+  duration_ms: 0.49975
+  type: 'test'
+  ...
+# Subtest: runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle
+ok 14 - runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle
+  ---
+  duration_ms: 20.457625
+  type: 'test'
+  ...
+# Subtest: settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error
+ok 15 - settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error
+  ---
+  duration_ms: 0.159708
+  type: 'test'
+  ...
+# Subtest: the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason
+ok 16 - the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason
+  ---
+  duration_ms: 0.72025
+  type: 'test'
+  ...
+# Subtest: a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none
+ok 17 - a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none
+  ---
+  duration_ms: 0.22375
+  type: 'test'
+  ...
+# Subtest: a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+ok 18 - a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+  ---
+  duration_ms: 0.393375
+  type: 'test'
+  ...
+# Subtest: a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before
+ok 19 - a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before
+  ---
+  duration_ms: 0.404833
+  type: 'test'
+  ...
+# Subtest: pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member
+ok 20 - pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member
+  ---
+  duration_ms: 0.249334
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 770.781333

@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: claude --print + --json-schema: closed object + bounded string array
+ok 1 - claude --print + --json-schema: closed object + bounded string array # SKIP
+  ---
+  duration_ms: 0.435208
+  type: 'test'
+  ...
+# Subtest: codex exec + --output-schema: closed object + bounded string array
+ok 2 - codex exec + --output-schema: closed object + bounded string array # SKIP
+  ---
+  duration_ms: 0.038417
+  type: 'test'
+  ...
+# Subtest: claude --print + --json-schema: enum-discriminated verdict
+ok 3 - claude --print + --json-schema: enum-discriminated verdict # SKIP
+  ---
+  duration_ms: 0.03175
+  type: 'test'
+  ...
+# Subtest: codex exec + --output-schema: enum-discriminated verdict
+ok 4 - codex exec + --output-schema: enum-discriminated verdict # SKIP
+  ---
+  duration_ms: 0.079708
+  type: 'test'
+  ...
+# Subtest: claude binary is on PATH
+ok 5 - claude binary is on PATH # SKIP
+  ---
+  duration_ms: 0.063959
+  type: 'test'
+  ...
+# Subtest: codex binary is on PATH
+ok 6 - codex binary is on PATH # SKIP
+  ---
+  duration_ms: 0.023791
+  type: 'test'
+  ...
+# Subtest: INSRC_LIVE_TESTS gate respected
+ok 7 - INSRC_LIVE_TESTS gate respected
+  ---
+  duration_ms: 0.095459
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 6
+# todo 0
+# duration_ms 303.0915

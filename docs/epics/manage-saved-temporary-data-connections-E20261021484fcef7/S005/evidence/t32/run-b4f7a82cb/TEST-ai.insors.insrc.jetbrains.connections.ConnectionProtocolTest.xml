@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.023">
+  <properties/>
+  <testcase name="all actual daemon descriptors supported and unknown schema stays disabled()" classname="ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest" time="0.001"/>
+  <testcase name="private fields references and raw error text never escape()" classname="ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest" time="0.003"/>
+  <testcase name="all current backend draft-test safe messages are accepted without coercion()" classname="ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest" time="0.001"/>
+  <testcase name="common valid and invalid wire cases use strict typed decoders()" classname="ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest" time="0.002"/>
+  <testcase name="streaming boundary rejects duplicate fields coercion depth size and cyclic constructed objects()" classname="ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest" time="0.006"/>
+  <testcase name="correlation rejects wrong root key operation mode epoch and stale test identity()" classname="ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

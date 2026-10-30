@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: tracker.push: happy path patches Epic meta.tracker with refs
+ok 1 - tracker.push: happy path patches Epic meta.tracker with refs
+  ---
+  duration_ms: 18.656667
+  type: 'test'
+  ...
+# Subtest: tracker.push: checklist failure refuses synthesize + leaves meta untouched
+ok 2 - tracker.push: checklist failure refuses synthesize + leaves meta untouched
+  ---
+  duration_ms: 3.075208
+  type: 'test'
+  ...
+# Subtest: tracker.sync: happy path merges status + lastSyncedAt into meta.tracker
+ok 3 - tracker.sync: happy path merges status + lastSyncedAt into meta.tracker
+  ---
+  duration_ms: 9.820959
+  type: 'test'
+  ...
+# Subtest: tracker.sync: refuses when Epic has no prior tracker refs
+ok 4 - tracker.sync: refuses when Epic has no prior tracker refs
+  ---
+  duration_ms: 3.196375
+  type: 'test'
+  ...
+# Subtest: tracker.push: refuses without epicHash param
+ok 5 - tracker.push: refuses without epicHash param
+  ---
+  duration_ms: 0.962292
+  type: 'test'
+  ...
+# Subtest: tracker.push: refuses when Epic is unapproved
+ok 6 - tracker.push: refuses when Epic is unapproved
+  ---
+  duration_ms: 1.614416
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 568.446209

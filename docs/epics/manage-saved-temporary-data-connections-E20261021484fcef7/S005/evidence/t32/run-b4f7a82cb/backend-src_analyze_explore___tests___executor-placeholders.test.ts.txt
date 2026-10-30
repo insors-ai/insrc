@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: $e1.field resolves to prior output field
+ok 1 - $e1.field resolves to prior output field
+  ---
+  duration_ms: 280.081583
+  type: 'test'
+  ...
+# Subtest: $eN.field[0..2] returns an array of items
+ok 2 - $eN.field[0..2] returns an array of items
+  ---
+  duration_ms: 250.180375
+  type: 'test'
+  ...
+# Subtest: placeholder referencing unknown dep skips the runner cleanly
+ok 3 - placeholder referencing unknown dep skips the runner cleanly
+  ---
+  duration_ms: 233.041083
+  type: 'test'
+  ...
+# Subtest: placeholder with out-of-range index skips the runner cleanly
+ok 4 - placeholder with out-of-range index skips the runner cleanly
+  ---
+  duration_ms: 238.338417
+  type: 'test'
+  ...
+# Subtest: placeholder resolves to empty array -> runner is skipped, not called
+ok 5 - placeholder resolves to empty array -> runner is skipped, not called
+  ---
+  duration_ms: 267.112834
+  type: 'test'
+  ...
+# Subtest: literal string params (not $e-prefixed) pass through verbatim
+ok 6 - literal string params (not $e-prefixed) pass through verbatim
+  ---
+  duration_ms: 233.258209
+  type: 'test'
+  ...
+# Subtest: substitution recurses into nested arrays + objects
+ok 7 - substitution recurses into nested arrays + objects
+  ---
+  duration_ms: 280.738459
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2346.367542

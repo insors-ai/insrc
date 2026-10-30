@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: CM-S1-W: schema-first typed batches preserve declared empty and all-null schemas and isolate worksheet targets
+ok 1 - CM-S1-W: schema-first typed batches preserve declared empty and all-null schemas and isolate worksheet targets
+  ---
+  duration_ms: 2.622542
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: batch limits cancellation required values and schema identity are enforced before row emission
+ok 2 - CM-S1-W: batch limits cancellation required values and schema identity are enforced before row emission
+  ---
+  duration_ms: 0.980667
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: saved Parquet uses the same declared schema and normalized rows as memory batches including zero rows
+ok 3 - CM-S1-W: saved Parquet uses the same declared schema and normalized rows as memory batches including zero rows
+  ---
+  duration_ms: 45.023792
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: legacy all-sheet union rejects divergent schemas rather than reusing another worksheet schema
+ok 4 - CM-S1-W: legacy all-sheet union rejects divergent schemas rather than reusing another worksheet schema
+  ---
+  duration_ms: 0.345792
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: shared normalization describes dates binary nested and numeric values explicitly
+ok 5 - CM-S1-W: shared normalization describes dates binary nested and numeric values explicitly
+  ---
+  duration_ms: 0.904417
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: closing a partially consumed source releases the active reader once and rejects further batches
+ok 6 - CM-S1-W: closing a partially consumed source releases the active reader once and rejects further batches
+  ---
+  duration_ms: 0.291791
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 257.080708

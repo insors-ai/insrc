@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: buildCallSequenceIR: frames -> call-frame nodes + ordered calls edges with citations (ac1)
+ok 1 - buildCallSequenceIR: frames -> call-frame nodes + ordered calls edges with citations (ac1)
+  ---
+  duration_ms: 1.404833
+  type: 'test'
+  ...
+# Subtest: buildCallSequenceIR: a repeat step is a marked calls edge, not a re-expanded node (ac2)
+ok 2 - buildCallSequenceIR: a repeat step is a marked calls edge, not a re-expanded node (ac2)
+  ---
+  duration_ms: 0.097084
+  type: 'test'
+  ...
+# Subtest: buildCallSequenceIR: a truncated frame yields a derived truncation marker stating depthUsed (ac3)
+ok 3 - buildCallSequenceIR: a truncated frame yields a derived truncation marker stating depthUsed (ac3)
+  ---
+  duration_ms: 0.151583
+  type: 'test'
+  ...
+# Subtest: repeated calls to the same callee preserve BOTH ordered steps (no dedupe)
+ok 4 - repeated calls to the same callee preserve BOTH ordered steps (no dedupe)
+  ---
+  duration_ms: 0.114792
+  type: 'test'
+  ...
+# Subtest: same walk -> deep-equal IR (determinism)
+ok 5 - same walk -> deep-equal IR (determinism)
+  ---
+  duration_ms: 0.229958
+  type: 'test'
+  ...
+# Subtest: makeExtract -> not-found when the entry-point symbol is unindexed (ac4)
+ok 6 - makeExtract -> not-found when the entry-point symbol is unindexed (ac4)
+  ---
+  duration_ms: 0.146959
+  type: 'test'
+  ...
+# Subtest: makeExtract -> source-not-ready / empty-scope
+ok 7 - makeExtract -> source-not-ready / empty-scope
+  ---
+  duration_ms: 0.130417
+  type: 'test'
+  ...
+# Subtest: makeExtract over a CYCLIC reader terminates and marks the repeat step (ac2)
+ok 8 - makeExtract over a CYCLIC reader terminates and marks the repeat step (ac2)
+  ---
+  duration_ms: 0.18925
+  type: 'test'
+  ...
+# Subtest: makeExtract over a deeper-than-maxDepth reader stops at the cap + records truncation (ac3)
+ok 9 - makeExtract over a deeper-than-maxDepth reader stops at the cap + records truncation (ac3)
+  ---
+  duration_ms: 0.32175
+  type: 'test'
+  ...
+# Subtest: makeExtract on a leaf entry point -> ok single-participant doc, no fabricated frames (k11)
+ok 10 - makeExtract on a leaf entry point -> ok single-participant doc, no fabricated frames (k11)
+  ---
+  duration_ms: 0.305875
+  type: 'test'
+  ...
+# Subtest: documentIRToMermaid(call-sequence IR) emits a sequenceDiagram with ->> messages in order
+ok 11 - documentIRToMermaid(call-sequence IR) emits a sequenceDiagram with ->> messages in order
+  ---
+  duration_ms: 0.224958
+  type: 'test'
+  ...
+# Subtest: documentIRToMermaid renders cycle-repeat + truncation markers as Note over
+ok 12 - documentIRToMermaid renders cycle-repeat + truncation markers as Note over
+  ---
+  duration_ms: 0.059291
+  type: 'test'
+  ...
+# Subtest: documentIRToMermaid keeps type-structure + component-dependency dispatch (no regression)
+ok 13 - documentIRToMermaid keeps type-structure + component-dependency dispatch (no regression)
+  ---
+  duration_ms: 0.108125
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 190.049458

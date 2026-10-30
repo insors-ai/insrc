@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS
+ok 1 - src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS
+  ---
+  duration_ms: 1.455167
+  type: 'test'
+  ...
+# Subtest: src/config/__tests__/tier-defaults.test.ts: the summariser follows the cheap tier and pins its model for a CLI, so the built-in default runs the Claude CLI on haiku
+ok 2 - src/config/__tests__/tier-defaults.test.ts: the summariser follows the cheap tier and pins its model for a CLI, so the built-in default runs the Claude CLI on haiku
+  ---
+  duration_ms: 2.264083
+  type: 'test'
+  ...
+# Subtest: src/config/__tests__/tier-defaults.test.ts: the installer takes the claude and codex tier defaults from the model definitions file (installer-defs.test.ts runs it)
+ok 3 - src/config/__tests__/tier-defaults.test.ts: the installer takes the claude and codex tier defaults from the model definitions file (installer-defs.test.ts runs it)
+  ---
+  duration_ms: 1.046292
+  type: 'test'
+  ...
+# Subtest: src/config/__tests__/tier-defaults.test.ts: the plugin's copy of the installer is identical to the script
+ok 4 - src/config/__tests__/tier-defaults.test.ts: the plugin's copy of the installer is identical to the script
+  ---
+  duration_ms: 0.242041
+  type: 'test'
+  ...
+# Subtest: a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)
+ok 5 - a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)
+  ---
+  duration_ms: 0.348792
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 401.05375

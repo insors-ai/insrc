@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: d9f85b3c t7 — key elements are numbered depth-first: top-level text, inputs, described elements and every action
+ok 1 - d9f85b3c t7 — key elements are numbered depth-first: top-level text, inputs, described elements and every action
+  ---
+  duration_ms: 28.685958
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t7 — the markers in the card are exactly the table numbers, in the same order
+ok 2 - d9f85b3c t7 — the markers in the card are exactly the table numbers, in the same order
+  ---
+  duration_ms: 0.203375
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t7 — numbering is stable: the same definition always gives the same markers and table
+ok 3 - d9f85b3c t7 — numbering is stable: the same definition always gives the same markers and table
+  ---
+  duration_ms: 0.305083
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t7 — descriptions fill the table, and an undescribed key element gets a null cell
+ok 4 - d9f85b3c t7 — descriptions fill the table, and an undescribed key element gets a null cell
+  ---
+  duration_ms: 0.061375
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t7 — Submit and OpenUrl stay distinguishable in the card and the table
+ok 5 - d9f85b3c t7 — Submit and OpenUrl stay distinguishable in the card and the table
+  ---
+  duration_ms: 0.159041
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid
+ok 6 - d9f85b3c t7 — the visual is HTML with its own card CSS, so the page inlines no Mermaid
+  ---
+  duration_ms: 0.493916
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 344.259417

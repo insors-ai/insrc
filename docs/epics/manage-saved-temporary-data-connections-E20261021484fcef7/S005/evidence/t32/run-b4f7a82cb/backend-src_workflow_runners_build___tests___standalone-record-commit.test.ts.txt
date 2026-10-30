@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a BUILD record persisted after another Story's commits names the Story's newest trailered commit
+ok 1 - a BUILD record persisted after another Story's commits names the Story's newest trailered commit
+  ---
+  duration_ms: 254.746708
+  type: 'test'
+  ...
+# Subtest: with no trailered commit the record names HEAD, and an explicit commit wins
+ok 2 - with no trailered commit the record names HEAD, and an explicit commit wins
+  ---
+  duration_ms: 232.527666
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 708.40725

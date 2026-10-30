@@ -1,0 +1,72 @@
+TAP version 13
+# Subtest: assertNamespaceAllowed
+    # Subtest: is a no-op when no whitelist is configured
+    ok 1 - is a no-op when no whitelist is configured
+      ---
+      duration_ms: 0.805375
+      type: 'test'
+      ...
+    # Subtest: accepts a prefix inside the whitelist
+    ok 2 - accepts a prefix inside the whitelist
+      ---
+      duration_ms: 0.175834
+      type: 'test'
+      ...
+    # Subtest: accepts a pattern whose literal stem starts with an allowed prefix
+    ok 3 - accepts a pattern whose literal stem starts with an allowed prefix
+      ---
+      duration_ms: 0.095875
+      type: 'test'
+      ...
+    # Subtest: rejects a pattern outside the whitelist
+    ok 4 - rejects a pattern outside the whitelist
+      ---
+      duration_ms: 0.245292
+      type: 'test'
+      ...
+    # Subtest: rejects a prefix outside the whitelist
+    ok 5 - rejects a prefix outside the whitelist
+      ---
+      duration_ms: 0.12125
+      type: 'test'
+      ...
+    # Subtest: requires a pattern or prefix when a whitelist is configured
+    ok 6 - requires a pattern or prefix when a whitelist is configured
+      ---
+      duration_ms: 0.05375
+      type: 'test'
+      ...
+    1..6
+ok 1 - assertNamespaceAllowed
+  ---
+  duration_ms: 2.262791
+  type: 'suite'
+  ...
+# Subtest: clamp helpers
+    # Subtest: clamps scan limit to [1, 500]
+    ok 1 - clamps scan limit to [1, 500]
+      ---
+      duration_ms: 0.126834
+      type: 'test'
+      ...
+    # Subtest: clamps sample-shape limit to [1, 50]
+    ok 2 - clamps sample-shape limit to [1, 50]
+      ---
+      duration_ms: 0.181709
+      type: 'test'
+      ...
+    1..2
+ok 2 - clamp helpers
+  ---
+  duration_ms: 0.480959
+  type: 'suite'
+  ...
+1..2
+# tests 8
+# suites 2
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 215.304625

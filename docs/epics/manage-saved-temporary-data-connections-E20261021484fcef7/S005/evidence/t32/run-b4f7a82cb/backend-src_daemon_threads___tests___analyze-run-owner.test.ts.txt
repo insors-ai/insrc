@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: live runs: the publisher hears a run id when it becomes live and when it stops, once each, however many runs share the id
+ok 1 - live runs: the publisher hears a run id when it becomes live and when it stops, once each, however many runs share the id
+  ---
+  duration_ms: 2.176542
+  type: 'test'
+  ...
+# Subtest: status board: a worker's live analyze runs reach the board through the hub; a stop from another thread or the owner's exit is handled
+ok 2 - status board: a worker's live analyze runs reach the board through the hub; a stop from another thread or the owner's exit is handled
+  ---
+  duration_ms: 9.578083
+  type: 'test'
+  ...
+# Subtest: router: analyze.run.status and analyze.run.purge from another session reach the worker running the analyze run; a run live nowhere is answered by the session's worker
+ok 3 - router: analyze.run.status and analyze.run.purge from another session reach the worker running the analyze run; a run live nowhere is answered by the session's worker
+  ---
+  duration_ms: 13.730417
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 432.618125

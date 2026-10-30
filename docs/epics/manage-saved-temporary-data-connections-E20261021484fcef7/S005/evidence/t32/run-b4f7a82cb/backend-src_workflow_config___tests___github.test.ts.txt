@@ -1,0 +1,127 @@
+TAP version 13
+# error: No such remote 'origin'
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# Subtest: parseGithubRemoteUrl handles SSH remotes
+ok 1 - parseGithubRemoteUrl handles SSH remotes
+  ---
+  duration_ms: 1.672833
+  type: 'test'
+  ...
+# Subtest: parseGithubRemoteUrl handles HTTPS remotes
+ok 2 - parseGithubRemoteUrl handles HTTPS remotes
+  ---
+  duration_ms: 0.265042
+  type: 'test'
+  ...
+# Subtest: parseGithubRemoteUrl rejects other hosts
+ok 3 - parseGithubRemoteUrl rejects other hosts
+  ---
+  duration_ms: 0.090625
+  type: 'test'
+  ...
+# Subtest: parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin
+ok 4 - parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin
+  ---
+  duration_ms: 34.341666
+  type: 'test'
+  ...
+# Subtest: parseGitRemoteOwnerRepo returns null on a repo with no origin
+ok 5 - parseGitRemoteOwnerRepo returns null on a repo with no origin
+  ---
+  duration_ms: 26.660542
+  type: 'test'
+  ...
+# Subtest: parseGitRemoteOwnerRepo returns null on a non-git dir
+ok 6 - parseGitRemoteOwnerRepo returns null on a non-git dir
+  ---
+  duration_ms: 8.798125
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig honors per-repo "type": "none"
+ok 7 - resolveGithubConfig honors per-repo "type": "none"
+  ---
+  duration_ms: 0.8705
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig honors default "type": "none" when no per-repo entry
+ok 8 - resolveGithubConfig honors default "type": "none" when no per-repo entry
+  ---
+  duration_ms: 0.48125
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig prefers per-repo "none" over default owner/repo
+ok 9 - resolveGithubConfig prefers per-repo "none" over default owner/repo
+  ---
+  duration_ms: 0.591667
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig returns type=github with owner/repo when configured
+ok 10 - resolveGithubConfig returns type=github with owner/repo when configured
+  ---
+  duration_ms: 1.191541
+  type: 'test'
+  ...
+# Subtest: a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo
+ok 11 - a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo
+  ---
+  duration_ms: 32.8245
+  type: 'test'
+  ...
+# Subtest: a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence
+ok 12 - a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence
+  ---
+  duration_ms: 31.722083
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig defaults to type=none when no matching entry AND no config file
+ok 13 - resolveGithubConfig defaults to type=none when no matching entry AND no config file
+  ---
+  duration_ms: 0.084625
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig defaults to type=none when file exists but has no matching entry
+ok 14 - resolveGithubConfig defaults to type=none when file exists but has no matching entry
+  ---
+  duration_ms: 0.50625
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig defaults to type=none when default entry is empty {}
+ok 15 - resolveGithubConfig defaults to type=none when default entry is empty {}
+  ---
+  duration_ms: 0.346792
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig with explicit "type": "github" but no owner/repo throws when git remote is absent
+ok 16 - resolveGithubConfig with explicit "type": "github" but no owner/repo throws when git remote is absent
+  ---
+  duration_ms: 7.3865
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig with explicit "type": "github" resolves via git remote when owner/repo omitted
+ok 17 - resolveGithubConfig with explicit "type": "github" resolves via git remote when owner/repo omitted
+  ---
+  duration_ms: 32.031917
+  type: 'test'
+  ...
+# Subtest: resolveGithubConfig without a config file does NOT auto-detect from git remote
+ok 18 - resolveGithubConfig without a config file does NOT auto-detect from git remote
+  ---
+  duration_ms: 22.787542
+  type: 'test'
+  ...
+# Subtest: lenient resolver behaviour is unchanged
+ok 19 - lenient resolver behaviour is unchanged
+  ---
+  duration_ms: 1.883583
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 408.309666

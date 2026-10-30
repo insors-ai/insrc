@@ -1,0 +1,114 @@
+TAP version 13
+# (node:6338) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-INVALIDATE: removal detaches an unused revision synchronously without constructing it
+ok 1 - CM-S4-INVALIDATE: removal detaches an unused revision synchronously without constructing it
+  ---
+  duration_ms: 13.879
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: failed and paused removal cleanup retains the old handle across same-ID recreation
+ok 2 - CM-S4-RETIRE: failed and paused removal cleanup retains the old handle across same-ID recreation
+  ---
+  duration_ms: 14.911583
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed
+ok 3 - CM-S4-RETIRE: late raw construction cannot escape a removed revision and is strictly closed
+  ---
+  duration_ms: 8.615167
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: cancellation preserves generation and unresolved preparation blocks reload and shutdown
+ok 4 - CM-S4-RETIRE: cancellation preserves generation and unresolved preparation blocks reload and shutdown
+  ---
+  duration_ms: 11.7555
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: failed idle close retains its exact driver for later strict removal retry
+ok 5 - CM-S4-RETIRE: failed idle close retains its exact driver for later strict removal retry
+  ---
+  duration_ms: 19.827709
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked
+ok 6 - CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked
+  ---
+  duration_ms: 89.438792
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection
+ok 7 - CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection
+  ---
+  duration_ms: 72.117208
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle
+ok 8 - CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle
+  ---
+  duration_ms: 29.965708
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision
+ok 9 - CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision
+  ---
+  duration_ms: 44.33825
+  type: 'test'
+  ...
+# Subtest: CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects
+ok 10 - CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects
+  ---
+  duration_ms: 5.567083
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage
+ok 11 - CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage
+  ---
+  duration_ms: 9.326541
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use
+ok 12 - CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use
+  ---
+  duration_ms: 45.488833
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape
+ok 13 - CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape
+  ---
+  duration_ms: 16.045417
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape
+ok 14 - CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape
+  ---
+  duration_ms: 8.68275
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes
+ok 15 - CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes
+  ---
+  duration_ms: 26.523958
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics
+ok 16 - CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics
+  ---
+  duration_ms: 9.039458
+  type: 'test'
+  ...
+# Subtest: CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out
+ok 17 - CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out
+  ---
+  duration_ms: 13.251792
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2074.639417

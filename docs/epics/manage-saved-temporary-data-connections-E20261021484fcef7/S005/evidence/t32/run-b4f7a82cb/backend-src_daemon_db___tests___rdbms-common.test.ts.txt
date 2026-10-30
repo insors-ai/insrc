@@ -1,0 +1,553 @@
+TAP version 13
+# Subtest: quoteTarget
+    # Subtest: quotes a bare table name for each dialect
+    ok 1 - quotes a bare table name for each dialect
+      ---
+      duration_ms: 0.628667
+      type: 'test'
+      ...
+    # Subtest: quotes schema.table with a dot
+    ok 2 - quotes schema.table with a dot
+      ---
+      duration_ms: 0.0705
+      type: 'test'
+      ...
+    # Subtest: rejects identifiers with whitespace or SQL syntax
+    ok 3 - rejects identifiers with whitespace or SQL syntax
+      ---
+      duration_ms: 0.186625
+      type: 'test'
+      ...
+    1..3
+ok 1 - quoteTarget
+  ---
+  duration_ms: 1.329166
+  type: 'suite'
+  ...
+# Subtest: compileWhere
+    # Subtest: returns empty text + values for no clauses
+    ok 1 - returns empty text + values for no clauses
+      ---
+      duration_ms: 0.737625
+      type: 'test'
+      ...
+    # Subtest: compiles = / != with parametrised placeholders (postgres)
+    ok 2 - compiles = / != with parametrised placeholders (postgres)
+      ---
+      duration_ms: 0.104333
+      type: 'test'
+      ...
+    # Subtest: compiles "in" with an array
+    ok 3 - compiles "in" with an array
+      ---
+      duration_ms: 0.052583
+      type: 'test'
+      ...
+    # Subtest: compiles "is null" with no placeholder
+    ok 4 - compiles "is null" with no placeholder
+      ---
+      duration_ms: 0.088875
+      type: 'test'
+      ...
+    # Subtest: mysql uses `?` for every param
+    ok 5 - mysql uses `?` for every param
+      ---
+      duration_ms: 0.2565
+      type: 'test'
+      ...
+    # Subtest: rejects unknown columns (defense against injection)
+    ok 6 - rejects unknown columns (defense against injection)
+      ---
+      duration_ms: 0.150625
+      type: 'test'
+      ...
+    # Subtest: rejects empty "in" arrays
+    ok 7 - rejects empty "in" arrays
+      ---
+      duration_ms: 0.146583
+      type: 'test'
+      ...
+    # Subtest: column lookup is case-insensitive
+    ok 8 - column lookup is case-insensitive
+      ---
+      duration_ms: 0.045583
+      type: 'test'
+      ...
+    # Subtest: regex / not regex (Phase 5d.3 Gap 1)
+        # Subtest: postgres uses ~ for regex and !~ for not regex
+        ok 1 - postgres uses ~ for regex and !~ for not regex
+          ---
+          duration_ms: 0.0865
+          type: 'test'
+          ...
+        # Subtest: mysql uses REGEXP / NOT REGEXP
+        ok 2 - mysql uses REGEXP / NOT REGEXP
+          ---
+          duration_ms: 0.0375
+          type: 'test'
+          ...
+        # Subtest: sqlite uses REGEXP / NOT REGEXP (driver registers the function)
+        ok 3 - sqlite uses REGEXP / NOT REGEXP (driver registers the function)
+          ---
+          duration_ms: 0.033959
+          type: 'test'
+          ...
+        # Subtest: oracle uses REGEXP_LIKE function syntax
+        ok 4 - oracle uses REGEXP_LIKE function syntax
+          ---
+          duration_ms: 0.0405
+          type: 'test'
+          ...
+        # Subtest: mssql throws -- no portable native regex (caller must avoid this op)
+        ok 5 - mssql throws -- no portable native regex (caller must avoid this op)
+          ---
+          duration_ms: 0.049375
+          type: 'test'
+          ...
+        # Subtest: rejects non-string regex values
+        ok 6 - rejects non-string regex values
+          ---
+          duration_ms: 0.046417
+          type: 'test'
+          ...
+        # Subtest: regex predicates compose with other clauses (parameter index shared)
+        ok 7 - regex predicates compose with other clauses (parameter index shared)
+          ---
+          duration_ms: 0.036334
+          type: 'test'
+          ...
+        1..7
+    ok 9 - regex / not regex (Phase 5d.3 Gap 1)
+      ---
+      duration_ms: 0.403
+      type: 'suite'
+      ...
+    1..9
+ok 2 - compileWhere
+  ---
+  duration_ms: 2.319042
+  type: 'suite'
+  ...
+# Subtest: buildSampleSql
+    # Subtest: assembles SELECT * FROM ... LIMIT N on postgres
+    ok 1 - assembles SELECT * FROM ... LIMIT N on postgres
+      ---
+      duration_ms: 0.245833
+      type: 'test'
+      ...
+    # Subtest: clamps the limit to SAMPLE_LIMIT (50)
+    ok 2 - clamps the limit to SAMPLE_LIMIT (50)
+      ---
+      duration_ms: 0.19175
+      type: 'test'
+      ...
+    # Subtest: emits TOP N for mssql instead of LIMIT
+    ok 3 - emits TOP N for mssql instead of LIMIT
+      ---
+      duration_ms: 0.03525
+      type: 'test'
+      ...
+    # Subtest: emits FETCH FIRST ... for oracle
+    ok 4 - emits FETCH FIRST ... for oracle
+      ---
+      duration_ms: 0.046084
+      type: 'test'
+      ...
+    # Subtest: includes the WHERE clause when provided
+    ok 5 - includes the WHERE clause when provided
+      ---
+      duration_ms: 0.042042
+      type: 'test'
+      ...
+    1..5
+ok 3 - buildSampleSql
+  ---
+  duration_ms: 0.619792
+  type: 'suite'
+  ...
+# Subtest: looksLikeMutation
+    # Subtest: flags DML/DDL keywords
+    ok 1 - flags DML/DDL keywords
+      ---
+      duration_ms: 0.040583
+      type: 'test'
+      ...
+    # Subtest: accepts clean SELECTs
+    ok 2 - accepts clean SELECTs
+      ---
+      duration_ms: 0.024875
+      type: 'test'
+      ...
+    1..2
+ok 4 - looksLikeMutation
+  ---
+  duration_ms: 0.0975
+  type: 'suite'
+  ...
+# Subtest: withTimeout
+    # Subtest: resolves when the op wins the race
+    ok 1 - resolves when the op wins the race
+      ---
+      duration_ms: 0.312083
+      type: 'test'
+      ...
+    # Subtest: rejects with a typed message when the timer wins
+    ok 2 - rejects with a typed message when the timer wins
+      ---
+      duration_ms: 51.457459
+      type: 'test'
+      ...
+    # Subtest: calls onTimeout() when it fires
+    ok 3 - calls onTimeout() when it fires
+      ---
+      duration_ms: 50.278375
+      type: 'test'
+      ...
+    1..3
+ok 5 - withTimeout
+  ---
+  duration_ms: 102.221042
+  type: 'suite'
+  ...
+# Subtest: aggregateResultKey
+    # Subtest: formats <col>__<fn> for the simple cases
+    ok 1 - formats <col>__<fn> for the simple cases
+      ---
+      duration_ms: 0.127459
+      type: 'test'
+      ...
+    # Subtest: embeds the percentile fraction (with `.` -> `_`)
+    ok 2 - embeds the percentile fraction (with `.` -> `_`)
+      ---
+      duration_ms: 0.04625
+      type: 'test'
+      ...
+    # Subtest: rejects percentile spec missing args.p
+    ok 3 - rejects percentile spec missing args.p
+      ---
+      duration_ms: 0.075042
+      type: 'test'
+      ...
+    1..3
+ok 6 - aggregateResultKey
+  ---
+  duration_ms: 0.301666
+  type: 'suite'
+  ...
+# Subtest: compileAggregateExprs
+    # Subtest: emits one quoted-aliased expression per aggregation
+    ok 1 - emits one quoted-aliased expression per aggregation
+      ---
+      duration_ms: 0.344416
+      type: 'test'
+      ...
+    # Subtest: rejects unknown columns (count exempt)
+    ok 2 - rejects unknown columns (count exempt)
+      ---
+      duration_ms: 0.083666
+      type: 'test'
+      ...
+    # Subtest: rejects duplicate result-keys
+    ok 3 - rejects duplicate result-keys
+      ---
+      duration_ms: 0.044083
+      type: 'test'
+      ...
+    # Subtest: rejects empty aggregations
+    ok 4 - rejects empty aggregations
+      ---
+      duration_ms: 0.030292
+      type: 'test'
+      ...
+    # Subtest: uses dialect-specific stddev / variance for MSSQL
+    ok 5 - uses dialect-specific stddev / variance for MSSQL
+      ---
+      duration_ms: 0.04725
+      type: 'test'
+      ...
+    # Subtest: uses STDDEV_SAMP / VAR_SAMP for the SQL-standard dialects
+    ok 6 - uses STDDEV_SAMP / VAR_SAMP for the SQL-standard dialects
+      ---
+      duration_ms: 0.155541
+      type: 'test'
+      ...
+    # Subtest: rejects out-of-range percentile p
+    ok 7 - rejects out-of-range percentile p
+      ---
+      duration_ms: 0.043666
+      type: 'test'
+      ...
+    # Subtest: renders skewness / kurtosis / mad as native function calls
+    ok 8 - renders skewness / kurtosis / mad as native function calls
+      ---
+      duration_ms: 0.141334
+      type: 'test'
+      ...
+    # Subtest: count_where compiles SUM(CASE) with predicate parameters
+    ok 9 - count_where compiles SUM(CASE) with predicate parameters
+      ---
+      duration_ms: 0.115167
+      type: 'test'
+      ...
+    # Subtest: count_where threads param indices via paramStartIndex
+    ok 10 - count_where threads param indices via paramStartIndex
+      ---
+      duration_ms: 0.046667
+      type: 'test'
+      ...
+    # Subtest: count_where rejects an empty predicate
+    ok 11 - count_where rejects an empty predicate
+      ---
+      duration_ms: 0.036834
+      type: 'test'
+      ...
+    # Subtest: composite_distinct_count uses native (a, b) on Postgres
+    ok 12 - composite_distinct_count uses native (a, b) on Postgres
+      ---
+      duration_ms: 0.047458
+      type: 'test'
+      ...
+    # Subtest: composite_distinct_count concats with sentinel on MySQL / SQLite / MSSQL
+    ok 13 - composite_distinct_count concats with sentinel on MySQL / SQLite / MSSQL
+      ---
+      duration_ms: 0.087666
+      type: 'test'
+      ...
+    # Subtest: composite_distinct_count rejects unknown columns + < 2 columns
+    ok 14 - composite_distinct_count rejects unknown columns + < 2 columns
+      ---
+      duration_ms: 0.064167
+      type: 'test'
+      ...
+    1..14
+ok 7 - compileAggregateExprs
+  ---
+  duration_ms: 1.390542
+  type: 'suite'
+  ...
+# Subtest: compileAggregate
+    # Subtest: wraps exprs in a SELECT ... FROM <quotedTarget>
+    ok 1 - wraps exprs in a SELECT ... FROM <quotedTarget>
+      ---
+      duration_ms: 0.095083
+      type: 'test'
+      ...
+    # Subtest: refuses suspicious target identifiers
+    ok 2 - refuses suspicious target identifiers
+      ---
+      duration_ms: 0.037541
+      type: 'test'
+      ...
+    # Subtest: compiles a structured WHERE clause when supplied
+    ok 3 - compiles a structured WHERE clause when supplied
+      ---
+      duration_ms: 0.043542
+      type: 'test'
+      ...
+    # Subtest: omits WHERE when the request has none (back-compat)
+    ok 4 - omits WHERE when the request has none (back-compat)
+      ---
+      duration_ms: 0.02775
+      type: 'test'
+      ...
+    # Subtest: rejects WHERE on an unknown column
+    ok 5 - rejects WHERE on an unknown column
+      ---
+      duration_ms: 0.043375
+      type: 'test'
+      ...
+    1..5
+ok 8 - compileAggregate
+  ---
+  duration_ms: 0.292458
+  type: 'suite'
+  ...
+# Subtest: readAggregateRow
+    # Subtest: coerces number / bigint / numeric-string / null
+    ok 1 - coerces number / bigint / numeric-string / null
+      ---
+      duration_ms: 0.084292
+      type: 'test'
+      ...
+    # Subtest: NaN / non-numeric / object becomes null
+    ok 2 - NaN / non-numeric / object becomes null
+      ---
+      duration_ms: 0.070292
+      type: 'test'
+      ...
+    # Subtest: preserves ISO date / datetime strings (temporal min/max)
+    ok 3 - preserves ISO date / datetime strings (temporal min/max)
+      ---
+      duration_ms: 0.966875
+      type: 'test'
+      ...
+    1..3
+ok 9 - readAggregateRow
+  ---
+  duration_ms: 1.171209
+  type: 'suite'
+  ...
+# Subtest: compileDistinct
+    # Subtest: produces a count-distinct + top-N pair for postgres
+    ok 1 - produces a count-distinct + top-N pair for postgres
+      ---
+      duration_ms: 0.203542
+      type: 'test'
+      ...
+    # Subtest: switches to TOP N for MSSQL (no LIMIT clause)
+    ok 2 - switches to TOP N for MSSQL (no LIMIT clause)
+      ---
+      duration_ms: 0.071125
+      type: 'test'
+      ...
+    # Subtest: uses FETCH FIRST N ROWS ONLY for oracle
+    ok 3 - uses FETCH FIRST N ROWS ONLY for oracle
+      ---
+      duration_ms: 0.04275
+      type: 'test'
+      ...
+    # Subtest: clamps topN to [1, 1000]
+    ok 4 - clamps topN to [1, 1000]
+      ---
+      duration_ms: 0.033416
+      type: 'test'
+      ...
+    # Subtest: rejects unknown columns
+    ok 5 - rejects unknown columns
+      ---
+      duration_ms: 0.04125
+      type: 'test'
+      ...
+    # Subtest: honors asTableExpr for non-identifier FROM (e.g. read_parquet(?))
+    ok 6 - honors asTableExpr for non-identifier FROM (e.g. read_parquet(?))
+      ---
+      duration_ms: 0.043208
+      type: 'test'
+      ...
+    1..6
+ok 10 - compileDistinct
+  ---
+  duration_ms: 0.491959
+  type: 'suite'
+  ...
+# Subtest: readDistinctRows
+    # Subtest: coerces count to number across number / bigint / string ships
+    ok 1 - coerces count to number across number / bigint / string ships
+      ---
+      duration_ms: 0.086125
+      type: 'test'
+      ...
+    1..1
+ok 11 - readDistinctRows
+  ---
+  duration_ms: 0.104583
+  type: 'suite'
+  ...
+# Subtest: readDistinctCount
+    # Subtest: reads the distinct_count scalar across coercion paths
+    ok 1 - reads the distinct_count scalar across coercion paths
+      ---
+      duration_ms: 0.042583
+      type: 'test'
+      ...
+    1..1
+ok 12 - readDistinctCount
+  ---
+  duration_ms: 0.059208
+  type: 'suite'
+  ...
+# Subtest: compileTemporalTrend
+    # Subtest: postgres uses native REGR_* with EXTRACT(EPOCH FROM ts)
+    ok 1 - postgres uses native REGR_* with EXTRACT(EPOCH FROM ts)
+      ---
+      duration_ms: 0.124083
+      type: 'test'
+      ...
+    # Subtest: mysql takes the expression-based path with UNIX_TIMESTAMP
+    ok 2 - mysql takes the expression-based path with UNIX_TIMESTAMP
+      ---
+      duration_ms: 0.185042
+      type: 'test'
+      ...
+    # Subtest: sqlite uses unixepoch()
+    ok 3 - sqlite uses unixepoch()
+      ---
+      duration_ms: 0.035208
+      type: 'test'
+      ...
+    # Subtest: oracle uses native REGR_* with date-arithmetic epoch
+    ok 4 - oracle uses native REGR_* with date-arithmetic epoch
+      ---
+      duration_ms: 0.036167
+      type: 'test'
+      ...
+    # Subtest: mssql uses DATEDIFF_BIG (expression path; T-SQL has no REGR_*)
+    ok 5 - mssql uses DATEDIFF_BIG (expression path; T-SQL has no REGR_*)
+      ---
+      duration_ms: 0.03375
+      type: 'test'
+      ...
+    # Subtest: threads request-level WHERE through compileWhere
+    ok 6 - threads request-level WHERE through compileWhere
+      ---
+      duration_ms: 0.0375
+      type: 'test'
+      ...
+    # Subtest: rejects unknown timestamp / value columns
+    ok 7 - rejects unknown timestamp / value columns
+      ---
+      duration_ms: 0.047458
+      type: 'test'
+      ...
+    1..7
+ok 13 - compileTemporalTrend
+  ---
+  duration_ms: 0.551791
+  type: 'suite'
+  ...
+# Subtest: readTemporalTrendRow
+    # Subtest: reads a native REGR_* row directly
+    ok 1 - reads a native REGR_* row directly
+      ---
+      duration_ms: 0.111333
+      type: 'test'
+      ...
+    # Subtest: computes slope/intercept/R² from SUM moments (expression path) -- perfect line
+    ok 2 - computes slope/intercept/R² from SUM moments (expression path) -- perfect line
+      ---
+      duration_ms: 0.077
+      type: 'test'
+      ...
+    # Subtest: returns null slope/r² when X variance is zero (expression path)
+    ok 3 - returns null slope/r² when X variance is zero (expression path)
+      ---
+      duration_ms: 0.030042
+      type: 'test'
+      ...
+    # Subtest: handles n < 2 (expression path)
+    ok 4 - handles n < 2 (expression path)
+      ---
+      duration_ms: 0.023333
+      type: 'test'
+      ...
+    # Subtest: returns empty result for undefined row
+    ok 5 - returns empty result for undefined row
+      ---
+      duration_ms: 0.0225
+      type: 'test'
+      ...
+    1..5
+ok 14 - readTemporalTrendRow
+  ---
+  duration_ms: 0.305167
+  type: 'suite'
+  ...
+1..14
+# tests 73
+# suites 15
+# pass 73
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 764.515041

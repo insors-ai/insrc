@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: t1: a BuildRecord carrying changeLog + feedback type-checks and JSON round-trips
+ok 1 - t1: a BuildRecord carrying changeLog + feedback type-checks and JSON round-trips
+  ---
+  duration_ms: 1.316584
+  type: 'test'
+  ...
+# Subtest: t4: renderBuildRecordMd emits a \#\# Changes and a \#\# Feedback section when present
+ok 2 - t4: renderBuildRecordMd emits a \#\# Changes and a \#\# Feedback section when present
+  ---
+  duration_ms: 0.238083
+  type: 'test'
+  ...
+# Subtest: t4: absent, undefined-valued, and empty-array changeLog/feedback all render byte-identically (omit-slot)
+ok 3 - t4: absent, undefined-valued, and empty-array changeLog/feedback all render byte-identically (omit-slot)
+  ---
+  duration_ms: 0.071292
+  type: 'test'
+  ...
+# Subtest: t4/t6c: a legacy record (body without the S002 keys) re-renders byte-identically to the base render
+ok 4 - t4/t6c: a legacy record (body without the S002 keys) re-renders byte-identically to the base render
+  ---
+  duration_ms: 0.052166
+  type: 'test'
+  ...
+# Subtest: t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of-band feedback
+ok 5 - t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of-band feedback
+  ---
+  duration_ms: 60.428709
+  type: 'test'
+  ...
+# Subtest: t6b: appendFeedback on a written BUILD json with a source-file target → body.feedback + a rendered \#\# Feedback section
+ok 6 - t6b: appendFeedback on a written BUILD json with a source-file target → body.feedback + a rendered \#\# Feedback section
+  ---
+  duration_ms: 24.488541
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 311.062209

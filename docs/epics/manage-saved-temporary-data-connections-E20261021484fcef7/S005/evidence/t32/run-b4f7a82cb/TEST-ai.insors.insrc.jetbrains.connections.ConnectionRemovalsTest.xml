@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:16" hostname="subho-office-mac" time="3.717">
+  <properties/>
+  <testcase name="testDirtyCancelBusyConflictAndAbsentRowNeverInventRemoval" classname="ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest" time="1.335"/>
+  <testcase name="testCredentialAndResourceCleanupUseOriginalTicketAcrossSameIdRecreation" classname="ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest" time="1.192"/>
+  <testcase name="testTemporaryDiscardPreservesSavedAndDuplicateIdsFailClosed" classname="ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest" time="1.152"/>
+  <testcase name="testTwentyUnchangedSc6SnapshotsHaveExactNativeCopyAndState" classname="ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest" time="0.038"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

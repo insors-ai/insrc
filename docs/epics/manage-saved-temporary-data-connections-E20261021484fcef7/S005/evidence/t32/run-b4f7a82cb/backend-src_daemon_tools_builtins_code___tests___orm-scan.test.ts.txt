@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: parsePrismaSchema: extracts both models with correct line numbers
+ok 1 - parsePrismaSchema: extracts both models with correct line numbers
+  ---
+  duration_ms: 122.867875
+  type: 'test'
+  ...
+# Subtest: parsePrismaSchema: User columns + relations + table override
+ok 2 - parsePrismaSchema: User columns + relations + table override
+  ---
+  duration_ms: 116.495375
+  type: 'test'
+  ...
+# Subtest: parsePrismaSchema: Post @map renames the column
+ok 3 - parsePrismaSchema: Post @map renames the column
+  ---
+  duration_ms: 127.166875
+  type: 'test'
+  ...
+# Subtest: parseTypeORMEntity: extracts table name + columns + relations
+ok 4 - parseTypeORMEntity: extracts table name + columns + relations
+  ---
+  duration_ms: 108.831667
+  type: 'test'
+  ...
+# Subtest: parseTypeORMEntity: skips classes without @Entity decorator (defensive)
+ok 5 - parseTypeORMEntity: skips classes without @Entity decorator (defensive)
+  ---
+  duration_ms: 124.328208
+  type: 'test'
+  ...
+# Subtest: execute: missing repoPath returns 400
+ok 6 - execute: missing repoPath returns 400
+  ---
+  duration_ms: 110.390375
+  type: 'test'
+  ...
+# Subtest: execute: unknown orm returns 400 with supported list
+ok 7 - execute: unknown orm returns 400 with supported list
+  ---
+  duration_ms: 115.695625
+  type: 'test'
+  ...
+# Subtest: execute: empty repo (no orm artefacts) returns success with empty detected + models
+ok 8 - execute: empty repo (no orm artefacts) returns success with empty detected + models
+  ---
+  duration_ms: 127.986375
+  type: 'test'
+  ...
+# Subtest: execute: prisma mode picks up models from prisma/schema.prisma
+ok 9 - execute: prisma mode picks up models from prisma/schema.prisma
+  ---
+  duration_ms: 132.391333
+  type: 'test'
+  ...
+# Subtest: execute: typeorm mode picks up @Entity classes from the graph
+ok 10 - execute: typeorm mode picks up @Entity classes from the graph
+  ---
+  duration_ms: 254.577541
+  type: 'test'
+  ...
+# Subtest: execute: auto mode merges models from every detected dialect
+ok 11 - execute: auto mode merges models from every detected dialect
+  ---
+  duration_ms: 115.699791
+  type: 'test'
+  ...
+# Subtest: execute: auto mode skips dialects that fail detection without erroring
+ok 12 - execute: auto mode skips dialects that fail detection without erroring
+  ---
+  duration_ms: 102.05475
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1807.197458

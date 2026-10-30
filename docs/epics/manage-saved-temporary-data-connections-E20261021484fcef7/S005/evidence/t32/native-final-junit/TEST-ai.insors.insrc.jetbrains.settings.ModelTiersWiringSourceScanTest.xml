@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.ModelTiersWiringSourceScanTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.01">
+  <properties/>
+  <testcase name="no PROVIDERS, no listModels use, no family or model literal in settings sources, definitions read on open and Refresh()" classname="ai.insors.insrc.jetbrains.settings.ModelTiersWiringSourceScanTest" time="0.004"/>
+  <testcase name="apply writes whole tiers and keeps a failed tier's pending edit with the reason and detail()" classname="ai.insors.insrc.jetbrains.settings.ModelTiersWiringSourceScanTest" time="0.003"/>
+  <testcase name="the section and the pure model import no cloud or HTTP client and reach the daemon only via the gateway()" classname="ai.insors.insrc.jetbrains.settings.ModelTiersWiringSourceScanTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

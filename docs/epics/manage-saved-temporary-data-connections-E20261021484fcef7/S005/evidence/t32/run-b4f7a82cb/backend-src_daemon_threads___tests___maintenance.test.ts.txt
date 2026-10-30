@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: unit
+    # Subtest: lane work that starts and ends between two ticks restarts the idle window: the board records when a lane was last busy
+    ok 1 - lane work that starts and ends between two ticks restarts the idle window: the board records when a lane was last busy
+      ---
+      duration_ms: 1.585583
+      type: 'test'
+      ...
+    # Subtest: with idleMs 0, a non-admin request in flight or a busy lane still means not idle: tick does not compact
+    ok 2 - with idleMs 0, a non-admin request in flight or a busy lane still means not idle: tick does not compact
+      ---
+      duration_ms: 0.199
+      type: 'test'
+      ...
+    # Subtest: maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does
+    ok 3 - maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does
+      ---
+      duration_ms: 18.444125
+      type: 'test'
+      ...
+    # Subtest: the pre-rename check is by worker identity: a worker that exited and was replaced between the close acknowledgements and the rename fails it, though the count is unchanged
+    ok 4 - the pre-rename check is by worker identity: a worker that exited and was replaced between the close acknowledgements and the rename fails it, though the count is unchanged
+      ---
+      duration_ms: 10.154916
+      type: 'test'
+      ...
+    # Subtest: graph.close is asked of every worker at once: unresponsive workers cost one acknowledgement timeout, not one each
+    ok 5 - graph.close is asked of every worker at once: unresponsive workers cost one acknowledgement timeout, not one each
+      ---
+      duration_ms: 401.863542
+      type: 'test'
+      ...
+    # Subtest: reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required
+    ok 6 - reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required
+      ---
+      duration_ms: 134.0595
+      type: 'test'
+      ...
+    # Subtest: the idle time, both thresholds and the pause limit are config schema keys with the design's defaults
+    ok 7 - the idle time, both thresholds and the pause limit are config schema keys with the design's defaults
+      ---
+      duration_ms: 0.82975
+      type: 'test'
+      ...
+    1..7
+ok 1 - unit
+  ---
+  duration_ms: 1825.748459
+  type: 'suite'
+  ...
+# Subtest: integration
+    # Subtest: maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank
+    ok 1 - maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank
+      ---
+      duration_ms: 278.2885
+      type: 'test'
+      ...
+    # Subtest: manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own
+    ok 2 - manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own
+      ---
+      duration_ms: 104.001125
+      type: 'test'
+      ...
+    # Subtest: a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards
+    ok 3 - a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards
+      ---
+      duration_ms: 658.136708
+      type: 'test'
+      ...
+    # Subtest: the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted
+    ok 4 - the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted
+      ---
+      duration_ms: 205.42025
+      type: 'test'
+      ...
+# [04:44:44] [31mERROR[39m: [36m[maintenance] maintenance: compaction failed[39m
+#     [35mmodule[39m: "maintenance"
+#     [35mreason[39m: "requested by daemon.compact"
+#     err: "compact: the environment was still open; nothing renamed"
+    # Subtest: the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves
+    ok 5 - the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves
+      ---
+      duration_ms: 868.736708
+      type: 'test'
+      ...
+    # Subtest: after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held
+    ok 6 - after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held
+      ---
+      duration_ms: 364.896709
+      type: 'test'
+      ...
+    # Subtest: after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment
+    ok 7 - after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment
+      ---
+      duration_ms: 148.082167
+      type: 'test'
+      ...
+    1..7
+ok 2 - integration
+  ---
+  duration_ms: 2628.323167
+  type: 'suite'
+  ...
+1..2
+# tests 14
+# suites 2
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4995.389042

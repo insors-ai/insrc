@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: scanOrphansWith: canned ps output returns ONLY the non-managed daemon-entry pid(s)
+ok 1 - scanOrphansWith: canned ps output returns ONLY the non-managed daemon-entry pid(s)
+  ---
+  duration_ms: 3.260958
+  type: 'test'
+  ...
+# Subtest: scanOrphansWith: platform 'win32' returns { supported:false } with no ps invoked
+ok 2 - scanOrphansWith: platform 'win32' returns { supported:false } with no ps invoked
+  ---
+  duration_ms: 0.302833
+  type: 'test'
+  ...
+# Subtest: scanOrphansWith: a throwing/garbled ps-runner degrades to { supported:true; orphans:[] }
+ok 3 - scanOrphansWith: a throwing/garbled ps-runner degrades to { supported:true; orphans:[] }
+  ---
+  duration_ms: 0.096042
+  type: 'test'
+  ...
+# Subtest: scanOrphansWith: managed pid undefined -> every matching daemon-entry process is a candidate
+ok 4 - scanOrphansWith: managed pid undefined -> every matching daemon-entry process is a candidate
+  ---
+  duration_ms: 0.0925
+  type: 'test'
+  ...
+# Subtest: killOrphansWith([p]) p dies on SIGTERM -> SIGTERM then liveness clears; 'terminated', no SIGKILL
+ok 5 - killOrphansWith([p]) p dies on SIGTERM -> SIGTERM then liveness clears; 'terminated', no SIGKILL
+  ---
+  duration_ms: 0.971959
+  type: 'test'
+  ...
+# Subtest: killOrphansWith([p]) p survives -> SIGTERM then SIGKILL after the wait; 'forced'
+ok 6 - killOrphansWith([p]) p survives -> SIGTERM then SIGKILL after the wait; 'forced'
+  ---
+  duration_ms: 0.307417
+  type: 'test'
+  ...
+# Subtest: killOrphansWith([managedPid, p]) -> managed pid never signalled; only p processed
+ok 7 - killOrphansWith([managedPid, p]) -> managed pid never signalled; only p processed
+  ---
+  duration_ms: 0.188875
+  type: 'test'
+  ...
+# Subtest: killOrphansWith([p]) kill throws -> 'error'/'not-found', no re-throw, other pids still processed
+ok 8 - killOrphansWith([p]) kill throws -> 'error'/'not-found', no re-throw, other pids still processed
+  ---
+  duration_ms: 0.14125
+  type: 'test'
+  ...
+# Subtest: killOrphansWith([]) -> no kill calls, resolves []; off-POSIX -> no-op
+ok 9 - killOrphansWith([]) -> no kill calls, resolves []; off-POSIX -> no-op
+  ---
+  duration_ms: 0.458
+  type: 'test'
+  ...
+# Subtest: makeServices().debug exposes scanOrphans + killOrphans bound to the real impls
+ok 10 - makeServices().debug exposes scanOrphans + killOrphans bound to the real impls
+  ---
+  duration_ms: 0.547833
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 483.872292

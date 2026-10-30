@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope
+ok 1 - runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope
+  ---
+  duration_ms: 210.176792
+  type: 'test'
+  ...
+# Subtest: runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs
+ok 2 - runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs
+  ---
+  duration_ms: 125.000292
+  type: 'test'
+  ...
+# Subtest: runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs
+ok 3 - runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs
+  ---
+  duration_ms: 134.626167
+  type: 'test'
+  ...
+# Subtest: runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop
+ok 4 - runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop
+  ---
+  duration_ms: 119.440958
+  type: 'test'
+  ...
+# Subtest: runShaper's run-mode bundle carries the report derived from the executed lookups
+ok 5 - runShaper's run-mode bundle carries the report derived from the executed lookups
+  ---
+  duration_ms: 131.407167
+  type: 'test'
+  ...
+# Subtest: a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups
+ok 6 - a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups
+  ---
+  duration_ms: 133.044584
+  type: 'test'
+  ...
+# Subtest: a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report
+ok 7 - a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report
+  ---
+  duration_ms: 120.003916
+  type: 'test'
+  ...
+# Subtest: a bundle cached before the change is not returned
+ok 8 - a bundle cached before the change is not returned
+  ---
+  duration_ms: 124.985708
+  type: 'test'
+  ...
+# Subtest: the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none
+ok 9 - the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none
+  ---
+  duration_ms: 133.020083
+  type: 'test'
+  ...
+# Subtest: runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline
+ok 10 - runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline
+  ---
+  duration_ms: 122.929166
+  type: 'test'
+  ...
+# Subtest: runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle
+ok 11 - runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle
+  ---
+  duration_ms: 122.529125
+  type: 'test'
+  ...
+# Subtest: runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss
+ok 12 - runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss
+  ---
+  duration_ms: 140.911042
+  type: 'test'
+  ...
+# Subtest: runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built
+ok 13 - runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built
+  ---
+  duration_ms: 133.891
+  type: 'test'
+  ...
+# Subtest: bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates
+ok 14 - bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates
+  ---
+  duration_ms: 125.372625
+  type: 'test'
+  ...
+# Subtest: runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks
+ok 15 - runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks
+  ---
+  duration_ms: 131.945958
+  type: 'test'
+  ...
+# Subtest: runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused
+ok 16 - runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused
+  ---
+  duration_ms: 150.466334
+  type: 'test'
+  ...
+# Subtest: runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache
+ok 17 - runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache
+  ---
+  duration_ms: 405.678917
+  type: 'test'
+  ...
+# Subtest: runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold (in no registered repository, or in a registered repository with no stored entities) is refused as not indexed before any lookup or model call, cold and warm, with the run's message; a caller that checked the scope already is not checked again
+ok 18 - runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold (in no registered repository, or in a registered repository with no stored entities) is refused as not indexed before any lookup or model call, cold and warm, with the run's message; a caller that checked the scope already is not checked again
+  ---
+  duration_ms: 126.806333
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3401.22275

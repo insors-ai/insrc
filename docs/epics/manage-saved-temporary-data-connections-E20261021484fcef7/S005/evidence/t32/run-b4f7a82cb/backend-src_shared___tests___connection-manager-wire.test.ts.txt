@@ -1,0 +1,36 @@
+TAP version 13
+# (node:86900) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal
+ok 1 - CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal
+  ---
+  duration_ms: 12.874167
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters
+ok 2 - CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters
+  ---
+  duration_ms: 74.032042
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use
+ok 3 - CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use
+  ---
+  duration_ms: 0.971458
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy
+ok 4 - CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy
+  ---
+  duration_ms: 0.414083
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1237.613958

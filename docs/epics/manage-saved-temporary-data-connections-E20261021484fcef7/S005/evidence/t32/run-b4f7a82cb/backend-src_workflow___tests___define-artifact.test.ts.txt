@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: renderDefineMarkdown produces expected sections
+ok 1 - renderDefineMarkdown produces expected sections
+  ---
+  duration_ms: 2.615333
+  type: 'test'
+  ...
+# Subtest: renderDefineMarkdown adds a Tracker link only when meta.tracker.epicRef is set
+ok 2 - renderDefineMarkdown adds a Tracker link only when meta.tracker.epicRef is set
+  ---
+  duration_ms: 0.533791
+  type: 'test'
+  ...
+# Subtest: renderDefineMarkdown escapes pipes in constraint text
+ok 3 - renderDefineMarkdown escapes pipes in constraint text
+  ---
+  duration_ms: 0.3255
+  type: 'test'
+  ...
+# Subtest: S001: renderDefineMarkdown renders an lc-namespaced local constraint with its source citation intact
+ok 4 - S001: renderDefineMarkdown renders an lc-namespaced local constraint with its source citation intact
+  ---
+  duration_ms: 0.318708
+  type: 'test'
+  ...
+# Subtest: isDefineBody accepts valid body
+ok 5 - isDefineBody accepts valid body
+  ---
+  duration_ms: 0.098584
+  type: 'test'
+  ...
+# Subtest: isDefineBody rejects bad flavor
+ok 6 - isDefineBody rejects bad flavor
+  ---
+  duration_ms: 0.052458
+  type: 'test'
+  ...
+# Subtest: isDefineBody rejects missing stories
+ok 7 - isDefineBody rejects missing stories
+  ---
+  duration_ms: 0.093125
+  type: 'test'
+  ...
+# Subtest: checkStoryDependencyGraph passes clean DAG
+ok 8 - checkStoryDependencyGraph passes clean DAG
+  ---
+  duration_ms: 0.737458
+  type: 'test'
+  ...
+# Subtest: checkStoryDependencyGraph reports unknown dependency
+ok 9 - checkStoryDependencyGraph reports unknown dependency
+  ---
+  duration_ms: 0.261166
+  type: 'test'
+  ...
+# Subtest: checkStoryDependencyGraph detects a cycle
+ok 10 - checkStoryDependencyGraph detects a cycle
+  ---
+  duration_ms: 0.35075
+  type: 'test'
+  ...
+# Subtest: checkConstraintCoverage passes when every operationalizes id resolves
+ok 11 - checkConstraintCoverage passes when every operationalizes id resolves
+  ---
+  duration_ms: 0.120334
+  type: 'test'
+  ...
+# Subtest: checkConstraintCoverage reports unknown constraint id
+ok 12 - checkConstraintCoverage reports unknown constraint id
+  ---
+  duration_ms: 0.06
+  type: 'test'
+  ...
+# Subtest: checkConstraintCoverage resolves local constraint ids too
+ok 13 - checkConstraintCoverage resolves local constraint ids too
+  ---
+  duration_ms: 0.046417
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 301.886417

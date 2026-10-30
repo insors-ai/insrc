@@ -1,0 +1,56 @@
+TAP version 13
+# fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+# Subtest: each admin-class method runs on the admin worker's thread id
+ok 1 - each admin-class method runs on the admin worker's thread id
+  ---
+  duration_ms: 237.076
+  type: 'test'
+  ...
+# fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+# Subtest: recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's
+ok 2 - recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's
+  ---
+  duration_ms: 234.329542
+  type: 'test'
+  ...
+# [04:44:32] [31mERROR[39m: [36m[graph-store] index state: the recount on open failed; counts are left as stored[39m
+#     [35mmodule[39m: "graph-store"
+#     err: {
+#       "type": "Error",
+#       "message": "Data read, but end of buffer not reached -1",
+#       "stack":
+#           Error: Data read, but end of buffer not reached -1
+#               at checkedRead (file:///Users/subhagho/work/projects/insors/insrc/node_modules/msgpackr/unpack.js:218:10)
+#               at Unpackr.unpack (file:///Users/subhagho/work/projects/insors/insrc/node_modules/msgpackr/unpack.js:106:10)
+#               at decode (/private/tmp/s5-frozen-qldpq8za/repo/src/db/graph/codec.ts:62:17)
+#               at decodeIndexStateRow (/private/tmp/s5-frozen-qldpq8za/repo/src/db/graph/codec.ts:270:66)
+#               at reconcileIndexStateInTxn (/private/tmp/s5-frozen-qldpq8za/repo/src/db/graph/index-state-rows.ts:133:15)
+#               at Object.callback (/private/tmp/s5-frozen-qldpq8za/repo/src/db/graph/store.ts:748:58)
+#               at executeTxnCallbacks (file:///Users/subhagho/work/projects/insors/insrc/node_modules/lmdb/write.js:668:36)
+#               at file:///Users/subhagho/work/projects/insors/insrc/node_modules/lmdb/write.js:511:6
+#     }
+# fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+# Subtest: repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field
+ok 3 - repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field
+  ---
+  duration_ms: 5265.59625
+  type: 'test'
+  ...
+# fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+# Subtest: daemon.status answers with storeFailure when store health is locks-lost
+ok 4 - daemon.status answers with storeFailure when store health is locks-lost
+  ---
+  duration_ms: 186.434625
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7083.629875

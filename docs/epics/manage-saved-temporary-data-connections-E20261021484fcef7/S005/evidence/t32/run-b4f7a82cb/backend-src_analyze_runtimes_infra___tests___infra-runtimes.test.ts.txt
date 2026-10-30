@@ -1,0 +1,154 @@
+TAP version 13
+# Subtest: readScopeRef: well-formed -> returns
+ok 1 - readScopeRef: well-formed -> returns
+  ---
+  duration_ms: 1.418208
+  type: 'test'
+  ...
+# Subtest: readScopeRef: missing -> throws INV-5
+ok 2 - readScopeRef: missing -> throws INV-5
+  ---
+  duration_ms: 0.26275
+  type: 'test'
+  ...
+# Subtest: baseName: directory-stripped
+ok 3 - baseName: directory-stripped
+  ---
+  duration_ms: 0.067584
+  type: 'test'
+  ...
+# Subtest: classifyFile: terraform / dockerfile / helm chart / gha / gitlab / compose
+ok 4 - classifyFile: terraform / dockerfile / helm chart / gha / gitlab / compose
+  ---
+  duration_ms: 29.138042
+  type: 'test'
+  ...
+# Subtest: extractResource: minimal valid manifest -> record
+ok 5 - extractResource: minimal valid manifest -> record
+  ---
+  duration_ms: 0.701542
+  type: 'test'
+  ...
+# Subtest: extractResource: no metadata.name -> null (dropped)
+ok 6 - extractResource: no metadata.name -> null (dropped)
+  ---
+  duration_ms: 0.215875
+  type: 'test'
+  ...
+# Subtest: extractResource: no apiVersion/kind -> null
+ok 7 - extractResource: no apiVersion/kind -> null
+  ---
+  duration_ms: 0.206125
+  type: 'test'
+  ...
+# Subtest: extractResource: label coercion of non-string values
+ok 8 - extractResource: label coercion of non-string values
+  ---
+  duration_ms: 0.113042
+  type: 'test'
+  ...
+# Subtest: registerBuiltinRuntimes registers all infra runtimes (incl. helm/docker/ci)
+ok 9 - registerBuiltinRuntimes registers all infra runtimes (incl. helm/docker/ci)
+  ---
+  duration_ms: 0.3485
+  type: 'test'
+  ...
+# Subtest: runtime templateIds match expected ids
+ok 10 - runtime templateIds match expected ids
+  ---
+  duration_ms: 0.148959
+  type: 'test'
+  ...
+# Subtest: registration parity: INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; produces-key === runtime output key
+ok 11 - registration parity: INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; produces-key === runtime output key
+  ---
+  duration_ms: 586.9145
+  type: 'test'
+  ...
+# Subtest: infra.discovery.families description no longer overpromises ansible/pulumi/cloudformation
+ok 12 - infra.discovery.families description no longer overpromises ansible/pulumi/cloudformation
+  ---
+  duration_ms: 0.1335
+  type: 'test'
+  ...
+# Subtest: INFRA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+ok 13 - INFRA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+  ---
+  duration_ms: 0.184333
+  type: 'test'
+  ...
+# Subtest: walkFiles: node_modules is skipped (SKIP_DIRS); other files visible
+ok 14 - walkFiles: node_modules is skipped (SKIP_DIRS); other files visible
+  ---
+  duration_ms: 1.002
+  type: 'test'
+  ...
+# Subtest: an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before
+ok 15 - an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before
+  ---
+  duration_ms: 53.498875
+  type: 'test'
+  ...
+# Subtest: discovery.families: classifies all expected families against the fixture
+ok 16 - discovery.families: classifies all expected families against the fixture
+  ---
+  duration_ms: 1.431959
+  type: 'test'
+  ...
+# Subtest: inventory.kubernetes: enumerates resources with kind/name/namespace/labels
+ok 17 - inventory.kubernetes: enumerates resources with kind/name/namespace/labels
+  ---
+  duration_ms: 1.200333
+  type: 'test'
+  ...
+# Subtest: inventory.kubernetes: Chart.yaml is skipped (helm metadata, not k8s)
+ok 18 - inventory.kubernetes: Chart.yaml is skipped (helm metadata, not k8s)
+  ---
+  duration_ms: 1.363167
+  type: 'test'
+  ...
+# Subtest: inventory.terraform: extracts resources / data / providers / variables / outputs
+ok 19 - inventory.terraform: extracts resources / data / providers / variables / outputs
+  ---
+  duration_ms: 2.348166
+  type: 'test'
+  ...
+# Subtest: inventory.terraform: captures indented blocks + drops invalid HCL (no throw)
+ok 20 - inventory.terraform: captures indented blocks + drops invalid HCL (no throw)
+  ---
+  duration_ms: 3.670375
+  type: 'test'
+  ...
+# Subtest: inventory.helm: enumerates charts with metadata + deps + templateFileCount + valuesKeys
+ok 21 - inventory.helm: enumerates charts with metadata + deps + templateFileCount + valuesKeys
+  ---
+  duration_ms: 1.172209
+  type: 'test'
+  ...
+# Subtest: inventory.docker: multi-stage Dockerfile FROM/stage/EXPOSE + compose services (build-only kept)
+ok 22 - inventory.docker: multi-stage Dockerfile FROM/stage/EXPOSE + compose services (build-only kept)
+  ---
+  duration_ms: 1.511833
+  type: 'test'
+  ...
+# Subtest: inventory.ci: GHA `on` map normalized + step uses; gitlab stages + jobs (reserved keys excluded); broken skipped
+ok 23 - inventory.ci: GHA `on` map normalized + step uses; gitlab stages + jobs (reserved keys excluded); broken skipped
+  ---
+  duration_ms: 1.088083
+  type: 'test'
+  ...
+# Subtest: inventory runtimes: empty scope yields well-formed empty inventories, no throw
+ok 24 - inventory runtimes: empty scope yields well-formed empty inventories, no throw
+  ---
+  duration_ms: 4.146
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1412.86425

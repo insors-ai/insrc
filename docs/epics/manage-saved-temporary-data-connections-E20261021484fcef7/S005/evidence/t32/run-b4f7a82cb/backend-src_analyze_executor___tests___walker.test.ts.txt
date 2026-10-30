@@ -1,0 +1,189 @@
+TAP version 13
+# Subtest: unmetDependencies: no consumes -> null
+ok 1 - unmetDependencies: no consumes -> null
+  ---
+  duration_ms: 0.940708
+  type: 'test'
+  ...
+# Subtest: unmetDependencies: every consume present -> null
+ok 2 - unmetDependencies: every consume present -> null
+  ---
+  duration_ms: 0.128625
+  type: 'test'
+  ...
+# Subtest: unmetDependencies: first missing name reported
+ok 3 - unmetDependencies: first missing name reported
+  ---
+  duration_ms: 0.052166
+  type: 'test'
+  ...
+# Subtest: projectUpstream: limits to consumed names only
+ok 4 - projectUpstream: limits to consumed names only
+  ---
+  duration_ms: 0.813667
+  type: 'test'
+  ...
+# Subtest: checkOutputShape: exact match -> null
+ok 5 - checkOutputShape: exact match -> null
+  ---
+  duration_ms: 0.176458
+  type: 'test'
+  ...
+# Subtest: checkOutputShape: missing name reported
+ok 6 - checkOutputShape: missing name reported
+  ---
+  duration_ms: 0.090792
+  type: 'test'
+  ...
+# Subtest: checkOutputShape: extra name reported
+ok 7 - checkOutputShape: extra name reported
+  ---
+  duration_ms: 0.086625
+  type: 'test'
+  ...
+# Subtest: runExecutor: 2-task happy path -- discovery + aggregator
+ok 8 - runExecutor: 2-task happy path -- discovery + aggregator
+  ---
+  duration_ms: 3.723708
+  type: 'test'
+  ...
+# Subtest: runExecutor: missing runtime -> task fails; downstream cascades
+ok 9 - runExecutor: missing runtime -> task fails; downstream cascades
+  ---
+  duration_ms: 2.307041
+  type: 'test'
+  ...
+# Subtest: runExecutor: runtime throws -> failed status with reason; cascade
+ok 10 - runExecutor: runtime throws -> failed status with reason; cascade
+  ---
+  duration_ms: 1.605458
+  type: 'test'
+  ...
+# Subtest: runExecutor: runtime returns extra/missing produces -> output-shape-mismatch
+ok 11 - runExecutor: runtime returns extra/missing produces -> output-shape-mismatch
+  ---
+  duration_ms: 2.840792
+  type: 'test'
+  ...
+# Subtest: runExecutor: planner-template task materialises child report as parent.report
+ok 12 - runExecutor: planner-template task materialises child report as parent.report
+  ---
+  duration_ms: 3.647583
+  type: 'test'
+  ...
+# Subtest: runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade
+ok 13 - runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade
+  ---
+  duration_ms: 1.305583
+  type: 'test'
+  ...
+# Subtest: taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json
+ok 14 - taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json
+  ---
+  duration_ms: 0.175791
+  type: 'test'
+  ...
+# Subtest: readTaskOutput: miss returns null
+ok 15 - readTaskOutput: miss returns null
+  ---
+  duration_ms: 0.047
+  type: 'test'
+  ...
+# Subtest: purgeTaskOutput on a missing slot is a silent no-op
+ok 16 - purgeTaskOutput on a missing slot is a silent no-op
+  ---
+  duration_ms: 0.107833
+  type: 'test'
+  ...
+# Subtest: onTaskEvent: 2-task happy path emits started+completed per task in plan order
+ok 17 - onTaskEvent: 2-task happy path emits started+completed per task in plan order
+  ---
+  duration_ms: 1.081375
+  type: 'test'
+  ...
+# Subtest: onTaskEvent: failed task emits started + completed with status="failed"
+ok 18 - onTaskEvent: failed task emits started + completed with status="failed"
+  ---
+  duration_ms: 1.233708
+  type: 'test'
+  ...
+# Subtest: onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set
+ok 19 - onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set
+  ---
+  duration_ms: 1.89725
+  type: 'test'
+  ...
+# Subtest: onTaskEvent: throwing subscriber does not crash the executor
+ok 20 - onTaskEvent: throwing subscriber does not crash the executor
+  ---
+  duration_ms: 0.933375
+  type: 'test'
+  ...
+# Subtest: SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)
+ok 21 - SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)
+  ---
+  duration_ms: 1.585333
+  type: 'test'
+  ...
+# Subtest: the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed
+ok 22 - the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed
+  ---
+  duration_ms: 1.080916
+  type: 'test'
+  ...
+# Subtest: a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)
+ok 23 - a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)
+  ---
+  duration_ms: 3.372208
+  type: 'test'
+  ...
+# Subtest: a task refused for naming a connection outside the scope is a failed task with a code and its own message
+ok 24 - a task refused for naming a connection outside the scope is a failed task with a code and its own message
+  ---
+  duration_ms: 5.031875
+  type: 'test'
+  ...
+# Subtest: plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping
+ok 25 - plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping
+  ---
+  duration_ms: 2.01775
+  type: 'test'
+  ...
+# Subtest: the plan walk imports nothing from the run driver
+ok 26 - the plan walk imports nothing from the run driver
+  ---
+  duration_ms: 0.480542
+  type: 'test'
+  ...
+# Subtest: every task of every plan in a tree keeps its own record
+ok 27 - every task of every plan in a tree keeps its own record
+  ---
+  duration_ms: 3.511125
+  type: 'test'
+  ...
+# Subtest: a planner task whose child produced no report fails with the child's cause
+ok 28 - a planner task whose child produced no report fails with the child's cause
+  ---
+  duration_ms: 5.376292
+  type: 'test'
+  ...
+# Subtest: a plan two levels down keeps its own records and names its tasks by their full path
+ok 29 - a plan two levels down keeps its own records and names its tasks by their full path
+  ---
+  duration_ms: 4.126042
+  type: 'test'
+  ...
+# [04:39:06] [31mERROR[39m: [36m[analyze:executor:walker] No runtime registered for template 'demo.missing'. Register one via registerTemplateRuntime() before running an executor pass.[39m
+#     [35mmodule[39m: "analyze:executor:walker"
+#     [35mrunId[39m: "executor-test-missing-2f26aea8"
+#     [35mtaskId[39m: "t01"
+#     [35mtemplate[39m: "demo.missing"
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 415.645375

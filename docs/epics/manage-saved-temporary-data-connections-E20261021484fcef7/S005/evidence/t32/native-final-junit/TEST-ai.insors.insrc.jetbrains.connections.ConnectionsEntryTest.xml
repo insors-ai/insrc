@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionsEntryTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:20:47" hostname="subho-office-mac" time="1.995">
+  <properties/>
+  <testcase name="testNoProjectCancelAndDisposedSelectionNeverObtainAnOwner" classname="ai.insors.insrc.jetbrains.connections.ConnectionsEntryTest" time="0.171"/>
+  <testcase name="testClosedProjectChoiceAndStaleChooserButtonsCannotOpenManager" classname="ai.insors.insrc.jetbrains.connections.ConnectionsEntryTest" time="0.346"/>
+  <testcase name="testSettingsActualProjectChoiceApplyResetAndViewCloseRetainSameProjectManager" classname="ai.insors.insrc.jetbrains.connections.ConnectionsEntryTest" time="1.477"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

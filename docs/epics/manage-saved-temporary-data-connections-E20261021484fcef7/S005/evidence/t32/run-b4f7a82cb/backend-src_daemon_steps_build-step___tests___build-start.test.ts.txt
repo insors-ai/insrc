@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)
+ok 1 - T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)
+  ---
+  duration_ms: 853.760625
+  type: 'test'
+  ...
+# Subtest: T32: the build-start file left UNCOMMITTED (untracked) with nothing else dirty — the range is still derived, exact set
+ok 2 - T32: the build-start file left UNCOMMITTED (untracked) with nothing else dirty — the range is still derived, exact set
+  ---
+  duration_ms: 413.147542
+  type: 'test'
+  ...
+# Subtest: T32 (tracked and modified): a build-start file that is the ONLY dirty tracked path does not stand in for the Story's work
+ok 3 - T32 (tracked and modified): a build-start file that is the ONLY dirty tracked path does not stand in for the Story's work
+  ---
+  duration_ms: 391.882792
+  type: 'test'
+  ...
+# Subtest: T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files
+ok 4 - T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files
+  ---
+  duration_ms: 837.607416
+  type: 'test'
+  ...
+# Subtest: T34: the same mid-build approval with the build-start file DELETED before task 2 — no file is written and the base is the pre-change one
+ok 5 - T34: the same mid-build approval with the build-start file DELETED before task 2 — no file is written and the base is the pre-change one
+  ---
+  duration_ms: 683.257708
+  type: 'test'
+  ...
+# Subtest: T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files
+ok 6 - T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files
+  ---
+  duration_ms: 691.815125
+  type: 'test'
+  ...
+# Subtest: T36 (plan-driven): implement writes NO BUILD record, and a batch approval then approves none for the Story
+ok 7 - T36 (plan-driven): implement writes NO BUILD record, and a batch approval then approves none for the Story
+  ---
+  duration_ms: 169.844083
+  type: 'test'
+  ...
+# Subtest: T36 (Small route): implement stamps and writes NO BUILD record; a batch approval approves none
+ok 8 - T36 (Small route): implement stamps and writes NO BUILD record; a batch approval approves none
+  ---
+  duration_ms: 124.6355
+  type: 'test'
+  ...
+# Subtest: Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp
+ok 9 - Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp
+  ---
+  duration_ms: 349.891666
+  type: 'test'
+  ...
+# Subtest: Trivial route: validate runs the test files touched since the build-start stamp, though a later commit is HEAD (ISSUE-91640defac1b5816)
+ok 10 - Trivial route: validate runs the test files touched since the build-start stamp, though a later commit is HEAD (ISSUE-91640defac1b5816)
+  ---
+  duration_ms: 375.013167
+  type: 'test'
+  ...
+# Subtest: fail-open: a stamp that cannot be written leaves the implement result unchanged on every route
+ok 11 - fail-open: a stamp that cannot be written leaves the implement result unchanged on every route
+  ---
+  duration_ms: 627.724541
+  type: 'test'
+  ...
+# Subtest: a REFUSED implement stamps nothing
+ok 12 - a REFUSED implement stamps nothing
+  ---
+  duration_ms: 115.418541
+  type: 'test'
+  ...
+# Subtest: T37: the completion writer excludes a COMMITTED build-start file — exact set
+ok 13 - T37: the completion writer excludes a COMMITTED build-start file — exact set
+  ---
+  duration_ms: 296.074708
+  type: 'test'
+  ...
+# Subtest: T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)
+ok 14 - T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)
+  ---
+  duration_ms: 224.522958
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6602.967292

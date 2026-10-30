@@ -4,6 +4,8 @@ The user will perform live UI validation after the full build and plugin install
 
 Use only VS Code and JetBrains. Test with disposable repositories and sources. Production connection-management admission currently remains closed by upstream prerequisites; unsupported controls should show upgrade guidance. Positive feature testing requires the separately isolated signed test daemon, with its socket protected from startup provisioning. Do not enable production gates to obtain a positive UI result.
 
+The existing signed mutation peer uses controlled driver factories for fault injection. It is useful for UI/transport flows, but does not prove real SQL/KV/file service behavior or handle cleanup. Source-preservation acceptance requires actual disposable services and native driver paths; do not count that controlled peer as service evidence.
+
 Record the installed package hashes, IDE versions, root/project selections, steps, screenshots (synthetic values only), and expected/actual results for each check:
 
 - Both IDEs: light/dark/high-contrast, keyboard focus/labels, blank masked replacements and fixed safe errors.

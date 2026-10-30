@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message
+ok 1 - step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message
+  ---
+  duration_ms: 3.861041
+  type: 'test'
+  ...
+# Subtest: step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored
+ok 2 - step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored
+  ---
+  duration_ms: 0.297792
+  type: 'test'
+  ...
+# Subtest: equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store
+ok 3 - equivalence: each of the seven tools through step.call returns the same envelope as the handler called directly on the same temporary store
+  ---
+  duration_ms: 218.548916
+  type: 'test'
+  ...
+# Subtest: the step host registers the workflow runners: a workflow run continues past its plan phase through step.call
+ok 4 - the step host registers the workflow runners: a workflow run continues past its plan phase through step.call
+  ---
+  duration_ms: 2.941666
+  type: 'test'
+  ...
+# Subtest: cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon
+ok 5 - cancellation: closing the stream during a design-review wait and during a code-review wait aborts the inner run in the daemon
+  ---
+  duration_ms: 27.849833
+  type: 'test'
+  ...
+# Subtest: insrc_code_review_step through step.call: the step's progress is threaded into its deps, so each daemon review frame arrives as a 'progress' frame before 'done'
+ok 6 - insrc_code_review_step through step.call: the step's progress is threaded into its deps, so each daemon review frame arrives as a 'progress' frame before 'done'
+  ---
+  duration_ms: 1.627
+  type: 'test'
+  ...
+# Subtest: insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'
+ok 7 - insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'
+  ---
+  duration_ms: 2.503916
+  type: 'test'
+  ...
+# Subtest: state store miss: each of the four stores says the daemon was restarted and the run must be started again
+ok 8 - state store miss: each of the four stores says the daemon was restarted and the run must be started again
+  ---
+  duration_ms: 1.554792
+  type: 'test'
+  ...
+# Subtest: insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame
+ok 9 - insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame
+  ---
+  duration_ms: 1.203208
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1078.536958

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: finalize: an authored sequenceDefinition → sibling sequence companion written + linked
+ok 1 - finalize: an authored sequenceDefinition → sibling sequence companion written + linked
+  ---
+  duration_ms: 35.100209
+  type: 'test'
+  ...
+# Subtest: finalize: an authored componentDependencyDefinition → sibling component companion written + linked
+ok 2 - finalize: an authored componentDependencyDefinition → sibling component companion written + linked
+  ---
+  duration_ms: 25.245875
+  type: 'test'
+  ...
+# Subtest: finalize: BOTH diagram slots → two sibling companions + two refs
+ok 3 - finalize: BOTH diagram slots → two sibling companions + two refs
+  ---
+  duration_ms: 35.1305
+  type: 'test'
+  ...
+# Subtest: finalize: NEITHER diagram slot → no diagram companion (byte-identical, absent-safe)
+ok 4 - finalize: NEITHER diagram slot → no diagram companion (byte-identical, absent-safe)
+  ---
+  duration_ms: 7.618458
+  type: 'test'
+  ...
+# Subtest: finalize: a malformed (dangling-ref) sequenceDefinition now SURFACES a retryable failure (S001, was swallowed)
+ok 5 - finalize: a malformed (dangling-ref) sequenceDefinition now SURFACES a retryable failure (S001, was swallowed)
+  ---
+  duration_ms: 0.6095
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 417.759875

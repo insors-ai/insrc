@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)
+ok 1 - run order: a code request on a path no registered repository contains emits no 'classified' event and no measure substep, and ends failed at classify with the same code and message as runShaper's refusal (recorded from today's code before the change)
+  ---
+  duration_ms: 361.236542
+  type: 'test'
+  ...
+# Subtest: run order: the same on the hinted-target branch
+ok 2 - run order: the same on the hinted-target branch
+  ---
+  duration_ms: 247.119458
+  type: 'test'
+  ...
+# Subtest: run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message
+ok 3 - run order: a docs request on an unindexed scope emits no 'classified' event and ends failed at classify with the moved check's code and message
+  ---
+  duration_ms: 132.087666
+  type: 'test'
+  ...
+# Subtest: run order: a request that passes the check still emits 'classified' with its measure, as before
+ok 4 - run order: a request that passes the check still emits 'classified' with its measure, as before
+  ---
+  duration_ms: 187.693709
+  type: 'test'
+  ...
+# Subtest: runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')
+ok 5 - runAnalyze: a request about a repository under index ends with code 'repo-indexing' through the orchestrator's mapping (not 'internal-error')
+  ---
+  duration_ms: 199.809792
+  type: 'test'
+  ...
+# Subtest: runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key
+ok 6 - runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and does not change the cache key
+  ---
+  duration_ms: 268.0935
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1967.5485

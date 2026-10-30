@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: rankOf orders cheap < mid < core and is total over the three tiers
+ok 1 - rankOf orders cheap < mid < core and is total over the three tiers
+  ---
+  duration_ms: 1.452541
+  type: 'test'
+  ...
+# Subtest: covers the analyze-pipeline reasoning sites (the ~11-caller scope finding)
+ok 2 - covers the analyze-pipeline reasoning sites (the ~11-caller scope finding)
+  ---
+  duration_ms: 0.151333
+  type: 'test'
+  ...
+# Subtest: covers the critical workflow reasoning roles
+ok 3 - covers the critical workflow reasoning roles
+  ---
+  duration_ms: 0.06
+  type: 'test'
+  ...
+# Subtest: every critical role defaults to the core tier (floor-protected)
+ok 4 - every critical role defaults to the core tier (floor-protected)
+  ---
+  duration_ms: 0.062292
+  type: 'test'
+  ...
+# Subtest: peripheral defaults: synthesize → mid, tracker/summaries/probes → cheap
+ok 5 - peripheral defaults: synthesize → mid, tracker/summaries/probes → cheap
+  ---
+  duration_ms: 0.09
+  type: 'test'
+  ...
+# Subtest: an unknown role id resolves to undefined (downstream gap-fallback, never throws)
+ok 6 - an unknown role id resolves to undefined (downstream gap-fallback, never throws)
+  ---
+  duration_ms: 0.073709
+  type: 'test'
+  ...
+# Subtest: every role id is unique
+ok 7 - every role id is unique
+  ---
+  duration_ms: 0.119625
+  type: 'test'
+  ...
+# Subtest: every descriptor carries a valid tier + criticality
+ok 8 - every descriptor carries a valid tier + criticality
+  ---
+  duration_ms: 0.067375
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 193.820959

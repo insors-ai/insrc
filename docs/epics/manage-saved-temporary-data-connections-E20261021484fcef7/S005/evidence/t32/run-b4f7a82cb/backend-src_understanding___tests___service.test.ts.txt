@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: Concurrent updates, exact replay and request conflicts preserve atomic history
+ok 1 - Concurrent updates, exact replay and request conflicts preserve atomic history
+  ---
+  duration_ms: 213.305167
+  type: 'test'
+  ...
+# Subtest: Original and assisted answers survive reopen and resume without granting authorization
+ok 2 - Original and assisted answers survive reopen and resume without granting authorization
+  ---
+  duration_ms: 231.656
+  type: 'test'
+  ...
+# Subtest: Recovery interrupts jobs and rejects late completion without losing answers
+ok 3 - Recovery interrupts jobs and rejects late completion without losing answers
+  ---
+  duration_ms: 249.868875
+  type: 'test'
+  ...
+# Subtest: Deletion isolates owners, rejects retries and late writes, and enforces private paths
+ok 4 - Deletion isolates owners, rejects retries and late writes, and enforces private paths
+  ---
+  duration_ms: 163.055833
+  type: 'test'
+  ...
+# Subtest: Assessment lifecycle logs omit private identity and answer content
+not ok 5 - Assessment lifecycle logs omit private identity and answer content
+  ---
+  duration_ms: 646.658875
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/understanding/__tests__/service.test.ts:1:8974'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(captured.includes('graph-store'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/understanding/__tests__/service.test.ts:169:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Privacy covers the active production file layout and its lock file
+ok 6 - Privacy covers the active production file layout and its lock file
+  ---
+  duration_ms: 252.193791
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2111.211458

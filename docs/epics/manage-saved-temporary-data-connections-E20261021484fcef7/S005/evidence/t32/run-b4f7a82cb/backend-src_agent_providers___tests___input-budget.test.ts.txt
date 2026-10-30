@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a CliProvider reports the budget it is given (absent when not given); Ollama reports undefined
+ok 1 - a CliProvider reports the budget it is given (absent when not given); Ollama reports undefined
+  ---
+  duration_ms: 0.782334
+  type: 'test'
+  ...
+# Subtest: a provider built through the registry for a Codex model reports the definitions file's chars limit; haiku (a token limit) none
+ok 2 - a provider built through the registry for a Codex model reports the definitions file's chars limit; haiku (a token limit) none
+  ---
+  duration_ms: 1.866
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 314.488083

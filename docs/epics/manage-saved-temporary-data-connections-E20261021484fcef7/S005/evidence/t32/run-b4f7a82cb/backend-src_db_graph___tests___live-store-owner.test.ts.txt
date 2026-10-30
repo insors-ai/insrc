@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: owner check: default path with no declaration is refused and no file is created
+ok 1 - owner check: default path with no declaration is refused and no file is created
+  ---
+  duration_ms: 1.801417
+  type: 'test'
+  ...
+# Subtest: owner check: after the declaration the same open succeeds, also after a close and reopen
+ok 2 - owner check: after the declaration the same open succeeds, also after a close and reopen
+  ---
+  duration_ms: 282.5785
+  type: 'test'
+  ...
+# Subtest: owner check: a temporary path opens without a declaration
+ok 3 - owner check: a temporary path opens without a declaration
+  ---
+  duration_ms: 242.857083
+  type: 'test'
+  ...
+# Subtest: owner check: the live path as a relative path and through a symbolic link is refused
+ok 4 - owner check: the live path as a relative path and through a symbolic link is refused
+  ---
+  duration_ms: 311.319417
+  type: 'test'
+  ...
+# Subtest: owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused
+ok 5 - owner check: only the owner declaration opens the live path; without it, and after it is forgotten, the open is refused
+  ---
+  duration_ms: 238.829833
+  type: 'test'
+  ...
+# Subtest: source scan: the reader declaration's name appears nowhere under src/
+ok 6 - source scan: the reader declaration's name appears nowhere under src/
+  ---
+  duration_ms: 346.258875
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1660.645375

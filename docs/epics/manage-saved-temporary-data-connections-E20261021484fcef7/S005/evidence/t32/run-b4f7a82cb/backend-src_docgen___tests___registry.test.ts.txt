@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: register → list includes it; get resolves it
+ok 1 - register → list includes it; get resolves it
+  ---
+  duration_ms: 1.472125
+  type: 'test'
+  ...
+# Subtest: get on an unregistered docType → undefined (not a throw)
+ok 2 - get on an unregistered docType → undefined (not a throw)
+  ---
+  duration_ms: 0.109041
+  type: 'test'
+  ...
+# Subtest: list preserves registration order and returns a fresh copy
+ok 3 - list preserves registration order and returns a fresh copy
+  ---
+  duration_ms: 0.1565
+  type: 'test'
+  ...
+# Subtest: registering the same docType twice → DuplicateDocTypeError
+ok 4 - registering the same docType twice → DuplicateDocTypeError
+  ---
+  duration_ms: 0.216541
+  type: 'test'
+  ...
+# Subtest: a non-object extractorInputSchema → InvalidRegistrationError
+ok 5 - a non-object extractorInputSchema → InvalidRegistrationError
+  ---
+  duration_ms: 0.073
+  type: 'test'
+  ...
+# Subtest: capability.id not matching docType → InvalidRegistrationError
+ok 6 - capability.id not matching docType → InvalidRegistrationError
+  ---
+  duration_ms: 0.054875
+  type: 'test'
+  ...
+# Subtest: an empty docType → InvalidRegistrationError
+ok 7 - an empty docType → InvalidRegistrationError
+  ---
+  duration_ms: 0.108167
+  type: 'test'
+  ...
+# Subtest: toSerializable drops the bound extract function, keeps the enumerable subset
+ok 8 - toSerializable drops the bound extract function, keeps the enumerable subset
+  ---
+  duration_ms: 0.314792
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 278.349541

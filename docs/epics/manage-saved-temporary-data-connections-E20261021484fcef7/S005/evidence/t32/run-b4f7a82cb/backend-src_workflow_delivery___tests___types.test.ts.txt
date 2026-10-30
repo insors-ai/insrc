@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: DeliveryStoreUnreadableError carries the store path and the underlying message
+ok 1 - DeliveryStoreUnreadableError carries the store path and the underlying message
+  ---
+  duration_ms: 0.579959
+  type: 'test'
+  ...
+# Subtest: the stage and route types list exactly the HLD members
+ok 2 - the stage and route types list exactly the HLD members
+  ---
+  duration_ms: 0.670459
+  type: 'test'
+  ...
+# Subtest: the gate types re-export the review verdict and list exactly the sketched members
+ok 3 - the gate types re-export the review verdict and list exactly the sketched members
+  ---
+  duration_ms: 0.138459
+  type: 'test'
+  ...
+# Subtest: the currency types list exactly the sketched members
+ok 4 - the currency types list exactly the sketched members
+  ---
+  duration_ms: 0.063459
+  type: 'test'
+  ...
+# Subtest: the delivery IPC types list exactly the sketched members
+ok 5 - the delivery IPC types list exactly the sketched members
+  ---
+  duration_ms: 0.253583
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.597833

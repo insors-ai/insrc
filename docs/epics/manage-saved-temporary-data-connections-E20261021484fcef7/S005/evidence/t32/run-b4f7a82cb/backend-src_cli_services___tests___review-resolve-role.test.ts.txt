@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: review-resolve-role.test.ts: reviewArtifact builds its provider from a fake models.resolveRole answer and refuses without one
+ok 1 - review-resolve-role.test.ts: reviewArtifact builds its provider from a fake models.resolveRole answer and refuses without one
+  ---
+  duration_ms: 4.886625
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 631.082875

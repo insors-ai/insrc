@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: publication requires exactly one successful current assessment per downstream stage
+ok 1 - publication requires exactly one successful current assessment per downstream stage
+  ---
+  duration_ms: 40.171292
+  type: 'test'
+  ...
+# Subtest: publication preserves deterministic diagnostics and reports only computable manifest identity
+ok 2 - publication preserves deterministic diagnostics and reports only computable manifest identity
+  ---
+  duration_ms: 5.740125
+  type: 'test'
+  ...
+# Subtest: role reassignment and metadata changes invalidate previously successful assessments
+ok 3 - role reassignment and metadata changes invalidate previously successful assessments
+  ---
+  duration_ms: 12.989125
+  type: 'test'
+  ...
+# Subtest: noncomputable coverage membership makes every assessment stale but preserves manifest identity
+ok 4 - noncomputable coverage membership makes every assessment stale but preserves manifest identity
+  ---
+  duration_ms: 7.2345
+  type: 'test'
+  ...
+# Subtest: invalid release fallback hashes a detached manifest without live property reads
+ok 5 - invalid release fallback hashes a detached manifest without live property reads
+  ---
+  duration_ms: 3.003958
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 471.790708

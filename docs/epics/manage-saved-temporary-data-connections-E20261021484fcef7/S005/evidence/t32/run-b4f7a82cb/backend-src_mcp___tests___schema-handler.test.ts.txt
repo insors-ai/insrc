@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: omitted tool → structured validTools, never throws (ac4)
+ok 1 - omitted tool → structured validTools, never throws (ac4)
+  ---
+  duration_ms: 1.454708
+  type: 'test'
+  ...
+# Subtest: empty-string tool → structured validTools (ac4)
+ok 2 - empty-string tool → structured validTools (ac4)
+  ---
+  duration_ms: 0.070791
+  type: 'test'
+  ...
+# Subtest: unknown tool → structured validTools (ac4)
+ok 3 - unknown tool → structured validTools (ac4)
+  ---
+  duration_ms: 0.070458
+  type: 'test'
+  ...
+# Subtest: phaseless tool returns its single contract (ok)
+ok 4 - phaseless tool returns its single contract (ok)
+  ---
+  duration_ms: 1.789334
+  type: 'test'
+  ...
+# Subtest: phaseless tool ignores a spurious phase (ac3)
+ok 5 - phaseless tool ignores a spurious phase (ac3)
+  ---
+  duration_ms: 0.503625
+  type: 'test'
+  ...
+# Subtest: multi-turn hit with a valid phase → schema + validPhases (ac1)
+ok 6 - multi-turn hit with a valid phase → schema + validPhases (ac1)
+  ---
+  duration_ms: 0.110416
+  type: 'test'
+  ...
+# Subtest: multi-turn phase omitted → error + validPhases, no schema (ac2)
+ok 7 - multi-turn phase omitted → error + validPhases, no schema (ac2)
+  ---
+  duration_ms: 0.132
+  type: 'test'
+  ...
+# Subtest: multi-turn unknown phase → error + validPhases (ac2)
+ok 8 - multi-turn unknown phase → error + validPhases (ac2)
+  ---
+  duration_ms: 0.053833
+  type: 'test'
+  ...
+# Subtest: multi-turn hit surfaces the dynamicNote in the description (ac5)
+ok 9 - multi-turn hit surfaces the dynamicNote in the description (ac5)
+  ---
+  duration_ms: 0.328541
+  type: 'test'
+  ...
+# Subtest: insrc_schema can look up itself (self-introspection)
+ok 10 - insrc_schema can look up itself (self-introspection)
+  ---
+  duration_ms: 0.349375
+  type: 'test'
+  ...
+# Subtest: JSON-Schema derivation of a rawShape yields a non-empty Record
+ok 11 - JSON-Schema derivation of a rawShape yields a non-empty Record
+  ---
+  duration_ms: 0.107084
+  type: 'test'
+  ...
+# Subtest: schema-unavailable is a structured error, not a throw
+ok 12 - schema-unavailable is a structured error, not a throw
+  ---
+  duration_ms: 0.201
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 269.863917

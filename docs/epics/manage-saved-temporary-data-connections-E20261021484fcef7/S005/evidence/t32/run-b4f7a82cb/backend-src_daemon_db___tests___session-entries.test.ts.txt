@@ -1,0 +1,66 @@
+TAP version 13
+# (node:8152) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-TEMP: exact overlay removal publishes revision-only receipt and invalidates private staged edits
+ok 1 - CM-S4-TEMP: exact overlay removal publishes revision-only receipt and invalidates private staged edits
+  ---
+  duration_ms: 306.581042
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close
+ok 2 - CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close
+  ---
+  duration_ms: 291.521625
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: removed config bytes are released immediately while runtime slot cleanup stays pending
+ok 3 - CM-S4-TEMP: removed config bytes are released immediately while runtime slot cleanup stays pending
+  ---
+  duration_ms: 506.9895
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: stale canceled forged and expired removal tokens have no publication effects
+ok 4 - CM-S4-TEMP: stale canceled forged and expired removal tokens have no publication effects
+  ---
+  duration_ms: 139.241917
+  type: 'test'
+  ...
+# Subtest: CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots
+ok 5 - CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots
+  ---
+  duration_ms: 285.848958
+  type: 'test'
+  ...
+# Subtest: CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy
+ok 6 - CM-S3-MEMORY: file generations reuse readonly paths and retain fixed memory-only policy
+  ---
+  duration_ms: 138.650459
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations
+ok 7 - CM-S3-REPLAY: session entry quota spans roots and commit rechecks concurrent preparations
+  ---
+  duration_ms: 184.839
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: cumulative config quota refuses create and update without partial state
+ok 8 - CM-S3-REPLAY: cumulative config quota refuses create and update without partial state
+  ---
+  duration_ms: 435.976333
+  type: 'test'
+  ...
+# Subtest: CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state
+ok 9 - CM-S3-MEMORY: cancellation expiry forgery and stale prepared generations cannot commit or leak prior state
+  ---
+  duration_ms: 95.866333
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3313.896708

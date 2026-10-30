@@ -1,0 +1,59 @@
+{"snapshot": "/private/tmp/s5-frozen-qldpq8za/repo", "commit": "b4f7a82cb44550ef55e522966c2237417bd15307", "backend": 868, "extension": 115, "serial": 22}
+backend-build 0
+extension-typecheck 0
+extension-bundle 0
+backend 25 / 846 src/analyze/__tests__/docs-retrieval.test.ts exit 0
+backend 50 / 846 src/analyze/context/__tests__/data-shaper.live.test.ts exit 0
+backend 75 / 846 src/analyze/context/__tests__/shaper-provider.test.ts exit 0
+backend 100 / 846 src/analyze/explore/__tests__/search-text-params.test.ts exit 0
+backend 125 / 846 src/analyze/runtimes/__tests__/dropped-or-failed.test.ts exit 0
+backend 150 / 846 src/cli/__tests__/model-tiers.test.ts exit 0
+backend 168 / 846 src/cli/services/__tests__/debug-mcp.test.ts exit 1
+backend 175 / 846 src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts exit 0
+backend 200 / 846 src/daemon/__tests__/analyze-progress.test.ts exit 0
+backend 225 / 846 src/daemon/__tests__/delivery-handler-contract.test.ts exit 0
+backend 239 / 846 src/daemon/__tests__/models-daemon-s3.test.ts exit 1
+backend 250 / 846 src/daemon/__tests__/request-lifetime.test.ts exit 0
+backend 275 / 846 src/daemon/db/__tests__/bounded-inflate.test.ts exit 0
+backend 300 / 846 src/daemon/db/__tests__/list-files.test.ts exit 0
+backend 325 / 846 src/daemon/db/__tests__/redis-mongo-probes.test.ts exit 0
+backend 350 / 846 src/daemon/steps/__tests__/analyze-step-handler.test.ts exit 0
+backend 358 / 846 src/daemon/db/__tests__/session-source-inventory.test.ts exit 1
+backend 375 / 846 src/daemon/steps/__tests__/session-host-bootstrap.test.ts exit 0
+backend 400 / 846 src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts exit 0
+backend 425 / 846 src/daemon/threads/__tests__/maintenance.test.ts exit 0
+backend 450 / 846 src/daemon/tools/builtins/code/__tests__/class-locate.test.ts exit 0
+backend 457 / 846 src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts exit 1
+backend 459 / 846 src/daemon/threads/__tests__/s4-acceptance.test.ts exit 1
+backend 465 / 846 src/daemon/threads/__tests__/threads-boot.test.ts exit 1
+backend 475 / 846 src/db/__tests__/entity-files-for-repo.test.ts exit 0
+backend 500 / 846 src/db/graph/__tests__/lock-loss-detection.test.ts exit 0
+backend 525 / 846 src/design/corpus/__tests__/contracts.test.ts exit 0
+backend 550 / 846 src/docgen/extract/__tests__/call-sequence.test.ts exit 0
+backend 575 / 846 src/indexer/__tests__/resolver-file-target.test.ts exit 0
+backend 593 / 846 src/mcp/__tests__/import-graph.test.ts exit 1
+backend 600 / 846 src/mcp/__tests__/review-rule-text.test.ts exit 0
+backend 625 / 846 src/shared/__tests__/review-stream-freshness.test.ts exit 0
+backend 637 / 846 src/understanding/__tests__/service.test.ts exit 1
+backend 650 / 846 src/workflow/__tests__/define-fr-assembly.test.ts exit 0
+backend 675 / 846 src/workflow/__tests__/migrate-docs-meta-rewrite.test.ts exit 0
+backend 700 / 846 src/workflow/amendments/__tests__/store.test.ts exit 0
+backend 725 / 846 src/workflow/artifacts/companion/__tests__/ux-render.test.ts exit 0
+backend 750 / 846 src/workflow/code-review/__tests__/subject-paths.test.ts exit 0
+backend 775 / 846 src/workflow/delivery/__tests__/notice.test.ts exit 0
+backend 800 / 846 src/workflow/review/__tests__/calibration.test.ts exit 0
+backend 825 / 846 src/workflow/runners/build/__tests__/changed-files.test.ts exit 0
+backend 846 / 846 src/daemon/threads/__tests__/worker-stores.test.ts exit 1
+extension 1 / 115 vscode-plugin/src/__tests__/activation.test.ts exit 1
+extension 25 / 115 vscode-plugin/src/chat/__tests__/edit-governor.test.ts exit 0
+extension 50 / 115 vscode-plugin/src/chat/__tests__/session-title.test.ts exit 0
+extension 65 / 115 vscode-plugin/src/config/__tests__/truthful-sync.test.ts exit 1
+extension 70 / 115 vscode-plugin/src/chat/__tests__/cli-adapter.test.ts exit 1
+extension 75 / 115 vscode-plugin/src/connections/__tests__/removal.test.ts exit 0
+extension 100 / 115 vscode-plugin/src/hosts/__tests__/writers.test.ts exit 0
+extension 115 / 115 vscode-plugin/src/chat/__tests__/chat-panel.test.ts exit 1
+jetbrains-test-build 1
+jetbrains-plugin-verifier 1
+vscode-vsix 0
+jetbrains-package 0
+{"done": true, "report": "/private/tmp/s5-frozen-qldpq8za/evidence/report.json", "allExecutedChecksPassed": false, "packages": [{"name": "insrc-jetbrains-0.5.2-s005-b4f7a82cb.zip", "path": "/private/tmp/s5-frozen-qldpq8za/artifacts/insrc-jetbrains-0.5.2-s005-b4f7a82cb.zip", "sha256": "05fef79e1f7fea853a68a3aef1297b9173ae2aabfbfa04b83be6b26bc828f8d4", "bytes": 2697317}, {"name": "insrc-vscode-0.5.16-s005-b4f7a82cb.vsix", "path": "/private/tmp/s5-frozen-qldpq8za/artifacts/insrc-vscode-0.5.16-s005-b4f7a82cb.vsix", "sha256": "d72c043d2716c937d4791ed30d777752610e10181faeb50d381fdc0397592115", "bytes": 368330}], "sourceDrift": []}

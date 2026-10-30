@@ -1,0 +1,23 @@
+TAP version 13
+# Subtest: CM-S2-A9: composed daemon and child logs contain no source credential or data canaries
+ok 1 - CM-S2-A9: composed daemon and child logs contain no source credential or data canaries
+  ---
+  duration_ms: 6619.846458
+  type: 'test'
+  ...
+# Subtest: CM-S4-PRIVACY/NO-PERSIST: composed removal keeps temporary persistence poisoned and owner loss unrecoverable
+ok 2 - CM-S4-PRIVACY/NO-PERSIST: composed removal keeps temporary persistence poisoned and owner loss unrecoverable
+  ---
+  duration_ms: 1678.710875
+  type: 'test'
+  ...
+# {"proof":"removal-privacy-ok","mode":"source","files":0,"keychain":0,"closes":2,"replies":13}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8492.92575

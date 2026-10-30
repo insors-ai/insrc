@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: oversized: false at/below the limit, true above it (strict >, ac4/ac1)
+ok 1 - oversized: false at/below the limit, true above it (strict >, ac4/ac1)
+  ---
+  duration_ms: 0.702167
+  type: 'test'
+  ...
+# Subtest: oversized: default OVERSIZED_LIMIT applied when no limit passed; injected limit overrides
+ok 2 - oversized: default OVERSIZED_LIMIT applied when no limit passed; injected limit overrides
+  ---
+  duration_ms: 0.090083
+  type: 'test'
+  ...
+# Subtest: toGraphvizDot: valid digraph — n<i> aliases, one node + one edge each
+ok 3 - toGraphvizDot: valid digraph — n<i> aliases, one node + one edge each
+  ---
+  duration_ms: 0.26225
+  type: 'test'
+  ...
+# Subtest: toGraphvizDot: DOT-hostile label chars are escaped into well-formed DOT
+ok 4 - toGraphvizDot: DOT-hostile label chars are escaped into well-formed DOT
+  ---
+  duration_ms: 0.067667
+  type: 'test'
+  ...
+# Subtest: toGraphvizDot: an edge to an alias-less node is skipped
+ok 5 - toGraphvizDot: an edge to an alias-less node is skipped
+  ---
+  duration_ms: 0.065167
+  type: 'test'
+  ...
+# Subtest: assembleFallbackShell: sc3 shape, inlined SVG + svg-pan-zoom, offline (ac2)
+ok 6 - assembleFallbackShell: sc3 shape, inlined SVG + svg-pan-zoom, offline (ac2)
+  ---
+  duration_ms: 0.174375
+  type: 'test'
+  ...
+# Subtest: assembleShell(small IR): primary-inline path; renderer NEVER invoked (ac4)
+ok 7 - assembleShell(small IR): primary-inline path; renderer NEVER invoked (ac4)
+  ---
+  duration_ms: 13.385958
+  type: 'test'
+  ...
+# Subtest: assembleShell(small IR): byte-identical to the default-renderer output (ac4 regression)
+ok 8 - assembleShell(small IR): byte-identical to the default-renderer output (ac4 regression)
+  ---
+  duration_ms: 4.403375
+  type: 'test'
+  ...
+# Subtest: assembleShell(oversized IR, ok renderer): fallback-subprocess shell (ac1/ac2)
+ok 9 - assembleShell(oversized IR, ok renderer): fallback-subprocess shell (ac1/ac2)
+  ---
+  duration_ms: 0.426834
+  type: 'test'
+  ...
+# Subtest: assembleShell(oversized IR, unavailable renderer): fallback-unavailable naming tried binaries + remedy (ac3)
+ok 10 - assembleShell(oversized IR, unavailable renderer): fallback-unavailable naming tried binaries + remedy (ac3)
+  ---
+  duration_ms: 0.373666
+  type: 'test'
+  ...
+# Subtest: live: graphvizSubprocessRenderer renders real DOT to an <svg> root
+ok 11 - live: graphvizSubprocessRenderer renders real DOT to an <svg> root # SKIP
+  ---
+  duration_ms: 0.034917
+  type: 'test'
+  ...
+# Subtest: live: generateDocument for an oversized component-dependency scope → ok fallback shell
+ok 12 - live: generateDocument for an oversized component-dependency scope → ok fallback shell # SKIP
+  ---
+  duration_ms: 0.029917
+  type: 'test'
+  ...
+# Subtest: live: both binaries absent → unavailable naming the tried binaries (ac3)
+ok 13 - live: both binaries absent → unavailable naming the tried binaries (ac3)
+  ---
+  duration_ms: 6.74425
+  type: 'test'
+  ...
+# Subtest: live: a present binary that fails on bad DOT → unavailable(reason), never throws
+ok 14 - live: a present binary that fails on bad DOT → unavailable(reason), never throws # SKIP
+  ---
+  duration_ms: 0.053
+  type: 'test'
+  ...
+# Subtest: generateDocument: unknown docType still → not-found (s5 leaves the surface intact)
+ok 15 - generateDocument: unknown docType still → not-found (s5 leaves the surface intact)
+  ---
+  duration_ms: 0.084208
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 406.08025

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: define: absent functionalDefinition renders byte-identically (no FR section)
+ok 1 - define: absent functionalDefinition renders byte-identically (no FR section)
+  ---
+  duration_ms: 1.971833
+  type: 'test'
+  ...
+# Subtest: define: a functionalDefinition renders the FR section when present
+ok 2 - define: a functionalDefinition renders the FR section when present
+  ---
+  duration_ms: 0.36375
+  type: 'test'
+  ...
+# Subtest: hld: absent functionalDefinition renders byte-identically (no FR section)
+ok 3 - hld: absent functionalDefinition renders byte-identically (no FR section)
+  ---
+  duration_ms: 0.833208
+  type: 'test'
+  ...
+# Subtest: hld: a functionalDefinition renders the FR section when present
+ok 4 - hld: a functionalDefinition renders the FR section when present
+  ---
+  duration_ms: 1.359166
+  type: 'test'
+  ...
+# Subtest: lld: absent functionalDefinition renders byte-identically (no FR section)
+ok 5 - lld: absent functionalDefinition renders byte-identically (no FR section)
+  ---
+  duration_ms: 1.190375
+  type: 'test'
+  ...
+# Subtest: lld: a functionalDefinition renders the FR section when present
+ok 6 - lld: a functionalDefinition renders the FR section when present
+  ---
+  duration_ms: 0.187584
+  type: 'test'
+  ...
+# Subtest: plan: absent functionalDefinition renders byte-identically (no FR section)
+ok 7 - plan: absent functionalDefinition renders byte-identically (no FR section)
+  ---
+  duration_ms: 0.862791
+  type: 'test'
+  ...
+# Subtest: plan: a functionalDefinition renders the FR section when present
+ok 8 - plan: a functionalDefinition renders the FR section when present
+  ---
+  duration_ms: 0.244625
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 299.861541

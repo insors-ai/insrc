@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: CM-S1-J: real socket dispatch owns identity and epoch across forged params labels reconnects and direct unary forwarding
+ok 1 - CM-S1-J: real socket dispatch owns identity and epoch across forged params labels reconnects and direct unary forwarding
+  ---
+  duration_ms: 9.07475
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 484.31125

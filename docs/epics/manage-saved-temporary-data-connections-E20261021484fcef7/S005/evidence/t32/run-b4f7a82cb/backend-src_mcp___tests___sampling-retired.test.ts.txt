@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext
+ok 1 - sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext
+  ---
+  duration_ms: 86.677209
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 272.892084

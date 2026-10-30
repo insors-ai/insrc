@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: judgeAdherence: maps model findings to DimensionResult{adherence} with expectationRef (ac1)
+ok 1 - judgeAdherence: maps model findings to DimensionResult{adherence} with expectationRef (ac1)
+  ---
+  duration_ms: 19.842667
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: no departures => empty findings, no manufactured findings (ac2)
+ok 2 - judgeAdherence: no departures => empty findings, no manufactured findings (ac2)
+  ---
+  duration_ms: 1.140667
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: empty grounding still yields a valid empty result (ac2)
+ok 3 - judgeAdherence: empty grounding still yields a valid empty result (ac2)
+  ---
+  duration_ms: 0.355417
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: drops a finding whose location file is outside the changed set
+ok 4 - judgeAdherence: drops a finding whose location file is outside the changed set
+  ---
+  duration_ms: 0.262375
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: issues exactly ONE completeStructured call, no other provider method (ac4/k4/k3)
+ok 5 - judgeAdherence: issues exactly ONE completeStructured call, no other provider method (ac4/k4/k3)
+  ---
+  duration_ms: 0.609709
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: a differently-decided-but-faithful design raises nothing (ac3)
+ok 6 - judgeAdherence: a differently-decided-but-faithful design raises nothing (ac3)
+  ---
+  duration_ms: 0.489542
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 7 - judgeAdherence: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+  ---
+  duration_ms: 0.612125
+  type: 'test'
+  ...
+# Subtest: ADHERENCE_FINDINGS_SCHEMA per-finding shape is 1:1 with sc3 DimensionFinding fields
+ok 8 - ADHERENCE_FINDINGS_SCHEMA per-finding shape is 1:1 with sc3 DimensionFinding fields
+  ---
+  duration_ms: 0.062125
+  type: 'test'
+  ...
+# Subtest: buildAdherencePrompt: the output-shape reminder is TRAILING (after the changed symbols)
+ok 9 - buildAdherencePrompt: the output-shape reminder is TRAILING (after the changed symbols)
+  ---
+  duration_ms: 0.243708
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: both contracts null (mode C) -> empty result with ZERO provider calls
+ok 10 - judgeAdherence: both contracts null (mode C) -> empty result with ZERO provider calls
+  ---
+  duration_ms: 0.748833
+  type: 'test'
+  ...
+# Subtest: judgeAdherence: a contract present -> issues exactly one completeStructured call (mode B unchanged)
+ok 11 - judgeAdherence: a contract present -> issues exactly one completeStructured call (mode B unchanged)
+  ---
+  duration_ms: 0.892417
+  type: 'test'
+  ...
+# Subtest: buildAdherencePrompt: mode A includes the LLD body + the Approved plan section + implementation-correctness framing
+ok 12 - buildAdherencePrompt: mode A includes the LLD body + the Approved plan section + implementation-correctness framing
+  ---
+  duration_ms: 0.082042
+  type: 'test'
+  ...
+# Subtest: buildAdherencePrompt: mode B (LLD only) includes the LLD body, OMITS the plan section, no null deref
+ok 13 - buildAdherencePrompt: mode B (LLD only) includes the LLD body, OMITS the plan section, no null deref
+  ---
+  duration_ms: 0.05425
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 344.83925

@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: epicCatalog enumerates Epics with problem + stories + approved flag
+ok 1 - epicCatalog enumerates Epics with problem + stories + approved flag
+  ---
+  duration_ms: 5.470125
+  type: 'test'
+  ...
+# Subtest: epicCatalog marks an un-approved Epic as not approved + returns [] for an empty repo
+ok 2 - epicCatalog marks an un-approved Epic as not approved + returns [] for an empty repo
+  ---
+  duration_ms: 1.541583
+  type: 'test'
+  ...
+# Subtest: nextStoryId returns s<max+1>
+ok 3 - nextStoryId returns s<max+1>
+  ---
+  duration_ms: 1.562042
+  type: 'test'
+  ...
+# Subtest: appendStoryToDefine appends the Story, re-renders md, and retains approval
+ok 4 - appendStoryToDefine appends the Story, re-renders md, and retains approval
+  ---
+  duration_ms: 3.631291
+  type: 'test'
+  ...
+# Subtest: appendStoryToDefine rejects a duplicate story id
+ok 5 - appendStoryToDefine rejects a duplicate story id
+  ---
+  duration_ms: 1.238959
+  type: 'test'
+  ...
+# Subtest: applyAddStory appends a new StoryBoundary to the effective HLD
+ok 6 - applyAddStory appends a new StoryBoundary to the effective HLD
+  ---
+  duration_ms: 0.165834
+  type: 'test'
+  ...
+# Subtest: applyAddStory rejects a story id that already has a boundary
+ok 7 - applyAddStory rejects a story id that already has a boundary
+  ---
+  duration_ms: 0.114458
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 304.335584

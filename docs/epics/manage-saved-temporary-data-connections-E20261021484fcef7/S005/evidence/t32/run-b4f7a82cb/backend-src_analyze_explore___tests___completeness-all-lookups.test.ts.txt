@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: a table test over all twenty lookup types finds a completeness record with its stated basis
+ok 1 - a table test over all twenty lookup types finds a completeness record with its stated basis
+  ---
+  duration_ms: 211.908917
+  type: 'test'
+  ...
+# Subtest: the fixture gives every lookup something to return, so the table is not a table of empty results
+ok 2 - the fixture gives every lookup something to return, so the table is not a table of empty results
+  ---
+  duration_ms: 201.812209
+  type: 'test'
+  ...
+# Subtest: each lookup that stops at a count reports the limit with its scope
+ok 3 - each lookup that stops at a count reports the limit with its scope
+  ---
+  duration_ms: 154.895959
+  type: 'test'
+  ...
+# Subtest: data-model.trace reports its overall limit and both per-target limits
+ok 4 - data-model.trace reports its overall limit and both per-target limits
+  ---
+  duration_ms: 125.113958
+  type: 'test'
+  ...
+# Subtest: search.text and config.trace turn the search's omissions into skipped, partlyRead and limited
+ok 5 - search.text and config.trace turn the search's omissions into skipped, partlyRead and limited
+  ---
+  duration_ms: 288.046666
+  type: 'test'
+  ...
+# Subtest: the table-listing lookup reads the data driver's cut flag into a limit
+ok 6 - the table-listing lookup reads the data driver's cut flag into a limit
+  ---
+  duration_ms: 290.015291
+  type: 'test'
+  ...
+# Subtest: every graph-based record carries the coverage note, on the paths that return early as well
+ok 7 - every graph-based record carries the coverage note, on the paths that return early as well
+  ---
+  duration_ms: 368.864792
+  type: 'test'
+  ...
+# Subtest: a limit below 1 does not make a text lookup fail
+ok 8 - a limit below 1 does not make a text lookup fail
+  ---
+  duration_ms: 326.372167
+  type: 'test'
+  ...
+# Subtest: a prepared value without the carried facts gives a record that is not established
+ok 9 - a prepared value without the carried facts gives a record that is not established
+  ---
+  duration_ms: 288.470584
+  type: 'test'
+  ...
+# Subtest: s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts
+ok 10 - s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts
+  ---
+  duration_ms: 383.5865
+  type: 'test'
+  ...
+# Subtest: s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository
+ok 11 - s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository
+  ---
+  duration_ms: 321.338083
+  type: 'test'
+  ...
+# Subtest: s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness
+ok 12 - s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness
+  ---
+  duration_ms: 153.4925
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3672.641209

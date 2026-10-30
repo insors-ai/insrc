@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: empty tiering: tiers = the definitions' tier defaults as canonical ids (source default), coreFloor = mid (default)
+ok 1 - empty tiering: tiers = the definitions' tier defaults as canonical ids (source default), coreFloor = mid (default)
+  ---
+  duration_ms: 1.502083
+  type: 'test'
+  ...
+# Subtest: empty tiering: a critical role resolves to its core default (source taxonomy), unclamped
+ok 2 - empty tiering: a critical role resolves to its core default (source taxonomy), unclamped
+  ---
+  duration_ms: 0.185667
+  type: 'test'
+  ...
+# Subtest: empty tiering: a peripheral role resolves to its taxonomy default (mid/cheap)
+ok 3 - empty tiering: a peripheral role resolves to its taxonomy default (mid/cheap)
+  ---
+  duration_ms: 0.233542
+  type: 'test'
+  ...
+# Subtest: a configured tier model overrides the default and is marked source=config
+ok 4 - a configured tier model overrides the default and is marked source=config
+  ---
+  duration_ms: 0.172375
+  type: 'test'
+  ...
+# Subtest: a roleTiers override changes the effective tier and is marked source=override
+ok 5 - a roleTiers override changes the effective tier and is marked source=override
+  ---
+  duration_ms: 0.102792
+  type: 'test'
+  ...
+# Subtest: a critical role overridden below coreFloor is clamped UP to the floor (clamped=true)
+ok 6 - a critical role overridden below coreFloor is clamped UP to the floor (clamped=true)
+  ---
+  duration_ms: 0.085666
+  type: 'test'
+  ...
+# Subtest: a peripheral role below coreFloor is NEVER clamped
+ok 7 - a peripheral role below coreFloor is NEVER clamped
+  ---
+  duration_ms: 0.136792
+  type: 'test'
+  ...
+# Subtest: a roleTiers key that is not a current taxonomy role is surfaced as a stale override
+ok 8 - a roleTiers key that is not a current taxonomy role is surfaced as a stale override
+  ---
+  duration_ms: 0.142
+  type: 'test'
+  ...
+# Subtest: config dot-path helpers target the right keys
+ok 9 - config dot-path helpers target the right keys
+  ---
+  duration_ms: 0.224375
+  type: 'test'
+  ...
+# Subtest: isTierName guards the tier union
+ok 10 - isTierName guards the tier union
+  ---
+  duration_ms: 0.287583
+  type: 'test'
+  ...
+# Subtest: ROLE_TIERS_PATH is the dotless map key (no role id appended)
+ok 11 - ROLE_TIERS_PATH is the dotless map key (no role id appended)
+  ---
+  duration_ms: 0.051375
+  type: 'test'
+  ...
+# Subtest: nextRoleTiers keeps a dotted role id as a single FLAT key
+ok 12 - nextRoleTiers keeps a dotted role id as a single FLAT key
+  ---
+  duration_ms: 0.075208
+  type: 'test'
+  ...
+# Subtest: nextRoleTiers merges into an existing map without disturbing other roles
+ok 13 - nextRoleTiers merges into an existing map without disturbing other roles
+  ---
+  duration_ms: 0.037917
+  type: 'test'
+  ...
+# Subtest: nextRoleTiers with tier=null clears the override (sparse) and leaves siblings
+ok 14 - nextRoleTiers with tier=null clears the override (sparse) and leaves siblings
+  ---
+  duration_ms: 0.034583
+  type: 'test'
+  ...
+# Subtest: nextRoleTiers does not mutate the input map
+ok 15 - nextRoleTiers does not mutate the input map
+  ---
+  duration_ms: 0.073292
+  type: 'test'
+  ...
+# Subtest: model-tiers.test.ts: computeEffectiveTiers over a fake definitions answer, with the daemon's effort precedence
+ok 16 - model-tiers.test.ts: computeEffectiveTiers over a fake definitions answer, with the daemon's effort precedence
+  ---
+  duration_ms: 0.563167
+  type: 'test'
+  ...
+# Subtest: model-tiers.test.ts: tier edit helpers (family without tierDefaults, effort drop, alias, unserved ids)
+ok 17 - model-tiers.test.ts: tier edit helpers (family without tierDefaults, effort drop, alias, unserved ids)
+  ---
+  duration_ms: 0.106625
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 323.39725

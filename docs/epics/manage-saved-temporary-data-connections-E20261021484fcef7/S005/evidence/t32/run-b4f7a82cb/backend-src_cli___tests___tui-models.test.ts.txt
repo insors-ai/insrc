@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown
+ok 1 - tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown
+  ---
+  duration_ms: 362.124167
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup
+ok 2 - tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup
+  ---
+  duration_ms: 111.229917
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false
+ok 3 - tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false
+  ---
+  duration_ms: 1090.275875
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: interrupted check and outcome-unknown decision
+ok 4 - tui-models.test.ts: interrupted check and outcome-unknown decision
+  ---
+  duration_ms: 541.11675
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: repo models view edits only tasks and coreFloor
+ok 5 - tui-models.test.ts: repo models view edits only tasks and coreFloor
+  ---
+  duration_ms: 1276.568459
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: Model Tiers pane retries after the daemon starts, names an older daemon, shows aliases and an effort the model does not take
+ok 6 - tui-models.test.ts: Model Tiers pane retries after the daemon starts, names an older daemon, shows aliases and an effort the model does not take
+  ---
+  duration_ms: 197.796042
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: check screen recovers from an expired check, offers an already-served id as a pick, reports the restart a save needs, and holds while restarting
+ok 7 - tui-models.test.ts: check screen recovers from an expired check, offers an already-served id as a pick, reports the restart a save needs, and holds while restarting
+  ---
+  duration_ms: 1243.075458
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: an edit waits for the previous save to reload; a save whose connection drops is read back; an older daemon refusing the check is named
+ok 8 - tui-models.test.ts: an edit waits for the previous save to reload; a save whose connection drops is read back; an older daemon refusing the check is named
+  ---
+  duration_ms: 1373.974042
+  type: 'test'
+  ...
+# Subtest: tui-models.test.ts: a lost connection reads as daemon down; r waits for a pending repo save; an unreadable read-back is reported as unknown
+ok 9 - tui-models.test.ts: a lost connection reads as daemon down; r waits for a pending repo save; an unreadable read-back is reported as unknown
+  ---
+  duration_ms: 857.640917
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7905.353458

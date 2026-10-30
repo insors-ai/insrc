@@ -1,0 +1,3358 @@
+[
+  {
+    "name": "extension-vscode-plugin_src___tests___activation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/__tests__/activation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 1,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src___tests___activation.test.ts.txt",
+    "sha256": "4f857e19fa500f73d07dbdd160b4ef75621448d50e4ac77fccdd2034c00b24b4",
+    "counts": {
+      "tests": 15,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 14,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [
+      "runReachabilityProbe degrades a hung probe to errored within the bounded deadline",
+      "runReachabilityProbe never throws even if reachability() rejects",
+      "activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves",
+      "the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)",
+      "only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)",
+      "a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running",
+      "no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given",
+      "a start is skipped when the fresh reachability check just before it finds the daemon running",
+      "a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation",
+      "a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'",
+      "runReachabilityProbe answers the state it pushed into the status surface",
+      "the extension entry passes the daemon lifecycle controller into the activation",
+      "activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws",
+      "the extension entry runs the settings pull, the update check and onboarding only after activation has settled"
+    ],
+    "interventions": [],
+    "file": "vscode-plugin/src/__tests__/activation.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src___tests___packaging.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/__tests__/packaging.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.19,
+    "output": "extension-vscode-plugin_src___tests___packaging.test.ts.txt",
+    "sha256": "f18d645465357480b9010cfea9cb4e3409b64c7fe82b25a2efcc8472227da274",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/__tests__/packaging.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src___tests___uninstall.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/__tests__/uninstall.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src___tests___uninstall.test.ts.txt",
+    "sha256": "5505ce5a66127e8067658cb845904973d78405246d7a0e94c71cdac48e04d1f9",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/__tests__/uninstall.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___approval-queue.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/approval-queue.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___approval-queue.test.ts.txt",
+    "sha256": "529c459f5576c20163eb30c42f252e3eaa0d08f2c9266270adc5132ccd1cf953",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/approval-queue.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___attachment-store.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/attachment-store.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___attachment-store.test.ts.txt",
+    "sha256": "fece7b9c13c6122fccb944ea4a5a107aa91ea82d182e02cab1841bf30b0e800a",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-failure.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-failure.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-failure.test.ts.txt",
+    "sha256": "6871e962f182f433d53b21d837af3773cafd8c2374e4df3441d475ee43fce278",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-failure.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-outbox.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-outbox.test.ts.txt",
+    "sha256": "799ef5f7c4a476f5d286ef347ffe019f61a986f8e5602171859d711b3df0b70f",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-panel.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 1,
+    "timedOut": false,
+    "durationSeconds": 600.23,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-panel.test.ts.txt",
+    "sha256": "503b9c5d55c5d3b1831896cf7c0acb0d4f1a2d24f9d717f2d68be0bd247800f9",
+    "counts": {
+      "tests": 164,
+      "pass": 163,
+      "fail": 0,
+      "cancelled": 1,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [
+      "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+    ],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-queue-fault-injection.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.24,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-queue-fault-injection.test.ts.txt",
+    "sha256": "0bb65e97603fcc92a6b0d2f30af083cc611062e23782a2189138e1bb7b422795",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-queue-outbox-host.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 4.04,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-queue-outbox-host.test.ts.txt",
+    "sha256": "b4d8a3a9b7f9542203208ee95b1a4055af2de35f9250a169767eec86e9aa9661",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-queue-routing.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.98,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-queue-routing.test.ts.txt",
+    "sha256": "b58008f3c43df7ed463f592d8120873f8bd3c0466921daaac70a61ebf4487ec7",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-queue-runner.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.81,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-queue-runner.test.ts.txt",
+    "sha256": "602db71533b5312aaf3b3c1ad29acb0d81acf11d30ce470e7736d52745820a47",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-queue-setup.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-queue-setup.test.ts.txt",
+    "sha256": "dd0a8d360124b3b87052ba5dd75c669950e137d5c2bc06f689d0567c501cd163",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-queue-store.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.18,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-queue-store.test.ts.txt",
+    "sha256": "9c15651a02c7fb82f317c350aac1895a71a94b339b268c9015d1fd56961d08a9",
+    "counts": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-queue-worker.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.33,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-queue-worker.test.ts.txt",
+    "sha256": "c19a9bd7f9ff1757b1eb5a08939e0a59f209e792d2805e3d91514dc0b8296ca0",
+    "counts": {
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-shell.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.39,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-shell.test.ts.txt",
+    "sha256": "03098e2743fefe71581cbb75f02784425009fd20b1481865239e1b2857fbe8b1",
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___chat-theme.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src_chat___tests___chat-theme.test.ts.txt",
+    "sha256": "a8dac1a8168df2f0ca9779e0f2bafefa4ffd46cbd556938d12e31f4495cb02e8",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___cli-adapter.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 1,
+    "timedOut": false,
+    "durationSeconds": 30.37,
+    "output": "extension-vscode-plugin_src_chat___tests___cli-adapter.test.ts.txt",
+    "sha256": "1ac73e94c7b8b4d44d81c3c91692d76e12bf8adf6e26c6862ee894f6cd955599",
+    "counts": {
+      "tests": 88,
+      "pass": 87,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [
+      "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group"
+    ],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___design-tokens.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/design-tokens.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___design-tokens.test.ts.txt",
+    "sha256": "3ca4429b1a16b2fa5b31f77faf0c538d04048063e60495de36e33777945fc160",
+    "counts": {
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/design-tokens.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___diff-click.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/diff-click.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___diff-click.test.ts.txt",
+    "sha256": "8839c984c5e4be1f928e82d9884f7bd4ab98ed381f35805bcf5a5d65c0ae1115",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___diff-highlight.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___diff-highlight.test.ts.txt",
+    "sha256": "5a83b08f0f84b75624815ec1a088ffd281b179f246e35f19044b6726a97b7c91",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___diff-sections.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/diff-sections.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___diff-sections.test.ts.txt",
+    "sha256": "1a75ef1cfa841e037f553263ebe797fd11c92f980a8e3f17087f909b9f63b092",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___diff-tokens.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___diff-tokens.test.ts.txt",
+    "sha256": "5fecbc6bff998b7a6654dd5486341ae8f52591469c89d9222ca4eafbe220e4e4",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___docs-review-client.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___docs-review-client.test.ts.txt",
+    "sha256": "6825e49c574ab0db29e42a2d91e414a2207d16b441a139c0ead5b78047546438",
+    "counts": {
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___docs-review-decision.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.81,
+    "output": "extension-vscode-plugin_src_chat___tests___docs-review-decision.test.ts.txt",
+    "sha256": "376b702905e9edacdd3c60fc83aa44c7f2c31488f76a8b907facafd772880e7e",
+    "counts": {
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___docs-review-panel.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 20.36,
+    "output": "extension-vscode-plugin_src_chat___tests___docs-review-panel.test.ts.txt",
+    "sha256": "a3db7cc480c47068feda89acf096e85e77cfd328c58c92954f6bda2d066c8ba9",
+    "counts": {
+      "tests": 228,
+      "pass": 228,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___docs-sections.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/docs-sections.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___docs-sections.test.ts.txt",
+    "sha256": "9425cce2c722a7f912c0ffdba33976d7bfefa2cc7aeca40df08a6d2fb8d9550f",
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/docs-sections.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___edit-governor.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/edit-governor.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___edit-governor.test.ts.txt",
+    "sha256": "3d37e36223e39330bdcf6b5b048b8d64ed078cec0254f639a0b61a4e188e42c4",
+    "counts": {
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/edit-governor.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___exec-path-scan.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___exec-path-scan.test.ts.txt",
+    "sha256": "458af1200b21599eff233f2eba474e3d5ae400571b4d4f1f0a78967cc3f524c4",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___extension-chat-wiring.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.33,
+    "output": "extension-vscode-plugin_src_chat___tests___extension-chat-wiring.test.ts.txt",
+    "sha256": "049c2312ac4424d73f3d14e45d5023eaa9511e4b0a5997d6bcbb387a916c8b8f",
+    "counts": {
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___fake-dom.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___fake-dom.test.ts.txt",
+    "sha256": "3aae1a13a06fca51fcfe5919ed8f59f0ec1dbf7520c01cf991dd85878a9c1a6d",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___git-baseline.integration.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.14,
+    "output": "extension-vscode-plugin_src_chat___tests___git-baseline.integration.test.ts.txt",
+    "sha256": "aaf99dc49af9f2690c7f5faf398644f01ec11ced6c508921df2f90b27df1565c",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___git-baseline.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/git-baseline.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___git-baseline.test.ts.txt",
+    "sha256": "37bc9c0526797048f75fc5715194413b058301928903a4528f6848163b5df4ea",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___group-lock.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/group-lock.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.33,
+    "output": "extension-vscode-plugin_src_chat___tests___group-lock.test.ts.txt",
+    "sha256": "2bbe32de2aa1d741559558af86bc9867abf4db055c7fad7cd56c4c35e67807d5",
+    "counts": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/group-lock.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___link-markup.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/link-markup.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src_chat___tests___link-markup.test.ts.txt",
+    "sha256": "b83fed2a1639edc066b1f742358fdf54e103adbf59c94cb220b499254f933003",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/link-markup.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___link-opener.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/link-opener.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src_chat___tests___link-opener.test.ts.txt",
+    "sha256": "57266184a3b60a29bab19d5cfab4d206c552b19431fe40e144e1e63472f7dcb0",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/link-opener.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___live-cli.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/live-cli.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___live-cli.test.ts.txt",
+    "sha256": "d01487f8450d1af7b6d7aa45ddd465f4a43531eeaa23cac9138fd7fd32171035",
+    "counts": {
+      "tests": 8,
+      "pass": 0,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 8,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/live-cli.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___markers.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/markers.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___markers.test.ts.txt",
+    "sha256": "b7b1853662c2bd0589d9881f5271c3c8cfbf2b4376d05e145ecd8b866007d949",
+    "counts": {
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/markers.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___mocks-contract.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/mocks-contract.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___mocks-contract.test.ts.txt",
+    "sha256": "ddf7e3a1a7fb30c386357b0a7893a8d644f1a9e1a3db47116a5b560d404811e9",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/mocks-contract.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___protocol.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___protocol.test.ts.txt",
+    "sha256": "f143b3f6f656d86491c54a5a77fab0553c5b08b09459a321c04b48ed7b56ad31",
+    "counts": {
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___render-registry.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src_chat___tests___render-registry.test.ts.txt",
+    "sha256": "81d4f681729ffa6f397a84d823d6bb4eee859dd101fbb3328b2f9c18991b08d1",
+    "counts": {
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___resolve-within.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/resolve-within.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___resolve-within.test.ts.txt",
+    "sha256": "46b068d5442cfc031340fc572dc6ca4a2b363dbfff78296b2c139cd7c3369376",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/resolve-within.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___review-column.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/review-column.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___review-column.test.ts.txt",
+    "sha256": "c49a6f6a23d05aefda9718b92e9dbf62c141ddda2f4ff6b22a8a4076bbb1804c",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/review-column.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___review-frame-message.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___review-frame-message.test.ts.txt",
+    "sha256": "bf2c21a4e732871c7e1341226b5ab79991e13b0f921f288b3f83e3c1928ac0f7",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___review-icon.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/review-icon.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___review-icon.test.ts.txt",
+    "sha256": "5da21a852252e4b6aa49985f95b3a57c0807427010e96abe0896cd666ff28295",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/review-icon.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___review-presenter.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/review-presenter.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.46,
+    "output": "extension-vscode-plugin_src_chat___tests___review-presenter.test.ts.txt",
+    "sha256": "d5a483d01cff775896da682ea6f603004d04811b93d82462dfa8b71537c747af",
+    "counts": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___review-wiring.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/review-wiring.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src_chat___tests___review-wiring.test.ts.txt",
+    "sha256": "7dfb0bb9102bb155da0d1ba80a8df0542c225feb32c08f9c09531dfc0102fdef",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___session-file-store.integration.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.3,
+    "output": "extension-vscode-plugin_src_chat___tests___session-file-store.integration.test.ts.txt",
+    "sha256": "964ca0e4e2f575ade553470a4f2f2c3c3b3110ae07668a49ffef2b07b3c392dd",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___session-file-store.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___session-file-store.test.ts.txt",
+    "sha256": "6852bd90c82dd014f074ae507a9363eb2785b6e2ddf0a5e6e272647469c5e4a4",
+    "counts": {
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___session-lock.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/session-lock.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.19,
+    "output": "extension-vscode-plugin_src_chat___tests___session-lock.test.ts.txt",
+    "sha256": "7c8826ec428dfedecd77fb52664dad8972c8b73328893369dabec472fb3ac85d",
+    "counts": {
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___session-output.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/session-output.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.44,
+    "output": "extension-vscode-plugin_src_chat___tests___session-output.test.ts.txt",
+    "sha256": "063ea588d51cb4b9a1b05bbc43af58d91158b451a712031aa8d38c2024056ad0",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/session-output.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___session-store.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/session-store.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src_chat___tests___session-store.test.ts.txt",
+    "sha256": "ff2cfbd046f8ea35b3ddfd9527884fcf897dcb30efe7f83dd1938223c8597a11",
+    "counts": {
+      "tests": 26,
+      "pass": 26,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___session-title.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/session-title.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___session-title.test.ts.txt",
+    "sha256": "3a304481de4dce8208e60e0d04f3232ab824a2731f85b23e0b063035d65980d9",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/session-title.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___stream-events.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/stream-events.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_chat___tests___stream-events.test.ts.txt",
+    "sha256": "41dbf8dc2e87bc8fc3cee4528f3128228edbf4b657dc2023a90116ffeac1d7de",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/stream-events.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___transcript-pager.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.49,
+    "output": "extension-vscode-plugin_src_chat___tests___transcript-pager.test.ts.txt",
+    "sha256": "f85a861200ba11f1032be9f09afc0535e2dc4a9e113ec23cb6d33520f56bfbd1",
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___transcript-window.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_chat___tests___transcript-window.test.ts.txt",
+    "sha256": "9af4a467ebe77399ae5c8d0b414720ca39914482e049e640c1056771c7b7fef0",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___turn-lifecycle.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.78,
+    "output": "extension-vscode-plugin_src_chat___tests___turn-lifecycle.test.ts.txt",
+    "sha256": "e5ee8b7429600ce75f63399b632b1e301712cc717b92439fba76d92b474d3876",
+    "counts": {
+      "tests": 32,
+      "pass": 32,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_chat___tests___webview-hljs.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.34,
+    "output": "extension-vscode-plugin_src_chat___tests___webview-hljs.test.ts.txt",
+    "sha256": "a414c8484574209880939148b4dfa04302030b51c7f242e4709985155b392698",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___gateway.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/gateway.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_config___tests___gateway.test.ts.txt",
+    "sha256": "3ebb505b692e99490759c95352d0775cbff2d3bbb8c84db6e32f23f6baa3b15f",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/gateway.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___key-map.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/key-map.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_config___tests___key-map.test.ts.txt",
+    "sha256": "57173884ba5c384ef29ace4d82860a977eb76e0ae5b49a424dc185950186de6e",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/key-map.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___manifest-catalog.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_config___tests___manifest-catalog.test.ts.txt",
+    "sha256": "ed3ec956928a340d8e76642bda0051828043e10563dd607f370bc0d7a70b4dd1",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___manifest-key-map-engine.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_config___tests___manifest-key-map-engine.test.ts.txt",
+    "sha256": "9e953f109e5d408750fbcf9737df85229fe358b106ca464cf6221cec66b0359b",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___per-role-engine.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/per-role-engine.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_config___tests___per-role-engine.test.ts.txt",
+    "sha256": "190f147879bc0bfa2a2f5ccc226e1c3b2541bd2e457d1ea02e829bb97e1df32d",
+    "counts": {
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___per-role.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/per-role.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_config___tests___per-role.test.ts.txt",
+    "sha256": "cdc63932688ab4aed32ef4cabf46ca7b429937ed93452e7ec5439a1ca6b197df",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/per-role.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___seam.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/seam.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_config___tests___seam.test.ts.txt",
+    "sha256": "efe47c5a4c1d2d253ec74dd36898f55efa878b6e4f64a61708603b27699f0fc3",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/seam.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___sync-engine.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/sync-engine.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_config___tests___sync-engine.test.ts.txt",
+    "sha256": "7a492223ef7af69e44baa0aee34096887c43df9320f3ea981618c6e3ee1b520e",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___sync-manifest-catalog.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.82,
+    "output": "extension-vscode-plugin_src_config___tests___sync-manifest-catalog.test.ts.txt",
+    "sha256": "3e8d1ea16c44e3088736284981d0e11ea43b24eb83dda5009885bcc3698bd4f1",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___truthful-sync.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/truthful-sync.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 1,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_config___tests___truthful-sync.test.ts.txt",
+    "sha256": "f08ed5e1435a91e0099a97597ea58bef376d9b9e1462a37547635730bc00498b",
+    "counts": {
+      "tests": 12,
+      "pass": 11,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [
+      "package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands"
+    ],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_config___tests___vscode-bundle-catalog.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 2.79,
+    "output": "extension-vscode-plugin_src_config___tests___vscode-bundle-catalog.test.ts.txt",
+    "sha256": "731ff305a88b19f785be0099464da23bd6ee2d813136b1d6d7df18c3e3e3ccc8",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___compatibility.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/compatibility.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 5.57,
+    "output": "extension-vscode-plugin_src_connections___tests___compatibility.test.ts.txt",
+    "sha256": "b48acc3aadadc760e5bd3893fd94eb1f70e1c1ce232857bd0e3943e377615d10",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___draft-test.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/draft-test.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 13.75,
+    "output": "extension-vscode-plugin_src_connections___tests___draft-test.test.ts.txt",
+    "sha256": "89c70b96836f55e2281473870643d06496fe8442d54a98637aa82aef8354204d",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___entry.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/entry.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.24,
+    "output": "extension-vscode-plugin_src_connections___tests___entry.test.ts.txt",
+    "sha256": "e09a6dd14d46751b4ed9f0c9d3117888adb549530d917866d6694abae2e302fa",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/entry.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___host.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/host.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 4.08,
+    "output": "extension-vscode-plugin_src_connections___tests___host.test.ts.txt",
+    "sha256": "27b2058d6d7e41236a12fbe550d3f8a6f72b5616558367992ba767a4acfa352f",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/host.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___isolation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/isolation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.23,
+    "output": "extension-vscode-plugin_src_connections___tests___isolation.test.ts.txt",
+    "sha256": "dab44a5042f90520e87a34dcc2422b70579f6d01a569de23681c80989da773a0",
+    "counts": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/isolation.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___mutation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/mutation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 3.31,
+    "output": "extension-vscode-plugin_src_connections___tests___mutation.test.ts.txt",
+    "sha256": "0943a9d99a9886e44858dc8d86eac4184586bd4447a06efbfdce96ceb3805836",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___privacy.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/privacy.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 4.54,
+    "output": "extension-vscode-plugin_src_connections___tests___privacy.test.ts.txt",
+    "sha256": "a32a4aaf9ef779cb8c7b2dd42d1b2e1c0d7e4b75cce33fa0e2b3bf7affd5daac",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/privacy.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___removal.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/removal.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.61,
+    "output": "extension-vscode-plugin_src_connections___tests___removal.test.ts.txt",
+    "sha256": "792e621089f6c2e1b18d360030ef3ee00b665aa4e368e658ed498b1be44c96a8",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/removal.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_connections___tests___session-owner.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/connections/__tests__/session-owner.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 1.07,
+    "output": "extension-vscode-plugin_src_connections___tests___session-owner.test.ts.txt",
+    "sha256": "c61deafb136d79ecc099171528609299dceadfd1ad497a4e5ca2e9ec03196e8a",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/connections/__tests__/session-owner.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_daemon___tests___bundle.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/daemon/__tests__/bundle.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_daemon___tests___bundle.test.ts.txt",
+    "sha256": "a94fc94f3649ea0e693db57166a7da41ef6ffbb399d65a4a80941ecaa439c71c",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/daemon/__tests__/bundle.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_daemon___tests___commands.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/daemon/__tests__/commands.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_daemon___tests___commands.test.ts.txt",
+    "sha256": "74b26e6fe2859c930f538c864c3995347170ea2707d830106d562a45c701db5b",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_daemon___tests___controller.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/daemon/__tests__/controller.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_daemon___tests___controller.test.ts.txt",
+    "sha256": "6edfdcacaf0e0ac70c81eca66036e033daa8f169a00f38fb44de913f6195f108",
+    "counts": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-details.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-details.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-details.test.ts.txt",
+    "sha256": "63d98bfd87be53c1119cce621a500d1a9352ed3cc2c6e77692a4d250117fd927",
+    "counts": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-host.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.45,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-host.test.ts.txt",
+    "sha256": "b72545de2accc4feb5fe64f4116ae2cad97dcde02abc6c53dace24002ae09e18",
+    "counts": {
+      "tests": 46,
+      "pass": 46,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-icon.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-icon.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-icon.test.ts.txt",
+    "sha256": "af0ece03ba5e71eaa051d7aaf07307625694876f8bf00441b57f0c5cf2073315",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-icon.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-model.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-model.test.ts.txt",
+    "sha256": "65d5b9701576b7a5c83af889388279ed475d9d3b9d0ac73395d1f2fde1169a3c",
+    "counts": {
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-perf.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-perf.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.44,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-perf.test.ts.txt",
+    "sha256": "b5f8a6eefae7a36f9d003f9ae28d5c33921f3bd009bd3c209d12cab8f819ac98",
+    "counts": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-protocol.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-protocol.test.ts.txt",
+    "sha256": "1c0ba400a03060fbe092e0e2f16d03906e08463786da8eaea842395199d089f9",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-state.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-state.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-state.test.ts.txt",
+    "sha256": "e5010e5a331a4b26d8b328f6816a4ae52d2a8ff76ceb0c3f824c95be034817f6",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-views.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-views.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-views.test.ts.txt",
+    "sha256": "596f1a7a15b3134a5395c15ce9b380817ac607d706c851f1c859b027fd9ab09e",
+    "counts": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___board-wiring.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_delivery___tests___board-wiring.test.ts.txt",
+    "sha256": "4a15ac4c3f546f4753138c9d06558e28c9f2a3d70ebf898946fb3637efd214ef",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___delivery-client.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.66,
+    "output": "extension-vscode-plugin_src_delivery___tests___delivery-client.test.ts.txt",
+    "sha256": "82d9187c342186a18614a3af4872398e597ae4846685638818adf128ab901284",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___details-memory.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/details-memory.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.33,
+    "output": "extension-vscode-plugin_src_delivery___tests___details-memory.test.ts.txt",
+    "sha256": "205dd9ec28945e8986259190b75acf7188c6244283b7b93f124c4424043c8c07",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/details-memory.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___epic-records.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/epic-records.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_delivery___tests___epic-records.test.ts.txt",
+    "sha256": "93376b7084b2f9d576ae2123fe75b79a491edccb1fab197e777ffdf0edf0e088",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/epic-records.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_delivery___tests___labels.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/delivery/__tests__/labels.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_delivery___tests___labels.test.ts.txt",
+    "sha256": "a00d52558dd6a9c541b479d6e4261deb349faa8d2656a859610b066fe6e41b7a",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_freshness___tests___daemon-freshness.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_freshness___tests___daemon-freshness.test.ts.txt",
+    "sha256": "73d6ff443f59b2df7c7ad634b34f0302a39eae29b9c69fcc375f65c216ad0005",
+    "counts": {
+      "tests": 23,
+      "pass": 23,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_freshness___tests___extension-wiring.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_freshness___tests___extension-wiring.test.ts.txt",
+    "sha256": "5bf5198cb064b826521ea09ae92b91669ca0ddc4986c647098deb97d2b60079f",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_hosts___tests___activation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/hosts/__tests__/activation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_hosts___tests___activation.test.ts.txt",
+    "sha256": "0621831e6b1a281d4222267645495455595905c547a667aa0aba668cb6024b1d",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/hosts/__tests__/activation.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_hosts___tests___adapter.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/hosts/__tests__/adapter.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_hosts___tests___adapter.test.ts.txt",
+    "sha256": "d818dbfbae6a88e90000b8d0a05f3d2316e9fc629e994bcd19cf578c9de99375",
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/hosts/__tests__/adapter.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_hosts___tests___commands.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/hosts/__tests__/commands.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_hosts___tests___commands.test.ts.txt",
+    "sha256": "694179abe19a13e6a189b16affffea58faf054add4e713f1316c5b82d27eb083",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/hosts/__tests__/commands.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_hosts___tests___writers.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/hosts/__tests__/writers.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_hosts___tests___writers.test.ts.txt",
+    "sha256": "6638d95f0d411cff6c58fd650eafa8a8f9ad41d20de7d72bd231570cf74fb8af",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_models___tests___model-tier-picker.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_models___tests___model-tier-picker.test.ts.txt",
+    "sha256": "dd76562bcf5f9f9f85895e5459a0d512347bacc024f14ace75103fc24292a524",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_onboarding___tests___activation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/onboarding/__tests__/activation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_onboarding___tests___activation.test.ts.txt",
+    "sha256": "95a0f68e9ad6aebbe97bd9935af13efd08d213370f5bbbb75c830f33132deb2e",
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/onboarding/__tests__/activation.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_onboarding___tests___onboarding.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_onboarding___tests___onboarding.test.ts.txt",
+    "sha256": "e2e345b5431cd5e029fd4baba13fd62ed26994db6b4ec3a33fa4e51892afa57f",
+    "counts": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___daemon-gateway.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_panels___tests___daemon-gateway.test.ts.txt",
+    "sha256": "0f64bd98e61c857a7668f7fc38d4cdf27e4c9da1cb9fed871db4660fd43a1d5e",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___debug-renderer.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/debug-renderer.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_panels___tests___debug-renderer.test.ts.txt",
+    "sha256": "802805c7718c5bcd5db87dd697f89f84726a36aa391e597e8479b103c31953ca",
+    "counts": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/debug-renderer.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___detail-renderers.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_panels___tests___detail-renderers.test.ts.txt",
+    "sha256": "49fab13fd342a6aafec39392e4d47415fc0f6f679d26ad8735233d0a56e711d9",
+    "counts": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___log-tail.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/log-tail.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_panels___tests___log-tail.test.ts.txt",
+    "sha256": "37363381ddb11b684da2c9a2c7aa105c0b7aa284f06df21119717d5ccc88900f",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/log-tail.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___orphan-kill.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/orphan-kill.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_panels___tests___orphan-kill.test.ts.txt",
+    "sha256": "1e56761dc948feef1b89f5602e7d9a59f327bc46afdc6f4a8a6ec59722860d98",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/orphan-kill.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___process-scan.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/process-scan.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_panels___tests___process-scan.test.ts.txt",
+    "sha256": "5e1bf9dc511c5cadfc9dee0b3ff23436fea688caf78e7bb30a0d820f04b1b8f9",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/process-scan.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___repo-config.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/repo-config.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_panels___tests___repo-config.test.ts.txt",
+    "sha256": "32f764214df18748e100860122a3dc4049cfb7ac7ad5b022b2dcf7935372dfbe",
+    "counts": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_panels___tests___webview-host.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.39,
+    "output": "extension-vscode-plugin_src_panels___tests___webview-host.test.ts.txt",
+    "sha256": "b9cadcf6eb2cd08789f2d89e8abc78005b1846ac10f611ef0d1f4250dadff8c1",
+    "counts": {
+      "tests": 27,
+      "pass": 27,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_surfaces___tests___surfaces.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/surfaces/__tests__/surfaces.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_surfaces___tests___surfaces.test.ts.txt",
+    "sha256": "f5cfe566e277fbd7adef995aff7868535bd8ea3cd9a74e1b1e99a8f5208fbe07",
+    "counts": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/surfaces/__tests__/surfaces.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_workspace___tests___activation.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_workspace___tests___activation.test.ts.txt",
+    "sha256": "9d9b08ea0746e2cd2a3bfcf4dc04c8e3f245190f2f5693c96d5d571b7f61d632",
+    "counts": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_workspace___tests___commands.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/workspace/__tests__/commands.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.29,
+    "output": "extension-vscode-plugin_src_workspace___tests___commands.test.ts.txt",
+    "sha256": "99858b3fccee5436309f105641823387cd8f84e9bcb9bce64fc69993323f381e",
+    "counts": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/workspace/__tests__/commands.test.ts"
+  },
+  {
+    "name": "extension-vscode-plugin_src_workspace___tests___registrar.test.ts",
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-timeout=600000",
+      "vscode-plugin/src/workspace/__tests__/registrar.test.ts"
+    ],
+    "cwd": "/private/tmp/s5-frozen-qldpq8za/repo",
+    "exitCode": 0,
+    "timedOut": false,
+    "durationSeconds": 0.28,
+    "output": "extension-vscode-plugin_src_workspace___tests___registrar.test.ts.txt",
+    "sha256": "c0138d938f124b828ccef589b6d36240e3843c39545097ebb517651ebf1b1fa8",
+    "counts": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failures": [],
+    "interventions": [],
+    "file": "vscode-plugin/src/workspace/__tests__/registrar.test.ts"
+  }
+]

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: t8/t3 CALL SITE: a finalized standalone LLD PERSISTS the definition head's label, not one derived from its own focus
+ok 1 - t8/t3 CALL SITE: a finalized standalone LLD PERSISTS the definition head's label, not one derived from its own focus
+  ---
+  duration_ms: 18.765667
+  type: 'test'
+  ...
+# Subtest: t8/t3 CALL SITE: with NO definition head, the finalized LLD still falls back to a label derived from its focus
+ok 2 - t8/t3 CALL SITE: with NO definition head, the finalized LLD still falls back to a label derived from its focus
+  ---
+  duration_ms: 13.224208
+  type: 'test'
+  ...
+# Subtest: ISSUE-0b2faed8: a standalone LLD written on a later day than its ISSUE persists the ISSUE's anchor and lands in the ISSUE's folder
+ok 3 - ISSUE-0b2faed8: a standalone LLD written on a later day than its ISSUE persists the ISSUE's anchor and lands in the ISSUE's folder
+  ---
+  duration_ms: 12.067
+  type: 'test'
+  ...
+# Subtest: ISSUE-0b2faed8: with NO definition head the standalone LLD carries no anchor and files under its own day
+ok 4 - ISSUE-0b2faed8: with NO definition head the standalone LLD carries no anchor and files under its own day
+  ---
+  duration_ms: 8.884459
+  type: 'test'
+  ...
+# Subtest: t8/t3 CALL SITE: an EMPTY label on the definition head is treated as absent at the call site too
+ok 5 - t8/t3 CALL SITE: an EMPTY label on the definition head is treated as absent at the call site too
+  ---
+  duration_ms: 9.344333
+  type: 'test'
+  ...
+# Subtest: t8/t4a CALL SITE: a finalized PLAN for a standalone work item PERSISTS the placement flag
+ok 6 - t8/t4a CALL SITE: a finalized PLAN for a standalone work item PERSISTS the placement flag
+  ---
+  duration_ms: 2.774042
+  type: 'test'
+  ...
+# Subtest: t8/t4a CALL SITE: an epic-parented PLAN still writes NO placement key at all
+ok 7 - t8/t4a CALL SITE: an epic-parented PLAN still writes NO placement key at all
+  ---
+  duration_ms: 1.629125
+  type: 'test'
+  ...
+# Subtest: 3a98d279 — a PLAN whose LLD carries a DIFFERENT label still takes the definition head's
+ok 8 - 3a98d279 — a PLAN whose LLD carries a DIFFERENT label still takes the definition head's
+  ---
+  duration_ms: 1.593667
+  type: 'test'
+  ...
+# Subtest: 3a98d279 — with NO definition head, a PLAN still falls back rather than composing an empty label
+ok 9 - 3a98d279 — with NO definition head, a PLAN still falls back rather than composing an empty label
+  ---
+  duration_ms: 1.841458
+  type: 'test'
+  ...
+# Subtest: c00559b7 — finalizePlan writes PLAN.md into the anchor LLD's folder
+ok 10 - c00559b7 — finalizePlan writes PLAN.md into the anchor LLD's folder
+  ---
+  duration_ms: 1.852458
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a PLAN for a legacy UNFLAGGED LLD-only item is still placed under docs/standalone
+ok 11 - c00559b7 — a PLAN for a legacy UNFLAGGED LLD-only item is still placed under docs/standalone
+  ---
+  duration_ms: 1.342333
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 382.846792

@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: validateAnalyzePrompts: every PROMPT_PATHS entry is present + non-empty
+ok 1 - validateAnalyzePrompts: every PROMPT_PATHS entry is present + non-empty
+  ---
+  duration_ms: 5.86425
+  type: 'test'
+  ...
+# Subtest: validateAnalyzePrompts: throws when a prompt file is missing
+ok 2 - validateAnalyzePrompts: throws when a prompt file is missing
+  ---
+  duration_ms: 1.395333
+  type: 'test'
+  ...
+# Subtest: validateAnalyzePrompts: throws when a prompt file is empty
+ok 3 - validateAnalyzePrompts: throws when a prompt file is empty
+  ---
+  duration_ms: 1.432875
+  type: 'test'
+  ...
+# Subtest: validateAnalyzePrompts: collects ALL failures in one error
+ok 4 - validateAnalyzePrompts: collects ALL failures in one error
+  ---
+  duration_ms: 1.717667
+  type: 'test'
+  ...
+# Subtest: AnalyzePromptValidationError preserves the failures array on the instance
+ok 5 - AnalyzePromptValidationError preserves the failures array on the instance
+  ---
+  duration_ms: 0.084334
+  type: 'test'
+  ...
+# Subtest: prompt file for 'classification' has a role intro matching expectations
+ok 6 - prompt file for 'classification' has a role intro matching expectations
+  ---
+  duration_ms: 0.151042
+  type: 'test'
+  ...
+# Subtest: prompt file for 'generic' has a role intro matching expectations
+ok 7 - prompt file for 'generic' has a role intro matching expectations
+  ---
+  duration_ms: 0.118791
+  type: 'test'
+  ...
+# Subtest: prompt file for 'code' has a role intro matching expectations
+ok 8 - prompt file for 'code' has a role intro matching expectations
+  ---
+  duration_ms: 0.079291
+  type: 'test'
+  ...
+# Subtest: prompt file for 'data' has a role intro matching expectations
+ok 9 - prompt file for 'data' has a role intro matching expectations
+  ---
+  duration_ms: 0.258958
+  type: 'test'
+  ...
+# Subtest: prompt file for 'infra' has a role intro matching expectations
+ok 10 - prompt file for 'infra' has a role intro matching expectations
+  ---
+  duration_ms: 0.325167
+  type: 'test'
+  ...
+# Subtest: prompt file for 'docs' has a role intro matching expectations
+ok 11 - prompt file for 'docs' has a role intro matching expectations
+  ---
+  duration_ms: 0.095667
+  type: 'test'
+  ...
+# Subtest: tmp helpers are wired (smoke)
+ok 12 - tmp helpers are wired (smoke)
+  ---
+  duration_ms: 0.375916
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 732.43875

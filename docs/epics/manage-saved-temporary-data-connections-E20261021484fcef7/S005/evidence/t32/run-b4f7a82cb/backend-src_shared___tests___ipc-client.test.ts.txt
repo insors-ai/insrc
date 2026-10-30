@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: rpc resolves the daemon result and writes the { label, pid } identity envelope on connect
+ok 1 - rpc resolves the daemon result and writes the { label, pid } identity envelope on connect
+  ---
+  duration_ms: 2.5105
+  type: 'test'
+  ...
+# Subtest: rpc rejects with "daemon is not running" on ENOENT / ECONNREFUSED
+ok 2 - rpc rejects with "daemon is not running" on ENOENT / ECONNREFUSED
+  ---
+  duration_ms: 0.453625
+  type: 'test'
+  ...
+# Subtest: rpc surfaces a daemon-side error and an unparseable line distinctly
+ok 3 - rpc surfaces a daemon-side error and an unparseable line distinctly
+  ---
+  duration_ms: 0.224334
+  type: 'test'
+  ...
+# Subtest: IpcClient.status returns the wire DaemonStatus via daemon.status
+ok 4 - IpcClient.status returns the wire DaemonStatus via daemon.status
+  ---
+  duration_ms: 0.223083
+  type: 'test'
+  ...
+# Subtest: IpcClient.reachability derives running / stopped / errored and never throws
+ok 5 - IpcClient.reachability derives running / stopped / errored and never throws
+  ---
+  duration_ms: 0.257875
+  type: 'test'
+  ...
+# Subtest: sockFilePath resolves to the daemon socket
+ok 6 - sockFilePath resolves to the daemon socket
+  ---
+  duration_ms: 0.056083
+  type: 'test'
+  ...
+# Subtest: src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)
+ok 7 - src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)
+  ---
+  duration_ms: 0.2135
+  type: 'test'
+  ...
+# Subtest: src/shared/ipc-client imports only node:net + shared types/paths (no daemon internals/indexer/storage)
+ok 8 - src/shared/ipc-client imports only node:net + shared types/paths (no daemon internals/indexer/storage)
+  ---
+  duration_ms: 0.372667
+  type: 'test'
+  ...
+# Subtest: ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged
+ok 9 - ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged
+  ---
+  duration_ms: 0.691541
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 213.343958

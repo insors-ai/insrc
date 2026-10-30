@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel
+ok 1 - model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel
+  ---
+  duration_ms: 6.8625
+  type: 'test'
+  ...
+# Subtest: model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit
+ok 2 - model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit
+  ---
+  duration_ms: 2.352459
+  type: 'test'
+  ...
+# Subtest: model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes
+ok 3 - model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes
+  ---
+  duration_ms: 368.876416
+  type: 'test'
+  ...
+# Subtest: model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts
+ok 4 - model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts
+  ---
+  duration_ms: 0.39625
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1004.286167

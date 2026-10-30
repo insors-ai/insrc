@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: extractChildIntent: well-formed childIntent -> returns it
+ok 1 - extractChildIntent: well-formed childIntent -> returns it
+  ---
+  duration_ms: 0.5855
+  type: 'test'
+  ...
+# Subtest: extractChildIntent: missing childIntent -> null
+ok 2 - extractChildIntent: missing childIntent -> null
+  ---
+  duration_ms: 0.057084
+  type: 'test'
+  ...
+# Subtest: extractChildIntent: malformed childIntent (missing required field) -> null
+ok 3 - extractChildIntent: malformed childIntent (missing required field) -> null
+  ---
+  duration_ms: 0.044041
+  type: 'test'
+  ...
+# Subtest: buildParentTaskPath: root parent (undefined) -> taskId verbatim
+ok 4 - buildParentTaskPath: root parent (undefined) -> taskId verbatim
+  ---
+  duration_ms: 0.0515
+  type: 'test'
+  ...
+# Subtest: buildParentTaskPath: empty parent string -> taskId verbatim
+ok 5 - buildParentTaskPath: empty parent string -> taskId verbatim
+  ---
+  duration_ms: 0.044125
+  type: 'test'
+  ...
+# Subtest: buildParentTaskPath: nested -> parent.taskId
+ok 6 - buildParentTaskPath: nested -> parent.taskId
+  ---
+  duration_ms: 0.038291
+  type: 'test'
+  ...
+# Subtest: countNodes / countPlannerTasks / maxDepth on a single-node tree
+ok 7 - countNodes / countPlannerTasks / maxDepth on a single-node tree
+  ---
+  duration_ms: 0.115584
+  type: 'test'
+  ...
+# Subtest: countNodes / countPlannerTasks / maxDepth on a 3-level tree
+ok 8 - countNodes / countPlannerTasks / maxDepth on a 3-level tree
+  ---
+  duration_ms: 0.181375
+  type: 'test'
+  ...
+# Subtest: runRecursivePlanner: root with one planner-template task spawns a child plan; tree has 2 nodes
+ok 9 - runRecursivePlanner: root with one planner-template task spawns a child plan; tree has 2 nodes
+  ---
+  duration_ms: 240.743667
+  type: 'test'
+  ...
+# Subtest: runRecursivePlanner: depth-cap hit on a deeper subtree -> childError = MaxPlanDepthExceededError
+ok 10 - runRecursivePlanner: depth-cap hit on a deeper subtree -> childError = MaxPlanDepthExceededError
+  ---
+  duration_ms: 12.971208
+  type: 'test'
+  ...
+# Subtest: runRecursivePlanner: child plans inherit rootScope for the depth cap
+ok 11 - runRecursivePlanner: child plans inherit rootScope for the depth cap
+  ---
+  duration_ms: 15.057958
+  type: 'test'
+  ...
+# Subtest: a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)
+ok 12 - a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)
+  ---
+  duration_ms: 81.020792
+  type: 'test'
+  ...
+# Subtest: the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan
+ok 13 - the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan
+  ---
+  duration_ms: 31.776834
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 901.892292

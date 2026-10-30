@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: strips matched ```json ... ``` fences
+ok 1 - strips matched ```json ... ``` fences
+  ---
+  duration_ms: 0.605208
+  type: 'test'
+  ...
+# Subtest: strips bare ``` ... ``` fences (no language tag)
+ok 2 - strips bare ``` ... ``` fences (no language tag)
+  ---
+  duration_ms: 0.085875
+  type: 'test'
+  ...
+# Subtest: strips single-sided OPEN fence (no closer) -- the live trigger
+ok 3 - strips single-sided OPEN fence (no closer) -- the live trigger
+  ---
+  duration_ms: 0.079708
+  type: 'test'
+  ...
+# Subtest: no fences -> passthrough trimmed
+ok 4 - no fences -> passthrough trimmed
+  ---
+  duration_ms: 0.04075
+  type: 'test'
+  ...
+# Subtest: empty input -> empty string
+ok 5 - empty input -> empty string
+  ---
+  duration_ms: 0.041208
+  type: 'test'
+  ...
+# Subtest: strips ```JSON (uppercase tag)
+ok 6 - strips ```JSON (uppercase tag)
+  ---
+  duration_ms: 0.032792
+  type: 'test'
+  ...
+# Subtest: handles trailing whitespace AFTER closing fence
+ok 7 - handles trailing whitespace AFTER closing fence
+  ---
+  duration_ms: 0.088458
+  type: 'test'
+  ...
+# Subtest: only the LEADING fence is stripped if the content starts with one
+ok 8 - only the LEADING fence is stripped if the content starts with one
+  ---
+  duration_ms: 0.075042
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.977666

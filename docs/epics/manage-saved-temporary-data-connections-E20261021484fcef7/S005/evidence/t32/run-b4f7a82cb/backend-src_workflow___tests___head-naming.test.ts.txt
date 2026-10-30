@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: c00559b7 — headLabel derives from the title, and falls back to the focus for an absent, blank or degenerate title
+ok 1 - c00559b7 — headLabel derives from the title, and falls back to the focus for an absent, blank or degenerate title
+  ---
+  duration_ms: 0.759833
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a SPEC with a title is labelled from it; without one, from its focus as before
+ok 2 - c00559b7 — a SPEC with a title is labelled from it; without one, from its focus as before
+  ---
+  duration_ms: 1.887542
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a DEF with a title is labelled from it; without one, from its focus as before
+ok 3 - c00559b7 — a DEF with a title is labelled from it; without one, from its focus as before
+  ---
+  duration_ms: 2.016333
+  type: 'test'
+  ...
+# Subtest: c00559b7 — an ISSUE is labelled from its defect title, falling back to the focus for a degenerate one
+ok 4 - c00559b7 — an ISSUE is labelled from its defect title, falling back to the focus for a degenerate one
+  ---
+  duration_ms: 0.531833
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a body title that is not a string is rejected as a schema failure
+ok 5 - c00559b7 — a body title that is not a string is rejected as a schema failure
+  ---
+  duration_ms: 0.070875
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a first-time standalone LLD is labelled from storyTitle; a re-finalized one keeps its LLD head's label
+ok 6 - c00559b7 — a first-time standalone LLD is labelled from storyTitle; a re-finalized one keeps its LLD head's label
+  ---
+  duration_ms: 29.379333
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 389.142666

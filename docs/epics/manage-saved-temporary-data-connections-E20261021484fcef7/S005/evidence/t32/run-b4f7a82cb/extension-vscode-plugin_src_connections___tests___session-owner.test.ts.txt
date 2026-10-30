@@ -1,0 +1,36 @@
+TAP version 13
+# (node:79308) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal
+ok 1 - CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal
+  ---
+  duration_ms: 43.640833
+  type: 'test'
+  ...
+# Subtest: CM-S5-OWNER-TS: exact expiry erases temporary inputs and epoch restart never resumes or replays old authority
+ok 2 - CM-S5-OWNER-TS: exact expiry erases temporary inputs and epoch restart never resumes or replays old authority
+  ---
+  duration_ms: 6.343875
+  type: 'test'
+  ...
+# Subtest: CM-S5-OWNER-TS: unavailable session features refuse without a claimed-lane Saved fallback
+ok 3 - CM-S5-OWNER-TS: unavailable session features refuse without a claimed-lane Saved fallback
+  ---
+  duration_ms: 1.72325
+  type: 'test'
+  ...
+# Subtest: CM-S5-OWNER-TS: disposal deadline closes only owned lanes even when end reply is lost
+ok 4 - CM-S5-OWNER-TS: disposal deadline closes only owned lanes even when end reply is lost
+  ---
+  duration_ms: 3.076542
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 956.856667

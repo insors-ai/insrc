@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: isStaleByIndexer returns true when registry watermark is newer than the bundle
+ok 1 - isStaleByIndexer returns true when registry watermark is newer than the bundle
+  ---
+  duration_ms: 0.705167
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer returns false when registry watermark equals the bundle
+ok 2 - isStaleByIndexer returns false when registry watermark equals the bundle
+  ---
+  duration_ms: 1.151042
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer returns false when registry watermark is older than the bundle
+ok 3 - isStaleByIndexer returns false when registry watermark is older than the bundle
+  ---
+  duration_ms: 0.120709
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer treats bundles with no repoLastIndexedAt stamp as stale (conservative)
+ok 4 - isStaleByIndexer treats bundles with no repoLastIndexedAt stamp as stale (conservative)
+  ---
+  duration_ms: 0.077875
+  type: 'test'
+  ...
+# Subtest: isStaleByIndexer treats bundles with no meta at all as stale
+ok 5 - isStaleByIndexer treats bundles with no meta at all as stale
+  ---
+  duration_ms: 0.0975
+  type: 'test'
+  ...
+# Subtest: readBundle returns the bundle when stamp is fresh against the registry watermark
+ok 6 - readBundle returns the bundle when stamp is fresh against the registry watermark
+  ---
+  duration_ms: 1.528625
+  type: 'test'
+  ...
+# Subtest: readBundle invalidates + returns null when registry watermark advanced
+ok 7 - readBundle invalidates + returns null when registry watermark advanced
+  ---
+  duration_ms: 0.661125
+  type: 'test'
+  ...
+# Subtest: readBundle skips the freshness check when currentLastIndexedAt is undefined
+ok 8 - readBundle skips the freshness check when currentLastIndexedAt is undefined
+  ---
+  duration_ms: 0.481917
+  type: 'test'
+  ...
+# Subtest: readBundle invalidates a bundle missing repoLastIndexedAt when a watermark is supplied
+ok 9 - readBundle invalidates a bundle missing repoLastIndexedAt when a watermark is supplied
+  ---
+  duration_ms: 0.627125
+  type: 'test'
+  ...
+# Subtest: readBundle: bypassCache=true short-circuits BEFORE the freshness check
+ok 10 - readBundle: bypassCache=true short-circuits BEFORE the freshness check
+  ---
+  duration_ms: 0.839042
+  type: 'test'
+  ...
+# Subtest: write-then-advance-then-read pattern: bundle is invalidated by the advanced watermark
+ok 11 - write-then-advance-then-read pattern: bundle is invalidated by the advanced watermark
+  ---
+  duration_ms: 0.552792
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 303.628708

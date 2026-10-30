@@ -1,0 +1,641 @@
+{
+  "baselineProductSource": "b4f7a82cb44550ef55e522966c2237417bd15307",
+  "testCorrectionCommit": "3dea5014f45a5049bb95469b491853e0c2b0c546",
+  "snapshot": "/private/tmp/s5-native-final-p2aiqo6q/repo",
+  "command": [
+    "./gradlew",
+    "--offline",
+    "--no-daemon",
+    "--no-configuration-cache",
+    "--no-build-cache",
+    "-Pkotlin.compiler.execution.strategy=in-process",
+    "-Pkotlin.incremental=false",
+    "test",
+    "build",
+    "--rerun-tasks",
+    "--console=plain"
+  ],
+  "exitCode": 0,
+  "changedFiles": [
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/NestedOpsPagesTest.kt"
+  ],
+  "productionSourceChanged": false,
+  "originalSweepResultsRetained": true,
+  "junit": [
+    {
+      "name": "ai.insors.insrc.jetbrains.onboarding.OnboardingWiringTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.DecidePolicyTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.SettingsWriteGatewayTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleServiceTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.SettingsViewTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.review.ResolveCommentTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.onboarding.OnboardingOfferTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.review.ReviewCommentTest",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.host.ProjectOpenWiringTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.debug.DebugStatusCardReaderTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.debug.McpRegistrationReaderTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableRestartTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.S7LiveRenderTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "1"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.host.JsonMcpConfigWriterTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.debug.LogEditorSourceScanTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionsIsolationTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.SetupConsentStoreTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.BuildContractTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.debug.LogTailSeamTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.host.MarkerWriterTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.ModelCheckFlowTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.platform.RunOnceTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.Sc4GatewayBindingsTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.SettingsEditModelTest",
+      "tests": "15",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.ModelTiersWiringSourceScanTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.SettingsTreeModelTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.PerRoleOverridesGatewayTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionDraftTestsTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.ModelTiersModelTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.DefaultDaemonScriptLocatorTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoActionTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.freshness.LastSeenPluginVersionStoreTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.review.ArtifactContentTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.Sc1LifecycleTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.host.RegistrationCompositionTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.ops.DebugPageTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionsPrivacyTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.host.Sc3TypesTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.ops.DaemonPageTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest",
+      "tests": "16",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.McpDebugStatusGatewayTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.DaemonProvisionerTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest",
+      "tests": "13",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.PluginDescriptorSmokeTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.ops.NestedOpsPagesTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.PerRepoOverridesModelTest",
+      "tests": "17",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.onboarding.OnboardingLifecycleTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunnerTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.steering.SteeringInjectionLifecycleTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.PerRepoOverridesGatewayTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionsCompatibilityTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.SettingsCatalogGatewayTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.review.ReviewPendingTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.ops.WorkflowsPageTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.review.ApproveTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.NodeRuntimeResolverTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.ModelDefinitionsGatewayTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.steering.SteeringInjectionIntegrationTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.onboarding.OnboardingCleanupIntegrationTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.host.DetectPresentTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionsEntryTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.SettingsTableModelTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.S003TypesTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.debug.LogModelTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.lifecycle.PrivateNodeProvisionerTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.Sc1ActivationIntegrationTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.RepoStatsGatewayTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionDraftTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.steering.SteeringContentTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.actions.RepoStatusPopupLayoutTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.daemon.Sc2DaemonGatewayTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionsSessionServiceTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "ai.insors.insrc.jetbrains.connections.ConnectionCorpusTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "counts": {
+    "tests": 468,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1
+  }
+}

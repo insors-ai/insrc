@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: team refresh followed by a reader call in a temp clone returns the policy end to end
+ok 1 - team refresh followed by a reader call in a temp clone returns the policy end to end
+  ---
+  duration_ms: 952.696334
+  type: 'test'
+  ...
+# Subtest: team init writes a starter that the reader accepts once it is on the default branch
+ok 2 - team init writes a starter that the reader accepts once it is on the default branch
+  ---
+  duration_ms: 598.955583
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2241.112417

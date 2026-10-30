@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: executor dispatches to the registered runner
+ok 1 - executor dispatches to the registered runner
+  ---
+  duration_ms: 242.103
+  type: 'test'
+  ...
+# Subtest: executor hands the request's resolved scope to the runner; without one the runner gets none
+ok 2 - executor hands the request's resolved scope to the runner; without one the runner gets none
+  ---
+  duration_ms: 228.334458
+  type: 'test'
+  ...
+# Subtest: stepPlan hands the resolved scope to the runner too
+ok 3 - stepPlan hands the resolved scope to the runner too
+  ---
+  duration_ms: 232.023167
+  type: 'test'
+  ...
+# Subtest: the step tool's plan phase resolves the scope from the token and runs the lookups there
+ok 4 - the step tool's plan phase resolves the scope from the token and runs the lookups there
+  ---
+  duration_ms: 299.448666
+  type: 'test'
+  ...
+# Subtest: unsupported exploration type produces a diagnostic output
+ok 5 - unsupported exploration type produces a diagnostic output
+  ---
+  duration_ms: 249.858167
+  type: 'test'
+  ...
+# Subtest: runner throw produces a `failed` output; does not stop the plan
+ok 6 - runner throw produces a `failed` output; does not stop the plan
+  ---
+  duration_ms: 225.621042
+  type: 'test'
+  ...
+# Subtest: deterministic exploration is cached across executions
+ok 7 - deterministic exploration is cached across executions
+  ---
+  duration_ms: 236.136417
+  type: 'test'
+  ...
+# Subtest: lastIndexedAt bump invalidates the cache
+ok 8 - lastIndexedAt bump invalidates the cache
+  ---
+  duration_ms: 281.771083
+  type: 'test'
+  ...
+# Subtest: readDep exposes prior exploration outputs to later runners
+ok 9 - readDep exposes prior exploration outputs to later runners
+  ---
+  duration_ms: 255.871875
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2871.07825

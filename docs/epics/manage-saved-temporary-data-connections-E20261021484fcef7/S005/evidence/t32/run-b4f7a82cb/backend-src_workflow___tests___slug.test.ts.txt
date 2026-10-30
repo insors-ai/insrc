@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: deriveSlug drops stopwords + hyphenates the rest
+ok 1 - deriveSlug drops stopwords + hyphenates the rest
+  ---
+  duration_ms: 0.713333
+  type: 'test'
+  ...
+# Subtest: deriveSlug caps at MAX_TOKENS (6) distinctive words
+ok 2 - deriveSlug caps at MAX_TOKENS (6) distinctive words
+  ---
+  duration_ms: 0.072875
+  type: 'test'
+  ...
+# Subtest: deriveSlug lowercases + strips punctuation
+ok 3 - deriveSlug lowercases + strips punctuation
+  ---
+  duration_ms: 0.042792
+  type: 'test'
+  ...
+# Subtest: deriveSlug rejects all-stopword focus
+ok 4 - deriveSlug rejects all-stopword focus
+  ---
+  duration_ms: 0.0925
+  type: 'test'
+  ...
+# Subtest: deriveSlug rejects empty
+ok 5 - deriveSlug rejects empty
+  ---
+  duration_ms: 0.092667
+  type: 'test'
+  ...
+# Subtest: safeDeriveSlug(undefined) returns a stable non-empty default, no throw
+ok 6 - safeDeriveSlug(undefined) returns a stable non-empty default, no throw
+  ---
+  duration_ms: 0.043583
+  type: 'test'
+  ...
+# Subtest: safeDeriveSlug('') returns a stable non-empty default, no throw
+ok 7 - safeDeriveSlug('') returns a stable non-empty default, no throw
+  ---
+  duration_ms: 0.077458
+  type: 'test'
+  ...
+# Subtest: safeDeriveSlug(valid focus) is byte-identical to deriveSlug (happy path unchanged)
+ok 8 - safeDeriveSlug(valid focus) is byte-identical to deriveSlug (happy path unchanged)
+  ---
+  duration_ms: 0.041083
+  type: 'test'
+  ...
+# Subtest: safeDeriveSlug on an all-stopword/degenerate focus falls back to a non-empty slug (deriveSlug throws)
+ok 9 - safeDeriveSlug on an all-stopword/degenerate focus falls back to a non-empty slug (deriveSlug throws)
+  ---
+  duration_ms: 0.32825
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 390.961708

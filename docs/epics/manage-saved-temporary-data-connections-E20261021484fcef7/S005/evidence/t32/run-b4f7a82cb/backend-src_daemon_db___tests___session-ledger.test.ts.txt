@@ -1,0 +1,66 @@
+TAP version 13
+# (node:8440) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-TEMP-REPLAY: remove commits revision-only truth and replay cannot select a recreated row
+ok 1 - CM-S4-TEMP-REPLAY: remove commits revision-only truth and replay cannot select a recreated row
+  ---
+  duration_ms: 4.465875
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP-REPLAY: postcommit apply failure returns the existing removal receipt without payload leakage
+ok 2 - CM-S4-TEMP-REPLAY: postcommit apply failure returns the existing removal receipt without payload leakage
+  ---
+  duration_ms: 0.597166
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP-REPLAY: ticket owner and request-generation expiry prevent removal publication after awaits
+ok 3 - CM-S4-TEMP-REPLAY: ticket owner and request-generation expiry prevent removal publication after awaits
+  ---
+  duration_ms: 0.574542
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP-REPLAY: 16384 remove receipts retain history at expiry without a separate tombstone quota
+ok 4 - CM-S4-TEMP-REPLAY: 16384 remove receipts retain history at expiry without a separate tombstone quota
+  ---
+  duration_ms: 1214.169875
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt
+ok 5 - CM-S3-REPLAY: HMAC context changed payload and concurrent identical mutation preserve one receipt
+  ---
+  duration_ms: 1.205583
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions
+ok 6 - CM-S3-REPLAY: signed lease expiry preserves committed truth and refuses unreceipted or lost sessions
+  ---
+  duration_ms: 0.431791
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication
+ok 7 - CM-S3-REPLAY: expiry during preparation prevents entry and receipt publication
+  ---
+  duration_ms: 0.419375
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: ticket and receipt quotas never evict live operation history
+ok 8 - CM-S3-REPLAY: ticket and receipt quotas never evict live operation history
+  ---
+  duration_ms: 1525.995834
+  type: 'test'
+  ...
+# Subtest: CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume
+ok 9 - CM-S3-REPLAY: real mutation sockets reconcile concurrent calls and a lost reply after control resume
+  ---
+  duration_ms: 148.336583
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3799.370542

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: generic.aggregate.report.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - generic.aggregate.report.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.404833
+  type: 'test'
+  ...
+# Subtest: generic.aggregate.report.live: real Ollama -> validator-passing AggregateReport
+ok 2 - generic.aggregate.report.live: real Ollama -> validator-passing AggregateReport # SKIP
+  ---
+  duration_ms: 0.044125
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 387.528209

@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: isHldBody / isLldBody: pass with NEITHER new field and WITH uxDefinition + adherence
+ok 1 - isHldBody / isLldBody: pass with NEITHER new field and WITH uxDefinition + adherence
+  ---
+  duration_ms: 0.632708
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown: uxDefinition + adherence present but NO ux-mock companion → byte-identical (omit-slot)
+ok 2 - renderLldMarkdown: uxDefinition + adherence present but NO ux-mock companion → byte-identical (omit-slot)
+  ---
+  duration_ms: 2.155833
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (never inlined)
+ok 3 - renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (never inlined)
+  ---
+  duration_ms: 0.264
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown: an ER + a UX companion render in their OWN slots
+ok 4 - renderLldMarkdown: an ER + a UX companion render in their OWN slots
+  ---
+  duration_ms: 0.153916
+  type: 'test'
+  ...
+# Subtest: ADHERENCE_PROPERTY_SCHEMA: validates a recorded selection against the AdherenceDimension set
+ok 5 - ADHERENCE_PROPERTY_SCHEMA: validates a recorded selection against the AdherenceDimension set
+  ---
+  duration_ms: 14.721792
+  type: 'test'
+  ...
+# Subtest: isAdherenceDimension: only the five selectable members
+ok 6 - isAdherenceDimension: only the five selectable members
+  ---
+  duration_ms: 0.077916
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements
+ok 7 - d9f85b3c t1 — design.story and design.epic synth schemas admit a UX card narrative and described elements
+  ---
+  duration_ms: 1.995125
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 338.986

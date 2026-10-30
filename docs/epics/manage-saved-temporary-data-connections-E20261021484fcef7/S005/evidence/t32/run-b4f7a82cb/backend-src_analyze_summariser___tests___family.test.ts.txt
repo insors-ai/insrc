@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: design/ wins over plans/
+ok 1 - design/ wins over plans/
+  ---
+  duration_ms: 0.789583
+  type: 'test'
+  ...
+# Subtest: plans/ matches for docs directly under plans
+ok 2 - plans/ matches for docs directly under plans
+  ---
+  duration_ms: 0.123416
+  type: 'test'
+  ...
+# Subtest: designs/ (plural) matches the design family
+ok 3 - designs/ (plural) matches the design family
+  ---
+  duration_ms: 0.044
+  type: 'test'
+  ...
+# Subtest: plan/ (singular) matches the plans family
+ok 4 - plan/ (singular) matches the plans family
+  ---
+  duration_ms: 0.039959
+  type: 'test'
+  ...
+# Subtest: docs/ matches for docs under docs/
+ok 5 - docs/ matches for docs under docs/
+  ---
+  duration_ms: 0.213917
+  type: 'test'
+  ...
+# Subtest: design > docs when both are in the path
+ok 6 - design > docs when both are in the path
+  ---
+  duration_ms: 0.074583
+  type: 'test'
+  ...
+# Subtest: adr/ matches for docs under adr/
+ok 7 - adr/ matches for docs under adr/
+  ---
+  duration_ms: 0.057458
+  type: 'test'
+  ...
+# Subtest: rfc/ matches for docs under rfc/
+ok 8 - rfc/ matches for docs under rfc/
+  ---
+  duration_ms: 0.061041
+  type: 'test'
+  ...
+# Subtest: spec/ matches for docs under spec/
+ok 9 - spec/ matches for docs under spec/
+  ---
+  duration_ms: 0.188417
+  type: 'test'
+  ...
+# Subtest: CHANGELOG.md classifies as changelog regardless of directory
+ok 10 - CHANGELOG.md classifies as changelog regardless of directory
+  ---
+  duration_ms: 0.321375
+  type: 'test'
+  ...
+# Subtest: CHANGES.md and HISTORY.md classify as changelog
+ok 11 - CHANGES.md and HISTORY.md classify as changelog
+  ---
+  duration_ms: 0.049458
+  type: 'test'
+  ...
+# Subtest: README.md classifies as readme
+ok 12 - README.md classifies as readme
+  ---
+  duration_ms: 0.0745
+  type: 'test'
+  ...
+# Subtest: ADR-*.md by basename classifies as adr
+ok 13 - ADR-*.md by basename classifies as adr
+  ---
+  duration_ms: 0.02975
+  type: 'test'
+  ...
+# Subtest: RFC-*.md by basename classifies as rfc
+ok 14 - RFC-*.md by basename classifies as rfc
+  ---
+  duration_ms: 0.026292
+  type: 'test'
+  ...
+# Subtest: SPEC-*.md by basename classifies as spec
+ok 15 - SPEC-*.md by basename classifies as spec
+  ---
+  duration_ms: 0.031834
+  type: 'test'
+  ...
+# Subtest: unknown paths fall back to other
+ok 16 - unknown paths fall back to other
+  ---
+  duration_ms: 0.028375
+  type: 'test'
+  ...
+# Subtest: empty path returns other
+ok 17 - empty path returns other
+  ---
+  duration_ms: 0.023
+  type: 'test'
+  ...
+# Subtest: windows-style backslashes normalise
+ok 18 - windows-style backslashes normalise
+  ---
+  duration_ms: 0.028333
+  type: 'test'
+  ...
+# Subtest: case-insensitive on directory names
+ok 19 - case-insensitive on directory names
+  ---
+  duration_ms: 0.023583
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 259.409958

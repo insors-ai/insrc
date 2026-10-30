@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: t1: PATHS carries the two S001 daemon-home entries under the insrc dir
+ok 1 - t1: PATHS carries the two S001 daemon-home entries under the insrc dir
+  ---
+  duration_ms: 2.039916
+  type: 'test'
+  ...
+# Subtest: t2: launchUpdate spawns the detached daemon-ctl.sh restart child with detached/unref/stdio-to-log
+ok 2 - t2: launchUpdate spawns the detached daemon-ctl.sh restart child with detached/unref/stdio-to-log
+  ---
+  duration_ms: 5.289708
+  type: 'test'
+  ...
+# Subtest: t2: launchUpdate rejects a concurrent launch when a live marker is present; a stale marker is ignored
+ok 3 - t2: launchUpdate rejects a concurrent launch when a live marker is present; a stale marker is ignored
+  ---
+  duration_ms: 5.462125
+  type: 'test'
+  ...
+# Subtest: t2: launchUpdate throws cannot-locate BEFORE any spawn or marker write when the root/helper is missing
+ok 4 - t2: launchUpdate throws cannot-locate BEFORE any spawn or marker write when the root/helper is missing
+  ---
+  duration_ms: 0.33675
+  type: 'test'
+  ...
+# Subtest: t2: readUpdateOutcome parses a present record and returns null for absent / unparseable (never throws)
+ok 5 - t2: readUpdateOutcome parses a present record and returns null for absent / unparseable (never throws)
+  ---
+  duration_ms: 0.626833
+  type: 'test'
+  ...
+# Subtest: t2: writeUpdateOutcome persists the record and clears the in-flight marker
+ok 6 - t2: writeUpdateOutcome persists the record and clears the in-flight marker
+  ---
+  duration_ms: 0.545042
+  type: 'test'
+  ...
+# Subtest: t2: runDetachedUpdate writes state:succeeded on a zero exit and clears the marker
+ok 7 - t2: runDetachedUpdate writes state:succeeded on a zero exit and clears the marker
+  ---
+  duration_ms: 2.6605
+  type: 'test'
+  ...
+# Subtest: t2: runDetachedUpdate writes state:failed with the raw stderr on a non-zero exit; no retry/rollback
+ok 8 - t2: runDetachedUpdate writes state:failed with the raw stderr on a non-zero exit; no retry/rollback
+  ---
+  duration_ms: 7.411208
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 617.980083

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged
+ok 1 - review stream module: ReviewStreamError from src/shared/review-stream.ts is the same class daemon-stream.ts exports, and the routing tests pass unchanged
+  ---
+  duration_ms: 0.990542
+  type: 'test'
+  ...
+# Subtest: shared review request: done resolves and ends the transport; progress and delta reach onFrame; frames after settling are ignored
+ok 2 - shared review request: done resolves and ends the transport; progress and delta reach onFrame; frames after settling are ignored
+  ---
+  duration_ms: 1.137583
+  type: 'test'
+  ...
+# Subtest: shared review request: an error frame is daemon-error with its reason; a transport failure, the wait limit and an abort cancel the transport
+ok 3 - shared review request: an error frame is daemon-error with its reason; a transport failure, the wait limit and an abort cancel the transport
+  ---
+  duration_ms: 0.634042
+  type: 'test'
+  ...
+# Subtest: shared review request: a transport that fails while it is still starting is cancelled once it has started
+ok 4 - shared review request: a transport that fails while it is still starting is cancelled once it has started
+  ---
+  duration_ms: 0.164083
+  type: 'test'
+  ...
+# Subtest: shared review request: a transport that throws while opening settles unreachable and releases its wait timer and abort listener
+ok 5 - shared review request: a transport that throws while opening settles unreachable and releases its wait timer and abort listener
+  ---
+  duration_ms: 0.160375
+  type: 'test'
+  ...
+# Subtest: shared review request: the two requests' parameters, and neither client interprets frames on its own
+ok 6 - shared review request: the two requests' parameters, and neither client interprets frames on its own
+  ---
+  duration_ms: 0.646667
+  type: 'test'
+  ...
+# Subtest: codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)
+ok 7 - codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)
+  ---
+  duration_ms: 0.207125
+  type: 'test'
+  ...
+# Subtest: runReviewStream with idleMs: frames more often than idleMs keep the request alive past idleMs; it resolves on its final frame
+ok 8 - runReviewStream with idleMs: frames more often than idleMs keep the request alive past idleMs; it resolves on its final frame
+  ---
+  duration_ms: 0.323291
+  type: 'test'
+  ...
+# Subtest: runReviewStream with idleMs: no frame for idleMs fails 'timeout' naming the idle limit and cancels the transport
+ok 9 - runReviewStream with idleMs: no frame for idleMs fails 'timeout' naming the idle limit and cancels the transport
+  ---
+  duration_ms: 0.44725
+  type: 'test'
+  ...
+# Subtest: runReviewStream: frames do not extend timeoutMs; past it the request fails 'timeout' naming the ceiling
+ok 10 - runReviewStream: frames do not extend timeoutMs; past it the request fails 'timeout' naming the ceiling
+  ---
+  duration_ms: 0.992875
+  type: 'test'
+  ...
+# Subtest: runReviewStream without idleMs (or with an out-of-range idleMs): today's single wait
+ok 11 - runReviewStream without idleMs (or with an out-of-range idleMs): today's single wait
+  ---
+  duration_ms: 0.283542
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 290.435708

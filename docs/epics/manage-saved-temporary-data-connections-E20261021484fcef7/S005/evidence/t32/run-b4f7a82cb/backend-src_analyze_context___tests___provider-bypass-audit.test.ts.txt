@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: no production reasoning site bypasses the RoutingSeamContext — only sanctioned files call buildShaperProvider
+ok 1 - no production reasoning site bypasses the RoutingSeamContext — only sanctioned files call buildShaperProvider
+  ---
+  duration_ms: 65.646584
+  type: 'test'
+  ...
+# Subtest: the allowlisted seam files still exist (guards against a stale allowlist)
+ok 2 - the allowlisted seam files still exist (guards against a stale allowlist)
+  ---
+  duration_ms: 0.381583
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 285.373042

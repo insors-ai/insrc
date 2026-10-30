@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: fieldAdd appends a documented field marker to interfaceSketch
+ok 1 - fieldAdd appends a documented field marker to interfaceSketch
+  ---
+  duration_ms: 1.075542
+  type: 'test'
+  ...
+# Subtest: fieldAdd refuses duplicate member name (matches methods too)
+ok 2 - fieldAdd refuses duplicate member name (matches methods too)
+  ---
+  duration_ms: 0.24225
+  type: 'test'
+  ...
+# Subtest: fieldRemove requires breaking=true + migrationCue
+ok 3 - fieldRemove requires breaking=true + migrationCue
+  ---
+  duration_ms: 0.104
+  type: 'test'
+  ...
+# Subtest: fieldRemove appends removal marker
+ok 4 - fieldRemove appends removal marker
+  ---
+  duration_ms: 0.102959
+  type: 'test'
+  ...
+# Subtest: rename swaps the contract name
+ok 5 - rename swaps the contract name
+  ---
+  duration_ms: 0.155334
+  type: 'test'
+  ...
+# Subtest: rename refuses when oldName does not match
+ok 6 - rename refuses when oldName does not match
+  ---
+  duration_ms: 0.060625
+  type: 'test'
+  ...
+# Subtest: methodAdd rejects signatures with function body
+ok 7 - methodAdd rejects signatures with function body
+  ---
+  duration_ms: 0.308375
+  type: 'test'
+  ...
+# Subtest: methodAdd appends a signature marker
+ok 8 - methodAdd appends a signature marker
+  ---
+  duration_ms: 0.217375
+  type: 'test'
+  ...
+# Subtest: reassignOwnership moves ownership from oldOwner to newOwner
+ok 9 - reassignOwnership moves ownership from oldOwner to newOwner
+  ---
+  duration_ms: 1.51525
+  type: 'test'
+  ...
+# Subtest: reassignOwnership refuses wrong oldOwner
+ok 10 - reassignOwnership refuses wrong oldOwner
+  ---
+  duration_ms: 0.333208
+  type: 'test'
+  ...
+# Subtest: addConsumer appends consumer + depends edge (S002 ac4: stays cg3 inverse-consistent)
+ok 11 - addConsumer appends consumer + depends edge (S002 ac4: stays cg3 inverse-consistent)
+  ---
+  duration_ms: 0.309417
+  type: 'test'
+  ...
+# Subtest: addConsumer refuses when consumer is already the owner
+ok 12 - addConsumer refuses when consumer is already the owner
+  ---
+  duration_ms: 0.053208
+  type: 'test'
+  ...
+# Subtest: nonFunctional.retarget swaps target value
+ok 13 - nonFunctional.retarget swaps target value
+  ---
+  duration_ms: 0.052083
+  type: 'test'
+  ...
+# Subtest: nonFunctional.retarget refuses when property is unset
+ok 14 - nonFunctional.retarget refuses when property is unset
+  ---
+  duration_ms: 0.042833
+  type: 'test'
+  ...
+# Subtest: rollout.reorder permutes phase order
+ok 15 - rollout.reorder permutes phase order
+  ---
+  duration_ms: 0.079666
+  type: 'test'
+  ...
+# Subtest: rollout.reorder refuses non-permutations
+ok 16 - rollout.reorder refuses non-permutations
+  ---
+  duration_ms: 0.074958
+  type: 'test'
+  ...
+# Subtest: rollout.splitPhase divides one phase into two
+ok 17 - rollout.splitPhase divides one phase into two
+  ---
+  duration_ms: 0.134166
+  type: 'test'
+  ...
+# Subtest: rollout.splitPhase refuses when union of new stories != original stories
+ok 18 - rollout.splitPhase refuses when union of new stories != original stories
+  ---
+  duration_ms: 0.084375
+  type: 'test'
+  ...
+# Subtest: rollout.mergePhases merges a contiguous run
+ok 19 - rollout.mergePhases merges a contiguous run
+  ---
+  duration_ms: 0.111667
+  type: 'test'
+  ...
+# Subtest: rollout.mergePhases refuses non-contiguous phases
+ok 20 - rollout.mergePhases refuses non-contiguous phases
+  ---
+  duration_ms: 0.051875
+  type: 'test'
+  ...
+# Subtest: applyAmendments is deterministic (same inputs → same outputs)
+ok 21 - applyAmendments is deterministic (same inputs → same outputs)
+  ---
+  duration_ms: 1.146083
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 287.8635

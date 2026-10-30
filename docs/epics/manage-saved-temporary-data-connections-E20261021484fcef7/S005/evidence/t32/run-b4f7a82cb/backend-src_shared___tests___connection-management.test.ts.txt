@@ -1,0 +1,48 @@
+TAP version 13
+# (node:85272) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-INPUT: removal state and cleanup accept only a bounded exact remove ticket
+ok 1 - CM-S4-INPUT: removal state and cleanup accept only a bounded exact remove ticket
+  ---
+  duration_ms: 5.222375
+  type: 'test'
+  ...
+# Subtest: CM-S4-INPUT: existing remove target validation and persisted outcome shape stay unchanged
+ok 2 - CM-S4-INPUT: existing remove target validation and persisted outcome shape stay unchanged
+  ---
+  duration_ms: 0.282958
+  type: 'test'
+  ...
+# Subtest: CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values
+ok 3 - CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values
+  ---
+  duration_ms: 0.229458
+  type: 'test'
+  ...
+# Subtest: CM-S1-J: legacy document remains readable and v2 declarations preserve safe outcome boundaries
+ok 4 - CM-S1-J: legacy document remains readable and v2 declarations preserve safe outcome boundaries
+  ---
+  duration_ms: 0.165375
+  type: 'test'
+  ...
+# Subtest: CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments
+ok 5 - CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments
+  ---
+  duration_ms: 4163.508833
+  type: 'test'
+  ...
+# Subtest: CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials
+ok 6 - CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials
+  ---
+  duration_ms: 700.427459
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5608.996542

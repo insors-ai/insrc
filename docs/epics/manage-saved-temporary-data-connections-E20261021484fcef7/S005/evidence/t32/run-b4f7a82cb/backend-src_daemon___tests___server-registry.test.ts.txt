@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: a new connection registers an entry labelled unknown until a message identifies it
+ok 1 - a new connection registers an entry labelled unknown until a message identifies it
+  ---
+  duration_ms: 1.160042
+  type: 'test'
+  ...
+# Subtest: handleMessage with a valid client envelope updates label/pid/lastMethod
+ok 2 - handleMessage with a valid client envelope updates label/pid/lastMethod
+  ---
+  duration_ms: 0.177709
+  type: 'test'
+  ...
+# Subtest: a malformed client envelope is ignored — the connection stays unknown/pid undefined
+ok 3 - a malformed client envelope is ignored — the connection stays unknown/pid undefined
+  ---
+  duration_ms: 0.19975
+  type: 'test'
+  ...
+# Subtest: socket close deletes the entry; a double-close / close-before-message is idempotent
+ok 4 - socket close deletes the entry; a double-close / close-before-message is idempotent
+  ---
+  duration_ms: 0.117084
+  type: 'test'
+  ...
+# Subtest: attachedClients() returns entries sorted by connectedAt
+ok 5 - attachedClients() returns entries sorted by connectedAt
+  ---
+  duration_ms: 0.717292
+  type: 'test'
+  ...
+# Subtest: the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)
+ok 6 - the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)
+  ---
+  duration_ms: 0.144125
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 326.370542

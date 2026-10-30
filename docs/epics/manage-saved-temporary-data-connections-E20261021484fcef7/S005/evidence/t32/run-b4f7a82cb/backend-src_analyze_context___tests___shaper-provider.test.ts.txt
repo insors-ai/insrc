@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: shaperProvider=ollama returns an OllamaProvider
+ok 1 - shaperProvider=ollama returns an OllamaProvider
+  ---
+  duration_ms: 4.363834
+  type: 'test'
+  ...
+# Subtest: shaperProvider=cli-claude returns a CliProvider (claude kind)
+ok 2 - shaperProvider=cli-claude returns a CliProvider (claude kind)
+  ---
+  duration_ms: 0.225958
+  type: 'test'
+  ...
+# Subtest: shaperProvider=cli-codex returns a CliProvider
+ok 3 - shaperProvider=cli-codex returns a CliProvider
+  ---
+  duration_ms: 0.081542
+  type: 'test'
+  ...
+# Subtest: cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)
+ok 4 - cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)
+  ---
+  duration_ms: 0.124916
+  type: 'test'
+  ...
+# Subtest: cli-claude + a listed claude shaperModel → forwarded as its canonical id; an unlisted one is not forwarded
+ok 5 - cli-claude + a listed claude shaperModel → forwarded as its canonical id; an unlisted one is not forwarded
+  ---
+  duration_ms: 0.077833
+  type: 'test'
+  ...
+# Subtest: cli-claude + a role-tier claude model → forwarded as its canonical id (role model wins)
+ok 6 - cli-claude + a role-tier claude model → forwarded as its canonical id (role model wins)
+  ---
+  duration_ms: 0.055
+  type: 'test'
+  ...
+# Subtest: cli-claude + a role-tier model that is Ollama-shaped → also dropped
+ok 7 - cli-claude + a role-tier model that is Ollama-shaped → also dropped
+  ---
+  duration_ms: 0.103
+  type: 'test'
+  ...
+# Subtest: ollama path is unchanged: the Ollama model id is still used
+ok 8 - ollama path is unchanged: the Ollama model id is still used
+  ---
+  duration_ms: 0.268375
+  type: 'test'
+  ...
+# Subtest: shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx
+ok 9 - shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx
+  ---
+  duration_ms: 0.344
+  type: 'test'
+  ...
+# Subtest: shaperProvider=cli-* is idempotent -- repeated calls return distinct instances
+ok 10 - shaperProvider=cli-* is idempotent -- repeated calls return distinct instances
+  ---
+  duration_ms: 0.344083
+  type: 'test'
+  ...
+# Subtest: clientDefault picks the matching CLI when config does NOT pin a provider
+ok 11 - clientDefault picks the matching CLI when config does NOT pin a provider
+  ---
+  duration_ms: 0.074583
+  type: 'test'
+  ...
+# Subtest: explicit config shaperProvider overrides the clientDefault
+ok 12 - explicit config shaperProvider overrides the clientDefault
+  ---
+  duration_ms: 0.091584
+  type: 'test'
+  ...
+# Subtest: ambient runWithClientProviderContext supplies the default
+ok 13 - ambient runWithClientProviderContext supplies the default
+  ---
+  duration_ms: 0.203667
+  type: 'test'
+  ...
+# Subtest: resolveShaperKind: explicit global wins over the per-run caller
+ok 14 - resolveShaperKind: explicit global wins over the per-run caller
+  ---
+  duration_ms: 0.101125
+  type: 'test'
+  ...
+# Subtest: resolveShaperKind: per-run caller used when the global is unset
+ok 15 - resolveShaperKind: per-run caller used when the global is unset
+  ---
+  duration_ms: 0.049542
+  type: 'test'
+  ...
+# Subtest: resolveShaperKind: the definitions' default family when all signals are unset
+ok 16 - resolveShaperKind: the definitions' default family when all signals are unset
+  ---
+  duration_ms: 0.041
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 403.371209

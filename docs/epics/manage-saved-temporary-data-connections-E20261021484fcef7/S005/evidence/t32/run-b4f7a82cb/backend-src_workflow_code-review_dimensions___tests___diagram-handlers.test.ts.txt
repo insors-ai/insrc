@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: registry: the sequence + component peer handlers register alongside er (additive, er untouched)
+ok 1 - registry: the sequence + component peer handlers register alongside er (additive, er untouched)
+  ---
+  duration_ms: 0.582916
+  type: 'test'
+  ...
+# Subtest: hasDiagramReferences: engages on a body carrying only a sequence / component definition (body-keyed)
+ok 2 - hasDiagramReferences: engages on a body carrying only a sequence / component definition (body-keyed)
+  ---
+  duration_ms: 0.146542
+  type: 'test'
+  ...
+# Subtest: judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9)
+ok 3 - judgeDiagram: a sound sequence / component definition → only the completeness LOWs (LLD-d9f85b3c t9)
+  ---
+  duration_ms: 2.494042
+  type: 'test'
+  ...
+# Subtest: judgeDiagram: a dangling sequence definition folds a HIGH breach through the diagram dimension
+ok 4 - judgeDiagram: a dangling sequence definition folds a HIGH breach through the diagram dimension
+  ---
+  duration_ms: 0.242542
+  type: 'test'
+  ...
+# Subtest: judgeDiagram: a dangling component definition folds a HIGH breach through the diagram dimension
+ok 5 - judgeDiagram: a dangling component definition folds a HIGH breach through the diagram dimension
+  ---
+  duration_ms: 0.187
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 346.1095

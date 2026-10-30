@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.002">
+  <properties/>
+  <testcase name="removing an existing override writes Clear and removing an unset role is a no-op()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.0"/>
+  <testcase name="rows list an override with its value and a non-override as default routing()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.001"/>
+  <testcase name="changing one role's override leaves the others untouched (per-key isolation)()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.0"/>
+  <testcase name="setting an unset role to its own default tier is an explicit override write()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.0"/>
+  <testcase name="setting the same tier a role already overrides to is not dirty()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.0"/>
+  <testcase name="adding an override to a dotted roleId writes Set at one literal segment()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.001"/>
+  <testcase name="a fresh model is not modified and writes nothing()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.0"/>
+  <testcase name="revert restores the saved state()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.0"/>
+  <testcase name="onSaved advances the baseline so the role is no longer dirty()" classname="ai.insors.insrc.jetbrains.settings.PerRoleOverridesModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

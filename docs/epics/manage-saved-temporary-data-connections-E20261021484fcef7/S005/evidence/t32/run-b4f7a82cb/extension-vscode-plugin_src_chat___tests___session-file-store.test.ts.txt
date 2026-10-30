@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)
+ok 1 - a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)
+  ---
+  duration_ms: 5.59525
+  type: 'test'
+  ...
+# Subtest: a save with no new rows writes the head only
+ok 2 - a save with no new rows writes the head only
+  ---
+  duration_ms: 0.218833
+  type: 'test'
+  ...
+# Subtest: a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once
+ok 3 - a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once
+  ---
+  duration_ms: 0.402917
+  type: 'test'
+  ...
+# Subtest: get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again
+ok 4 - get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again
+  ---
+  duration_ms: 0.476084
+  type: 'test'
+  ...
+# Subtest: list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending
+ok 5 - list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending
+  ---
+  duration_ms: 0.414333
+  type: 'test'
+  ...
+# Subtest: a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped
+ok 6 - a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped
+  ---
+  duration_ms: 0.500708
+  type: 'test'
+  ...
+# Subtest: an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id
+ok 7 - an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id
+  ---
+  duration_ms: 0.197166
+  type: 'test'
+  ...
+# Subtest: after another writer has appended to the rows file, the same held session object is saved three times (with a new row, with only a head change, and after a get of its id): every save only appends, the rows file is never replaced, it holds both writers' rows in save order, and the get returns a fresh object with all of them (mutation: untrack the object when the cached copy is dropped)
+ok 8 - after another writer has appended to the rows file, the same held session object is saved three times (with a new row, with only a head change, and after a get of its id): every save only appends, the rows file is never replaced, it holds both writers' rows in save order, and the get returns a fresh object with all of them (mutation: untrack the object when the cached copy is dropped)
+  ---
+  duration_ms: 0.2545
+  type: 'test'
+  ...
+# Subtest: an object the store has never tracked, saved for an id whose files exist, replaces the rows file whole through a temporary file and a rename; so does a tracked object whose transcript is shorter than its count
+ok 9 - an object the store has never tracked, saved for an id whose files exist, replaces the rows file whole through a temporary file and a rename; so does a tracked object whose transcript is shorter than its count
+  ---
+  duration_ms: 0.331667
+  type: 'test'
+  ...
+# Subtest: a failing append or head write makes save throw and leaves the object's count where the rows on disk are, so the next save writes the missing rows once and none twice
+ok 10 - a failing append or head write makes save throw and leaves the object's count where the rows on disk are, so the next save writes the missing rows once and none twice
+  ---
+  duration_ms: 0.532292
+  type: 'test'
+  ...
+# Subtest: with maxSessions set, a save that creates a new session removes the sessions with the oldest savedAt and their rows files and calls onEvict for each, never the session being saved; a failing remove is logged and the save succeeds; a cap of 0 or less is no cap
+ok 11 - with maxSessions set, a save that creates a new session removes the sessions with the oldest savedAt and their rows files and calls onEvict for each, never the session being saved; a failing remove is logged and the save succeeds; a cap of 0 or less is no cap
+  ---
+  duration_ms: 0.619083
+  type: 'test'
+  ...
+# Subtest: a held session object saved after its files were removed is written whole with its head, get then returns every row, and the cap is applied without removing it (mutation: append only the rows beyond its count)
+ok 12 - a held session object saved after its files were removed is written whole with its head, get then returns every row, and the cap is applied without removing it (mutation: append only the rows beyond its count)
+  ---
+  duration_ms: 0.245958
+  type: 'test'
+  ...
+# Subtest: a save after the store cut back a torn last line appends and does not replace the rows file
+ok 13 - a save after the store cut back a torn last line appends and does not replace the rows file
+  ---
+  duration_ms: 0.129834
+  type: 'test'
+  ...
+# Subtest: the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did
+ok 14 - the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did
+  ---
+  duration_ms: 0.738459
+  type: 'test'
+  ...
+# Subtest: a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated
+ok 15 - a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated
+  ---
+  duration_ms: 0.551875
+  type: 'test'
+  ...
+# Subtest: a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept
+ok 16 - a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept
+  ---
+  duration_ms: 0.385458
+  type: 'test'
+  ...
+# Subtest: the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged
+ok 17 - the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged
+  ---
+  duration_ms: 0.261541
+  type: 'test'
+  ...
+# Subtest: a failed whole-file write leaves no temporary file behind, and a field the store does not know is carried through a save, a read and the migration
+ok 18 - a failed whole-file write leaves no temporary file behind, and a field the store does not know is carried through a save, a read and the migration
+  ---
+  duration_ms: 0.255334
+  type: 'test'
+  ...
+# Subtest: session file store: a user row with attachments round-trips unchanged
+ok 19 - session file store: a user row with attachments round-trips unchanged
+  ---
+  duration_ms: 0.135917
+  type: 'test'
+  ...
+# Subtest: session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place
+ok 20 - session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place
+  ---
+  duration_ms: 0.253875
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 214.97025

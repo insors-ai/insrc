@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: validateCitations passes when every ref resolves + every id used
+ok 1 - validateCitations passes when every ref resolves + every id used
+  ---
+  duration_ms: 1.678209
+  type: 'test'
+  ...
+# Subtest: validateCitations fails on unknown ref
+ok 2 - validateCitations fails on unknown ref
+  ---
+  duration_ms: 0.131208
+  type: 'test'
+  ...
+# Subtest: validateCitations tolerates an unused citation (harmless padding)
+ok 3 - validateCitations tolerates an unused citation (harmless padding)
+  ---
+  duration_ms: 0.048042
+  type: 'test'
+  ...
+# Subtest: validateCitations fails on duplicate id
+ok 4 - validateCitations fails on duplicate id
+  ---
+  duration_ms: 0.047209
+  type: 'test'
+  ...
+# Subtest: validateCitations fails on non-cN id shape
+ok 5 - validateCitations fails on non-cN id shape
+  ---
+  duration_ms: 0.101833
+  type: 'test'
+  ...
+# Subtest: S001: validateCitations IGNORES lc-refs and k-refs — an lc/k ref absent from the citation list does NOT fail
+ok 6 - S001: validateCitations IGNORES lc-refs and k-refs — an lc/k ref absent from the citation list does NOT fail
+  ---
+  duration_ms: 0.104917
+  type: 'test'
+  ...
+# Subtest: S001: validateCitations still FAILS a genuine dangling c-ref (the guard is not weakened by S001)
+ok 7 - S001: validateCitations still FAILS a genuine dangling c-ref (the guard is not weakened by S001)
+  ---
+  duration_ms: 0.056292
+  type: 'test'
+  ...
+# Subtest: checkScopeBoundary passes on stub workflow (no rules)
+ok 8 - checkScopeBoundary passes on stub workflow (no rules)
+  ---
+  duration_ms: 0.057542
+  type: 'test'
+  ...
+# Subtest: checkScopeBoundary fails define artifact containing a code fence
+ok 9 - checkScopeBoundary fails define artifact containing a code fence
+  ---
+  duration_ms: 0.251209
+  type: 'test'
+  ...
+# Subtest: checkScopeBoundary fails design.epic containing a task list
+ok 10 - checkScopeBoundary fails design.epic containing a task list
+  ---
+  duration_ms: 0.393334
+  type: 'test'
+  ...
+# Subtest: renderCitationBlock formats the tail block
+ok 11 - renderCitationBlock formats the tail block
+  ---
+  duration_ms: 0.098959
+  type: 'test'
+  ...
+# Subtest: renderCitationBlock returns empty on empty list
+ok 12 - renderCitationBlock returns empty on empty list
+  ---
+  duration_ms: 0.031
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 188.504417

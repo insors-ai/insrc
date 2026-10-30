@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory
+ok 1 - no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory
+  ---
+  duration_ms: 32190.3215
+  type: 'test'
+  ...
+# Subtest: the check sees a vector store that IS opened at the default path
+ok 2 - the check sees a vector store that IS opened at the default path
+  ---
+  duration_ms: 467.546333
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32884.478459

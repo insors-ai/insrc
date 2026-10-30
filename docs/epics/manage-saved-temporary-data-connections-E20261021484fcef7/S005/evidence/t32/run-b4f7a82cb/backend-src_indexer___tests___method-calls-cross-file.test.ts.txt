@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: a call to a method of an exported class in an imported file is an edge from the caller
+ok 1 - a call to a method of an exported class in an imported file is an edge from the caller
+  ---
+  duration_ms: 399.153833
+  type: 'test'
+  ...
+# Subtest: a private method, a \#name method and a method of a class the file does not export are not resolved across files
+ok 2 - a private method, a \#name method and a method of a class the file does not export are not resolved across files
+  ---
+  duration_ms: 331.630417
+  type: 'test'
+  ...
+# Subtest: a method name that two imported classes share is recorded ambiguous with both candidates, not guessed
+ok 3 - a method name that two imported classes share is recorded ambiguous with both candidates, not guessed
+  ---
+  duration_ms: 283.411709
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1378.713417

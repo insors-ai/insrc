@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: T2 given no author, finalizeArtifact writes no author field
+ok 1 - T2 given no author, finalizeArtifact writes no author field
+  ---
+  duration_ms: 1.882833
+  type: 'test'
+  ...
+# Subtest: T2 given controller, finalizeArtifact stamps it in the artifact and in the json it renders
+ok 2 - T2 given controller, finalizeArtifact stamps it in the artifact and in the json it renders
+  ---
+  duration_ms: 0.221792
+  type: 'test'
+  ...
+# Subtest: T2 given daemon, finalizeArtifact stamps it in the artifact and in the json it renders
+ok 3 - T2 given daemon, finalizeArtifact stamps it in the artifact and in the json it renders
+  ---
+  duration_ms: 0.133541
+  type: 'test'
+  ...
+# Subtest: T2 the author is the ONLY difference the argument makes
+ok 4 - T2 the author is the ONLY difference the argument makes
+  ---
+  duration_ms: 0.788625
+  type: 'test'
+  ...
+# Subtest: T2 a finalize that fails is returned as it is, with no author added
+ok 5 - T2 a finalize that fails is returned as it is, with no author added
+  ---
+  duration_ms: 0.08425
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 322.665375

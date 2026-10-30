@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: T10 code of controller author with fresh grounding is sent to the daemon (full) and returns done with its verdict
+ok 1 - T10 code of controller author with fresh grounding is sent to the daemon (full) and returns done with its verdict
+  ---
+  duration_ms: 3.745875
+  type: 'test'
+  ...
+# Subtest: T10 code of unknown author with fresh grounding is sent to the daemon (full) and returns done with its verdict
+ok 2 - T10 code of unknown author with fresh grounding is sent to the daemon (full) and returns done with its verdict
+  ---
+  duration_ms: 0.740542
+  type: 'test'
+  ...
+# Subtest: T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked
+ok 3 - T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked
+  ---
+  duration_ms: 3.779167
+  type: 'test'
+  ...
+# Subtest: T10 the invoking client is passed to the daemon when the tool knows it
+ok 4 - T10 the invoking client is passed to the daemon when the tool knows it
+  ---
+  duration_ms: 0.178167
+  type: 'test'
+  ...
+# Subtest: T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet
+ok 5 - T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet
+  ---
+  duration_ms: 0.631709
+  type: 'test'
+  ...
+# Subtest: T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself
+ok 6 - T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself
+  ---
+  duration_ms: 0.547333
+  type: 'test'
+  ...
+# Subtest: T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode
+ok 7 - T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode
+  ---
+  duration_ms: 0.6225
+  type: 'test'
+  ...
+# Subtest: T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements
+ok 8 - T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements
+  ---
+  duration_ms: 0.54975
+  type: 'test'
+  ...
+# Subtest: T17 fresh grounding with no symbols asks the daemon with the degraded mode
+ok 9 - T17 fresh grounding with no symbols asks the daemon with the degraded mode
+  ---
+  duration_ms: 0.929917
+  type: 'test'
+  ...
+# Subtest: T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon
+ok 10 - T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon
+  ---
+  duration_ms: 0.952833
+  type: 'test'
+  ...
+# Subtest: T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped
+ok 11 - T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped
+  ---
+  duration_ms: 0.42175
+  type: 'test'
+  ...
+# Subtest: an older daemon that ignored the degraded mode is an error, not a verdict
+ok 12 - an older daemon that ignored the degraded mode is an error, not a verdict
+  ---
+  duration_ms: 0.210875
+  type: 'test'
+  ...
+# Subtest: an older daemon that stamped no reviewer is an error, not a verdict
+ok 13 - an older daemon that stamped no reviewer is an error, not a verdict
+  ---
+  duration_ms: 0.144916
+  type: 'test'
+  ...
+# Subtest: T11 a daemon code review that fails (unreachable) is an error: nothing stamped, no judgements prompt offered
+ok 14 - T11 a daemon code review that fails (unreachable) is an error: nothing stamped, no judgements prompt offered
+  ---
+  duration_ms: 0.258917
+  type: 'test'
+  ...
+# Subtest: T11 a daemon code review that fails (daemon-error) is an error: nothing stamped, no judgements prompt offered
+ok 15 - T11 a daemon code review that fails (daemon-error) is an error: nothing stamped, no judgements prompt offered
+  ---
+  duration_ms: 0.108959
+  type: 'test'
+  ...
+# Subtest: T11 a daemon code review that fails (unknown-method) is an error: nothing stamped, no judgements prompt offered
+ok 16 - T11 a daemon code review that fails (unknown-method) is an error: nothing stamped, no judgements prompt offered
+  ---
+  duration_ms: 0.09075
+  type: 'test'
+  ...
+# Subtest: T11 a daemon code review that fails (timeout) is an error: nothing stamped, no judgements prompt offered
+ok 17 - T11 a daemon code review that fails (timeout) is an error: nothing stamped, no judgements prompt offered
+  ---
+  duration_ms: 0.114583
+  type: 'test'
+  ...
+# Subtest: T11 a daemon code review that fails (failed) is an error: nothing stamped, no judgements prompt offered
+ok 18 - T11 a daemon code review that fails (failed) is an error: nothing stamped, no judgements prompt offered
+  ---
+  duration_ms: 0.057334
+  type: 'test'
+  ...
+# Subtest: codeReviewWaitLimits reads both keys, falls back to the defaults on a bad value and clamps idle to the ceiling
+ok 19 - codeReviewWaitLimits reads both keys, falls back to the defaults on a bad value and clamps idle to the ceiling
+  ---
+  duration_ms: 0.12
+  type: 'test'
+  ...
+# Subtest: reviewByDaemon passes the limits as timeoutMs and idleMs to codeReviewStream and relays every progress frame to deps.progress
+ok 20 - reviewByDaemon passes the limits as timeoutMs and idleMs to codeReviewStream and relays every progress frame to deps.progress
+  ---
+  duration_ms: 0.45825
+  type: 'test'
+  ...
+# Subtest: a ceiling or idle timeout answers next:'error' naming the config key to raise
+ok 21 - a ceiling or idle timeout answers next:'error' naming the config key to raise
+  ---
+  duration_ms: 14.680084
+  type: 'test'
+  ...
+# Subtest: T12 the judgements phase refuses controller-authored code and stamps nothing
+ok 22 - T12 the judgements phase refuses controller-authored code and stamps nothing
+  ---
+  duration_ms: 0.534542
+  type: 'test'
+  ...
+# Subtest: T12 an unknown author does not stop the judgements phase (only a known controller author does)
+ok 23 - T12 an unknown author does not stop the judgements phase (only a known controller author does)
+  ---
+  duration_ms: 0.646375
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 404.236125

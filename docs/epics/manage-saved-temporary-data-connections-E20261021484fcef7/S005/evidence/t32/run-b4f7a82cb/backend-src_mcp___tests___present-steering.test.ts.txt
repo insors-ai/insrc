@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval
+ok 1 - the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval
+  ---
+  duration_ms: 4.903292
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 401.19475

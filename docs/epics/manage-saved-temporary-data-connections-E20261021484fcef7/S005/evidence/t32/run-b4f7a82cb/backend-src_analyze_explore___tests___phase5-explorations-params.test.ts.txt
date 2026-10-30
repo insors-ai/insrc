@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: db.tables.list rejects empty params
+ok 1 - db.tables.list rejects empty params
+  ---
+  duration_ms: 1.097375
+  type: 'test'
+  ...
+# Subtest: db.tables.list rejects whitespace-only connectionId
+ok 2 - db.tables.list rejects whitespace-only connectionId
+  ---
+  duration_ms: 0.18375
+  type: 'test'
+  ...
+# Subtest: db.table.describe rejects empty params
+ok 3 - db.table.describe rejects empty params
+  ---
+  duration_ms: 0.138083
+  type: 'test'
+  ...
+# Subtest: db.table.describe rejects only-connectionId
+ok 4 - db.table.describe rejects only-connectionId
+  ---
+  duration_ms: 0.060584
+  type: 'test'
+  ...
+# Subtest: manifests.locate returns empty output when repo has no indexed entities
+ok 5 - manifests.locate returns empty output when repo has no indexed entities
+  ---
+  duration_ms: 236.761583
+  type: 'test'
+  ...
+# Subtest: classifyFamily: Dockerfile -> docker
+ok 6 - classifyFamily: Dockerfile -> docker
+  ---
+  duration_ms: 0.162541
+  type: 'test'
+  ...
+# Subtest: classifyFamily: .tf -> terraform
+ok 7 - classifyFamily: .tf -> terraform
+  ---
+  duration_ms: 0.052458
+  type: 'test'
+  ...
+# Subtest: classifyFamily: .github/workflows/*.yml -> ci
+ok 8 - classifyFamily: .github/workflows/*.yml -> ci
+  ---
+  duration_ms: 0.356125
+  type: 'test'
+  ...
+# Subtest: classifyFamily: Chart.yaml -> helm
+ok 9 - classifyFamily: Chart.yaml -> helm
+  ---
+  duration_ms: 0.292416
+  type: 'test'
+  ...
+# Subtest: classifyFamily: k8s/ path -> kubernetes
+ok 10 - classifyFamily: k8s/ path -> kubernetes
+  ---
+  duration_ms: 0.576417
+  type: 'test'
+  ...
+# Subtest: classifyFamily: plain yaml under repo root -> other
+ok 11 - classifyFamily: plain yaml under repo root -> other
+  ---
+  duration_ms: 0.053708
+  type: 'test'
+  ...
+# Subtest: isK8sPath: recognises the standard directories
+ok 12 - isK8sPath: recognises the standard directories
+  ---
+  duration_ms: 0.041541
+  type: 'test'
+  ...
+# Subtest: isHelmPath: Chart.yaml + values.yaml + helm/ + charts/
+ok 13 - isHelmPath: Chart.yaml + values.yaml + helm/ + charts/
+  ---
+  duration_ms: 0.037167
+  type: 'test'
+  ...
+# Subtest: isCIPath: known CI file locations
+ok 14 - isCIPath: known CI file locations
+  ---
+  duration_ms: 0.034875
+  type: 'test'
+  ...
+# Subtest: inferResourceKind: filename convention wins for kubernetes/helm
+ok 15 - inferResourceKind: filename convention wins for kubernetes/helm
+  ---
+  duration_ms: 0.080041
+  type: 'test'
+  ...
+# Subtest: inferResourceKind: undefined for non-kubernetes families
+ok 16 - inferResourceKind: undefined for non-kubernetes families
+  ---
+  duration_ms: 0.027666
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 609.579334

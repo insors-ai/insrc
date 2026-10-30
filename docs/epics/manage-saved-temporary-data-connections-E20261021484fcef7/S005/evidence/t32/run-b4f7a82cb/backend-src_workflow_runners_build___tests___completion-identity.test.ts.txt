@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: DIFF-COMPLETION-NOOP: real completion preserves BUILD bytes, file identities, provenance order/version/author and TESTS ranAt
+ok 1 - DIFF-COMPLETION-NOOP: real completion preserves BUILD bytes, file identities, provenance order/version/author and TESTS ranAt
+  ---
+  duration_ms: 871.506
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-IDENTITY: approval metadata and no-op completion stay stable while normal validate persistence still refreshes semantic time
+ok 2 - DIFF-APPROVE-IDENTITY: approval metadata and no-op completion stay stable while normal validate persistence still refreshes semantic time
+  ---
+  duration_ms: 990.397042
+  type: 'test'
+  ...
+# Subtest: DIFF-COMPLETION-CHANGE: new commits/files and changed tasks persist; unchanged per-file provenance survives the new Story revision
+ok 3 - DIFF-COMPLETION-CHANGE: new commits/files and changed tasks persist; unchanged per-file provenance survives the new Story revision
+  ---
+  duration_ms: 1889.014667
+  type: 'test'
+  ...
+# Subtest: DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint
+ok 4 - DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint
+  ---
+  duration_ms: 572.216666
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4573.409459

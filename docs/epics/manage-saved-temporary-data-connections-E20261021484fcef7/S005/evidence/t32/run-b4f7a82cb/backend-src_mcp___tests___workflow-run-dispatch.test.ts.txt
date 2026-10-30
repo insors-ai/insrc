@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: startRun / pollRun / abortRun speak the unary framing against a fake daemon
+ok 1 - startRun / pollRun / abortRun speak the unary framing against a fake daemon
+  ---
+  duration_ms: 17.617459
+  type: 'test'
+  ...
+# Subtest: unaryRpc rejects when the daemon returns an error field
+ok 2 - unaryRpc rejects when the daemon returns an error field
+  ---
+  duration_ms: 1.331334
+  type: 'test'
+  ...
+# Subtest: handleWorkflowRun: START returns runId + next:poll + guidance
+ok 3 - handleWorkflowRun: START returns runId + next:poll + guidance
+  ---
+  duration_ms: 1.278083
+  type: 'test'
+  ...
+# Subtest: handleWorkflowRun: POLL renders frames as short lines + status
+ok 4 - handleWorkflowRun: POLL renders frames as short lines + status
+  ---
+  duration_ms: 0.867459
+  type: 'test'
+  ...
+# Subtest: handleWorkflowRun: POLL done surfaces artifact + runId + model + review
+ok 5 - handleWorkflowRun: POLL done surfaces artifact + runId + model + review
+  ---
+  duration_ms: 1.102083
+  type: 'test'
+  ...
+# Subtest: handleWorkflowRun: POLL error surfaces the error + marks isError
+ok 6 - handleWorkflowRun: POLL error surfaces the error + marks isError
+  ---
+  duration_ms: 0.662083
+  type: 'test'
+  ...
+# Subtest: handleWorkflowRun: ABORT returns aborted + runId
+ok 7 - handleWorkflowRun: ABORT returns aborted + runId
+  ---
+  duration_ms: 0.734667
+  type: 'test'
+  ...
+# Subtest: handleWorkflowRun: no phase args → guidance error
+ok 8 - handleWorkflowRun: no phase args → guidance error
+  ---
+  duration_ms: 0.11175
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 414.423875

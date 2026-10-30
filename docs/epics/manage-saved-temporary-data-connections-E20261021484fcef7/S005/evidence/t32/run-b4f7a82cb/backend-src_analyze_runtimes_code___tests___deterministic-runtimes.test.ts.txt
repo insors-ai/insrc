@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: modulePrefixOf: includes trailing slash for nested paths
+ok 1 - modulePrefixOf: includes trailing slash for nested paths
+  ---
+  duration_ms: 0.701125
+  type: 'test'
+  ...
+# Subtest: modulePrefixOf: root-level path (no slash) returns input
+ok 2 - modulePrefixOf: root-level path (no slash) returns input
+  ---
+  duration_ms: 0.061958
+  type: 'test'
+  ...
+# Subtest: compareEntitiesByLocation: file then startLine then name
+ok 3 - compareEntitiesByLocation: file then startLine then name
+  ---
+  duration_ms: 1.326375
+  type: 'test'
+  ...
+# Subtest: code deterministic runtimes integration: skipped (set INSRC_LIVE_TESTS=1)
+ok 4 - code deterministic runtimes integration: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.064542
+  type: 'test'
+  ...
+# Subtest: discovery.entrypoints: lists only exported functions/methods/classes, sorted by location
+ok 5 - discovery.entrypoints: lists only exported functions/methods/classes, sorted by location # SKIP
+  ---
+  duration_ms: 0.052958
+  type: 'test'
+  ...
+# Subtest: surface.functional: splits exports vs internalHelpers for a single module
+ok 6 - surface.functional: splits exports vs internalHelpers for a single module # SKIP
+  ---
+  duration_ms: 0.034125
+  type: 'test'
+  ...
+# Subtest: surface.functional: shallow depth omits body, deep includes it
+ok 7 - surface.functional: shallow depth omits body, deep includes it # SKIP
+  ---
+  duration_ms: 0.10375
+  type: 'test'
+  ...
+# Subtest: the gated test of an unknown module value fails with the message that no stored source file lies under it
+ok 8 - the gated test of an unknown module value fails with the message that no stored source file lies under it # SKIP
+  ---
+  duration_ms: 0.117125
+  type: 'test'
+  ...
+# Subtest: surface.functional: passing a non-module entity id -> throws
+ok 9 - surface.functional: passing a non-module entity id -> throws # SKIP
+  ---
+  duration_ms: 0.214709
+  type: 'test'
+  ...
+# Subtest: surface.functional: missing params.module -> throws with INV-5 message
+ok 10 - surface.functional: missing params.module -> throws with INV-5 message # SKIP
+  ---
+  duration_ms: 0.1395
+  type: 'test'
+  ...
+# Subtest: structure.module-tree: emits module nodes + IMPORTS edges as module-to-module
+ok 11 - structure.module-tree: emits module nodes + IMPORTS edges as module-to-module # SKIP
+  ---
+  duration_ms: 0.031125
+  type: 'test'
+  ...
+# Subtest: the gated test of a repository with no module entity and one source file gives one node '.' and no edge
+ok 12 - the gated test of a repository with no module entity and one source file gives one node '.' and no edge # SKIP
+  ---
+  duration_ms: 0.024
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 9
+# todo 0
+# duration_ms 470.032625

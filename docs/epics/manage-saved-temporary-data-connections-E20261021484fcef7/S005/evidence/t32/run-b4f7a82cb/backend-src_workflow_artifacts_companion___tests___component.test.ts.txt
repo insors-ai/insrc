@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: validateComponentDependencyDefinition: sound → no findings; dangling → HIGH breach
+ok 1 - validateComponentDependencyDefinition: sound → no findings; dangling → HIGH breach
+  ---
+  duration_ms: 1.206208
+  type: 'test'
+  ...
+# Subtest: validateComponentDependencyDefinition: a duplicate component id → HIGH breach
+ok 2 - validateComponentDependencyDefinition: a duplicate component id → HIGH breach
+  ---
+  duration_ms: 0.104459
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 189.869

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: ac1: session B is answered on its own thread while session A's worker spins
+ok 1 - ac1: session B is answered on its own thread while session A's worker spins
+  ---
+  duration_ms: 7678.922875
+  type: 'test'
+  ...
+# Subtest: ac2/ac3: one session over two connections runs in order on one worker thread, released after idle
+ok 2 - ac2/ac3: one session over two connections runs in order on one worker thread, released after idle
+  ---
+  duration_ms: 6761.554709
+  type: 'test'
+  ...
+# Subtest: ac4: a session worker failure is contained; a throwing handler keeps its worker
+ok 3 - ac4: a session worker failure is contained; a throwing handler keeps its worker
+  ---
+  duration_ms: 2374.946
+  type: 'test'
+  ...
+# Subtest: ac5: no Promise.all over provider calls in the modules s3 adds or changes
+ok 4 - ac5: no Promise.all over provider calls in the modules s3 adds or changes
+  ---
+  duration_ms: 3.243541
+  type: 'test'
+  ...
+# Subtest: ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once
+ok 5 - ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once
+  ---
+  duration_ms: 959.65525
+  type: 'test'
+  ...
+# Subtest: ac6: a token of each step kind resumes on a new worker after an idle release
+ok 6 - ac6: a token of each step kind resumes on a new worker after an idle release
+  ---
+  duration_ms: 6420.679792
+  type: 'test'
+  ...
+# Subtest: ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins
+ok 7 - ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins
+  ---
+  duration_ms: 15904.892167
+  type: 'test'
+  ...
+# Subtest: parity: moved session methods answer over the socket as the single-thread daemon does
+ok 8 - parity: moved session methods answer over the socket as the single-thread daemon does
+  ---
+  duration_ms: 3554.814417
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 44082.277667

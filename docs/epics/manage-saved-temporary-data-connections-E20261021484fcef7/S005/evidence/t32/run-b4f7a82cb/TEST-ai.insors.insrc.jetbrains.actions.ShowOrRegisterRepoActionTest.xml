@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoActionTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="RegisterRepoDialog collects the root plus two steering toggles and never closes-as-success on failure()" classname="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoActionTest" time="0.001"/>
+  <testcase name="plugin_xml registers the action on ProjectViewPopupMenu and stays platform-only()" classname="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoActionTest" time="0.001"/>
+  <testcase name="actionPerformed reuses the BGT-computed registration flag and never re-probes on the EDT()" classname="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoActionTest" time="0.001"/>
+  <testcase name="RepoStatusDialog reads repoStats off the EDT and renders Loaded vs Unavailable()" classname="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoActionTest" time="0.0"/>
+  <testcase name="the action computes the dynamic label off the EDT (BGT) and never blocks or throws in update()" classname="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoActionTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

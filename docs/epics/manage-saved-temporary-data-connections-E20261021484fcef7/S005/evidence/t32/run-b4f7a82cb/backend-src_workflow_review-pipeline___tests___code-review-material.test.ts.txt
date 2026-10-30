@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: each included summary is one atom with id entityId, label file\#name, the file's directory as module, and text equal to the row's JSON
+ok 1 - each included summary is one atom with id entityId, label file\#name, the file's directory as module, and text equal to the row's JSON
+  ---
+  duration_ms: 2.102208
+  type: 'test'
+  ...
+# Subtest: a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none
+ok 2 - a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none
+  ---
+  duration_ms: 0.558958
+  type: 'test'
+  ...
+# Subtest: same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only
+ok 3 - same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only
+  ---
+  duration_ms: 0.270875
+  type: 'test'
+  ...
+# Subtest: a duplicate entityId throws an error naming it
+ok 4 - a duplicate entityId throws an error naming it
+  ---
+  duration_ms: 0.191042
+  type: 'test'
+  ...
+# Subtest: the same grounding gives identical material and identical neighbour summaries every time
+ok 5 - the same grounding gives identical material and identical neighbour summaries every time
+  ---
+  duration_ms: 0.610833
+  type: 'test'
+  ...
+# Subtest: a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names
+ok 6 - a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names
+  ---
+  duration_ms: 0.13375
+  type: 'test'
+  ...
+# Subtest: coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence
+ok 7 - coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence
+  ---
+  duration_ms: 1.204542
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before
+ok 8 - ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before
+  ---
+  duration_ms: 138.855875
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took
+ok 9 - ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took
+  ---
+  duration_ms: 951.255166
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time
+ok 10 - ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time
+  ---
+  duration_ms: 86.55175
+  type: 'test'
+  ...
+# Subtest: ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds
+ok 11 - ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds
+  ---
+  duration_ms: 0.823125
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1477.826

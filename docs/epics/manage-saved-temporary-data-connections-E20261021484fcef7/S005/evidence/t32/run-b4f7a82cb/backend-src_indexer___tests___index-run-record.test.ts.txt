@@ -1,0 +1,32 @@
+TAP version 13
+# [04:47:31] [31mERROR[39m: [36m[indexer] full index failed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-s5t6-repo-PJOBIn"
+#     err: "manifest read failed"
+# Subtest: full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)
+ok 1 - full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)
+  ---
+  duration_ms: 755.901667
+  type: 'test'
+  ...
+# Subtest: reindex of a ready repository: status indexing and the running record carries the new run's figures
+ok 2 - reindex of a ready repository: status indexing and the running record carries the new run's figures
+  ---
+  duration_ms: 1345.308917
+  type: 'test'
+  ...
+# Subtest: start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged
+ok 3 - start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged
+  ---
+  duration_ms: 617.110583
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3118.95825

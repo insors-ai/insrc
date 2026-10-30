@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: encodeEntityKey + decode round-trips u64 values including edges
+ok 1 - encodeEntityKey + decode round-trips u64 values including edges
+  ---
+  duration_ms: 4.761167
+  type: 'test'
+  ...
+# Subtest: encodeRepoKey + decode round-trips u32
+ok 2 - encodeRepoKey + decode round-trips u32
+  ---
+  duration_ms: 0.745959
+  type: 'test'
+  ...
+# Subtest: encodeOutEdgeKey produces 17 bytes; round-trips
+ok 3 - encodeOutEdgeKey produces 17 bytes; round-trips
+  ---
+  duration_ms: 1.556625
+  type: 'test'
+  ...
+# Subtest: encodeInEdgeKey produces 17 bytes; round-trips
+ok 4 - encodeInEdgeKey produces 17 bytes; round-trips
+  ---
+  duration_ms: 0.940625
+  type: 'test'
+  ...
+# Subtest: encodeOutEdgePrefix + prefixSuccessor bracket a single (from,kind) range
+ok 5 - encodeOutEdgePrefix + prefixSuccessor bracket a single (from,kind) range
+  ---
+  duration_ms: 3.042
+  type: 'test'
+  ...
+# Subtest: encodeOutEdgePrefix without kind brackets all kinds for a (from)
+ok 6 - encodeOutEdgePrefix without kind brackets all kinds for a (from)
+  ---
+  duration_ms: 0.39025
+  type: 'test'
+  ...
+# Subtest: big-endian u64 key ordering matches numeric ordering
+ok 7 - big-endian u64 key ordering matches numeric ordering
+  ---
+  duration_ms: 0.278209
+  type: 'test'
+  ...
+# Subtest: composite name_index key includes repo + kind + name
+ok 8 - composite name_index key includes repo + kind + name
+  ---
+  duration_ms: 0.3435
+  type: 'test'
+  ...
+# Subtest: plan_step key range scans return idx-ordered steps
+ok 9 - plan_step key range scans return idx-ordered steps
+  ---
+  duration_ms: 0.518083
+  type: 'test'
+  ...
+# Subtest: conversation_turn key orders by idx within session
+ok 10 - conversation_turn key orders by idx within session
+  ---
+  duration_ms: 0.402875
+  type: 'test'
+  ...
+# Subtest: todo_item key respects orderKey lex order
+ok 11 - todo_item key respects orderKey lex order
+  ---
+  duration_ms: 0.243875
+  type: 'test'
+  ...
+# Subtest: config_by_scope key supports hierarchical prefix scans
+ok 12 - config_by_scope key supports hierarchical prefix scans
+  ---
+  duration_ms: 0.216333
+  type: 'test'
+  ...
+# Subtest: relation-kind enum byte mapping is bidirectional
+ok 13 - relation-kind enum byte mapping is bidirectional
+  ---
+  duration_ms: 0.251583
+  type: 'test'
+  ...
+# Subtest: entity-kind enum byte mapping is bidirectional
+ok 14 - entity-kind enum byte mapping is bidirectional
+  ---
+  duration_ms: 0.197709
+  type: 'test'
+  ...
+# Subtest: utf8 segment with null byte is rejected
+ok 15 - utf8 segment with null byte is rejected
+  ---
+  duration_ms: 0.440458
+  type: 'test'
+  ...
+# Subtest: all 20 sub-DBs open and accept basic put/get
+ok 16 - all 20 sub-DBs open and accept basic put/get
+  ---
+  duration_ms: 225.835083
+  type: 'test'
+  ...
+# Subtest: lifecycle close + reopen preserves data
+ok 17 - lifecycle close + reopen preserves data
+  ---
+  duration_ms: 120.973333
+  type: 'test'
+  ...
+# Subtest: concurrent first-callers share the same init promise
+ok 18 - concurrent first-callers share the same init promise
+  ---
+  duration_ms: 189.465958
+  type: 'test'
+  ...
+# Subtest: write transaction is atomic
+ok 19 - write transaction is atomic
+  ---
+  duration_ms: 204.779958
+  type: 'test'
+  ...
+# Subtest: cursor range scan over out_edge prefix returns kind-scoped neighbors
+ok 20 - cursor range scan over out_edge prefix returns kind-scoped neighbors
+  ---
+  duration_ms: 205.970459
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1231.605917

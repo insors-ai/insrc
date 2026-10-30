@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: c00559b7 — a DEF beats an ISSUE and an LLD, and reports headKind DEF with its tracker
+ok 1 - c00559b7 — a DEF beats an ISSUE and an LLD, and reports headKind DEF with its tracker
+  ---
+  duration_ms: 4.30975
+  type: 'test'
+  ...
+# Subtest: c00559b7 — an ISSUE beats an LLD, keeps its own fields and carries its tracker
+ok 2 - c00559b7 — an ISSUE beats an LLD, keeps its own fields and carries its tracker
+  ---
+  duration_ms: 1.711583
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a lone flagged LLD heads its work item, anchored on its epicCreatedAt
+ok 3 - c00559b7 — a lone flagged LLD heads its work item, anchored on its epicCreatedAt
+  ---
+  duration_ms: 1.161709
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a legacy UNFLAGGED lone LLD still heads its work item and reports standalone: true
+ok 4 - c00559b7 — a legacy UNFLAGGED lone LLD still heads its work item and reports standalone: true
+  ---
+  duration_ms: 0.921667
+  type: 'test'
+  ...
+# Subtest: c00559b7 — the lowest-ordinal Story's LLD wins, compared numerically
+ok 5 - c00559b7 — the lowest-ordinal Story's LLD wins, compared numerically
+  ---
+  duration_ms: 1.984292
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a malformed lowest-ordinal LLD is no head: the result is {}
+ok 6 - c00559b7 — a malformed lowest-ordinal LLD is no head: the result is {}
+  ---
+  duration_ms: 2.20375
+  type: 'test'
+  ...
+# Subtest: c00559b7 — no artifacts at all, or no artifacts dir, is still {}
+ok 7 - c00559b7 — no artifacts at all, or no artifacts dir, is still {}
+  ---
+  duration_ms: 1.335125
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a non-object tracker is ignored rather than passed through
+ok 8 - c00559b7 — a non-object tracker is ignored rather than passed through
+  ---
+  duration_ms: 1.141334
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS records under docs/standalone, in the LLD's folder
+ok 9 - c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS records under docs/standalone, in the LLD's folder
+  ---
+  duration_ms: 2.4015
+  type: 'test'
+  ...
+# Subtest: c00559b7 — compareStoryOrdinal orders by ordinal, then by id, for both id spellings
+ok 10 - c00559b7 — compareStoryOrdinal orders by ordinal, then by id, for both id spellings
+  ---
+  duration_ms: 6.825167
+  type: 'test'
+  ...
+# Subtest: c00559b7 — compareStoryOrdinal uses the canonical story-id parse: a non-story id sorts last
+ok 11 - c00559b7 — compareStoryOrdinal uses the canonical story-id parse: a non-story id sorts last
+  ---
+  duration_ms: 0.116959
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 307.334541

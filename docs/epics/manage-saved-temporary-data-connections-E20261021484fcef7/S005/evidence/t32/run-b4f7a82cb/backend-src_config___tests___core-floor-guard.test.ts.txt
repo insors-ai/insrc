@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: ac1 — critical role strictly below the floor is raised: effectiveTier=floor, clamped, reason
+ok 1 - ac1 — critical role strictly below the floor is raised: effectiveTier=floor, clamped, reason
+  ---
+  duration_ms: 1.513459
+  type: 'test'
+  ...
+# Subtest: ac1 — critical role at the floor passes through (strict below-floor only): clamped=false
+ok 2 - ac1 — critical role at the floor passes through (strict below-floor only): clamped=false
+  ---
+  duration_ms: 0.094
+  type: 'test'
+  ...
+# Subtest: ac1 — critical role above the floor passes through unchanged, clamped=false
+ok 3 - ac1 — critical role above the floor passes through unchanged, clamped=false
+  ---
+  duration_ms: 0.047333
+  type: 'test'
+  ...
+# Subtest: ac1 — floor=cheap (bottom-rank no-op floor) never clamps a critical role
+ok 4 - ac1 — floor=cheap (bottom-rank no-op floor) never clamps a critical role
+  ---
+  duration_ms: 0.046666
+  type: 'test'
+  ...
+# Subtest: ac1 — off-contract configuredFloor throws InvalidTierError rather than passing an uninterpretable floor
+ok 5 - ac1 — off-contract configuredFloor throws InvalidTierError rather than passing an uninterpretable floor
+  ---
+  duration_ms: 0.268458
+  type: 'test'
+  ...
+# Subtest: ac1 — off-contract resolvedTier throws InvalidTierError rather than emitting a guessed effectiveTier
+ok 6 - ac1 — off-contract resolvedTier throws InvalidTierError rather than emitting a guessed effectiveTier
+  ---
+  duration_ms: 0.055958
+  type: 'test'
+  ...
+# Subtest: ac2 — absent floor + resolved below default: raised to the built-in default, clamped, reason
+ok 7 - ac2 — absent floor + resolved below default: raised to the built-in default, clamped, reason
+  ---
+  duration_ms: 0.091
+  type: 'test'
+  ...
+# Subtest: ac2 — absent floor + resolved at/above the default passes through unchanged, clamped=false
+ok 8 - ac2 — absent floor + resolved at/above the default passes through unchanged, clamped=false
+  ---
+  duration_ms: 0.0715
+  type: 'test'
+  ...
+# Subtest: ac3 — peripheral role below the floor is permitted: effectiveTier=cheap, clamped=false
+ok 9 - ac3 — peripheral role below the floor is permitted: effectiveTier=cheap, clamped=false
+  ---
+  duration_ms: 0.211625
+  type: 'test'
+  ...
+# Subtest: ac3 — peripheral role with no floor is never floored by the built-in default
+ok 10 - ac3 — peripheral role with no floor is never floored by the built-in default
+  ---
+  duration_ms: 0.283375
+  type: 'test'
+  ...
+# Subtest: fail-safe — unclassifiable role.criticality is treated as critical and clamped to the floor
+ok 11 - fail-safe — unclassifiable role.criticality is treated as critical and clamped to the floor
+  ---
+  duration_ms: 0.110667
+  type: 'test'
+  ...
+# Subtest: fail-safe — unclassifiable criticality at/above the floor still passes through, clamped=false
+ok 12 - fail-safe — unclassifiable criticality at/above the floor still passes through, clamped=false
+  ---
+  duration_ms: 0.043833
+  type: 'test'
+  ...
+# Subtest: the guard logs via getLogger and never uses console.*
+ok 13 - the guard logs via getLogger and never uses console.*
+  ---
+  duration_ms: 0.43175
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 387.056667

@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again
+ok 1 - lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again
+  ---
+  duration_ms: 1.876959
+  type: 'test'
+  ...
+# Subtest: lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build
+ok 2 - lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build
+  ---
+  duration_ms: 0.339708
+  type: 'test'
+  ...
+# [04:44:33] [31mERROR[39m: [36m[lazy-runtime] handler runtime: the build failed; the next local request tries again[39m
+#     [35mmodule[39m: "lazy-runtime"
+#     [35mmethod[39m: "x.echo"
+#     err: "a handler table failed to load"
+# [04:44:33] [31mERROR[39m: [36m[lazy-runtime] handler runtime: the build failed; the next local request tries again[39m
+#     [35mmodule[39m: "lazy-runtime"
+#     [35mmethod[39m: "x.echo"
+#     err: "no tables"
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 335.846875

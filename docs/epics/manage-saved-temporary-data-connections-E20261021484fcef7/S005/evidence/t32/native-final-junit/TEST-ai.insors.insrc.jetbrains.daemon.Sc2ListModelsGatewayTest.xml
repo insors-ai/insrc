@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="a framed error reply (invalid-params) maps to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" time="0.001"/>
+  <testcase name="available false with empty models maps to Loaded false NOT Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" time="0.0"/>
+  <testcase name="models not a list degrades to an empty Loaded, never a throw()" classname="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" time="0.0"/>
+  <testcase name="a DaemonUnavailableException maps to Unavailable, never throws()" classname="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" time="0.0"/>
+  <testcase name="available true with models maps to Loaded with ids and displayNames()" classname="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" time="0.0"/>
+  <testcase name="a malformed models entry (missing or blank id, or models not a list) is skipped defensively()" classname="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" time="0.0"/>
+  <testcase name="available true with empty models maps to Loaded true empty()" classname="ai.insors.insrc.jetbrains.daemon.Sc2ListModelsGatewayTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

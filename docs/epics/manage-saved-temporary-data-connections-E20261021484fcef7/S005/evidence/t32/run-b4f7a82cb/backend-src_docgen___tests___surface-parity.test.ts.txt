@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: buildDocgenInputSchema: docType enum = exactly listDocTypes(), no hard-coded list
+ok 1 - buildDocgenInputSchema: docType enum = exactly listDocTypes(), no hard-coded list
+  ---
+  duration_ms: 1.132834
+  type: 'test'
+  ...
+# Subtest: buildDocgenInputSchema: repo+docType required, per-type fields unioned + optional
+ok 2 - buildDocgenInputSchema: repo+docType required, per-type fields unioned + optional
+  ---
+  duration_ms: 0.113416
+  type: 'test'
+  ...
+# Subtest: buildDocgenInputSchema: a newly-registered docType appears with zero helper edits (drift guard)
+ok 3 - buildDocgenInputSchema: a newly-registered docType appears with zero helper edits (drift guard)
+  ---
+  duration_ms: 0.062833
+  type: 'test'
+  ...
+# Subtest: docgenTool.inputSchema is the registry-derived shape (not a fixed {docType,repo,path} literal)
+ok 4 - docgenTool.inputSchema is the registry-derived shape (not a fixed {docType,repo,path} literal)
+  ---
+  duration_ms: 0.09925
+  type: 'test'
+  ...
+# Subtest: tool docType enum equals the registry docType set (no surface omits a type, ac1/ac4)
+ok 5 - tool docType enum equals the registry docType set (no surface omits a type, ac1/ac4)
+  ---
+  duration_ms: 0.048
+  type: 'test'
+  ...
+# Subtest: generateDocument: unknown docType → not-found, WITHOUT consulting repo readiness (precedence)
+ok 6 - generateDocument: unknown docType → not-found, WITHOUT consulting repo readiness (precedence)
+  ---
+  duration_ms: 0.087583
+  type: 'test'
+  ...
+# Subtest: generateDocument: registered docType + not-ready repo → source-not-ready BEFORE extraction (ac3)
+ok 7 - generateDocument: registered docType + not-ready repo → source-not-ready BEFORE extraction (ac3)
+  ---
+  duration_ms: 0.137625
+  type: 'test'
+  ...
+# Subtest: generateDocument: no repo in input skips the readiness check (left to the extractor → empty-scope)
+ok 8 - generateDocument: no repo in input skips the readiness check (left to the extractor → empty-scope)
+  ---
+  duration_ms: 0.098084
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 364.495875

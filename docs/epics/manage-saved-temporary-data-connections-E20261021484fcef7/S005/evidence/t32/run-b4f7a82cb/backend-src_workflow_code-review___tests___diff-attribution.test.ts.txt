@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: a diff review of a trailered Story shows only its own hunks in a file another Story also edited
+ok 1 - a diff review of a trailered Story shows only its own hunks in a file another Story also edited
+  ---
+  duration_ms: 208.385458
+  type: 'test'
+  ...
+# Subtest: without a story key the diff is today's; the daemon records attribution and raw controller fallback requires isolation
+ok 2 - without a story key the diff is today's; the daemon records attribution and raw controller fallback requires isolation
+  ---
+  duration_ms: 333.829625
+  type: 'test'
+  ...
+# Subtest: the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit
+ok 3 - the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit
+  ---
+  duration_ms: 201.275375
+  type: 'test'
+  ...
+# Subtest: storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited
+ok 4 - storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited
+  ---
+  duration_ms: 193.97125
+  type: 'test'
+  ...
+# Subtest: a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding
+ok 5 - a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding
+  ---
+  duration_ms: 224.373875
+  type: 'test'
+  ...
+# Subtest: a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there
+ok 6 - a Story commit that renames a file, to a path with a tab in it, is reviewed at the new path, and its committed, staged and unstaged hunks are all grounded there
+  ---
+  duration_ms: 184.274792
+  type: 'test'
+  ...
+# Subtest: a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks
+ok 7 - a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks
+  ---
+  duration_ms: 301.484625
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2080.01275

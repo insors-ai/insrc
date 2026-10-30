@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the third-party notice at the repository root names Ponytail, links its repository, carries its copyright line and its MIT licence text, and says where the ladder was used
+ok 1 - the third-party notice at the repository root names Ponytail, links its repository, carries its copyright line and its MIT licence text, and says where the ladder was used
+  ---
+  duration_ms: 1.733125
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180.18025

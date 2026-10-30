@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: sequenceDefinitionToIr: participants→call-frame nodes, messages→edges, docType call-sequence
+ok 1 - sequenceDefinitionToIr: participants→call-frame nodes, messages→edges, docType call-sequence
+  ---
+  duration_ms: 1.630166
+  type: 'test'
+  ...
+# Subtest: sequenceDefinitionToIr: a recurse message edge id carries the :repeat suffix
+ok 2 - sequenceDefinitionToIr: a recurse message edge id carries the :repeat suffix
+  ---
+  duration_ms: 0.136709
+  type: 'test'
+  ...
+# Subtest: sequenceDefinitionToIr: a truncation → a truncation node citing its frame
+ok 3 - sequenceDefinitionToIr: a truncation → a truncation node citing its frame
+  ---
+  duration_ms: 0.118875
+  type: 'test'
+  ...
+# Subtest: sequenceDefinitionToIr: byte-identical IR for a byte-identical def (deterministic)
+ok 4 - sequenceDefinitionToIr: byte-identical IR for a byte-identical def (deterministic)
+  ---
+  duration_ms: 0.088875
+  type: 'test'
+  ...
+# Subtest: sequenceDefinitionToIr: a dangling message endpoint throws SequenceDefinitionError
+ok 5 - sequenceDefinitionToIr: a dangling message endpoint throws SequenceDefinitionError
+  ---
+  duration_ms: 0.261458
+  type: 'test'
+  ...
+# Subtest: validateSequenceDefinition: a sound def → no findings; a dangling endpoint → HIGH breach
+ok 6 - validateSequenceDefinition: a sound def → no findings; a dangling endpoint → HIGH breach
+  ---
+  duration_ms: 0.209541
+  type: 'test'
+  ...
+# Subtest: validateSequenceDefinition: a non-array participants/messages → HIGH breach
+ok 7 - validateSequenceDefinition: a non-array participants/messages → HIGH breach
+  ---
+  duration_ms: 0.055542
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.612417

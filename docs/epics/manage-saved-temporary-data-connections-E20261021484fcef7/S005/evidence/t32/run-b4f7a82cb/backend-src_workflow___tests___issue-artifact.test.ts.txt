@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: renderIssueMarkdown: emits the id-marker header + one section per body field, in order
+ok 1 - renderIssueMarkdown: emits the id-marker header + one section per body field, in order
+  ---
+  duration_ms: 0.900666
+  type: 'test'
+  ...
+# Subtest: renderIssueMarkdown: NO routing/linking metadata leaks into the GH body (k4)
+ok 2 - renderIssueMarkdown: NO routing/linking metadata leaks into the GH body (k4)
+  ---
+  duration_ms: 0.104667
+  type: 'test'
+  ...
+# Subtest: isIssueBody: accepts a well-formed body, rejects any missing/empty prose field
+ok 3 - isIssueBody: accepts a well-formed body, rejects any missing/empty prose field
+  ---
+  duration_ms: 0.071917
+  type: 'test'
+  ...
+# Subtest: issueArtifactId / issueArtifactPaths: hash-named json, nested item-root ISSUE.md under docs/standalone
+ok 4 - issueArtifactId / issueArtifactPaths: hash-named json, nested item-root ISSUE.md under docs/standalone
+  ---
+  duration_ms: 0.306292
+  type: 'test'
+  ...
+# Subtest: ArtifactKind: ISSUE is an item-root singleton (NOT story-scoped); existing kinds unchanged
+ok 5 - ArtifactKind: ISSUE is an item-root singleton (NOT story-scoped); existing kinds unchanged
+  ---
+  duration_ms: 0.154292
+  type: 'test'
+  ...
+# Subtest: pathsForWorkflow: workflow "issue" routes to the ISSUE.md/json keyed by meta.issueHash
+ok 6 - pathsForWorkflow: workflow "issue" routes to the ISSUE.md/json keyed by meta.issueHash
+  ---
+  duration_ms: 0.310875
+  type: 'test'
+  ...
+# Subtest: writeAtomic round-trip: IssueArtifact json is deep-equal + idempotent
+ok 7 - writeAtomic round-trip: IssueArtifact json is deep-equal + idempotent
+  ---
+  duration_ms: 3.554209
+  type: 'test'
+  ...
+# Subtest: prepareDecompose[issue]: a fixed 2-step plan (issue.capture -> checklist.verify)
+ok 8 - prepareDecompose[issue]: a fixed 2-step plan (issue.capture -> checklist.verify)
+  ---
+  duration_ms: 0.16675
+  type: 'test'
+  ...
+# Subtest: prepareSynthesize[issue]: supported (no throw) and grounds on the step outputs
+ok 9 - prepareSynthesize[issue]: supported (no throw) and grounds on the step outputs
+  ---
+  duration_ms: 0.430542
+  type: 'test'
+  ...
+# Subtest: finalizeArtifact[issue]: converged output → exactly one IssueArtifact, magnitude on meta, approvedAt unset
+ok 10 - finalizeArtifact[issue]: converged output → exactly one IssueArtifact, magnitude on meta, approvedAt unset
+  ---
+  duration_ms: 2.222917
+  type: 'test'
+  ...
+# Subtest: finalizeArtifact[issue]: a body failing isIssueBody is a retryable schemaFailure (no partial write)
+ok 11 - finalizeArtifact[issue]: a body failing isIssueBody is a retryable schemaFailure (no partial write)
+  ---
+  duration_ms: 0.100208
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 348.372125

@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict
+ok 1 - T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict
+  ---
+  duration_ms: 7.85625
+  type: 'test'
+  ...
+# Subtest: T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict
+ok 2 - T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict
+  ---
+  duration_ms: 1.649208
+  type: 'test'
+  ...
+# Subtest: T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict
+ok 3 - T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict
+  ---
+  duration_ms: 1.336333
+  type: 'test'
+  ...
+# Subtest: T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict
+ok 4 - T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict
+  ---
+  duration_ms: 1.355833
+  type: 'test'
+  ...
+# Subtest: T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict
+ok 5 - T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict
+  ---
+  duration_ms: 2.621167
+  type: 'test'
+  ...
+# Subtest: T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict
+ok 6 - T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict
+  ---
+  duration_ms: 1.237125
+  type: 'test'
+  ...
+# Subtest: T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked
+ok 7 - T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked
+  ---
+  duration_ms: 4.292916
+  type: 'test'
+  ...
+# Subtest: T9 an older artifact with no author field is routed by its attribution labels
+ok 8 - T9 an older artifact with no author field is routed by its attribution labels
+  ---
+  duration_ms: 5.188958
+  type: 'test'
+  ...
+# Subtest: T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF
+ok 9 - T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF
+  ---
+  duration_ms: 4.2375
+  type: 'test'
+  ...
+# Subtest: a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit
+ok 10 - a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit
+  ---
+  duration_ms: 12.5955
+  type: 'test'
+  ...
+# Subtest: T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered
+ok 11 - T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered
+  ---
+  duration_ms: 4.622583
+  type: 'test'
+  ...
+# Subtest: T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered
+ok 12 - T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered
+  ---
+  duration_ms: 2.816375
+  type: 'test'
+  ...
+# Subtest: T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered
+ok 13 - T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered
+  ---
+  duration_ms: 3.406541
+  type: 'test'
+  ...
+# Subtest: T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered
+ok 14 - T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered
+  ---
+  duration_ms: 2.47125
+  type: 'test'
+  ...
+# Subtest: T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered
+ok 15 - T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered
+  ---
+  duration_ms: 3.535333
+  type: 'test'
+  ...
+# Subtest: T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered
+ok 16 - T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered
+  ---
+  duration_ms: 2.503583
+  type: 'test'
+  ...
+# Subtest: T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message
+ok 17 - T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message
+  ---
+  duration_ms: 4.840792
+  type: 'test'
+  ...
+# Subtest: T12 the findings phase refuses a controller-authored LLD and stamps nothing
+ok 18 - T12 the findings phase refuses a controller-authored LLD and stamps nothing
+  ---
+  duration_ms: 2.138708
+  type: 'test'
+  ...
+# Subtest: T12 the findings phase refuses a controller-authored HLD and stamps nothing
+ok 19 - T12 the findings phase refuses a controller-authored HLD and stamps nothing
+  ---
+  duration_ms: 1.587833
+  type: 'test'
+  ...
+# Subtest: T12 the verdicts phase refuses a controller-authored DEF and stamps nothing
+ok 20 - T12 the verdicts phase refuses a controller-authored DEF and stamps nothing
+  ---
+  duration_ms: 162.902416
+  type: 'test'
+  ...
+# Subtest: T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD
+ok 21 - T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD
+  ---
+  duration_ms: 4.079541
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 626.267292

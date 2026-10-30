@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: live: a real claude turn yields a terminal sc2 event
+ok 1 - live: a real claude turn yields a terminal sc2 event # SKIP
+  ---
+  duration_ms: 0.733417
+  type: 'test'
+  ...
+# Subtest: live: a real codex turn yields a terminal sc2 event
+ok 2 - live: a real codex turn yields a terminal sc2 event # SKIP
+  ---
+  duration_ms: 0.056667
+  type: 'test'
+  ...
+# Subtest: live: claude review mode surfaces an approval-request the host can answer via decide()
+ok 3 - live: claude review mode surfaces an approval-request the host can answer via decide() # SKIP
+  ---
+  duration_ms: 0.077875
+  type: 'test'
+  ...
+# Subtest: live: claude auto mode runs a tool prompt without blocking (bypass flag accepted)
+ok 4 - live: claude auto mode runs a tool prompt without blocking (bypass flag accepted) # SKIP
+  ---
+  duration_ms: 0.028209
+  type: 'test'
+  ...
+# Subtest: live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content
+ok 5 - live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content # SKIP
+  ---
+  duration_ms: 0.033209
+  type: 'test'
+  ...
+# Subtest: live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content
+ok 6 - live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content # SKIP
+  ---
+  duration_ms: 0.02775
+  type: 'test'
+  ...
+# Subtest: live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section
+ok 7 - live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section # SKIP
+  ---
+  duration_ms: 0.087458
+  type: 'test'
+  ...
+# Subtest: live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths
+ok 8 - live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths # SKIP
+  ---
+  duration_ms: 0.033041
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 8
+# todo 0
+# duration_ms 209.641541

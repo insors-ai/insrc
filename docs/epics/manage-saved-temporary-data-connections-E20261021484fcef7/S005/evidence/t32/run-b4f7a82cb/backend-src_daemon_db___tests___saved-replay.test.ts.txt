@@ -1,0 +1,48 @@
+TAP version 13
+# (node:8008) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S1-D: simultaneous identical replay joins one mutation and restart replays the exact durable outcome without effects
+ok 1 - CM-S1-D: simultaneous identical replay joins one mutation and restart replays the exact durable outcome without effects
+  ---
+  duration_ms: 274.272541
+  type: 'test'
+  ...
+# Subtest: CM-S1-D: expired signed tickets reconcile missing or pruned receipts and can never authorize a new replay
+ok 2 - CM-S1-D: expired signed tickets reconcile missing or pruned receipts and can never authorize a new replay
+  ---
+  duration_ms: 168.869708
+  type: 'test'
+  ...
+# Subtest: CM-S1-E: uncertain initial and final receipt rename results reconcile in place without staging another generation
+ok 3 - CM-S1-E: uncertain initial and final receipt rename results reconcile in place without staging another generation
+  ---
+  duration_ms: 242.610542
+  type: 'test'
+  ...
+# Subtest: CM-S1-Q: activation-only retry preserves exact registry revision receipt and credential generation
+ok 4 - CM-S1-Q: activation-only retry preserves exact registry revision receipt and credential generation
+  ---
+  duration_ms: 128.527833
+  type: 'test'
+  ...
+# Subtest: CM-S1-R: a failed safe-list refresh retries only list without another ticket mutation stage or registry write
+ok 5 - CM-S1-R: a failed safe-list refresh retries only list without another ticket mutation stage or registry write
+  ---
+  duration_ms: 125.535625
+  type: 'test'
+  ...
+# Subtest: CM-S1-D: a full service process exits after commit without a response and the restarted owner reconciles one receipt
+ok 6 - CM-S1-D: a full service process exits after commit without a response and the restarted owner reconciles one receipt
+  ---
+  duration_ms: 1306.535417
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3080.016833

@@ -1,0 +1,53 @@
+TAP version 13
+# Subtest: prismaSchemaDescription
+    # Subtest: describes a simple model by Prisma name
+    ok 1 - describes a simple model by Prisma name
+      ---
+      duration_ms: 10.298458
+      type: 'test'
+      ...
+    # Subtest: skips relation virtual fields + emits FK on the local scalar column
+    ok 2 - skips relation virtual fields + emits FK on the local scalar column
+      ---
+      duration_ms: 1.489667
+      type: 'test'
+      ...
+    # Subtest: honours @@map for table name resolution (lookup by SQL name)
+    ok 3 - honours @@map for table name resolution (lookup by SQL name)
+      ---
+      duration_ms: 0.71975
+      type: 'test'
+      ...
+    # Subtest: honours @map for column name overrides
+    ok 4 - honours @map for column name overrides
+      ---
+      duration_ms: 0.579375
+      type: 'test'
+      ...
+    # Subtest: marks composite-PK columns as primaryKey:true
+    ok 5 - marks composite-PK columns as primaryKey:true
+      ---
+      duration_ms: 0.607416
+      type: 'test'
+      ...
+    # Subtest: throws a typed error for an unknown target
+    ok 6 - throws a typed error for an unknown target
+      ---
+      duration_ms: 0.7115
+      type: 'test'
+      ...
+    1..6
+ok 1 - prismaSchemaDescription
+  ---
+  duration_ms: 14.944125
+  type: 'suite'
+  ...
+1..1
+# tests 6
+# suites 1
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 208.983042

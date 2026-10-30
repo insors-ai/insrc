@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: buildOwnershipIndex maps cited code paths to owning work items
+ok 1 - buildOwnershipIndex maps cited code paths to owning work items
+  ---
+  duration_ms: 2.834
+  type: 'test'
+  ...
+# Subtest: buildOwnershipIndex is best-effort: missing store → empty; bad json skipped
+ok 2 - buildOwnershipIndex is best-effort: missing store → empty; bad json skipped
+  ---
+  duration_ms: 0.078
+  type: 'test'
+  ...
+# Subtest: matchGraphCandidates scores by distinct matched paths, sorted desc
+ok 3 - matchGraphCandidates scores by distinct matched paths, sorted desc
+  ---
+  duration_ms: 0.145166
+  type: 'test'
+  ...
+# Subtest: matchGraphCandidates: unmatched paths contribute nothing (no throw)
+ok 4 - matchGraphCandidates: unmatched paths contribute nothing (no throw)
+  ---
+  duration_ms: 0.058291
+  type: 'test'
+  ...
+# Subtest: matchGraphCandidates: an ABSOLUTE graph-neighbour path matches its repo-relative owner key
+ok 5 - matchGraphCandidates: an ABSOLUTE graph-neighbour path matches its repo-relative owner key
+  ---
+  duration_ms: 0.106666
+  type: 'test'
+  ...
+# Subtest: matchGraphCandidates: suffix match is path-boundary-guarded (no cross-story false attach, lc1)
+ok 6 - matchGraphCandidates: suffix match is path-boundary-guarded (no cross-story false attach, lc1)
+  ---
+  duration_ms: 0.098292
+  type: 'test'
+  ...
+# Subtest: inferParentCandidates: touched path owned by a story yields a graph candidate + evidence
+ok 7 - inferParentCandidates: touched path owned by a story yields a graph candidate + evidence
+  ---
+  duration_ms: 0.180958
+  type: 'test'
+  ...
+# Subtest: inferParentCandidates: graph expansion folds neighbour files into ownership matching
+ok 8 - inferParentCandidates: graph expansion folds neighbour files into ownership matching
+  ---
+  duration_ms: 0.138209
+  type: 'test'
+  ...
+# Subtest: inferParentCandidates: returns raw scores only (no threshold applied)
+ok 9 - inferParentCandidates: returns raw scores only (no threshold applied)
+  ---
+  duration_ms: 0.24725
+  type: 'test'
+  ...
+# Subtest: inferParentCandidates: empty defectDescription skips the semantic pass
+ok 10 - inferParentCandidates: empty defectDescription skips the semantic pass
+  ---
+  duration_ms: 0.293792
+  type: 'test'
+  ...
+# Subtest: refFromDocPath parses slug + storyId from a docs artifact path
+ok 11 - refFromDocPath parses slug + storyId from a docs artifact path
+  ---
+  duration_ms: 0.146542
+  type: 'test'
+  ...
+# Subtest: mapSemanticHits maps artifact hits to work items, rank-decayed, de-duped
+ok 12 - mapSemanticHits maps artifact hits to work items, rank-decayed, de-duped
+  ---
+  duration_ms: 0.0955
+  type: 'test'
+  ...
+# Subtest: end-to-end: touched paths under a story → graph attach with grounded evidence (ac1)
+ok 13 - end-to-end: touched paths under a story → graph attach with grounded evidence (ac1)
+  ---
+  duration_ms: 1.239542
+  type: 'test'
+  ...
+# Subtest: end-to-end: defect description matching a story → semantic attach (ac2)
+ok 14 - end-to-end: defect description matching a story → semantic attach (ac2)
+  ---
+  duration_ms: 0.125042
+  type: 'test'
+  ...
+# Subtest: end-to-end: neither tier matches → prompt → standalone (ac3)
+ok 15 - end-to-end: neither tier matches → prompt → standalone (ac3)
+  ---
+  duration_ms: 0.072917
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 462.082958

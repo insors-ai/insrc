@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: substitutePlaceholders returns params unchanged when no $sN
+ok 1 - substitutePlaceholders returns params unchanged when no $sN
+  ---
+  duration_ms: 1.432333
+  type: 'test'
+  ...
+# Subtest: substitutePlaceholders resolves $s1 whole output
+ok 2 - substitutePlaceholders resolves $s1 whole output
+  ---
+  duration_ms: 0.1335
+  type: 'test'
+  ...
+# Subtest: substitutePlaceholders resolves $s1.foo.bar
+ok 3 - substitutePlaceholders resolves $s1.foo.bar
+  ---
+  duration_ms: 0.129583
+  type: 'test'
+  ...
+# Subtest: substitutePlaceholders resolves $s1.arr[0]
+ok 4 - substitutePlaceholders resolves $s1.arr[0]
+  ---
+  duration_ms: 0.090958
+  type: 'test'
+  ...
+# Subtest: substitutePlaceholders throws on unknown step
+ok 5 - substitutePlaceholders throws on unknown step
+  ---
+  duration_ms: 0.103666
+  type: 'test'
+  ...
+# Subtest: substitutePlaceholders throws on unknown key
+ok 6 - substitutePlaceholders throws on unknown key
+  ---
+  duration_ms: 0.046792
+  type: 'test'
+  ...
+# Subtest: startRun runs deterministic steps to completion
+ok 7 - startRun runs deterministic steps to completion
+  ---
+  duration_ms: 2.097708
+  type: 'test'
+  ...
+# Subtest: startRun threads $sN.<accessor> substitutions between steps
+ok 8 - startRun threads $sN.<accessor> substitutions between steps
+  ---
+  duration_ms: 0.418959
+  type: 'test'
+  ...
+# Subtest: startRun errors when a runner is missing
+ok 9 - startRun errors when a runner is missing
+  ---
+  duration_ms: 0.260666
+  type: 'test'
+  ...
+# Subtest: startRun pauses on an llm-pause runner + resumeRun continues
+ok 10 - startRun pauses on an llm-pause runner + resumeRun continues
+  ---
+  duration_ms: 2.716916
+  type: 'test'
+  ...
+# Subtest: S010: a finalize returning llm-pause RE-PAUSES the same step (nextStepIndex unchanged), then completes
+ok 11 - S010: a finalize returning llm-pause RE-PAUSES the same step (nextStepIndex unchanged), then completes
+  ---
+  duration_ms: 1.679083
+  type: 'test'
+  ...
+# Subtest: S010: the executor threads draftProvider into BOTH run() and finalize() ctx; absent → undefined (byte-identical)
+ok 12 - S010: the executor threads draftProvider into BOTH run() and finalize() ctx; absent → undefined (byte-identical)
+  ---
+  duration_ms: 1.328709
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 302.454208

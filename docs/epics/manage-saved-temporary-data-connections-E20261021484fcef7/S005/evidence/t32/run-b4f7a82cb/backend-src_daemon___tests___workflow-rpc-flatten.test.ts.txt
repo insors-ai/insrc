@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the findings flattened into a workflow step start with the completeness line when the bundle has a report, and are unchanged when it has none
+ok 1 - the findings flattened into a workflow step start with the completeness line when the bundle has a report, and are unchanged when it has none
+  ---
+  duration_ms: 0.687125
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 913.681875

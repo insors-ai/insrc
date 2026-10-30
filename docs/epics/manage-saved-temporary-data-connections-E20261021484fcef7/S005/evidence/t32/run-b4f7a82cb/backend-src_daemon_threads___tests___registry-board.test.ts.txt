@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target
+ok 1 - TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target
+  ---
+  duration_ms: 0.877209
+  type: 'test'
+  ...
+# Subtest: registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker
+ok 2 - registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker
+  ---
+  duration_ms: 0.132208
+  type: 'test'
+  ...
+# Subtest: a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op
+ok 3 - a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op
+  ---
+  duration_ms: 0.132416
+  type: 'test'
+  ...
+# Subtest: StatusBoard keeps the latest status per thread and snapshots empty as specified
+ok 4 - StatusBoard keeps the latest status per thread and snapshots empty as specified
+  ---
+  duration_ms: 1.108208
+  type: 'test'
+  ...
+# Subtest: publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing
+ok 5 - publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing
+  ---
+  duration_ms: 0.210375
+  type: 'test'
+  ...
+# Subtest: a status published from a worker appears in a main-thread snapshot
+ok 6 - a status published from a worker appears in a main-thread snapshot
+  ---
+  duration_ms: 201.933291
+  type: 'test'
+  ...
+# Subtest: board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread
+ok 7 - board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread
+  ---
+  duration_ms: 744.765875
+  type: 'test'
+  ...
+# Subtest: board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is
+ok 8 - board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is
+  ---
+  duration_ms: 0.303791
+  type: 'test'
+  ...
+# Subtest: board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged
+ok 9 - board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged
+  ---
+  duration_ms: 0.273916
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1298.323416

@@ -1,0 +1,132 @@
+TAP version 13
+# (node:77665) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit
+ok 1 - chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit
+  ---
+  duration_ms: 27.562666
+  type: 'test'
+  ...
+# Subtest: worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once
+ok 2 - worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once
+  ---
+  duration_ms: 5.201833
+  type: 'test'
+  ...
+# Subtest: worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick
+ok 3 - worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick
+  ---
+  duration_ms: 3.922791
+  type: 'test'
+  ...
+# Subtest: worker recovery: a lease left by a window that reloaded (same window key, old pid and its CLI gone) is freed at once, its message fails for resend, and the queued messages behind it run; another window's dead lease waits LEASE_TAKEOVER_MS
+ok 4 - worker recovery: a lease left by a window that reloaded (same window key, old pid and its CLI gone) is freed at once, its message fails for resend, and the queued messages behind it run; another window's dead lease waits LEASE_TAKEOVER_MS
+  ---
+  duration_ms: 113.437916
+  type: 'test'
+  ...
+# Subtest: worker recovery: a reloaded window reclaims a lease whose CLI lives and does not fail the message
+ok 5 - worker recovery: a reloaded window reclaims a lease whose CLI lives and does not fail the message
+  ---
+  duration_ms: 3.613708
+  type: 'test'
+  ...
+# Subtest: worker recovery: a dead holder and dead CLI of another window is freed only after LEASE_TAKEOVER_MS and the next message runs
+ok 6 - worker recovery: a dead holder and dead CLI of another window is freed only after LEASE_TAKEOVER_MS and the next message runs
+  ---
+  duration_ms: 183.745917
+  type: 'test'
+  ...
+# Subtest: worker recovery: a holder that keeps heartbeating past LEASE_TAKEOVER_MS is never taken over
+ok 7 - worker recovery: a holder that keeps heartbeating past LEASE_TAKEOVER_MS is never taken over
+  ---
+  duration_ms: 220.984459
+  type: 'test'
+  ...
+# Subtest: a reclaimed lease is heartbeated while the CLI lives, then finished as detached-ended and released when the CLI exits, and the next message runs
+ok 8 - a reclaimed lease is heartbeated while the CLI lives, then finished as detached-ended and released when the CLI exits, and the next message runs
+  ---
+  duration_ms: 8.815375
+  type: 'test'
+  ...
+# Subtest: a reclaimed lease lost to another window clears the marker and stops heartbeating
+ok 9 - a reclaimed lease lost to another window clears the marker and stops heartbeating
+  ---
+  duration_ms: 9.035417
+  type: 'test'
+  ...
+# Subtest: dispose leaves the presence row in place and windowAlive stays true until PRESENCE_GRACE_MS passes
+ok 10 - dispose leaves the presence row in place and windowAlive stays true until PRESENCE_GRACE_MS passes
+  ---
+  duration_ms: 3.286459
+  type: 'test'
+  ...
+# Subtest: a head whose window stopped refreshing presence and whose pid is dead is marked not-delivered after PRESENCE_GRACE_MS and the next message runs
+ok 11 - a head whose window stopped refreshing presence and whose pid is dead is marked not-delivered after PRESENCE_GRACE_MS and the next message runs
+  ---
+  duration_ms: 11.467
+  type: 'test'
+  ...
+# Subtest: a head whose window has a fresh presence row or a live pid is never marked; no presence row and a message younger than PRESENCE_GRACE_MS is not marked
+ok 12 - a head whose window has a fresh presence row or a live pid is never marked; no presence row and a message younger than PRESENCE_GRACE_MS is not marked
+  ---
+  duration_ms: 47.526209
+  type: 'test'
+  ...
+# Subtest: dispose-and-recreate a worker with the same windowKey while a second window ticks, the head is not marked not-delivered
+ok 13 - dispose-and-recreate a worker with the same windowKey while a second window ticks, the head is not marked not-delivered
+  ---
+  duration_ms: 22.3185
+  type: 'test'
+  ...
+# Subtest: a reload slower than PRESENCE_GRACE_MS ends as not-delivered with a resend and no row is lost
+ok 14 - a reload slower than PRESENCE_GRACE_MS ends as not-delivered with a resend and no row is lost
+  ---
+  duration_ms: 9.369625
+  type: 'test'
+  ...
+# Subtest: a previous-plugin window's dispose deleting its presence row: a head younger than PRESENCE_GRACE_MS is not marked, an older one is marked once
+ok 15 - a previous-plugin window's dispose deleting its presence row: a head younger than PRESENCE_GRACE_MS is not marked, an older one is marked once
+  ---
+  duration_ms: 14.212167
+  type: 'test'
+  ...
+# Subtest: submit at the bound returns ok:false reason full
+ok 16 - submit at the bound returns ok:false reason full
+  ---
+  duration_ms: 280.493042
+  type: 'test'
+  ...
+# Subtest: a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend
+ok 17 - a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend
+  ---
+  duration_ms: 10.249125
+  type: 'test'
+  ...
+# Subtest: a retrying head is not taken before its due time, holds the queue behind it, and runs when due
+ok 18 - a retrying head is not taken before its due time, holds the queue behind it, and runs when due
+  ---
+  duration_ms: 5.21
+  type: 'test'
+  ...
+# Subtest: a message that fails three infrastructure retries ends failed and the next message runs
+ok 19 - a message that fails three infrastructure retries ends failed and the next message runs
+  ---
+  duration_ms: 63.938709
+  type: 'test'
+  ...
+# Subtest: act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note
+ok 20 - act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note
+  ---
+  duration_ms: 4.496833
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1237.755292

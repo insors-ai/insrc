@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: resolveScope for each of the seven kinds, with nested repos
+ok 1 - resolveScope for each of the seven kinds, with nested repos
+  ---
+  duration_ms: 1.822541
+  type: 'test'
+  ...
+# Subtest: a sibling directory that only shares a name prefix is not inside the repo
+ok 2 - a sibling directory that only shares a name prefix is not inside the repo
+  ---
+  duration_ms: 0.107541
+  type: 'test'
+  ...
+# Subtest: resolveScope directory kinds keep their own directory as lookupPath; a path in no repo gives repoPath null
+ok 3 - resolveScope directory kinds keep their own directory as lookupPath; a path in no repo gives repoPath null
+  ---
+  duration_ms: 0.290208
+  type: 'test'
+  ...
+# Subtest: a registry that cannot be read leaves the repo unknown for the file-system kinds
+ok 4 - a registry that cannot be read leaves the repo unknown for the file-system kinds
+  ---
+  duration_ms: 0.320166
+  type: 'test'
+  ...
+# Subtest: resolveScope symbol cases: split, no '\#', none, two, '\#' in the path
+ok 5 - resolveScope symbol cases: split, no '\#', none, two, '\#' in the path
+  ---
+  duration_ms: 0.334084
+  type: 'test'
+  ...
+# Subtest: resolveScope symbol not-indexed cases: empty repo, no containing repo, empty registry
+ok 6 - resolveScope symbol not-indexed cases: empty repo, no containing repo, empty registry
+  ---
+  duration_ms: 0.261792
+  type: 'test'
+  ...
+# Subtest: a symbol that resolves costs one read: the whole repo is read only when the file has no entities
+ok 7 - a symbol that resolves costs one read: the whole repo is read only when the file has no entities
+  ---
+  duration_ms: 0.265375
+  type: 'test'
+  ...
+# Subtest: resolveScope connection cases: one, none, two, unparseable connections file
+ok 8 - resolveScope connection cases: one, none, two, unparseable connections file
+  ---
+  duration_ms: 0.285666
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 407.920334

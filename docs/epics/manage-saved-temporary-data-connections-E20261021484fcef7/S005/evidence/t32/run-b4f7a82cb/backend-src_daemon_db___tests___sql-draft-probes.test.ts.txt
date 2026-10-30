@@ -1,0 +1,22 @@
+TAP version 13
+# Warning: got packets out of order. Expected 3 but received 0
+# Warning: got packets out of order. Expected 1 but received 4
+# Warning: got packets out of order. Expected 5 but received 0
+# Warning: got packets out of order. Expected 3 but received 0
+# Warning: got packets out of order. Expected 1 but received 4
+# Warning: got packets out of order. Expected 5 but received 0
+# Subtest: CM-S2-A3: registered SQL probes authenticate and await SELECT1 rather than lazy construction
+ok 1 - CM-S2-A3: registered SQL probes authenticate and await SELECT1 rather than lazy construction
+  ---
+  duration_ms: 45.974667
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 347.623917

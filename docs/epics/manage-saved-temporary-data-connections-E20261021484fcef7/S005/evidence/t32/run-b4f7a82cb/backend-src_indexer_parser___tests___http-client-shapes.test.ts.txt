@@ -1,0 +1,163 @@
+TAP version 13
+# Subtest: http-client-shapes helper — stable contract for t4/t5
+    # Subtest: exposes a per-language client-shape table for all five parser languages
+    ok 1 - exposes a per-language client-shape table for all five parser languages
+      ---
+      duration_ms: 0.577209
+      type: 'test'
+      ...
+    # Subtest: matchHttpClient resolves module-rooted (exact) + instance (method) shapes, and rejects look-alikes
+    ok 2 - matchHttpClient resolves module-rooted (exact) + instance (method) shapes, and rejects look-alikes
+      ---
+      duration_ms: 0.742792
+      type: 'test'
+      ...
+    # Subtest: normalizeCallee collapses whitespace so spaced member chains match
+    ok 3 - normalizeCallee collapses whitespace so spaced member chains match
+      ---
+      duration_ms: 0.083792
+      type: 'test'
+      ...
+    # Subtest: fileImportsHttpLibrary gates java/scala on an HTTP-library import; ts/js/python/go are ungated
+    ok 4 - fileImportsHttpLibrary gates java/scala on an HTTP-library import; ts/js/python/go are ungated
+      ---
+      duration_ms: 0.105208
+      type: 'test'
+      ...
+    # Subtest: emitCallsHttp pushes one unresolved CALLS_HTTP, and skips an empty URL (no empty-`to` node)
+    ok 5 - emitCallsHttp pushes one unresolved CALLS_HTTP, and skips an empty URL (no empty-`to` node)
+      ---
+      duration_ms: 0.070542
+      type: 'test'
+      ...
+    1..5
+ok 1 - http-client-shapes helper — stable contract for t4/t5
+  ---
+  duration_ms: 2.0435
+  type: 'suite'
+  ...
+# Subtest: TypeScript/JS HTTP recognizer
+    # Subtest: fetch / axios.get / got / http.request each emit one CALLS_HTTP with the raw URL expr
+    ok 1 - fetch / axios.get / got / http.request each emit one CALLS_HTTP with the raw URL expr
+      ---
+      duration_ms: 2.824333
+      type: 'test'
+      ...
+    # Subtest: a local function named get()/post() (not an HTTP client) emits NO CALLS_HTTP
+    ok 2 - a local function named get()/post() (not an HTTP client) emits NO CALLS_HTTP
+      ---
+      duration_ms: 0.340667
+      type: 'test'
+      ...
+    # Subtest: an unextractable URL (spread args) emits no CALLS_HTTP — no empty-`to` node
+    ok 3 - an unextractable URL (spread args) emits no CALLS_HTTP — no empty-`to` node
+      ---
+      duration_ms: 4.421375
+      type: 'test'
+      ...
+    # Subtest: a file with no HTTP calls yields no CALLS_HTTP relations
+    ok 4 - a file with no HTTP calls yields no CALLS_HTTP relations
+      ---
+      duration_ms: 0.722
+      type: 'test'
+      ...
+    1..4
+ok 2 - TypeScript/JS HTTP recognizer
+  ---
+  duration_ms: 8.916292
+  type: 'suite'
+  ...
+# Subtest: TypeScript proven-receiver dataflow recall (S001 t3)
+    # Subtest: Angular this.http.get (HttpClient DI) + axios.create instance each emit one CALLS_HTTP with the raw URL
+    ok 1 - Angular this.http.get (HttpClient DI) + axios.create instance each emit one CALLS_HTTP with the raw URL
+      ---
+      duration_ms: 2.627708
+      type: 'test'
+      ...
+    # Subtest: PRECISION: an unproven receiver .get(), and a param named http WITHOUT the HttpClient type, emit ZERO CALLS_HTTP
+    ok 2 - PRECISION: an unproven receiver .get(), and a param named http WITHOUT the HttpClient type, emit ZERO CALLS_HTTP
+      ---
+      duration_ms: 0.90125
+      type: 'test'
+      ...
+    # Subtest: PRECISION (lexical scope): `client` = axios.create in one method does NOT prove `client` in another method
+    ok 3 - PRECISION (lexical scope): `client` = axios.create in one method does NOT prove `client` in another method
+      ---
+      duration_ms: 0.516792
+      type: 'test'
+      ...
+    # Subtest: PRECISION (class scope): a same-named non-HttpClient field in a second class does NOT match
+    ok 4 - PRECISION (class scope): a same-named non-HttpClient field in a second class does NOT match
+      ---
+      duration_ms: 0.789292
+      type: 'test'
+      ...
+    # Subtest: the field-based HttpClient (public field, not a ctor param) is also proven
+    ok 5 - the field-based HttpClient (public field, not a ctor param) is also proven
+      ---
+      duration_ms: 0.310792
+      type: 'test'
+      ...
+    # Subtest: PRECISION (nested-closure shadow): a nested `const client = new Map()` shadows the outer axios proof — no CALLS_HTTP for the nested read
+    ok 6 - PRECISION (nested-closure shadow): a nested `const client = new Map()` shadows the outer axios proof — no CALLS_HTTP for the nested read
+      ---
+      duration_ms: 0.503333
+      type: 'test'
+      ...
+    # Subtest: PRECISION (outer capture preserved): a closure that captures the un-redeclared outer axios var still emits one CALLS_HTTP
+    ok 7 - PRECISION (outer capture preserved): a closure that captures the un-redeclared outer axios var still emits one CALLS_HTTP
+      ---
+      duration_ms: 0.325167
+      type: 'test'
+      ...
+    # Subtest: PRECISION (capture + shadow in one body): outer axios call emits, nested shadow does not
+    ok 8 - PRECISION (capture + shadow in one body): outer axios call emits, nested shadow does not
+      ---
+      duration_ms: 0.490459
+      type: 'test'
+      ...
+    # Subtest: PRECISION (param shadow): a closure PARAMETER named like the outer axios var shadows the proof — no CALLS_HTTP
+    ok 9 - PRECISION (param shadow): a closure PARAMETER named like the outer axios var shadows the proof — no CALLS_HTTP
+      ---
+      duration_ms: 1.686875
+      type: 'test'
+      ...
+    # Subtest: PRECISION (nested-function param shadow): a nested function param shadows the outer axios var — no CALLS_HTTP
+    ok 10 - PRECISION (nested-function param shadow): a nested function param shadows the outer axios var — no CALLS_HTTP
+      ---
+      duration_ms: 0.71875
+      type: 'test'
+      ...
+    # Subtest: PRECISION (catch shadow): a catch binding named like the outer axios var shadows the proof — no CALLS_HTTP
+    ok 11 - PRECISION (catch shadow): a catch binding named like the outer axios var shadows the proof — no CALLS_HTTP
+      ---
+      duration_ms: 0.387708
+      type: 'test'
+      ...
+    # Subtest: PRECISION (catch shadow, outer still works): the outer axios call outside catch still emits, the catch-shadowed one does not
+    ok 12 - PRECISION (catch shadow, outer still works): the outer axios call outside catch still emits, the catch-shadowed one does not
+      ---
+      duration_ms: 0.343583
+      type: 'test'
+      ...
+    # Subtest: PRECISION (inner class in method): an inner class whose `http` field is a Map does NOT inherit the outer HttpClient proof; the outer call still emits
+    ok 13 - PRECISION (inner class in method): an inner class whose `http` field is a Map does NOT inherit the outer HttpClient proof; the outer call still emits
+      ---
+      duration_ms: 0.373417
+      type: 'test'
+      ...
+    1..13
+ok 3 - TypeScript proven-receiver dataflow recall (S001 t3)
+  ---
+  duration_ms: 10.186084
+  type: 'suite'
+  ...
+1..3
+# tests 22
+# suites 3
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 226.831417

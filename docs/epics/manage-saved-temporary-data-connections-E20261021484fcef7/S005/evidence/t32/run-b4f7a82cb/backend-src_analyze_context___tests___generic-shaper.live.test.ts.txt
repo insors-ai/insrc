@@ -1,0 +1,36 @@
+TAP version 13
+# (node:73144) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: generic-shaper.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - generic-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.433042
+  type: 'test'
+  ...
+# Subtest: G1: code-only workspace -- code in summary; data + infra declared-absent
+ok 2 - G1: code-only workspace -- code in summary; data + infra declared-absent # SKIP
+  ---
+  duration_ms: 0.069125
+  type: 'test'
+  ...
+# Subtest: G2: mixed workspace -- code + data + infra all positively acknowledged
+ok 3 - G2: mixed workspace -- code + data + infra all positively acknowledged # SKIP
+  ---
+  duration_ms: 0.037917
+  type: 'test'
+  ...
+# Subtest: G3: empty workspace -- bundle valid; artefacts + upstream empty per prompt contract
+ok 4 - G3: empty workspace -- bundle valid; artefacts + upstream empty per prompt contract # SKIP
+  ---
+  duration_ms: 0.077417
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 4
+# todo 0
+# duration_ms 657.445667

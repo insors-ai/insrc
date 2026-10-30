@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: t1 ac1: one externalEndpoint node per distinct resolved target, with a CALLS_HTTP edge from each caller
+ok 1 - t1 ac1: one externalEndpoint node per distinct resolved target, with a CALLS_HTTP edge from each caller
+  ---
+  duration_ms: 140.858333
+  type: 'test'
+  ...
+# Subtest: t1 ac2 dedup: three call-sites to one target => one node, three CALLS_HTTP edges
+ok 2 - t1 ac2 dedup: three call-sites to one target => one node, three CALLS_HTTP edges
+  ---
+  duration_ms: 183.95375
+  type: 'test'
+  ...
+# Subtest: t1 ac2 per-repo: two repos calling the same target => two distinct nodes
+ok 3 - t1 ac2 per-repo: two repos calling the same target => two distinct nodes
+  ---
+  duration_ms: 274.139292
+  type: 'test'
+  ...
+# Subtest: t1 cross-language: a TS and a Python edge to the same resolved identity share ONE language-agnostic node
+ok 4 - t1 cross-language: a TS and a Python edge to the same resolved identity share ONE language-agnostic node
+  ---
+  duration_ms: 267.218875
+  type: 'test'
+  ...
+# Subtest: t1 resolved-vs-literal dedup: an interpolated expr resolving to the same host/path as a literal collapses to one node
+ok 5 - t1 resolved-vs-literal dedup: an interpolated expr resolving to the same host/path as a literal collapses to one node
+  ---
+  duration_ms: 164.523958
+  type: 'test'
+  ...
+# Subtest: t1 unresolved (k5): an un-pinnable URL mints an unresolved node carrying rawExpression + a CALLS_HTTP edge, never dropped
+ok 6 - t1 unresolved (k5): an un-pinnable URL mints an unresolved node carrying rawExpression + a CALLS_HTTP edge, never dropped
+  ---
+  duration_ms: 108.386083
+  type: 'test'
+  ...
+# Subtest: t1 dangling `from`: a CALLS_HTTP whose caller no longer exists is skipped (no node, no edge)
+ok 7 - t1 dangling `from`: a CALLS_HTTP whose caller no longer exists is skipped (no node, no edge)
+  ---
+  duration_ms: 116.1745
+  type: 'test'
+  ...
+# Subtest: t1 idempotency: re-running over identical rows yields the identical node/edge set; sc2 called once per distinct expr
+ok 8 - t1 idempotency: re-running over identical rows yields the identical node/edge set; sc2 called once per distinct expr
+  ---
+  duration_ms: 137.322791
+  type: 'test'
+  ...
+# Subtest: t1 no-op: a repo with no CALLS_HTTP rows produces no endpoints and leaves the graph unchanged
+ok 9 - t1 no-op: a repo with no CALLS_HTTP rows produces no endpoints and leaves the graph unchanged
+  ---
+  duration_ms: 121.43575
+  type: 'test'
+  ...
+# Subtest: t2 edges-stat: one caller, two distinct raw exprs -> same identity => endpoints=1, edges=1 (not 2)
+ok 10 - t2 edges-stat: one caller, two distinct raw exprs -> same identity => endpoints=1, edges=1 (not 2)
+  ---
+  duration_ms: 180.80475
+  type: 'test'
+  ...
+# Subtest: t2 GC: an orphan externalEndpoint (no in-edge) is deleted while a live one survives the pass
+ok 11 - t2 GC: an orphan externalEndpoint (no in-edge) is deleted while a live one survives the pass
+  ---
+  duration_ms: 280.427333
+  type: 'test'
+  ...
+# Subtest: t2 GC full-clear: a repo whose HTTP calls were all removed ends with zero endpoint nodes
+ok 12 - t2 GC full-clear: a repo whose HTTP calls were all removed ends with zero endpoint nodes
+  ---
+  duration_ms: 250.39275
+  type: 'test'
+  ...
+# Subtest: t2 idempotency: re-running on identical rows deletes nothing and yields the same node set
+ok 13 - t2 idempotency: re-running on identical rows deletes nothing and yields the same node set
+  ---
+  duration_ms: 276.676375
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2915.238125

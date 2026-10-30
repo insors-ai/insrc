@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: an answer to a superseded refresh is dropped and nothing from it is applied
+ok 1 - an answer to a superseded refresh is dropped and nothing from it is applied
+  ---
+  duration_ms: 2.590208
+  type: 'test'
+  ...
+# Subtest: empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty
+ok 2 - empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty
+  ---
+  duration_ms: 0.624958
+  type: 'test'
+  ...
+# Subtest: a failed refresh keeps the last snapshot as stale with the failure and its time
+ok 3 - a failed refresh keeps the last snapshot as stale with the failure and its time
+  ---
+  duration_ms: 0.417542
+  type: 'test'
+  ...
+# Subtest: set-view from a story screen resets the trail to one root and keeps only the attention flag
+ok 4 - set-view from a story screen resets the trail to one root and keeps only the attention flag
+  ---
+  duration_ms: 0.387125
+  type: 'test'
+  ...
+# Subtest: open-epic and open-item push entries with new ids and record the opener, and the trail is capped at 20 keeping the root
+ok 5 - open-epic and open-item push entries with new ids and record the opener, and the trail is capped at 20 keeping the root
+  ---
+  duration_ms: 0.301958
+  type: 'test'
+  ...
+# Subtest: back and go-to-crumb restore the earlier entry with its own search, attention and paging
+ok 6 - back and go-to-crumb restore the earlier entry with its own search, attention and paging
+  ---
+  duration_ms: 0.158791
+  type: 'test'
+  ...
+# Subtest: filter intents are ignored on an item screen, and a refresh that removes the item truncates the trail with a notice
+ok 7 - filter intents are ignored on an item screen, and a refresh that removes the item truncates the trail with a notice
+  ---
+  duration_ms: 0.22025
+  type: 'test'
+  ...
+# Subtest: every screen message carries a breadcrumb that follows the trail and a back label naming where Back goes
+ok 8 - every screen message carries a breadcrumb that follows the trail and a back label naming where Back goes
+  ---
+  duration_ms: 1.225958
+  type: 'test'
+  ...
+# Subtest: statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner
+ok 9 - statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner
+  ---
+  duration_ms: 0.278625
+  type: 'test'
+  ...
+# Subtest: screenAnnouncement names a new screen, and a return as its breadcrumb does
+ok 10 - screenAnnouncement names a new screen, and a return as its breadcrumb does
+  ---
+  duration_ms: 0.337833
+  type: 'test'
+  ...
+# Subtest: refreshAnnouncement counts the whole snapshot when ready, leads with a removal notice, and otherwise says the status
+ok 11 - refreshAnnouncement counts the whole snapshot when ready, leads with a removal notice, and otherwise says the status
+  ---
+  duration_ms: 0.159875
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 203.4075

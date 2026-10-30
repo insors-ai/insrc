@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: checkPlanTaskGraph: accepts a valid single-task graph
+ok 1 - checkPlanTaskGraph: accepts a valid single-task graph
+  ---
+  duration_ms: 1.474416
+  type: 'test'
+  ...
+# Subtest: checkPlanTaskGraph: accepts a valid multi-task ordered graph
+ok 2 - checkPlanTaskGraph: accepts a valid multi-task ordered graph
+  ---
+  duration_ms: 0.111542
+  type: 'test'
+  ...
+# Subtest: checkPlanTaskGraph: rejects a dependency cycle
+ok 3 - checkPlanTaskGraph: rejects a dependency cycle
+  ---
+  duration_ms: 0.241208
+  type: 'test'
+  ...
+# Subtest: checkPlanTaskGraph: rejects a dangling dependsOn id
+ok 4 - checkPlanTaskGraph: rejects a dangling dependsOn id
+  ---
+  duration_ms: 0.156542
+  type: 'test'
+  ...
+# Subtest: checkPlanTaskGraph: rejects order that is not a valid topological order
+ok 5 - checkPlanTaskGraph: rejects order that is not a valid topological order
+  ---
+  duration_ms: 0.091666
+  type: 'test'
+  ...
+# Subtest: checkPlanTaskGraph: rejects a non-t\\d id and empty derivedFrom
+ok 6 - checkPlanTaskGraph: rejects a non-t\\d id and empty derivedFrom
+  ---
+  duration_ms: 0.057625
+  type: 'test'
+  ...
+# Subtest: checkPlanTaskGraph: rejects design under-coverage (a citation no Task derives from)
+ok 7 - checkPlanTaskGraph: rejects design under-coverage (a citation no Task derives from)
+  ---
+  duration_ms: 0.13025
+  type: 'test'
+  ...
+# Subtest: checkPlanTaskGraph: rejects a derivedFrom id with no matching citation
+ok 8 - checkPlanTaskGraph: rejects a derivedFrom id with no matching citation
+  ---
+  duration_ms: 0.04825
+  type: 'test'
+  ...
+# Subtest: checkTestStrategyCoverage: returns [] for a total coverage map
+ok 9 - checkTestStrategyCoverage: returns [] for a total coverage map
+  ---
+  duration_ms: 0.287292
+  type: 'test'
+  ...
+# Subtest: checkTestStrategyCoverage: flags an uncovered LLD strategy item
+ok 10 - checkTestStrategyCoverage: flags an uncovered LLD strategy item
+  ---
+  duration_ms: 0.295959
+  type: 'test'
+  ...
+# Subtest: checkTestStrategyCoverage: flags a coverage row with an unknown task id
+ok 11 - checkTestStrategyCoverage: flags a coverage row with an unknown task id
+  ---
+  duration_ms: 0.053875
+  type: 'test'
+  ...
+# Subtest: checkTestStrategyCoverage: flags a Task with an empty tests[]
+ok 12 - checkTestStrategyCoverage: flags a Task with an empty tests[]
+  ---
+  duration_ms: 0.051
+  type: 'test'
+  ...
+# Subtest: checkTestStrategyCoverage: flags a coverage claim whose Task names no tests
+ok 13 - checkTestStrategyCoverage: flags a coverage claim whose Task names no tests
+  ---
+  duration_ms: 0.123333
+  type: 'test'
+  ...
+# Subtest: checkTestStrategyCoverage: accepts one-to-many and many-to-one mappings
+ok 14 - checkTestStrategyCoverage: accepts one-to-many and many-to-one mappings
+  ---
+  duration_ms: 0.046333
+  type: 'test'
+  ...
+# Subtest: renderPlanMarkdown: leads with the PLAN- marker, renders the ordered task table + [[cN]]
+ok 15 - renderPlanMarkdown: leads with the PLAN- marker, renders the ordered task table + [[cN]]
+  ---
+  duration_ms: 1.611958
+  type: 'test'
+  ...
+# Subtest: renderPlanMarkdown output passes validateCitations (every citation grounded)
+ok 16 - renderPlanMarkdown output passes validateCitations (every citation grounded)
+  ---
+  duration_ms: 0.360917
+  type: 'test'
+  ...
+# Subtest: planArtifactPaths: nested story-scoped md under docs/epics + hash-json under .insrc/artifacts; hash fallback
+ok 17 - planArtifactPaths: nested story-scoped md under docs/epics + hash-json under .insrc/artifacts; hash fallback
+  ---
+  duration_ms: 0.298875
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd resolves a rendered plan md back to its canonical json; approve sets approvedAt
+ok 18 - jsonPathForMd resolves a rendered plan md back to its canonical json; approve sets approvedAt
+  ---
+  duration_ms: 14.045375
+  type: 'test'
+  ...
+# Subtest: isPlanBody guards the tasks + testStrategyCoverage shape
+ok 19 - isPlanBody guards the tasks + testStrategyCoverage shape
+  ---
+  duration_ms: 0.100416
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 312.429833

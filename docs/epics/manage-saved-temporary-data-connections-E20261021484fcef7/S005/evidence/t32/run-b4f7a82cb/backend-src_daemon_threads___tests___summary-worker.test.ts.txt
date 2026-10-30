@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input
+ok 1 - with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input
+  ---
+  duration_ms: 2053.243708
+  type: 'test'
+  ...
+# Subtest: waitForIndexIdle on the summary worker reflects the code-indexing worker's real state
+ok 2 - waitForIndexIdle on the summary worker reflects the code-indexing worker's real state
+  ---
+  duration_ms: 866.091375
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3501.448709

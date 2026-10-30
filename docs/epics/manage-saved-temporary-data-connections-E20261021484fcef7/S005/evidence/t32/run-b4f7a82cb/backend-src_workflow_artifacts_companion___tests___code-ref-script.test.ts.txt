@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: an element holding a path and line is marked, and a click posts that path and line to the parent
+ok 1 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: an element holding a path and line is marked, and a click posts that path and line to the parent
+  ---
+  duration_ms: 2.10575
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a table cell holding a path with no line is marked and posts the path alone
+ok 2 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a table cell holding a path with no line is marked and posts the path alone
+  ---
+  duration_ms: 0.374125
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: text with no reference is not marked and a click on it posts nothing
+ok 3 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: text with no reference is not marked and a click on it posts nothing
+  ---
+  duration_ms: 0.347959
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: marking changes no text node
+ok 4 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: marking changes no text node
+  ---
+  duration_ms: 0.301417
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a click on a marked box inside the pan/zoom viewport, which captures the pointer, posts the reference
+ok 5 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a click on a marked box inside the pan/zoom viewport, which captures the pointer, posts the reference
+  ---
+  duration_ms: 0.295292
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a press, a move past the drag threshold and a release posts nothing
+ok 6 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a press, a move past the drag threshold and a release posts nothing
+  ---
+  duration_ms: 0.324417
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a bare file name is not marked
+ok 7 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a bare file name is not marked
+  ---
+  duration_ms: 0.274542
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: an element marked from text that is later replaced loses its mark, so a click on the drawn diagram opens nothing
+ok 8 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: an element marked from text that is later replaced loses its mark, so a click on the drawn diagram opens nothing
+  ---
+  duration_ms: 0.4175
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a click with no press before it, as the keyboard sends, is read at its own target
+ok 9 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a click with no press before it, as the keyboard sends, is read at its own target
+  ---
+  duration_ms: 0.498625
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the script stops no event and the posted origin is any, as the frame has an opaque origin
+ok 10 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the script stops no event and the posted origin is any, as the frame has an opaque origin
+  ---
+  duration_ms: 0.602083
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the companion page and the docgen page carry the script, after the diagram is drawn
+ok 11 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the companion page and the docgen page carry the script, after the diagram is drawn
+  ---
+  duration_ms: 15.066625
+  type: 'test'
+  ...
+# Subtest: src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the docgen fallback shell carries the script and marks references at load
+ok 12 - src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the docgen fallback shell carries the script and marks references at load
+  ---
+  duration_ms: 0.290916
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 323.871584

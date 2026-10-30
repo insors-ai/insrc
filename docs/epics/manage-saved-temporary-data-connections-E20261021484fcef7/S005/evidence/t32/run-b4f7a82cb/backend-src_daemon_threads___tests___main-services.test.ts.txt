@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply
+ok 1 - a worker started with the request entry answers a request, relays stream frames, aborts on cancel and names an uncloneable reply
+  ---
+  duration_ms: 195.642042
+  type: 'test'
+  ...
+# Subtest: a worker started before the embedding bootstrap settles embeds with the decided backend after the push
+ok 2 - a worker started before the embedding bootstrap settles embeds with the decided backend after the push
+  ---
+  duration_ms: 363.310458
+  type: 'test'
+  ...
+# Subtest: daemon.threads.enabled is a config schema key defaulting to on and daemon.info returns its four fields
+ok 3 - daemon.threads.enabled is a config schema key defaulting to on and daemon.info returns its four fields
+  ---
+  duration_ms: 2.256542
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 847.677083

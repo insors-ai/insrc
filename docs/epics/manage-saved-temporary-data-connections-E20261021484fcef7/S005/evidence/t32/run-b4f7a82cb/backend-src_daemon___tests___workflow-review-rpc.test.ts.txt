@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: T12 a controller-authored LLD: progress frames, then done with the verdict and reviewedBy daemon
+ok 1 - T12 a controller-authored LLD: progress frames, then done with the verdict and reviewedBy daemon
+  ---
+  duration_ms: 37.351125
+  type: 'test'
+  ...
+# Subtest: T12 a controller-authored DEF is reviewed through the pipeline and ends in done
+ok 2 - T12 a controller-authored DEF is reviewed through the pipeline and ends in done
+  ---
+  duration_ms: 182.635458
+  type: 'test'
+  ...
+# (node:6036) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: T12 a daemon-authored DEF ends in one error frame; no provider call, nothing stamped
+ok 3 - T12 a daemon-authored DEF ends in one error frame; no provider call, nothing stamped
+  ---
+  duration_ms: 2.159958
+  type: 'test'
+  ...
+# Subtest: T12 a daemon-authored LLD ends in one error frame; no provider call, nothing stamped
+ok 4 - T12 a daemon-authored LLD ends in one error frame; no provider call, nothing stamped
+  ---
+  duration_ms: 8.593417
+  type: 'test'
+  ...
+# Subtest: a bad request, a missing artifact and a failing review each end in one error frame
+ok 5 - a bad request, a missing artifact and a failing review each end in one error frame
+  ---
+  duration_ms: 6.423458
+  type: 'test'
+  ...
+# Subtest: workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged
+ok 6 - workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged
+  ---
+  duration_ms: 8.342083
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 772.856792

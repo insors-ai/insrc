@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan
+ok 1 - each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan
+  ---
+  duration_ms: 128.498667
+  type: 'test'
+  ...
+# Subtest: a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild
+ok 2 - a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild
+  ---
+  duration_ms: 2.326375
+  type: 'test'
+  ...
+# Subtest: adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk
+ok 3 - adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk
+  ---
+  duration_ms: 21.193875
+  type: 'test'
+  ...
+# Subtest: a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note
+ok 4 - a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note
+  ---
+  duration_ms: 14.255417
+  type: 'test'
+  ...
+# Subtest: a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's
+ok 5 - a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's
+  ---
+  duration_ms: 9.336417
+  type: 'test'
+  ...
+# Subtest: a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review
+ok 6 - a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review
+  ---
+  duration_ms: 4.808042
+  type: 'test'
+  ...
+# Subtest: a key with no notes is adjudicated on the no-evidence statement
+ok 7 - a key with no notes is adjudicated on the no-evidence statement
+  ---
+  duration_ms: 9.269542
+  type: 'test'
+  ...
+# Subtest: a conventions candidate rejected by the module judgement is absent from the merged result
+ok 8 - a conventions candidate rejected by the module judgement is absent from the merged result
+  ---
+  duration_ms: 4.004083
+  type: 'test'
+  ...
+# Subtest: a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing
+ok 9 - a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing
+  ---
+  duration_ms: 13.127166
+  type: 'test'
+  ...
+# Subtest: a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits
+ok 10 - a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits
+  ---
+  duration_ms: 5.907167
+  type: 'test'
+  ...
+# Subtest: a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits
+ok 11 - a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits
+  ---
+  duration_ms: 16.88075
+  type: 'test'
+  ...
+# Subtest: a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review
+ok 12 - a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review
+  ---
+  duration_ms: 11.879042
+  type: 'test'
+  ...
+# Subtest: a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller
+ok 13 - a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller
+  ---
+  duration_ms: 5.792375
+  type: 'test'
+  ...
+# Subtest: every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit
+ok 14 - every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit
+  ---
+  duration_ms: 7.50325
+  type: 'test'
+  ...
+# Subtest: a pair answer naming a counterpart outside its two symbols is rejected
+ok 15 - a pair answer naming a counterpart outside its two symbols is rejected
+  ---
+  duration_ms: 7.792459
+  type: 'test'
+  ...
+# Subtest: compare and pair calls are counted under pipelineCalls.relation, not chunk
+ok 16 - compare and pair calls are counted under pipelineCalls.relation, not chunk
+  ---
+  duration_ms: 6.2735
+  type: 'test'
+  ...
+# Subtest: out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today
+ok 17 - out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today
+  ---
+  duration_ms: 9.723167
+  type: 'test'
+  ...
+# Subtest: a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today
+ok 18 - a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today
+  ---
+  duration_ms: 4.055917
+  type: 'test'
+  ...
+# Subtest: pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review
+ok 19 - pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review
+  ---
+  duration_ms: 11.239625
+  type: 'test'
+  ...
+# Subtest: merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once
+ok 20 - merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once
+  ---
+  duration_ms: 27.471917
+  type: 'test'
+  ...
+# Subtest: a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row
+ok 21 - a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row
+  ---
+  duration_ms: 7.214084
+  type: 'test'
+  ...
+# Subtest: a mutual call cut between chunks is checked in both directions, each at its own caller
+ok 22 - a mutual call cut between chunks is checked in both directions, each at its own caller
+  ---
+  duration_ms: 6.233584
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 703.438208

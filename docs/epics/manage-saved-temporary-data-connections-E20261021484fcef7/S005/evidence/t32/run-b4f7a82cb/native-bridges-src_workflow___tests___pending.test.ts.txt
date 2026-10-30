@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: listPendingArtifacts returns ONLY pending artifacts (approvedAt/rejectedAt excluded) — ac1
+ok 1 - listPendingArtifacts returns ONLY pending artifacts (approvedAt/rejectedAt excluded) — ac1
+  ---
+  duration_ms: 4.534
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts maps each descriptor field (kind/title/mdPath/workItemId/openQuestionCount/state)
+ok 2 - listPendingArtifacts maps each descriptor field (kind/title/mdPath/workItemId/openQuestionCount/state)
+  ---
+  duration_ms: 1.383959
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts lists a pending BUILD record whose Story has a code review record, with kind BUILD, its work item id and the path of its BUILD.md
+ok 3 - listPendingArtifacts lists a pending BUILD record whose Story has a code review record, with kind BUILD, its work item id and the path of its BUILD.md
+  ---
+  duration_ms: 3.750584
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts leaves out a BUILD record with no code review record, an approved or a rejected one, and EXT, STUB and AMD records as before
+ok 4 - listPendingArtifacts leaves out a BUILD record with no code review record, an approved or a rejected one, and EXT, STUB and AMD records as before
+  ---
+  duration_ms: 3.793166
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts gives a BUILD record an empty path when the BUILD.md its fields derive does not exist or does not carry this record's artifact marker, and lists the records in file-name order
+ok 5 - listPendingArtifacts gives a BUILD record an empty path when the BUILD.md its fields derive does not exist or does not carry this record's artifact marker, and lists the records in file-name order
+  ---
+  duration_ms: 4.229542
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts returns [] for an absent .insrc/artifacts dir (not a throw)
+ok 6 - listPendingArtifacts returns [] for an absent .insrc/artifacts dir (not a throw)
+  ---
+  duration_ms: 0.1855
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts skips a single malformed JSON file and still returns the rest
+ok 7 - listPendingArtifacts skips a single malformed JSON file and still returns the rest
+  ---
+  duration_ms: 0.98225
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts defaults: no openQuestions -> 0; no derivable workItemId -> omitted
+ok 8 - listPendingArtifacts defaults: no openQuestions -> 0; no derivable workItemId -> omitted
+  ---
+  duration_ms: 0.709292
+  type: 'test'
+  ...
+# Subtest: listPendingArtifacts falls back title to workItemId then artifactId when body has none
+ok 9 - listPendingArtifacts falls back title to workItemId then artifactId when body has none
+  ---
+  duration_ms: 0.904416
+  type: 'test'
+  ...
+# Subtest: handleWorkflowPending: fixture repo with pending artifacts -> { artifacts } (ac1)
+ok 10 - handleWorkflowPending: fixture repo with pending artifacts -> { artifacts } (ac1)
+  ---
+  duration_ms: 0.877292
+  type: 'test'
+  ...
+# Subtest: handleWorkflowPending: all-approved / absent store -> { artifacts: [] } (ac3, distinct from error)
+ok 11 - handleWorkflowPending: all-approved / absent store -> { artifacts: [] } (ac3, distinct from error)
+  ---
+  duration_ms: 0.823166
+  type: 'test'
+  ...
+# Subtest: handleWorkflowPending: repo-unresolved (no param, no env) -> { error }, NOT { artifacts: [] } (ac2)
+ok 12 - handleWorkflowPending: repo-unresolved (no param, no env) -> { error }, NOT { artifacts: [] } (ac2)
+  ---
+  duration_ms: 0.750041
+  type: 'test'
+  ...
+# Subtest: handleWorkflowPending: store-unreadable (artifacts path is a file) -> { error } (ac2)
+ok 13 - handleWorkflowPending: store-unreadable (artifacts path is a file) -> { error } (ac2)
+  ---
+  duration_ms: 0.557792
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 277.291458

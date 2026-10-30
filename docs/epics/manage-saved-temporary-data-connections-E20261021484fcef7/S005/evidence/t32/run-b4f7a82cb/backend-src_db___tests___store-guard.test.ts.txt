@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: withStore releases its permit on resolve, reject, synchronous throw and abort
+ok 1 - withStore releases its permit on resolve, reject, synchronous throw and abort
+  ---
+  duration_ms: 5.237209
+  type: 'test'
+  ...
+# Subtest: an acquisition past its limit fails with StoreLockTimeoutError naming the holder
+ok 2 - an acquisition past its limit fails with StoreLockTimeoutError naming the holder
+  ---
+  duration_ms: 52.658625
+  type: 'test'
+  ...
+# Subtest: two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError
+ok 3 - two concurrent same-thread withStore calls on a one-permit store both complete in turn; withStore inside a held op fails with StoreLockNestedError
+  ---
+  duration_ms: 21.448666
+  type: 'test'
+  ...
+# Subtest: reclaim releases after quiescence and marks the store unhealthy past limitMs
+ok 4 - reclaim releases after quiescence and marks the store unhealthy past limitMs
+  ---
+  duration_ms: 54.392833
+  type: 'test'
+  ...
+# [04:46:28] [31mERROR[39m: [36m[store-guard] store guard: a dead worker's calls did not finish in time; store marked unhealthy[39m
+#     [35mmodule[39m: "store-guard"
+#     [35mstore[39m: "duckdb"
+#     [35mthreadId[39m: 43
+#     [35mlimitMs[39m: 30
+# Subtest: a worker terminated while holding a permit has it reclaimed and another worker then acquires it
+ok 5 - a worker terminated while holding a permit has it reclaimed and another worker then acquires it
+  ---
+  duration_ms: 265.81275
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 598.652292

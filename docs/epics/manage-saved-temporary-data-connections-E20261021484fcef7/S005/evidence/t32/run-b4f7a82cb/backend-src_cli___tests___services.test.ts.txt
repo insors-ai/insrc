@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: listEpics returns [] when there is no artifacts dir
+ok 1 - listEpics returns [] when there is no artifacts dir
+  ---
+  duration_ms: 5.783583
+  type: 'test'
+  ...
+# Subtest: listEpics scans DEF-<hash>.json and reads the display slug
+ok 2 - listEpics scans DEF-<hash>.json and reads the display slug
+  ---
+  duration_ms: 5.747458
+  type: 'test'
+  ...
+# Subtest: formatBytes scales units
+ok 3 - formatBytes scales units
+  ---
+  duration_ms: 0.277667
+  type: 'test'
+  ...
+# Subtest: formatUptime is h/m/s aware
+ok 4 - formatUptime is h/m/s aware
+  ---
+  duration_ms: 0.07725
+  type: 'test'
+  ...
+# Subtest: formatWhen handles empty + invalid
+ok 5 - formatWhen handles empty + invalid
+  ---
+  duration_ms: 0.152875
+  type: 'test'
+  ...
+# Subtest: makeServices().debug.sections lists the three sections in DebugSectionId order
+ok 6 - makeServices().debug.sections lists the three sections in DebugSectionId order
+  ---
+  duration_ms: 0.325292
+  type: 'test'
+  ...
+# Subtest: makeServices() still returns every pre-existing facade (additive-only)
+ok 7 - makeServices() still returns every pre-existing facade (additive-only)
+  ---
+  duration_ms: 0.200583
+  type: 'test'
+  ...
+# Subtest: services.test.ts: Services.models calls the matching rpc methods with their params
+ok 8 - services.test.ts: Services.models calls the matching rpc methods with their params
+  ---
+  duration_ms: 0.738834
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 749.796166

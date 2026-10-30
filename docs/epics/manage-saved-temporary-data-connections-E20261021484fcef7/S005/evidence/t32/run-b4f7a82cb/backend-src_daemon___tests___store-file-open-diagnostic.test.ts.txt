@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: diagnostic through the tools' route: fs.promises.readFile of the lock file logs one warn line with a stack, once per stack
+ok 1 - diagnostic through the tools' route: fs.promises.readFile of the lock file logs one warn line with a stack, once per stack
+  ---
+  duration_ms: 13.674084
+  type: 'test'
+  ...
+# Subtest: the default report is a warn line on the daemon log, with the stack
+ok 2 - the default report is a warn line on the daemon log, with the stack
+  ---
+  duration_ms: 1.329208
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 338.221583

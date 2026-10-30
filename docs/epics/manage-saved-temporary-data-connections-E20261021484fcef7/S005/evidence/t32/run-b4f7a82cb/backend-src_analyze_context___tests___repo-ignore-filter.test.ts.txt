@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: excludes directories matching a root .gitignore rule
+ok 1 - excludes directories matching a root .gitignore rule
+  ---
+  duration_ms: 107.656875
+  type: 'test'
+  ...
+# Subtest: every ancestor of a tracked file is considered included
+ok 2 - every ancestor of a tracked file is considered included
+  ---
+  duration_ms: 99.622542
+  type: 'test'
+  ...
+# Subtest: respects a subdirectory .gitignore
+ok 3 - respects a subdirectory .gitignore
+  ---
+  duration_ms: 96.718833
+  type: 'test'
+  ...
+# Subtest: non-git repo returns a permissive filter that includes everything
+ok 4 - non-git repo returns a permissive filter that includes everything
+  ---
+  duration_ms: 0.952292
+  type: 'test'
+  ...
+# Subtest: permissiveIgnoreFilter is always-include
+ok 5 - permissiveIgnoreFilter is always-include
+  ---
+  duration_ms: 0.062375
+  type: 'test'
+  ...
+# Subtest: include() returns only tracked items
+ok 6 - include() returns only tracked items
+  ---
+  duration_ms: 84.621833
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 608.448667

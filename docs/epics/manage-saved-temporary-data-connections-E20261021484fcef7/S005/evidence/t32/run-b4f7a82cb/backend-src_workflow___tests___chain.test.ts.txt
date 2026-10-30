@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: chain: no artifacts → next-action run-define
+ok 1 - chain: no artifacts → next-action run-define
+  ---
+  duration_ms: 1.642
+  type: 'test'
+  ...
+# Subtest: chain: unapproved Define → approve-define
+ok 2 - chain: unapproved Define → approve-define
+  ---
+  duration_ms: 1.777292
+  type: 'test'
+  ...
+# Subtest: chain: approved Define, no HLD → run-hld
+ok 3 - chain: approved Define, no HLD → run-hld
+  ---
+  duration_ms: 3.027625
+  type: 'test'
+  ...
+# Subtest: chain: unapproved HLD → approve-hld
+ok 4 - chain: unapproved HLD → approve-hld
+  ---
+  duration_ms: 2.382541
+  type: 'test'
+  ...
+# Subtest: chain: approved HLD, no LLDs → run-lld for first Story
+ok 5 - chain: approved HLD, no LLDs → run-lld for first Story
+  ---
+  duration_ms: 2.9175
+  type: 'test'
+  ...
+# Subtest: chain: unapproved LLD blocks the chain → approve-lld
+ok 6 - chain: unapproved LLD blocks the chain → approve-lld
+  ---
+  duration_ms: 3.317458
+  type: 'test'
+  ...
+# Subtest: chain: pending amendment surfaces before further LLDs
+ok 7 - chain: pending amendment surfaces before further LLDs
+  ---
+  duration_ms: 2.928916
+  type: 'test'
+  ...
+# Subtest: chain: all Stories approved, no tracker → push-tracker
+ok 8 - chain: all Stories approved, no tracker → push-tracker
+  ---
+  duration_ms: 3.418583
+  type: 'test'
+  ...
+# Subtest: formatChainReport prints all section headers
+ok 9 - formatChainReport prints all section headers
+  ---
+  duration_ms: 0.644542
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 325.3

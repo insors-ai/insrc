@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: compactGraphStore reclaims space after large deletes
+ok 1 - compactGraphStore reclaims space after large deletes
+  ---
+  duration_ms: 591.241333
+  type: 'test'
+  ...
+# Subtest: compactGraphStore preserves all rows when nothing has been freed
+ok 2 - compactGraphStore preserves all rows when nothing has been freed
+  ---
+  duration_ms: 270.595125
+  type: 'test'
+  ...
+# Subtest: compactGraphStore cleans up .bak after success
+ok 3 - compactGraphStore cleans up .bak after success
+  ---
+  duration_ms: 327.110666
+  type: 'test'
+  ...
+# Subtest: compactGraphStore re-opens the env so subsequent writes go through
+ok 4 - compactGraphStore re-opens the env so subsequent writes go through
+  ---
+  duration_ms: 361.12575
+  type: 'test'
+  ...
+# Subtest: compactGraphStore throws when env is not open
+ok 5 - compactGraphStore throws when env is not open
+  ---
+  duration_ms: 7.964208
+  type: 'test'
+  ...
+# Subtest: compactGraphStore pre-clears stale .compact / .bak from a prior aborted run
+ok 6 - compactGraphStore pre-clears stale .compact / .bak from a prior aborted run
+  ---
+  duration_ms: 291.585167
+  type: 'test'
+  ...
+# Subtest: compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data
+ok 7 - compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data
+  ---
+  duration_ms: 332.989084
+  type: 'test'
+  ...
+# Subtest: compactGraphStore with a beforeRename hook that throws: rejects with the cause, no rename, the compacted copy is removed and the original store reopens with its data
+ok 8 - compactGraphStore with a beforeRename hook that throws: rejects with the cause, no rename, the compacted copy is removed and the original store reopens with its data
+  ---
+  duration_ms: 277.625375
+  type: 'test'
+  ...
+# Subtest: compactGraphStore with a hook returning true or no hook returns today's CompactResult
+ok 9 - compactGraphStore with a hook returning true or no hook returns today's CompactResult
+  ---
+  duration_ms: 293.969083
+  type: 'test'
+  ...
+# Subtest: compactGraphStore keeps an asynchronous write queued just before it: the write is committed before the copy, never lost in the swap
+ok 10 - compactGraphStore keeps an asynchronous write queued just before it: the write is committed before the copy, never lost in the swap
+  ---
+  duration_ms: 1017.381125
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4005.539792

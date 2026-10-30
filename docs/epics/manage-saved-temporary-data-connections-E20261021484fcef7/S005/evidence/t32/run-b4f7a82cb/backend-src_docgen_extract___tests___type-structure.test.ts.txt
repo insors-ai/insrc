@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: buildTypeStructureIR: types → derived nodes, narrated stays empty (k8)
+ok 1 - buildTypeStructureIR: types → derived nodes, narrated stays empty (k8)
+  ---
+  duration_ms: 1.39325
+  type: 'test'
+  ...
+# Subtest: buildTypeStructureIR: INHERITS/IMPLEMENTS map to edges with the right kind
+ok 2 - buildTypeStructureIR: INHERITS/IMPLEMENTS map to edges with the right kind
+  ---
+  duration_ms: 0.127792
+  type: 'test'
+  ...
+# Subtest: buildTypeStructureIR: an edge to an OUT-OF-SCOPE type is dropped (self-contained doc)
+ok 3 - buildTypeStructureIR: an edge to an OUT-OF-SCOPE type is dropped (self-contained doc)
+  ---
+  duration_ms: 0.059917
+  type: 'test'
+  ...
+# Subtest: buildTypeStructureIR: a self-referential type keeps its self-edge (not deduped)
+ok 4 - buildTypeStructureIR: a self-referential type keeps its self-edge (not deduped)
+  ---
+  duration_ms: 0.048667
+  type: 'test'
+  ...
+# Subtest: buildTypeStructureIR: two same-named types in different files stay distinct nodes
+ok 5 - buildTypeStructureIR: two same-named types in different files stay distinct nodes
+  ---
+  duration_ms: 0.122208
+  type: 'test'
+  ...
+# Subtest: buildTypeStructureIR is deterministic — same input → deep-equal IR
+ok 6 - buildTypeStructureIR is deterministic — same input → deep-equal IR
+  ---
+  duration_ms: 0.153292
+  type: 'test'
+  ...
+# Subtest: extract: unfinished indexing (no revision) → source-not-ready
+ok 7 - extract: unfinished indexing (no revision) → source-not-ready
+  ---
+  duration_ms: 0.167542
+  type: 'test'
+  ...
+# Subtest: extract: zero types in scope → empty-scope with a reason (ac6)
+ok 8 - extract: zero types in scope → empty-scope with a reason (ac6)
+  ---
+  duration_ms: 0.121291
+  type: 'test'
+  ...
+# Subtest: extract: happy path → ok with a derived-only IR at the pinned revision
+ok 9 - extract: happy path → ok with a derived-only IR at the pinned revision
+  ---
+  duration_ms: 0.251208
+  type: 'test'
+  ...
+# Subtest: extract: missing repo in input → empty-scope guard (belt-and-braces)
+ok 10 - extract: missing repo in input → empty-scope guard (belt-and-braces)
+  ---
+  duration_ms: 0.269833
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 198.278042

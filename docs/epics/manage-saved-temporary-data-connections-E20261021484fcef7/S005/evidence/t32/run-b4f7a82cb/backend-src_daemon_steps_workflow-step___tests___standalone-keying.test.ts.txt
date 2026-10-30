@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: augmentStandaloneParams: no-op unless standalone===true
+ok 1 - augmentStandaloneParams: no-op unless standalone===true
+  ---
+  duration_ms: 0.565583
+  type: 'test'
+  ...
+# Subtest: augmentStandaloneParams: standalone mints a 16-char self-hash + default storyId
+ok 2 - augmentStandaloneParams: standalone mints a 16-char self-hash + default storyId
+  ---
+  duration_ms: 0.171459
+  type: 'test'
+  ...
+# Subtest: augmentStandaloneParams: is deterministic in the runId (same runId → same hash)
+ok 3 - augmentStandaloneParams: is deterministic in the runId (same runId → same hash)
+  ---
+  duration_ms: 0.055709
+  type: 'test'
+  ...
+# Subtest: augmentStandaloneParams: preserves a caller-provided epicHash + storyId
+ok 4 - augmentStandaloneParams: preserves a caller-provided epicHash + storyId
+  ---
+  duration_ms: 0.042083
+  type: 'test'
+  ...
+# Subtest: epicKeyFor: a standalone design.story keys by the minted (augmented) epicHash
+ok 5 - epicKeyFor: a standalone design.story keys by the minted (augmented) epicHash
+  ---
+  duration_ms: 0.105042
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 456.915375

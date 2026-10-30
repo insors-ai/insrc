@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the 27 built-in templates yield a branch each, with exactly their 9 slot sets at the expected paths
+ok 1 - the 27 built-in templates yield a branch each, with exactly their 9 slot sets at the expected paths
+  ---
+  duration_ms: 1.792375
+  type: 'test'
+  ...
+# Subtest: a slot is placed only at a position the original schema restricts to an object, and the adherence root one-of-three is left out of the branch
+ok 2 - a slot is placed only at a position the original schema restricts to an object, and the adherence root one-of-three is left out of the branch
+  ---
+  duration_ms: 0.36825
+  type: 'test'
+  ...
+# Subtest: no inputSchema, a local reference, a union with a string, and a draft-07 tuple each yield a whole-params slot, and no built-in template falls back
+ok 3 - no inputSchema, a local reference, a union with a string, and a draft-07 tuple each yield a whole-params slot, and no built-in template falls back
+  ---
+  duration_ms: 518.164542
+  type: 'test'
+  ...
+# Subtest: repeated and recursive wire-schema builds with identical and different catalogs compile through validateAgainstSchema and validateCodexReply without an id collision
+ok 4 - repeated and recursive wire-schema builds with identical and different catalogs compile through validateAgainstSchema and validateCodexReply without an id collision
+  ---
+  duration_ms: 904.925625
+  type: 'test'
+  ...
+# Subtest: two catalogs sharing a template id with different inputSchemas get different wire schemas
+ok 5 - two catalogs sharing a template id with different inputSchemas get different wire schemas
+  ---
+  duration_ms: 30.480917
+  type: 'test'
+  ...
+# Subtest: the codex strict copy of the built-in planner wire schema for every target contains no open object
+ok 6 - the codex strict copy of the built-in planner wire schema for every target contains no open object
+  ---
+  duration_ms: 2.122
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1914.487375

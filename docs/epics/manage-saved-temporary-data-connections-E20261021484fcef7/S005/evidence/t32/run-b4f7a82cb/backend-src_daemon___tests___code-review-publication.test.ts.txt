@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite
+ok 1 - DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite
+  ---
+  duration_ms: 6514.3025
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata
+ok 2 - DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata
+  ---
+  duration_ms: 8943.608542
+  type: 'test'
+  ...
+# Subtest: DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR
+ok 3 - DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR
+  ---
+  duration_ms: 2770.301208
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record
+ok 4 - DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record
+  ---
+  duration_ms: 3764.779375
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity
+ok 5 - DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity
+  ---
+  duration_ms: 4311.777667
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models
+ok 6 - DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models
+  ---
+  duration_ms: 809.0415
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read
+ok 7 - DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read
+  ---
+  duration_ms: 673.498375
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result
+ok 8 - DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result
+  ---
+  duration_ms: 4243.984458
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review
+ok 9 - DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review
+  ---
+  duration_ms: 410.422667
+  type: 'test'
+  ...
+# Subtest: DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint
+ok 10 - DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint
+  ---
+  duration_ms: 5214.50075
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38229.939

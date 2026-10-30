@@ -1,0 +1,54 @@
+TAP version 13
+# (node:79266) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery
+ok 1 - CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery
+  ---
+  duration_ms: 253.852
+  type: 'test'
+  ...
+# Subtest: CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation
+ok 2 - CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation
+  ---
+  duration_ms: 137.461875
+  type: 'test'
+  ...
+# Subtest: CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create
+ok 3 - CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create
+  ---
+  duration_ms: 174.536916
+  type: 'test'
+  ...
+# Subtest: CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation
+ok 4 - CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation
+  ---
+  duration_ms: 132.873667
+  type: 'test'
+  ...
+# Subtest: CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume
+ok 5 - CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume
+  ---
+  duration_ms: 93.700875
+  type: 'test'
+  ...
+# Subtest: CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation
+ok 6 - CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation
+  ---
+  duration_ms: 1403.618292
+  type: 'test'
+  ...
+# Subtest: CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable
+ok 7 - CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable
+  ---
+  duration_ms: 132.984042
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3197.157916

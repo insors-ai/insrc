@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: client-family.test.ts: step host and one-shot analyze map client 'claude'/'codex' to the family with that cliKind; an injected clientDefault wins; MCP client detection imports no registry or model-defaults
+ok 1 - client-family.test.ts: step host and one-shot analyze map client 'claude'/'codex' to the family with that cliKind; an injected clientDefault wins; MCP client detection imports no registry or model-defaults
+  ---
+  duration_ms: 5.840125
+  type: 'test'
+  ...
+# Subtest: client-family.test.ts: src/mcp/** and src/cli/** do not import getModelRegistry
+ok 2 - client-family.test.ts: src/mcp/** and src/cli/** do not import getModelRegistry
+  ---
+  duration_ms: 7.2975
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1109.824791

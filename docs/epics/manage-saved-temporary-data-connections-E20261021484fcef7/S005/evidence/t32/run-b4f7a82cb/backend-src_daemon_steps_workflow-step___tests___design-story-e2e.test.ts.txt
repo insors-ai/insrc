@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md
+ok 1 - design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md
+  ---
+  duration_ms: 29.643917
+  type: 'test'
+  ...
+# Subtest: design.story new-capability: s7 skips, artifact has no Migration section
+ok 2 - design.story new-capability: s7 skips, artifact has no Migration section
+  ---
+  duration_ms: 17.409458
+  type: 'test'
+  ...
+# Subtest: design.story: refuses without an approved HLD
+ok 3 - design.story: refuses without an approved HLD
+  ---
+  duration_ms: 5.729917
+  type: 'test'
+  ...
+# Subtest: design.story: refuses without epicHash or storyId params
+ok 4 - design.story: refuses without epicHash or storyId params
+  ---
+  duration_ms: 0.748125
+  type: 'test'
+  ...
+# Subtest: design.story: unknown shared-contract id fails synthesize
+ok 5 - design.story: unknown shared-contract id fails synthesize
+  ---
+  duration_ms: 13.500541
+  type: 'test'
+  ...
+# Subtest: design.story: migration MISSING for enhancement Epic → hard-fail
+ok 6 - design.story: migration MISSING for enhancement Epic → hard-fail
+  ---
+  duration_ms: 13.333416
+  type: 'test'
+  ...
+# Subtest: design.story: migration PRESENT for new-capability Epic → hard-fail
+ok 7 - design.story: migration PRESENT for new-capability Epic → hard-fail
+  ---
+  duration_ms: 18.643542
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 635.024708

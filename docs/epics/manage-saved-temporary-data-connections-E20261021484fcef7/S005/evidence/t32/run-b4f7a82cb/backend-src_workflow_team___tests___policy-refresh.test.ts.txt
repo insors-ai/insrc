@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: refresh brings a changed policy into the tracking ref and the reader applies it
+ok 1 - refresh brings a changed policy into the tracking ref and the reader applies it
+  ---
+  duration_ms: 793.011917
+  type: 'test'
+  ...
+# Subtest: only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect
+ok 2 - only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect
+  ---
+  duration_ms: 1115.048291
+  type: 'test'
+  ...
+# Subtest: unreachable remote reports failure and the last fetched policy stays in use
+ok 3 - unreachable remote reports failure and the last fetched policy stays in use
+  ---
+  duration_ms: 566.159
+  type: 'test'
+  ...
+# Subtest: a supplied branch is refused when the remote is unreachable and nothing is recorded
+ok 4 - a supplied branch is refused when the remote is unreachable and nothing is recorded
+  ---
+  duration_ms: 450.162417
+  type: 'test'
+  ...
+# Subtest: sighting write failure reports failure and cosmetic HEAD failure is a warning only
+ok 5 - sighting write failure reports failure and cosmetic HEAD failure is a warning only
+  ---
+  duration_ms: 923.91225
+  type: 'test'
+  ...
+# Subtest: a second refresh is refused while the lock is held and a stale lock is taken over
+ok 6 - a second refresh is refused while the lock is held and a stale lock is taken over
+  ---
+  duration_ms: 455.170666
+  type: 'test'
+  ...
+# Subtest: default-branch rename and policy file removal
+ok 7 - default-branch rename and policy file removal
+  ---
+  duration_ms: 1014.47075
+  type: 'test'
+  ...
+# Subtest: refresh with --branch on a dangling remote HEAD fetches and records source user
+ok 8 - refresh with --branch on a dangling remote HEAD fetches and records source user
+  ---
+  duration_ms: 534.151458
+  type: 'test'
+  ...
+# Subtest: an exhausted deadline stops the refresh and records nothing
+ok 9 - an exhausted deadline stops the refresh and records nothing
+  ---
+  duration_ms: 293.301875
+  type: 'test'
+  ...
+# Subtest: removing the policy while the remote HEAD cannot be updated still removes the record and only warns
+ok 10 - removing the policy while the remote HEAD cannot be updated still removes the record and only warns
+  ---
+  duration_ms: 907.119459
+  type: 'test'
+  ...
+# Subtest: removal with a stale remote HEAD on a retained old branch keeps the record and fails closed
+ok 11 - removal with a stale remote HEAD on a retained old branch keeps the record and fails closed
+  ---
+  duration_ms: 1059.720417
+  type: 'test'
+  ...
+# Subtest: a git failure while looking for the policy file is not mistaken for a removal
+ok 12 - a git failure while looking for the policy file is not mistaken for a removal
+  ---
+  duration_ms: 482.130291
+  type: 'test'
+  ...
+# Subtest: removal never deletes the record before a possibly stale remote HEAD is fixed
+ok 13 - removal never deletes the record before a possibly stale remote HEAD is fixed
+  ---
+  duration_ms: 856.823958
+  type: 'test'
+  ...
+# Subtest: a deadline that runs out during the anchor lookup records nothing
+ok 14 - a deadline that runs out during the anchor lookup records nothing
+  ---
+  duration_ms: 3282.60425
+  type: 'test'
+  ...
+# Subtest: a team directory that cannot be created fails the refresh cleanly instead of throwing
+ok 15 - a team directory that cannot be created fails the refresh cleanly instead of throwing
+  ---
+  duration_ms: 319.931875
+  type: 'test'
+  ...
+# Subtest: refreshPolicy takes the branch as a plain second argument, as the LLD specifies
+ok 16 - refreshPolicy takes the branch as a plain second argument, as the LLD specifies
+  ---
+  duration_ms: 576.677833
+  type: 'test'
+  ...
+# Subtest: a default branch whose name has a plus sign refreshes
+ok 17 - a default branch whose name has a plus sign refreshes
+  ---
+  duration_ms: 571.586709
+  type: 'test'
+  ...
+# Subtest: a policy file that exists but cannot be read is still recorded, and the refresh reports it
+ok 18 - a policy file that exists but cannot be read is still recorded, and the refresh reports it
+  ---
+  duration_ms: 627.489416
+  type: 'test'
+  ...
+# Subtest: removal with the remote HEAD unset and a retained branch that has a policy fixes the HEAD first or fails closed
+ok 19 - removal with the remote HEAD unset and a retained branch that has a policy fixes the HEAD first or fails closed
+  ---
+  duration_ms: 1052.894041
+  type: 'test'
+  ...
+# Subtest: a refresh started from a subdirectory refreshes the repository and does not drop its record
+ok 20 - a refresh started from a subdirectory refreshes the repository and does not drop its record
+  ---
+  duration_ms: 434.387792
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16540.743666

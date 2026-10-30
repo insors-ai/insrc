@@ -1,0 +1,151 @@
+TAP version 13
+# Subtest: models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier
+not ok 1 - models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier
+  ---
+  duration_ms: 2923.89825
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/models-daemon-s3.test.ts:1:1793'
+  failureType: 'testCodeFailure'
+  error: |-
+    [04:40:04] INFO: [daemon:model-catalog] model definitions validated
+        module: "daemon:model-catalog"
+        dir: "/private/tmp/s5-frozen-qldpq8za/repo/src/assets/models"
+        version: 1
+        models: {
+          "cli-claude": 4,
+          "cli-codex": 7,
+          "cli-vibe": 4,
+          "ollama": 2,
+          "ollama-claude": 6
+        }
+    [04:40:05] INFO: [daemon:model-catalog] model definitions validated
+        module: "daemon:model-catalog"
+        dir: "/private/tmp/s5-frozen-qldpq8za/repo/src/assets/models"
+        version: 1
+        models: {
+          "cli-claude": 4,
+          "cli-codex": 7,
+          "cli-vibe": 4,
+          "ollama": 2,
+          "ollama-claude": 6
+        }
+    [04:40:05] INFO: [graph-store] lmdb graph store initialised
+        module: "graph-store"
+        initMs: 14
+        mapsizeGiB: 1024
+        schemaVersion: 5
+        path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-models-s3-VXQ0LP/.insrc/graph.lmdb"
+    [04:40:05] INFO: [indexer] indexer starting
+        module: "indexer"
+        repos: 0
+    [04:40:05] INFO: [indexer] config full index started
+        module: "indexer"
+        scope: "global"
+    [04:40:05] INFO: [indexer] config full index complete
+        module: "indexer"
+        scope: "global"
+        indexed: 0
+        skipped: 0
+        elapsed: "0.0s"
+    (node:89701) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    [04:40:05] INFO: [embedder] embedder backend set
+        module: "embedder"
+        backend: "ollama"
+    [04:40:05] INFO: [embedder] embedder backend set
+        module: "embedder"
+        backend: "ollama"
+    fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+    
+    
+    0 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/models-daemon-s3.test.ts:100:11)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel
+not ok 2 - models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel
+  ---
+  duration_ms: 2993.899708
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/models-daemon-s3.test.ts:1:3607'
+  failureType: 'testCodeFailure'
+  error: |-
+    [04:40:07] INFO: [daemon:model-catalog] model definitions validated
+        module: "daemon:model-catalog"
+        dir: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-models-s3-assets-yYDoFd"
+        version: 1
+        models: {
+          "cli-claude": 4,
+          "cli-codex": 7,
+          "cli-vibe": 4,
+          "ollama": 3,
+          "ollama-claude": 6
+        }
+    [04:40:08] INFO: [daemon:model-catalog] model definitions validated
+        module: "daemon:model-catalog"
+        dir: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-models-s3-assets-yYDoFd"
+        version: 1
+        models: {
+          "cli-claude": 4,
+          "cli-codex": 7,
+          "cli-vibe": 4,
+          "ollama": 3,
+          "ollama-claude": 6
+        }
+    [04:40:08] INFO: [graph-store] lmdb graph store initialised
+        module: "graph-store"
+        initMs: 10
+        mapsizeGiB: 1024
+        schemaVersion: 5
+        path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-models-s3-cold-kyogDi/.insrc/graph.lmdb"
+    [04:40:08] INFO: [indexer] indexer starting
+        module: "indexer"
+        repos: 0
+    [04:40:08] INFO: [indexer] config full index started
+        module: "indexer"
+        scope: "global"
+    [04:40:08] INFO: [indexer] config full index complete
+        module: "indexer"
+        scope: "global"
+        indexed: 0
+        skipped: 0
+        elapsed: "0.0s"
+    (node:91552) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    [04:40:08] INFO: [embedder] embedder backend set
+        module: "embedder"
+        backend: "ollama"
+    [04:40:08] INFO: [embedder] embedder backend set
+        module: "embedder"
+        backend: "ollama"
+    fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/models-daemon-s3.test.ts:140:11)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6286.407833

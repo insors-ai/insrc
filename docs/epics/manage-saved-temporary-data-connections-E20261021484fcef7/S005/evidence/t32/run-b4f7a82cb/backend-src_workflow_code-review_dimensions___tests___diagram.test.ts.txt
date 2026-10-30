@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: registry: S003 registers the ER handler; a duplicate registration throws (fail-fast)
+ok 1 - registry: S003 registers the ER handler; a duplicate registration throws (fail-fast)
+  ---
+  duration_ms: 1.204625
+  type: 'test'
+  ...
+# Subtest: judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs)
+ok 2 - judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → only completeness LOWs)
+  ---
+  duration_ms: 19.538167
+  type: 'test'
+  ...
+# Subtest: judgeDiagram: a dangling erDefinition folds a HIGH breach through the dimension
+ok 3 - judgeDiagram: a dangling erDefinition folds a HIGH breach through the dimension
+  ---
+  duration_ms: 0.367041
+  type: 'test'
+  ...
+# Subtest: judgeDiagram: dispatches a companion to its owning registered handler (spy) + aggregates
+ok 4 - judgeDiagram: dispatches a companion to its owning registered handler (spy) + aggregates
+  ---
+  duration_ms: 0.256
+  type: 'test'
+  ...
+# Subtest: judgeDiagram: a companion no handler owns yields ONE LOW observation (never throws)
+ok 5 - judgeDiagram: a companion no handler owns yields ONE LOW observation (never throws)
+  ---
+  duration_ms: 0.429666
+  type: 'test'
+  ...
+# Subtest: ER handler: a referenced-but-absent companion file → HIGH breach (ac3)
+ok 6 - ER handler: a referenced-but-absent companion file → HIGH breach (ac3)
+  ---
+  duration_ms: 1.448584
+  type: 'test'
+  ...
+# Subtest: ER handler: a present companion file → no absent-file breach
+ok 7 - ER handler: a present companion file → no absent-file breach
+  ---
+  duration_ms: 1.299375
+  type: 'test'
+  ...
+# Subtest: hasDiagramReferences: true for an erDefinition and/or a diagram companion; false otherwise
+ok 8 - hasDiagramReferences: true for an erDefinition and/or a diagram companion; false otherwise
+  ---
+  duration_ms: 0.138292
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 342.234291

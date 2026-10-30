@@ -1,0 +1,48 @@
+TAP version 13
+# (node:73156) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: infra-shaper.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - infra-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.453917
+  type: 'test'
+  ...
+# Subtest: I1: k8s + tf + GHA manifests -- all three families appear in summary + surface
+ok 2 - I1: k8s + tf + GHA manifests -- all three families appear in summary + surface # SKIP
+  ---
+  duration_ms: 0.046791
+  type: 'test'
+  ...
+# Subtest: I2: k8s-only scope does NOT surface false TF / GHA positives
+ok 3 - I2: k8s-only scope does NOT surface false TF / GHA positives # SKIP
+  ---
+  duration_ms: 0.032541
+  type: 'test'
+  ...
+# Subtest: I3: empty manifest dir -- no families detected; bundle still schema-valid
+ok 4 - I3: empty manifest dir -- no families detected; bundle still schema-valid # SKIP
+  ---
+  duration_ms: 0.038041
+  type: 'test'
+  ...
+# Subtest: I4: artefacts contains representative excerpts for each detected family
+ok 5 - I4: artefacts contains representative excerpts for each detected family # SKIP
+  ---
+  duration_ms: 0.038917
+  type: 'test'
+  ...
+# Subtest: helpers wired: cleanupRun handles missing files (smoke)
+ok 6 - helpers wired: cleanupRun handles missing files (smoke) # SKIP
+  ---
+  duration_ms: 0.079666
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 6
+# todo 0
+# duration_ms 624.924583

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: every queued single-document job runs before each document, including jobs queued while the sweep runs
+ok 1 - every queued single-document job runs before each document, including jobs queued while the sweep runs
+  ---
+  duration_ms: 1.944125
+  type: 'test'
+  ...
+# Subtest: a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues
+ok 2 - a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues
+  ---
+  duration_ms: 0.441959
+  type: 'test'
+  ...
+# Subtest: every result kind is classified as summarised, skipped, gone or failed
+ok 3 - every result kind is classified as summarised, skipped, gone or failed
+  ---
+  duration_ms: 0.198458
+  type: 'test'
+  ...
+# Subtest: progress is reported after each document, with the total
+ok 4 - progress is reported after each document, with the total
+  ---
+  duration_ms: 0.141209
+  type: 'test'
+  ...
+# Subtest: once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs
+ok 5 - once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs
+  ---
+  duration_ms: 0.189542
+  type: 'test'
+  ...
+# Subtest: the sweep waits for code work before each single-document job and each document, runs an edit queued during the wait before the next document, and ends with stopped when shutdown comes during the wait
+ok 6 - the sweep waits for code work before each single-document job and each document, runs an edit queued during the wait before the next document, and ends with stopped when shutdown comes during the wait
+  ---
+  duration_ms: 0.199166
+  type: 'test'
+  ...
+# Subtest: code work arriving while a document is read pauses the sweep again: an edit queued in that pause runs first, and shutdown in it ends the sweep without summarising
+ok 7 - code work arriving while a document is read pauses the sweep again: an edit queued in that pause runs first, and shutdown in it ends the sweep without summarising
+  ---
+  duration_ms: 0.098958
+  type: 'test'
+  ...
+# Subtest: shutdown that comes while a document is read ends the sweep without summarising it
+ok 8 - shutdown that comes while a document is read ends the sweep without summarising it
+  ---
+  duration_ms: 0.070375
+  type: 'test'
+  ...
+# Subtest: a kept-good result is counted as skipped, not failed
+ok 9 - a kept-good result is counted as skipped, not failed
+  ---
+  duration_ms: 0.198792
+  type: 'test'
+  ...
+# Subtest: runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)
+ok 10 - runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)
+  ---
+  duration_ms: 9.701666
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 268.739666

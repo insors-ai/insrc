@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: admitStandaloneBuild: trivial (no LLD) is admitted directly
+ok 1 - admitStandaloneBuild: trivial (no LLD) is admitted directly
+  ---
+  duration_ms: 0.598333
+  type: 'test'
+  ...
+# Subtest: admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)
+ok 2 - admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)
+  ---
+  duration_ms: 1.043292
+  type: 'test'
+  ...
+# Subtest: trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record
+ok 3 - trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record
+  ---
+  duration_ms: 51.413042
+  type: 'test'
+  ...
+# Subtest: trivial standalone build without a focus is an error (no-scope)
+ok 4 - trivial standalone build without a focus is an error (no-scope)
+  ---
+  duration_ms: 2.445166
+  type: 'test'
+  ...
+# Subtest: Small standalone build without an epicHash is an error (no-identity)
+ok 5 - Small standalone build without an epicHash is an error (no-identity)
+  ---
+  duration_ms: 1.914459
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 490.085708

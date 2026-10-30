@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.PluginDescriptorSmokeTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.002">
+  <properties/>
+  <testcase name="descriptor depends only on the common platform module()" classname="ai.insors.insrc.jetbrains.PluginDescriptorSmokeTest" time="0.001"/>
+  <testcase name="descriptor declares the insrc plugin id()" classname="ai.insors.insrc.jetbrains.PluginDescriptorSmokeTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

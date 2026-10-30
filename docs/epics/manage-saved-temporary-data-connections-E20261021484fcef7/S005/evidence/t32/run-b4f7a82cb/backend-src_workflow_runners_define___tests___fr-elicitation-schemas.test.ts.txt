@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: epicFrameSchema: omitting functionalRequirements still validates (absent-safe)
+ok 1 - epicFrameSchema: omitting functionalRequirements still validates (absent-safe)
+  ---
+  duration_ms: 20.260042
+  type: 'test'
+  ...
+# Subtest: epicFrameSchema: a doc-level FR statement (+ optional rationale) validates
+ok 2 - epicFrameSchema: a doc-level FR statement (+ optional rationale) validates
+  ---
+  duration_ms: 0.164542
+  type: 'test'
+  ...
+# Subtest: epicFrameSchema: an FR without a statement is REJECTED
+ok 3 - epicFrameSchema: an FR without a statement is REJECTED
+  ---
+  duration_ms: 0.098416
+  type: 'test'
+  ...
+# Subtest: epicFrameSchema: an FR carrying an id/scope is REJECTED (model must not mint ids)
+ok 4 - epicFrameSchema: an FR carrying an id/scope is REJECTED (model must not mint ids)
+  ---
+  duration_ms: 0.060083
+  type: 'test'
+  ...
+# Subtest: storiesComposeSchema: omitting per-story functionalRequirements still validates (absent-safe)
+ok 5 - storiesComposeSchema: omitting per-story functionalRequirements still validates (absent-safe)
+  ---
+  duration_ms: 7.027292
+  type: 'test'
+  ...
+# Subtest: storiesComposeSchema: per-story FR statements validate
+ok 6 - storiesComposeSchema: per-story FR statements validate
+  ---
+  duration_ms: 0.100792
+  type: 'test'
+  ...
+# Subtest: storiesComposeSchema: a per-story FR without a statement is REJECTED
+ok 7 - storiesComposeSchema: a per-story FR without a statement is REJECTED
+  ---
+  duration_ms: 0.117625
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 368.355208

@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: round-trip: parse(serialize(defaultFormat('define'))) deep-equals the in-code default
+ok 1 - round-trip: parse(serialize(defaultFormat('define'))) deep-equals the in-code default
+  ---
+  duration_ms: 2.082417
+  type: 'test'
+  ...
+# Subtest: round-trip: parse(serialize(defaultFormat('hld'))) deep-equals the in-code default
+ok 2 - round-trip: parse(serialize(defaultFormat('hld'))) deep-equals the in-code default
+  ---
+  duration_ms: 0.38125
+  type: 'test'
+  ...
+# Subtest: round-trip: parse(serialize(defaultFormat('lld'))) deep-equals the in-code default
+ok 3 - round-trip: parse(serialize(defaultFormat('lld'))) deep-equals the in-code default
+  ---
+  duration_ms: 0.357209
+  type: 'test'
+  ...
+# Subtest: round-trip: parse(serialize(defaultFormat('plan'))) deep-equals the in-code default
+ok 4 - round-trip: parse(serialize(defaultFormat('plan'))) deep-equals the in-code default
+  ---
+  duration_ms: 0.117667
+  type: 'test'
+  ...
+# Subtest: parse: a template with no header is REJECTED
+ok 5 - parse: a template with no header is REJECTED
+  ---
+  duration_ms: 0.247583
+  type: 'test'
+  ...
+# Subtest: parse: a kind mismatch against expectKind is REJECTED
+ok 6 - parse: a kind mismatch against expectKind is REJECTED
+  ---
+  duration_ms: 0.073375
+  type: 'test'
+  ...
+# Subtest: parse: a section directive with no id is REJECTED
+ok 7 - parse: a section directive with no id is REJECTED
+  ---
+  duration_ms: 0.122792
+  type: 'test'
+  ...
+# Subtest: parse: an invalid audience is REJECTED
+ok 8 - parse: an invalid audience is REJECTED
+  ---
+  duration_ms: 0.050875
+  type: 'test'
+  ...
+# Subtest: parse: an unknown directive attribute is REJECTED
+ok 9 - parse: an unknown directive attribute is REJECTED
+  ---
+  duration_ms: 0.218125
+  type: 'test'
+  ...
+# Subtest: parse: a directive with no following heading is REJECTED
+ok 10 - parse: a directive with no following heading is REJECTED
+  ---
+  duration_ms: 0.288917
+  type: 'test'
+  ...
+# Subtest: parse: an item-section before an itemFormat directive is REJECTED
+ok 11 - parse: an item-section before an itemFormat directive is REJECTED
+  ---
+  duration_ms: 0.070209
+  type: 'test'
+  ...
+# Subtest: serialize: a per-repo edit (reordered/renamed section) parses back into the edited format
+ok 12 - serialize: a per-repo edit (reordered/renamed section) parses back into the edited format
+  ---
+  duration_ms: 0.07575
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 197.815167

@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: a command a real claude session backgrounds through its Bash tool is gone once the timed-out session is killed
+ok 1 - a command a real claude session backgrounds through its Bash tool is gone once the timed-out session is killed # SKIP
+  ---
+  duration_ms: 0.679625
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 318.14475

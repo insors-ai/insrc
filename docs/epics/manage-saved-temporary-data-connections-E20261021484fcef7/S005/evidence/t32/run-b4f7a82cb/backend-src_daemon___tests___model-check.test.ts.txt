@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit
+ok 1 - model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit
+  ---
+  duration_ms: 1193.487834
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'
+ok 2 - model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'
+  ---
+  duration_ms: 1716.893791
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'
+ok 3 - model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'
+  ---
+  duration_ms: 1366.584583
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second
+ok 4 - model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second
+  ---
+  duration_ms: 1924.175375
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: invalid params refused with no CLI call
+ok 5 - model-check.test.ts: invalid params refused with no CLI call
+  ---
+  duration_ms: 2.355208
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: the unknown-model check refuses a host family
+ok 6 - model-check.test.ts: the unknown-model check refuses a host family
+  ---
+  duration_ms: 2.152209
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected
+ok 7 - model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected
+  ---
+  duration_ms: 1215.052292
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: ModelCheckResult carries exactly the sc4 fields
+ok 8 - model-check.test.ts: ModelCheckResult carries exactly the sc4 fields
+  ---
+  duration_ms: 529.817541
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases
+ok 9 - model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases
+  ---
+  duration_ms: 3976.053083
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'
+ok 10 - model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'
+  ---
+  duration_ms: 2102.6265
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected
+ok 11 - model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected
+  ---
+  duration_ms: 1336.21
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks
+ok 12 - model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks
+  ---
+  duration_ms: 692.264834
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename
+ok 13 - model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename
+  ---
+  duration_ms: 4.196875
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds
+ok 14 - model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds
+  ---
+  duration_ms: 439.411125
+  type: 'test'
+  ...
+# Subtest: model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry
+ok 15 - model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry
+  ---
+  duration_ms: 439.301708
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17353.931

@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart
+ok 1 - planned tasks show their dependencies and checks with Passed, Failed or Unrecorded, a build-only task is unplanned, and unrecorded tasks are counted apart
+  ---
+  duration_ms: 3.704625
+  type: 'test'
+  ...
+# Subtest: the details give the daemon's stage reason and the records it cites
+ok 2 - the details give the daemon's stage reason and the records it cites
+  ---
+  duration_ms: 1.31675
+  type: 'test'
+  ...
+# Subtest: an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict
+ok 3 - an approved build with failed tasks shows the approval, the failed rows and a sentence explaining the conflict
+  ---
+  duration_ms: 0.797417
+  type: 'test'
+  ...
+# Subtest: a rejected record reads Rejected, and the original review verdict is shown with any override
+ok 4 - a rejected record reads Rejected, and the original review verdict is shown with any override
+  ---
+  duration_ms: 0.26075
+  type: 'test'
+  ...
+# Subtest: a code review with no build keeps its stage, lists the review-without-build notice and shows the review as evidence
+ok 5 - a code review with no build keeps its stage, lists the review-without-build notice and shows the review as evidence
+  ---
+  duration_ms: 0.176625
+  type: 'test'
+  ...
+# Subtest: chain rows per route — full-chain story shows DEF/HLD from its epic plus LLD/PLAN/BUILD; small story has no PLAN row; small-bugfix has ISSUE and BUILD only; trivial has BUILD only; unknown lists recorded kinds only; a missing expected kind is 'Not recorded'; two BUILDs give two rows
+ok 6 - chain rows per route — full-chain story shows DEF/HLD from its epic plus LLD/PLAN/BUILD; small story has no PLAN row; small-bugfix has ISSUE and BUILD only; trivial has BUILD only; unknown lists recorded kinds only; a missing expected kind is 'Not recorded'; two BUILDs give two rows
+  ---
+  duration_ms: 0.392208
+  type: 'test'
+  ...
+# Subtest: a story with CR, SPEC, EXT and AMD evidence gets a chain without those kinds, they remain in Records, and buildItemDetails does not throw
+ok 7 - a story with CR, SPEC, EXT and AMD evidence gets a chain without those kinds, they remain in Records, and buildItemDetails does not throw
+  ---
+  duration_ms: 0.133042
+  type: 'test'
+  ...
+# Subtest: conflict is { headline: 'Two records disagree', text } exactly when item.conflict is set
+ok 8 - conflict is { headline: 'Two records disagree', text } exactly when item.conflict is set
+  ---
+  duration_ms: 0.076834
+  type: 'test'
+  ...
+# Subtest: kicker, chips and TaskRowView.resultTone
+ok 9 - kicker, chips and TaskRowView.resultTone
+  ---
+  duration_ms: 0.317333
+  type: 'test'
+  ...
+# Subtest: the chain takes DEF and HLD only from a parent epic, and ISSUE only from a parent issue
+ok 10 - the chain takes DEF and HLD only from a parent epic, and ISSUE only from a parent issue
+  ---
+  duration_ms: 0.386833
+  type: 'test'
+  ...
+# Subtest: an item kind or approval state this build does not know still gives a readable kicker and a neutral chain row
+ok 11 - an item kind or approval state this build does not know still gives a readable kicker and a neutral chain row
+  ---
+  duration_ms: 0.135416
+  type: 'test'
+  ...
+# Subtest: the tasks chip is danger when the story-level result failed, even with every task passed
+ok 12 - the tasks chip is danger when the story-level result failed, even with every task passed
+  ---
+  duration_ms: 0.130167
+  type: 'test'
+  ...
+# Subtest: correctedBy lists the issues correcting the item and approvedAt reads the approval time
+ok 13 - correctedBy lists the issues correcting the item and approvedAt reads the approval time
+  ---
+  duration_ms: 0.287291
+  type: 'test'
+  ...
+# Subtest: a task row with no title shows its id, as the same task does among the dependencies
+ok 14 - a task row with no title shows its id, as the same task does among the dependencies
+  ---
+  duration_ms: 0.100958
+  type: 'test'
+  ...
+# Subtest: a task's short id is the last ':' segment of its item id, or the whole id without one
+ok 15 - a task's short id is the last ':' segment of its item id, or the whole id without one
+  ---
+  duration_ms: 0.030666
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 212.087916

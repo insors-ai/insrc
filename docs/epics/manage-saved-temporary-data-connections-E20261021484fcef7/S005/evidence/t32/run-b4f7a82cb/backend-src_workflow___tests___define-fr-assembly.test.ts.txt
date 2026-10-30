@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: absent-safe: no FR statements anywhere → {} (no fd, no error)
+ok 1 - absent-safe: no FR statements anywhere → {} (no fd, no error)
+  ---
+  duration_ms: 0.634458
+  type: 'test'
+  ...
+# Subtest: assembles doc-level + per-story FRs with minted ids, correct scope/itemRef
+ok 2 - assembles doc-level + per-story FRs with minted ids, correct scope/itemRef
+  ---
+  duration_ms: 0.431625
+  type: 'test'
+  ...
+# Subtest: id stability: identical inputs mint identical ids across two runs
+ok 3 - id stability: identical inputs mint identical ids across two runs
+  ---
+  duration_ms: 0.832125
+  type: 'test'
+  ...
+# Subtest: blank/whitespace statements are skipped; all-blank → {}
+ok 4 - blank/whitespace statements are skipped; all-blank → {}
+  ---
+  duration_ms: 0.172125
+  type: 'test'
+  ...
+# Subtest: a per-story FR whose story id is not among the known stories → validation error (dangling itemRef)
+ok 5 - a per-story FR whose story id is not among the known stories → validation error (dangling itemRef)
+  ---
+  duration_ms: 0.099125
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 342.91

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.lifecycle.PrivateNodeProvisionerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.005">
+  <properties/>
+  <testcase name="unsupportedPlatform_throwsNodeProvisioningException()" classname="ai.insors.insrc.jetbrains.lifecycle.PrivateNodeProvisionerTest" time="0.001"/>
+  <testcase name="alreadyPresent_reusedNoReDownload()" classname="ai.insors.insrc.jetbrains.lifecycle.PrivateNodeProvisionerTest" time="0.001"/>
+  <testcase name="targetUrlIsNodeBinaryOnly_noCloudEndpoint()" classname="ai.insors.insrc.jetbrains.lifecycle.PrivateNodeProvisionerTest" time="0.0"/>
+  <testcase name="fetchOrVerifyFailure_throwsNodeProvisioningException_noPartialRuntime()" classname="ai.insors.insrc.jetbrains.lifecycle.PrivateNodeProvisionerTest" time="0.001"/>
+  <testcase name="absent_downloadVerifyExtract_returnsExecutable()" classname="ai.insors.insrc.jetbrains.lifecycle.PrivateNodeProvisionerTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: effectiveJudges keeps ux only when hasUxAcceptance
+ok 1 - effectiveJudges keeps ux only when hasUxAcceptance
+  ---
+  duration_ms: 1.421917
+  type: 'test'
+  ...
+# Subtest: DEFAULT_DEPS carries the ux slot last (conditional at run time)
+ok 2 - DEFAULT_DEPS carries the ux slot last (conditional at run time)
+  ---
+  duration_ms: 0.289
+  type: 'test'
+  ...
+# Subtest: expectedDimensions: base four when neither fires; pushes ux on hasUxAcceptance
+ok 3 - expectedDimensions: base four when neither fires; pushes ux on hasUxAcceptance
+  ---
+  duration_ms: 0.2025
+  type: 'test'
+  ...
+# Subtest: expectedDimensions: a declared-but-uncontented adherence selection is still expected (ac3)
+ok 4 - expectedDimensions: a declared-but-uncontented adherence selection is still expected (ac3)
+  ---
+  duration_ms: 0.149083
+  type: 'test'
+  ...
+# Subtest: buildJudgementsSchema: admits ux in the enum exactly when ux is in the computed dims
+ok 5 - buildJudgementsSchema: admits ux in the enum exactly when ux is in the computed dims
+  ---
+  duration_ms: 0.174583
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a valid uxDefinition runs the ux dimension + folds to pass
+ok 6 - runCodeReview: a valid uxDefinition runs the ux dimension + folds to pass
+  ---
+  duration_ms: 28.134291
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a required-but-missing UX design folds a ux HIGH to block (un-forked, ac2)
+ok 7 - runCodeReview: a required-but-missing UX design folds a ux HIGH to block (un-forked, ac2)
+  ---
+  duration_ms: 0.580417
+  type: 'test'
+  ...
+# Subtest: runCodeReview: neither uxDefinition nor adherence → exactly the base four (byte-shape compatible)
+ok 8 - runCodeReview: neither uxDefinition nor adherence → exactly the base four (byte-shape compatible)
+  ---
+  duration_ms: 0.24075
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 375.228541

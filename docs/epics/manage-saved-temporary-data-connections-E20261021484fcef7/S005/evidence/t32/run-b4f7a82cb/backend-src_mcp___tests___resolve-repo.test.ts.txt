@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: repoContainingCwd: CWD inside a registered repo matches it
+ok 1 - repoContainingCwd: CWD inside a registered repo matches it
+  ---
+  duration_ms: 0.772667
+  type: 'test'
+  ...
+# Subtest: repoContainingCwd: CWD equal to a repo root matches (equality inclusive)
+ok 2 - repoContainingCwd: CWD equal to a repo root matches (equality inclusive)
+  ---
+  duration_ms: 0.074208
+  type: 'test'
+  ...
+# Subtest: repoContainingCwd: nested repos — most-specific (longest) containing path wins
+ok 3 - repoContainingCwd: nested repos — most-specific (longest) containing path wins
+  ---
+  duration_ms: 0.071541
+  type: 'test'
+  ...
+# Subtest: repoContainingCwd: path-segment boundary respected — /foo does NOT contain /foobar
+ok 4 - repoContainingCwd: path-segment boundary respected — /foo does NOT contain /foobar
+  ---
+  duration_ms: 0.088625
+  type: 'test'
+  ...
+# Subtest: repoContainingCwd: CWD outside every registered repo → undefined
+ok 5 - repoContainingCwd: CWD outside every registered repo → undefined
+  ---
+  duration_ms: 0.381667
+  type: 'test'
+  ...
+# Subtest: repoContainingCwd: empty registry → undefined
+ok 6 - repoContainingCwd: empty registry → undefined
+  ---
+  duration_ms: 0.125
+  type: 'test'
+  ...
+# Subtest: resolveRepoPath: explicit non-empty arg wins unconditionally + never calls the CWD lookup
+ok 7 - resolveRepoPath: explicit non-empty arg wins unconditionally + never calls the CWD lookup
+  ---
+  duration_ms: 0.231
+  type: 'test'
+  ...
+# Subtest: resolveRepoPath: explicit empty string is treated as absent → proceeds to CWD match
+ok 8 - resolveRepoPath: explicit empty string is treated as absent → proceeds to CWD match
+  ---
+  duration_ms: 0.122416
+  type: 'test'
+  ...
+# Subtest: resolveRepoPath: CWD-contained repo wins over a DIFFERENT INSRC_REPO (the core fix)
+ok 9 - resolveRepoPath: CWD-contained repo wins over a DIFFERENT INSRC_REPO (the core fix)
+  ---
+  duration_ms: 0.299917
+  type: 'test'
+  ...
+# Subtest: resolveRepoPath: no CWD match → falls through to INSRC_REPO (headless/cron fallback)
+ok 10 - resolveRepoPath: no CWD match → falls through to INSRC_REPO (headless/cron fallback)
+  ---
+  duration_ms: 0.290916
+  type: 'test'
+  ...
+# Subtest: resolveRepoPath: no CWD match + INSRC_REPO unset → undefined (terminal no-repo contract unchanged)
+ok 11 - resolveRepoPath: no CWD match + INSRC_REPO unset → undefined (terminal no-repo contract unchanged)
+  ---
+  duration_ms: 0.086917
+  type: 'test'
+  ...
+# Subtest: resolveRepoPath: daemon-unreachable surfaces the error (does NOT silently fall through to INSRC_REPO)
+ok 12 - resolveRepoPath: daemon-unreachable surfaces the error (does NOT silently fall through to INSRC_REPO)
+  ---
+  duration_ms: 0.319834
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 314.352083

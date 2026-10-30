@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: t1: ResolvedTarget discriminates on `resolved`; ConfigSourceLayer has the four members
+ok 1 - t1: ResolvedTarget discriminates on `resolved`; ConfigSourceLayer has the four members
+  ---
+  duration_ms: 2.584542
+  type: 'test'
+  ...
+# Subtest: t3: a concrete literal resolves true with identity=the literal (no map lookup)
+ok 2 - t3: a concrete literal resolves true with identity=the literal (no map lookup)
+  ---
+  duration_ms: 0.428458
+  type: 'test'
+  ...
+# Subtest: t3: an interpolation referencing a key present only in localConfig resolves from the default
+ok 3 - t3: an interpolation referencing a key present only in localConfig resolves from the default
+  ---
+  duration_ms: 0.144458
+  type: 'test'
+  ...
+# Subtest: t3: a two-key interpolation with one missing key => {resolved:false} (no partial pin)
+ok 4 - t3: a two-key interpolation with one missing key => {resolved:false} (no partial pin)
+  ---
+  duration_ms: 0.132709
+  type: 'test'
+  ...
+# Subtest: t3: a missing key => unresolved
+ok 5 - t3: a missing key => unresolved
+  ---
+  duration_ms: 0.055875
+  type: 'test'
+  ...
+# Subtest: t3: a cyclic interpolation chain terminates and returns unresolved
+ok 6 - t3: a cyclic interpolation chain terminates and returns unresolved
+  ---
+  duration_ms: 0.046417
+  type: 'test'
+  ...
+# Subtest: t3: a deep (nested) chain that terminates resolves to the final literal
+ok 7 - t3: a deep (nested) chain that terminates resolves to the final literal
+  ---
+  duration_ms: 0.099958
+  type: 'test'
+  ...
+# Subtest: t3: protocol is carried through unchanged for http/messaging/rpc (no shape validation)
+ok 8 - t3: protocol is carried through unchanged for http/messaging/rpc (no shape validation)
+  ---
+  duration_ms: 0.098166
+  type: 'test'
+  ...
+# Subtest: t3: precedence via resolveAgainst — k8s beats envFile beats localConfig; k8s beats docker
+ok 9 - t3: precedence via resolveAgainst — k8s beats envFile beats localConfig; k8s beats docker
+  ---
+  duration_ms: 0.223792
+  type: 'test'
+  ...
+# Subtest: t2: .env parser — key=value, quoted, comments, export, malformed line skipped
+ok 10 - t2: .env parser — key=value, quoted, comments, export, malformed line skipped
+  ---
+  duration_ms: 0.413084
+  type: 'test'
+  ...
+# Subtest: t2: Dockerfile ENV parser — KEY=VALUE (multi) + legacy KEY VALUE, tagged docker
+ok 11 - t2: Dockerfile ENV parser — KEY=VALUE (multi) + legacy KEY VALUE, tagged docker
+  ---
+  duration_ms: 0.15725
+  type: 'test'
+  ...
+# Subtest: t2: docker-compose parser — environment map + list forms, tagged docker
+ok 12 - t2: docker-compose parser — environment map + list forms, tagged docker
+  ---
+  duration_ms: 1.618292
+  type: 'test'
+  ...
+# Subtest: t2: k8s manifest parser — container env + ConfigMap data (multi-doc), tagged k8s, never kubectl
+ok 13 - t2: k8s manifest parser — container env + ConfigMap data (multi-doc), tagged k8s, never kubectl
+  ---
+  duration_ms: 0.319
+  type: 'test'
+  ...
+# Subtest: t2: unparseable YAML is skipped without throwing
+ok 14 - t2: unparseable YAML is skipped without throwing
+  ---
+  duration_ms: 0.439667
+  type: 'test'
+  ...
+# Subtest: t2: localConfig parser — flat JSON + key=value/key: value lines, tagged localConfig
+ok 15 - t2: localConfig parser — flat JSON + key=value/key: value lines, tagged localConfig
+  ---
+  duration_ms: 0.153334
+  type: 'test'
+  ...
+# Subtest: t2: buildConfigSourceMap — dispatch by filename + total precedence winner per key
+ok 16 - t2: buildConfigSourceMap — dispatch by filename + total precedence winner per key
+  ---
+  duration_ms: 0.194291
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 330.477708

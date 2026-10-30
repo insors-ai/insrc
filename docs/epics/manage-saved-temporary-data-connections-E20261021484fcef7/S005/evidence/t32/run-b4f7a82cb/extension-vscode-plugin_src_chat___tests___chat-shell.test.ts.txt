@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works
+ok 1 - the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works
+  ---
+  duration_ms: 31.144208
+  type: 'test'
+  ...
+# Subtest: the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request
+ok 2 - the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request
+  ---
+  duration_ms: 17.373791
+  type: 'test'
+  ...
+# Subtest: shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits
+ok 3 - shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits
+  ---
+  duration_ms: 7.9565
+  type: 'test'
+  ...
+# Subtest: shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged
+ok 4 - shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged
+  ---
+  duration_ms: 4.577875
+  type: 'test'
+  ...
+# Subtest: shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared
+ok 5 - shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared
+  ---
+  duration_ms: 3.52575
+  type: 'test'
+  ...
+# Subtest: transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing
+ok 6 - transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing
+  ---
+  duration_ms: 27.588208
+  type: 'test'
+  ...
+# Subtest: transcript-row: a marker row appends the same line a restored marker row draws
+ok 7 - transcript-row: a marker row appends the same line a restored marker row draws
+  ---
+  duration_ms: 3.030584
+  type: 'test'
+  ...
+# Subtest: diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget
+ok 8 - diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget
+  ---
+  duration_ms: 4.65175
+  type: 'test'
+  ...
+# Subtest: chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running
+ok 9 - chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running
+  ---
+  duration_ms: 8.644833
+  type: 'test'
+  ...
+# Subtest: a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq
+ok 10 - a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq
+  ---
+  duration_ms: 1.981625
+  type: 'test'
+  ...
+# Subtest: chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored
+ok 11 - chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored
+  ---
+  duration_ms: 1.899583
+  type: 'test'
+  ...
+# Subtest: chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do
+ok 12 - chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do
+  ---
+  duration_ms: 2.241292
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 314.061083

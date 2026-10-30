@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered
+ok 1 - maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered
+  ---
+  duration_ms: 23.344125
+  type: 'test'
+  ...
+# Subtest: a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock
+ok 2 - a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock
+  ---
+  duration_ms: 173.795166
+  type: 'test'
+  ...
+# Subtest: an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds
+ok 3 - an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds
+  ---
+  duration_ms: 1107.83775
+  type: 'test'
+  ...
+# Subtest: a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress
+ok 4 - a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress
+  ---
+  duration_ms: 550.116583
+  type: 'test'
+  ...
+# Subtest: an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered
+ok 5 - an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered
+  ---
+  duration_ms: 662.406125
+  type: 'test'
+  ...
+# Subtest: the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it
+ok 6 - the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it
+  ---
+  duration_ms: 323.190541
+  type: 'test'
+  ...
+# Subtest: a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered
+ok 7 - a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered
+  ---
+  duration_ms: 322.752625
+  type: 'test'
+  ...
+# Subtest: an edit's settle pass that comes due during maintenance waits for the maintenance lock instead of failing, and runs after it
+ok 8 - an edit's settle pass that comes due during maintenance waits for the maintenance lock instead of failing, and runs after it
+  ---
+  duration_ms: 663.814292
+  type: 'test'
+  ...
+# Subtest: a cancelled stream with no request lifetime keeps its maintenance hold until its handler sends its terminal frame
+ok 9 - a cancelled stream with no request lifetime keeps its maintenance hold until its handler sends its terminal frame
+  ---
+  duration_ms: 344.548041
+  type: 'test'
+  ...
+# Subtest: an understanding.watch or todos.subscribe opened during maintenance is refused at once with the busy error and reads nothing; opened after it, the watch delivers its snapshot
+ok 10 - an understanding.watch or todos.subscribe opened during maintenance is refused at once with the busy error and reads nothing; opened after it, the watch delivers its snapshot
+  ---
+  duration_ms: 73.521542
+  type: 'test'
+  ...
+# Subtest: background work that is still waiting when its bounded wait runs out waits again and runs after maintenance, instead of failing
+ok 11 - background work that is still waiting when its bounded wait runs out waits again and runs after maintenance, instead of failing
+  ---
+  duration_ms: 451.7655
+  type: 'test'
+  ...
+# Subtest: a timer run that is still waiting for maintenance at its bound skips this tick (undefined) without running; one that gets the hold runs
+ok 12 - a timer run that is still waiting for maintenance at its bound skips this tick (undefined) without running; one that gets the hold runs
+  ---
+  duration_ms: 102.187167
+  type: 'test'
+  ...
+# Subtest: a lock timeout thrown by the background work itself is not retried: it rejects after one run
+ok 13 - a lock timeout thrown by the background work itself is not retried: it rejects after one run
+  ---
+  duration_ms: 0.559167
+  type: 'test'
+  ...
+# Subtest: maintenance work played by the test that fails rejects run() with its error instead of leaving it pending
+ok 14 - maintenance work played by the test that fails rejects run() with its error instead of leaving it pending
+  ---
+  duration_ms: 0.222167
+  type: 'test'
+  ...
+# Subtest: an admitted subscription starts outside the admission hold: work it begins does not see that hold as its own
+ok 15 - an admitted subscription starts outside the admission hold: work it begins does not see that hold as its own
+  ---
+  duration_ms: 21.511959
+  type: 'test'
+  ...
+# Subtest: a subscription whose start throws is answered with an error frame, not left waiting
+ok 16 - a subscription whose start throws is answered with an error frame, not left waiting
+  ---
+  duration_ms: 21.94025
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5478.63775

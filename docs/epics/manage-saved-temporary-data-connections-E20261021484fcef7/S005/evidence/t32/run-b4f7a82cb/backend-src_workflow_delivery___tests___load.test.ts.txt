@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: every kind in a temporary store is lifted, AMD from its flat shape
+ok 1 - every kind in a temporary store is lifted, AMD from its flat shape
+  ---
+  duration_ms: 12.842625
+  type: 'test'
+  ...
+# Subtest: invalid JSON, missing meta, unknown prefix and an unreadable file each become a load failure and the load continues
+ok 2 - invalid JSON, missing meta, unknown prefix and an unreadable file each become a load failure and the load continues
+  ---
+  duration_ms: 1.792416
+  type: 'test'
+  ...
+# Subtest: an absent store yields an empty record set
+ok 3 - an absent store yields an empty record set
+  ---
+  duration_ms: 0.234875
+  type: 'test'
+  ...
+# Subtest: a store whose listDir throws raises DeliveryStoreUnreadableError
+ok 4 - a store whose listDir throws raises DeliveryStoreUnreadableError
+  ---
+  duration_ms: 0.208375
+  type: 'test'
+  ...
+# Subtest: the store is byte-identical after a load
+ok 5 - the store is byte-identical after a load
+  ---
+  duration_ms: 5.533875
+  type: 'test'
+  ...
+# Subtest: an unparseable storyId keeps storyIdRaw with storyOrdinal null
+ok 6 - an unparseable storyId keeps storyIdRaw with storyOrdinal null
+  ---
+  duration_ms: 0.905625
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 279.677417

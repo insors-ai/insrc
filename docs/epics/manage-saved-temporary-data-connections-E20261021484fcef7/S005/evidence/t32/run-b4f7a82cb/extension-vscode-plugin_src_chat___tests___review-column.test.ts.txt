@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: chooseReviewColumn picks a group without the chat tab, the active one first, else the lowest column, and none when only the chat's group is open
+ok 1 - chooseReviewColumn picks a group without the chat tab, the active one first, else the lowest column, and none when only the chat's group is open
+  ---
+  duration_ms: 0.653916
+  type: 'test'
+  ...
+# Subtest: chooseReviewColumn: a tab whose input is not an object or has no viewType does not mark its group as the chat's
+ok 2 - chooseReviewColumn: a tab whose input is not an object or has no viewType does not mark its group as the chat's
+  ---
+  duration_ms: 0.072625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 178.173

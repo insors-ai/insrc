@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none
+ok 1 - finalize: a re-authored HLD, epic LLD, standalone LLD and PLAN each keep the feedback entries of the JSON at their own artifact path, in order, and render them in the Feedback section; a first authoring has none; a re-authored Define carries none
+  ---
+  duration_ms: 71.26475
+  type: 'test'
+  ...
+# Subtest: finalize: the prior artifact JSON is byte-identical after the finalizer has run
+ok 2 - finalize: the prior artifact JSON is byte-identical after the finalizer has run
+  ---
+  duration_ms: 52.554917
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 490.632958

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact
+ok 1 - define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact
+  ---
+  duration_ms: 14.082792
+  type: 'test'
+  ...
+# Subtest: define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)
+ok 2 - define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)
+  ---
+  duration_ms: 5.37075
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 508.565041

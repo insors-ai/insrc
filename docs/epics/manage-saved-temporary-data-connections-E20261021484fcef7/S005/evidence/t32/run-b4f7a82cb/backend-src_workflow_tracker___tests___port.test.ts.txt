@@ -1,0 +1,71 @@
+TAP version 13
+# error: No such remote 'origin'
+# Subtest: missingCapabilities names every capability the tracker does not declare
+ok 1 - missingCapabilities names every capability the tracker does not declare
+  ---
+  duration_ms: 1.385208
+  type: 'test'
+  ...
+# Subtest: strict resolver refuses malformed or unsupported configuration
+ok 2 - strict resolver refuses malformed or unsupported configuration
+  ---
+  duration_ms: 61.226792
+  type: 'test'
+  ...
+# Subtest: strict resolver accepts an own entry without a type and falls back to the origin remote for type github
+ok 3 - strict resolver accepts an own entry without a type and falls back to the origin remote for type github
+  ---
+  duration_ms: 42.645625
+  type: 'test'
+  ...
+# Subtest: strict resolver never takes a target from the default entry's owner and repo
+ok 4 - strict resolver never takes a target from the default entry's owner and repo
+  ---
+  duration_ms: 30.306125
+  type: 'test'
+  ...
+# Subtest: TrackerPort type exposes issueOps with the AMD-8 signatures
+ok 5 - TrackerPort type exposes issueOps with the AMD-8 signatures
+  ---
+  duration_ms: 920.757791
+  type: 'test'
+  ...
+# Subtest: loadTracker succeeds when every needed capability is declared
+ok 6 - loadTracker succeeds when every needed capability is declared
+  ---
+  duration_ms: 1.064958
+  type: 'test'
+  ...
+# Subtest: loadTracker with an empty needed set validates configuration and sign-in
+ok 7 - loadTracker with an empty needed set validates configuration and sign-in
+  ---
+  duration_ms: 1.186959
+  type: 'test'
+  ...
+# Subtest: loadTracker refuses a needed signoff-request capability naming it
+ok 8 - loadTracker refuses a needed signoff-request capability naming it
+  ---
+  duration_ms: 0.614417
+  type: 'test'
+  ...
+# Subtest: loadTracker names gh as the missing tool
+ok 9 - loadTracker names gh as the missing tool
+  ---
+  duration_ms: 0.592583
+  type: 'test'
+  ...
+# Subtest: loadTracker names the missing sign-in
+ok 10 - loadTracker names the missing sign-in
+  ---
+  duration_ms: 0.705458
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1751.871334

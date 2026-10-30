@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: renderSequenceCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref
+ok 1 - renderSequenceCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref
+  ---
+  duration_ms: 22.38025
+  type: 'test'
+  ...
+# Subtest: renderComponentCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref
+ok 2 - renderComponentCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref
+  ---
+  duration_ms: 18.614291
+  type: 'test'
+  ...
+# Subtest: renderSequenceCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written
+ok 3 - renderSequenceCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written
+  ---
+  duration_ms: 0.937
+  type: 'test'
+  ...
+# Subtest: renderComponentCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written
+ok 4 - renderComponentCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written
+  ---
+  duration_ms: 0.501334
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 336.8295

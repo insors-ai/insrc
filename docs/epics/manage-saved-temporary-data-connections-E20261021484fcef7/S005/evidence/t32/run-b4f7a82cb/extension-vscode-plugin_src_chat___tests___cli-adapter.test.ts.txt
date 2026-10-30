@@ -1,0 +1,548 @@
+TAP version 13
+# Subtest: claude: text turn maps to status + assistant-delta(s) + done(ok)
+ok 1 - claude: text turn maps to status + assistant-delta(s) + done(ok)
+  ---
+  duration_ms: 1.892
+  type: 'test'
+  ...
+# Subtest: claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff
+ok 2 - claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff
+  ---
+  duration_ms: 0.2765
+  type: 'test'
+  ...
+# Subtest: claude: is_error result maps to done(ok:false)
+ok 3 - claude: is_error result maps to done(ok:false)
+  ---
+  duration_ms: 0.096459
+  type: 'test'
+  ...
+# Subtest: nothing is yielded after the terminal event, even if the stream continues
+ok 4 - nothing is yielded after the terminal event, even if the stream continues
+  ---
+  duration_ms: 0.263416
+  type: 'test'
+  ...
+# Subtest: codex: item.completed + turn.completed maps to assistant-delta + done(ok)
+ok 5 - codex: item.completed + turn.completed maps to assistant-delta + done(ok)
+  ---
+  duration_ms: 0.406167
+  type: 'test'
+  ...
+# Subtest: an in-stream error is terminal: nothing (incl. a second done) is yielded after it
+ok 6 - an in-stream error is terminal: nothing (incl. a second done) is yielded after it
+  ---
+  duration_ms: 0.142667
+  type: 'test'
+  ...
+# Subtest: a stdout stream error surfaces as a terminal error event (never throws/rejects)
+ok 7 - a stdout stream error surfaces as a terminal error event (never throws/rejects)
+  ---
+  duration_ms: 0.326959
+  type: 'test'
+  ...
+# Subtest: abandoning the stream early kills the subprocess (no orphan)
+ok 8 - abandoning the stream early kills the subprocess (no orphan)
+  ---
+  duration_ms: 0.101583
+  type: 'test'
+  ...
+# Subtest: the terminal done carries the captured native session id (resume handle for S005)
+ok 9 - the terminal done carries the captured native session id (resume handle for S005)
+  ---
+  duration_ms: 0.34075
+  type: 'test'
+  ...
+# Subtest: error path 1: spawn throws synchronously -> terminal error event (never rejects)
+ok 10 - error path 1: spawn throws synchronously -> terminal error event (never rejects)
+  ---
+  duration_ms: 0.310666
+  type: 'test'
+  ...
+# Subtest: error path 2: ENOENT spawn error -> terminal error naming the missing CLI
+ok 11 - error path 2: ENOENT spawn error -> terminal error naming the missing CLI
+  ---
+  duration_ms: 0.10725
+  type: 'test'
+  ...
+# Subtest: error path 3: non-zero exit with no terminal event -> error carrying the stderr tail
+ok 12 - error path 3: non-zero exit with no terminal event -> error carrying the stderr tail
+  ---
+  duration_ms: 0.201
+  type: 'test'
+  ...
+# Subtest: error path 4: an auth-failure stderr -> a re-login error message
+ok 13 - error path 4: an auth-failure stderr -> a re-login error message
+  ---
+  duration_ms: 0.127584
+  type: 'test'
+  ...
+# Subtest: error path 5: an unparseable stream line is skipped+warned, not fatal
+ok 14 - error path 5: an unparseable stream line is skipped+warned, not fatal
+  ---
+  duration_ms: 0.134791
+  type: 'test'
+  ...
+# Subtest: cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)
+ok 15 - cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)
+  ---
+  duration_ms: 0.353375
+  type: 'test'
+  ...
+# Subtest: run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop
+ok 16 - run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop
+  ---
+  duration_ms: 5.45725
+  type: 'test'
+  ...
+# Subtest: cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group
+not ok 17 - cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group
+  ---
+  duration_ms: 33.50125
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/vscode-plugin/src/chat/__tests__/cli-adapter.test.ts:1:10286'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '/proc/77713/stat'"
+  code: 'ENOENT'
+  stack: |-
+    readFileSync (node:fs:440:20)
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/vscode-plugin/src/chat/__tests__/cli-adapter.test.ts:307:16)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles
+ok 18 - after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles
+  ---
+  duration_ms: 5.673417
+  type: 'test'
+  ...
+# Subtest: cancel(): unknown/finished turnId is a no-op (idempotent, no throw)
+ok 19 - cancel(): unknown/finished turnId is a no-op (idempotent, no throw)
+  ---
+  duration_ms: 0.193916
+  type: 'test'
+  ...
+# Subtest: capabilities.resume is true for both providers; a resume request passes the native flag
+ok 20 - capabilities.resume is true for both providers; a resume request passes the native flag
+  ---
+  duration_ms: 0.093584
+  type: 'test'
+  ...
+# Subtest: ProviderRegistry.available lists only installed agentic CLIs (never Ollama)
+ok 21 - ProviderRegistry.available lists only installed agentic CLIs (never Ollama)
+  ---
+  duration_ms: 0.039833
+  type: 'test'
+  ...
+# Subtest: ProviderRegistry.get() on an absent provider throws unknown-provider
+ok 22 - ProviderRegistry.get() on an absent provider throws unknown-provider
+  ---
+  duration_ms: 0.158833
+  type: 'test'
+  ...
+# Subtest: claude: a Bash tool_use sets ToolCallEvent.command from input.command
+ok 23 - claude: a Bash tool_use sets ToolCallEvent.command from input.command
+  ---
+  duration_ms: 0.1265
+  type: 'test'
+  ...
+# Subtest: claude: a command-less tool_use omits command (renders as the tool name, k2)
+ok 24 - claude: a command-less tool_use omits command (renders as the tool name, k2)
+  ---
+  duration_ms: 0.074583
+  type: 'test'
+  ...
+# Subtest: the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call
+ok 25 - the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call
+  ---
+  duration_ms: 0.347709
+  type: 'test'
+  ...
+# Subtest: an input that is not a list of at most twenty non-empty strings leaves present absent
+ok 26 - an input that is not a list of at most twenty non-empty strings leaves present absent
+  ---
+  duration_ms: 0.409959
+  type: 'test'
+  ...
+# Subtest: the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one
+ok 27 - the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one
+  ---
+  duration_ms: 0.540292
+  type: 'test'
+  ...
+# Subtest: a Codex mcp_tool_call insrc_present item with status failed still sets present
+ok 28 - a Codex mcp_tool_call insrc_present item with status failed still sets present
+  ---
+  duration_ms: 0.101542
+  type: 'test'
+  ...
+# Subtest: a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before
+ok 29 - a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before
+  ---
+  duration_ms: 0.344458
+  type: 'test'
+  ...
+# Subtest: codex: a command_execution item sets command from item.command
+ok 30 - codex: a command_execution item sets command from item.command
+  ---
+  duration_ms: 0.077208
+  type: 'test'
+  ...
+# Subtest: codex: a tool_call item without a command omits command (k2)
+ok 31 - codex: a tool_call item without a command omits command (k2)
+  ---
+  duration_ms: 0.065292
+  type: 'test'
+  ...
+# Subtest: claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use
+ok 32 - claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use
+  ---
+  duration_ms: 0.096584
+  type: 'test'
+  ...
+# Subtest: claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted
+ok 33 - claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted
+  ---
+  duration_ms: 0.079875
+  type: 'test'
+  ...
+# Subtest: claude: a tool_result with empty content still emits a tool-result (empty output)
+ok 34 - claude: a tool_result with empty content still emits a tool-result (empty output)
+  ---
+  duration_ms: 0.073292
+  type: 'test'
+  ...
+# Subtest: claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])
+ok 35 - claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])
+  ---
+  duration_ms: 0.060542
+  type: 'test'
+  ...
+# Subtest: codex: a completed command_execution with output emits both a tool-call and a tool-result
+ok 36 - codex: a completed command_execution with output emits both a tool-call and a tool-result
+  ---
+  duration_ms: 0.072834
+  type: 'test'
+  ...
+# Subtest: codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)
+ok 37 - codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)
+  ---
+  duration_ms: 0.088625
+  type: 'test'
+  ...
+# Subtest: deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)
+ok 38 - deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)
+  ---
+  duration_ms: 0.262792
+  type: 'test'
+  ...
+# Subtest: deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)
+ok 39 - deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)
+  ---
+  duration_ms: 40.6005
+  type: 'test'
+  ...
+# Subtest: deriveChatTitle: an error event -> undefined; an unknown provider -> undefined
+ok 40 - deriveChatTitle: an error event -> undefined; an unknown provider -> undefined
+  ---
+  duration_ms: 0.21675
+  type: 'test'
+  ...
+# Subtest: S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)
+ok 41 - S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)
+  ---
+  duration_ms: 0.073
+  type: 'test'
+  ...
+# Subtest: S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)
+ok 42 - S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)
+  ---
+  duration_ms: 0.152667
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)
+ok 43 - S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)
+  ---
+  duration_ms: 0.399875
+  type: 'test'
+  ...
+# Subtest: S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox
+ok 44 - S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox
+  ---
+  duration_ms: 0.177542
+  type: 'test'
+  ...
+# Subtest: S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)
+ok 45 - S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)
+  ---
+  duration_ms: 0.095583
+  type: 'test'
+  ...
+# Subtest: S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent
+ok 46 - S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent
+  ---
+  duration_ms: 0.083084
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)
+ok 47 - S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)
+  ---
+  duration_ms: 0.12275
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)
+ok 48 - S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)
+  ---
+  duration_ms: 0.080959
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)
+ok 49 - S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)
+  ---
+  duration_ms: 0.100584
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): permission_denied with a nested input.command sets event.command
+ok 50 - S001 (bugfix): permission_denied with a nested input.command sets event.command
+  ---
+  duration_ms: 0.064042
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): a top-level command takes precedence over input.command
+ok 51 - S001 (bugfix): a top-level command takes precedence over input.command
+  ---
+  duration_ms: 0.059
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)
+ok 52 - S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)
+  ---
+  duration_ms: 0.065291
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)
+ok 53 - S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)
+  ---
+  duration_ms: 0.140667
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block
+ok 54 - S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block
+  ---
+  duration_ms: 0.110458
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)
+ok 55 - S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)
+  ---
+  duration_ms: 0.0285
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block
+ok 56 - S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block
+  ---
+  duration_ms: 0.039917
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)
+ok 57 - S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)
+  ---
+  duration_ms: 0.1215
+  type: 'test'
+  ...
+# Subtest: S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])
+ok 58 - S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])
+  ---
+  duration_ms: 0.065708
+  type: 'test'
+  ...
+# Subtest: S004 t5: an unparseable line is skipped+logged, never thrown (as today)
+ok 59 - S004 t5: an unparseable line is skipped+logged, never thrown (as today)
+  ---
+  duration_ms: 0.073541
+  type: 'test'
+  ...
+# Subtest: S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)
+ok 60 - S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)
+  ---
+  duration_ms: 0.186583
+  type: 'test'
+  ...
+# Subtest: S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)
+ok 61 - S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)
+  ---
+  duration_ms: 0.079416
+  type: 'test'
+  ...
+# Subtest: S004 t5: decide() on an unknown turn is a safe no-op (never throws)
+ok 62 - S004 t5: decide() on an unknown turn is a safe no-op (never throws)
+  ---
+  duration_ms: 0.033375
+  type: 'test'
+  ...
+# Subtest: claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta
+ok 63 - claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta
+  ---
+  duration_ms: 0.199292
+  type: 'test'
+  ...
+# Subtest: claude: a marker-only text block emits the selection-request with NO empty assistant-delta
+ok 64 - claude: a marker-only text block emits the selection-request with NO empty assistant-delta
+  ---
+  duration_ms: 0.076417
+  type: 'test'
+  ...
+# Subtest: claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw
+ok 65 - claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw
+  ---
+  duration_ms: 0.103458
+  type: 'test'
+  ...
+# Subtest: claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)
+ok 66 - claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)
+  ---
+  duration_ms: 0.128541
+  type: 'test'
+  ...
+# Subtest: claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)
+ok 67 - claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)
+  ---
+  duration_ms: 0.077292
+  type: 'test'
+  ...
+# Subtest: codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped
+ok 68 - codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped
+  ---
+  duration_ms: 0.101417
+  type: 'test'
+  ...
+# Subtest: codex: a malformed marker -> NO event, the raw text stays a delta, no throw
+ok 69 - codex: a malformed marker -> NO event, the raw text stays a delta, no throw
+  ---
+  duration_ms: 0.089875
+  type: 'test'
+  ...
+# Subtest: codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence
+ok 70 - codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence
+  ---
+  duration_ms: 0.099
+  type: 'test'
+  ...
+# Subtest: codex: a no-marker delta behaves exactly as today
+ok 71 - codex: a no-marker delta behaves exactly as today
+  ---
+  duration_ms: 0.075584
+  type: 'test'
+  ...
+# Subtest: claude: tool-call and its tool-result carry the tool_use id as callId
+ok 72 - claude: tool-call and its tool-result carry the tool_use id as callId
+  ---
+  duration_ms: 0.161959
+  type: 'test'
+  ...
+# Subtest: codex: a command item with an id carries it as callId on both events; an id-less item omits it
+ok 73 - codex: a command item with an id carries it as callId on both events; an id-less item omits it
+  ---
+  duration_ms: 0.1085
+  type: 'test'
+  ...
+# Subtest: the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line
+ok 74 - the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line
+  ---
+  duration_ms: 221.2725
+  type: 'test'
+  ...
+# Subtest: marker lines reaching a mapper produce no events
+ok 75 - marker lines reaching a mapper produce no events
+  ---
+  duration_ms: 0.310334
+  type: 'test'
+  ...
+# Subtest: run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits
+ok 76 - run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits
+  ---
+  duration_ms: 322.455042
+  type: 'test'
+  ...
+# Subtest: a beginTurn failure falls back to the pipe with one logged error
+ok 77 - a beginTurn failure falls back to the pipe with one logged error
+  ---
+  duration_ms: 0.507125
+  type: 'test'
+  ...
+# Subtest: resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one
+ok 78 - resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one
+  ---
+  duration_ms: 28.778125
+  type: 'test'
+  ...
+# Subtest: resume()'s handed-over process stops the recorded pid's group only while its start time matches
+ok 79 - resume()'s handed-over process stops the recorded pid's group only while its start time matches
+  ---
+  duration_ms: 6.183209
+  type: 'test'
+  ...
+# Subtest: 65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verbatim, after the end-of-options marker
+ok 80 - 65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verbatim, after the end-of-options marker
+  ---
+  duration_ms: 0.9445
+  type: 'test'
+  ...
+# Subtest: claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'
+ok 81 - claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'
+  ---
+  duration_ms: 0.187292
+  type: 'test'
+  ...
+# Subtest: claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today
+ok 82 - claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today
+  ---
+  duration_ms: 0.828583
+  type: 'test'
+  ...
+# Subtest: codex argv is unchanged by readDirs
+ok 83 - codex argv is unchanged by readDirs
+  ---
+  duration_ms: 0.479959
+  type: 'test'
+  ...
+# Subtest: codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere
+ok 84 - codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere
+  ---
+  duration_ms: 0.272917
+  type: 'test'
+  ...
+# Subtest: the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits
+ok 85 - the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits
+  ---
+  duration_ms: 312.318375
+  type: 'test'
+  ...
+# Subtest: claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither
+ok 86 - claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither
+  ---
+  duration_ms: 0.420125
+  type: 'test'
+  ...
+# Subtest: codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied
+ok 87 - codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied
+  ---
+  duration_ms: 0.729416
+  type: 'test'
+  ...
+# Subtest: a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message
+ok 88 - a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message
+  ---
+  duration_ms: 3.62275
+  type: 'test'
+  ...
+1..88
+# tests 88
+# suites 0
+# pass 87
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30248.763292

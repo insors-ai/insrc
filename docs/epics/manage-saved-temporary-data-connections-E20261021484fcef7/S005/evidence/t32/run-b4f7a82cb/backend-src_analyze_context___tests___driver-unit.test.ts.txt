@@ -1,0 +1,196 @@
+TAP version 13
+# Subtest: stable stringify produces identical output for object key permutations
+ok 1 - stable stringify produces identical output for object key permutations
+  ---
+  duration_ms: 0.824291
+  type: 'test'
+  ...
+# Subtest: stable stringify is order-stable for Maps with reverse insertion
+ok 2 - stable stringify is order-stable for Maps with reverse insertion
+  ---
+  duration_ms: 0.130875
+  type: 'test'
+  ...
+# Subtest: stable stringify treats different values as distinct
+ok 3 - stable stringify treats different values as distinct
+  ---
+  duration_ms: 0.059833
+  type: 'test'
+  ...
+# Subtest: stable stringify is deterministic for arrays (insertion order matters)
+ok 4 - stable stringify is deterministic for arrays (insertion order matters)
+  ---
+  duration_ms: 0.036791
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError
+ok 5 - classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError
+  ---
+  duration_ms: 0.156834
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError("Ollama is not running. Start it...") -> ShaperLlmUnavailableError
+ok 6 - classifyOllamaError("Ollama is not running. Start it...") -> ShaperLlmUnavailableError
+  ---
+  duration_ms: 0.039292
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError("Model not found ...") -> ShaperLlmUnavailableError
+ok 7 - classifyOllamaError("Model not found ...") -> ShaperLlmUnavailableError
+  ---
+  duration_ms: 0.091917
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError("fetch failed") -> ShaperLlmUnavailableError (retries exhausted by provider)
+ok 8 - classifyOllamaError("fetch failed") -> ShaperLlmUnavailableError (retries exhausted by provider)
+  ---
+  duration_ms: 0.063417
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError("Did not receive done...") -> ShaperLlmUnavailableError (retries exhausted)
+ok 9 - classifyOllamaError("Did not receive done...") -> ShaperLlmUnavailableError (retries exhausted)
+  ---
+  duration_ms: 0.924834
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError("ECONNRESET") -> ShaperLlmUnavailableError
+ok 10 - classifyOllamaError("ECONNRESET") -> ShaperLlmUnavailableError
+  ---
+  duration_ms: 0.462
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError("socket hang up") -> ShaperLlmUnavailableError
+ok 11 - classifyOllamaError("socket hang up") -> ShaperLlmUnavailableError
+  ---
+  duration_ms: 0.087083
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError(arbitrary other Error) -> original error
+ok 12 - classifyOllamaError(arbitrary other Error) -> original error
+  ---
+  duration_ms: 0.106583
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError(non-Error value) -> wraps in Error
+ok 13 - classifyOllamaError(non-Error value) -> wraps in Error
+  ---
+  duration_ms: 0.044167
+  type: 'test'
+  ...
+# Subtest: deriveEmptyLayers on an all-empty bundle returns every layer
+ok 14 - deriveEmptyLayers on an all-empty bundle returns every layer
+  ---
+  duration_ms: 0.725583
+  type: 'test'
+  ...
+# Subtest: deriveEmptyLayers on a fully-populated bundle returns []
+ok 15 - deriveEmptyLayers on a fully-populated bundle returns []
+  ---
+  duration_ms: 0.0435
+  type: 'test'
+  ...
+# Subtest: deriveEmptyLayers treats whitespace-only bodies as empty
+ok 16 - deriveEmptyLayers treats whitespace-only bodies as empty
+  ---
+  duration_ms: 0.087958
+  type: 'test'
+  ...
+# Subtest: deriveEmptyLayers preserves the spec render order in its return
+ok 17 - deriveEmptyLayers preserves the spec render order in its return
+  ---
+  duration_ms: 0.03425
+  type: 'test'
+  ...
+# Subtest: ShaperLlmUnavailableError carries the call and the cause in its message
+ok 18 - ShaperLlmUnavailableError carries the call and the cause in its message
+  ---
+  duration_ms: 0.033708
+  type: 'test'
+  ...
+# Subtest: ShaperToolLoopExhausted carries the turn count in its message
+ok 19 - ShaperToolLoopExhausted carries the turn count in its message
+  ---
+  duration_ms: 0.060875
+  type: 'test'
+  ...
+# Subtest: ShaperSchemaUnrecoverable carries the retry count + reasons in its message
+ok 20 - ShaperSchemaUnrecoverable carries the retry count + reasons in its message
+  ---
+  duration_ms: 0.051709
+  type: 'test'
+  ...
+# Subtest: ShaperPromptMissingError carries the absolute prompt path
+ok 21 - ShaperPromptMissingError carries the absolute prompt path
+  ---
+  duration_ms: 0.039708
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: classification mode returns empty string
+ok 22 - renderUpstreamSection: classification mode returns empty string
+  ---
+  duration_ms: 0.068042
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: run mode returns empty string
+ok 23 - renderUpstreamSection: run mode returns empty string
+  ---
+  duration_ms: 0.043625
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: task mode with empty upstream map returns empty string
+ok 24 - renderUpstreamSection: task mode with empty upstream map returns empty string
+  ---
+  duration_ms: 0.049875
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: task mode with one populated upstream renders a JSON block
+ok 25 - renderUpstreamSection: task mode with one populated upstream renders a JSON block
+  ---
+  duration_ms: 0.19825
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: null upstream value renders [unavailable: ...] marker
+ok 26 - renderUpstreamSection: null upstream value renders [unavailable: ...] marker
+  ---
+  duration_ms: 0.041583
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: undefined upstream value also renders unavailable marker
+ok 27 - renderUpstreamSection: undefined upstream value also renders unavailable marker
+  ---
+  duration_ms: 0.031083
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: mixed populated + null upstream renders both
+ok 28 - renderUpstreamSection: mixed populated + null upstream renders both
+  ---
+  duration_ms: 0.110958
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: upstream task ids are sorted alphabetically
+ok 29 - renderUpstreamSection: upstream task ids are sorted alphabetically
+  ---
+  duration_ms: 0.044041
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept
+ok 30 - classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept
+  ---
+  duration_ms: 1.061708
+  type: 'test'
+  ...
+# Subtest: classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'
+ok 31 - classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'
+  ---
+  duration_ms: 0.301875
+  type: 'test'
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 653.003417

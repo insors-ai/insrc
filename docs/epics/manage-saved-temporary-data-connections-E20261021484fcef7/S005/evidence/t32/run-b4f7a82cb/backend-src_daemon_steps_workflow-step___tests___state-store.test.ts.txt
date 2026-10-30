@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: save + load round-trip
+ok 1 - save + load round-trip
+  ---
+  duration_ms: 1.021792
+  type: 'test'
+  ...
+# Subtest: release drops the entry
+ok 2 - release drops the entry
+  ---
+  duration_ms: 0.147875
+  type: 'test'
+  ...
+# Subtest: load throws on unknown token
+ok 3 - load throws on unknown token
+  ---
+  duration_ms: 0.14975
+  type: 'test'
+  ...
+# Subtest: token is URL-safe base64 (no +, /, =)
+ok 4 - token is URL-safe base64 (no +, /, =)
+  ---
+  duration_ms: 0.122834
+  type: 'test'
+  ...
+# Subtest: s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message
+ok 5 - s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message
+  ---
+  duration_ms: 0.21725
+  type: 'test'
+  ...
+# Subtest: s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')
+ok 6 - s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')
+  ---
+  duration_ms: 0.228167
+  type: 'test'
+  ...
+# Subtest: s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)
+ok 7 - s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)
+  ---
+  duration_ms: 0.336375
+  type: 'test'
+  ...
+# Subtest: s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three
+ok 8 - s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three
+  ---
+  duration_ms: 0.288333
+  type: 'test'
+  ...
+# Subtest: replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1
+ok 9 - replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1
+  ---
+  duration_ms: 9.76775
+  type: 'test'
+  ...
+# Subtest: replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)
+ok 10 - replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)
+  ---
+  duration_ms: 0.552916
+  type: 'test'
+  ...
+# Subtest: replaceState is mint-before-release: the new token always exists even as the old is dropped
+ok 11 - replaceState is mint-before-release: the new token always exists even as the old is dropped
+  ---
+  duration_ms: 0.41425
+  type: 'test'
+  ...
+# Subtest: replaceState never deletes the just-minted token in the degenerate prev===next case
+ok 12 - replaceState never deletes the just-minted token in the degenerate prev===next case
+  ---
+  duration_ms: 0.238458
+  type: 'test'
+  ...
+# Subtest: replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)
+ok 13 - replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)
+  ---
+  duration_ms: 4.181708
+  type: 'test'
+  ...
+# Subtest: reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)
+ok 14 - reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)
+  ---
+  duration_ms: 0.570292
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 303.517

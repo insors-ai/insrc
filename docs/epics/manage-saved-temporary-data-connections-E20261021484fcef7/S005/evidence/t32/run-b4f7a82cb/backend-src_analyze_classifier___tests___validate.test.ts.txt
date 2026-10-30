@@ -1,0 +1,322 @@
+TAP version 13
+# Subtest: the matrix covers every pairing: five kinds of source by seven kinds of scope
+ok 1 - the matrix covers every pairing: five kinds of source by seven kinds of scope
+  ---
+  duration_ms: 3.984083
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=code, kind=repo -> true
+ok 2 - isKindCompatibleWithTarget: target=code, kind=repo -> true
+  ---
+  duration_ms: 2.05075
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=code, kind=module -> true
+ok 3 - isKindCompatibleWithTarget: target=code, kind=module -> true
+  ---
+  duration_ms: 0.9265
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=code, kind=file -> true
+ok 4 - isKindCompatibleWithTarget: target=code, kind=file -> true
+  ---
+  duration_ms: 0.786666
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=code, kind=symbol -> true
+ok 5 - isKindCompatibleWithTarget: target=code, kind=symbol -> true
+  ---
+  duration_ms: 0.723166
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=code, kind=connection -> false
+ok 6 - isKindCompatibleWithTarget: target=code, kind=connection -> false
+  ---
+  duration_ms: 1.284375
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=code, kind=manifest-dir -> true
+ok 7 - isKindCompatibleWithTarget: target=code, kind=manifest-dir -> true
+  ---
+  duration_ms: 1.292167
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=code, kind=workspace -> true
+ok 8 - isKindCompatibleWithTarget: target=code, kind=workspace -> true
+  ---
+  duration_ms: 0.753334
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=data, kind=repo -> true
+ok 9 - isKindCompatibleWithTarget: target=data, kind=repo -> true
+  ---
+  duration_ms: 0.746125
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=data, kind=module -> false
+ok 10 - isKindCompatibleWithTarget: target=data, kind=module -> false
+  ---
+  duration_ms: 0.720792
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=data, kind=file -> false
+ok 11 - isKindCompatibleWithTarget: target=data, kind=file -> false
+  ---
+  duration_ms: 0.5115
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=data, kind=symbol -> false
+ok 12 - isKindCompatibleWithTarget: target=data, kind=symbol -> false
+  ---
+  duration_ms: 0.5525
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=data, kind=connection -> true
+ok 13 - isKindCompatibleWithTarget: target=data, kind=connection -> true
+  ---
+  duration_ms: 0.620292
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=data, kind=manifest-dir -> true
+ok 14 - isKindCompatibleWithTarget: target=data, kind=manifest-dir -> true
+  ---
+  duration_ms: 0.50675
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=data, kind=workspace -> true
+ok 15 - isKindCompatibleWithTarget: target=data, kind=workspace -> true
+  ---
+  duration_ms: 0.471667
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=infra, kind=repo -> true
+ok 16 - isKindCompatibleWithTarget: target=infra, kind=repo -> true
+  ---
+  duration_ms: 0.51025
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=infra, kind=module -> false
+ok 17 - isKindCompatibleWithTarget: target=infra, kind=module -> false
+  ---
+  duration_ms: 0.625041
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=infra, kind=file -> false
+ok 18 - isKindCompatibleWithTarget: target=infra, kind=file -> false
+  ---
+  duration_ms: 0.587792
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=infra, kind=symbol -> false
+ok 19 - isKindCompatibleWithTarget: target=infra, kind=symbol -> false
+  ---
+  duration_ms: 0.489167
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=infra, kind=connection -> false
+ok 20 - isKindCompatibleWithTarget: target=infra, kind=connection -> false
+  ---
+  duration_ms: 0.53925
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=infra, kind=manifest-dir -> true
+ok 21 - isKindCompatibleWithTarget: target=infra, kind=manifest-dir -> true
+  ---
+  duration_ms: 0.520709
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=infra, kind=workspace -> true
+ok 22 - isKindCompatibleWithTarget: target=infra, kind=workspace -> true
+  ---
+  duration_ms: 0.711125
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=docs, kind=repo -> true
+ok 23 - isKindCompatibleWithTarget: target=docs, kind=repo -> true
+  ---
+  duration_ms: 1.699833
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=docs, kind=module -> true
+ok 24 - isKindCompatibleWithTarget: target=docs, kind=module -> true
+  ---
+  duration_ms: 0.539209
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=docs, kind=file -> true
+ok 25 - isKindCompatibleWithTarget: target=docs, kind=file -> true
+  ---
+  duration_ms: 0.472333
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=docs, kind=symbol -> false
+ok 26 - isKindCompatibleWithTarget: target=docs, kind=symbol -> false
+  ---
+  duration_ms: 0.49275
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=docs, kind=connection -> false
+ok 27 - isKindCompatibleWithTarget: target=docs, kind=connection -> false
+  ---
+  duration_ms: 0.581083
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=docs, kind=manifest-dir -> false
+ok 28 - isKindCompatibleWithTarget: target=docs, kind=manifest-dir -> false
+  ---
+  duration_ms: 0.484041
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=docs, kind=workspace -> true
+ok 29 - isKindCompatibleWithTarget: target=docs, kind=workspace -> true
+  ---
+  duration_ms: 0.49625
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=generic, kind=repo -> true
+ok 30 - isKindCompatibleWithTarget: target=generic, kind=repo -> true
+  ---
+  duration_ms: 0.659292
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=generic, kind=module -> true
+ok 31 - isKindCompatibleWithTarget: target=generic, kind=module -> true
+  ---
+  duration_ms: 0.477917
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=generic, kind=file -> true
+ok 32 - isKindCompatibleWithTarget: target=generic, kind=file -> true
+  ---
+  duration_ms: 0.591
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=generic, kind=symbol -> true
+ok 33 - isKindCompatibleWithTarget: target=generic, kind=symbol -> true
+  ---
+  duration_ms: 0.56325
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=generic, kind=connection -> true
+ok 34 - isKindCompatibleWithTarget: target=generic, kind=connection -> true
+  ---
+  duration_ms: 0.588166
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=generic, kind=manifest-dir -> true
+ok 35 - isKindCompatibleWithTarget: target=generic, kind=manifest-dir -> true
+  ---
+  duration_ms: 0.77825
+  type: 'test'
+  ...
+# Subtest: isKindCompatibleWithTarget: target=generic, kind=workspace -> true
+ok 36 - isKindCompatibleWithTarget: target=generic, kind=workspace -> true
+  ---
+  duration_ms: 0.674291
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: code+connection -> scope-ref-kind-target-mismatch
+ok 37 - validateIntentSemantics: code+connection -> scope-ref-kind-target-mismatch
+  ---
+  duration_ms: 0.749041
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: data+file -> scope-ref-kind-target-mismatch
+ok 38 - validateIntentSemantics: data+file -> scope-ref-kind-target-mismatch
+  ---
+  duration_ms: 0.487167
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: infra+module -> scope-ref-kind-target-mismatch
+ok 39 - validateIntentSemantics: infra+module -> scope-ref-kind-target-mismatch
+  ---
+  duration_ms: 0.522292
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: pairings the plan tasks accept are accepted (infra+repo, data+repo, data+manifest-dir, code+manifest-dir)
+ok 40 - validateIntentSemantics: pairings the plan tasks accept are accepted (infra+repo, data+repo, data+manifest-dir, code+manifest-dir)
+  ---
+  duration_ms: 0.736875
+  type: 'test'
+  ...
+# Subtest: validator symbol form: passes, no '\#', file part not a file
+ok 41 - validator symbol form: passes, no '\#', file part not a file
+  ---
+  duration_ms: 1.327583
+  type: 'test'
+  ...
+# Subtest: classifier prompt's pairing list equals the exported table
+ok 42 - classifier prompt's pairing list equals the exported table
+  ---
+  duration_ms: 1.383167
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: generic+any-kind -> no kind/target failure
+ok 43 - validateIntentSemantics: generic+any-kind -> no kind/target failure
+  ---
+  duration_ms: 0.765917
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: missing path -> scope-ref-unresolved
+ok 44 - validateIntentSemantics: missing path -> scope-ref-unresolved
+  ---
+  duration_ms: 0.619083
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=file but value is a directory -> scope-ref-unresolved
+ok 45 - validateIntentSemantics: kind=file but value is a directory -> scope-ref-unresolved
+  ---
+  duration_ms: 0.859
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=repo but value is a file -> scope-ref-unresolved
+ok 46 - validateIntentSemantics: kind=repo but value is a file -> scope-ref-unresolved
+  ---
+  duration_ms: 0.6735
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=workspace + real dir -> pass
+ok 47 - validateIntentSemantics: kind=workspace + real dir -> pass
+  ---
+  duration_ms: 0.554083
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=file + real file -> pass
+ok 48 - validateIntentSemantics: kind=file + real file -> pass
+  ---
+  duration_ms: 0.636166
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=manifest-dir + real dir + infra target -> pass
+ok 49 - validateIntentSemantics: kind=manifest-dir + real dir + infra target -> pass
+  ---
+  duration_ms: 0.722542
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=connection + registered id -> pass
+ok 50 - validateIntentSemantics: kind=connection + registered id -> pass
+  ---
+  duration_ms: 0.737333
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=connection + unknown id -> scope-ref-unresolved
+ok 51 - validateIntentSemantics: kind=connection + unknown id -> scope-ref-unresolved
+  ---
+  duration_ms: 0.618833
+  type: 'test'
+  ...
+# Subtest: validateIntentSemantics: kind=connection + no callback -> pass (cannot verify)
+ok 52 - validateIntentSemantics: kind=connection + no callback -> pass (cannot verify)
+  ---
+  duration_ms: 0.560959
+  type: 'test'
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 384.402208

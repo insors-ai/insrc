@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.008">
+  <properties/>
+  <testcase name="the Update balloon action re-dispatches the blocking update off the EDT (HIGH-1)()" classname="ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest" time="0.005"/>
+  <testcase name="git ls-remote bounds the wait before reading so a hung git cannot defeat the timeout (MED-2)()" classname="ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest" time="0.001"/>
+  <testcase name="onProjectOpened schedules the check via the injected executor (fire-and-forget)()" classname="ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest" time="0.001"/>
+  <testcase name="the freshness wiring drives the daemon-owned IPC, not the lifecycle shell-out (k2)()" classname="ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,274 @@
+TAP version 13
+# Subtest: buildClassification rejects non-object params with invalid-params
+ok 1 - buildClassification rejects non-object params with invalid-params
+  ---
+  duration_ms: 0.784917
+  type: 'test'
+  ...
+# Subtest: buildClassification rejects missing runId
+ok 2 - buildClassification rejects missing runId
+  ---
+  duration_ms: 0.112958
+  type: 'test'
+  ...
+# Subtest: buildClassification rejects missing scopeRef
+ok 3 - buildClassification rejects missing scopeRef
+  ---
+  duration_ms: 0.072125
+  type: 'test'
+  ...
+# Subtest: buildClassification rejects bad scopeRef.kind
+ok 4 - buildClassification rejects bad scopeRef.kind
+  ---
+  duration_ms: 0.057666
+  type: 'test'
+  ...
+# Subtest: buildRun rejects missing intent
+ok 5 - buildRun rejects missing intent
+  ---
+  duration_ms: 0.158125
+  type: 'test'
+  ...
+# Subtest: buildRun rejects bad intent.target
+ok 6 - buildRun rejects bad intent.target
+  ---
+  duration_ms: 0.057458
+  type: 'test'
+  ...
+# Subtest: buildRun rejects bad intent.scope
+ok 7 - buildRun rejects bad intent.scope
+  ---
+  duration_ms: 0.088666
+  type: 'test'
+  ...
+# Subtest: buildRun rejects non-boolean intent.focused
+ok 8 - buildRun rejects non-boolean intent.focused
+  ---
+  duration_ms: 0.064333
+  type: 'test'
+  ...
+# Subtest: buildTask rejects target=generic at task scope
+ok 9 - buildTask rejects target=generic at task scope
+  ---
+  duration_ms: 0.407875
+  type: 'test'
+  ...
+# Subtest: buildTask rejects bad task.produces shape
+ok 10 - buildTask rejects bad task.produces shape
+  ---
+  duration_ms: 0.318083
+  type: 'test'
+  ...
+# Subtest: buildTask accepts undefined upstream as an empty Map
+ok 11 - buildTask accepts undefined upstream as an empty Map
+  ---
+  duration_ms: 285.89325
+  type: 'test'
+  ...
+# Subtest: buildTask accepts array-form upstream
+ok 12 - buildTask accepts array-form upstream
+  ---
+  duration_ms: 1.93075
+  type: 'test'
+  ...
+# Subtest: buildTask rejects bad upstream array entries
+ok 13 - buildTask rejects bad upstream array entries
+  ---
+  duration_ms: 0.194583
+  type: 'test'
+  ...
+# Subtest: invalid-params responses carry { code, message }
+ok 14 - invalid-params responses carry { code, message }
+  ---
+  duration_ms: 0.094084
+  type: 'test'
+  ...
+# Subtest: classify rejects non-object params with invalid-params
+ok 15 - classify rejects non-object params with invalid-params
+  ---
+  duration_ms: 0.102958
+  type: 'test'
+  ...
+# Subtest: classify rejects missing runId
+ok 16 - classify rejects missing runId
+  ---
+  duration_ms: 0.056833
+  type: 'test'
+  ...
+# Subtest: classify rejects missing userPrompt
+ok 17 - classify rejects missing userPrompt
+  ---
+  duration_ms: 0.045333
+  type: 'test'
+  ...
+# Subtest: classify rejects missing scopeRef
+ok 18 - classify rejects missing scopeRef
+  ---
+  duration_ms: 0.0355
+  type: 'test'
+  ...
+# Subtest: classify rejects bad scopeRef.kind
+ok 19 - classify rejects bad scopeRef.kind
+  ---
+  duration_ms: 0.259667
+  type: 'test'
+  ...
+# Subtest: classify rejects empty-string userPrompt
+ok 20 - classify rejects empty-string userPrompt
+  ---
+  duration_ms: 0.0665
+  type: 'test'
+  ...
+# Subtest: plan rejects non-object params with invalid-params
+ok 21 - plan rejects non-object params with invalid-params
+  ---
+  duration_ms: 0.129584
+  type: 'test'
+  ...
+# Subtest: plan rejects missing runId
+ok 22 - plan rejects missing runId
+  ---
+  duration_ms: 0.056916
+  type: 'test'
+  ...
+# Subtest: plan rejects missing intent
+ok 23 - plan rejects missing intent
+  ---
+  duration_ms: 0.035958
+  type: 'test'
+  ...
+# Subtest: plan rejects bad intent.target
+ok 24 - plan rejects bad intent.target
+  ---
+  duration_ms: 0.038708
+  type: 'test'
+  ...
+# Subtest: plan rejects bad rootScope value
+ok 25 - plan rejects bad rootScope value
+  ---
+  duration_ms: 0.0445
+  type: 'test'
+  ...
+# Subtest: plan rejects non-integer currentDepth
+ok 26 - plan rejects non-integer currentDepth
+  ---
+  duration_ms: 0.038791
+  type: 'test'
+  ...
+# Subtest: plan rejects negative currentDepth
+ok 27 - plan rejects negative currentDepth
+  ---
+  duration_ms: 0.034959
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): non-object params -> analyze.result frame with invalid-params + done
+ok 28 - runStart (streaming): non-object params -> analyze.result frame with invalid-params + done
+  ---
+  duration_ms: 0.189666
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): missing runId -> invalid-params in terminal frame
+ok 29 - runStart (streaming): missing runId -> invalid-params in terminal frame
+  ---
+  duration_ms: 0.048667
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): missing userPrompt -> invalid-params
+ok 30 - runStart (streaming): missing userPrompt -> invalid-params
+  ---
+  duration_ms: 0.042834
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): missing scopeRef -> invalid-params
+ok 31 - runStart (streaming): missing scopeRef -> invalid-params
+  ---
+  duration_ms: 0.057584
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): bad scopeRef.kind -> invalid-params with field name in message
+ok 32 - runStart (streaming): bad scopeRef.kind -> invalid-params with field name in message
+  ---
+  duration_ms: 0.046792
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): resume cache hit -> analyze.result with ok:true; no intermediate progress frames
+ok 33 - runStart (streaming): resume cache hit -> analyze.result with ok:true; no intermediate progress frames
+  ---
+  duration_ms: 3.842417
+  type: 'test'
+  ...
+# Subtest: runStatus rejects non-object params with invalid-params
+ok 34 - runStatus rejects non-object params with invalid-params
+  ---
+  duration_ms: 0.125584
+  type: 'test'
+  ...
+# Subtest: runStatus rejects missing runId
+ok 35 - runStatus rejects missing runId
+  ---
+  duration_ms: 0.045333
+  type: 'test'
+  ...
+# Subtest: runStatus on missing runId record returns invalid-input
+ok 36 - runStatus on missing runId record returns invalid-input
+  ---
+  duration_ms: 0.059917
+  type: 'test'
+  ...
+# Subtest: runStatus returns the persisted RunRecord round-trip
+ok 37 - runStatus returns the persisted RunRecord round-trip
+  ---
+  duration_ms: 3.428291
+  type: 'test'
+  ...
+# Subtest: runPurge rejects non-object params with invalid-params
+ok 38 - runPurge rejects non-object params with invalid-params
+  ---
+  duration_ms: 0.133083
+  type: 'test'
+  ...
+# Subtest: runPurge rejects missing runId
+ok 39 - runPurge rejects missing runId
+  ---
+  duration_ms: 0.038292
+  type: 'test'
+  ...
+# Subtest: runPurge rejects non-boolean force
+ok 40 - runPurge rejects non-boolean force
+  ---
+  duration_ms: 0.047833
+  type: 'test'
+  ...
+# Subtest: runPurge on missing runId record returns purged=false (idempotent)
+ok 41 - runPurge on missing runId record returns purged=false (idempotent)
+  ---
+  duration_ms: 0.102166
+  type: 'test'
+  ...
+# Subtest: runPurge removes a persisted finished run; subsequent purge returns purged=false
+ok 42 - runPurge removes a persisted finished run; subsequent purge returns purged=false
+  ---
+  duration_ms: 3.472
+  type: 'test'
+  ...
+# Subtest: runPurge refuses on status=in-progress for a live run without force; force=true overrides
+ok 43 - runPurge refuses on status=in-progress for a live run without force; force=true overrides
+  ---
+  duration_ms: 3.283209
+  type: 'test'
+  ...
+# Subtest: AnalyzeRpcOk responses have ok:true and a bundle field
+ok 44 - AnalyzeRpcOk responses have ok:true and a bundle field
+  ---
+  duration_ms: 0.058375
+  type: 'test'
+  ...
+1..44
+# tests 44
+# suites 0
+# pass 44
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 995.027666

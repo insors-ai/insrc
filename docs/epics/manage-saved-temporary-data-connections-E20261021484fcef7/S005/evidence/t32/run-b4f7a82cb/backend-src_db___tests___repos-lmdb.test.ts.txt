@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: addRepo + listRepos round-trip
+ok 1 - addRepo + listRepos round-trip
+  ---
+  duration_ms: 153.010875
+  type: 'test'
+  ...
+# Subtest: addRepo with explicit name overrides basename derivation
+ok 2 - addRepo with explicit name overrides basename derivation
+  ---
+  duration_ms: 198.663042
+  type: 'test'
+  ...
+# Subtest: addRepo with empty name falls back to basename
+ok 3 - addRepo with empty name falls back to basename
+  ---
+  duration_ms: 209.82975
+  type: 'test'
+  ...
+# Subtest: addRepo on existing path updates in place (same repo_id semantics)
+ok 4 - addRepo on existing path updates in place (same repo_id semantics)
+  ---
+  duration_ms: 208.174042
+  type: 'test'
+  ...
+# Subtest: addRepo with multiple paths creates multiple rows
+ok 5 - addRepo with multiple paths creates multiple rows
+  ---
+  duration_ms: 182.5265
+  type: 'test'
+  ...
+# Subtest: removeRepo by path deletes the row
+ok 6 - removeRepo by path deletes the row
+  ---
+  duration_ms: 252.776708
+  type: 'test'
+  ...
+# Subtest: removeRepo deletes the repository's index_state row with its registry row (Epic c2ba6fa6 s1/t1)
+ok 7 - removeRepo deletes the repository's index_state row with its registry row (Epic c2ba6fa6 s1/t1)
+  ---
+  duration_ms: 216.572125
+  type: 'test'
+  ...
+# Subtest: removeRepo on unknown path is a silent no-op
+ok 8 - removeRepo on unknown path is a silent no-op
+  ---
+  duration_ms: 198.2555
+  type: 'test'
+  ...
+# Subtest: listRepos on empty registry returns empty array
+ok 9 - listRepos on empty registry returns empty array
+  ---
+  duration_ms: 235.185375
+  type: 'test'
+  ...
+# Subtest: updateRepoStatus mutates only status / lastIndexed / errorMsg
+ok 10 - updateRepoStatus mutates only status / lastIndexed / errorMsg
+  ---
+  duration_ms: 282.912083
+  type: 'test'
+  ...
+# Subtest: updateRepoStatus on unknown path is a silent no-op
+ok 11 - updateRepoStatus on unknown path is a silent no-op
+  ---
+  duration_ms: 284.025709
+  type: 'test'
+  ...
+# Subtest: updateRepoStatus with errorMsg surfaces it on listRepos
+ok 12 - updateRepoStatus with errorMsg surfaces it on listRepos
+  ---
+  duration_ms: 253.922875
+  type: 'test'
+  ...
+# Subtest: all four status values round-trip
+ok 13 - all four status values round-trip
+  ---
+  duration_ms: 309.315708
+  type: 'test'
+  ...
+# Subtest: lastIndexed sentinel: absent when never indexed, present after first index
+ok 14 - lastIndexed sentinel: absent when never indexed, present after first index
+  ---
+  duration_ms: 259.962959
+  type: 'test'
+  ...
+# Subtest: lastIndexed survives close + reopen
+ok 15 - lastIndexed survives close + reopen
+  ---
+  duration_ms: 238.454333
+  type: 'test'
+  ...
+# Subtest: many repos round-trip without collision (linear-scan correctness)
+ok 16 - many repos round-trip without collision (linear-scan correctness)
+  ---
+  duration_ms: 733.747959
+  type: 'test'
+  ...
+# Subtest: addRepo updates status without losing addedAt
+ok 17 - addRepo updates status without losing addedAt
+  ---
+  duration_ms: 197.567333
+  type: 'test'
+  ...
+# Subtest: validateRepoPathShape rejects empty string
+ok 18 - validateRepoPathShape rejects empty string
+  ---
+  duration_ms: 3.363292
+  type: 'test'
+  ...
+# Subtest: validateRepoPathShape rejects non-string input
+ok 19 - validateRepoPathShape rejects non-string input
+  ---
+  duration_ms: 0.621458
+  type: 'test'
+  ...
+# Subtest: validateRepoPathShape rejects relative paths
+ok 20 - validateRepoPathShape rejects relative paths
+  ---
+  duration_ms: 0.179833
+  type: 'test'
+  ...
+# Subtest: validateRepoPathShape rejects filesystem root + system / volatile dirs
+ok 21 - validateRepoPathShape rejects filesystem root + system / volatile dirs
+  ---
+  duration_ms: 0.3035
+  type: 'test'
+  ...
+# Subtest: validateRepoPathShape normalises trailing-slash + .. segments
+ok 22 - validateRepoPathShape normalises trailing-slash + .. segments
+  ---
+  duration_ms: 1.135833
+  type: 'test'
+  ...
+# Subtest: validateRepoPathShape rejects normalised banned root (e.g. `/Users/.`)
+ok 23 - validateRepoPathShape rejects normalised banned root (e.g. `/Users/.`)
+  ---
+  duration_ms: 0.841375
+  type: 'test'
+  ...
+# Subtest: validateRepoPath (full) accepts an existing temp directory
+ok 24 - validateRepoPath (full) accepts an existing temp directory
+  ---
+  duration_ms: 0.219083
+  type: 'test'
+  ...
+# Subtest: validateRepoPath (full) rejects non-existent path
+ok 25 - validateRepoPath (full) rejects non-existent path
+  ---
+  duration_ms: 2.766417
+  type: 'test'
+  ...
+# Subtest: addRepo rejects empty / banned-root paths via shape validation
+ok 26 - addRepo rejects empty / banned-root paths via shape validation
+  ---
+  duration_ms: 192.586459
+  type: 'test'
+  ...
+# Subtest: registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one
+ok 27 - registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one
+  ---
+  duration_ms: 303.4725
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5293.302708

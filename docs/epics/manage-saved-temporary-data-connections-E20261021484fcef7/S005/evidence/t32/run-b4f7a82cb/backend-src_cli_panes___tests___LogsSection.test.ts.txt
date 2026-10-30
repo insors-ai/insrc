@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: on open renders the daemon + agent category list and calls neither tailLog (no stream until select) (ac1)
+ok 1 - on open renders the daemon + agent category list and calls neither tailLog (no stream until select) (ac1)
+  ---
+  duration_ms: 42.220542
+  type: 'test'
+  ...
+# Subtest: selecting a category calls tailLog once + renders its lines; selecting another disposes the first (single stream) (ac2)
+ok 2 - selecting a category calls tailLog once + renders its lines; selecting another disposes the first (single stream) (ac2)
+  ---
+  duration_ms: 141.952
+  type: 'test'
+  ...
+# Subtest: an emit AFTER dispose (stale subscription) does not appear in the view
+ok 3 - an emit AFTER dispose (stale subscription) does not appear in the view
+  ---
+  duration_ms: 107.980583
+  type: 'test'
+  ...
+# Subtest: setting a level/module/text filter limits the visible lines while emits accumulate; clearing re-reveals them (ac3)
+ok 4 - setting a level/module/text filter limits the visible lines while emits accumulate; clearing re-reveals them (ac3)
+  ---
+  duration_ms: 192.128875
+  type: 'test'
+  ...
+# Subtest: no key deletes/rotates/clears a log — only select + filter + section-nav honoured (k2); disposed on unmount
+ok 5 - no key deletes/rotates/clears a log — only select + filter + section-nav honoured (k2); disposed on unmount
+  ---
+  duration_ms: 107.030625
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1234.695917

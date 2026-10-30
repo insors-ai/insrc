@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.actions.RepoStatusPopupLayoutTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.007">
+  <properties/>
+  <testcase name="the dialog's Index completeness group shows the reasons and counts of an incomplete repository, complete for a complete one, and unknown without the field()" classname="ai.insors.insrc.jetbrains.actions.RepoStatusPopupLayoutTest" time="0.002"/>
+  <testcase name="ac4 - the off-EDT read + disposed guard is preserved and the shipped Settings page is not edited()" classname="ai.insors.insrc.jetbrains.actions.RepoStatusPopupLayoutTest" time="0.001"/>
+  <testcase name="ac3 - one outer JBScrollPane (AS_NEEDED vertical, NEVER horizontal), no inner scroll pane, over a fixed-size ScrollableColumn()" classname="ai.insors.insrc.jetbrains.actions.RepoStatusPopupLayoutTest" time="0.001"/>
+  <testcase name="ac2 - the status popup uses collapsible accordion groups with nested tables, not the flat rows()" classname="ai.insors.insrc.jetbrains.actions.RepoStatusPopupLayoutTest" time="0.0"/>
+  <testcase name="ac1 - the action sets the insrc menu-item icon from pluginIcon_svg()" classname="ai.insors.insrc.jetbrains.actions.RepoStatusPopupLayoutTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

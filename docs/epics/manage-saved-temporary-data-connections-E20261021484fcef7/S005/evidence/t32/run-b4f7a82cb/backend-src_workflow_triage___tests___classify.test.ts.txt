@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: routeForSizeClass: epic enters at define, in-Epic, full chain
+ok 1 - routeForSizeClass: epic enters at define, in-Epic, full chain
+  ---
+  duration_ms: 2.176875
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: feature is a standalone LLD with plan
+ok 2 - routeForSizeClass: feature is a standalone LLD with plan
+  ---
+  duration_ms: 0.160875
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: small is a standalone LLD, no plan
+ok 3 - routeForSizeClass: small is a standalone LLD, no plan
+  ---
+  duration_ms: 0.087416
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: trivial routes straight to build, no LLD
+ok 4 - routeForSizeClass: trivial routes straight to build, no LLD
+  ---
+  duration_ms: 0.222709
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: every non-epic tier is standalone (the enabling invariant)
+ok 5 - routeForSizeClass: every non-epic tier is standalone (the enabling invariant)
+  ---
+  duration_ms: 0.154875
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: only trivial (and a small bugfix) skips the LLD
+ok 6 - routeForSizeClass: only trivial (and a small bugfix) skips the LLD
+  ---
+  duration_ms: 0.111125
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: bugfix small routes issue -> build (no design, no plan)
+ok 7 - routeForSizeClass: bugfix small routes issue -> build (no design, no plan)
+  ---
+  duration_ms: 0.260084
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: bugfix sized routes issue -> design -> plan -> build
+ok 8 - routeForSizeClass: bugfix sized routes issue -> design -> plan -> build
+  ---
+  duration_ms: 0.132042
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: a bugfix with no magnitude throws (authoritative guard)
+ok 9 - routeForSizeClass: a bugfix with no magnitude throws (authoritative guard)
+  ---
+  duration_ms: 0.408042
+  type: 'test'
+  ...
+# Subtest: routeForSizeClass: magnitude is ignored for the four fixed tiers (ac1)
+ok 10 - routeForSizeClass: magnitude is ignored for the four fixed tiers (ac1)
+  ---
+  duration_ms: 1.277542
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: accepts a well-formed result
+ok 11 - CLASSIFY_SCHEMA: accepts a well-formed result
+  ---
+  duration_ms: 15.415833
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: rejects an unknown sizeClass
+ok 12 - CLASSIFY_SCHEMA: rejects an unknown sizeClass
+  ---
+  duration_ms: 0.091875
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: rejects missing storyTitle
+ok 13 - CLASSIFY_SCHEMA: rejects missing storyTitle
+  ---
+  duration_ms: 0.052042
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: rejects an unknown signal kind
+ok 14 - CLASSIFY_SCHEMA: rejects an unknown signal kind
+  ---
+  duration_ms: 0.055209
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: sizeClass enum includes bugfix (auto-derived from SIZE_CLASSES)
+ok 15 - CLASSIFY_SCHEMA: sizeClass enum includes bugfix (auto-derived from SIZE_CLASSES)
+  ---
+  duration_ms: 0.273041
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: accepts a bugfix with magnitude sized
+ok 16 - CLASSIFY_SCHEMA: accepts a bugfix with magnitude sized
+  ---
+  duration_ms: 0.040542
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: rejects a bugfix with NO magnitude (conditional required)
+ok 17 - CLASSIFY_SCHEMA: rejects a bugfix with NO magnitude (conditional required)
+  ---
+  duration_ms: 0.045959
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: rejects an out-of-enum magnitude
+ok 18 - CLASSIFY_SCHEMA: rejects an out-of-enum magnitude
+  ---
+  duration_ms: 0.0355
+  type: 'test'
+  ...
+# Subtest: CLASSIFY_SCHEMA: a non-bugfix tier needs no magnitude (four-tier unchanged)
+ok 19 - CLASSIFY_SCHEMA: a non-bugfix tier needs no magnitude (four-tier unchanged)
+  ---
+  duration_ms: 0.033459
+  type: 'test'
+  ...
+# Subtest: sc1 contract: a bugfix TriageResult carries magnitude and startStage issue
+ok 20 - sc1 contract: a bugfix TriageResult carries magnitude and startStage issue
+  ---
+  duration_ms: 0.036792
+  type: 'test'
+  ...
+# Subtest: sc1 contract: a fixed-tier TriageResult omits magnitude and keeps its route
+ok 21 - sc1 contract: a fixed-tier TriageResult omits magnitude and keeps its route
+  ---
+  duration_ms: 0.031125
+  type: 'test'
+  ...
+# Subtest: buildClassifyPrompt: request + grounding trail, grounding after the request
+ok 22 - buildClassifyPrompt: request + grounding trail, grounding after the request
+  ---
+  duration_ms: 0.097917
+  type: 'test'
+  ...
+# Subtest: buildClassifyPrompt: empty grounding is flagged for conservative classification
+ok 23 - buildClassifyPrompt: empty grounding is flagged for conservative classification
+  ---
+  duration_ms: 0.03425
+  type: 'test'
+  ...
+# Subtest: buildClassifyPrompt: declaredBugfix adds bugfix+magnitude guidance to the system prompt
+ok 24 - buildClassifyPrompt: declaredBugfix adds bugfix+magnitude guidance to the system prompt
+  ---
+  duration_ms: 0.03925
+  type: 'test'
+  ...
+# Subtest: buildClassifyPrompt: WITHOUT declaredBugfix the system prompt is the unchanged four-tier prompt
+ok 25 - buildClassifyPrompt: WITHOUT declaredBugfix the system prompt is the unchanged four-tier prompt
+  ---
+  duration_ms: 0.040166
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 341.311417

@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: models-daemon-s4.test.ts: check, approve and reject through a real daemon; after restarts the approved model is served with its approved efforts, the rejected one refused, and an unreachable CLI cannot be approved
+ok 1 - models-daemon-s4.test.ts: check, approve and reject through a real daemon; after restarts the approved model is served with its approved efforts, the rejected one refused, and an unreachable CLI cannot be approved
+  ---
+  duration_ms: 11373.843917
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11867.132958

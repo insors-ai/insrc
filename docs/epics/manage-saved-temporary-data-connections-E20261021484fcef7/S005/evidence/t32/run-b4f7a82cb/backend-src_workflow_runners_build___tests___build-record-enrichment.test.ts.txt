@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: render: a non-empty body.summary -> a `\#\# Summary` section carrying the narrative (ac1)
+ok 1 - render: a non-empty body.summary -> a `\#\# Summary` section carrying the narrative (ac1)
+  ---
+  duration_ms: 0.935083
+  type: 'test'
+  ...
+# Subtest: render: an empty / whitespace body.summary -> NO `\#\# Summary` section (omit-slot, ac3)
+ok 2 - render: an empty / whitespace body.summary -> NO `\#\# Summary` section (omit-slot, ac3)
+  ---
+  duration_ms: 0.122
+  type: 'test'
+  ...
+# Subtest: render: a summary XOR feedback -> only the present section renders
+ok 3 - render: a summary XOR feedback -> only the present section renders
+  ---
+  duration_ms: 0.096875
+  type: 'test'
+  ...
+# Subtest: render: neither summary nor feedback -> no new sections, byte-identical to the pre-S003 render (ac3/k4)
+ok 4 - render: neither summary nor feedback -> no new sections, byte-identical to the pre-S003 render (ac3/k4)
+  ---
+  duration_ms: 0.071625
+  type: 'test'
+  ...
+# Subtest: persist: a record with body.summary -> the json carries it and the .md renders `\#\# Summary` (ac1)
+ok 5 - persist: a record with body.summary -> the json carries it and the .md renders `\#\# Summary` (ac1)
+  ---
+  duration_ms: 32.900875
+  type: 'test'
+  ...
+# Subtest: appendFeedback: build-cycle feedback accretes on the persisted BUILD json and renders `\#\# Feedback` (ac2)
+ok 6 - appendFeedback: build-cycle feedback accretes on the persisted BUILD json and renders `\#\# Feedback` (ac2)
+  ---
+  duration_ms: 28.190291
+  type: 'test'
+  ...
+# Subtest: persist upsert: a re-validate that omits body.summary PRESERVES the prior summary
+ok 7 - persist upsert: a re-validate that omits body.summary PRESERVES the prior summary
+  ---
+  duration_ms: 56.653917
+  type: 'test'
+  ...
+# Subtest: persist: a record with neither summary nor feedback -> the .md has no new sections (ac3/k4)
+ok 8 - persist: a record with neither summary nor feedback -> the .md has no new sections (ac3/k4)
+  ---
+  duration_ms: 28.771958
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 377.566584

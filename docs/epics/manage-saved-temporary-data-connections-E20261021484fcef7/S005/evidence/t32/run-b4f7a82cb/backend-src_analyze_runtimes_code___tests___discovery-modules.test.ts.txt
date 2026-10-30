@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: readScopeRef: well-formed scopeRef -> returned verbatim
+ok 1 - readScopeRef: well-formed scopeRef -> returned verbatim
+  ---
+  duration_ms: 1.204541
+  type: 'test'
+  ...
+# Subtest: readScopeRef: missing scopeRef -> throws with INV-5 message
+ok 2 - readScopeRef: missing scopeRef -> throws with INV-5 message
+  ---
+  duration_ms: 0.19
+  type: 'test'
+  ...
+# Subtest: readScopeRef: scopeRef with wrong shape -> throws
+ok 3 - readScopeRef: scopeRef with wrong shape -> throws
+  ---
+  duration_ms: 0.060875
+  type: 'test'
+  ...
+# Subtest: registerBuiltinRuntimes registers code.discovery.modules; idempotent
+ok 4 - registerBuiltinRuntimes registers code.discovery.modules; idempotent
+  ---
+  duration_ms: 0.343
+  type: 'test'
+  ...
+# Subtest: registerBuiltinRuntimes: after reset, re-registers without collision
+ok 5 - registerBuiltinRuntimes: after reset, re-registers without collision
+  ---
+  duration_ms: 0.134333
+  type: 'test'
+  ...
+# Subtest: code.discovery.modules integration: skipped (set INSRC_LIVE_TESTS=1)
+ok 6 - code.discovery.modules integration: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.075583
+  type: 'test'
+  ...
+# Subtest: integration: seeded 3 modules + 2 functions -> outputs only the 3 modules, sorted by path
+ok 7 - integration: seeded 3 modules + 2 functions -> outputs only the 3 modules, sorted by path # SKIP
+  ---
+  duration_ms: 0.070375
+  type: 'test'
+  ...
+# Subtest: integration: repo with zero modules -> empty array, not error
+ok 8 - integration: repo with zero modules -> empty array, not error # SKIP
+  ---
+  duration_ms: 0.123209
+  type: 'test'
+  ...
+# Subtest: integration: manifest-dir scopeRef -> resolved to repo path
+ok 9 - integration: manifest-dir scopeRef -> resolved to repo path # SKIP
+  ---
+  duration_ms: 0.360208
+  type: 'test'
+  ...
+# Subtest: integration: a kind the code family does not accept (connection) -> refused, naming the template and the kinds allowed
+ok 10 - integration: a kind the code family does not accept (connection) -> refused, naming the template and the kinds allowed # SKIP
+  ---
+  duration_ms: 0.238458
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 5
+# todo 0
+# duration_ms 717.553625

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a codex CliProvider with model gpt-6.1-sol and effort high runs and codex reports reasoning effort high
+ok 1 - a codex CliProvider with model gpt-6.1-sol and effort high runs and codex reports reasoning effort high # SKIP set INSRC_LIVE_TESTS=1 (real CLI calls)
+  ---
+  duration_ms: 0.572458
+  type: 'test'
+  ...
+# Subtest: a claude CliProvider with effort low runs, and claude given an unknown --effort value warns and runs at its default
+ok 2 - a claude CliProvider with effort low runs, and claude given an unknown --effort value warns and runs at its default # SKIP set INSRC_LIVE_TESTS=1 (real CLI calls)
+  ---
+  duration_ms: 0.047083
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 307.2655

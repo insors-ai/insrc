@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: depthForRepo counts repoPath-named jobs (full/reembed/doc-summarise-repo) for that repo
+ok 1 - depthForRepo counts repoPath-named jobs (full/reembed/doc-summarise-repo) for that repo
+  ---
+  duration_ms: 0.765333
+  type: 'test'
+  ...
+# Subtest: depthForRepo counts file/config-file jobs whose filePath is under the repo (repoPath+sep)
+ok 2 - depthForRepo counts file/config-file jobs whose filePath is under the repo (repoPath+sep)
+  ---
+  duration_ms: 0.327833
+  type: 'test'
+  ...
+# Subtest: repo-agnostic jobs (config-full/config-reindex/doc-summarise-entity) and other-repo jobs do NOT count
+ok 3 - repo-agnostic jobs (config-full/config-reindex/doc-summarise-entity) and other-repo jobs do NOT count
+  ---
+  duration_ms: 0.165417
+  type: 'test'
+  ...
+# Subtest: depthForRepo returns 0 for a repo with no queued jobs; get depth() is the global total
+ok 4 - depthForRepo returns 0 for a repo with no queued jobs; get depth() is the global total
+  ---
+  duration_ms: 0.058125
+  type: 'test'
+  ...
+# Subtest: a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued
+ok 5 - a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued
+  ---
+  duration_ms: 0.065417
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 329.576

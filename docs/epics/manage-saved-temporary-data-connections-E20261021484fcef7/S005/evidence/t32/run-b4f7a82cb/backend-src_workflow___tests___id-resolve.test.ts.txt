@@ -1,0 +1,322 @@
+TAP version 13
+# Subtest: worked example — canonical + slug, exactly
+ok 1 - worked example — canonical + slug, exactly
+  ---
+  duration_ms: 0.907167
+  type: 'test'
+  ...
+# Subtest: round-trip canonical + slug at every level
+ok 2 - round-trip canonical + slug at every level
+  ---
+  duration_ms: 0.889625
+  type: 'test'
+  ...
+# Subtest: ordinal padding — <3 digits pad to 3, >=1000 keep full width
+ok 3 - ordinal padding — <3 digits pad to 3, >=1000 keep full width
+  ---
+  duration_ms: 0.080875
+  type: 'test'
+  ...
+# Subtest: parse accepts canonical AND slug for the same node
+ok 4 - parse accepts canonical AND slug for the same node
+  ---
+  duration_ms: 0.098917
+  type: 'test'
+  ...
+# Subtest: hash8 derives from epicHash slice, never re-hashed
+ok 5 - hash8 derives from epicHash slice, never re-hashed
+  ---
+  duration_ms: 0.042084
+  type: 'test'
+  ...
+# Subtest: date is UTC of createdAt
+ok 6 - date is UTC of createdAt
+  ---
+  duration_ms: 0.036708
+  type: 'test'
+  ...
+# Subtest: parentId chain task → story → epic → null
+ok 7 - parentId chain task → story → epic → null
+  ---
+  duration_ms: 0.144125
+  type: 'test'
+  ...
+# Subtest: label ↔ ordinal bridges
+ok 8 - label ↔ ordinal bridges
+  ---
+  duration_ms: 0.114125
+  type: 'test'
+  ...
+# Subtest: S001: storyIdToOrdinal accepts s<n> AND S<nnn> — case + padding inert
+ok 9 - S001: storyIdToOrdinal accepts s<n> AND S<nnn> — case + padding inert
+  ---
+  duration_ms: 0.292792
+  type: 'test'
+  ...
+# Subtest: S001/ac1: a standalone uppercase S001 canonicalizes to the same id as its lowercase sibling
+ok 10 - S001/ac1: a standalone uppercase S001 canonicalizes to the same id as its lowercase sibling
+  ---
+  duration_ms: 0.344417
+  type: 'test'
+  ...
+# Subtest: S001/ac2: lowercase story ids are byte-identical before/after; ordinalToStoryId unchanged
+ok 11 - S001/ac2: lowercase story ids are byte-identical before/after; ordinalToStoryId unchanged
+  ---
+  duration_ms: 0.05325
+  type: 'test'
+  ...
+# Subtest: S001: deriveWorkItemIdentity composes the bundle; story-level s1===S001; epic-level has no story segment
+ok 12 - S001: deriveWorkItemIdentity composes the bundle; story-level s1===S001; epic-level has no story segment
+  ---
+  duration_ms: 0.096042
+  type: 'test'
+  ...
+# Subtest: S001/lc1: identity stays both-way — parse(toCanonical(mint(S001))) yields ordinal 1
+ok 13 - S001/lc1: identity stays both-way — parse(toCanonical(mint(S001))) yields ordinal 1
+  ---
+  duration_ms: 0.042708
+  type: 'test'
+  ...
+# Subtest: resolver — \#9, s1/t3, canonical + slug all resolve to the same task record
+ok 14 - resolver — \#9, s1/t3, canonical + slug all resolve to the same task record
+  ---
+  duration_ms: 4.308292
+  type: 'test'
+  ...
+# Subtest: resolver — story-level (s1, \#5) and epic-level (\#1)
+ok 15 - resolver — story-level (s1, \#5) and epic-level (\#1)
+  ---
+  duration_ms: 2.160083
+  type: 'test'
+  ...
+# Subtest: resolver — both-way helpers
+ok 16 - resolver — both-way helpers
+  ---
+  duration_ms: 2.817916
+  type: 'test'
+  ...
+# Subtest: resolver — a second epic that does NOT hold the label no longer makes it ambiguous (INVERTED at S001/t5)
+ok 17 - resolver — a second epic that does NOT hold the label no longer makes it ambiguous (INVERTED at S001/t5)
+  ---
+  duration_ms: 2.327875
+  type: 'test'
+  ...
+# Subtest: resolver — a DEF-less bugfix epic resolves 'S001/t1' to its PlanTask (was null: unresolved-target)
+ok 18 - resolver — a DEF-less bugfix epic resolves 'S001/t1' to its PlanTask (was null: unresolved-target)
+  ---
+  duration_ms: 1.813333
+  type: 'test'
+  ...
+# Subtest: resolver — MUTATION (INVERTED at ISSUE-c00559b7): delete the ISSUE and the LLD heads the work item; delete the LLD too and the target goes back to null
+ok 19 - resolver — MUTATION (INVERTED at ISSUE-c00559b7): delete the ISSUE and the LLD heads the work item; delete the LLD too and the target goes back to null
+  ---
+  duration_ms: 8.762708
+  type: 'test'
+  ...
+# Subtest: resolver — an uppercase S001 story is resolvable by ISSUE NUMBER (the lowercase-only PLAN_RE/LLD_RE defect)
+ok 20 - resolver — an uppercase S001 story is resolvable by ISSUE NUMBER (the lowercase-only PLAN_RE/LLD_RE defect)
+  ---
+  duration_ms: 2.685791
+  type: 'test'
+  ...
+# Subtest: resolver — the hierarchical id form also resolves for a DEF-less epic
+ok 21 - resolver — the hierarchical id form also resolves for a DEF-less epic
+  ---
+  duration_ms: 2.170292
+  type: 'test'
+  ...
+# Subtest: resolver — ADDITIVE: when BOTH a DEF and an ISSUE exist for one hash, the DEF wins and nothing is guessed
+ok 22 - resolver — ADDITIVE: when BOTH a DEF and an ISSUE exist for one hash, the DEF wins and nothing is guessed
+  ---
+  duration_ms: 2.126875
+  type: 'test'
+  ...
+# Subtest: resolver — a DEF-bearing epic is untouched by the ISSUE fallback (regression)
+ok 23 - resolver — a DEF-bearing epic is untouched by the ISSUE fallback (regression)
+  ---
+  duration_ms: 1.26325
+  type: 'test'
+  ...
+# Subtest: resolver — a bugfix epic is not shadowed by a DEF epic that lacks its story (INVERTED at S001/t5)
+ok 24 - resolver — a bugfix epic is not shadowed by a DEF epic that lacks its story (INVERTED at S001/t5)
+  ---
+  duration_ms: 3.135292
+  type: 'test'
+  ...
+# Subtest: RED-FIRST (a), green at t4 — asserts DESIRED behaviour, FAILS today: a DEF epic holding s1 plus an UNRELATED ISSUE epic on a different hash still resolves `s1`
+ok 25 - RED-FIRST (a), green at t4 — asserts DESIRED behaviour, FAILS today: a DEF epic holding s1 plus an UNRELATED ISSUE epic on a different hash still resolves `s1`
+  ---
+  duration_ms: 2.091791
+  type: 'test'
+  ...
+# Subtest: RED-FIRST (b), green at t3 — asserts DESIRED behaviour, FAILS today: a single-epic repo REFUSES a nonexistent story instead of minting a dummy ref
+ok 26 - RED-FIRST (b), green at t3 — asserts DESIRED behaviour, FAILS today: a single-epic repo REFUSES a nonexistent story instead of minting a dummy ref
+  ---
+  duration_ms: 1.3065
+  type: 'test'
+  ...
+# Subtest: RED-FIRST (c), green at t3, NARROWING 1 — asserts DESIRED behaviour, FAILS today: an explicitly scoped label for a story the scoped epic LACKS refuses
+ok 27 - RED-FIRST (c), green at t3, NARROWING 1 — asserts DESIRED behaviour, FAILS today: an explicitly scoped label for a story the scoped epic LACKS refuses
+  ---
+  duration_ms: 1.117833
+  type: 'test'
+  ...
+# Subtest: RED-FIRST (d), green at t3, NARROWING 2 — asserts DESIRED behaviour, FAILS today: a hierarchical id naming a nonexistent story ordinal refuses
+ok 28 - RED-FIRST (d), green at t3, NARROWING 2 — asserts DESIRED behaviour, FAILS today: a hierarchical id naming a nonexistent story ordinal refuses
+  ---
+  duration_ms: 2.392667
+  type: 'test'
+  ...
+# Subtest: RED-FIRST (e), green at t4 — asserts DESIRED behaviour, FAILS today: two FEATURE epics where only ONE holds s1 resolves (additive beyond the regression)
+ok 29 - RED-FIRST (e), green at t4 — asserts DESIRED behaviour, FAILS today: two FEATURE epics where only ONE holds s1 resolves (additive beyond the regression)
+  ---
+  duration_ms: 2.030292
+  type: 'test'
+  ...
+# Subtest: t2: readEpicDefinition reads the DEF first and the ISSUE second — the order is the discriminator
+ok 30 - t2: readEpicDefinition reads the DEF first and the ISSUE second — the order is the discriminator
+  ---
+  duration_ms: 2.007625
+  type: 'test'
+  ...
+# Subtest: t2: first-READABLE-wins — a MALFORMED DEF falls through to the ISSUE rather than aborting the read
+ok 31 - t2: first-READABLE-wins — a MALFORMED DEF falls through to the ISSUE rather than aborting the read
+  ---
+  duration_ms: 1.372667
+  type: 'test'
+  ...
+# Subtest: t2: readEpicDefinition NEVER throws — missing, malformed, and a malformed-with-no-fallback all yield an absence
+ok 32 - t2: readEpicDefinition NEVER throws — missing, malformed, and a malformed-with-no-fallback all yield an absence
+  ---
+  duration_ms: 1.299667
+  type: 'test'
+  ...
+# Subtest: t3: the reader is now WIRED — the DEF body type carries `stories`, and an undeclared story no longer resolves
+ok 33 - t3: the reader is now WIRED — the DEF body type carries `stories`, and an undeclared story no longer resolves
+  ---
+  duration_ms: 1.412833
+  type: 'test'
+  ...
+# Subtest: t3 — the ARTIFACT clause: a story with an LLD resolves, and one with only a PLAN resolves too
+ok 34 - t3 — the ARTIFACT clause: a story with an LLD resolves, and one with only a PLAN resolves too
+  ---
+  duration_ms: 1.569958
+  type: 'test'
+  ...
+# Subtest: t3 — neither artifact nor declaration → REFUSAL, not a dummy ref
+ok 35 - t3 — neither artifact nor declaration → REFUSAL, not a dummy ref
+  ---
+  duration_ms: 1.191042
+  type: 'test'
+  ...
+# Subtest: t3 — the DECLARATION clause alone suffices: a DEF-declared story with no LLD and no PLAN resolves
+ok 36 - t3 — the DECLARATION clause alone suffices: a DEF-declared story with no LLD and no PLAN resolves
+  ---
+  duration_ms: 1.329292
+  type: 'test'
+  ...
+# Subtest: t3 — an ISSUE-anchored epic blesses ordinal 1 and REFUSES ordinal 2 (the one-story convention)
+ok 37 - t3 — an ISSUE-anchored epic blesses ordinal 1 and REFUSES ordinal 2 (the one-story convention)
+  ---
+  duration_ms: 1.352042
+  type: 'test'
+  ...
+# Subtest: t3 — s1 / S1 / S001 verify identically, inherited from storyIdToOrdinal
+ok 38 - t3 — s1 / S1 / S001 verify identically, inherited from storyIdToOrdinal
+  ---
+  duration_ms: 2.504291
+  type: 'test'
+  ...
+# Subtest: t3 — an EPIC-level call is entirely unverified and unchanged (asserted, not assumed)
+ok 39 - t3 — an EPIC-level call is entirely unverified and unchanged (asserted, not assumed)
+  ---
+  duration_ms: 1.183584
+  type: 'test'
+  ...
+# Subtest: t3 — task-level NON-extension: an existing story with an unknown taskId still resolves, `task` absent
+ok 40 - t3 — task-level NON-extension: an existing story with an unknown taskId still resolves, `task` absent
+  ---
+  duration_ms: 1.230125
+  type: 'test'
+  ...
+# Subtest: t3 — never throws: an unparseable story label and a malformed definition artifact each yield a refusal
+ok 41 - t3 — never throws: an unparseable story label and a malformed definition artifact each yield a refusal
+  ---
+  duration_ms: 1.492292
+  type: 'test'
+  ...
+# Subtest: t3 — PER-CLAUSE degradation: a corrupt DEF does not disqualify a story whose LLD is intact
+ok 42 - t3 — PER-CLAUSE degradation: a corrupt DEF does not disqualify a story whose LLD is intact
+  ---
+  duration_ms: 1.523417
+  type: 'test'
+  ...
+# Subtest: t4 — GENUINE ambiguity still refuses: two feature epics that BOTH contain s1, unscoped → null
+ok 43 - t4 — GENUINE ambiguity still refuses: two feature epics that BOTH contain s1, unscoped → null
+  ---
+  duration_ms: 1.724959
+  type: 'test'
+  ...
+# Subtest: t4 — a tie within the EXPLICIT tier does not fall through to the implied tier
+ok 44 - t4 — a tie within the EXPLICIT tier does not fall through to the implied tier
+  ---
+  duration_ms: 3.851709
+  type: 'test'
+  ...
+# Subtest: t4 — a bugfix-only repo: `S001` refuses unscoped (every ISSUE epic implies one) and resolves with an explicit scope
+ok 45 - t4 — a bugfix-only repo: `S001` refuses unscoped (every ISSUE epic implies one) and resolves with an explicit scope
+  ---
+  duration_ms: 2.539958
+  type: 'test'
+  ...
+# Subtest: t4 — the ISSUE was NOT demoted: a bugfix epic is still an enumerated peer, reachable unscoped and scoped
+ok 46 - t4 — the ISSUE was NOT demoted: a bugfix epic is still an enumerated peer, reachable unscoped and scoped
+  ---
+  duration_ms: 1.493875
+  type: 'test'
+  ...
+# Subtest: t4 — an epic with real evidence but UNUSABLE identity counts toward ambiguity instead of vanishing
+ok 47 - t4 — an epic with real evidence but UNUSABLE identity counts toward ambiguity instead of vanishing
+  ---
+  duration_ms: 1.820792
+  type: 'test'
+  ...
+# Subtest: t4 — a lone candidate whose reference cannot be built is a REFUSAL, not a hand-off
+ok 48 - t4 — a lone candidate whose reference cannot be built is a REFUSAL, not a hand-off
+  ---
+  duration_ms: 0.932875
+  type: 'test'
+  ...
+# Subtest: t6 — resolveByIssue NO-OP: issue numbers resolve at task, story and epic level exactly as before
+ok 49 - t6 — resolveByIssue NO-OP: issue numbers resolve at task, story and epic level exactly as before
+  ---
+  duration_ms: 1.552833
+  type: 'test'
+  ...
+# Subtest: t6 — resolveByIssue, the ONE corner that is not a no-op: a DEF storyRef for a story that does not exist now refuses
+ok 50 - t6 — resolveByIssue, the ONE corner that is not a no-op: a DEF storyRef for a story that does not exist now refuses
+  ---
+  duration_ms: 0.908292
+  type: 'test'
+  ...
+# Subtest: resolver — unknown / malformed identifier → null
+ok 51 - resolver — unknown / malformed identifier → null
+  ---
+  duration_ms: 0.957333
+  type: 'test'
+  ...
+# Subtest: id marker embeds as the first body line and round-trips out
+ok 52 - id marker embeds as the first body line and round-trips out
+  ---
+  duration_ms: 0.365667
+  type: 'test'
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 291.506125

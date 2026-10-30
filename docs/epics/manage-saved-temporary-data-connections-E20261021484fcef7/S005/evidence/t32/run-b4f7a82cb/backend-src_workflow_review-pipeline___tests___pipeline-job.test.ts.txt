@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens
+ok 1 - the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens
+  ---
+  duration_ms: 2.660333
+  type: 'test'
+  ...
+# Subtest: a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope
+ok 2 - a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope
+  ---
+  duration_ms: 25.737
+  type: 'test'
+  ...
+# Subtest: a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats
+ok 3 - a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats
+  ---
+  duration_ms: 1.072167
+  type: 'test'
+  ...
+# Subtest: a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies
+ok 4 - a transient error or an invalid answer is re-issued once under a new callId, then the stage failure policy applies
+  ---
+  duration_ms: 1.12575
+  type: 'test'
+  ...
+# Subtest: a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt
+ok 5 - a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt
+  ---
+  duration_ms: 10.299292
+  type: 'test'
+  ...
+# Subtest: refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material
+ok 6 - refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material
+  ---
+  duration_ms: 1.007833
+  type: 'test'
+  ...
+# Subtest: runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them
+ok 7 - runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them
+  ---
+  duration_ms: 2.726291
+  type: 'test'
+  ...
+# Subtest: a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message
+ok 8 - a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message
+  ---
+  duration_ms: 1.654542
+  type: 'test'
+  ...
+# Subtest: a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)
+ok 9 - a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)
+  ---
+  duration_ms: 0.929333
+  type: 'test'
+  ...
+# Subtest: a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded
+ok 10 - a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded
+  ---
+  duration_ms: 144.340292
+  type: 'test'
+  ...
+# Subtest: an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept
+ok 11 - an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept
+  ---
+  duration_ms: 4.251916
+  type: 'test'
+  ...
+# Subtest: a relation judged by two calls is complete only when both are answered
+ok 12 - a relation judged by two calls is complete only when both are answered
+  ---
+  duration_ms: 3.747958
+  type: 'test'
+  ...
+# Subtest: usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged
+ok 13 - usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged
+  ---
+  duration_ms: 7.206375
+  type: 'test'
+  ...
+# Subtest: an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named
+ok 14 - an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named
+  ---
+  duration_ms: 5.484583
+  type: 'test'
+  ...
+# Subtest: the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit
+ok 15 - the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit
+  ---
+  duration_ms: 3.064959
+  type: 'test'
+  ...
+# Subtest: a divided review whose result is an array keeps it an array, and its calls per role are read from the job
+ok 16 - a divided review whose result is an array keeps it an array, and its calls per role are read from the job
+  ---
+  duration_ms: 0.982791
+  type: 'test'
+  ...
+# Subtest: a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review
+ok 17 - a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review
+  ---
+  duration_ms: 0.834833
+  type: 'test'
+  ...
+# Subtest: a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions
+ok 18 - a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions
+  ---
+  duration_ms: 0.437
+  type: 'test'
+  ...
+# Subtest: DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted
+ok 19 - DIFF-REPAIR: an oversized correction fails explicitly instead of being silently omitted
+  ---
+  duration_ms: 0.223625
+  type: 'test'
+  ...
+# Subtest: a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'
+ok 20 - a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'
+  ---
+  duration_ms: 1.086334
+  type: 'test'
+  ...
+# Subtest: a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size
+ok 21 - a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size
+  ---
+  duration_ms: 1.5525
+  type: 'test'
+  ...
+# Subtest: a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)
+ok 22 - a call that did not complete is logged with the failure detail (ISSUE-d3a6b651)
+  ---
+  duration_ms: 0.274084
+  type: 'test'
+  ...
+# Subtest: a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons
+ok 23 - a review call rejected by the reply check is classified invalid-answer and re-issued with a correction note carrying the reasons
+  ---
+  duration_ms: 0.178375
+  type: 'test'
+  ...
+# Subtest: a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once
+ok 24 - a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once
+  ---
+  duration_ms: 0.162708
+  type: 'test'
+  ...
+# Subtest: a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts
+ok 25 - a claim whose three attempts stall, or two stalls then a transient failure, is recorded as not judged with a message naming three attempts
+  ---
+  duration_ms: 0.265125
+  type: 'test'
+  ...
+# Subtest: ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders
+ok 26 - ReviewCallFailedError names the real attempt count and an older NotJudged without attempts still renders
+  ---
+  duration_ms: 0.211667
+  type: 'test'
+  ...
+# Subtest: the pipeline driver forwards a structured call's stallMs to completeStructured
+ok 27 - the pipeline driver forwards a structured call's stallMs to completeStructured
+  ---
+  duration_ms: 0.155333
+  type: 'test'
+  ...
+# Subtest: the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession
+ok 28 - the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession
+  ---
+  duration_ms: 0.26975
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3444.369583

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.007">
+  <properties/>
+  <testcase name="kill of an empty selection is a no-op()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.002"/>
+  <testcase name="scan returns an empty scan for an empty process list()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.001"/>
+  <testcase name="scan swallows an enumeration failure into an empty scan (never throws)()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.0"/>
+  <testcase name="kill reports the managed pid SKIPPED and never signals it()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.001"/>
+  <testcase name="scan keeps only daemon-entry-matching non-managed pids()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.001"/>
+  <testcase name="kill returns empty off an unsupported platform()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.0"/>
+  <testcase name="scan degrades to Unsupported when no command line is observable()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.0"/>
+  <testcase name="scan with only the managed daemon matching yields an empty list()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.001"/>
+  <testcase name="kill escalates SIGTERM to SIGKILL and reports per-pid outcomes in input order()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.0"/>
+  <testcase name="scan degrades to Unsupported off a capable platform()" classname="ai.insors.insrc.jetbrains.debug.OrphanProcessSeamTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

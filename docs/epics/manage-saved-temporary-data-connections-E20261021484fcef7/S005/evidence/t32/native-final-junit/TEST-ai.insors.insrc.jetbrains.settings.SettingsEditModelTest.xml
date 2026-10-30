@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.005">
+  <properties/>
+  <testcase name="re-selecting an unset field's own default is not dirty()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.002"/>
+  <testcase name="editing a number to a new value is dirty and writes a numeric Set()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="onSaved after a clear marks the field unset and shows the default()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="an enum value outside the declared set is a validation error()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.001"/>
+  <testcase name="an unset field edited to a value is dirty (was using the default)()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="a non-numeric number edit is a validation error and is excluded from writes()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="an empty string is a valid string value()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.001"/>
+  <testcase name="revertField drops the edit()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="a dotted path maps to literal segments (lc1)()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="a set-but-null value displays the default (not a blank or false control)()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="reset-to-default clears a set key but is a no-op on an unset key()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="a fresh model is not modified and has nothing to write()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="re-typing the same integral number (Gson Double baseline) is not dirty()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="control-kind maps per declared type()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <testcase name="onSaved advances the baseline so the field is no longer dirty()" classname="ai.insors.insrc.jetbrains.settings.SettingsEditModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

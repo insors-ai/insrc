@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.SettingsTreeModelTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.002">
+  <properties/>
+  <testcase name="nodes are categories in groupsOf order then one node per section title()" classname="ai.insors.insrc.jetbrains.settings.SettingsTreeModelTest" time="0.001"/>
+  <testcase name="the default node is General when present()" classname="ai.insors.insrc.jetbrains.settings.SettingsTreeModelTest" time="0.001"/>
+  <testcase name="the default node falls back to the first category when there is no General()" classname="ai.insors.insrc.jetbrains.settings.SettingsTreeModelTest" time="0.0"/>
+  <testcase name="an empty catalog with only sections still yields section nodes and a valid default()" classname="ai.insors.insrc.jetbrains.settings.SettingsTreeModelTest" time="0.0"/>
+  <testcase name="every option maps to exactly one category node in order (no drop, dup, or reorder)()" classname="ai.insors.insrc.jetbrains.settings.SettingsTreeModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

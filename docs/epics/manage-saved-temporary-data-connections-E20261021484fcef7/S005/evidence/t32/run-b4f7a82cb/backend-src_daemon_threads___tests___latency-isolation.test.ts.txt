@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open
+ok 1 - daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open
+  ---
+  duration_ms: 21331.354334
+  type: 'test'
+  ...
+# Subtest: a session request on the main thread is answered while an indexing pass runs
+ok 2 - a session request on the main thread is answered while an indexing pass runs
+  ---
+  duration_ms: 11691.012375
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33715.586417

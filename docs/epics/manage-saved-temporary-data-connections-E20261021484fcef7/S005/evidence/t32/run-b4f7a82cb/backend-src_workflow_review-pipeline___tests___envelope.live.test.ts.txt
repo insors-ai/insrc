@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: claude and codex accept the envelope around every review answer schema and echo the callId
+ok 1 - claude and codex accept the envelope around every review answer schema and echo the callId # SKIP INSRC_LIVE_TESTS is not 1
+  ---
+  duration_ms: 0.939208
+  type: 'test'
+  ...
+# Subtest: a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline
+ok 2 - a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline # SKIP INSRC_LIVE_TESTS is not 1
+  ---
+  duration_ms: 0.056709
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 759.228167

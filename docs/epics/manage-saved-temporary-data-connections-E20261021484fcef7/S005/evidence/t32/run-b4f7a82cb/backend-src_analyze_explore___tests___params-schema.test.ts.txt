@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: every exploration type has exactly one params branch, derived from EXPLORATION_TYPES
+ok 1 - every exploration type has exactly one params branch, derived from EXPLORATION_TYPES
+  ---
+  duration_ms: 1.497916
+  type: 'test'
+  ...
+# Subtest: each branch is closed, requires no param, and admits null and a placeholder string for every value
+ok 2 - each branch is closed, requires no param, and admits null and a placeholder string for every value
+  ---
+  duration_ms: 23.773917
+  type: 'test'
+  ...
+# Subtest: every documented params example in the decomposer prompt validates against its type's branch
+ok 3 - every documented params example in the decomposer prompt validates against its type's branch
+  ---
+  duration_ms: 7.722042
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 397.99125

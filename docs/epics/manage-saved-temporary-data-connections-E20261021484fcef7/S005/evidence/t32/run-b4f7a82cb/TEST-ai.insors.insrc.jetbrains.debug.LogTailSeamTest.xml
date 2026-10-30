@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.debug.LogTailSeamTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="rotation to a higher-N segment resets seen and truncation re-tails from 0()" classname="ai.insors.insrc.jetbrains.debug.LogTailSeamTest" time="0.001"/>
+  <testcase name="a throwing fs degrades to an empty initial emit and a valid idempotent dispose()" classname="ai.insors.insrc.jetbrains.debug.LogTailSeamTest" time="0.0"/>
+  <testcase name="a watch trigger after appended lines emits ONLY the fresh lines()" classname="ai.insors.insrc.jetbrains.debug.LogTailSeamTest" time="0.0"/>
+  <testcase name="a transient read failure skips the emit without throwing()" classname="ai.insors.insrc.jetbrains.debug.LogTailSeamTest" time="0.0"/>
+  <testcase name="tail emits the last maxLines of the highest-N segment initially()" classname="ai.insors.insrc.jetbrains.debug.LogTailSeamTest" time="0.0"/>
+  <testcase name="a post-dispose trigger emits nothing()" classname="ai.insors.insrc.jetbrains.debug.LogTailSeamTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

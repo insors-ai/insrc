@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: getAllTurnsWithVectorsForRepo joins Lance vectors back onto turns
+ok 1 - getAllTurnsWithVectorsForRepo joins Lance vectors back onto turns
+  ---
+  duration_ms: 174.963708
+  type: 'test'
+  ...
+# Subtest: getAllTurnsWithVectorsForRepo returns vectors only for Lance-backed turns
+ok 2 - getAllTurnsWithVectorsForRepo returns vectors only for Lance-backed turns
+  ---
+  duration_ms: 151.468333
+  type: 'test'
+  ...
+# Subtest: compaction reclassifies directive turns as type=directive
+ok 3 - compaction reclassifies directive turns as type=directive
+  ---
+  duration_ms: 183.122584
+  type: 'test'
+  ...
+# Subtest: compaction promotes warm-tier turns and re-embeds the compressed text
+ok 4 - compaction promotes warm-tier turns and re-embeds the compressed text
+  ---
+  duration_ms: 154.922334
+  type: 'test'
+  ...
+# Subtest: compaction collapses archive sessions into a summary turn (centroid)
+ok 5 - compaction collapses archive sessions into a summary turn (centroid)
+  ---
+  duration_ms: 186.541
+  type: 'test'
+  ...
+# Subtest: compaction dedupes near-duplicate turns within the same tier
+ok 6 - compaction dedupes near-duplicate turns within the same tier
+  ---
+  duration_ms: 158.9245
+  type: 'test'
+  ...
+# Subtest: compaction-deleted turns are removed from Lance turn_vec
+ok 7 - compaction-deleted turns are removed from Lance turn_vec
+  ---
+  duration_ms: 183.672875
+  type: 'test'
+  ...
+# Subtest: compaction dryRun does not mutate state
+ok 8 - compaction dryRun does not mutate state
+  ---
+  duration_ms: 199.708125
+  type: 'test'
+  ...
+# Subtest: compaction on empty repo is a no-op
+ok 9 - compaction on empty repo is a no-op
+  ---
+  duration_ms: 157.020875
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1919.047209

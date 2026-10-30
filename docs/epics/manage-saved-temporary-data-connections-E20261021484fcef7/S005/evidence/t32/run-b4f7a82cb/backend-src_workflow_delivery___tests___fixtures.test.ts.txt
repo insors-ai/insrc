@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: every real-shape fixture builds a valid ArtifactRecord with its identity fields intact
+ok 1 - every real-shape fixture builds a valid ArtifactRecord with its identity fields intact
+  ---
+  duration_ms: 8.680959
+  type: 'test'
+  ...
+# Subtest: builders fabricate records the same way recordFromFile lifts them
+ok 2 - builders fabricate records the same way recordFromFile lifts them
+  ---
+  duration_ms: 0.260292
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 301.9175

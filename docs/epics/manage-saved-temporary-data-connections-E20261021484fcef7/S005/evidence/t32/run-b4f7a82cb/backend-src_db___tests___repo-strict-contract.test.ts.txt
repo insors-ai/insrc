@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: 5.2: upsertEntities throws UnregisteredRepoError for an unregistered workspace path
+ok 1 - 5.2: upsertEntities throws UnregisteredRepoError for an unregistered workspace path
+  ---
+  duration_ms: 191.820458
+  type: 'test'
+  ...
+# Subtest: 5.2: failed upsert leaves the repo sub-DB untouched (no auto-allocation)
+ok 2 - 5.2: failed upsert leaves the repo sub-DB untouched (no auto-allocation)
+  ---
+  duration_ms: 170.535584
+  type: 'test'
+  ...
+# Subtest: 5.2: upsertEntities succeeds once the path is pre-registered via addRepo
+ok 3 - 5.2: upsertEntities succeeds once the path is pre-registered via addRepo
+  ---
+  duration_ms: 194.228292
+  type: 'test'
+  ...
+# Subtest: 5.2: storage layer never writes a non-shared-modules repo row outside addRepo()
+ok 4 - 5.2: storage layer never writes a non-shared-modules repo row outside addRepo()
+  ---
+  duration_ms: 176.491334
+  type: 'test'
+  ...
+# Subtest: 5.2: module entities (empty repo path) bypass strict lookup via namespace fallback
+ok 5 - 5.2: module entities (empty repo path) bypass strict lookup via namespace fallback
+  ---
+  duration_ms: 170.509417
+  type: 'test'
+  ...
+# Subtest: 5.2: UnregisteredRepoError is throwable + introspectable
+ok 6 - 5.2: UnregisteredRepoError is throwable + introspectable
+  ---
+  duration_ms: 0.63475
+  type: 'test'
+  ...
+# Subtest: 5.3: same module name in Java vs Python produces distinct entity IDs
+ok 7 - 5.3: same module name in Java vs Python produces distinct entity IDs
+  ---
+  duration_ms: 205.533542
+  type: 'test'
+  ...
+# Subtest: 5.3: Java + Scala module entities share the jvm namespace row (no separate row per language)
+ok 8 - 5.3: Java + Scala module entities share the jvm namespace row (no separate row per language)
+  ---
+  duration_ms: 199.730708
+  type: 'test'
+  ...
+# Subtest: 5.3: every shared-modules namespace gets its own reserved repoId (4 distinct rows)
+ok 9 - 5.3: every shared-modules namespace gets its own reserved repoId (4 distinct rows)
+  ---
+  duration_ms: 161.131709
+  type: 'test'
+  ...
+# Subtest: 5.3: reserved shared-modules row has empty path + namespace tag in storage
+ok 10 - 5.3: reserved shared-modules row has empty path + namespace tag in storage
+  ---
+  duration_ms: 142.455
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1878.1475

@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: mcpStatusWith: canned claude+codex output -> per-client registered + connected
+not ok 1 - mcpStatusWith: canned claude+codex output -> per-client registered + connected
+  ---
+  duration_ms: 83.59375
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/cli/services/__tests__/debug-mcp.test.ts:1:504'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+          available: true,
+          client: 'claude',
+          connected: true,
+    ...
+        },
+    +   {
+    +     available: true,
+    +     client: 'vibe',
+    +     connected: false,
+    +     registered: false
+    +   }
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      client: 'claude'
+      available: true
+      registered: true
+      connected: true
+    1:
+      client: 'codex'
+      available: true
+      registered: true
+      connected: true
+  actual:
+    0:
+      client: 'claude'
+      available: true
+      registered: true
+      connected: true
+    1:
+      client: 'codex'
+      available: true
+      registered: true
+      connected: true
+    2:
+      client: 'vibe'
+      available: true
+      registered: false
+      connected: false
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/cli/services/__tests__/debug-mcp.test.ts:41:9)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: mcpStatusWith: no insrc line -> registered:false, connected:false (still available)
+ok 2 - mcpStatusWith: no insrc line -> registered:false, connected:false (still available)
+  ---
+  duration_ms: 46.954792
+  type: 'test'
+  ...
+# Subtest: mcpStatusWith: a registered-but-not-connected client reports connected:false
+ok 3 - mcpStatusWith: a registered-but-not-connected client reports connected:false
+  ---
+  duration_ms: 44.409625
+  type: 'test'
+  ...
+# Subtest: mcpStatusWith: a spawnError/non-zero client -> available:false while the other still evaluates (never throws)
+ok 4 - mcpStatusWith: a spawnError/non-zero client -> available:false while the other still evaluates (never throws)
+  ---
+  duration_ms: 42.928417
+  type: 'test'
+  ...
+# Subtest: mcpStatusWith: always exactly one entry per known client (claude, codex), never omitted
+not ok 5 - mcpStatusWith: always exactly one entry per known client (claude, codex), never omitted
+  ---
+  duration_ms: 44.0115
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/cli/services/__tests__/debug-mcp.test.ts:1:2234'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        'claude',
+        'codex',
+    +   'vibe'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'claude'
+    1: 'codex'
+  actual:
+    0: 'claude'
+    1: 'codex'
+    2: 'vibe'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/cli/services/__tests__/debug-mcp.test.ts:81:9)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: attachedClientsWith: a resolving rpc -> {reachable:true; clients} sorted by connectedAt
+ok 6 - attachedClientsWith: a resolving rpc -> {reachable:true; clients} sorted by connectedAt
+  ---
+  duration_ms: 0.366625
+  type: 'test'
+  ...
+# Subtest: attachedClientsWith: a rejecting rpc (daemon down) -> {reachable:false} without throwing
+ok 7 - attachedClientsWith: a rejecting rpc (daemon down) -> {reachable:false} without throwing
+  ---
+  duration_ms: 0.121916
+  type: 'test'
+  ...
+# Subtest: makeServices().debug exposes attachedClients + mcpStatus bound to the real impls
+ok 8 - makeServices().debug exposes attachedClients + mcpStatus bound to the real impls
+  ---
+  duration_ms: 0.182542
+  type: 'test'
+  ...
+# Subtest: rpc() writes an IpcRequest carrying client={label:cli, pid:process.pid}
+ok 9 - rpc() writes an IpcRequest carrying client={label:cli, pid:process.pid}
+  ---
+  duration_ms: 0.497583
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 7
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 809.720583

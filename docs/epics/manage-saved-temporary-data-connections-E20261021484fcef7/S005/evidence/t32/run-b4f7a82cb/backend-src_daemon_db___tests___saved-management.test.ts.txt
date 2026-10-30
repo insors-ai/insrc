@@ -1,0 +1,108 @@
+TAP version 13
+# (node:7989) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-SAVED: removal atomically drops selected row and revision while preserving source and unrelated document
+ok 1 - CM-S4-SAVED: removal atomically drops selected row and revision while preserving source and unrelated document
+  ---
+  duration_ms: 171.727166
+  type: 'test'
+  ...
+# Subtest: CM-S4-REPLAY: concurrent identical removal and recreated-ID replay preserve exact original operation
+ok 2 - CM-S4-REPLAY: concurrent identical removal and recreated-ID replay preserve exact original operation
+  ---
+  duration_ms: 184.362416
+  type: 'test'
+  ...
+# Subtest: CM-S4-SAVED: busy stale and missing removals preserve registration credentials and receipts
+ok 3 - CM-S4-SAVED: busy stale and missing removals preserve registration credentials and receipts
+  ---
+  duration_ms: 118.719333
+  type: 'test'
+  ...
+# Subtest: CM-S4-REPLAY: ambiguous rename and fsync failures retain the barrier until same-ticket classification
+ok 4 - CM-S4-REPLAY: ambiguous rename and fsync failures retain the barrier until same-ticket classification
+  ---
+  duration_ms: 450.049625
+  type: 'test'
+  ...
+# Subtest: CM-S4-REPLAY: expired and pruned removal receipts cannot delete a recreated generation
+ok 5 - CM-S4-REPLAY: expired and pruned removal receipts cannot delete a recreated generation
+  ---
+  duration_ms: 272.794875
+  type: 'test'
+  ...
+# Subtest: CM-S4-REPLAY: real process crash before or after rename recovers removal truth on restart
+ok 6 - CM-S4-REPLAY: real process crash before or after rename recovers removal truth on restart
+  ---
+  duration_ms: 4115.655125
+  type: 'test'
+  ...
+# Subtest: CM-S4-STATE: Saved removal state authenticates before registry lookup and never infers absent success
+ok 7 - CM-S4-STATE: Saved removal state authenticates before registry lookup and never infers absent success
+  ---
+  duration_ms: 89.767167
+  type: 'test'
+  ...
+# Subtest: CM-S4-CREDENTIALS: Saved removal state survives credential cleanup failure and restart independently of runtime cleanup
+ok 8 - CM-S4-CREDENTIALS: Saved removal state survives credential cleanup failure and restart independently of runtime cleanup
+  ---
+  duration_ms: 277.26725
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: Saved cleanup retries leave new generations usable and retain expired pending receipts
+ok 9 - CM-S4-RETIRE: Saved cleanup retries leave new generations usable and retain expired pending receipts
+  ---
+  duration_ms: 243.118875
+  type: 'test'
+  ...
+# Subtest: CM-S4-STATE: committed truth stays observable while original credential cleanup is still in flight
+ok 10 - CM-S4-STATE: committed truth stays observable while original credential cleanup is still in flight
+  ---
+  duration_ms: 146.26175
+  type: 'test'
+  ...
+# Subtest: CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports
+ok 11 - CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports
+  ---
+  duration_ms: 146.179375
+  type: 'test'
+  ...
+# Subtest: CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization
+ok 12 - CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization
+  ---
+  duration_ms: 365.119209
+  type: 'test'
+  ...
+# Subtest: CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect
+ok 13 - CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect
+  ---
+  duration_ms: 410.334625
+  type: 'test'
+  ...
+# Subtest: CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family
+ok 14 - CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family
+  ---
+  duration_ms: 283.492833
+  type: 'test'
+  ...
+# Subtest: CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction
+ok 15 - CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction
+  ---
+  duration_ms: 7.981334
+  type: 'test'
+  ...
+# Subtest: CM-S4-RACES: saved remove update remove and acquire interleave at the existing writer barrier
+ok 16 - CM-S4-RACES: saved remove update remove and acquire interleave at the existing writer barrier
+  ---
+  duration_ms: 153.647833
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8382.978916

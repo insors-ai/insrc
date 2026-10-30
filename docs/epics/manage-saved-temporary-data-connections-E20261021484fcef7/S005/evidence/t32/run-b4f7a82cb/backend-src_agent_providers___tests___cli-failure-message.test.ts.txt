@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the message of a failed claude call gives the CLI's own error text first and in full, wherever it stands in the output
+ok 1 - the message of a failed claude call gives the CLI's own error text first and in full, wherever it stands in the output
+  ---
+  duration_ms: 2.395209
+  type: 'test'
+  ...
+# Subtest: a long CLI output is written whole to a file the message names, and is never cut
+ok 2 - a long CLI output is written whole to a file the message names, and is never cut
+  ---
+  duration_ms: 2.161791
+  type: 'test'
+  ...
+# Subtest: the API's refusal of a request is not retried as transient; an overloaded or rate-limited call still is
+ok 3 - the API's refusal of a request is not retried as transient; an overloaded or rate-limited call still is
+  ---
+  duration_ms: 0.372667
+  type: 'test'
+  ...
+# Subtest: a long output with no envelope keeps the error output in the message, and the file is private and old files are removed
+ok 4 - a long output with no envelope keeps the error output in the message, and the file is private and old files are removed
+  ---
+  duration_ms: 2.342792
+  type: 'test'
+  ...
+# Subtest: whether a failure is retried is decided on what the CLI said, not on figures elsewhere in its output
+ok 5 - whether a failure is retried is decided on what the CLI said, not on figures elsewhere in its output
+  ---
+  duration_ms: 0.161417
+  type: 'test'
+  ...
+# Subtest: the provider itself throws that error for a claude and a codex CLI that exit non-zero, once, with a long output in the default directory
+ok 6 - the provider itself throws that error for a claude and a codex CLI that exit non-zero, once, with a long output in the default directory
+  ---
+  duration_ms: 1004.828584
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1260.535584

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: model-catalog.test.ts: one synchronous refusal per fixture reason, each naming the entry and rule (incl. the three tier-default effort fixtures)
+ok 1 - model-catalog.test.ts: one synchronous refusal per fixture reason, each naming the entry and rule (incl. the three tier-default effort fixtures)
+  ---
+  duration_ms: 34.200834
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: a valid fixture whose tier default names its model by alias and carries an accepted effort validates
+ok 2 - model-catalog.test.ts: a valid fixture whose tier default names its model by alias and carries an accepted effort validates
+  ---
+  duration_ms: 2.215833
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: validateModelCatalog returns and caches the frozen file; a second call does not re-read
+ok 3 - model-catalog.test.ts: validateModelCatalog returns and caches the frozen file; a second call does not re-read
+  ---
+  duration_ms: 3.022375
+  type: 'test'
+  ...
+# Subtest: modelCatalogDir(): the in-process override, else INSRC_MODEL_CATALOG_DIR, else MODEL_CATALOG_DIR
+ok 4 - modelCatalogDir(): the in-process override, else INSRC_MODEL_CATALOG_DIR, else MODEL_CATALOG_DIR
+  ---
+  duration_ms: 0.193709
+  type: 'test'
+  ...
+# Subtest: smoke: the built out/assets/models stages the catalog JSON, non-empty
+ok 5 - smoke: the built out/assets/models stages the catalog JSON, non-empty
+  ---
+  duration_ms: 0.922292
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: memoryMb accepted on Ollama models, refused when not a positive integer or on a CLI model
+ok 6 - model-catalog.test.ts: memoryMb accepted on Ollama models, refused when not a positive integer or on a CLI model
+  ---
+  duration_ms: 9.563625
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: the five-family fixture with ollama-claude and cli-vibe validates
+ok 7 - model-catalog.test.ts: the five-family fixture with ollama-claude and cli-vibe validates
+  ---
+  duration_ms: 1.766333
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails naming the family and field
+ok 8 - model-catalog.test.ts: a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails naming the family and field
+  ---
+  duration_ms: 5.528917
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: hosting on a vendor or plain-Ollama model fails
+ok 9 - model-catalog.test.ts: hosting on a vendor or plain-Ollama model fails
+  ---
+  duration_ms: 3.611708
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: the existing families validate as before
+ok 10 - model-catalog.test.ts: the existing families validate as before
+  ---
+  duration_ms: 7.896875
+  type: 'test'
+  ...
+# Subtest: model-catalog.test.ts: ollama-claude must run the claude CLI and declare at least one model
+ok 11 - model-catalog.test.ts: ollama-claude must run the claude CLI and declare at least one model
+  ---
+  duration_ms: 5.604042
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 528.470792

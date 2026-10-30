@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: tool settings set by one session reach every session worker, those already running and those started later
+ok 1 - tool settings set by one session reach every session worker, those already running and those started later
+  ---
+  duration_ms: 3924.756291
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4362.050042

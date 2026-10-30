@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset
+ok 1 - a Lance write in one thread is read from another with readConsistencyInterval 0 and missed with it unset
+  ---
+  duration_ms: 268.375708
+  type: 'test'
+  ...
+# Subtest: two threads' DuckDB queries run one after the other behind the one permit and both succeed
+ok 2 - two threads' DuckDB queries run one after the other behind the one permit and both succeed
+  ---
+  duration_ms: 1090.518667
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1682.45075

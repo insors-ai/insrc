@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: c00559b7 — an LLD-only work item is enumerated and its identity comes from the LLD head
+ok 1 - c00559b7 — an LLD-only work item is enumerated and its identity comes from the LLD head
+  ---
+  duration_ms: 4.842083
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a hash with an ISSUE and an LLD is headed by the ISSUE and enumerated once
+ok 2 - c00559b7 — a hash with an ISSUE and an LLD is headed by the ISSUE and enumerated once
+  ---
+  duration_ms: 3.544167
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a DEF head keeps its tracker refs through the shared reader
+ok 3 - c00559b7 — a DEF head keeps its tracker refs through the shared reader
+  ---
+  duration_ms: 1.396875
+  type: 'test'
+  ...
+# Subtest: c00559b7 — with no head at all a hash is not enumerated
+ok 4 - c00559b7 — with no head at all a hash is not enumerated
+  ---
+  duration_ms: 0.913541
+  type: 'test'
+  ...
+# Subtest: c00559b7 — S001/t1 and s1/t1 scoped by epicHash, and the hierarchical id, all reach the standalone task
+ok 5 - c00559b7 — S001/t1 and s1/t1 scoped by epicHash, and the hierarchical id, all reach the standalone task
+  ---
+  duration_ms: 2.450333
+  type: 'test'
+  ...
+# Subtest: c00559b7 — a legacy UNFLAGGED standalone LLD is reached the same way
+ok 6 - c00559b7 — a legacy UNFLAGGED standalone LLD is reached the same way
+  ---
+  duration_ms: 1.151333
+  type: 'test'
+  ...
+# Subtest: c00559b7 — unscoped s1/t1 over DEF + ISSUE + LLD-only resolves to the DEF epic, exactly as before
+ok 7 - c00559b7 — unscoped s1/t1 over DEF + ISSUE + LLD-only resolves to the DEF epic, exactly as before
+  ---
+  duration_ms: 2.670333
+  type: 'test'
+  ...
+# Subtest: c00559b7 — the bugfix's implied S001 still outranks an LLD-only item that built S001
+ok 8 - c00559b7 — the bugfix's implied S001 still outranks an LLD-only item that built S001
+  ---
+  duration_ms: 1.843666
+  type: 'test'
+  ...
+# Subtest: c00559b7 — with only LLD-only items, a single one resolves unscoped and two refuse as ambiguous
+ok 9 - c00559b7 — with only LLD-only items, a single one resolves unscoped and two refuse as ambiguous
+  ---
+  duration_ms: 1.773167
+  type: 'test'
+  ...
+# Subtest: c00559b7 — workflowIdForIssue for a DEF epic with a tracker block is unchanged beside an LLD-only item
+ok 10 - c00559b7 — workflowIdForIssue for a DEF epic with a tracker block is unchanged beside an LLD-only item
+  ---
+  duration_ms: 1.968292
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 231.733125

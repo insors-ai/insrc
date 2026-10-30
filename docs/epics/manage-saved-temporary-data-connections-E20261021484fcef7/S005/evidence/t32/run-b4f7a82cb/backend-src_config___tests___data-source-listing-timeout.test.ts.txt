@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: the setting analyzer.dataSourceListingTimeoutMs is in the configuration catalog as a number with a default of 120000
+ok 1 - the setting analyzer.dataSourceListingTimeoutMs is in the configuration catalog as a number with a default of 120000
+  ---
+  duration_ms: 1.137917
+  type: 'test'
+  ...
+# Subtest: the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds
+ok 2 - the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds
+  ---
+  duration_ms: 6.809917
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 372.182834

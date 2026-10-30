@@ -1,0 +1,11 @@
+{
+  "baselineProductSource": "b4f7a82cb44550ef55e522966c2237417bd15307",
+  "testCorrectionCommit": "ee8990fd330e78ebc0117de9d69221b788b1b7f1",
+  "changedFiles": [
+    "vscode-plugin/src/__tests__/activation.test.ts",
+    "vscode-plugin/src/config/__tests__/truthful-sync.test.ts"
+  ],
+  "exitCode": 0,
+  "productionSourceChanged": false,
+  "originalSweepResultsRetained": true
+}

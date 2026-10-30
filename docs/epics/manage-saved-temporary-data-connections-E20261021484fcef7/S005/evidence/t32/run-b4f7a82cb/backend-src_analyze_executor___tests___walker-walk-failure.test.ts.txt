@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates
+ok 1 - a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates
+  ---
+  duration_ms: 9.025208
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 422.508791

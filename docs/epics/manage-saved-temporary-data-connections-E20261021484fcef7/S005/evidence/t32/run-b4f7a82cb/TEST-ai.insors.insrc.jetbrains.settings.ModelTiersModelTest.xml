@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.ModelTiersModelTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="choices exactly from a fake definitions answer, current-tier parity with the daemon's resolution, an unaccepted stored effort shown as none and not dirty()" classname="ai.insors.insrc.jetbrains.settings.ModelTiersModelTest" time="0.003"/>
+  <testcase name="runner switch defaults incl a local family without tierDefaults, effort cleared on model change, whole-tier writes, not-listed model refused()" classname="ai.insors.insrc.jetbrains.settings.ModelTiersModelTest" time="0.0"/>
+  <testcase name="updateDefinitions re-resolves clean tiers and keeps a dirty tier's edit()" classname="ai.insors.insrc.jetbrains.settings.ModelTiersModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

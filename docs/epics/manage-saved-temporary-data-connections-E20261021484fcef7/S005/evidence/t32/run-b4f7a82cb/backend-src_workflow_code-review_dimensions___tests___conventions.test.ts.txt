@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: judgeConventions: documented-rule breach maps with rule id in expectationRef, confidence:breach, dimension:conventions (ac1)
+ok 1 - judgeConventions: documented-rule breach maps with rule id in expectationRef, confidence:breach, dimension:conventions (ac1)
+  ---
+  duration_ms: 18.257792
+  type: 'test'
+  ...
+# Subtest: buildConventionsPrompt: embeds the DOCUMENTED_RULES baseline (rule ids present) (ac1)
+ok 2 - buildConventionsPrompt: embeds the DOCUMENTED_RULES baseline (rule ids present) (ac1)
+  ---
+  duration_ms: 0.181667
+  type: 'test'
+  ...
+# Subtest: judgeConventions: three distinct TS-rule breaches each survive individually with their location (ac2)
+ok 3 - judgeConventions: three distinct TS-rule breaches each survive individually with their location (ac2)
+  ---
+  duration_ms: 1.375583
+  type: 'test'
+  ...
+# Subtest: CONVENTIONS_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional (ac2)
+ok 4 - CONVENTIONS_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional (ac2)
+  ---
+  duration_ms: 0.312333
+  type: 'test'
+  ...
+# Subtest: judgeConventions: thin-sample idiom drift is tagged confidence:observation, not breach (ac3)
+ok 5 - judgeConventions: thin-sample idiom drift is tagged confidence:observation, not breach (ac3)
+  ---
+  duration_ms: 0.693583
+  type: 'test'
+  ...
+# Subtest: buildConventionsPrompt: system charge carries the breach-vs-observation low-confidence discipline (ac3)
+ok 6 - buildConventionsPrompt: system charge carries the breach-vs-observation low-confidence discipline (ac3)
+  ---
+  duration_ms: 0.169958
+  type: 'test'
+  ...
+# Subtest: judgeConventions: a Promise.all-over-LLM breach maps against the no-promise-all-llm rule with confidence:breach (ac4)
+ok 7 - judgeConventions: a Promise.all-over-LLM breach maps against the no-promise-all-llm rule with confidence:breach (ac4)
+  ---
+  duration_ms: 0.509333
+  type: 'test'
+  ...
+# Subtest: judgeConventions: direct-storage (k5) and raw-dump (k6) breaches map through; out-of-changedFiles dropped (ac5)
+ok 8 - judgeConventions: direct-storage (k5) and raw-dump (k6) breaches map through; out-of-changedFiles dropped (ac5)
+  ---
+  duration_ms: 0.560709
+  type: 'test'
+  ...
+# Subtest: judgeConventions: issues exactly ONE completeStructured call, no other provider method (k3/k4)
+ok 9 - judgeConventions: issues exactly ONE completeStructured call, no other provider method (k3/k4)
+  ---
+  duration_ms: 0.414375
+  type: 'test'
+  ...
+# Subtest: judgeConventions: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 10 - judgeConventions: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+  ---
+  duration_ms: 1.201583
+  type: 'test'
+  ...
+# Subtest: judgeConventions: empty grounding still yields a valid empty result (edge)
+ok 11 - judgeConventions: empty grounding still yields a valid empty result (edge)
+  ---
+  duration_ms: 0.656125
+  type: 'test'
+  ...
+# Subtest: judgeConventions: clean code => empty findings, no manufactured finding (edge)
+ok 12 - judgeConventions: clean code => empty findings, no manufactured finding (edge)
+  ---
+  duration_ms: 0.968417
+  type: 'test'
+  ...
+# Subtest: buildConventionsPrompt: the output-shape reminder is TRAILING (after the documented rules, after the symbols)
+ok 13 - buildConventionsPrompt: the output-shape reminder is TRAILING (after the documented rules, after the symbols)
+  ---
+  duration_ms: 0.068959
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 330.639375

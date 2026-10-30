@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: feedbackBodyLines: absent → []
+ok 1 - feedbackBodyLines: absent → []
+  ---
+  duration_ms: 1.255
+  type: 'test'
+  ...
+# Subtest: feedbackBodyLines: empty → []
+ok 2 - feedbackBodyLines: empty → []
+  ---
+  duration_ms: 0.091333
+  type: 'test'
+  ...
+# Subtest: feedbackBodyLines: present → one bullet per entry with author/timestamp/target/comment
+ok 3 - feedbackBodyLines: present → one bullet per entry with author/timestamp/target/comment
+  ---
+  duration_ms: 0.160708
+  type: 'test'
+  ...
+# Subtest: changeLogBodyLines: absent → []
+ok 4 - changeLogBodyLines: absent → []
+  ---
+  duration_ms: 0.119084
+  type: 'test'
+  ...
+# Subtest: changeLogBodyLines: empty → []
+ok 5 - changeLogBodyLines: empty → []
+  ---
+  duration_ms: 0.094167
+  type: 'test'
+  ...
+# Subtest: changeLogBodyLines: present → one bullet per entry with target file/author/timestamp (+ optional segment + summary)
+ok 6 - changeLogBodyLines: present → one bullet per entry with target file/author/timestamp (+ optional segment + summary)
+  ---
+  duration_ms: 0.094291
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 200.044833

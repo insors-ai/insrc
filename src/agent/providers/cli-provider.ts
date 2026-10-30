@@ -150,6 +150,13 @@ export function codexReviewSessionArgs(schemaPath: string, cwd: string, modelArg
 	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...modelArgs];
 }
 
+/** Where an Ollama-hosted family's claude runs (Epic b220bb61, Story s2):
+ *  the Ollama server and whether the model is an Ollama cloud model. */
+export interface OllamaTarget {
+	readonly host:    string;
+	readonly hosting: 'cloud' | 'local';
+}
+
 export interface CliProviderOpts {
 	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly kind: CliKind;
@@ -169,6 +176,9 @@ export interface CliProviderOpts {
 	/** The model's input limit in characters, from the model definitions
 	 *  (codex states its limit; claude's size refusal decides when absent). */
 	readonly inputBudgetChars?: number | undefined;
+	/** Run claude against this Ollama server (claude kind with a model only).
+	 *  Absent: the CLI runs exactly as before. */
+	readonly ollama?: OllamaTarget | undefined;
 }
 
 
@@ -215,11 +225,17 @@ export class CliProvider implements LLMProvider {
 	private readonly timeoutMs: number;
 	private readonly codexFirstOutputMs: number;
 	private readonly embedDelegate: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
+	/** The Ollama server claude runs against, when this provider serves an Ollama-hosted family. */
+	readonly ollama: OllamaTarget | undefined;
 
 	readonly capabilities: ProviderCapabilities;
 
 	constructor(opts: CliProviderOpts) {
 		assertConnectionProviderAdmission(opts.connectionExecution);
+		if (opts.ollama !== undefined && (opts.kind !== 'claude' || opts.model === undefined || opts.model.length === 0)) {
+			throw new Error(`cli-provider: an Ollama target needs the claude CLI and a model (kind '${opts.kind}', model '${opts.model ?? ''}')`);
+		}
+		this.ollama = opts.ollama;
 		this.kind = opts.kind;
 		this.inputBudgetChars = opts.inputBudgetChars;
 		this.defaultModel = opts.model;
@@ -369,7 +385,7 @@ export class CliProvider implements LLMProvider {
 			if (this.kind !== 'claude') throw new UnsupportedBoundedInputError('No verified tool-free invocation is available for this CLI');
 			const args = boundedClaudeArgs(wireSchema, this.modelArgs(opts));
 			const out = await runInProcessGroup(this.binPath, args, {
-				cwd: dir, stdin: serialiseMessages(messages), env: boundedClaudeEnv(),
+				cwd: dir, stdin: serialiseMessages(messages), env: this.withOllama(boundedClaudeEnv()) ?? boundedClaudeEnv(),
 				timeoutMs: opts.timeoutMs ?? this.timeoutMs,
 				...(opts.signal !== undefined ? { signal: opts.signal } : {}),
 			});
@@ -693,9 +709,20 @@ export class CliProvider implements LLMProvider {
 		return { ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs, ...(signal !== undefined ? { signal } : {}) };
 	}
 
+	/** A copy of `base` pointing claude at this provider's Ollama server, without
+	 *  the vendor login; undefined when the provider has no Ollama target. The
+	 *  daemon's own environment is never changed. */
+	private withOllama(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv | undefined {
+		if (this.ollama === undefined) return undefined;
+		const env: NodeJS.ProcessEnv = { ...base, ANTHROPIC_BASE_URL: this.ollama.host, ANTHROPIC_AUTH_TOKEN: 'ollama', ANTHROPIC_API_KEY: '' };
+		delete env['CLAUDE_CODE_OAUTH_TOKEN'];
+		return env;
+	}
+
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
 		return new Promise((resolve, reject) => {
-			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal);
+			const env = exec?.env ?? this.withOllama(process.env);
+			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal, env);
 			r.then(out => {
 				if (out.exitCode !== 0) {
 					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr));

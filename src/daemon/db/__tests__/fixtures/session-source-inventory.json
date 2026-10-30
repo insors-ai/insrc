@@ -56,6 +56,10 @@
         ],
         [
           "provider-adapter",
+          "boundedClaudeEnv"
+        ],
+        [
+          "provider-adapter",
           "buildRetryNote"
         ],
         [
@@ -692,6 +696,22 @@
         ],
         [
           "provider-adapter",
+          "this.withOllama"
+        ],
+        [
+          "provider-adapter",
+          "this.withOllama"
+        ],
+        [
+          "provider-use",
+          "this.withOllama"
+        ],
+        [
+          "provider-use",
+          "this.withOllama"
+        ],
+        [
+          "provider-adapter",
           "this.withTransientRetry"
         ],
         [
@@ -811,9 +831,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 192,
-      "sitesDigest": "e440bad0b31a163191bf282bfb665ec42351bd7454b55dadf767e51a170de839",
-      "sourceDigest": "107228c4e894d68fab79043a2ca189892adbecbdd5ca5ced77c63dedd014a6fa",
+      "siteCount": 197,
+      "sitesDigest": "740a2e445c1e3d96a854454656a67a51bc82dc9ddc1fbf14ac3f47a6ce977618",
+      "sourceDigest": "431eb459ea814553a9d0e2e76a816b2579d80203fed29a16fbe8e2323ddcfc5b",
       "boundaries": [
         "diagnostic",
         "filesystem-open",

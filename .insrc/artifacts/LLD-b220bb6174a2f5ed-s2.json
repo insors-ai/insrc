@@ -218,6 +218,13 @@
         "choice": "Pre-filter gate (mirror s1 LLD)",
         "rationale": "Same decision as the s1 LLD: k1-k6 are must-meet constraints applied before scoring; a1 meets them.",
         "resolvedAt": "2026-10-30T05:26:50.086Z"
+      },
+      "q2b43a06b": {
+        "question": "Resolved 2026-10-30 (user decision): ac3 means serial per caller, as for today's runners; separate daemon sessions may run Ollama-targeted claude at the same time. Alternative a2's process-wide gate is not built.",
+        "status": "resolved",
+        "choice": "a1 — Serial per caller (adopted)",
+        "rationale": "User decision 2026-10-30: serial per caller as for today's runners; no process-wide gate.",
+        "resolvedAt": "2026-10-30T05:27:38.180Z"
       }
     }
   },

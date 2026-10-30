@@ -339,6 +339,8 @@ The bounded tool-free path would have to verify the launcher passes its allow-li
 
 - `q2800c4c8` — Item alt2: alternatives were scored against ac1-ac4, sc1 and sc2; Epic constraints k1-k6 are reflected in the notes but not as separate score entries (partial), as in the s1 LLD where k1-k6 were treated as a pre-filter gate.
   - **resolved**: Pre-filter gate (mirror s1 LLD) — Same decision as the s1 LLD: k1-k6 are must-meet constraints applied before scoring; a1 meets them. _(2026-10-30T05:26:50.086Z)_
+- `q2b43a06b` — Resolved 2026-10-30 (user decision): ac3 means serial per caller, as for today's runners; separate daemon sessions may run Ollama-targeted claude at the same time. Alternative a2's process-wide gate is not built.
+  - **resolved**: a1 — Serial per caller (adopted) — User decision 2026-10-30: serial per caller as for today's runners; no process-wide gate. _(2026-10-30T05:27:38.180Z)_
 
 ## Citations
 

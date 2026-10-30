@@ -11,7 +11,7 @@ import { parseConnectionKey } from '../../../src/shared/connection-management-wi
 
 type Header={readonly v:1;readonly viewId:string;readonly generation:number};
 export type ConnectionIntent=Header&(
- | {readonly type:'ready'|'refresh'|'add'|'save'|'test'|'cancel-test'|'remove'|'close'|'clear-filter'}
+ | {readonly type:'ready'|'refresh'|'add'|'save'|'test'|'cancel-test'|'remove'|'close'|'clear-filter'|'browse-file'}
  | {readonly type:'root'|'search'|'id'|'kind';readonly value:string}
  | {readonly type:'filter';readonly value:ScopeFilter}
  | {readonly type:'scope';readonly value:ConnectionScope}
@@ -30,13 +30,13 @@ export interface ConnectionRenderView {
  readonly viewId:string;readonly generation:number;
  readonly list:Pick<ManagerProjection,'roots'|'repoRoot'|'filter'|'search'|'listState'|'counts'|'matchingCount'|'stale'|'canMutate'>;
  readonly rows:readonly {readonly key:ConnectionKey;readonly revision:string;readonly kind:string;readonly label:string;readonly family:string;readonly selected:boolean}[];
- readonly canCreateDraft:boolean;
+ readonly canCreateDraft:boolean;readonly canBrowseFile:boolean;readonly validationMessages:readonly string[];
  readonly choices:readonly {readonly kind:string;readonly family:string;readonly enabled:boolean;readonly guidance:string|null}[];
  readonly draft:DraftView|null;readonly formId:number;readonly blocked:boolean;readonly valid:boolean;
  readonly test:DraftTestView;readonly operations:readonly MutationView[];
  readonly confirmation:RemovalConfirmation|null;readonly dirty:boolean;readonly error:string;readonly notice:string;
 }
-const simple=new Set(['ready','refresh','add','save','test','cancel-test','remove','close','clear-filter']);
+const simple=new Set(['ready','refresh','add','save','test','cancel-test','remove','close','clear-filter','browse-file']);
 const text=(v:unknown):v is string=>typeof v==='string'&&v.length<=16384&&!/[\u0000-\u001f]/.test(v);
 /** Safe data-descriptor copy rejects getters/prototypes/cycles/private references before field access. */
 export function parseConnectionIntent(value:unknown):ConnectionIntent|null {

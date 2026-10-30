@@ -24,12 +24,14 @@ export interface ConnectionsHostPorts {
  readonly createPanel:()=>ConnectionPanel;readonly registeredRoots:()=>Promise<readonly string[]>;
  readonly owner:ConnectionsWorkbenchOwner;readonly mutations:ConnectionMutationController;
  readonly tests:ConnectionDraftTests;readonly removals:ConnectionRemovals;
+ readonly pickFile?:(()=>Promise<string|undefined>)|undefined;
  readonly nonce?:(()=>string)|undefined;
 }
 const PREFIX='db.connections.v2.';
 export class ConnectionsManagerHost {
  #ports:ConnectionsHostPorts;#panel:ConnectionPanel|null=null;#viewId='';#generation=0;#formId=0;#ready=false;#visible=true;#disposed=false;#publishing=false;
  #model:ConnectionManagerState=createConnectionManager([],'');#draft:ConnectionDraft|null=null;#descriptors:readonly ClientDriverDescriptor[]=[];#descriptorEpoch='';#descriptorRoot='';
+ #picking=false;
  #pending:(()=>void|Promise<void>)|null=null;#error='';#notice='';#read:AbortController|null=null;#subscriptions:MutationTimer[]=[];
  constructor(ports:ConnectionsHostPorts){
   this.#ports=ports;
@@ -114,17 +116,24 @@ export class ConnectionsManagerHost {
   try{
    if(this.#draft?.view.discarded){this.#draft=null;this.#formId++;this.#bump();this.#bindTest();}
    const projection=projectConnectionManager(this.#model),visible=new Set(projection.visibleKeys.map(k=>JSON.stringify(k)));
-   const draft=this.#draft?.view??null;let valid=false;if(this.#draft)try{this.#draft.serialize();valid=true;}catch{/* Incomplete field values remain editable. */}
+   const draft=this.#draft?.view??null,validationMessages=this.#draft?this.#validationMessages(this.#draft):[],valid=!!draft&&validationMessages.length===0;
    const operations=this.#ports.mutations.records.filter(r=>r.key.repoRoot===this.#model.repoRoot);
    const features=this.#ports.owner.features(projection.repoRoot??'');
    const view:ConnectionRenderView={viewId:this.#viewId,generation:this.#generation,
     controls:{save:!!draft&&connectionActionSupported(features,draft.key.scope,draft.mode),test:!!draft&&connectionActionSupported(features,draft.key.scope,'test'),remove:!!projection.selected&&connectionActionSupported(features,projection.selected.key.scope,'remove'),operations:Object.fromEntries(operations.map(r=>[r.recordId,['reconcile','replay','activation','cleanup','refresh','dismiss'].filter(action=>connectionOperationSupported(features,r.key.scope,r.mode,action))]))},
     list:{roots:projection.roots,repoRoot:projection.repoRoot,filter:projection.filter,search:projection.search,listState:projection.listState,counts:projection.counts,matchingCount:projection.matchingCount,stale:projection.stale,canMutate:projection.canMutate},
-    rows:projection.rows.filter(r=>visible.has(JSON.stringify(r.key))).map(r=>({key:r.key,revision:r.revision,kind:r.kind,label:r.label??r.key.id,family:r.effectiveFamily,selected:!!projection.selected&&sameConnectionKey(projection.selected.key,r.key)&&projection.selected.revision===r.revision})),
-    canCreateDraft:this.#canCreateDraft(),choices:connectionDriverChoices(this.#descriptors),draft,formId:this.#formId,blocked:!!draft&&this.#ports.mutations.isBlocked(draft.key),valid,
+    rows:projection.rows.filter(r=>visible.has(JSON.stringify(r.key))).map(r=>({key:r.key,revision:r.revision,kind:r.kind,label:r.label?.trim()?r.label:r.key.id,family:r.effectiveFamily,selected:!!projection.selected&&sameConnectionKey(projection.selected.key,r.key)&&projection.selected.revision===r.revision})),
+    canCreateDraft:this.#canCreateDraft(),canBrowseFile:!!this.#ports.pickFile&&!this.#picking,validationMessages,choices:connectionDriverChoices(this.#descriptors),draft,formId:this.#formId,blocked:!!draft&&this.#ports.mutations.isBlocked(draft.key),valid,
     test:this.#ports.tests.view,operations,confirmation:this.#ports.removals.view.confirmation,dirty:this.#pending!==null||this.#ports.removals.view.resolveDirty,error:this.#error,notice:this.#notice};
    this.#panel.postMessage({type:'render',view});
   }finally{this.#publishing=false;}
+ }
+ #validationMessages(draft:ConnectionDraft):string[]{
+  const view=draft.view,messages:string[]=[];
+  if(!view.key.id.trim())messages.push('Enter a Connection ID. Label is optional.');
+  if(view.family==='file'&&Object.hasOwn((view.publicInputSchema['properties']??{}) as object,'path')&&(typeof view.publicValues['path']!=='string'||!view.publicValues['path'].trim()))messages.push('Select a source file with Browse or enter its file path.');
+  try{draft.serialize();}catch{if(!messages.length)messages.push('Check the Connection ID, driver fields and credential replacements.');}
+  return messages;
  }
  #canCreateDraft():boolean{
   const model=this.#model;
@@ -173,6 +182,18 @@ export class ConnectionsManagerHost {
      if(!this.#canCreateDraft())return;const first=connectionDriverChoices(this.#descriptors).find(d=>d.enabled);if(!first)return;
      this.#navigate({type:'kind',value:first.kind},()=>this.#newDraft(first.kind,this.#model.filter==='temporary'?'temporary':'saved'));break;
     }
+    case 'browse-file':{
+     const draft=this.#editable(),view=draft.view,properties=view.publicInputSchema['properties'] as Record<string,unknown>;
+     if(!this.#ports.pickFile||this.#picking||view.family!=='file'||!Object.hasOwn(properties,'path'))break;
+     const panel=this.#panel,generation=this.#generation,epoch=this.#model.daemonEpoch,revision=view.draftRevision;
+     this.#picking=true;this.#publish();
+     try{
+      const path=await this.#ports.pickFile();
+      if(path===undefined||this.#disposed||!this.#visible||this.#panel!==panel||this.#generation!==generation||this.#model.daemonEpoch!==epoch||this.#draft!==draft||draft.view.draftRevision!==revision||this.#pending)break;
+      if(this.#editable()!==draft)break;draft.setField(['path'],path);
+     }finally{this.#picking=false;}
+     break;
+    }
     case 'scope':case 'kind':{
      const draft=this.#editable();if(draft.view.mode!=='create')return;
      const {kind,key}=draft.view;this.#navigate(intent.type==='scope'?{type:'scope',value:intent.value}:{type:'kind',value:intent.value},()=>this.#newDraft(intent.type==='kind'?intent.value:kind,intent.type==='scope'?intent.value:key.scope,key.id));break;
@@ -186,9 +207,9 @@ export class ConnectionsManagerHost {
     case 'credential-addresses':{
      const draft=this.#editable();try{draft.setCredentialAddresses(intent.slot,intent.values);}catch(error){if(draft.view.credentials.some(c=>c.slot===intent.slot))try{draft.setCredential(intent.slot,'replace','');}catch{/* Read-only forms remain unchanged. */}throw error;}break;
     }
-    case 'test':{const draft=this.#editable();if(!this.#allow(draft.view.key,'test'))break;const epoch=this.#ports.owner.view.daemonEpoch;if(epoch)await this.#ports.tests.test(draft,{key:draft.view.key,daemonEpoch:epoch,viewGeneration:this.#generation});break;}
+    case 'test':{const draft=this.#editable();if(!this.#allow(draft.view.key,'test'))break;const issues=this.#validationMessages(draft);if(issues.length){this.#error=issues.join(' ');break;}const epoch=this.#ports.owner.view.daemonEpoch;if(epoch)await this.#ports.tests.test(draft,{key:draft.view.key,daemonEpoch:epoch,viewGeneration:this.#generation});break;}
     case 'cancel-test':this.#ports.tests.cancel();break;
-    case 'save':{const draft=this.#editable();if(!this.#allow(draft.view.key,draft.view.mode))break;this.#ports.tests.cancel();await this.#ports.mutations.submit(draft);break;}
+    case 'save':{const draft=this.#editable();if(!this.#allow(draft.view.key,draft.view.mode))break;const issues=this.#validationMessages(draft);if(issues.length){this.#error=issues.join(' ');break;}this.#ports.tests.cancel();await this.#ports.mutations.submit(draft);break;}
     case 'remove':{
      const selected=this.#model.selected,row=selected&&this.#model.rows.find(r=>sameConnectionKey(r.key,selected.key)&&r.revision===selected.revision);
      if(row&&projectConnectionManager(this.#model).canMutate&&projectConnectionManager(this.#model).visibleKeys.some(k=>sameConnectionKey(k,row.key))&&this.#allow(row.key,'remove')){this.#ports.removals.begin(row,this.#draft??undefined);this.#bump();}break;

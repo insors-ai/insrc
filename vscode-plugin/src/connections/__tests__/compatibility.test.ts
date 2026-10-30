@@ -73,6 +73,8 @@ test('CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test
   dom.choose('kind','csv');dom.input('id','throwaway');field(f.panel,'path','source.csv');
   assert.equal(f.panel.view.draft?.key.id,'throwaway');assert.equal(f.panel.view.valid,true);
   assert.equal(dom.el('save').disabled,true);assert.equal(dom.el('test').disabled,true);assert.match(dom.el('form-guidance').textContent,/Draft only/);
+  assert.match(dom.el('save-guidance').textContent,/daemon has not enabled/);assert.match(dom.el('test-guidance').textContent,/daemon has not enabled/);
+  assert.equal(f.panel.view.validationMessages.length,0);
   dom.click('save');dom.click('test');assert.equal(f.peer.calls.filter(call=>['ticket','mutate','test'].includes(call)).length,0);assert.equal(f.peer.legacyWrites(),0);
   // Loss of metadata revokes local draft editing too; never reuse a stale catalog.
   f.peer.setCapabilities('normal',['safe-read']);dom.click('refresh');await until(()=>!f.panel.view.canCreateDraft&&f.panel.view.list.listState==='upgrade-required');

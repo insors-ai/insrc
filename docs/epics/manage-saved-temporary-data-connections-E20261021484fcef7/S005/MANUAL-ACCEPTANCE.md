@@ -28,3 +28,12 @@ Do not infer live acceptance from headless tests, diagrams, build success, or in
 - Against an isolated enabled signed test daemon only, Save/Test and successful list refresh remain available. The installed production daemon currently advertises safe-read and driver-descriptors only; a VSIX update alone cannot enable actual creation.
 
 Details: UI-FEEDBACK.md. Earlier acceptance results remain historical.
+
+
+## File form feedback recheck (VS Code 0.5.17)
+
+- Install the new VSIX and reload VS Code; a daemon update alone does not update this UI.
+- Add Parquet: File path is first under Connection fields, clearly labeled with source-file guidance. Browse opens the native file selector and fills the same editable path input.
+- Cancel Browse, edit the path while a dialog is open, or hide/close the manager: a delayed selection must not overwrite the current draft.
+- Leave Label blank. Enter Connection ID and file path. On an enabled isolated daemon, Test and Save enable; successful Save shows Connection ID as the list name.
+- Missing inputs get specific messages. On the current production daemon, each action explains that creation/testing is not enabled; changing Label cannot resolve a backend capability restriction.

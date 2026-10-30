@@ -92,7 +92,7 @@ test('CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, acce
 
 test('CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON',()=>{
  const key={repoRoot:'/fixture/repo-a',scope:'temporary' as const,id:'fixture'};
- const base:ConnectionRenderView={canCreateDraft:true,viewId:'fixture',generation:1,list:{roots:[key.repoRoot],repoRoot:key.repoRoot,filter:'all',search:'',listState:'ready',counts:{all:0,saved:0,temporary:0},matchingCount:0,stale:false,canMutate:true},rows:[],choices:connectionDriverChoices(descriptors),draft:null,formId:0,blocked:false,valid:false,test:{status:'idle',tookMs:null,message:'',cleanupUnverified:false},operations:[],confirmation:null,dirty:false,error:'',notice:''};
+ const base:ConnectionRenderView={canCreateDraft:true,canBrowseFile:false,validationMessages:[],viewId:'fixture',generation:1,list:{roots:[key.repoRoot],repoRoot:key.repoRoot,filter:'all',search:'',listState:'ready',counts:{all:0,saved:0,temporary:0},matchingCount:0,stale:false,canMutate:true},rows:[],choices:connectionDriverChoices(descriptors),draft:null,formId:0,blocked:false,valid:false,test:{status:'idle',tookMs:null,message:'',cleanupUnverified:false},operations:[],confirmation:null,dirty:false,error:'',notice:''};
  const dom=new RendererHarness(connectionManagerDocument(nonce,'fixture',1));let formId=0;
  for(const descriptor of descriptors){const d=new ConnectionDraft(descriptor,key);if(descriptor.secretSlots[0])d.setCredential(descriptor.secretSlots[0],'replace','fixture-only-blank-mask');
   dom.deliver({type:'render',view:{...base,draft:d.view,formId:++formId}});assert.equal(dom.el('error').textContent,'',descriptor.kind);assert.equal(dom.el('kind').children.length,29);assert.equal(dom.all().some(e=>e.tag==='textarea'),false);
@@ -117,4 +117,30 @@ test('CM-S5-RENDER-TS: registration precedes list at every width and toolbar ico
   assert.ok(button,id);assert.match(button[0],/aria-label="[^"]+"/);assert.match(button[0],/title="[^"]+"/);
   assert.match(button[1]!,/^<svg /);assert.match(button[1]!,/aria-hidden="true"/);assert.match(button[1]!,/focusable="false"/);
  }
+});
+
+
+test('CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input',async()=>{
+ const f=await managementFixture(),probes=createConnectionsDraftTests(f.owner),removals=new ConnectionRemovals(f.controller),panel=new FakeConnectionPanel();
+ let resolve!:(path:string|undefined)=>void;
+ const host=new ConnectionsManagerHost({owner:f.owner,mutations:f.controller,tests:probes,removals,registeredRoots:async()=>[f.f.root],createPanel:()=>panel,pickFile:()=>new Promise(r=>{resolve=r;})});
+ try{
+  await host.open();const dom=panel.dom!;dom.choose('root',f.f.root);await until(()=>panel.view.list.listState==='empty-registry');dom.click('add');dom.choose('kind','parquet');
+  const fields=dom.el('fields');assert.match(fields.children[0]!.children[1]!.textContent,/File path/);
+  assert.match(fields.textContent,/Label \(optional\)/);assert.match(dom.el('save-guidance').textContent,/Connection ID/);assert.match(dom.el('test-guidance').textContent,/source file/);
+  dom.click('save');dom.click('test');assert.equal(f.calls.filter(c=>c==='ticket'||c==='mutate').length,0);
+  const browse=()=>dom.all(fields).find(e=>e.getAttribute('data-file-picker')==='true')!;
+  assert.equal(browse().textContent,'Browse…');browse().fire('click');assert.equal(browse().disabled,true);
+  resolve('/fixture/orders.parquet');await until(()=>panel.view.draft?.publicValues['path']==='/fixture/orders.parquet');
+  assert.equal(dom.el('save').disabled,true);assert.match(dom.el('save-guidance').textContent,/Connection ID/);
+  dom.input('id','orders');input(dom,['label'],'');assert.equal(panel.view.valid,true);assert.equal(dom.el('save').disabled,false);assert.equal(dom.el('test').disabled,false);assert.equal(dom.el('save-guidance').textContent,'');
+  // A cancelled dialog has no effect, and typing while it is open makes its result stale.
+  browse().fire('click');resolve(undefined);await until(()=>panel.view.canBrowseFile);assert.equal(panel.view.draft?.publicValues['path'],'/fixture/orders.parquet');
+  browse().fire('click');input(dom,['path'],'/fixture/typed.parquet');resolve('/fixture/stale.parquet');await until(()=>panel.view.canBrowseFile);assert.equal(panel.view.draft?.publicValues['path'],'/fixture/typed.parquet');
+  // No picker action can submit a connection or fall back to legacy writes.
+  assert.equal(f.calls.filter(c=>c==='ticket'||c==='mutate').length,0);assert.equal(f.legacyWrites(),0);
+  browse().fire('click');panel.visibility(false);resolve('/fixture/hidden.parquet');await new Promise(r=>setTimeout(r,10));panel.visibility(true);assert.equal(panel.view.draft?.publicValues['path'],'/fixture/typed.parquet');
+  dom.click('save');await until(()=>panel.view.list.counts.saved===1&&panel.view.draft===null);
+  assert.equal(f.calls.filter(c=>c==='mutate').length,1);assert.equal(f.legacyWrites(),0);assert.equal(panel.view.rows[0]?.label,'orders');
+ }finally{host.dispose();probes.dispose();removals.dispose();await f.close();}
 });

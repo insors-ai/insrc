@@ -51,6 +51,7 @@ test('CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equiv
     assert.match(activation, /localResourceRoots: \[\]/);
     const connectionsPanel=activation.slice(activation.indexOf("createWebviewPanel('insrc.connections'"),activation.indexOf('context.subscriptions.push(connectionManager'));
     assert.match(connectionsPanel,/panel.iconPath =/);
+    assert.match(activation,/pickFile: async \(\) => \(await vscode\.window\.showOpenDialog\(\{ canSelectMany: false, openLabel: 'Use file' \}\)\)\?\.\[0\]\?\.fsPath/);
     for(const filename of ['connections-icon.svg','connections-icon-dark.svg']){
       assert.ok(connectionsPanel.includes(filename));
       const svg=readFileSync(new URL('../../../media/'+filename,import.meta.url),'utf8');

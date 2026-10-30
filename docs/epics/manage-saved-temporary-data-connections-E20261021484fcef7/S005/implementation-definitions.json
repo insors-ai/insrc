@@ -2,7 +2,7 @@
   "uxDefinition": {
     "type": "AdaptiveCard",
     "version": "1.5",
-    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence.",
+    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence. File sources put File path first, explain optional Label, and use a native Browse dialog. Separate persistent Save/Test messages distinguish missing inputs from disabled daemon capabilities; delayed picker results cannot replace an edited or hidden draft.",
     "body": [
       {
         "type": "TextBlock",
@@ -74,6 +74,30 @@
             "description": "Illustrative subset; actual picker offers every validated daemon descriptor with actionable unsupported guidance."
           },
           {
+            "type": "Input.Text",
+            "id": "path",
+            "label": "File path *",
+            "placeholder": "data/orders.parquet",
+            "description": "First descriptor field for file drivers. Browse opens a native single-file dialog; manual entry remains available. Cancel, hidden/closed views and edited drafts ignore delayed selections."
+          },
+          {
+            "type": "ActionSet",
+            "description": "Native VS Code file picker; preview button does not access the filesystem.",
+            "actions": [
+              {
+                "type": "Action.Submit",
+                "title": "Browse\u2026",
+                "description": "Choose a source file; only its path is sent to the current local draft."
+              }
+            ]
+          },
+          {
+            "type": "Input.Text",
+            "id": "label",
+            "label": "Label (optional)",
+            "description": "Friendly list name; blank uses Connection ID."
+          },
+          {
             "type": "Input.ChoiceSet",
             "id": "scope",
             "label": "Lifetime",
@@ -88,13 +112,6 @@
               }
             ],
             "description": "Scope independent of driver family; fixed during edit."
-          },
-          {
-            "type": "Input.Text",
-            "id": "path",
-            "label": "File path",
-            "placeholder": "data/orders.parquet",
-            "description": "Illustrative descriptor field; host validates descriptor-specific schema. No arbitrary raw config editor."
           },
           {
             "type": "TextBlock",
@@ -128,6 +145,12 @@
             "type": "TextBlock",
             "text": "Draft only: the connected daemon has not enabled connection creation or testing. Save and Test require an enabled compatible daemon.",
             "description": "Alternative unavailable state shown when valid public metadata exists but workbench-session capabilities are absent. The fields remain editable; no ticket, mutation, test or legacy write is sent.",
+            "wrap": true
+          },
+          {
+            "type": "TextBlock",
+            "text": "Save unavailable: Enter a Connection ID.\nTest unavailable: The connected daemon has not enabled connection creation or testing.",
+            "description": "Alternative disabled action explanations, not simultaneous successful state; optional Label is never required.",
             "wrap": true
           }
         ]

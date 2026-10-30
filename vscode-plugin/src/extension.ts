@@ -320,6 +320,7 @@ export function activate(context: vscode.ExtensionContext): void {
     logger: panelLog,
   });
   const connectionManager = new ConnectionsManagerHost({
+    pickFile: async () => (await vscode.window.showOpenDialog({ canSelectMany: false, openLabel: 'Use file' }))?.[0]?.fsPath,
     owner: connectionsOwner, mutations: connectionMutations,
     tests: connectionTests, removals: connectionRemovals,
     registeredRoots: async () => (await daemonData.registeredRepos()).map(repo => repo.path),

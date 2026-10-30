@@ -44,3 +44,10 @@ Registration messages appear in a fixed message section at the bottom of the Con
 Clicking the message section opens a popup where the user can cycle through the collected registration messages. Keep the section and popup keyboard-accessible and preserve the existing safe-message handling.
 
 Status: recorded for implementation. No runtime message-section or popup change is claimed by this entry.
+
+
+## Pending manual feedback — 2026-10-31: datasource type icons
+
+Provide an icon for every supported datasource type. Show the matching icon beside the type name in the datasource dropdown, each connection in the list, and the connection edit view. Use the same icon for a given type across these surfaces. Retain readable type names and ensure icons remain legible in light and dark themes.
+
+Status: recorded for implementation. No runtime icons or dropdown changes are claimed by this entry.

@@ -173,3 +173,16 @@ test('config-catalog-defs.test.ts: model-defaults and config-catalog import no l
 		assert.deepEqual(row(catalog, 'models.tiers.cheap.effort')!.enumValues, [''], label);
 	}
 });
+
+test("config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family", () => {
+	const shipped = JSON.parse(readFileSync(join(SRC, 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as ModelDefinitionsFile;
+	const d = deriveModelDefaults(shipped);
+	assert.deepEqual(d.familyIds, ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama', 'ollama-claude']);
+	assert.equal(d.defaultFamily, 'cli-claude');
+	const claude = shipped.families.find(f => f.id === 'cli-claude')!;
+	for (const tier of ['core', 'mid', 'cheap'] as const) {
+		assert.deepEqual(d.tiers[tier], { runner: 'cli-claude', model: claude.tierDefaults![tier].model, effort: claude.tierDefaults![tier].effort ?? '' }, tier);
+	}
+	const local = shipped.families.find(f => f.id === 'ollama')!;
+	assert.equal(d.toolLoopModel, local.toolLoopModel, "the local family is still 'ollama' (the host family carries a CLI kind)");
+});

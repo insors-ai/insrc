@@ -41,6 +41,8 @@ export type FamilyId = 'cli-claude' | 'cli-codex' | 'cli-vibe' | 'ollama' | 'oll
 export type CliFamilyId = 'cli-claude' | 'cli-codex' | 'cli-vibe';
 /** The Ollama-hosted CLI family: runs a vendor CLI against Ollama, no tier defaults. */
 export type HostFamilyId = 'ollama-claude';
+/** The server a host family's CLI runs against. */
+export type FamilyHost = 'ollama';
 /** Where a host-family model runs: Ollama's cloud or the local Ollama server. */
 export type ModelHosting = 'cloud' | 'local';
 /** An effort level name; the file is the authority for level names. */
@@ -76,7 +78,7 @@ export interface FamilyDefinition {
 	readonly id:               FamilyId;
 	readonly cliKind?:         'claude' | 'codex' | 'vibe' | undefined;
 	/** Present only on a host family: its CLI runs against Ollama. */
-	readonly host?:            'ollama' | undefined;
+	readonly host?:            FamilyHost | undefined;
 	readonly displayName:      string;
 	readonly models:           readonly ModelDefinition[];
 	readonly tierDefaults?:    Readonly<Record<TierName, TierDefault>> | undefined;

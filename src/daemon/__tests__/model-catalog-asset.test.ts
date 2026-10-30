@@ -107,3 +107,21 @@ test('model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and t
 	const r = spawnSync(process.execPath, ['--import', 'tsx', join(repoRoot, 'scripts', 'check-model-definitions.mjs'), '--module', join(repoRoot, 'src', 'daemon', 'model-catalog.ts')], { cwd: repoRoot, encoding: 'utf8', timeout: 60_000 });
 	assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
 });
+
+test("model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts", () => {
+	const ids = validateModelCatalog().families.map(f => f.id);
+	assert.equal(ids.at(-1), 'ollama-claude', 'appended after the existing families');
+	const host = family('ollama-claude');
+	assert.deepEqual([host.cliKind, host.host, host.tierDefaults, host.summariserModel], ['claude', 'ollama', undefined, undefined]);
+	const three = ['low', 'high', 'max'];
+	assert.deepEqual(host.models.map(m => [m.id, m.hosting, m.efforts]), [
+		['deepseek-v4-pro:cloud', 'cloud', []],
+		['deepseek-v4.1-flash:cloud', 'cloud', three],
+		['glm-5.3:cloud', 'cloud', three],
+		['glm-5.3-flash:cloud', 'cloud', three],
+		['mistral-large-4:cloud', 'cloud', []],
+		['kimi-k3:cloud', 'cloud', three],
+	]);
+	// The installer takes the first family per CLI kind: still the vendor claude family.
+	assert.equal(validateModelCatalog().families.find(f => f.cliKind === 'claude')!.id, 'cli-claude');
+});

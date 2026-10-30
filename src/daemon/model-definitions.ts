@@ -28,6 +28,7 @@ import {
 	validateModelCatalog,
 	type CliFamilyId,
 	type EffortLevel,
+	type FamilyHost,
 	type FamilyId,
 	type InputLimit,
 	type ModelHosting,
@@ -56,7 +57,7 @@ export interface FamilyDefinitionEntry {
 	readonly id:               FamilyId;
 	readonly cliKind?:         'claude' | 'codex' | 'vibe' | undefined;
 	/** Ollama-hosted families only: the CLI runs against Ollama. */
-	readonly host?:            'ollama' | undefined;
+	readonly host?:            FamilyHost | undefined;
 	readonly displayName:      string;
 	readonly tierDefaults?:    Readonly<Record<TierName, TierDefault>> | undefined;
 	readonly summariserModel?: string | undefined;

@@ -48,3 +48,25 @@ test("models-definitions-daemon.test.ts: a real daemon answers models.definition
 		rmSync(home, { recursive: true, force: true });
 	}
 });
+
+test('models-definitions-daemon.test.ts: models.definitions returns the host family with host and hosting', { timeout: 90_000 }, async () => {
+	const home = mkdtempSync(join(tmpdir(), 'insrc-models-definitions-host-'));
+	try {
+		const daemon = await startDaemon(home);
+		try {
+			const defs = await rpc(daemon.sock, 'models.definitions') as ModelDefinitionsResult;
+			const host = defs.families.find(f => f.id === 'ollama-claude');
+			assert.ok(host, 'ollama-claude listed');
+			assert.deepEqual([host.cliKind, host.host], ['claude', 'ollama']);
+			assert.ok(!('rejectedModels' in host) && !('tierDefaults' in host));
+			const shipped = validateModelCatalog().families.find(f => f.id === 'ollama-claude')!;
+			assert.deepEqual(host.models.map(m => [m.id, m.hosting, m.efforts]), shipped.models.map(m => [m.id, m.hosting, m.efforts]));
+			for (const m of host.models) assert.ok(m.hosting === 'cloud' && !('installed' in m), m.id);
+			for (const f of defs.families.filter(x => x.id !== 'ollama-claude')) assert.ok(!('host' in f), `${f.id}: no host`);
+		} finally {
+			await daemon.stop();
+		}
+	} finally {
+		rmSync(home, { recursive: true, force: true });
+	}
+});

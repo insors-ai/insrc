@@ -1,0 +1,181 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b220bb6174a2f5ed",
+    "storyId": "s5",
+    "createdAt": "2026-10-30T09:03:14.752Z",
+    "updatedAt": "2026-10-30T09:15:42.376Z",
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicSlug": "run-claude-codex-ollama-models"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0071452d2",
+        "ranAt": "2026-10-30T09:03:14.752Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "b220-s5-gradle.test.ts: ModelDefinitionsGatewayTest parses a family's host and its models' hosting, and null when the answer has neither",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+                "title": "b220-s5-gradle.test.ts: ModelDefinitionsGatewayTest parses a family's host and its models' hosting, and null when the answer has neither",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14278,
+            "titles": [
+              {
+                "title": "b220-s5-gradle.test.ts: ModelDefinitionsGatewayTest parses a family's host and its models' hosting, and null when the answer has neither",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "ae950609d",
+        "ranAt": "2026-10-30T09:15:42.376Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "b220-s5-gradle.test.ts: ModelTiersModelTest offers the host family, labels its models cloud or local, offers efforts only where the model has them and writes the whole tier",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest offers the host family, labels its models cloud or local, offers efforts only where the model has them and writes the whole tier",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "b220-s5-gradle.test.ts: ModelTiersModelTest notes an undeclared host-family model as not supported, the tier will not run, while a vendor or host-less family keeps today's note",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest notes an undeclared host-family model as not supported, the tier will not run, while a vendor or host-less family keeps today's note",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "b220-s5-gradle.test.ts: ModelTiersModelTest resolves a tier saved on the host family to its runner, model and effort on reopen",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest resolves a tier saved on the host family to its runner, model and effort on reopen",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 28924,
+            "titles": [
+              {
+                "title": "b220-s5-gradle.test.ts: ModelDefinitionsGatewayTest parses a family's host and its models' hosting, and null when the answer has neither",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest offers the host family, labels its models cloud or local, offers efforts only where the model has them and writes the whole tier",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest notes an undeclared host-family model as not supported, the tier will not run, while a vendor or host-less family keeps today's note",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest resolves a tier saved on the host family to its runner, model and effort on reopen",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelCheckFlowTest keeps the host family out of Check model and offers it again when the answer has no host",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "99aac4506",
+        "ranAt": "2026-10-30T09:10:35.794Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "b220-s5-gradle.test.ts: ModelCheckFlowTest keeps the host family out of Check model and offers it again when the answer has no host",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+                "title": "b220-s5-gradle.test.ts: ModelCheckFlowTest keeps the host family out of Check model and offers it again when the answer has no host",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/b220-s5-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32574,
+            "titles": [
+              {
+                "title": "b220-s5-gradle.test.ts: ModelDefinitionsGatewayTest parses a family's host and its models' hosting, and null when the answer has neither",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest offers the host family, labels its models cloud or local, offers efforts only where the model has them and writes the whole tier",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest notes an undeclared host-family model as not supported, the tier will not run, while a vendor or host-less family keeps today's note",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelTiersModelTest resolves a tier saved on the host family to its runner, model and effort on reopen",
+                "result": "pass"
+              },
+              {
+                "title": "b220-s5-gradle.test.ts: ModelCheckFlowTest keeps the host family out of Check model and offers it again when the answer has no host",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

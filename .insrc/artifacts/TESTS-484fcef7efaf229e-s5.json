@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T19:32:09.393Z",
+    "updatedAt": "2026-10-30T19:49:40.238Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -835,8 +835,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "eb6dc3067",
-        "ranAt": "2026-10-30T19:32:09.393Z",
+        "commit": "9a3d83992",
+        "ranAt": "2026-10-30T19:49:40.238Z",
         "testsPassed": true,
         "tests": [
           {
@@ -850,18 +850,13 @@
                 "result": "pass"
               },
               {
-                "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
-                "title": "CM-S5-RENDER-TS: datasource badges cover every driver and the icon picker supports selection and keyboard navigation",
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: Refresh recovers repository discovery after reload, retaining Saved registrations and expiring Temporary ones",
                 "result": "pass"
               },
               {
-                "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
-                "title": "CM-S5-RENDER-TS: fixed two-line history retains safe messages, cycles in a popup, and survives manager reopen",
-                "result": "pass"
-              },
-              {
-                "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
-                "title": "CM-S5-RENDER-TS: per-row removal captures its own target with dirty-draft cancellation and stale-row refusal",
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: repository discovery retries ignore stale replies and restore unselected guidance without an opened-path match",
                 "result": "pass"
               }
             ],
@@ -870,31 +865,10 @@
         ],
         "files": [
           {
-            "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 16691,
-            "titles": [
-              {
-                "title": "CM-S5-RENDER-TS: datasource badges cover every driver and the icon picker supports selection and keyboard navigation",
-                "result": "pass"
-              },
-              {
-                "title": "CM-S5-RENDER-TS: fixed two-line history retains safe messages, cycles in a popup, and survives manager reopen",
-                "result": "pass"
-              },
-              {
-                "title": "CM-S5-RENDER-TS: per-row removal captures its own target with dirty-draft cancellation and stale-row refusal",
-                "result": "pass"
-              }
-            ],
-            "otherFailures": []
-          },
-          {
             "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 12337,
+            "durationMs": 13126,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
@@ -930,6 +904,14 @@
               },
               {
                 "title": "Connections defaults to opened context and preserves manual selection and dirty drafts across reopen",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: Refresh recovers repository discovery after reload, retaining Saved registrations and expiring Temporary ones",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: repository discovery retries ignore stale replies and restore unselected guidance without an opened-path match",
                 "result": "pass"
               }
             ],

@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "a1b67a7b0",
+  "version": "0.5.22",
+  "package": "vscode-plugin/insrc-vscode-0.5.22-s005-a1b67a7b0.vsix",
+  "sha256": "8d71aca12fcce1bcb2aaa29c06c2bc21c65d8ad54ad7a4829742cea94f6c4ed0",
+  "bundleSha256": "b63cd8a4abbebfc2ddb03c5bb86a6781a6b77b55e14097cfb4d522c6837b1e9e",
+  "archiveVerified": true,
+  "manualNativeUI": "pending-user",
+  "daemonRestarted": false
+}

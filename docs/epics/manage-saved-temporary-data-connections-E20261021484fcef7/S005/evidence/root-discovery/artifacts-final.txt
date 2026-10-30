@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence
+ok 1 - CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence
+  ---
+  duration_ms: 20.202458
+  type: 'test'
+  ...
+# Subtest: CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits
+ok 2 - CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits
+  ---
+  duration_ms: 21.645083
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 205.305542

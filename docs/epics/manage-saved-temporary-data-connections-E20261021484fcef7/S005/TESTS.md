@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 61 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -303,23 +303,21 @@ Run at 2026-10-29T18:07:35.864Z on commit `8f1861afd`. Tests check: **passed**. 
 
 ## t18
 
-Run at 2026-10-30T19:32:09.393Z on commit `eb6dc3067`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T19:49:40.238Z on commit `9a3d83992`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close | `vscode-plugin/src/connections/__tests__/host.test.ts` |
-| pass | CM-S5-RENDER-TS: datasource badges cover every driver and the icon picker supports selection and keyboard navigation | `vscode-plugin/src/connections/__tests__/feedback.test.ts` |
-| pass | CM-S5-RENDER-TS: fixed two-line history retains safe messages, cycles in a popup, and survives manager reopen | `vscode-plugin/src/connections/__tests__/feedback.test.ts` |
-| pass | CM-S5-RENDER-TS: per-row removal captures its own target with dirty-draft cancellation and stale-row refusal | `vscode-plugin/src/connections/__tests__/feedback.test.ts` |
+| pass | CM-S5-RENDER-TS: Refresh recovers repository discovery after reload, retaining Saved registrations and expiring Temporary ones | `vscode-plugin/src/connections/__tests__/host.test.ts` |
+| pass | CM-S5-RENDER-TS: repository discovery retries ignore stale replies and restore unselected guidance without an opened-path match | `vscode-plugin/src/connections/__tests__/host.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/feedback.test.ts` | 0 | 3 | 16.7 s |  |
-| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 9 | 12.3 s |  |
+| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 11 | 13.1 s |  |
 
 ## t19
 

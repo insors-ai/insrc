@@ -4,7 +4,7 @@
     "epicHash": "486751c3411ceef9",
     "storyId": "S001",
     "createdAt": "2026-10-30T19:37:31.977Z",
-    "updatedAt": "2026-10-30T21:51:21.309Z",
+    "updatedAt": "2026-10-30T22:10:54.708Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T19:19:13.160Z",
@@ -34,14 +34,260 @@
       },
       {
         "id": "t6",
-        "passed": true
+        "passed": false
       }
     ],
-    "summary": "t6 final reconciliation: (1) build green — tsc exit 0, check-model-definitions + copy-assets clean (/tmp/build-t6.log). (2) regen smoke branded — companion + docgen shells 8/8 branded checks each (/tmp/smoke.mts). (3) affected suites green: artifact-theme 19/0, companion+docgen wide 236/0, admin-worker 4/0, indexing-worker 4/0, debug-mcp 9/0. (4) SWEEP RECONCILED per-file at pristine HEAD (worktree /tmp/pristine5 @ 012a6624d, same node_modules): every disputed full-sweep failure was re-run in isolation on BOTH trees — /tmp/disputed-mine.log vs /tmp/disputed-pristine.log. Result: ZERO failing tests unique to the changed tree (comm of normalized fail lists is empty on the mine side; pristine actually has 3 extra flaky fails: CM-S3-GATE, CM-S4-GATE-bundle, CM-S5-LIFETIME-COPY). The 12 CM-S3 + CM-S4-GATE failures reproduce identically at pristine HEAD; SIGTERM-during-indexing and summary-link job-in-flight PASS in isolation on both trees (their full-sweep failures are cross-file interference under load). Earlier pristine sweep log /tmp/full-pristine4.log was killed mid-run at CM-S4-BUSY, which is why its fail list lacked the later files — that gap is now closed by the per-file pristine runs. Conclusion: no test regression is attributable to this Story; all sweep failures are pre-existing/environmental at HEAD.",
+    "summary": "t6 re-validate after code-review round 1: typecheck clean (tsc exit 0), build green, regen smoke 8/8 branded on both shells (/tmp/smoke2.log), full affected-suite run 310 pass / 0 fail exit 0 (/tmp/fix2.log) covering artifact-theme, companion (shell + code-ref-script), docgen (shell, fallback, narrative-band, extract/narrative). Sweep reconciliation stands: per-file pristine-vs-mine runs show zero failures unique to this Story (/tmp/dm2.txt vs /tmp/dp2.txt); SIGTERM/summary-link pass in isolation on both trees.",
     "testRecord": {
       "md": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/TESTS.md"
     },
-    "changeLog": [],
-    "commit": "4afe8a18a"
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-2ec4d97980969dd5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-dc0bd8089ce15fcd.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-e587866ef17ae15a.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-e587866ef17ae15a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-486751c3411ceef9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": ".vibe/config.toml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/answer-abort-finished-run-status-board-E20261029e587866e/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "plans/mermaid-theme-and-readability-requirements.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/contrast.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/fonts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/perf.integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/viewer-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/fonts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/theme.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/artifacts/companion/panzoom.js"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/OFL.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/poppins-400.woff2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/poppins-600.woff2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/poppins-700.woff2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/debug-mcp.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/admin-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/fallback.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/narrative-band.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/fallback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-486751c3411ceef9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/extract/__tests__/narrative.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:10:54.708Z"
+      }
+    ],
+    "commit": "bdf2ff3ca"
   }
 }

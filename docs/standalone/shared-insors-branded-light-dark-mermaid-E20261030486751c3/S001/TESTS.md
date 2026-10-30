@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -25,7 +25,7 @@ Run at 2026-10-30T19:44:16.264Z on commit `4afe8a18a`. Tests check: **passed**. 
 
 ## t2
 
-Run at 2026-10-30T19:50:55.299Z on commit `9a3d83992`. Tests check: **passed**. 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T22:10:56.037Z on commit `bdf2ff3ca`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/artifact-theme/__tests__/theme.test.ts**
 
@@ -40,6 +40,9 @@ Run at 2026-10-30T19:50:55.299Z on commit `9a3d83992`. Tests check: **passed**. 
 | pass | theme.test.ts: contrast pairs exist for both modes with NFR1 targets | `src/artifact-theme/__tests__/theme.test.ts` |
 | pass | theme.test.ts: viewerBootScript carries the readable clamp, theme persistence, safe re-render, export and error+source | `src/artifact-theme/__tests__/theme.test.ts` |
 | pass | theme.test.ts: exportableSvg embeds background + fonts + overrides and keeps the whole diagram | `src/artifact-theme/__tests__/theme.test.ts` |
+| pass | theme.test.ts: diagramRoles reads :::role, classDef, class and DOT class= roles only (R4) | `src/artifact-theme/__tests__/theme.test.ts` |
+| pass | theme.test.ts: legendSlotHtml wraps both modes for the boot script to toggle; empty when no roles (R4) | `src/artifact-theme/__tests__/theme.test.ts` |
+| pass | theme.test.ts: the boot script embeds the tested exportableSvg and toggles the legend with the theme (R4/R12) | `src/artifact-theme/__tests__/theme.test.ts` |
 
 **unit: src/artifact-theme/__tests__/fonts.test.ts**
 
@@ -60,31 +63,41 @@ Run at 2026-10-30T19:50:55.299Z on commit `9a3d83992`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/artifact-theme/__tests__/contrast.test.ts` | 0 | 3 | 0.7 s |  |
-| `src/artifact-theme/__tests__/fonts.test.ts` | 0 | 2 | 0.4 s |  |
-| `src/artifact-theme/__tests__/theme.test.ts` | 0 | 9 | 0.5 s |  |
+| `src/artifact-theme/__tests__/contrast.test.ts` | 0 | 3 | 0.4 s |  |
+| `src/artifact-theme/__tests__/fonts.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/artifact-theme/__tests__/theme.test.ts` | 0 | 12 | 0.5 s |  |
 
 ## t3
 
-Run at 2026-10-30T20:17:21.652Z on commit `012a6624d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T22:10:55.436Z on commit `bdf2ff3ca`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/artifacts/companion/__tests__/shell.test.ts**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
+| pass | d9f85b3c t3 — Header, Narrative, View and Description appear in that order | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
 | pass | d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
 | pass | d9f85b3c t3 — a Mermaid page inlines Mermaid and the branded theme boot drives the render | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — the legend renders iff the mermaid source carries role classes (R4) | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
 | pass | d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — an inlined runtime cannot close its script element early | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — every header, narrative and table string is escaped | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
+| pass | d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError | `src/workflow/artifacts/companion/__tests__/shell.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/artifacts/companion/__tests__/shell.test.ts` | 0 | 12 | 0.6 s |  |
+| `src/workflow/artifacts/companion/__tests__/shell.test.ts` | 0 | 13 | 0.7 s |  |
 
 ## t5
 
-Run at 2026-10-30T20:19:13.816Z on commit `012a6624d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-30T22:10:55.381Z on commit `bdf2ff3ca`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: src/artifact-theme/__tests__/viewer-script.test.ts**
 
@@ -97,7 +110,7 @@ Run at 2026-10-30T20:19:13.816Z on commit `012a6624d`. Tests check: **passed**. 
 
 **live: src/artifact-theme/__tests__/perf.integration.test.ts**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: perf.integration.test.ts green locally: n=1/50/500 policy builds all < 1000ms budget; fonts embedded once per page (3 @font-face rules) — see /tmp/t5c.log (19 pass, 0 fail across artifact-theme suite)
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/fix2.log: artifact-theme+companion+docgen suites 310 pass 0 fail (EXIT=0), incl. perf.integration n=1/50/500 < 1000ms budget
 
 **Files run**
 
@@ -107,29 +120,33 @@ Reported by the builder, not run by the gate: **pass**. Evidence: perf.integrati
 
 ## t4
 
-Run at 2026-10-30T20:21:20.955Z on commit `012a6624d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T22:10:55.190Z on commit `bdf2ff3ca`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/docgen/render/__tests__/shell.test.ts**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
+| pass | documentIRToMermaid: classDiagram with class decls + inherit/implement arrows | `src/docgen/render/__tests__/shell.test.ts` |
+| pass | documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped | `src/docgen/render/__tests__/shell.test.ts` |
 | pass | assembleShell: offline self-contained shell — runtime INLINED, no external fetch | `src/docgen/render/__tests__/shell.test.ts` |
+| pass | assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw | `src/docgen/render/__tests__/shell.test.ts` |
 | pass | assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4) | `src/docgen/render/__tests__/shell.test.ts` |
 | pass | assembleShell: the primary Mermaid shell is branded — shared classes, theme meta, fonts, controls, no theme neutral / old colors | `src/docgen/render/__tests__/shell.test.ts` |
+| pass | assembleShell: the legend renders iff the diagram source carries role classes (R4) | `src/docgen/render/__tests__/shell.test.ts` |
 | pass | assembleShell: the fallback subprocess shell is branded too (shared classes + meta + theme toggle + export) | `src/docgen/render/__tests__/shell.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/docgen/render/__tests__/shell.test.ts` | 0 | 7 | 0.4 s |  |
+| `src/docgen/render/__tests__/shell.test.ts` | 0 | 8 | 0.5 s |  |
 
 ## t6
 
-Run at 2026-10-30T21:51:21.309Z on commit `012a6624d`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-30T22:10:54.708Z on commit `bdf2ff3ca`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: regen smoke**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/smoke.mts 8/8 branded checks companion+docgen; build exit 0 /tmp/build-t6.log; affected suites /tmp/wide3.log 236/0, /tmp/t5c.log 19/0, /tmp/aw2.log 4/0, /tmp/iw3.log 4/0, /tmp/dm.log 9/0; per-file pristine-vs-mine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log, normalized diff /tmp/dm2.txt vs /tmp/dp2.txt: zero failures unique to changed tree
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/smoke2.log companion+docgen 8/8 branded checks each; /tmp/fix2.log 310/0 affected suites; /tmp/build-t6.log build exit 0; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log

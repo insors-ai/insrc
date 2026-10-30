@@ -4,7 +4,7 @@
     "epicHash": "486751c3411ceef9",
     "storyId": "S001",
     "createdAt": "2026-10-30T19:37:31.977Z",
-    "updatedAt": "2026-10-30T21:51:21.309Z",
+    "updatedAt": "2026-10-30T22:10:56.037Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T19:19:13.160Z",
     "epicSlug": "shared-insors-branded-light-dark-mermaid"
@@ -58,8 +58,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "9a3d83992",
-        "ranAt": "2026-10-30T19:50:55.299Z",
+        "commit": "bdf2ff3ca",
+        "ranAt": "2026-10-30T22:10:56.037Z",
         "testsPassed": true,
         "tests": [
           {
@@ -110,6 +110,21 @@
               {
                 "file": "src/artifact-theme/__tests__/theme.test.ts",
                 "title": "theme.test.ts: exportableSvg embeds background + fonts + overrides and keeps the whole diagram",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: diagramRoles reads :::role, classDef, class and DOT class= roles only (R4)",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: legendSlotHtml wraps both modes for the boot script to toggle; empty when no roles (R4)",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: the boot script embeds the tested exportableSvg and toggles the legend with the theme (R4/R12)",
                 "result": "pass"
               }
             ],
@@ -162,7 +177,7 @@
             "file": "src/artifact-theme/__tests__/contrast.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 695,
+            "durationMs": 385,
             "titles": [
               {
                 "title": "contrast.test.ts: brand tokens are the six exact hex values",
@@ -183,7 +198,7 @@
             "file": "src/artifact-theme/__tests__/fonts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 372,
+            "durationMs": 503,
             "titles": [
               {
                 "title": "fonts.test.ts: Poppins 400/600/700 woff2 exist with the OFL license note and valid wOF2 magic",
@@ -200,7 +215,7 @@
             "file": "src/artifact-theme/__tests__/theme.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 450,
+            "durationMs": 479,
             "titles": [
               {
                 "title": "theme.test.ts: THEME_VERSION is stamped and brand tokens are exact",
@@ -237,6 +252,18 @@
               {
                 "title": "theme.test.ts: exportableSvg embeds background + fonts + overrides and keeps the whole diagram",
                 "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: diagramRoles reads :::role, classDef, class and DOT class= roles only (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: legendSlotHtml wraps both modes for the boot script to toggle; empty when no roles (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: the boot script embeds the tested exportableSvg and toggles the legend with the theme (R4/R12)",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -245,8 +272,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "012a6624d",
-        "ranAt": "2026-10-30T20:17:21.652Z",
+        "commit": "bdf2ff3ca",
+        "ranAt": "2026-10-30T22:10:55.436Z",
         "testsPassed": true,
         "tests": [
           {
@@ -254,6 +281,21 @@
             "level": "unit",
             "source": "mapping",
             "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page",
+                "result": "pass"
+              },
               {
                 "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
                 "title": "d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init",
@@ -266,7 +308,42 @@
               },
               {
                 "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — the legend renders iff the mermaid source carries role classes (R4)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
                 "title": "d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — an inlined runtime cannot close its script element early",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — every header, narrative and table string is escaped",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError",
                 "result": "pass"
               }
             ],
@@ -278,7 +355,7 @@
             "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 632,
+            "durationMs": 703,
             "titles": [
               {
                 "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
@@ -298,6 +375,10 @@
               },
               {
                 "title": "d9f85b3c t3 — a Mermaid page inlines Mermaid and the branded theme boot drives the render",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the legend renders iff the mermaid source carries role classes (R4)",
                 "result": "pass"
               },
               {
@@ -335,8 +416,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "012a6624d",
-        "ranAt": "2026-10-30T20:19:13.816Z",
+        "commit": "bdf2ff3ca",
+        "ranAt": "2026-10-30T22:10:55.381Z",
         "testsPassed": true,
         "tests": [
           {
@@ -375,7 +456,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "perf.integration.test.ts green locally: n=1/50/500 policy builds all < 1000ms budget; fonts embedded once per page (3 @font-face rules) — see /tmp/t5c.log (19 pass, 0 fail across artifact-theme suite)"
+              "evidence": "/tmp/fix2.log: artifact-theme+companion+docgen suites 310 pass 0 fail (EXIT=0), incl. perf.integration n=1/50/500 < 1000ms budget"
             }
           }
         ],
@@ -384,7 +465,7 @@
             "file": "src/artifact-theme/__tests__/viewer-script.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 650,
+            "durationMs": 683,
             "titles": [
               {
                 "title": "viewer-script.test.ts: the generated boot script parses (node --check)",
@@ -409,8 +490,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "012a6624d",
-        "ranAt": "2026-10-30T20:21:20.955Z",
+        "commit": "bdf2ff3ca",
+        "ranAt": "2026-10-30T22:10:55.190Z",
         "testsPassed": true,
         "tests": [
           {
@@ -420,7 +501,22 @@
             "cases": [
               {
                 "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
                 "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw",
                 "result": "pass"
               },
               {
@@ -431,6 +527,11 @@
               {
                 "file": "src/docgen/render/__tests__/shell.test.ts",
                 "title": "assembleShell: the primary Mermaid shell is branded — shared classes, theme meta, fonts, controls, no theme neutral / old colors",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "assembleShell: the legend renders iff the diagram source carries role classes (R4)",
                 "result": "pass"
               },
               {
@@ -447,7 +548,7 @@
             "file": "src/docgen/render/__tests__/shell.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 414,
+            "durationMs": 452,
             "titles": [
               {
                 "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
@@ -474,6 +575,10 @@
                 "result": "pass"
               },
               {
+                "title": "assembleShell: the legend renders iff the diagram source carries role classes (R4)",
+                "result": "pass"
+              },
+              {
                 "title": "assembleShell: the fallback subprocess shell is branded too (shared classes + meta + theme toggle + export)",
                 "result": "pass"
               }
@@ -484,8 +589,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "012a6624d",
-        "ranAt": "2026-10-30T21:51:21.309Z",
+        "commit": "bdf2ff3ca",
+        "ranAt": "2026-10-30T22:10:54.708Z",
         "testsPassed": true,
         "tests": [
           {
@@ -496,7 +601,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/smoke.mts 8/8 branded checks companion+docgen; build exit 0 /tmp/build-t6.log; affected suites /tmp/wide3.log 236/0, /tmp/t5c.log 19/0, /tmp/aw2.log 4/0, /tmp/iw3.log 4/0, /tmp/dm.log 9/0; per-file pristine-vs-mine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log, normalized diff /tmp/dm2.txt vs /tmp/dp2.txt: zero failures unique to changed tree"
+              "evidence": "/tmp/smoke2.log companion+docgen 8/8 branded checks each; /tmp/fix2.log 310/0 affected suites; /tmp/build-t6.log build exit 0; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log"
             }
           }
         ],

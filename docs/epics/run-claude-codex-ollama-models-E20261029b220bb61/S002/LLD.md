@@ -341,6 +341,8 @@ The bounded tool-free path would have to verify the launcher passes its allow-li
   - **resolved**: Pre-filter gate (mirror s1 LLD) — Same decision as the s1 LLD: k1-k6 are must-meet constraints applied before scoring; a1 meets them. _(2026-10-30T05:26:50.086Z)_
 - `q2b43a06b` — Resolved 2026-10-30 (user decision): ac3 means serial per caller, as for today's runners; separate daemon sessions may run Ollama-targeted claude at the same time. Alternative a2's process-wide gate is not built.
   - **resolved**: a1 — Serial per caller (adopted) — User decision 2026-10-30: serial per caller as for today's runners; no process-wide gate. _(2026-10-30T05:27:38.180Z)_
+- `q93fd2759` — The signed-out answer of POST /api/me was not probed (Ollama was signed in); checkOllamaTarget treats any non-200 answer, or a 200 without an account id, as not signed in. /api/me is reached with plain fetch because the ollama npm client has no call for it (it offers list and show).
+  - **resolved**: Narrow the signal before shipping — Verified 2026-10-30 from Ollama's source (server/routes.go WhoamiHandler, POST /api/me): signed out (or a user with no name) answers 401 {"error":"unauthorized","signin_url":...}; signed in answers 200 with the user object (name set); an upstream failure answers 503 {"error":"account unavailable"} and a sign-in URL failure 500. So checkOllamaTarget maps 401 to cause 'not-signed-in' (message includes the signin_url and `ollama signin`), and 200 with a name to signed in; any other answer (503/500/other) fails with a message naming 'Ollama could not check the ollama.com account (status N)', not as not-signed-in. _(2026-10-30T05:28:40.034Z)_
 
 ## Citations
 

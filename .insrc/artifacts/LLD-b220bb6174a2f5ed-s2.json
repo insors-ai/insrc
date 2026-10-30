@@ -225,6 +225,13 @@
         "choice": "a1 — Serial per caller (adopted)",
         "rationale": "User decision 2026-10-30: serial per caller as for today's runners; no process-wide gate.",
         "resolvedAt": "2026-10-30T05:27:38.180Z"
+      },
+      "q93fd2759": {
+        "question": "The signed-out answer of POST /api/me was not probed (Ollama was signed in); checkOllamaTarget treats any non-200 answer, or a 200 without an account id, as not signed in. /api/me is reached with plain fetch because the ollama npm client has no call for it (it offers list and show).",
+        "status": "resolved",
+        "choice": "Narrow the signal before shipping",
+        "rationale": "Verified 2026-10-30 from Ollama's source (server/routes.go WhoamiHandler, POST /api/me): signed out (or a user with no name) answers 401 {\"error\":\"unauthorized\",\"signin_url\":...}; signed in answers 200 with the user object (name set); an upstream failure answers 503 {\"error\":\"account unavailable\"} and a sign-in URL failure 500. So checkOllamaTarget maps 401 to cause 'not-signed-in' (message includes the signin_url and `ollama signin`), and 200 with a name to signed in; any other answer (503/500/other) fails with a message naming 'Ollama could not check the ollama.com account (status N)', not as not-signed-in.",
+        "resolvedAt": "2026-10-30T05:28:40.034Z"
       }
     }
   },

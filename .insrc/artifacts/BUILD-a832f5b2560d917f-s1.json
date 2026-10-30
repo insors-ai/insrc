@@ -6,18 +6,30 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "394641257277c052375444bf9562047e54baaeb449803790a39685a732cc7ed7",
-        "at": "2026-10-30T04:39:43.146Z",
+        "number": 3,
+        "contentHash": "e3d78cbd1eb3358f38e7c1d9c7171503dcd72a704f943ca72f84dc06b0c548c4",
+        "at": "2026-10-30T05:26:22.333Z",
         "by": {
-          "id": "insrc:build",
+          "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T05:26:22.554Z",
+        "override": {
+          "reason": "User explicitly approved BUILD with override for the review's promised-test mapping false positive. TESTS.md maps 'Qualification still rejects incomplete isolation evidence, changed runtime pins and stale canonical authority' to 'Effective native isolation qualification rejects inherited tools and unproven binaries', recorded pass. Both task validation gates, all 12 affected tests, typecheck and build passed. No activation signoff or engine default change."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-63f1389f-e065-46c8-a966-f2bade81dd10",
@@ -29,7 +41,7 @@
     "schemaVersion": 1,
     "epicHash": "a832f5b2560d917f",
     "storyId": "s1",
-    "revision": 2,
+    "revision": 3,
     "updatedAt": "2026-10-30T04:38:43.440Z",
     "authoredBy": "controller",
     "standalone": true,
@@ -56,115 +68,136 @@
           "file": "src/agent/providers/__tests__/investigation-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/review-investigation-adoption.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-adoption.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-a832f5b2560d917f-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-a832f5b2560d917f-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-a832f5b2560d917f-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-a832f5b2560d917f-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a832f5b2560d917f-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a832f5b2560d917f-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-a832f5b2560d917f-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-a832f5b2560d917f-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": "docs/review-investigation.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": "docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": "docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": "scripts/review-investigation-probe.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/review-investigation-probe-export.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T04:38:43.440Z"
+        "timestamp": "2026-10-30T05:26:21.866Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-a832f5b2560d917f-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T05:26:21.866Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-a832f5b2560d917f-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T05:26:21.866Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T05:26:21.866Z"
       }
     ],
-    "commit": "fd31793e7"
+    "commit": "5ccd5c85f"
   },
   "citations": []
 }

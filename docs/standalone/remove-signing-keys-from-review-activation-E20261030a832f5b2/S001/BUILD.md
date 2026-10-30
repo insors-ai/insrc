@@ -4,7 +4,7 @@
 
 **Standalone:** yes  ·  **Created:** 2026-10-30T04:34:24.430Z  ·  **Updated:** 2026-10-30T04:38:43.440Z
 
-**Commit:** fd31793e7
+**Commit:** 5ccd5c85f
 
 ## Summary
 
@@ -19,19 +19,22 @@ Updated operator prerequisites and runbook to require approved installed runtime
 
 ## Changes
 
-- `src/agent/providers/__tests__/investigation-session.test.ts` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `src/daemon/__tests__/review-investigation-adoption.test.ts` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `src/daemon/review-investigation-adoption.ts` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/LLD-a832f5b2560d917f-s1.json` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/LLD-a832f5b2560d917f-s1.log.jsonl` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/PLAN-a832f5b2560d917f-s1.json` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/PLAN-a832f5b2560d917f-s1.log.jsonl` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/TASK-a832f5b2560d917f-s1-t1.json` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/TASK-a832f5b2560d917f-s1-t2.json` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/TASKS-a832f5b2560d917f-s1.json` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `.insrc/artifacts/TASKS-a832f5b2560d917f-s1.log.jsonl` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `docs/review-investigation.md` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/LLD.md` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/PLAN.md` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `scripts/review-investigation-probe.mjs` — **insrc-build** (2026-10-30T04:38:43.440Z)
-- `src/daemon/__tests__/review-investigation-probe-export.test.ts` — **insrc-build** (2026-10-30T04:38:43.440Z)
+- `src/agent/providers/__tests__/investigation-session.test.ts` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `src/daemon/__tests__/review-investigation-adoption.test.ts` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `src/daemon/review-investigation-adoption.ts` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/LLD-a832f5b2560d917f-s1.json` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/LLD-a832f5b2560d917f-s1.log.jsonl` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/PLAN-a832f5b2560d917f-s1.json` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/PLAN-a832f5b2560d917f-s1.log.jsonl` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/TASK-a832f5b2560d917f-s1-t1.json` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/TASK-a832f5b2560d917f-s1-t2.json` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/TASKS-a832f5b2560d917f-s1.json` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/TASKS-a832f5b2560d917f-s1.log.jsonl` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `docs/review-investigation.md` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/LLD.md` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/PLAN.md` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `scripts/review-investigation-probe.mjs` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `src/daemon/__tests__/review-investigation-probe-export.test.ts` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/CR-a832f5b2560d917f-s1.json` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `.insrc/artifacts/CR-a832f5b2560d917f-s1.log.jsonl` — **insrc-build** (2026-10-30T05:26:21.866Z)
+- `docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/CR.md` — **insrc-build** (2026-10-30T05:26:21.866Z)

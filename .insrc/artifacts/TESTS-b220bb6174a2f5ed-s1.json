@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b220bb6174a2f5ed",
+    "storyId": "s1",
+    "createdAt": "2026-10-29T19:58:32.650Z",
+    "updatedAt": "2026-10-30T03:55:04.862Z",
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicSlug": "run-claude-codex-ollama-models"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "2b26eac4e",
+        "ranAt": "2026-10-30T03:55:04.862Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-catalog.test.ts: the five-family fixture with ollama-claude and cli-vibe validates",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: the five-family fixture with ollama-claude and cli-vibe validates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog.test.ts: a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails naming the family and field",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails naming the family and field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog.test.ts: hosting on a vendor or plain-Ollama model fails",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: hosting on a vendor or plain-Ollama model fails",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog.test.ts: the existing families validate as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: the existing families validate as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 596,
+            "titles": [
+              {
+                "title": "model-catalog.test.ts: one synchronous refusal per fixture reason, each naming the entry and rule (incl. the three tier-default effort fixtures)",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: a valid fixture whose tier default names its model by alias and carries an accepted effort validates",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: validateModelCatalog returns and caches the frozen file; a second call does not re-read",
+                "result": "pass"
+              },
+              {
+                "title": "modelCatalogDir(): the in-process override, else INSRC_MODEL_CATALOG_DIR, else MODEL_CATALOG_DIR",
+                "result": "pass"
+              },
+              {
+                "title": "smoke: the built out/assets/models stages the catalog JSON, non-empty",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: memoryMb accepted on Ollama models, refused when not a positive integer or on a CLI model",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: the five-family fixture with ollama-claude and cli-vibe validates",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: a host family missing host, cliKind or a model's hosting, or carrying tierDefaults or summariserModel, fails naming the family and field",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: hosting on a vendor or plain-Ollama model fails",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: the existing families validate as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

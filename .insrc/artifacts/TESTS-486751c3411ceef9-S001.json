@@ -4,7 +4,7 @@
     "epicHash": "486751c3411ceef9",
     "storyId": "S001",
     "createdAt": "2026-10-30T19:37:31.977Z",
-    "updatedAt": "2026-10-30T21:26:49.145Z",
+    "updatedAt": "2026-10-30T21:51:21.309Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T19:19:13.160Z",
     "epicSlug": "shared-insors-branded-light-dark-mermaid"
@@ -485,7 +485,7 @@
       {
         "taskId": "t6",
         "commit": "012a6624d",
-        "ranAt": "2026-10-30T21:26:49.145Z",
+        "ranAt": "2026-10-30T21:51:21.309Z",
         "testsPassed": true,
         "tests": [
           {
@@ -496,7 +496,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "tsx /tmp/smoke.mts: companion+docgen all 8 branded checks true; affected-suite logs: /tmp/wide3.log (236 pass 0 fail), /tmp/t5c.log (19/0), /tmp/aw2.log (4/0), /tmp/iw3.log (4/0), /tmp/dm.log (9/0); build exit 0 (/tmp/build-t6.log); pristine comparison: /tmp/fail-pristine2.txt vs /tmp/fail-mine2.txt"
+              "evidence": "/tmp/smoke.mts 8/8 branded checks companion+docgen; build exit 0 /tmp/build-t6.log; affected suites /tmp/wide3.log 236/0, /tmp/t5c.log 19/0, /tmp/aw2.log 4/0, /tmp/iw3.log 4/0, /tmp/dm.log 9/0; per-file pristine-vs-mine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log, normalized diff /tmp/dm2.txt vs /tmp/dp2.txt: zero failures unique to changed tree"
             }
           }
         ],

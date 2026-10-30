@@ -152,6 +152,40 @@ test('assembleShell: the primary Mermaid shell is branded — shared classes, th
 	assert.doesNotMatch(html, /<script[^>]*\bsrc=/i, 'still fully offline');
 });
 
+test('assembleShell: the legend renders iff the diagram source carries role classes (R4)', async () => {
+	const plain: DocumentIR = {
+		docType: 'component-dependency', scopeDescription: 'repo',
+		derived: { nodes: [{ id: 'a', label: 'A', kind: 'component' }], edges: [] },
+		narrated: { sections: [] }, generatedAtRevision: 'r1',
+	};
+	const plainOut = await assembleShell(plain, { renderSvg: async () => ({ status: 'unavailable' as const, triedBinaries: [], reason: '' }) } as never);
+	assert.ok(isOk(plainOut));
+	if (isOk(plainOut)) assert.doesNotMatch(plainOut.value.html, /<div class="insrc-legend"/, 'no role metadata → no legend element');
+	const withRoles: DocumentIR = {
+		docType: 'component-dependency', scopeDescription: 'repo',
+		derived: {
+			nodes: [
+				{ id: 'a', label: 'API', kind: 'internal' },
+				{ id: 'b', label: 'DB', kind: 'datastore' },
+				{ id: 'c', label: 'Cloud', kind: 'external' },
+			],
+			edges: [{ from: 'a', to: 'b', kind: 'depends-on' }, { from: 'b', to: 'c', kind: 'depends-on' }],
+		},
+		narrated: { sections: [] }, generatedAtRevision: 'r1',
+	};
+	const out = await assembleShell(withRoles, { renderSvg: async () => ({ status: 'unavailable' as const, triedBinaries: [], reason: '' }) } as never);
+	assert.ok(isOk(out));
+	if (!isOk(out)) return;
+	const html = out.value.html;
+	assert.match(html, /\["API"\]:::internal/, 'role kind becomes a mermaid class assignment');
+	assert.match(html, /data-iv-legend="light"/);
+	assert.match(html, /data-iv-legend="dark" hidden/);
+	assert.match(html, />internal</);
+	assert.match(html, />datastore</);
+	assert.match(html, />external</);
+	assert.doesNotMatch(html, />note</, 'roles absent from the source are not shown');
+});
+
 test('assembleShell: the fallback subprocess shell is branded too (shared classes + meta + theme toggle + export)', async () => {
 	const nodes = Array.from({ length: 70 }, (_, i) => ({ id: `n${i}`, label: `C${i}`, kind: 'component' }));
 	const bigIR: DocumentIR = {

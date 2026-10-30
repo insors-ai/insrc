@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793397413231-e4wq83",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T21:56:52.500Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 188201,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "486751c3411ceef9",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "486751c3411ceef9",
+      "storyId": "S001",
+      "author": "controller",
+      "sourceDigest": "d681402a74abfcdf9e6b3ae5aa609c495a96ec24f6e707d7c4865892a04844eb",
+      "contractDigest": "fff3661103c0294b89da4ce3a94d43c52409d388ed456231aaa80be3e5956f66",
+      "buildDigest": "a61a424a329643d4aee85785f19d75eab4395088eb8e39cff03bb86858be944c",
+      "testsDigest": "3277f687a622e0eb7cd2044ec867a090105d59c001ee70a587f147281fb0a871",
+      "digest": "e9296e2a7642a0510d8bbfe4c0a9f00e101504b8381424d6d9544bea97eae9c6"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-10-30T19:19:13.160Z",
+    "epicSlug": "shared-insors-branded-light-dark-mermaid",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "486751c3411ceef9",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        ".vibe/config.toml",
+        "plans/mermaid-theme-and-readability-requirements.md",
+        "src/artifact-theme/__tests__/contrast.test.ts",
+        "src/artifact-theme/__tests__/fonts.test.ts",
+        "src/artifact-theme/__tests__/perf.integration.test.ts",
+        "src/artifact-theme/__tests__/theme.test.ts",
+        "src/artifact-theme/__tests__/viewer-script.test.ts",
+        "src/artifact-theme/fonts.ts",
+        "src/artifact-theme/theme.ts",
+        "src/assets/artifacts/companion/panzoom.js",
+        "src/assets/fonts/poppins/OFL.txt",
+        "src/assets/fonts/poppins/poppins-400.woff2",
+        "src/assets/fonts/poppins/poppins-600.woff2",
+        "src/assets/fonts/poppins/poppins-700.woff2",
+        "src/cli/services/__tests__/debug-mcp.test.ts",
+        "src/daemon/threads/__tests__/admin-worker.test.ts",
+        "src/daemon/threads/__tests__/indexing-worker.test.ts",
+        "src/docgen/render/__tests__/fallback.test.ts",
+        "src/docgen/render/__tests__/narrative-band.test.ts",
+        "src/docgen/render/__tests__/shell.test.ts",
+        "src/docgen/render/fallback.ts",
+        "src/docgen/render/shell.ts",
+        "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts",
+        "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+        "src/workflow/artifacts/companion/shell.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/artifact-theme/theme.ts:736699",
+            "message": "legendHtml has zero callers (not invoked from src/workflow/artifacts/companion/shell.ts's bootScript/renderCompanionPage nor from src/docgen/render/shell.ts's buildHtml) and zero testsReaching. R4 ('role palette + legend only when roles exist') and the LLD's dataModelChanges entry ('ROLE_PALETTE+legend iff roles') require the legend to be wired into both shells' rendered output, but no call site injects it into either shell.",
+            "expectationRef": "LLD acceptanceMapping R4 / dataModelChanges(ArtifactThemePolicy).details ('ROLE_PALETTE+legend iff roles')"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/artifact-theme/theme.ts:736705",
+            "message": "exportableSvg has zero callers (not used by companion/shell.ts, docgen/render/shell.ts, or docgen/render/fallback.ts) and zero testsReaching, despite R12 ('export full svg + font style + background rect') being an explicit acceptance criterion mapped to viewer-script/theme tests and to viewerBootScript's export control.",
+            "expectationRef": "LLD acceptanceMapping R12 / errorPaths.errorCases 'export' scenario ('full svg + font style + background rect')"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/docgen/render/fallback.ts",
+            "message": "assembleFallbackShell is reached only by src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts, but that test file does not appear in the gate's test-record results at all, so its pass-state cannot be confirmed — present but unverified, not confirmed passing.",
+            "expectationRef": "assembleFallbackShell",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "736739"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/docgen/render/shell.ts",
+            "message": "assembleShell is reached only by src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts, but that test file does not appear in the gate's test-record results at all, so its pass-state cannot be confirmed — present but unverified, not confirmed passing.",
+            "expectationRef": "assembleShell",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "736756"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 2,
+      "med": 2,
+      "low": 0
+    }
+  }
+}

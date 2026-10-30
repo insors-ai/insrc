@@ -131,6 +131,10 @@ test('assembleFallbackShell: sc3 shape, inlined SVG + svg-pan-zoom, offline (ac2
 	// the OFFLINE guarantee: no external fetch
 	assert.doesNotMatch(shell.html, /<script[^>]*\bsrc=/i);
 	assert.doesNotMatch(shell.html, /<link[^>]*\bhref=/i);
+	// the export control runs the shared tested serializer, and the legend toggles with the theme (R4/R12)
+	assert.match(shell.html, /var EXPORT_SVG=function exportableSvg\(/);
+	assert.match(shell.html, /EXPORT_SVG\(new XMLSerializer\(\)/);
+	assert.match(shell.html, /\[data-iv-legend\]/);
 });
 
 // ── t5 · assembleShell dispatch (fake renderer) ─────────────────────────────

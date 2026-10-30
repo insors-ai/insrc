@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
 	BRAND, CONTRAST_PAIRS, DIAGRAM_OVERRIDES_CSS, LEGEND_CSS, ROLE_PALETTE, SURFACES, THEME_VERSION,
-	exportableSvg, fontFaceCssForArtifacts, legendHtml, mermaidConfigFor, pageCssFor, viewerBootScript,
+	diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendHtml, legendSlotHtml, mermaidConfigFor, pageCssFor, viewerBootScript,
 } from '../theme.js';
 
 test('theme.test.ts: THEME_VERSION is stamped and brand tokens are exact', () => {
@@ -97,11 +97,39 @@ test('theme.test.ts: viewerBootScript carries the readable clamp, theme persiste
 
 test('theme.test.ts: exportableSvg embeds background + fonts + overrides and keeps the whole diagram', () => {
 	const svg = '<svg viewBox="0 0 400 300"><g id="all-content">x</g></svg>';
-	const out = exportableSvg(svg, 'dark', '');
+	const style = fontFaceCssForArtifacts() + '\n' + DIAGRAM_OVERRIDES_CSS;
+	const out = exportableSvg(svg, { bg: SURFACES.dark.bg, style });
 	assert.match(out, /^<\?xml version="1\.0"/);
 	assert.match(out, /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
 	assert.match(out, /<rect width="400" height="300" fill="#102D1A"\/>/, 'explicit dark background (R12)');
 	assert.match(out, /@font-face/, 'Poppins embedded for offline export');
 	assert.match(out, /relationshipLabel/, 'ER override embedded');
 	assert.match(out, /<g id="all-content">/, 'full diagram content, not just the viewport');
+	// pure: no xmlns duplication when the svg already carries one
+	const withNs = exportableSvg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>', { bg: '#fff', style: '' });
+	assert.equal(withNs.match(/xmlns=/g)?.length, 1);
+});
+
+test('theme.test.ts: diagramRoles reads :::role, classDef, class and DOT class= roles only (R4)', () => {
+	assert.deepEqual(diagramRoles('flowchart LR\n  A:::external --> B'), ['external']);
+	assert.deepEqual(diagramRoles('classDef datastore fill:#DEF0E9\nclass n0 datastore'), ['datastore']);
+	assert.deepEqual(diagramRoles('digraph { n0 [label="x", class="note"]; }'), ['note']);
+	assert.deepEqual(diagramRoles('flowchart LR\n  A --> B'), [], 'no role metadata → no roles, none invented');
+	assert.deepEqual(diagramRoles('flowchart LR\n  A:::bogus --> B'), [], 'unknown class names are not roles');
+});
+
+test('theme.test.ts: legendSlotHtml wraps both modes for the boot script to toggle; empty when no roles (R4)', () => {
+	assert.equal(legendSlotHtml([]), '');
+	const slot = legendSlotHtml(['external', 'note']);
+	assert.match(slot, /data-iv-legend="light"/);
+	assert.match(slot, /data-iv-legend="dark" hidden/);
+	assert.match(slot, new RegExp(ROLE_PALETTE.light.external.replace('#', '#')));
+	assert.match(slot, new RegExp(ROLE_PALETTE.dark.note.replace('#', '#')));
+});
+
+test('theme.test.ts: the boot script embeds the tested exportableSvg and toggles the legend with the theme (R4/R12)', () => {
+	const boot = viewerBootScript({ initialMode: 'light', configs: { light: {}, dark: {} } });
+	assert.match(boot, /var EXPORT_SVG=function exportableSvg\(/, 'the export serializer is embedded verbatim');
+	assert.match(boot, /EXPORT_SVG\(new XMLSerializer\(\)/, 'runtime export calls it');
+	assert.match(boot, /\[data-iv-legend\]/, 'theme switch shows/hides the per-mode legend');
 });

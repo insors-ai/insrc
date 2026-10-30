@@ -126,10 +126,10 @@ Run at 2026-10-30T20:21:20.955Z on commit `012a6624d`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-10-30T21:26:49.145Z on commit `012a6624d`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-30T21:51:21.309Z on commit `012a6624d`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: regen smoke**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: tsx /tmp/smoke.mts: companion+docgen all 8 branded checks true; affected-suite logs: /tmp/wide3.log (236 pass 0 fail), /tmp/t5c.log (19/0), /tmp/aw2.log (4/0), /tmp/iw3.log (4/0), /tmp/dm.log (9/0); build exit 0 (/tmp/build-t6.log); pristine comparison: /tmp/fail-pristine2.txt vs /tmp/fail-mine2.txt
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/smoke.mts 8/8 branded checks companion+docgen; build exit 0 /tmp/build-t6.log; affected suites /tmp/wide3.log 236/0, /tmp/t5c.log 19/0, /tmp/aw2.log 4/0, /tmp/iw3.log 4/0, /tmp/dm.log 9/0; per-file pristine-vs-mine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log, normalized diff /tmp/dm2.txt vs /tmp/dp2.txt: zero failures unique to changed tree

@@ -34,7 +34,7 @@ import {
 } from './fallback.js';
 import { renderNarrativeBand } from './narrative.js';
 import {
-	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, fontFaceCssForArtifacts, mermaidConfigFor, pageCssFor, viewerBootScript,
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, asDiagramRole, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageCssFor, viewerBootScript,
 } from '../../artifact-theme/theme.js';
 
 /** The single source of truth for where the docgen runtime assets live
@@ -128,7 +128,10 @@ function toClassDiagram(ir: DocumentIR, alias: ReadonlyMap<string, string>): str
 function toFlowchart(ir: DocumentIR, alias: ReadonlyMap<string, string>): string {
 	const lines: string[] = ['flowchart LR'];
 	for (const n of ir.derived.nodes) {
-		lines.push(`  ${alias.get(n.id)!}["${escapeLabel(n.label)}"]`);
+		// R4: a node whose structured kind IS a role carries the role class, so the
+		// legend (and role palette) apply; other kinds stay unclassified.
+		const role = asDiagramRole(n.kind);
+		lines.push(`  ${alias.get(n.id)!}["${escapeLabel(n.label)}"]${role !== undefined ? `:::${role}` : ''}`);
 	}
 	for (const e of ir.derived.edges) {
 		const from = alias.get(e.from);
@@ -219,6 +222,8 @@ function buildHtml(
 	sourceLink?: { readonly label: string; readonly href: string } | undefined,
 ): string {
 	const narrative = renderNarrativeBand(sections, sourceLink);
+	// R4: the legend renders only when the diagram source carries role classes.
+	const legend = legendSlotHtml(diagramRoles(mermaidSource));
 	// A narrative doc shares the viewport between diagram + prose; a derived-only
 	// doc keeps the full-height diagram (no inline style → byte-identical).
 	const diagramStyle = narrative !== '' ? ' style="height:65vh"' : '';
@@ -258,6 +263,7 @@ ${docgenPageStyle()}
 <div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-zin" aria-label="zoom in">+</button><span id="iv-zl">100%</span><button id="iv-zout" aria-label="zoom out">−</button><button id="iv-zfit" aria-label="fit to view">Fit</button><button id="iv-z100" aria-label="actual size">1:1</button><button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button><button id="iv-srcbtn" aria-label="show diagram source" title="Show source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div id="docgen-diagram" class="insrc-viewer-diagram"${diagramStyle}><pre class="mermaid">${escapeHtml(mermaidSource)}</pre></div>
+${legend}
 <pre class="iv-src" id="iv-src"></pre>${narrative}
 <script>${mermaid}</script>
 <script>${svgPanZoom}</script>

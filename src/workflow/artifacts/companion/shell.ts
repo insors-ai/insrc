@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import { docgenAssetDir } from '../../../docgen/render/shell.js';
 import {
-	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, fontFaceCssForArtifacts, mermaidConfigFor, pageCssFor, viewerBootScript,
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageCssFor, viewerBootScript,
 } from '../../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from '../../../docgen/render/code-ref-script.js';
 import { DiagramGenerationError } from './render.js';
@@ -225,6 +225,8 @@ export function renderCompanionPage(header: CompanionHeader, page: CompanionPage
 	const visualHtml = visual.kind === 'mermaid'
 		? `<pre class="mermaid">${esc(visual.source)}</pre>`
 		: visual.html;
+	// R4: the legend renders only when the diagram source carries role classes.
+	const legend = visual.kind === 'mermaid' ? legendSlotHtml(diagramRoles(visual.source)) : '';
 	const visualStyle = visual.kind === 'html' && visual.style !== undefined ? visual.style : '';
 	const scripts = [
 		...(visual.kind === 'mermaid' && runtime.mermaid !== undefined ? [inlineScript(runtime.mermaid)] : []),
@@ -257,6 +259,7 @@ ${pageStyle()}<style>${visualStyle}</style></head>
 <div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-theme" title="Toggle light/dark" aria-label="toggle light/dark theme" aria-pressed="false">◐</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage">${visualHtml}</div></div>
+${legend}
 <pre class="iv-src" id="iv-src"></pre>
 </div></section>
 <section class="blk desc"><h2>Description</h2>${description}</section>

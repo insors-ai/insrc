@@ -125,6 +125,23 @@ test('d9f85b3c t3 — a Mermaid page inlines Mermaid and the branded theme boot 
 	assert.match(html, /<pre class="mermaid">erDiagram\n  CUSTOMER \|\|--o\{ ORDER : places<\/pre>/);
 });
 
+test('d9f85b3c t3 — the legend renders iff the mermaid source carries role classes (R4)', () => {
+	const plain = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
+	assert.doesNotMatch(shellMarkup(plain), /data-iv-legend/, 'no role metadata → no legend slot');
+	const withRoles: CompanionPageContent = {
+		...MERMAID_PAGE,
+		visual: { kind: 'mermaid', source: 'flowchart LR\n  A[API]:::internal --> B[(DB)]:::datastore\n  B --> C[Cloud]:::external' },
+	};
+	const html = shellMarkup(renderCompanionPage(HEADER, withRoles, RUNTIME_MERMAID));
+	assert.match(html, /data-iv-legend="light"/);
+	assert.match(html, /data-iv-legend="dark" hidden/);
+	assert.match(html, /insrc-legend/);
+	assert.match(html, />internal</);
+	assert.match(html, />datastore</);
+	assert.match(html, />external</);
+	assert.doesNotMatch(html, />note</, 'roles absent from the source are not shown');
+});
+
 test('d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS', () => {
 	const html = renderCompanionPage(HEADER, HTML_PAGE, { panzoom: '/*PANZOOM*/', mermaid: '/*MERMAID*/' });
 	assert.ok(!html.includes('/*MERMAID*/'), 'Mermaid is not inlined even when supplied');

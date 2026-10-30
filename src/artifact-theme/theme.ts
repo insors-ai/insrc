@@ -150,6 +150,45 @@ export function legendHtml(mode: ThemeMode, roles: readonly DiagramRole[]): stri
 	return `<div class="insrc-legend" role="list">${items}</div>`;
 }
 
+const ROLE_NAMES: readonly DiagramRole[] = ['internal', 'datastore', 'external', 'note'];
+
+/** Narrow a structured-source label (e.g. an IR node `kind`) to a role, when it IS one. */
+export function asDiagramRole(name: string): DiagramRole | undefined {
+	return (ROLE_NAMES as readonly string[]).includes(name) ? name as DiagramRole : undefined;
+}
+
+/**
+ * The roles a diagram source actually carries (R4): `:::role` class
+ * assignments, `classDef <role>` declarations and `class <ids> <role>`
+ * statements whose name is a known role. Diagrams without role metadata get
+ * no legend — roles are never invented from names.
+ */
+export function diagramRoles(source: string): DiagramRole[] {
+	const found = new Set<DiagramRole>();
+	const isRole = (name: string | undefined): name is DiagramRole =>
+		name !== undefined && asDiagramRole(name) !== undefined;
+	for (const m of source.matchAll(/:::\s*([A-Za-z_][\w-]*)/g)) if (isRole(m[1])) found.add(m[1]);
+	for (const m of source.matchAll(/^\s*classDef\s+([A-Za-z_][\w-]*)/gm)) if (isRole(m[1])) found.add(m[1]);
+	// DOT attributes (`class="external"` / `class=external`) used by the fallback renderer
+	for (const m of source.matchAll(/\bclass\s*=\s*"?([A-Za-z_][\w-]*)"?/g)) if (isRole(m[1])) found.add(m[1]);
+	for (const m of source.matchAll(/^\s*class\s+[^;]+$/gm)) {
+		for (const token of (m[0].match(/[A-Za-z_][\w-]*/g) ?? [])) if (isRole(token)) found.add(token);
+	}
+	return ROLE_NAMES.filter(r => found.has(r));
+}
+
+/**
+ * Both-mode legend slot the shells inject under the viewport when the diagram
+ * carries roles (R4). Each mode's legend sits in a `[data-iv-legend]` wrapper
+ * the boot script shows/hides with the active theme — same pattern as the
+ * `style[data-iv-mode]` tags.
+ */
+export function legendSlotHtml(roles: readonly DiagramRole[]): string {
+	if (roles.length === 0) return '';
+	return `<div data-iv-legend="light">${legendHtml('light', roles)}</div>` +
+		`<div data-iv-legend="dark" hidden>${legendHtml('dark', roles)}</div>`;
+}
+
 // ---------------------------------------------------------------------------
 // Mermaid configuration per mode (R5: only 10.9.1-supported settings)
 // ---------------------------------------------------------------------------
@@ -321,9 +360,13 @@ export function viewerBootScript(opts: ViewerBootOpts): string {
   var mode=(function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'${opts.initialMode}';})();
   var SURFACES_BG=${JSON.stringify({ light: LIGHT.bg, dark: DARK.bg })};
   var CSS_TEXT=root.getAttribute('data-iv-export-css')||'';
+  // The tested export serializer, embedded verbatim so the in-browser export
+  // runs the same code the unit tests exercise (R12).
+  var EXPORT_SVG=${exportableSvg.toString()};
   function applyMode(m,rerender){
     mode=m;if(root)root.setAttribute('data-theme',m);
     document.querySelectorAll('style[data-iv-mode]').forEach(function(s){s.disabled=(s.getAttribute('data-iv-mode')!==m);});
+    document.querySelectorAll('[data-iv-legend]').forEach(function(el){el.hidden=(el.getAttribute('data-iv-legend')!==m);});
     try{localStorage.setItem('insrc-theme-mode',m);}catch(e){}
     var t=document.getElementById('iv-theme');if(t)t.setAttribute('aria-pressed',m==='dark'?'true':'false');
     if(rerender)doRender();
@@ -373,15 +416,7 @@ export function viewerBootScript(opts: ViewerBootOpts): string {
     var svg=stage&&stage.querySelector('svg');if(!svg)return null;
     var clone=svg.cloneNode(true);
     clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
-    var vb=clone.viewBox&&clone.viewBox.baseVal;
-    var w=vb&&vb.width?vb.width:800,h=vb&&vb.height?vb.height:600;
-    var rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    rect.setAttribute('width',w);rect.setAttribute('height',h);rect.setAttribute('fill',SURFACES_BG[mode]);
-    clone.insertBefore(rect,clone.firstChild);
-    var style=document.createElementNS('http://www.w3.org/2000/svg','style');
-    style.textContent=CSS_TEXT.split('</').join('<\\/');
-    clone.insertBefore(style,clone.firstChild);
-    return '<?xml version="1.0" encoding="UTF-8"?>\\n'+new XMLSerializer().serializeToString(clone);
+    return EXPORT_SVG(new XMLSerializer().serializeToString(clone),{bg:SURFACES_BG[mode],style:CSS_TEXT});
   }
   window.insrcViewer={setMode:function(m){applyMode(m,true);},fit:fitView,zoomIn:function(){zoomBy(1.25);},zoomOut:function(){zoomBy(0.8);},reset:resetView,exportSvg:exportSvg,mode:function(){return mode;}};
   function on(id,fn){var b=document.getElementById(id);if(b)b.addEventListener('click',fn);}
@@ -419,20 +454,24 @@ export function viewerBootScript(opts: ViewerBootOpts): string {
  * viewport), explicit background rect in the mode's canvas color, and an
  * embedded <style> with the font-face + diagram overrides so the export keeps
  * Poppins and the ER label treatment outside the viewer.
+ *
+ * Deliberately PURE — every input arrives via `opts` — so the shells can embed
+ * this exact function (`exportableSvg.toString()`) into the runtime boot
+ * script and the in-browser export runs the same tested code (R12).
  */
-export function exportableSvg(svgText: string, mode: ThemeMode, extraCss: string): string {
-	const bg = SURFACES[mode].bg;
-	const style = `${fontFaceCss()}\n${DIAGRAM_OVERRIDES_CSS}\n${extraCss}`;
+export function exportableSvg(svgText: string, opts: { readonly bg: string; readonly style: string }): string {
+	const { bg, style } = opts;
 	// insert background rect + style right after the opening <svg ...> tag
 	const openEnd = svgText.indexOf('>');
 	if (openEnd === -1) return svgText;
-	const open = svgText.slice(0, openEnd + 1);
+	let open = svgText.slice(0, openEnd + 1);
 	const rest = svgText.slice(openEnd + 1);
+	if (!open.includes('xmlns=')) open = open.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
 	const vb = /viewBox="([^"]+)"/.exec(open)?.[1]?.split(/\s+/).map(Number);
 	const w = vb && Number.isFinite(vb[2]) ? vb[2] : 800;
 	const h = vb && Number.isFinite(vb[3]) ? vb[3] : 600;
 	return `<?xml version="1.0" encoding="UTF-8"?>\n` +
-		open.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ') +
+		open +
 		`<rect width="${w}" height="${h}" fill="${bg}"/><style>${style.replace(/<\//g, '<\\/')}</style>` +
 		rest;
 }

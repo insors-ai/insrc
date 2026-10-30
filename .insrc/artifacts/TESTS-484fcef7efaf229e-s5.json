@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T04:17:45.737Z",
+    "updatedAt": "2026-10-30T04:33:47.080Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -534,8 +534,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "710d847c1",
-        "ranAt": "2026-10-29T17:07:13.552Z",
+        "commit": "be26a144e",
+        "ranAt": "2026-10-30T04:26:43.355Z",
         "testsPassed": true,
         "tests": [
           {
@@ -587,7 +587,7 @@
             "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2982,
+            "durationMs": 2958,
             "titles": [
               {
                 "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
@@ -624,8 +624,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "b91a36215",
-        "ranAt": "2026-10-29T17:28:25.111Z",
+        "commit": "be26a144e",
+        "ranAt": "2026-10-30T04:28:27.227Z",
         "testsPassed": true,
         "tests": [
           {
@@ -647,7 +647,7 @@
             "file": "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 17205,
+            "durationMs": 26209,
             "titles": [
               {
                 "title": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
@@ -1315,6 +1315,42 @@
               },
               {
                 "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t31",
+        "commit": "2c35eb1aa",
+        "ranAt": "2026-10-30T04:33:47.080Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-packaging.test.ts",
+                "title": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-packaging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 36281,
+            "titles": [
+              {
+                "title": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite",
                 "result": "pass"
               }
             ],

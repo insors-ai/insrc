@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -198,7 +198,7 @@ Run at 2026-10-29T16:42:41.556Z on commit `7faf99e13`. Tests check: **passed**. 
 
 ## t12
 
-Run at 2026-10-29T17:07:13.552Z on commit `710d847c1`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T04:26:43.355Z on commit `be26a144e`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery**
 
@@ -220,7 +220,7 @@ Run at 2026-10-29T17:07:13.552Z on commit `710d847c1`. Tests check: **passed**. 
 
 ## t13
 
-Run at 2026-10-29T17:28:25.111Z on commit `b91a36215`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T04:28:27.227Z on commit `be26a144e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create**
 
@@ -232,7 +232,7 @@ Run at 2026-10-29T17:28:25.111Z on commit `b91a36215`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-kotlin-mutation.test.ts` | 0 | 1 | 17.2 s |  |
+| `src/shared/__tests__/connection-manager-kotlin-mutation.test.ts` | 0 | 1 | 26.2 s |  |
 
 ## t14
 
@@ -471,3 +471,19 @@ Run at 2026-10-30T04:17:45.737Z on commit `878dbc47d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/connection-manager-release.test.ts` | 0 | 2 | 3.9 s |  |
+
+## t31
+
+Run at 2026-10-30T04:33:47.080Z on commit `2c35eb1aa`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**smoke: CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite | `src/shared/__tests__/connection-manager-packaging.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-packaging.test.ts` | 0 | 1 | 36.3 s |  |

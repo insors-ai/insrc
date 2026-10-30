@@ -54,7 +54,7 @@ export interface DaemonDataGateway {
   mcpClients(): Promise<readonly McpClientView[]>;
   /** Per-provider MCP registration state (the daemon's `mcp.status` read): what is
    *  already registered, so a settings UI can offer only the rest. */
-  mcpRegistration(): Promise<readonly McpRegistrationView[]>;
+  mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
   registeredRepos(): Promise<readonly RepoRef[]>;
   scanOrphans(): Promise<readonly OrphanProcess[]>;
 }
@@ -192,7 +192,7 @@ export interface RepoConfigRendererDeps {
   /** The raw ~/.insrc/config.json (config.show) — the source of per-repo overrides. */
   rawConfig(): Promise<Record<string, unknown>>;
   /** Per-provider MCP registration state (mcp.status) — the Providers section source. */
-  mcpRegistration(): Promise<readonly McpRegistrationView[]>;
+  mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
 }
 
 /**

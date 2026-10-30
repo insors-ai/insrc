@@ -156,7 +156,7 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
     // non-checkable; only unregistered, available ones are checkboxes.
     let providers: string;
     try {
-      providers = renderProvidersSection(await deps.mcpRegistration());
+      providers = renderProvidersSection(await deps.mcpRegistration(active));
     } catch (err) {
       // An old daemon answers 'unknown method: mcp.status' — say so and point at the update.
       const msg = err instanceof Error ? err.message : String(err);
@@ -205,7 +205,7 @@ function renderProvidersSection(regs: readonly McpRegistrationView[]): string {
     ? `<button id="insrc-register-providers" type="button">Register selected providers</button>`
     : '';
   return (
-    `<p class="hint">Register the insrc MCP server (and inject the steering block) for a provider in this repo. Already-registered providers are not checkable.</p>` +
+    `<p class="hint">Register the insrc MCP server (and inject the steering block) for a provider in this repo. Already-registered providers are not checkable. vibe reads its config once at startup — after registering, restart vibe inside this repo to load the server (it is written to the repo's own .vibe/config.toml).</p>` +
     `<div class="providers">${rows.join('')}</div>` +
     button
   );

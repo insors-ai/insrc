@@ -1,0 +1,678 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793373679644-3i614w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T15:23:21.007Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 121354,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "581e07f5fb79532c",
+    "epicSlug": "shared-insors-branded-light-dark-mermaid",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793373679644-3i614w",
+    "hldEffectiveHash": "581e07f5fb79532c08dad36d49b1739a5ed5030cf0e4bc652eaf4c8d76016c68",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The upstream doc's 'Decisions for design' bullet 6 requires an explicit decision on Mermaid runtime-upgrade need (R5: 'evaluate whether a runtime update is necessary'). This LLD makes that decision (keep 10.9.1, use only already-supported settings) rather than silently dropping it.",
+          "evidence": "LLD §5 acceptance-mapping row: 'R5 | config only 10.9.1-supported settings; runtime.json unchanged'. src/assets/docgen/runtime.json confirms the shipped version is indeed mermaidVersion 10.9.1, so the decision (no upgrade, stay within current capabilities) is consistent with the real shipped runtime. A sibling draft of this same story (LLD-402fecfe37bc6ad9-S001, same slug, created 14 minutes earlier) was blocked in review precisely because it omitted this decision (claim coverage-of-intent.2, MED, does-not-hold); this later draft under review adds the missing R5 row, resolving that gap. [files: plans/mermaid-theme-and-readability-requirements.md, src/assets/docgen/runtime.json, .insrc/artifacts/LLD-402fecfe37bc6ad9-S001.json]",
+          "action": "Read the plan's 'Decisions for design' list, runtime.json, and the prior sibling draft's recorded review findings for the same requirement.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Migration §6 'State before' claim — both shells today hard-code Mermaid's neutral theme, and the companion shell hard-codes a fixed light page background (#f3f5f8) — is true of the real code.",
+          "evidence": "src/workflow/artifacts/companion/shell.ts:163 `mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'neutral'})` and :175 `body{margin:0;background:#f3f5f8;...}`; src/docgen/render/shell.ts:206 `mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutral' })`. [files: src/workflow/artifacts/companion/shell.ts, src/docgen/render/shell.ts]",
+          "action": "Read both shell.ts files end to end and located the cited lines.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "`src/artifact-theme/{theme.ts,fonts.ts}` and `src/assets/fonts/poppins/*.woff2` are genuinely new (do not already exist), and copy-assets.mjs already ships `src/assets` wholesale so the new font tree ships without any pipeline-code change, contrary to the LLD listing copy-assets.mjs as a 'call site' implying it needs to change.",
+          "evidence": "Glob for `src/artifact-theme/**` returned no files (genuinely new). copy-assets.mjs: `const DIRS = ['prompts', 'assets']` then `cpSync(src, dst, { recursive: true })` for each — this already recursively copies the whole `src/assets` tree, so a new `src/assets/fonts/poppins/` subtree ships automatically with zero edits to copy-assets.mjs. The LLD's claim that fonts are 'shipped by copy-assets.mjs' is literally true, though listing it as a call-site needing modification is slightly misleading (not a correctness defect). [files: copy-assets.mjs]",
+          "action": "Globbed the claimed new module path and read copy-assets.mjs in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'Existing pan/zoom runtimes reused' [[c1]] — each shell already owns a working, distinct pan/zoom runtime that the new theme module only needs to style, not replace.",
+          "evidence": "src/workflow/artifacts/companion/shell.ts loadCompanionRuntime() reads and inlines `panzoom.js`; src/docgen/render/shell.ts loadRuntime() reads and inlines `svg-pan-zoom.min.js` per runtime.json. Both are already loaded and rendered by renderCompanionPage/assembleShell today. [files: src/workflow/artifacts/companion/shell.ts, src/docgen/render/shell.ts]",
+          "action": "Read the runtime-loading code in both shell.ts files.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The change-site inventory (§3.1: companion/shell.ts, docgen/render/shell.ts, docgen/render/fallback.ts) is complete for one shared DIAGRAM_OVERRIDES_CSS string (notably the ER relationship-label dark-on-Crayola override) to apply correctly in both rendering shells.",
+          "evidence": "The companion shell wraps the diagram in `<div class=\"stage\" id=\"stage\">` (src/workflow/artifacts/companion/shell.ts:251), while docgen's primary shell wraps it in `<div id=\"docgen-diagram\">` (src/docgen/render/shell.ts:235) — two different container selectors. A single shared override CSS scoped (per the design's own reference, c5) to `.stage svg .relationshipLabel`/`.relationshipLabelBox` only matches the companion DOM. Nothing in §2.3/§3.1/§4 of this LLD adds a DOM-harmonization change (a shared wrapper class/id) to either shell, so the shared CSS would silently fail to apply the ER contrast fix in one of the two rendering paths — reproducing exactly the R3 defect the story exists to fix. This exact HIGH defect was already raised against the immediately-prior draft of this same story (LLD-402fecfe37bc6ad9-S001, claim change-sites.2) and remains unaddressed in this draft. [files: src/workflow/artifacts/companion/shell.ts, src/docgen/render/shell.ts, src/docgen/render/fallback.ts]",
+          "action": "Read the exact container markup in companion/shell.ts and docgen/render/shell.ts (both already read in full) and compared selectors; cross-checked against the prior sibling draft's recorded review finding for the same gap.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The two listed contract signatures match the real, current signatures exactly: `renderCompanionPage(header, page, runtime): string` and `assembleShell(ir, renderer?): Promise<DocGenOutcome<RenderedDocumentShell>>`.",
+          "evidence": "src/workflow/artifacts/companion/shell.ts:217 `export function renderCompanionPage(header: CompanionHeader, page: CompanionPageContent, runtime: CompanionRuntime): string`; src/docgen/render/shell.ts:259-262 `export async function assembleShell(ir: DocumentIR, renderer: SubprocessRenderer = graphvizSubprocessRenderer): Promise<DocGenOutcome<RenderedDocumentShell>>`. [files: src/workflow/artifacts/companion/shell.ts, src/docgen/render/shell.ts]",
+          "action": "Read both function definitions in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No stored/persisted shape needs migration — `RenderedDocumentShell` stays structurally unchanged and generated artifacts are plain static HTML files with no versioned DB record, matching the LLD's 'Zero downtime: yes — Data rewrite: no'.",
+          "evidence": "src/docgen/types.ts:125-132 `RenderedDocumentShell { docType, backend, html, inlinedRuntimeVersion, diagramFormat:'svg', supportsZoomPan:true }` has no versioned/stored field the new theme policy would need to migrate; the type already carries `inlinedRuntimeVersion`, which the new `insrc-theme` meta tag/version stamp can ride alongside without a shape change. [files: src/docgen/types.ts]",
+          "action": "Read the RenderedDocumentShell type definition.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'mermaid.run rejects' is a real, already-reachable failure point in both shells that the planned actionable-error/show-source response can hook into, not an invented hook.",
+          "evidence": "src/workflow/artifacts/companion/shell.ts:164-169 already chains `mermaid.run({...}).then(...).catch(function(err){document.getElementById('stage').textContent=...})`; src/docgen/render/shell.ts:207-218 already wraps `await mermaid.run({...})` in try/catch writing to `#docgen-error`. Both are genuine existing rejection paths the design proposes to extend (actionable message + source access), not fictitious hooks. [files: src/workflow/artifacts/companion/shell.ts, src/docgen/render/shell.ts]",
+          "action": "Read the boot/init scripts in both shell.ts files.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "NFR1 (≥4.5:1 / ≥3:1 measured contrast) has a proving test that actually computes rendered contrast ratios, not merely asserts fixed hex token equality.",
+          "evidence": "LLD §5 lists a dedicated `src/artifact-theme/__tests__/contrast.test.ts` under the unit-test subjects for 'tokens, contrast pairs (NFR1)...', and the acceptance-mapping table's NFR1 row explicitly reads 'contrast.test.ts computed ratios incl. notes/labels/states' — i.e. it commits to computing ratios, unlike the sibling draft of this same story (LLD-402fecfe37bc6ad9-S001) whose review found NFR1 unmapped to any ratio-computing test (claim tests.1, MED, does-not-hold, because its only related test asserted fixed hex equality). This draft's explicit 'computed ratios' commitment resolves that gap at the design level (the test file itself does not yet exist to inspect, since the module is still unbuilt). [files: .insrc/artifacts/LLD-402fecfe37bc6ad9-S001.json]",
+          "action": "Read this LLD's §5 test-strategy and acceptance-mapping table, and compared it against the prior sibling draft's recorded review finding for the identical NFR1 test gap.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 0,
+        "low": 8,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-30T15:23:34.503Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone triage-routed feature story (no HLD): two artifact shells + shared theme module + asset pipeline.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "standalone",
+        "owns": [],
+        "depends": [],
+        "internal": "Shared Insors-branded light/dark Mermaid theme policy consumed by companion shell and docgen shell (+fallback), Poppins packaged under src/assets/fonts, shipped by copy-assets.mjs."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {
+        "security": "strict Mermaid securityLevel; no author-supplied CSS/JS/config executed; no remote URL (NFR6/NFR3)",
+        "performance": "NFR5: record render/theme-switch timings on small/medium/large fixtures; no render loops"
+      }
+    },
+    "summary": {
+      "prose": "One versioned Insors-branded theme policy module drives both artifact shells (workflow companions + docgen): exact brand tokens with coordinated light/dark variants and a persisted manual override, packaged Poppins 400/600/700 (offline, base64-inlined), semantic role colors with a legend only where the structured source carries roles, ER label contrast overrides, label wrapping and node sizing, a density policy with overview+detail for dense graphs, readable initial scale (>=16px labels) with fit as a separate action, keyboard-accessible controls, full-SVG export with embedded styling, honest error states, measured contrast pairs, and a theme version stamp — all offline with strict Mermaid security unchanged.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "renderCompanionPage",
+          "signature": "(header: CompanionHeader, page: CompanionPageContent, runtime: CompanionRuntime) => string",
+          "parameters": [
+            {
+              "name": "header",
+              "type": "CompanionHeader",
+              "purpose": "page header",
+              "optional": false
+            },
+            {
+              "name": "page",
+              "type": "CompanionPageContent",
+              "purpose": "kind content + visual",
+              "optional": false
+            },
+            {
+              "name": "runtime",
+              "type": "CompanionRuntime",
+              "purpose": "inlined runtimes",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "branded theme-aware version-stamped self-contained HTML"
+          },
+          "errors": [
+            {
+              "type": "DiagramGenerationError",
+              "condition": "runtime asset unreadable"
+            }
+          ],
+          "preconditions": [
+            "runtime assets under out/assets"
+          ],
+          "postconditions": [
+            "no theme neutral/#f3f5f8; insrc-theme meta; legend iff roles present"
+          ]
+        },
+        {
+          "name": "assembleShell",
+          "signature": "(ir: DocumentIR, renderer?: SubprocessRenderer) => Promise<DocGenOutcome<RenderedDocumentShell>>",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "derived IR",
+              "optional": false
+            },
+            {
+              "name": "renderer",
+              "type": "SubprocessRenderer",
+              "purpose": "oversized subprocess renderer",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DocGenOutcome<RenderedDocumentShell>>",
+            "meaning": "branded shell on primary + fallback paths"
+          },
+          "errors": [
+            {
+              "type": "fallback-unavailable",
+              "condition": "runtime missing / no renderer for oversized IR"
+            }
+          ],
+          "preconditions": [
+            "docgen runtime assets present"
+          ],
+          "postconditions": [
+            "inlinedRuntimeVersion reported; insrc-theme meta added"
+          ]
+        },
+        {
+          "name": "themePolicy (src/artifact-theme/theme.ts)",
+          "signature": "THEME_VERSION; BRAND; CONTRAST_PAIRS{light,dark}; ROLE_PALETTE; mermaidConfigFor(mode); pageCssFor(mode); DIAGRAM_OVERRIDES_CSS; LEGEND_CSS; FONT_FACE_CSS; viewerBootScript(opts); exportableSvg(svg,mode)",
+          "parameters": [
+            {
+              "name": "mode",
+              "type": "\"light\"|\"dark\"",
+              "purpose": "variant",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "object|string",
+            "meaning": "centralized policy pieces inlined by both shells"
+          },
+          "errors": [],
+          "preconditions": [
+            "Poppins woff2 read from src/assets/fonts/poppins, embedded base64"
+          ],
+          "postconditions": [
+            "no remote URL; CONTRAST_PAIRS documented (NFR1)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ArtifactThemePolicy",
+        "change": "new",
+        "details": "6 exact brand tokens; derived light/dark surfaces; per-mode Mermaid themeVariables (base theme, Poppins, fontSize); ROLE_PALETTE (internal/data-store/external/note) applied only when role metadata exists + legend markup; CONTRAST_PAIRS measured per mode (NFR1); DIAGRAM_OVERRIDES (ER relationshipLabel dark-on-Crayola both modes); FONT_FACE_CSS (3 base64 woff2); page CSS scoped under .insrc-artifact (R15); viewer boot: auto color-scheme + persisted override + safe re-render preserving pan/zoom + fonts.ready before run + readable initial scale (>=16px, fit separate) + density policy + export + error-with-source",
+        "callSites": [
+          "src/workflow/artifacts/companion/shell.ts",
+          "src/docgen/render/shell.ts",
+          "src/docgen/render/fallback.ts"
+        ]
+      },
+      {
+        "entity": "Poppins font assets",
+        "change": "new",
+        "details": "src/assets/fonts/poppins/{400,600,700}.woff2 (OFL-1.1) shipped by copy-assets.mjs, embedded base64",
+        "callSites": [
+          "copy-assets.mjs",
+          "src/artifact-theme/fonts.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "mermaid.run rejects",
+          "detection": "run() rejects",
+          "response": "actionable error + show-source (R13)",
+          "userImpact": "error+source visible",
+          "recoverable": true
+        },
+        {
+          "scenario": "font asset missing at generation",
+          "detection": "fonts.ts read fails",
+          "response": "system-sans fallback, still embedded, logged (NFR3)",
+          "userImpact": "typeface only",
+          "recoverable": true
+        },
+        {
+          "scenario": "fonts.ready hangs",
+          "detection": "timeout race",
+          "response": "render fallback; re-frame when fonts resolve",
+          "userImpact": "brief fallback render",
+          "recoverable": true
+        },
+        {
+          "scenario": "theme switch mid-view",
+          "detection": "toggle",
+          "response": "re-init + re-run same source; restore pan/zoom; persist (R9)",
+          "userImpact": "same-position re-render",
+          "recoverable": true
+        },
+        {
+          "scenario": "export",
+          "detection": "export control",
+          "response": "full svg + embedded font style + explicit background (R12)",
+          "userImpact": "standalone readable export",
+          "recoverable": true
+        },
+        {
+          "scenario": "huge diagram perf",
+          "detection": "re-render guard + debounced resize",
+          "response": "no render loops (NFR5); oversized -> existing subprocess fallback (R8)",
+          "userImpact": "stable large diagrams",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "fit would shrink labels below 16px",
+          "expected": "initial scale clamps to readable; Fit stays separate (R6/R11)"
+        },
+        {
+          "input": "long/multiline labels",
+          "expected": "wrap where supported; node/row sized to content; no clip/loss (R7)"
+        },
+        {
+          "input": "dense graph",
+          "expected": "orientation/spacing/grouping; overview+detail or oversized fallback; truncation disclosed (R8)"
+        },
+        {
+          "input": "narrow viewport",
+          "expected": "toolbar wraps; keyboard focus visible (NFR2); re-frame without overriding manual zoom"
+        },
+        {
+          "input": "ER dark mode",
+          "expected": "relationship labels dark-on-Crayola via override; connectors >=3:1 (NFR1)"
+        },
+        {
+          "input": "host page CSS",
+          "expected": "artifact CSS scoped under .insrc-artifact (R15)"
+        },
+        {
+          "input": "malicious label/config",
+          "expected": "escapeHtml + strict + validated constant config; negative tests (NFR6)"
+        },
+        {
+          "input": "no role metadata",
+          "expected": "coherent default style; no invented roles; no legend (R4)"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "securityLevel strict; no author-supplied CSS/JS/config executed",
+          "source": "c4"
+        },
+        {
+          "text": "no remote URL; runtimes+fonts inlined",
+          "source": "c3"
+        },
+        {
+          "text": "entities/edges/labels/order/cardinalities/approval history untouched (NFR4)",
+          "source": "c4"
+        },
+        {
+          "text": "pan/zoom runtimes reused",
+          "source": "c1"
+        },
+        {
+          "text": "old saved artifacts readable, never auto-rewritten (R14)",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "tokens, contrast pairs (NFR1), role palette+legend, variants, ER override, fonts, version",
+          "subjects": [
+            "src/artifact-theme/__tests__/theme.test.ts",
+            "src/artifact-theme/__tests__/fonts.test.ts",
+            "src/artifact-theme/__tests__/contrast.test.ts"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "shells consume policy; scoped CSS; controls; no remote URLs; escaping negatives; legend iff roles",
+          "subjects": [
+            "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+            "src/docgen/render/__tests__/shell.test.ts"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "readable-scale clamp + density config + oversized routing",
+          "subjects": [
+            "src/artifact-theme/__tests__/viewer-script.test.ts",
+            "src/docgen/render/__tests__/shell.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "boot script node --check; export standalone svg; structural-preservation fixture (NFR4)",
+          "subjects": [
+            "src/artifact-theme/__tests__/viewer-script.test.ts",
+            "src/workflow/artifacts/companion/__tests__/shell.test.ts"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "perf baseline render/theme-switch on 3 fixture sizes (NFR5)",
+          "subjects": [
+            "src/artifact-theme/__tests__/perf.integration.test.ts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "R1",
+          "provingTests": [
+            "theme.test.ts single THEME_VERSION; both shells same module"
+          ]
+        },
+        {
+          "criterionId": "R2",
+          "provingTests": [
+            "variants; data-theme + toggle + persistence"
+          ]
+        },
+        {
+          "criterionId": "R3",
+          "provingTests": [
+            "contrast.test.ts pairs both modes; ER override"
+          ]
+        },
+        {
+          "criterionId": "R4",
+          "provingTests": [
+            "ROLE_PALETTE+legend tests; legend iff roles; no invented roles"
+          ]
+        },
+        {
+          "criterionId": "R5",
+          "provingTests": [
+            "config only 10.9.1-supported settings; runtime.json unchanged"
+          ]
+        },
+        {
+          "criterionId": "R6",
+          "provingTests": [
+            "fonts.test.ts; fonts.ready gate; readable-scale clamp test"
+          ]
+        },
+        {
+          "criterionId": "R7",
+          "provingTests": [
+            "wrap/sizing config + long-label fixture assertions"
+          ]
+        },
+        {
+          "criterionId": "R8",
+          "provingTests": [
+            "oversized routing intact; density config; disclosed truncation"
+          ]
+        },
+        {
+          "criterionId": "R9",
+          "provingTests": [
+            "theme switch re-runs same source; transform restored; definition unchanged"
+          ]
+        },
+        {
+          "criterionId": "R10",
+          "provingTests": [
+            "controls + keyboard + focus (NFR2)"
+          ]
+        },
+        {
+          "criterionId": "R11",
+          "provingTests": [
+            "initial scale clamp; re-frame without overriding manual zoom"
+          ]
+        },
+        {
+          "criterionId": "R12",
+          "provingTests": [
+            "export test: full svg, font style, background, complete"
+          ]
+        },
+        {
+          "criterionId": "R13",
+          "provingTests": [
+            "error + show-source; no empty success"
+          ]
+        },
+        {
+          "criterionId": "R14",
+          "provingTests": [
+            "insrc-theme meta = THEME_VERSION; old artifact parses"
+          ]
+        },
+        {
+          "criterionId": "R15",
+          "provingTests": [
+            "scoped CSS; no remote URL; malicious-label escape"
+          ]
+        },
+        {
+          "criterionId": "NFR1",
+          "provingTests": [
+            "contrast.test.ts computed ratios incl. notes/labels/states"
+          ]
+        },
+        {
+          "criterionId": "NFR2",
+          "provingTests": [
+            "keyboard/focus tests; grayscale documented"
+          ]
+        },
+        {
+          "criterionId": "NFR3",
+          "provingTests": [
+            "offline font assets; no CDN reference in html"
+          ]
+        },
+        {
+          "criterionId": "NFR4",
+          "provingTests": [
+            "structural-preservation fixture pre/post theme"
+          ]
+        },
+        {
+          "criterionId": "NFR5",
+          "provingTests": [
+            "perf.integration.test.ts timings 3 sizes"
+          ]
+        },
+        {
+          "criterionId": "NFR6",
+          "provingTests": [
+            "negative tests: label/config/link injection; strict asserted"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "theme neutral + fixed light CSS; no fonts/version/roles/contrast record",
+      "stateAfter": "both shells inline the versioned branded policy incl. fonts, role palette+legend, contrast pairs, controls, export, version stamp",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "add theme module + font assets",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "rewire shells + tests",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "regenerate new artifacts; old ones readable (R14)",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "old saved HTML unchanged; single-file output; presentation-only",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared versioned theme-policy module inlined by both shells",
+        "oneLineSummary": "one module owns the whole policy",
+        "approach": "src/artifact-theme + assets",
+        "pros": [
+          "R1 single source",
+          "offline fonts",
+          "version stamp"
+        ],
+        "cons": [
+          "shared boot builder needed"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "shared JSON + per-shell CSS",
+        "oneLineSummary": "theme JSON only",
+        "approach": "asset JSON",
+        "pros": [
+          "small"
+        ],
+        "cons": [
+          "drift, no fonts"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "violates R1/R2/R6"
+      },
+      {
+        "id": "a3",
+        "name": "built-in themes only",
+        "oneLineSummary": "dark/neutral switch",
+        "approach": "init config",
+        "pros": [
+          "tiny"
+        ],
+        "cons": [
+          "misses brand/contrast/legend/export"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "fails R1-R4/R12"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "exact readable-scale formula for extreme sizes (default: clamp so labels >=16px; fit separate)",
+      "theme persistence scope (localStorage per origin)"
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "file",
+      "ref": "src/workflow/artifacts/companion/shell.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "file",
+      "ref": "src/docgen/render/shell.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "file",
+      "ref": "src/assets/docgen/runtime.json"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "plans/mermaid-theme-and-readability-requirements.md"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/previews/mermaid-themes/insors-mermaid-themes.json"
+    }
+  ]
+}

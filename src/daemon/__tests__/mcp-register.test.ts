@@ -288,3 +288,85 @@ test('probeMcpClients: an unreachable CLI resolves available:false, registered:f
     { client: 'vibe', available: true, registered: false },
   ]);
 });
+
+// ---------------------------------------------------------------------------
+// vibe project-layer registration (<repo>/.vibe/config.toml)
+// ---------------------------------------------------------------------------
+
+test('vibe + repoPath: writes [[mcp_servers]] insrc into the repo\'s own .vibe/config.toml, never spawns `vibe mcp add`, note says restart vibe', async () => {
+	const { deps, calls } = stub(() => ok(), () => undefined);
+	const writes: { repo: string; text: string }[] = [];
+	deps.vibeProjectConfigText = () => undefined;
+	deps.ensureVibeProjectDir = () => {};
+	deps.writeVibeProjectConfig = (repo, text) => { writes.push({ repo, text }); };
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
+	const v = byClient(r, 'vibe');
+	assert.equal(v.action, 'registered');
+	assert.match(v.note ?? '', /\.vibe\/config\.toml/);
+	assert.match(v.note ?? '', /restart vibe/);
+	assert.equal(writes.length, 1);
+	assert.equal(writes[0]!.repo, '/repo/a');
+	assert.match(writes[0]!.text, /\[\[mcp_servers\]\]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"/);
+	assert.match(writes[0]!.text, /"\/opt\/insrc\/daemon\/out\/bin\/insrc-mcp\.js"/);
+	assert.ok(!calls.some(c => c.bin === 'vibe' && isAdd(c.args)), 'no user-global `vibe mcp add` when a repo path is given');
+});
+
+test('vibe + repoPath: existing project entry → unchanged, nothing written; existing unrelated content is preserved on write', async () => {
+	const { deps } = stub(() => ok(), () => undefined);
+	deps.vibeProjectConfigText = () => '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n';
+	let wrote = 0;
+	deps.writeVibeProjectConfig = () => { wrote++; };
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
+	assert.equal(byClient(r, 'vibe').action, 'unchanged');
+	assert.equal(wrote, 0, 'idempotent: no rewrite when the project file already has insrc');
+
+	// When absent, the write appends after existing content (TOML-safe: new
+	// array-of-tables header at EOF) and keeps the existing text.
+	const { deps: deps2 } = stub(() => ok(), () => undefined);
+	deps2.vibeProjectConfigText = () => '[tools]\nfoo = 1\n';
+	deps2.ensureVibeProjectDir = () => {};
+	const writes2: string[] = [];
+	deps2.writeVibeProjectConfig = (_repo, text) => { writes2.push(text); };
+	const r2 = await registerMcpClients(ROOT, { vibe: true }, deps2, '/repo/b');
+	assert.equal(byClient(r2, 'vibe').action, 'registered');
+	assert.ok(writes2[0]!.startsWith('[tools]\nfoo = 1\n'), 'existing content preserved');
+	assert.match(writes2[0]!, /\[tools\]\nfoo = 1\n\n\[\[mcp_servers\]\]/);
+});
+
+test('vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)', async () => {
+	const { deps, calls } = stub(() => ok(), () => undefined);
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps);
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	assert.ok(calls.some(c => c.bin === 'vibe' && isAdd(c.args)), 'user-global add still runs without a repo path');
+});
+
+test('probeMcpClients with a repoPath counts the repo\'s project .vibe/config.toml as registered for vibe', async () => {
+	const { probeMcpClients } = await import('../mcp-register.js');
+	const run = async (_bin: string, _args: readonly string[]) => ok('vibe 1.0');
+	const deps: McpRegisterDeps = {
+		run,
+		vibeConfigText: () => undefined, // user-global does NOT have it
+		vibeProjectConfigText: (repo) => (repo === '/repo/a' ? '[[mcp_servers]]\nname = "insrc"\n' : undefined),
+	};
+	const withRepo = await probeMcpClients(deps, '/repo/a');
+	assert.equal(withRepo.clients.find(c => c.client === 'vibe')!.registered, true, 'project-layer entry counts');
+	const withoutRepo = await probeMcpClients(deps, '/repo/b');
+	assert.equal(withoutRepo.clients.find(c => c.client === 'vibe')!.registered, false, 'other repo without the entry stays unregistered');
+	const noPath = await probeMcpClients(deps);
+	assert.equal(noPath.clients.find(c => c.client === 'vibe')!.registered, false, 'no path → user-global only');
+});
+
+test('upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, idempotent, valid entry', async () => {
+	const { mkdtempSync, readFileSync, existsSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+	const { upsertVibeProjectServer, vibeProjectConfigPath, vibeConfigHasServer: has } = await import('../mcp-register.js');
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-vibe-proj-'));
+	assert.equal(upsertVibeProjectServer(repo, '/x/insrc-mcp.js'), 'registered');
+	const cfg = vibeProjectConfigPath(repo);
+	assert.ok(existsSync(cfg));
+	const text = readFileSync(cfg, 'utf8');
+	assert.ok(has(text, 'insrc'));
+	assert.match(text, /args = \[\n {4}"\/x\/insrc-mcp\.js",\n\]/);
+	assert.equal(upsertVibeProjectServer(repo, '/x/insrc-mcp.js'), 'unchanged', 'second call is a no-op');
+});

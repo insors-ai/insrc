@@ -1,0 +1,549 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793371499927-g416o8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T14:48:35.288Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 215343,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f4e2ae0fdc016e87",
+    "epicSlug": "group-repo-configuration-panel-s-role",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793371499927-g416o8",
+    "hldEffectiveHash": "f4e2ae0fdc016e87d704dc6ef31e5840e2944764c4ee4291f41b15faa35db02f",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "A single cohesive UX rework of one existing panel (renderRepoConfig), with a real design decision (how to group 34 roles, how to implement collapsible sections in a VS-Code-free HTML string renderer plus the shared webview bootstrap script) and multiple build tasks (renderer restructure, CSS, bootstrap-script toggle wiring, tests). Not trivial/small since it touches the renderer logic, the shared shellHtml CSS block, and the webview-host.ts bootstrap script together (the same multi-file shape as the just-completed Model Tiers Story, which was also sized 'feature'). Not an epic: no new subsystem, no new top-level module — it reworks the presentation of an existing, already-shipped panel (Story E20260923401ae5fb:S007) without touching its write path, data model, or daemon contract.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers the full stated intent (group role rows by criticality into collapsible sections, separate core-floor section, status-card Providers) and builds nothing from the mock's declared non-goals ('Show N more' truncation, custom .chev indicator).",
+          "evidence": "mocks/repo-config-grouped.html's caption lists three open questions for round 2, including the client-JS toggle and 'show N more'. The LLD Summary explicitly resolves the client-JS question (native <details>/<summary>, no script) and declares both truncation and the .chev element as non-goals, consistent with alternative a1 in section 7.1 which is chosen specifically because it needs no new script. Section 2.1's postconditions and the Migration section's steps (1-3) only add grouping/section CSS and reshape two render functions — no truncation or chevron code is specified anywhere in the Data model, Error paths, Test strategy, or Migration sections.",
+          "action": "none — coverage matches stated scope and the explicit non-goals are honored throughout.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today renderRepoConfig renders one flat <table class=\"role-tiers\"> of all roles, a separate <table class=\"core-floor\">, and renderProvidersSection renders three distinct checkbox-label variants, with no grouping beyond <h3> headers, exactly as the Migration 'State before' and references c1/c3 describe.",
+          "evidence": "Read vscode-plugin/src/panels/repo-config.ts:131-139: `<h3>Role tiers</h3><table class=\"role-tiers\">${roles}</table>` + `<h3>Core floor</h3><table class=\"core-floor\">${floor}</table>` + `<h3>Providers</h3>${providers}`, and tierRow (lines 58-66) emits `<tr><td>...</td><td><select...></td></tr>`. renderProvidersSection (lines 150-170) emits exactly three <label><input type=checkbox ...></label> variants (registered/checked-disabled, unavailable/disabled, checkable with data-provider) — matching the design's three-variant description verbatim.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The error-path split described in 'Contract details' preconditions is accurate: registeredRepos()/rawConfig() rejections are uncaught inside renderRepoConfig (propagate), while mcpRegistration() rejections are caught locally at repo-config.ts:120-129 and degrade only the Providers section.",
+          "evidence": "Lines 111 (`const raw = await deps.rawConfig();`, line 84 `await deps.registeredRepos();`) have no surrounding try/catch inside renderRepoConfig — a rejection there propagates. Lines 121-129 wrap `await deps.mcpRegistration()` in its own try/catch that sets `providers` to a hint string and does not rethrow, exactly matching the design's description of two distinct behaviors.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RoleDescriptor.criticality already exists as a closed 'critical'|'peripheral' union with exactly 14 critical and 20 peripheral roles (34 total), as the design's grouping and all its row-count claims depend on.",
+          "evidence": "src/config/role-taxonomy.ts:33 defines `export type Criticality = 'critical' | 'peripheral'`; counting the ROLES array (lines 56-101) gives 14 entries with criticality:'critical' (design.alternatives.enumerate/judge, design.contract.detail, scope.audit, review, build, define.scope.assess/epic.frame/stories.compose, understanding.classify/generate/grade/verify/guide) and 20 with 'peripheral', totaling 34 — matching the design's '14 critical + 20 peripheral' claim exactly.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The new 'RoleGroup' shape is genuinely new (not already present) and is correctly scoped as a module-private, non-exported rendering-only structure with no daemon/config shape implication.",
+          "evidence": "Grep of vscode-plugin/src/panels/repo-config.ts shows no existing 'RoleGroup' identifier; the design's section 3.1 explicitly scopes it as module-private and built from the already-existing Criticality/RoleDescriptor types from role-taxonomy.ts — nothing is claimed reused that doesn't exist, and nothing claimed new (RoleGroup) is found pre-existing.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The webview-host.ts shared shellHtml <style> block already carries a precedent of panel-specific CSS additions (.tier/.hosting-chip/.note from the Model Tiers Story) that the design's Migration step 1 says it is additive to, and REPO_BOOTSTRAP's querySelectorAll('input[data-provider]') collection logic the design claims is preserved unchanged actually exists at that location.",
+          "evidence": "webview-host.ts:558 `function shellHtml(...)` with .tier/.tier-head/.hosting-chip/.note rules at lines 597-614 confirm the cited precedent. REPO_BOOTSTRAP (lines 106-126) contains `for (const el of document.querySelectorAll('input[data-provider]')) { if (el.checked) clients.push(...) }` at lines 122-123, confirming the design's claim that this collection logic needs no change since it is independent of the row wrapper markup.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "None of the new CSS class names the design introduces (.section, .role-row, .status-chip, .provider-row, .floor-row, .rows) collide with any class already defined in webview-host.ts's shared style block, so the additive claim in Migration step 1 holds without a naming conflict.",
+          "evidence": "Grep for `\\.section\\b|\\.rows\\b|\\.role-row|\\.status-chip|\\.provider-row|\\.floor-row` in webview-host.ts returned no matches — none of these selectors exist today, so the new rules are genuinely additive as claimed.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing repo-config.test.ts write-path assertions (data-segments regex matches at lines 47-48,212,216) are wrapper-agnostic as the design's test-strategy claims, so a div-vs-tr reshape of tierRow does not break them.",
+          "evidence": "repo-config.test.ts:47-48 match `data-segments=\"...\"><option value=\"\">global</option>...` directly against the <select> element's own markup; line 212 extracts via `/data-segments=\"([^\"]+)\"/g` anywhere in the HTML; line 216 checks `doesNotMatch(/<input|data-segments=\"[^\"]*(runner|model|effort|tiers)/)`. None of these patterns reference the <tr>/<td> wrapper, confirming they match regardless of whether tierRow's outer element is a <tr> or a <div>.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The regroup touches only rendering code and introduces no new stored/config shape, so no stored-data migration is needed — the design's 'no data rewrite' claim is accurate.",
+          "evidence": "renderRepoConfig (repo-config.ts:82-141) and renderProvidersSection (144-170) only read `raw` (via readStringAt) and `regs` (McpRegistrationView[]) to build HTML strings; neither function, nor the new RoleGroup shape (module-private, rendering-only per section 3.1), writes or persists anything. isRepoModelWrite (lines 52-55) and the write handler (178-225) are untouched by the design. There is therefore no stored shape for a migration to act on.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This is a genuinely standalone Story with no parent HLD/Epic shared contracts to violate, and the design's claim that it changes no write path, message shape, or daemon capability (so it doesn't redesign anything another Story or shared contract owns) holds against the real code.",
+          "evidence": "Section 1 states 'Standalone feature — no parent HLD' and section 6 'Backward compat' states the webview->host message shapes (selectRepo/repoWrite/repoRegisterProviders) and isRepoModelWrite are untouched. Verified directly: isRepoModelWrite (repo-config.ts:52-55), createRepoConfigWriteHandler (178-225), createRepoRegisterProvidersHandler (267-313), and the three REPO_BOOTSTRAP message shapes (webview-host.ts:106-126) are all referenced only as unchanged call sites in the LLD — the design's own contract sections (2.1-2.3) only touch renderRepoConfig/tierRow/renderProvidersSection's return markup, not any of the write-handling or messaging code shared with S007's original write-path design.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's claim that the two existing error behaviors (registeredRepos/rawConfig propagate vs. mcpRegistration() degrades locally) are both preserved unchanged by the regroup is accurate, since the regroup only touches markup-building code downstream of these awaits, not the try/catch structure itself.",
+          "evidence": "The regroup (per Migration steps 2-3) rewrites only how `roles`/`floor` and `providers` strings are assembled after the awaits at lines 84, 111, and within the 121-129 try/catch — it does not touch the await/catch structure itself, so both propagation and local-catch behavior are structurally preserved as claimed.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The acceptance-mapping table's ac1/ac2/ac3 each map to concrete named tests in the Test strategy section, and those named tests target real existing test infrastructure (repo-config.test.ts, with the fixtures it names such as REGS/McpRegistrationView already present).",
+          "evidence": "repo-config.test.ts already imports `McpRegistrationView, RepoProviderRegistration` and defines a `REGS: McpRegistrationView[]` fixture array (line 256), confirming the Test strategy's claim that McpRegistrationView fixtures covering all three states already exist as a pattern to extend. ac1-ac3 in the Acceptance mapping table each name a specific proving test description tied to the real subjects (renderRepoConfig, renderProvidersSection, the three write handlers), and the Test strategy's 'unit' entries correctly identify these as the subjects under vscode-plugin/src/panels/repo-config.ts.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-30T15:02:40.603Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-30T15:16:12.737Z",
+    "rangeBase": "1b31f90afb18719b2af1bc078f209025d1edce50"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story reworks the VS Code Repo Configuration panel's presentation: the flat 34-row role-tiers table becomes two collapsible groups (Critical, open by default; Peripheral, collapsed) split on the existing RoleDescriptor.criticality field, the core floor gets its own section, and the Providers checkbox list becomes status-card rows (registered / not registered / CLI unavailable) — delivering the same grouping/collapse behavior the approved mock at mocks/repo-config-grouped.html demonstrates, via native <details>/<summary> disclosure (resolving the mock's own open question about client-side JS: none is needed) rather than the mock's own div+.collapsed+.chev markup. No write path, message shape, or daemon capability changes; this is a presentation-only rework of the already-shipped Story S007 panel. Non-goals: (1) the mock's 'Show N more' truncation inside an expanded group (left as an explicit open question for round 2 in the mock's own caption) is NOT implemented by this Story — a1's win over a2 was specifically that it needs no new client-side script, and truncation would require one; an expanded group always renders its full role list. (2) the mock's custom .chev indicator is NOT reproduced — the native <summary> disclosure triangle is the sole expand/collapse indicator, so no separate chevron element risks doubling up with it.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Group the Repo Configuration panel's role tiers by criticality, with status-card Providers"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderRepoConfig",
+          "signature": "export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "RepoConfigRendererDeps",
+              "purpose": "unchanged: registeredRepos + rawConfig + mcpRegistration reads",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RepoConfigRenderer",
+            "meaning": "unchanged (selected) => Promise<string> shape; the returned HTML now groups role rows into two <details> sections (open=Critical, closed=Peripheral) instead of one flat <table class=\"role-tiers\">, delivering the same grouping/collapse behavior the approved mock at mocks/repo-config-grouped.html demonstrates — via native <details>/<summary>, not the mock's own div+.collapsed+.chev markup"
+          },
+          "errors": [],
+          "preconditions": [
+            "same as today: registeredRepos()/rawConfig() rejections propagate unchanged (uncaught, bubbling to the host's renderRepoPanel try/catch); mcpRegistration() rejections are instead caught LOCALLY inside renderRepoConfig (repo-config.ts:120-129) and degrade to an in-section hint paragraph, never propagating — these are two different behaviors, not one"
+          ],
+          "postconditions": [
+            "role rows are split by reasoningRoleTaxonomy().roles[].criticality into two <details class=\"section\"> groups (the 'critical' group rendered with the open attribute, 'peripheral' without), each carrying a role count in its <summary>, delivering the approved mock's default-expand/collapse states",
+            "the native <summary> disclosure triangle is the ONLY expand/collapse indicator — no separate .chev element is rendered, so there is no risk of a double indicator; only its color/size may be restyled via the summary::marker pseudo-element",
+            "core floor keeps its own <section>, visually separated from the role groups (was already its own <table> today; now styled as its own section like the role groups)",
+            "no change to which segments a field write addresses (vscode-plugin/src/panels/repo-config.ts:52-55's isRepoModelWrite is untouched)",
+            "does NOT implement the mock's 'Show N more' truncation inside an expanded group (non-goal; see Summary) — an expanded <details> group always renders its full role list, matching a1's no-new-script design"
+          ]
+        },
+        {
+          "name": "tierRow",
+          "signature": "function tierRow(label: string, segments: readonly string[], current: string): string",
+          "parameters": [
+            {
+              "name": "label",
+              "type": "string",
+              "purpose": "the role id or 'coreFloor' shown as the row's label",
+              "optional": false
+            },
+            {
+              "name": "segments",
+              "type": "readonly string[]",
+              "purpose": "the write-path segments carried on the row's <select data-segments>, unchanged",
+              "optional": false
+            },
+            {
+              "name": "current",
+              "type": "string",
+              "purpose": "the row's currently stored tier value ('' = global), unchanged",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "one role row's markup; reshaped from a <tr><td>...</td><td>...</td></tr> table row (vscode-plugin/src/panels/repo-config.ts:65) to a <div class=\"role-row\">...</div> flex row living inside a <details> group's rows container, matching the mock's .role-row styling"
+          },
+          "errors": [],
+          "preconditions": [
+            "same as today"
+          ],
+          "postconditions": [
+            "identical data-segments attribute and option list as today — only the wrapping markup (div vs tr) and CSS class change; the write-path contract is untouched"
+          ]
+        },
+        {
+          "name": "renderProvidersSection",
+          "signature": "function renderProvidersSection(regs: readonly McpRegistrationView[]): string",
+          "parameters": [
+            {
+              "name": "regs",
+              "type": "readonly McpRegistrationView[]",
+              "purpose": "unchanged: per-provider MCP registration state from mcp.status",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "reshaped from three <label><input></label> checkbox variants (vscode-plugin/src/panels/repo-config.ts:150-170) to a <div class=\"provider-list\"> of status-card rows: a registered provider shows a 'registered' chip (no checkbox), an available-but-unregistered one keeps its real checkable <input type=checkbox data-provider> plus a 'not registered' chip, and an unavailable one shows a 'CLI not found on PATH' chip (no checkbox) — matching the mock's status-chip styling"
+          },
+          "errors": [],
+          "preconditions": [
+            "same as today"
+          ],
+          "postconditions": [
+            "the checkable input (data-provider attribute) is preserved exactly where it exists today — the existing 'Register selected providers' button + REPO_BOOTSTRAP's querySelectorAll('input[data-provider]') collection logic (webview-host.ts:119-126) needs no change"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "RoleGroup",
+        "change": "new",
+        "details": "A local (module-private, not exported) grouping shape built inside renderRepoConfig: { criticality: Criticality; label: string; roles: readonly RoleDescriptor[] }. Criticality is the existing type from role-taxonomy.ts; this is purely an internal rendering grouping, not a new daemon or config shape.",
+        "callSites": [
+          "vscode-plugin/src/panels/repo-config.ts:82-141"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A future third Criticality value is added to role-taxonomy.ts without updating the grouping logic in renderRepoConfig.",
+          "detection": "TypeScript's exhaustiveness checking on the closed 'critical'|'peripheral' union (Criticality, role-taxonomy.ts) fails to compile if the grouping switch/partition does not handle every member — caught at build time (npx tsc --noEmit), not at runtime.",
+          "response": "The grouping code must be written as an exhaustive switch/partition over Criticality so a new member is a compile error, not a silently-dropped role.",
+          "userImpact": "None in practice — this is a build-time guard, not a runtime failure a user would ever see.",
+          "recoverable": true
+        },
+        {
+          "scenario": "registeredRepos() / rawConfig() rejects while rendering the grouped panel.",
+          "detection": "Same as today: the await inside renderRepoConfig's async body rejects (uncaught at this level).",
+          "response": "Unchanged — the rejection propagates to the host's existing never-throw wrapper (renderRepoPanel's try/catch in webview-host.ts), which degrades to the existing error body. No new error handling is added or needed for the regroup.",
+          "userImpact": "Unchanged from today: an in-panel error state instead of the form.",
+          "recoverable": true
+        },
+        {
+          "scenario": "mcpRegistration() rejects while rendering the Providers section.",
+          "detection": "Same as today: repo-config.ts:120-129's own local try/catch around `await deps.mcpRegistration()` catches the rejection — it never reaches renderRepoConfig's outer scope.",
+          "response": "Unchanged — the catch renders an in-section hint paragraph (an 'unknown method' update prompt when the message matches /unknown method/, else a generic unavailability hint) in place of the Providers list; the rest of the panel (role groups, core floor) still renders normally. This is a DIFFERENT behavior from the registeredRepos()/rawConfig() case: it does not propagate and does not degrade the whole panel.",
+          "userImpact": "The Providers section shows a hint instead of the provider list; the role-tier groups and core floor remain fully usable.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repo with every role and the core floor left at 'global' (no overrides at all).",
+          "expected": "Both groups still render all 34 rows (14 critical + 20 peripheral) each showing 'global' selected; grouping is independent of whether any override exists."
+        },
+        {
+          "input": "Every known provider is either already registered or unavailable (none checkable).",
+          "expected": "Every provider renders as a non-checkable status card (registered or CLI-unavailable chip); the 'Register selected providers' button is omitted, exactly as today's checkable-count check already does."
+        },
+        {
+          "input": "The user switches the selected repo (a fresh selectRepo re-render).",
+          "expected": "The new document's <details> elements reset to their markup-declared default state (critical open, peripheral closed) — a previously-expanded peripheral group does not persist across a repo switch, since each render is a fresh HTML document with no client-side state carried over."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A field write addresses only ['tasks', roleId] or ['coreFloor'] segments — the grouped/card presentation changes no write-path segment shape.",
+          "source": "c5"
+        },
+        {
+          "text": "A registeredRepos()/rawConfig() rejection propagates to the host's existing never-throw degrade path, unchanged by the regroup; an mcpRegistration() rejection is instead caught locally inside renderRepoConfig and degrades only the Providers section — these two distinct behaviors are both preserved unchanged.",
+          "source": "c1"
+        },
+        {
+          "text": "The checkable provider input's data-provider attribute and REPO_BOOTSTRAP's querySelectorAll('input[data-provider]') collection for the Register button are preserved exactly — the status-card rework does not touch the registration message flow.",
+          "source": "c4"
+        },
+        {
+          "text": "All 34 roles (14 critical + 20 peripheral, per reasoningRoleTaxonomy().roles) continue to render somewhere in the grouped output — none silently dropped by the criticality partition.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (via npx tsx --test), matching repo-config.test.ts / webview-host.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify renderRepoConfig groups all 34 roles into two <details> sections by criticality, open=critical/closed=peripheral by default, with the core floor in its own section, and that all roles are present (none dropped).",
+          "subjects": [
+            "vscode-plugin/src/panels/repo-config.ts (renderRepoConfig, tierRow)"
+          ],
+          "fixturesNeeded": [
+            "a fake registeredRepos()/rawConfig() returning a selected repo with a mix of overridden and 'global' role tiers",
+            "the real reasoningRoleTaxonomy().roles (already imported by repo-config.ts) to assert the real 14/20 split"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify renderProvidersSection renders status cards (registered / not registered / CLI unavailable chips) and preserves the checkable data-provider input exactly where it exists today.",
+          "subjects": [
+            "vscode-plugin/src/panels/repo-config.ts (renderProvidersSection)"
+          ],
+          "fixturesNeeded": [
+            "McpRegistrationView fixtures covering all three states: registered, available+unregistered, unavailable"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify the existing write-path tests (data-segments values, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler) still pass unmodified against the regrouped markup, confirming the regroup changed no write-path contract.",
+          "subjects": [
+            "vscode-plugin/src/panels/repo-config.ts (createRepoConfigWriteHandler, createRepoRegisterProvidersHandler)"
+          ],
+          "fixturesNeeded": [
+            "none needed — the existing repo-config.test.ts fixtures (REPOS, fakeConsent, fakeStatus, makeWriteDeps) and their data-segments/<option> regex assertions (e.g. repo-config.test.ts:47-48,212) match on attribute content, not the row's wrapper element, so they are wrapper-agnostic (tr vs div) and require no change"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify the shared shellHtml CSS block carries the new .section/.role-row/.status-chip rules the regrouped markup depends on, matching the Model Tiers Story's precedent for a panel-specific CSS addition.",
+          "subjects": [
+            "vscode-plugin/src/panels/webview-host.ts (shellHtml's shared <style> block)"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "repo-config.test.ts: renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table",
+            "repo-config.test.ts: the core floor renders in its own <details>/section, separate from the role groups"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "repo-config.test.ts: renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "repo-config.test.ts: every existing data-segments / createRepoConfigWriteHandler / createRepoRegisterProvidersHandler test still passes against the regrouped markup, proving the write path is unchanged"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "renderRepoConfig renders one flat <table class=\"role-tiers\"> with all 34 roles as plain <tr> rows (no grouping), one <table class=\"core-floor\"> row, and renderProvidersSection renders a flat list of three different <label><input></label> checkbox variants — no visual structure beyond <h3> section headers (vscode-plugin/src/panels/repo-config.ts:131-139).",
+      "stateAfter": "renderRepoConfig renders role rows split into two <details class=\"section\"> groups by criticality (Critical open by default, Peripheral closed), the core floor in its own section, and renderProvidersSection renders status-card rows (registered / not registered / CLI-unavailable chips) — delivering the same grouping/collapse behavior as mocks/repo-config-grouped.html via native <details>/<summary> rather than its div+.collapsed+.chev markup. The write path, message shapes, and daemon reads are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new .section/.section-head/.count/.rows/.role-row/.provider-row/.status-chip/.floor-row CSS rules to webview-host.ts's shared shellHtml style block, additive to the existing .tier/.note/.hosting-chip rules the Model Tiers Story already added there. Unlike the mock, no .chev/.collapsed rules are needed (native <details>/<summary> provides its own disclosure marker and open/closed state); optionally restyle the marker's color via the summary::marker pseudo-element.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Rewrite renderRepoConfig to partition reasoningRoleTaxonomy().roles by criticality into two RoleGroup values and render each as a <details> section via the reshaped tierRow; give the core floor its own section wrapper.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rewrite renderProvidersSection to render status-card rows instead of the three checkbox-label variants, preserving the checkable data-provider input exactly where it exists today.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API signature changes: renderRepoConfig/createRepoConfigWriteHandler/createRepoRegisterProvidersHandler keep their existing exported signatures. tierRow and renderProvidersSection are module-private helpers, so their internal markup reshape is not a breaking change to any consumer. The webview->host message shapes (selectRepo/repoWrite/repoRegisterProviders) and the write-path segment validation (isRepoModelWrite) are untouched.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Native <details>/<summary> collapsible sections",
+        "oneLineSummary": "Render each role group as a standard HTML5 <details> element (open by default for Critical, closed for Peripheral) with no new client-side script.",
+        "approach": "renderRepoConfig emits <details class=\"section\" open><summary class=\"section-head\">Critical roles <span class=\"count\">14</span></summary><div class=\"rows\">...</div></details> for the critical group and the same without open for peripheral. The browser's native disclosure behavior handles expand/collapse; no postMessage, no REPO_BOOTSTRAP change. Providers becomes a <div class=\"provider-list\"> of status-card rows replacing the three checkbox label variants.",
+        "pros": [
+          "Zero new webview->host message, zero REPO_BOOTSTRAP change",
+          "Native, accessible disclosure semantics for free",
+          "Smallest possible diff"
+        ],
+        "cons": [
+          "<details>'s native marker is harder to restyle pixel-for-pixel to the mock's custom glyph",
+          "No 'show N more' truncation inside an open group without extra markup/script"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Custom div sections with a REPO_BOOTSTRAP click-toggle",
+        "oneLineSummary": "Reproduce the mock's exact .section/.section-head/.collapsed markup, with a new click listener in REPO_BOOTSTRAP toggling a 'collapsed' class.",
+        "approach": "renderRepoConfig emits plain div-based section markup matching the mock verbatim; REPO_BOOTSTRAP gains a new listener toggling .collapsed — a local DOM class flip, no postMessage.",
+        "pros": [
+          "Pixel-exact match to the approved mock",
+          "Full control over a future 'show N more' truncation"
+        ],
+        "cons": [
+          "Adds a new script listener for a purely cosmetic effect <details> already provides natively",
+          "More surface to keep correct"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Functionally equivalent to a1 but costs more (a new script listener) for a purely cosmetic gain (pixel-exact chevron) — fails the smallest-complete-change constraint a1 satisfies."
+      },
+      {
+        "id": "a3",
+        "name": "Grouped but always-expanded (no collapse)",
+        "oneLineSummary": "Keep both groups visually separated but always fully expanded — drop the collapse/expand interaction entirely.",
+        "approach": "Same two-group split and status-card Providers as a1/a2, but render both groups always expanded with no <details>/no toggle.",
+        "pros": [
+          "Simplest possible markup, no collapse state to reason about"
+        ],
+        "cons": [
+          "Drops the exact behavior the approved mock demonstrates (peripheral collapsed by default)"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Cheapest, but fails the collapse-behavior constraint outright — the user explicitly approved a mock whose entire point was hiding the 20-role peripheral group by default; always-expanded reintroduces the problem the Story exists to solve."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/repo-config.ts:57-66,82-141",
+      "quotedText": "renderRepoConfig / tierRow — the flat table-row renderer"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/config/role-taxonomy.ts:35-41,52-90",
+      "quotedText": "RoleDescriptor { id, criticality, defaultTier } — 14 critical / 20 peripheral"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/repo-config.ts:144-170",
+      "quotedText": "renderProvidersSection — the flat checkbox-variant list"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/webview-host.ts:98-118,558-620",
+      "quotedText": "shellHtml's shared style block + REPO_BOOTSTRAP — where new CSS/script must land"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/repo-config.ts:52-55",
+      "quotedText": "isRepoModelWrite — the write-path validation this Story must not touch"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/__tests__/repo-config.test.ts; vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+      "quotedText": "existing test templates this Story extends"
+    }
+  ]
+}

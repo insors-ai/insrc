@@ -348,7 +348,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				// each approved client (--scope user / global, idempotent). A
 				// registration failure is captured per-client and never fails the add.
 				try {
-					mcp = await registerMcpClients(daemonInstallRoot(), sel);
+					mcp = await registerMcpClients(daemonInstallRoot(), sel, {}, normalisedPath);
 				} catch (err) {
 					log.warn(
 						{ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) },
@@ -409,7 +409,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'steering injection failed; MCP registration proceeds regardless');
 				}
 				try {
-					mcp = await registerMcpClients(daemonInstallRoot(), sel);
+					mcp = await registerMcpClients(daemonInstallRoot(), sel, {}, normalisedPath);
 				} catch (err) {
 					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'mcp registration failed');
 				}

@@ -25,7 +25,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -77,6 +77,11 @@ export interface McpRegisterDeps {
 	/** vibe's pre-check seam: the text of vibe's user config.toml, or undefined
 	 *  when it cannot be read (default: $VIBE_HOME/config.toml, ~/.vibe fallback). */
 	readonly vibeConfigText?: () => string | undefined;
+	/** vibe project-layer seams: read the repo's own .vibe/config.toml (undefined
+	 *  when absent/unreadable), create the .vibe dir, and write the file. */
+	readonly vibeProjectConfigText?: (repoPath: string) => string | undefined;
+	readonly ensureVibeProjectDir?: (repoPath: string) => void;
+	readonly writeVibeProjectConfig?: (repoPath: string, text: string) => void;
 }
 
 /** One client's registration plan. `selected` comes from the SteeringSelection
@@ -96,6 +101,65 @@ function defaultVibeConfigText(): string | undefined {
 	const home = process.env['VIBE_HOME'] ?? join(homedir(), '.vibe');
 	try { return readFileSync(join(home, 'config.toml'), 'utf8'); }
 	catch { return undefined; }
+}
+
+// ---------------------------------------------------------------------------
+// vibe PROJECT-layer registration (<repo>/.vibe/config.toml)
+// ---------------------------------------------------------------------------
+// vibe discovers a project config by walking up from the cwd to a trusted
+// `.vibe/config.toml` (core/config/layers/project.py) and merges `mcp_servers`
+// across layers BY NAME (WithUnionMerge(merge_key="name")), so a project-level
+// `insrc` entry overrides the user-global one without double-spawning. Writing
+// the entry into the repo's own .vibe/config.toml therefore makes the repo
+// self-contained: anyone opening it gets the insrc MCP on the next vibe start.
+// NOTE: vibe reads config once at session start and never hot-reloads MCP
+// discovery, so a restart is required — the outcome note says so.
+
+/** The project-layer vibe config path for a repo. */
+export function vibeProjectConfigPath(repoPath: string): string {
+	return join(repoPath, '.vibe', 'config.toml');
+}
+
+/** The `[[mcp_servers]]` block for the insrc server, appended at EOF (always
+ *  valid TOML: a new array-of-tables header ends any open table). */
+export function vibeServerTomlBlock(mcpJs: string): string {
+	return [
+		'',
+		'[[mcp_servers]]',
+		'name = "insrc"',
+		'transport = "stdio"',
+		'command = "node"',
+		'args = [',
+		`    ${JSON.stringify(mcpJs)},`,
+		']',
+		'',
+	].join('\n');
+}
+
+function defaultVibeProjectConfigText(repoPath: string): string | undefined {
+	try { return readFileSync(vibeProjectConfigPath(repoPath), 'utf8'); }
+	catch { return undefined; }
+}
+
+/**
+ * Idempotently ensure the repo's own .vibe/config.toml declares the insrc MCP
+ * server. Returns 'unchanged' when the entry is already there, else appends the
+ * block and writes (creating .vibe/). IO errors propagate — the caller guards.
+ */
+export function upsertVibeProjectServer(
+	repoPath: string,
+	mcpJs: string,
+	deps: McpRegisterDeps = {},
+): 'unchanged' | 'registered' {
+	const readText = deps.vibeProjectConfigText ?? defaultVibeProjectConfigText;
+	const text = readText(repoPath);
+	if (text !== undefined && vibeConfigHasServer(text, 'insrc')) return 'unchanged';
+	const ensureDir = deps.ensureVibeProjectDir ?? ((p: string) => mkdirSync(join(p, '.vibe'), { recursive: true }));
+	const writeText = deps.writeVibeProjectConfig ?? ((p: string, t: string) => writeFileSync(vibeProjectConfigPath(p), t, 'utf8'));
+	ensureDir(repoPath);
+	const base = text === undefined || text.trim() === '' ? '' : text.endsWith('\n') ? text : text + '\n';
+	writeText(repoPath, base + vibeServerTomlBlock(mcpJs));
+	return 'registered';
 }
 
 /** Does vibe's config.toml text already declare an [[mcp_servers]] table named
@@ -135,6 +199,7 @@ export async function registerMcpClients(
 	installRoot: string,
 	selection: SteeringSelection,
 	deps: McpRegisterDeps = {},
+	repoPath?: string,
 ): Promise<{ clients: McpClientOutcome[] }> {
 	const run = deps.run ?? runCli;
 	const entrypointExists = deps.entrypointExists ?? existsSync;
@@ -149,7 +214,7 @@ export async function registerMcpClients(
 	const clients: McpClientOutcome[] = [];
 	for (const p of plans) {
 		if (!p.selected) { clients.push({ client: p.client, action: 'skipped' }); continue; }
-		clients.push(await registerOne(p, mcpJs, run, entrypointExists, vibeConfigText));
+		clients.push(await registerOne(p, mcpJs, run, entrypointExists, vibeConfigText, repoPath, deps));
 	}
 	return { clients };
 }
@@ -173,9 +238,10 @@ export interface McpProbeResult {
  * unanswerable/unreachable client resolves to available:false. Used by the
  * `mcp.status` IPC so a settings UI can show what is already registered.
  */
-export async function probeMcpClients(deps: McpRegisterDeps = {}): Promise<{ clients: McpProbeResult[] }> {
+export async function probeMcpClients(deps: McpRegisterDeps = {}, repoPath?: string): Promise<{ clients: McpProbeResult[] }> {
 	const run = deps.run ?? runCli;
 	const vibeConfigText = deps.vibeConfigText ?? defaultVibeConfigText;
+	const vibeProjectConfigText = deps.vibeProjectConfigText ?? defaultVibeProjectConfigText;
 	const out: McpProbeResult[] = [];
 	for (const p of clientPlans()) {
 		try {
@@ -188,14 +254,19 @@ export async function probeMcpClients(deps: McpRegisterDeps = {}): Promise<{ cli
 				out.push({ client: p.client, available: true, registered: alreadyRegistered(list.stdout) });
 			} else {
 				// vibe: no `mcp list`; availability = the binary answers --version,
-				// registered = an [[mcp_servers]] insrc table in its config.toml.
+				// registered = an [[mcp_servers]] insrc table in its config.toml —
+				// the user-global one OR the repo's own project-layer .vibe/config.toml.
 				const version = await run(p.bin, ['--version']);
 				if (version.spawnError !== undefined || version.code !== 0) {
 					out.push({ client: p.client, available: false, registered: false });
 					continue;
 				}
 				const text = vibeConfigText();
-				out.push({ client: p.client, available: true, registered: text !== undefined && vibeConfigHasServer(text, 'insrc') });
+				const projectText = repoPath !== undefined ? vibeProjectConfigText(repoPath) : undefined;
+				const registered =
+					(text !== undefined && vibeConfigHasServer(text, 'insrc')) ||
+					(projectText !== undefined && vibeConfigHasServer(projectText, 'insrc'));
+				out.push({ client: p.client, available: true, registered });
 			}
 		} catch {
 			out.push({ client: p.client, available: false, registered: false });
@@ -210,13 +281,16 @@ async function registerOne(
 	run: (bin: string, args: readonly string[]) => Promise<CliRun>,
 	entrypointExists: (mcpJs: string) => boolean,
 	vibeConfigText: () => string | undefined,
+	repoPath?: string,
+	deps: McpRegisterDeps = {},
 ): Promise<McpClientOutcome> {
 	try {
 		if (!entrypointExists(mcpJs)) {
 			return { client: p.client, action: 'failed', note: `MCP entrypoint missing at ${mcpJs}` };
 		}
 		// Idempotency pre-check: `<cli> mcp list` where the CLI has one, else
-		// (vibe) vibe's user config.toml.
+		// (vibe) vibe's config.toml — the repo's own project-layer file when a
+		// repoPath is given, else the user-global one.
 		if (p.listArgs !== undefined) {
 			const list = await run(p.bin, p.listArgs);
 			if (list.spawnError !== undefined) {
@@ -229,6 +303,18 @@ async function registerOne(
 			if (alreadyRegistered(list.stdout)) {
 				return { client: p.client, action: 'unchanged' };
 			}
+		} else if (repoPath !== undefined) {
+			// vibe + repo: write the entry into the repo's OWN .vibe/config.toml
+			// (project layer; vibe discovers it by walking up from the cwd and
+			// merges mcp_servers by name, so it overrides — never duplicates —
+			// the user-global entry). Idempotent within that file.
+			const outcome = upsertVibeProjectServer(repoPath, mcpJs, deps);
+			if (outcome === 'unchanged') return { client: p.client, action: 'unchanged' };
+			return {
+				client: p.client,
+				action: 'registered',
+				note: `project config .vibe/config.toml — restart vibe (in this repo) to load the MCP server; config is read once at session start`,
+			};
 		} else {
 			const text = vibeConfigText();
 			if (text !== undefined && vibeConfigHasServer(text, 'insrc')) {

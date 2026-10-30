@@ -315,8 +315,12 @@ const REGS: McpRegistrationView[] = [
   { client: 'vibe', available: false, registered: false },
 ];
 
-test('renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable', async () => {
-  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => REGS })(REPOS[0]!.path);
+test('renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable; the repo path is probed and the vibe restart hint shows', async () => {
+  let probed: string | undefined;
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async (repoPath?: string) => { probed = repoPath; return REGS; } })(REPOS[0]!.path);
+  assert.equal(probed, REPOS[0]!.path, 'mcp.status is probed with the selected repo so the project-layer .vibe/config.toml counts');
+  assert.match(html, /restart vibe inside this repo/, 'the hint tells the user vibe reads its config at startup');
+  assert.match(html, /repo's own \.vibe\/config\.toml/, 'the hint names the project-layer file');
   assert.match(html, /<h3>Providers<\/h3>/, 'the section renders in the repo form');
   assert.match(html, /Claude Code<\/span><span class="status-chip ok">registered<\/span>/, 'registered provider shows a registered chip, no checkbox');
   assert.doesNotMatch(html, /data-provider="claude"/, 'a registered provider carries no data-provider checkbox');

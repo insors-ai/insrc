@@ -103,10 +103,12 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
       return (payload?.clients ?? []).map((c) => ({ host: c.label, wired: true }));
     },
 
-    async mcpRegistration(): Promise<readonly McpRegistrationView[]> {
+    async mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]> {
       let payload: McpStatusPayload;
       try {
-        payload = await rpc<McpStatusPayload>('mcp.status');
+        // The repo path lets the daemon also probe the repo's own project-layer
+        // .vibe/config.toml for vibe (vibe merges config layers by server name).
+        payload = await rpc<McpStatusPayload>('mcp.status', repoPath !== undefined && repoPath !== '' ? { path: repoPath } : {});
       } catch (err) {
         throw asReadError('mcp.status failed', err);
       }

@@ -1,0 +1,582 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "f4e2ae0fdc016e87",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T15:20:17.001Z",
+    "updatedAt": "2026-10-30T15:42:39.438Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T14:48:35.288Z",
+    "epicSlug": "group-repo-configuration-panel-s-role"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ec1e3858a",
+        "ranAt": "2026-10-30T15:20:17.001Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "webview-host.test.ts: the shared shellHtml style block defines .section/.section-head/.count/.rows/.role-row/.provider-row/.status-chip/.floor-row rules",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "the shared shellHtml style block defines .section/.section-head/.count/.rows/.role-row/.provider-row/.status-chip/.floor-row rules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 581,
+            "titles": [
+              {
+                "title": "showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel",
+                "result": "pass"
+              },
+              {
+                "title": "Cancel path: a dismissed menu (undefined) opens no panel (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs, defaults to daemon, renders gateway.status() (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "the shared shell styles form controls with theme variables — selects/dropdowns do not fall back to the browser white ground",
+                "result": "pass"
+              },
+              {
+                "title": "Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "a setHtml throw (e.g. panel disposed mid-render) degrades to a logged no-op — never an unhandled rejection or a sync throw",
+                "result": "pass"
+              },
+              {
+                "title": "single-instance: a second open reveals the same panel + switches tab, and after user-close a later open creates fresh",
+                "result": "pass"
+              },
+              {
+                "title": "openRepoConfiguration creates/reveals the separate Repo Configuration shell (single-instance)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a late switchTab/refresh after the panel was disposed is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the empty selectRepo option clears the selection back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)",
+                "result": "pass"
+              },
+              {
+                "title": "a {repoRegisterProviders} message forwards a validated RepoProviderRegistration to onRepoRegisterProviders; malformed ones are silent no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "the repo bootstrap script posts repoRegisterProviders with the checked data-provider values",
+                "result": "pass"
+              },
+              {
+                "title": "S001: openModelTiers always opens/reveals the panel (never a no-op); with no modelTiersRenderer it renders the placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a {kind:'tierField'} modelTiersWrite forwards a validated ModelTiersWrite; a {kind:'coreFloor'} one too; malformed ones are silent no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a modelTiersRenderer throw degrades to an error body; an onModelTiersWrite throw is caught",
+                "result": "pass"
+              },
+              {
+                "title": "the model-tiers bootstrap script posts modelTiersWrite for both a tier field change and the core-floor change",
+                "result": "pass"
+              },
+              {
+                "title": "the shared shellHtml style block defines .section/.section-head/.count/.rows/.role-row/.provider-row/.status-chip/.floor-row rules",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "de04c0dab",
+        "ranAt": "2026-10-30T15:42:39.438Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-config.test.ts: renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: the core floor renders in its own <details>/section, separate from the role groups",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "the core floor renders in its own <details>/section, separate from the role groups",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 457,
+            "titles": [
+              {
+                "title": "renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table",
+                "result": "pass"
+              },
+              {
+                "title": "the core floor renders in its own <details>/section, separate from the role groups",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: all roles at 'global' still render all 34 rows across both groups",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a repo switch always renders the default open/closed groups afresh (no stale collapse state carried between repos)",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: no checkable providers omits the 'Register selected providers' button",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: an mcpRegistration() rejection degrades only the Providers section to a hint paragraph; role groups and core floor still render",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: an unregistered selected repo falls back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable",
+                "result": "pass"
+              },
+              {
+                "title": "renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one",
+                "result": "pass"
+              },
+              {
+                "title": "steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoRegisterProvidersHandler: on accept, mcp.register is called with the repo + mapped steering; outcome surfaced + panel refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoRegisterProvidersHandler: decline writes nothing; unknown client / unregistered repo / empty selection are no-ops",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f8d03eb4e",
+        "ranAt": "2026-10-30T15:31:22.722Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-config.test.ts: renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 444,
+            "titles": [
+              {
+                "title": "renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table",
+                "result": "pass"
+              },
+              {
+                "title": "the core floor renders in its own <details>/section, separate from the role groups",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: an unregistered selected repo falls back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable",
+                "result": "pass"
+              },
+              {
+                "title": "renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one",
+                "result": "pass"
+              },
+              {
+                "title": "steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoRegisterProvidersHandler: on accept, mcp.register is called with the repo + mapped steering; outcome surfaced + panel refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoRegisterProvidersHandler: decline writes nothing; unknown client / unregistered repo / empty selection are no-ops",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "4b123fbd6",
+        "ranAt": "2026-10-30T15:33:20.460Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-config.test.ts: every existing data-segments / createRepoConfigWriteHandler / createRepoRegisterProvidersHandler test still passes against the regrouped markup, proving the write path is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "createRepoRegisterProvidersHandler: on accept, mcp.register is called with the repo + mapped steering; outcome surfaced + panel refreshed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: all roles at 'global' still render all 34 rows across both groups",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: all roles at 'global' still render all 34 rows across both groups",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: no checkable providers omits the 'Register selected providers' button",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: no checkable providers omits the 'Register selected providers' button",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: an mcpRegistration() rejection degrades only the Providers section to a hint paragraph; role groups and core floor still render",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: an mcpRegistration() rejection degrades only the Providers section to a hint paragraph; role groups and core floor still render",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 434,
+            "titles": [
+              {
+                "title": "renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table",
+                "result": "pass"
+              },
+              {
+                "title": "the core floor renders in its own <details>/section, separate from the role groups",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: all roles at 'global' still render all 34 rows across both groups",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a repo switch always renders the default open/closed groups afresh (no stale collapse state carried between repos)",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: no checkable providers omits the 'Register selected providers' button",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: an mcpRegistration() rejection degrades only the Providers section to a hint paragraph; role groups and core floor still render",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: an unregistered selected repo falls back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable",
+                "result": "pass"
+              },
+              {
+                "title": "renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one",
+                "result": "pass"
+              },
+              {
+                "title": "steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoRegisterProvidersHandler: on accept, mcp.register is called with the repo + mapped steering; outcome surfaced + panel refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoRegisterProvidersHandler: decline writes nothing; unknown client / unregistered repo / empty selection are no-ops",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

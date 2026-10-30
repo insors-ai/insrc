@@ -18,6 +18,7 @@ import { PATHS } from '../shared/paths.js';
 import type { AttachedClient, DaemonStatus, ThreadView } from '../shared/types.js';
 import { guideGetResult, guideListResult } from './guide-sections.js';
 import { probeMcpClients } from './mcp-register.js';
+import { validateRepoPath } from '../db/repos.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
 import { launchUpdate, makeUpdateHandlers, readUpdateOutcome } from './update-runner.js';
@@ -79,7 +80,17 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void): RpcHand
 		// because the method-class table routes 'mcp.status' to the ADMIN WORKER —
 		// a worker-side omission here answers 'unknown method: mcp.status' over the
 		// socket even though the main table has it.
-		'mcp.status': async () => probeMcpClients(),
+		'mcp.status': async (params) => {
+			// Optional repo path: vibe's registration may live in the repo's own
+			// project-layer .vibe/config.toml, so the probe checks both it and the
+			// user-global config when a path is given.
+			const rawPath = (params as { path?: unknown } | undefined)?.path;
+			let repoPath: string | undefined;
+			if (typeof rawPath === 'string' && rawPath.length > 0) {
+				try { repoPath = validateRepoPath(rawPath); } catch { repoPath = undefined; }
+			}
+			return probeMcpClients({}, repoPath);
+		},
 
 		'daemon.shutdown': async () => {
 			log.info('shutdown requested');

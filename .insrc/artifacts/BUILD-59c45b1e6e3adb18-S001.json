@@ -7,11 +7,122 @@
     "storyId": "S001",
     "createdAt": "2026-10-30T19:03:58.570Z",
     "authoredBy": "controller",
-    "epicCreatedAt": "2026-10-30T19:03:58.570Z"
+    "epicCreatedAt": "2026-10-30T19:03:58.570Z",
+    "updatedAt": "2026-10-30T19:07:41.273Z"
   },
   "body": {
     "focus": "Default the Connections repository dropdown to the opened repository\n\nOpen a VS Code workspace in a registered repository (or a subdirectory of one), then open Connections for the first time. Observed: the repository dropdown has no selection and connections require manually choosing the already-open repository. Expected: preselect the registered repository containing the opened path. [[c1]] [[c3]]\n\nConnectionsManagerHost.open loads and dispatches registered-roots but receives no opened-path context and only refreshes an existing model.repoRoot. createConnectionManager initializes repoRoot to null, while registered-roots retains existing selection without choosing an initial one. Thus the first open remains unselected. Grounding: analyze located the host/reducer; direct source inspection confirmed this behavior and activation wiring. [[c1]] [[c2]]\n\nUse VS Code's opened path to preselect the deepest containing registered repository when there is no prior manager selection or retained draft. Prefer a local active file's containing workspace; otherwise use the opened workspace folder. Keep manual selection and unsaved draft ownership on reopen, preserve registered-root admission and path boundaries, and leave selection empty if there is no registered match. Never register a repository implicitly. Verify initial selection, nested paths, sibling-prefix rejection, multi-root context, no-match and manual/draft retention. [[c1]] [[c2]] [[c3]]",
     "producesLld": false,
-    "commit": "d1edf0bb0"
+    "commit": "66b504e49",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Default the Connections dropdown to the deepest registered repository containing the opened local workspace/current file, preserving manual selection and unsaved drafts. Added the user-requested SQLite sample before advancing the issue; root/extension typechecks and all 36 connection tests passed.",
+    "testRecord": {
+      "md": "docs/standalone/59c45b1e6e3adb18-E2026103059c45b1e/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-eda948eef958a33d.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/consumer-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/59c45b1e6e3adb18-E2026103059c45b1e/S001/IMPLEMENTATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/59c45b1e6e3adb18-E2026103059c45b1e/S001/evidence/connections.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/59c45b1e6e3adb18-E2026103059c45b1e/S001/evidence/host.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/default-connections-repository-dropdown-opened-repository-E20261030eda948ee/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "test-fixtures/connection-management/v1/MANUAL-FIXTURES.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "test-fixtures/connection-management/v1/manual-orders.sqlite"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/connections/__tests__/host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/connections/host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/vscode.d.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T19:07:41.273Z"
+      }
+    ]
   }
 }

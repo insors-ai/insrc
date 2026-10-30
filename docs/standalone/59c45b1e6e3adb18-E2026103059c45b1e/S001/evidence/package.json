@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "66b504e49",
+  "version": "0.5.20",
+  "package": "vscode-plugin/insrc-vscode-0.5.20-s005-66b504e49.vsix",
+  "sha256": "2600be8358c127a1bfdf1372101deb4ee937422cfb1bee7843c06b08fb38de45",
+  "verifiedArchiveAndBundle": true,
+  "SQLiteFixture": "test-fixtures/connection-management/v1/manual-orders.sqlite",
+  "SQLiteIntegrity": "ok",
+  "SQLiteForeignKeyErrors": [],
+  "SQLiteDaemonTest": "reachable",
+  "SQLiteProbeMs": 220.5682089999318,
+  "registrationSaved": false,
+  "daemonRestarted": false,
+  "liveUI": "pending-user-manual"
+}

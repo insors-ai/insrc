@@ -82,7 +82,10 @@ test('CM-S1-J: protocol declarations compile in strict NodeNext including negati
 });
 
 
-test('CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials', async () => {
+test('CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials', async t => {
+ const {connectionSessionRuntime}=await import('../../daemon/connection-session-rpc.js');
+ // This legacy-only fixture has no registered daemon DB; explicitly disable its singleton reservation authority.
+ t.mock.method(connectionSessionRuntime,'ready',async()=>false);
  const { PATHS } = await import('../paths.js');
  const { saveConnectionRpc } = await import('../../daemon/db-rpc.js');
  const { _setKeystoreForTests } = await import('../../daemon/db/secrets.js');

@@ -1195,5 +1195,15 @@
 	"src/workflow/tracker/resolve.ts#EXPLICIT_EVIDENCE": {
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/daemon/db/management-defaults.ts#owners": {
+		"class": "one-owner",
+		"owner": "main",
+		"reason": "Daemon startup and MAIN_DAEMON_CONNECTION_METHODS capability handling exclusively own this per-root Saved owner/pending map. Worker requests forward to main before initialization; all cached owners close in the main daemon shutdown path. The filesystem owner lease independently excludes another process."
+	},
+	"src/daemon/db/management-defaults.ts#closing": {
+		"class": "one-owner",
+		"owner": "main",
+		"reason": "Main-daemon shutdown sets this admission fence while draining the same main-owned Saved roots. Startup and v2 capability initialization run on main; worker-local copies are never used for management admission."
 	}
 }

@@ -1,0 +1,12 @@
+{
+  "tests": 473,
+  "passed": 472,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 1,
+  "exitCode": 0,
+  "sourceCommit": "19e6110fd",
+  "command": "JDK21 offline clean test, one Gradle process",
+  "evidence": "native-serial.txt",
+  "note": "Full totals parsed immediately after serial full run. Later focused bridge calls use separate temporary reports."
+}

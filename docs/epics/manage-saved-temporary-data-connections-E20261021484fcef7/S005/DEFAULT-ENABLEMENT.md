@@ -37,3 +37,14 @@ Manual sample: test-fixtures/connection-management/v1/manual-orders.parquet cont
 
 
 Frozen runtime source: 19e6110fd. Post-sweep test-only correction fixes a stale bare verifier variable in session-release-gate.test.ts. All 3 strict-audit cases pass against that unchanged frozen source/build. The git-HEAD status test passes all 4 cases in the real checkout; its archive failure is environmental. A first strict-audit rerun in the shared working tree correctly rejected source/build drift from concurrent unrelated edits; that output is retained. Runtime production code did not change after the freeze.
+
+
+## Final verification
+
+The frozen Node sweep attempted 988 files: completed TAP totals 8392 tests, 8219 passed, 23 failed, 147 skipped, 3 TODO, plus 9 file timeouts without final totals. This original sweep is not green. Exact file outcomes are in evidence/default-enablement/full-sweep-summary.json and all raw logs are in full-sweep-logs.tar.gz (SHA256 6c679bcf9b60af497371a948b56aed66fa47403372a1ce562cfff20350e09c69).
+
+The runner incorrectly parallelized JVM bridge wrappers despite shared compiler outputs. Those failures/timeouts are retained. A separate serial offline JDK21 clean test run succeeded: **473 tests, 472 passed, 1 skipped, zero failures/errors**. The corrected serial compatibility/wire bridge then passed all 7 Node cases, including its actual JUnit classes. No Kotlin production code changed.
+
+Additional test-only revalidation on the frozen product passed the 3 strict audit cases and all 6 module-state inventory cases after explicitly classifying the two new main-owned values. The wire fixture now explicitly disables its unrelated singleton reservation authority. The compatibility bridge expects the newly added fifth case. Git-history verification passes both cases in the actual checkout; archive/no-.git failures remain recorded as environmental. Pending source inventories, worker/CLI/protected-file/import-graph failures, non-native timeouts and wider sweep failures remain unrelabeled.
+
+No production runtime source changed after 19e6110fd. Subsequent changes are tests, audit classifications, evidence, docs and the five-row sample. The old t30 policy verdict remains failed; no independent code-review or manual UI acceptance is claimed.

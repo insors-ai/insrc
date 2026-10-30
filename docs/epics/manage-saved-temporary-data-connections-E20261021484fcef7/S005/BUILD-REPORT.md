@@ -2,6 +2,8 @@
 
 Current policy: connection management is **enabled by default** by the user’s explicit instruction. See DEFAULT-ENABLEMENT.md. Earlier fail-closed release statements below are historical and superseded; pending tests are not marked passed.
 
+Default-enabled runtime source `19e6110fd`: backend build and real Parquet Test/Save/reopen/removal pass. The frozen 988-file Node sweep retained 23 failures and 9 file timeouts; exact results and post-sweep test corrections are in `evidence/default-enablement/summary.json`. Serial JDK21 revalidation passed: 473 tests, 472 passed, 1 skipped. The legacy t30 validator still rejects the now-superseded disabled-runtime policy; its original verdict is retained. Runtime availability is enabled, while release-audit certification and manual client acceptance remain pending.
+
 Latest VS Code file-form correction: runtime commit `edf10ffe1`, extension **0.5.17**. Installable package: [insrc-vscode-0.5.17-s005-edf10ffe1.vsix](/Users/subhagho/work/projects/insors/insrc/vscode-plugin/insrc-vscode-0.5.17-s005-edf10ffe1.vsix). Native Browse, prominent File path, optional Label fallback and per-action disabled reasons are implemented. See FILE-FEEDBACK.md for current evidence and remaining daemon restrictions. Production Save/Test is still unavailable; no release prerequisite was promoted. The frozen full-build results below remain historical.
 
 Frozen source: `b4f7a82cb44550ef55e522966c2237417bd15307`; tree `38ff9012a5dcbd6ec88b5a1c2cbad79c2c2234ad`. Node v22.23.2, JDK21. Source drift: 0 tracked files.

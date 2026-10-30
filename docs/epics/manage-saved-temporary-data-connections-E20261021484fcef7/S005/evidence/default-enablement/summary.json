@@ -1,0 +1,57 @@
+{
+  "runtimeSourceCommit": "19e6110fd",
+  "nodeSweep": {
+    "backend": {
+      "files": 872,
+      "timeouts": 8,
+      "totals": {
+        "tests": 7052,
+        "pass": 6894,
+        "fail": 20,
+        "cancelled": 0,
+        "skipped": 135,
+        "todo": 3
+      }
+    },
+    "vscode": {
+      "files": 116,
+      "timeouts": 1,
+      "totals": {
+        "tests": 1340,
+        "pass": 1325,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 12,
+        "todo": 0
+      }
+    }
+  },
+  "nodeSweepGreen": false,
+  "originalFailuresRetained": true,
+  "nativeSerial": {
+    "tests": 473,
+    "passed": 472,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "exitCode": 0,
+    "sourceCommit": "19e6110fd",
+    "command": "JDK21 offline clean test, one Gradle process",
+    "evidence": "native-serial.txt",
+    "note": "Full totals parsed immediately after serial full run. Later focused bridge calls use separate temporary reports."
+  },
+  "rawLogArchive": "full-sweep-logs.tar.gz",
+  "rawLogArchiveSHA256": "6c679bcf9b60af497371a948b56aed66fa47403372a1ce562cfff20350e09c69",
+  "postSweepCorrections": {
+    "auditVerifierCases": 3,
+    "compatibilityAndWireCases": 7,
+    "moduleStateCases": 6,
+    "artifactCases": 2,
+    "gitDependentArchiveCases": 2,
+    "runtimeProductChanged": false
+  },
+  "workflowGate": "failed against superseded policy; unmodified verdict retained",
+  "manualUIAcceptance": "pending user",
+  "releaseAudit": "pending; does not disable runtime",
+  "installedDaemonChanged": false
+}

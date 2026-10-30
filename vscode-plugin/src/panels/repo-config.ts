@@ -120,8 +120,12 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
     let providers: string;
     try {
       providers = renderProvidersSection(await deps.mcpRegistration());
-    } catch {
-      providers = `<p class="hint">Provider registration state is unavailable right now.</p>`;
+    } catch (err) {
+      // An old daemon answers 'unknown method: mcp.status' — say so and point at the update.
+      const msg = err instanceof Error ? err.message : String(err);
+      providers = /unknown method/.test(msg)
+        ? `<p class="hint">The running daemon predates provider registration — run <b>insrc: Update daemon</b> (or restart the daemon) and reopen this panel.</p>`
+        : `<p class="hint">Provider registration state is unavailable right now.</p>`;
     }
 
     return (

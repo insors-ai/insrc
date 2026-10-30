@@ -17,6 +17,7 @@ import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
 import type { AttachedClient, DaemonStatus, ThreadView } from '../shared/types.js';
 import { guideGetResult, guideListResult } from './guide-sections.js';
+import { probeMcpClients } from './mcp-register.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
 import { launchUpdate, makeUpdateHandlers, readUpdateOutcome } from './update-runner.js';
@@ -71,6 +72,14 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void): RpcHand
 		'guide.list': async () => {
 			return guideListResult(readSteeringBlock) as unknown as Record<string, unknown>;
 		},
+
+		// Read-only probe: is the insrc MCP server already registered for each
+		// known client (claude/codex via `mcp list`, vibe via its config.toml)?
+		// Never throws. In sharedAdminHandlers (not only the main thread's table)
+		// because the method-class table routes 'mcp.status' to the ADMIN WORKER —
+		// a worker-side omission here answers 'unknown method: mcp.status' over the
+		// socket even though the main table has it.
+		'mcp.status': async () => probeMcpClients(),
 
 		'daemon.shutdown': async () => {
 			log.info('shutdown requested');

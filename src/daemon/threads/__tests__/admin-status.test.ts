@@ -107,3 +107,16 @@ test('admin handlers: daemon.debug-status keeps clients as before and adds threa
 	threads = [{ threadId: 3, role: 'admin', cls: 'admin', busy: false, queued: 0, activeRuns: 0 }];
 	assert.deepEqual(await handlers['daemon.debug-status']!(undefined), { clients, threads }, 'clients unchanged, threads added');
 });
+
+test('admin handlers: the worker table serves mcp.status (method-class routes it to the admin worker)', async () => {
+	const { adminWorkerHandlers, sharedAdminHandlers } = await import('../../admin-handlers.js');
+	// Regression: 'mcp.status' is classed 'admin', so with daemon threads the socket's
+	// request lands on THIS worker — a worker-side omission answered
+	// 'unknown method: mcp.status' even though the main thread's table had it.
+	const handlers = adminWorkerHandlers({
+		shutdown: () => {}, status: async () => assert.fail('not asked'), repoList: async () => [],
+		clients: async () => [], threads: async () => [],
+	});
+	assert.equal(typeof handlers['mcp.status'], 'function', 'the admin worker serves mcp.status');
+	assert.equal(typeof sharedAdminHandlers(() => {})['mcp.status'], 'function', 'sharedAdminHandlers carries it, so main and worker serve one source');
+});

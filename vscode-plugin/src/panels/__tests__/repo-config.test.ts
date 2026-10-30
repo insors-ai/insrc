@@ -274,6 +274,10 @@ test('renderRepoConfig: Providers section — registered = checked+disabled, unr
 
   const down = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => { throw new Error('mcp.status down'); } })(REPOS[0]!.path);
   assert.match(down, /registration state is unavailable/, 'a failed mcp.status read degrades to a hint, not an error');
+
+  const oldDaemon = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => { throw new Error('mcp.status failed: unknown method: mcp.status'); } })(REPOS[0]!.path);
+  assert.match(oldDaemon, /predates provider registration/, 'an old daemon (unknown method) gets an update hint, not the bare unavailable text');
+  assert.match(oldDaemon, /insrc: Update daemon/, 'the hint names the update command');
 });
 
 test('steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)', () => {

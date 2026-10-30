@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c5c764585f6714f7",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T13:12:58.093Z",
+    "updatedAt": "2026-10-30T14:10:55.735Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T12:10:13.232Z",
+    "epicSlug": "group-vs-code-model-tiers-settings",
+    "approvedAt": "2026-10-30T14:10:56.172Z",
+    "reviewOverride": {
+      "reason": "manual code review completed per interim rule (code-review framework being rewritten)",
+      "at": "2026-10-30T14:10:56.172Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/group-vs-code-model-tiers-settings-E20261030c5c76458/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/models/model-tier-picker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/webview-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/surfaces/command-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/__tests__/packaging.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T13:43:40.452Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+          "version": "f7d2fcc5e"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T14:10:55.735Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/model-tiers.ts",
+          "version": "f7d2fcc5e"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T14:10:55.735Z"
+      }
+    ],
+    "commit": "f7d2fcc5e"
+  }
+}

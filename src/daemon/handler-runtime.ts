@@ -20,7 +20,7 @@ import { AssessmentError } from '../shared/understanding.js';
 
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { injectSteeringBlock, type SteeringSelection } from './steering-inject.js';
-import { registerMcpClients, probeMcpClients, daemonInstallRoot } from './mcp-register.js';
+import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import { getDb } from '../db/client.js';
@@ -379,11 +379,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
-		// Read-only probe: is the insrc MCP server already registered for each
-		// known client (claude/codex via `mcp list`, vibe via its config.toml)?
-		// Lets a settings UI list providers with only the unregistered ones
-		// checkable. Never throws; an unanswerable client is available:false.
-		'mcp.status': async () => probeMcpClients(),
+		// ('mcp.status' lives in sharedAdminHandlers — ./admin-handlers.ts — so the
+		// admin worker serves it too; the method-class table routes it there.)
 
 		// Post-setup provider registration for an ALREADY-registered repo: the
 		// same steering-block injection + per-client MCP registration repo.add

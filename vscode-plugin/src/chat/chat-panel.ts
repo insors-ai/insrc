@@ -31,6 +31,7 @@ import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession, TranscriptEntry, RunConfig } from './session-store.js';
 import type { ModelDefinitions } from '../models/definitions.js';
+import { providerIcon, PROVIDER_ICON_SVGS } from './provider-icons.js';
 import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
 import type { TurnEvent } from './stream-events.js';
 import type { DeclaredOutcome, PresentedTurn, ReviewPresenter } from './review-presenter.js';
@@ -101,27 +102,38 @@ export interface RunProviderView {
 const CLI_KIND_TO_PROVIDER: Readonly<Record<string, ProviderId>> = { claude: 'claude', codex: 'codex', vibe: 'vibe' };
 
 /** Project the daemon's model definitions to the popup's per-provider view, keeping only
- *  installed providers and dropping rejected model ids. Pure; never throws. */
+ *  installed providers and dropping rejected model ids. Families sharing a cliKind are
+ *  ONE provider: an Ollama-hosted CLI family (e.g. ollama-claude) runs the same CLI
+ *  binary against locally-hosted models, so its models join the vendor family's entry
+ *  (label from the vendor family) instead of adding a duplicate provider row. Pure; never throws. */
 export function runCatalogView(defs: ModelDefinitions, available: readonly ProviderId[]): readonly RunProviderView[] {
-  const out: RunProviderView[] = [];
+  const byProvider = new Map<ProviderId, { label: string; vendorLabelSeen: boolean; seen: Set<string>; models: RunModelView[] }>();
   for (const f of defs.families) {
     const provider = f.cliKind !== undefined ? CLI_KIND_TO_PROVIDER[f.cliKind] : undefined;
     if (provider === undefined || !available.includes(provider)) continue;
     const rejected = new Set(f.rejectedModels ?? []);
-    out.push({
-      id: provider,
-      label: f.displayName,
-      models: f.models
-        .filter((m) => !rejected.has(m.id))
-        .map((m) => ({
-          id: m.id,
-          name: m.displayName ?? m.id,
-          ...(m.aliases.length > 0 ? { alias: m.aliases[0] } : {}),
-          efforts: m.efforts,
-        })),
-    });
+    let entry = byProvider.get(provider);
+    if (entry === undefined) {
+      entry = { label: f.displayName, vendorLabelSeen: f.host === undefined, seen: new Set(), models: [] };
+      byProvider.set(provider, entry);
+    }
+    // The vendor (non-hosted) family's displayName is the provider's label, whatever the order.
+    if (f.host === undefined && !entry.vendorLabelSeen) {
+      entry.label = f.displayName;
+      entry.vendorLabelSeen = true;
+    }
+    for (const m of f.models) {
+      if (rejected.has(m.id) || entry.seen.has(m.id)) continue;
+      entry.seen.add(m.id);
+      entry.models.push({
+        id: m.id,
+        name: m.displayName ?? m.id,
+        ...(m.aliases.length > 0 ? { alias: m.aliases[0] } : {}),
+        efforts: m.efforts,
+      });
+    }
   }
-  return out;
+  return [...byProvider.entries()].map(([id, e]) => ({ id, label: e.label, models: e.models }));
 }
 
 export interface ChatPanelHostDeps {
@@ -1168,6 +1180,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.runbtn:hover,.gaugebtn:hover{color:var(--accent);}` +
       `.runbtn:focus-visible,.gaugebtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `.runbtn .chev{opacity:.6;font-size:10px;}` +
+      `.pico{display:inline-flex;width:14px;height:14px;flex:0 0 14px;align-items:center;justify-content:center;}` +
+      `.pico svg{width:14px;height:14px;display:block;}` +
       `.gaugebtn.dim{opacity:.5;cursor:default;}` +
       `@keyframes insrc-rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}` +
       `.popup,.slider-pop{position:absolute;bottom:calc(100% + 8px);right:0;display:none;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:10px;box-shadow:0 12px 32px var(--pop-shadow);z-index:20;animation:insrc-rise .12s ease-out;color:var(--dropdown-fg);}` +
@@ -1386,14 +1400,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const rb=document.getElementById('insrc-runbtn'),gb=document.getElementById('insrc-effortbtn');` +
       `const rp=document.getElementById('insrc-runpop'),ep=document.getElementById('insrc-effortpop');` +
       `function rstate(){return{provider:rb?rb.getAttribute('data-provider')||'':'',model:rb?rb.getAttribute('data-model')||'':'',effort:rb?rb.getAttribute('data-effort')||'':''};}` +
+      `var ICONS=${JSON.stringify(PROVIDER_ICON_SVGS)};function pico(p){return ICONS[p]||'';}` +
       `function rprov(p){return catalog.filter(function(f){return f.id===p;})[0];}` +
       `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m;})[0]:undefined;}` +
-      `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML=(s.provider||'…')+' · '+(m?(m.alias||m.name):'default')+' <span class="chev">▾</span>';}` +
+      `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML='<span class="pico">'+pico(s.provider)+'</span> '+(s.provider||'…')+' · '+(m?(m.alias||m.name):'default')+' <span class="chev">▾</span>';}` +
       `function elabel(){var s=rstate();document.getElementById('insrc-effortlabel').textContent=s.effort||'default';}` +
       `function rlevels(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);if(!f)return[];if(m)return m.efforts.slice();var u=[];f.models.forEach(function(x){x.efforts.forEach(function(e){if(u.indexOf(e)<0)u.push(e);});});return u;}` +
       `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');}` +
-      `function mitem(sel,label,sub,onclick,onhover,dis){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
-      `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.';catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:'',effort:rstate().effort}});}},function(){renderModelPane(f);},started&&f.id!==s.provider));});renderModelPane(rprov(hover||s.provider));}` +
+      `function mitem(sel,label,sub,onclick,onhover,dis,icon){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="pico">'+(icon||'')+'</span><span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
+      `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.';catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:'',effort:rstate().effort}});}},function(){renderModelPane(f);},started&&f.id!==s.provider,pico(f.id)));});renderModelPane(rprov(hover||s.provider));}` +
       `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&s.model===m.id,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
       `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});rb.setAttribute('data-model',id);rlabel();closePops();}}` +
       `function renderEffortPop(){var s=rstate(),levels=['default'].concat(rlevels()),cur=s.effort?levels.indexOf(s.effort):0;if(cur<0)cur=0;var sl=document.getElementById('insrc-effortslider');sl.max=levels.length-1;sl.value=cur;sl.setAttribute('aria-valuetext',levels[cur]);var tk=document.getElementById('insrc-ticks'),nt=document.getElementById('insrc-notches');tk.innerHTML='';nt.innerHTML='';levels.forEach(function(l,i){var t=document.createElement('i');if(i===cur)t.className='on';tk.appendChild(t);var sp=document.createElement('span');sp.textContent=l;if(i===cur)sp.className='on';sp.onclick=function(){sl.value=i;applyEffort();};nt.appendChild(sp);});document.getElementById('insrc-effortnote').textContent=s.provider==='vibe'?'vibe has no per-call thinking flag — the level is informational; the model’s \`thinking\` in ~/.vibe/config.toml applies.':'Applies to the next turns of this chat.';}` +
@@ -1570,7 +1585,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span>` +
       // Run-config controls, bottom-right corner of the status bar. The popups open upward.
       `<span class="runctl">` +
-      `<button id="insrc-runbtn" type="button" class="runbtn ${provCls}" aria-haspopup="menu" aria-expanded="false" title="provider · model" data-provider="${attr(runProvider ?? '')}" data-model="${attr(runModelId ?? '')}" data-effort="${attr(runEffort ?? '')}">${attr(runProvider ?? '…')} · ${attr(runModelLabel)} <span class="chev">▾</span></button>` +
+      `<button id="insrc-runbtn" type="button" class="runbtn ${provCls}" aria-haspopup="menu" aria-expanded="false" title="provider · model" data-provider="${attr(runProvider ?? '')}" data-model="${attr(runModelId ?? '')}" data-effort="${attr(runEffort ?? '')}"><span class="pico">${providerIcon(runProvider)}</span> ${attr(runProvider ?? '…')} · ${attr(runModelLabel)} <span class="chev">▾</span></button>` +
       `<button id="insrc-effortbtn" type="button" class="gaugebtn ${provCls}" aria-haspopup="dialog" aria-expanded="false" title="effort level"><span aria-hidden="true">◔</span> <span id="insrc-effortlabel">${attr(runEffortLabel)}</span></button>` +
       `<div id="insrc-runpop" class="popup" role="menu" aria-label="provider and model">` +
       `<div class="panes"><div class="pane" id="insrc-provpane"><div class="pane-h">Provider</div></div><div class="pane" id="insrc-modelpane"><div class="pane-h">Model</div></div></div>` +

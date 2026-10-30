@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>insrc VS Code — Model Tiers, grouped by tier (UX mock, round 1)</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg: light-dark(#ffffff, #1e1e1e);
+  --bg-inset: light-dark(#f3f3f3, #252526);
+  --panel: light-dark(#ffffff, #252526);
+  --fg: light-dark(#1b1b1b, #cccccc);
+  --fg-strong: light-dark(#000000, #ffffff);
+  --muted: light-dark(#6a6a6a, #9d9d9d);
+  --border: light-dark(#d4d4d4, #3c3c3c);
+  --border-lit: light-dark(#c8c8c8, #4a4a4a);
+  --dropdown-bg: light-dark(#ffffff, #3c3c3c);
+  --dropdown-border: light-dark(#c8c8c8, #5a5a5a);
+  --hover: light-dark(#ececec, #2a2d2e);
+  --accent: light-dark(#0e639c, #4fc3f7);
+  --focus: light-dark(#0078d4, #0090ff);
+  --warn-bg: light-dark(#fff8e1, #3a2f12);
+  --warn-fg: light-dark(#8a6400, #e8b94a);
+  --err-bg: light-dark(#fdecea, #3a1f1f);
+  --err-fg: light-dark(#a3221a, #f28b82);
+  --ok-fg: light-dark(#2e7d32, #81c995);
+  --chip-cloud-bg: light-dark(#e3f2fd, #1b3a52);
+  --chip-cloud-fg: light-dark(#0b5fa5, #7ec8f5);
+  --chip-local-bg: light-dark(#e8f5e9, #1e3a24);
+  --chip-local-fg: light-dark(#2e7d32, #81c995);
+  --sans: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:13px;padding:1.25rem;display:flex;flex-direction:column;align-items:center;gap:.9rem}
+.demo-bar{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:.5rem .9rem;background:var(--bg-inset);max-width:720px}
+.demo-bar b{color:var(--accent);letter-spacing:.04em}
+.panel{width:min(640px,100%);border:1px solid var(--border-lit);border-radius:8px;overflow:hidden;background:var(--panel);box-shadow:0 8px 30px rgb(0 0 0 / .22)}
+.panel-head{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:.15rem}
+.panel-head h1{margin:0;font-size:15px;font-weight:600;color:var(--fg-strong)}
+.panel-head p{margin:0;font-size:12px;color:var(--muted)}
+.tier-list{display:flex;flex-direction:column}
+.tier{border-bottom:1px solid var(--border);padding:.85rem 1rem}
+.tier:last-child{border-bottom:none}
+.tier-head{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin-bottom:.1rem}
+.tier-name{display:flex;align-items:baseline;gap:.5rem}
+.tier-name b{font-size:13px;color:var(--fg-strong);text-transform:uppercase;letter-spacing:.05em}
+.tier-purpose{font-size:11.5px;color:var(--muted)}
+.floor-badge{font-size:10.5px;background:var(--bg-inset);color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:1px 8px;white-space:nowrap}
+.controls{display:flex;gap:.5rem;margin-top:.55rem;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:.2rem;flex:1;min-width:120px}
+.field label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.field select{background:var(--dropdown-bg);color:var(--fg);border:1px solid var(--dropdown-border);border-radius:5px;font:inherit;font-size:12.5px;padding:4px 6px;height:28px}
+.field select:focus{outline:2px solid var(--focus);outline-offset:-1px}
+.hosting-chip{display:inline-flex;align-items:center;font-size:10px;border-radius:9px;padding:0 6px;height:16px;margin-left:5px;vertical-align:1px;font-weight:600}
+.hosting-chip.cloud{background:var(--chip-cloud-bg);color:var(--chip-cloud-fg)}
+.hosting-chip.local{background:var(--chip-local-bg);color:var(--chip-local-fg)}
+.note{display:flex;align-items:flex-start;gap:.4rem;margin-top:.5rem;font-size:11.5px;border-radius:5px;padding:.35rem .55rem}
+.note.warn{background:var(--warn-bg);color:var(--warn-fg)}
+.note.err{background:var(--err-bg);color:var(--err-fg)}
+.note.ok{color:var(--ok-fg)}
+.note .dot{flex:0 0 auto;margin-top:.1rem}
+.note a{color:inherit;text-decoration:underline;cursor:pointer}
+.panel-foot{padding:.65rem 1rem;background:var(--bg-inset);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.foot-field{display:flex;align-items:center;gap:.5rem;font-size:12px}
+.foot-field select{background:var(--dropdown-bg);color:var(--fg);border:1px solid var(--dropdown-border);border-radius:5px;font:inherit;font-size:12px;padding:3px 6px;height:26px}
+.foot-hint{font-size:11px;color:var(--muted)}
+.caption{width:min(640px,100%);font-size:12px;color:var(--muted);line-height:1.5}
+.caption b{color:var(--fg)}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <b>MOCK · ROUND 1</b>
+  <span>Each tier is its own card: name, purpose, one row of dropdowns, and inline status. Compare with today's flat list of 9 free-text fields.</span>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h1>Model Tiers</h1>
+    <p>Which tool and model each tier runs. Pulled live from the daemon — nothing here is typed by hand.</p>
+  </div>
+
+  <div class="tier-list">
+
+    <!-- CORE: vendor family, everything normal -->
+    <div class="tier">
+      <div class="tier-head">
+        <div class="tier-name"><b>Core</b><span class="tier-purpose">critical reasoning — never runs below the core floor</span></div>
+      </div>
+      <div class="controls">
+        <div class="field">
+          <label>Runner</label>
+          <select><option selected>Claude Code</option><option>Codex</option><option>Claude on Ollama</option><option>Ollama (local)</option></select>
+        </div>
+        <div class="field">
+          <label>Model</label>
+          <select><option selected>claude-opus-5-5</option><option>claude-sonnet-5-5</option></select>
+        </div>
+        <div class="field">
+          <label>Effort</label>
+          <select><option>CLI default</option><option selected>high</option><option>max</option></select>
+        </div>
+      </div>
+      <div class="note ok"><span class="dot">●</span><span>Running as configured.</span></div>
+    </div>
+
+    <!-- MID: Ollama-hosted family, cloud model, clean -->
+    <div class="tier">
+      <div class="tier-head">
+        <div class="tier-name"><b>Mid</b><span class="tier-purpose">most reasoning and build work</span></div>
+      </div>
+      <div class="controls">
+        <div class="field">
+          <label>Runner</label>
+          <select><option>Claude Code</option><option>Codex</option><option selected>Claude on Ollama</option><option>Ollama (local)</option></select>
+        </div>
+        <div class="field">
+          <label>Model</label>
+          <select><option selected>glm-5.3</option><option>deepseek-v4.1-flash</option><option>kimi-k3</option></select>
+        </div>
+        <div class="field">
+          <label>Effort</label>
+          <select><option>CLI default</option><option selected>high</option><option>max</option></select>
+        </div>
+      </div>
+      <div class="note ok"><span class="dot">●</span><span>Running as configured. <span class="hosting-chip cloud">cloud</span></span></div>
+    </div>
+
+    <!-- CHEAP: Ollama-hosted family, model no longer declared -> not supported -->
+    <div class="tier">
+      <div class="tier-head">
+        <div class="tier-name"><b>Cheap</b><span class="tier-purpose">narrow, high-volume tasks</span></div>
+        <span class="floor-badge">raised to mid by the core floor</span>
+      </div>
+      <div class="controls">
+        <div class="field">
+          <label>Runner</label>
+          <select><option>Claude Code</option><option>Codex</option><option selected>Claude on Ollama</option><option>Ollama (local)</option></select>
+        </div>
+        <div class="field">
+          <label>Model</label>
+          <select><option>glm-5.3-flash</option><option>deepseek-v4-pro</option><option selected style="color:var(--err-fg)">mistral-large-4 (removed)</option></select>
+        </div>
+        <div class="field">
+          <label>Effort</label>
+          <select disabled><option>—</option></select>
+        </div>
+      </div>
+      <div class="note err"><span class="dot">⚠</span><span><b>mistral-large-4</b> is not supported by Claude on Ollama — the tier will not run. Pick a listed model above.</span></div>
+    </div>
+
+  </div>
+
+  <div class="panel-foot">
+    <div class="foot-field">
+      <label class="foot-hint">Core floor</label>
+      <select><option>Core</option><option selected>Mid</option><option>Cheap</option></select>
+    </div>
+    <div class="foot-hint">Critical roles never resolve below this tier · <a href="#" style="color:inherit">Check an unlisted model…</a></div>
+  </div>
+</div>
+
+<div class="caption">
+  <p><b>What changed vs. today:</b> the native VS Code Settings page lists 9 free-text fields (core.runner, core.model, core.effort, mid.…, cheap.…) in one flat group, each repeating the same long description. There's no visual separation between tiers, no indication of the model's cloud/local hosting, and no inline "this won't run" warning — you only find out when a run fails.</p>
+  <p><b>What this mock proposes:</b> a dedicated panel (likely a webview, opened via a command or the gear icon next to Insrc in the status bar) with one card per tier, real dropdowns sourced from the daemon's model definitions (like the existing <code>insrc: Set model tier</code> picker already does), inline hosting badges, and the "not supported" state shown in place rather than discovered later.</p>
+  <p><b>Open questions for round 2:</b> (1) does this replace the native settings fields, or sit alongside them as a friendlier front-end that still writes the same config? (2) is a full webview worth it, or would a grouped <code>insrc: Set model tier</code> QuickPick — one list showing all three tiers at once, each with its current value — get most of the benefit for far less work? (3) where does this panel live — a command, a sidebar view, or the existing Settings UI's "edit in settings.json" link replaced with a button?</p>
+</div>
+
+</body>
+</html>

@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Script } from 'node:vm';
 import { createChatPanelHost, runCatalogView, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
+import { providerIcon } from '../provider-icons.js';
 import { transcriptPagerWebviewSource } from '../transcript-pager.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import { createFileChatSessionStore, ROWS_SUFFIX } from '../session-file-store.js';
@@ -1662,6 +1663,7 @@ test('run-config controls: the statusbar runctl group carries the run button, ga
   assert.ok(at >= 0, 'the .runctl group is rendered in the statusbar');
   const runctl = withCli.slice(at);
   assert.match(runctl, /<button id="insrc-runbtn"[^>]*data-provider="[^"]*" data-model="[^"]*" data-effort="[^"]*"/, 'run button carries the session run-config in data-*');
+  assert.match(runctl, /<button id="insrc-runbtn"[^>]*><span class="pico"><svg[^>]*>/, 'run button leads with the provider icon (inline currentColor svg)');
   assert.match(runctl, /<button id="insrc-effortbtn"[^>]*>.*<span id="insrc-effortlabel">/, 'gauge button carries the effort label');
   assert.match(runctl, /<div id="insrc-runpop" class="popup" role="menu"[^>]*>/, 'provider·model popup present');
   assert.match(runctl, /id="insrc-provpane"/, 'provider pane present');
@@ -1697,13 +1699,20 @@ test('run-config popup bootstrap: catalog parse + button wiring posts new-chat /
   const subAt = html.indexOf('function doSubmit(){');
   assert.ok(subAt >= 0, 'doSubmit present');
   assert.match(html.slice(subAt, subAt + 200), /return;started=true;/, 'the first submit marks the chat started');
-  assert.match(html, /function mitem\(sel,label,sub,onclick,onhover,dis\)/, 'mitem takes a disabled flag');
+  assert.match(html, /function mitem\(sel,label,sub,onclick,onhover,dis,icon\)/, 'mitem takes a disabled flag and an icon slot');
   assert.match(html, /if\(dis\)d\.setAttribute\('aria-disabled','true'\);/, 'disabled items carry aria-disabled');
   assert.match(html, /if\(!dis\)\{if\(onhover\)d\.onmouseenter=onhover;d\.onclick=onclick;\}/, 'disabled items get no handlers');
   assert.match(html, /started&&f\.id!==s\.provider/, 'renderProvPane disables other providers once started');
   assert.match(html, /\.popup \.item\.dis\{opacity:\.45;cursor:default;\}/, 'disabled item style present');
   assert.match(html, /id="insrc-popfoot"/, 'popup foot present');
   assert.match(html, /started\?'Provider is fixed once a chat has started/, 'the foot note switches when started');
+  // Provider icons: the glyph map is embedded, pico() resolves it, the run button's label
+  // and each provider row carry the icon in a .pico slot.
+  assert.match(html, /var ICONS=\{"claude":"<svg[\s\S]*?"codex":"<svg[\s\S]*?"vibe":"<svg/, 'the provider icon map (claude/codex/vibe) is embedded');
+  assert.match(html, /function pico\(p\)\{return ICONS\[p\]\|\|'';\}/, 'pico() resolves the map');
+  assert.match(html, /rb\.innerHTML='<span class="pico">'\+pico\(s\.provider\)/, 'the run button label leads with the provider icon');
+  assert.match(html, /d\.innerHTML='<span class="pico">'\+\(icon\|\|''\)\+'<\/span><span class="chk">/, 'menu items carry an icon slot before the check');
+  assert.match(html, /started&&f\.id!==s\.provider,pico\(f\.id\)\)\);/, 'each provider row passes its icon');
 });
 
 test('regression: the history dropdown still opens/new-chats, and session-restored still clears + replays', () => {
@@ -5402,12 +5411,22 @@ test('runCatalogView: maps cliKind→provider, keeps only installed providers, d
       { id: 'cli-vibe', cliKind: 'vibe', displayName: 'Mistral Vibe CLI', models: [
         { id: 'zai-glm-5-3', aliases: ['glm-5-3'], efforts: ['low', 'max'], source: 'shipped' },
       ], rejectedModels: [], tierDefaults: {} },
+      // An Ollama-hosted CLI family runs the SAME claude binary on local models — it must
+      // merge into the claude entry, not add a second provider row (both would show selected).
+      { id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude CLI on Ollama', models: [
+        { id: 'qwen3.6:35b', aliases: ['qwen'], displayName: 'Qwen 3.6 35B', efforts: ['low', 'max'], source: 'shipped', hosting: 'local' },
+        { id: 'claude-opus-5-5', aliases: [], displayName: 'dup', efforts: [], source: 'shipped', hosting: 'cloud' },
+      ], rejectedModels: [] },
       { id: 'ollama', displayName: 'Ollama', models: [], toolLoopModel: 'qwen' },
     ],
   } as never;
   const view = runCatalogView(defs, ['claude', 'vibe']); // codex NOT installed
-  assert.deepEqual(view.map((p) => p.id), ['claude', 'vibe'], 'only installed CLI families, ollama excluded');
-  assert.deepEqual(view[0]!.models.map((m) => [m.id, m.alias, m.efforts]), [['claude-opus-5-5', 'opus', ['low', 'high']]], 'rejected model dropped, first alias kept');
+  assert.deepEqual(view.map((p) => p.id), ['claude', 'vibe'], 'only installed CLI families, ollama excluded — one row per provider, no ollama-claude duplicate');
+  assert.equal(view[0]!.label, 'Claude CLI', 'the vendor family supplies the label, not the Ollama-hosted one');
+  assert.deepEqual(view[0]!.models.map((m) => [m.id, m.alias, m.efforts]), [
+    ['claude-opus-5-5', 'opus', ['low', 'high']],
+    ['qwen3.6:35b', 'qwen', ['low', 'max']],
+  ], 'rejected model dropped, first alias kept, host-family models merged, duplicate id deduped');
   assert.deepEqual(view[1]!.models[0], { id: 'zai-glm-5-3', name: 'zai-glm-5-3', alias: 'glm-5-3', efforts: ['low', 'max'] });
 });
 
@@ -5505,4 +5524,27 @@ test('a started chat refuses a provider change (host backstop); an unstarted dra
   fc.send(env('submit-turn', { text: 'hi' }));
   await new Promise((r) => setTimeout(r, 20));
   assert.deepEqual(ran, ['claude', 'claude', 'codex'], 'an unstarted draft allows the provider switch');
+});
+
+test('providerIcon: the OFFICIAL vendor mark per provider (path data from media/providers/*.svg), fill=currentColor, empty for unknown ids', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { dirname, join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const files: Record<string, string> = { claude: 'claude.svg', codex: 'codex.svg', vibe: 'vibe.svg' };
+  for (const id of ['claude', 'codex', 'vibe'] as const) {
+    const svg = providerIcon(id);
+    assert.match(svg, /^<svg /, `${id} has an inline svg`);
+    assert.match(svg, /fill='currentColor'/, `${id} follows the theme (fill=currentColor)`);
+    assert.doesNotMatch(svg, /#[0-9a-fA-F]{3,8}/, `${id} carries no fixed colour`);
+    // The inlined path must be the official mark's path, verbatim from the media asset.
+    const asset = readFileSync(join(here, '..', '..', '..', 'media', 'providers', files[id]!), 'utf8');
+    const assetPaths = [...asset.matchAll(/<path[^>]*?d="([^"]+)"/gs)].map((m) => m[1]!.replace(/\s+/g, ' ').trim());
+    const inlineD = /<path d='([^']+)'\/>/.exec(svg)?.[1]!;
+    assert.equal(inlineD, assetPaths.join(' '), `${id} inlines the official path data from media/providers/${files[id]} (not a hand-drawn glyph)`);
+  }
+  assert.equal(providerIcon('ollama'), '', 'non-CLI providers get no icon');
+  assert.equal(providerIcon(''), '');
+  assert.equal(providerIcon(undefined), '');
+  assert.notEqual(providerIcon('claude'), providerIcon('codex'), 'distinct marks');
 });

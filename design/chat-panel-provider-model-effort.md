@@ -61,7 +61,13 @@ never cover the input.
 ### Provider/model popup (`#insrc-runbtn`)
 
 - A single button labelled `<provider> · <model>` (model shown as its alias/display
-  name or "default"). Chevron indicates it opens a menu.
+  name or "default"). Chevron indicates it opens a menu. The button LEADS with the
+  provider's icon — the ACTUAL vendor mark, inlined as SVG with `fill='currentColor'`
+  (no fixed colour, no remote resource, CSP-safe) in a `.pico` slot. Canonical sources
+  ship in `vscode-plugin/media/providers/` (claude.svg = simpleicons "claude" CC0,
+  codex.svg = OpenAI mark via gilbarbara/logos, vibe.svg = simpleicons "mistralai"
+  CC0) and are inlined verbatim from `src/chat/provider-icons.ts`. The same glyph heads
+  each provider row in the popup's Provider pane.
 - Click opens a right-aligned popup **above** the button: two scrollable panes
   (max-height capped) under tiny uppercase section labels — left **Provider**
   (installed only, from `providers.available`), right the **models** of the
@@ -139,7 +145,11 @@ daemon models.definitions ──▶ plugin gateway modelCatalog() ──▶ chat
 - `cliKind` → `ProviderId`: `cli-claude→claude`, `cli-codex→codex`, `cli-vibe→vibe`
   (the same mapping the daemon's `familyForClient` uses).
 - Model list per provider = that family's served models (shipped + user-approved,
-  rejected excluded), exactly what `models.definitions` returns.
+  rejected excluded), exactly what `models.definitions` returns. Families sharing a
+  `cliKind` are ONE provider: an Ollama-hosted CLI family (`ollama-claude`,
+  `host: 'ollama'`) runs the same CLI binary on local models, so its models merge into
+  the vendor family's entry (vendor label wins, duplicate model ids deduped) — never a
+  second provider row that would also render as selected.
 - Effort levels = selected model's `efforts`, else the family's union; `''`
   (absent) means the CLI default.
 

@@ -1,0 +1,583 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c5c764585f6714f7",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T13:12:58.093Z",
+    "updatedAt": "2026-10-30T13:43:40.452Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T12:10:13.232Z",
+    "epicSlug": "group-vs-code-model-tiers-settings"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "9e647cf13",
+        "ranAt": "2026-10-30T13:12:58.093Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tier-picker.test.ts: currentTier remains exported with unchanged resolution behavior",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "model-tier-picker.test.ts: currentTier remains exported with unchanged resolution behavior",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tier-picker.test.ts: tierStatus classifies ok/not-supported/not-listed/floor-raised across a host-set family, an open vendor family, an unresolvable runner, and all three coreFloor values",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "model-tier-picker.test.ts: tierStatus classifies ok/not-supported/not-listed/floor-raised across a host-set family, an open vendor family, an unresolvable runner, and all three coreFloor values",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 340,
+            "titles": [
+              {
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: the host family is offered next to today's; its models carry cloud/local marks, no 'Enter another model id', efforts only where the model has them, one whole-tier write",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: an undeclared current model on the host family is 'not supported — the tier will not run'; a vendor family and a host-less answer keep today's items",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: reopening the picker after a save on the host family marks the saved family, model and effort as current",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: currentTier remains exported with unchanged resolution behavior",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: tierStatus classifies ok/not-supported/not-listed/floor-raised across a host-set family, an open vendor family, an unresolvable runner, and all three coreFloor values",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "14af75a9c",
+        "ranAt": "2026-10-30T13:17:49.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tiers.test.ts: renderModelTiers renders one labelled card per tier (core/mid/cheap), not a flat field list",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "renderModelTiers: one labelled card per tier (core/mid/cheap), not a flat field list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tiers.test.ts: renderModelTiers renders the panel-foot Core-floor <select> bound to the current insrc.models.coreFloor value",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "renderModelTiers: the panel-foot Core-floor <select> is bound to the current insrc.models.coreFloor value",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tiers.test.ts: createModelTiersWriteHandler maps both ModelTiersWrite kinds to the right config.write key and calls refresh() only when config.write resolves (not when it rejects)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "createModelTiersWriteHandler: a {kind:'tierField'} write maps to ['models','tiers',tier,field]; a {kind:'coreFloor'} write maps to ['models','coreFloor']",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "createModelTiersWriteHandler: refresh() runs on an accepted write and on a refused write, never on a rejected one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 366,
+            "titles": [
+              {
+                "title": "renderModelTiers: one labelled card per tier (core/mid/cheap), not a flat field list",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: a tier resolved to the host-set family shows its cloud/local hosting badge; an unresolved model is flagged not-supported inline",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: the panel-foot Core-floor <select> is bound to the current insrc.models.coreFloor value",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: a {kind:'tierField'} write maps to ['models','tiers',tier,field]; a {kind:'coreFloor'} write maps to ['models','coreFloor']",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: refresh() runs on an accepted write and on a refused write, never on a rejected one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "a0283861e",
+        "ranAt": "2026-10-30T13:21:53.119Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "webview-host.test.ts: openModelTiers always opens/reveals the panel and falls back to a placeholder body when modelTiersRenderer is unset",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "S001: openModelTiers always opens/reveals the panel (never a no-op); with no modelTiersRenderer it renders the placeholder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "webview-host.test.ts: the status-bar MenuItem list carries the new 'Model Tiers' entry alongside 'Repo Configuration'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "webview-host.test.ts: a malformed postMessage of either ModelTiersWrite kind is silently dropped and never reaches onModelTiersWrite",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "S001: a {kind:'tierField'} modelTiersWrite forwards a validated ModelTiersWrite; a {kind:'coreFloor'} one too; malformed ones are silent no-ops",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 548,
+            "titles": [
+              {
+                "title": "showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel",
+                "result": "pass"
+              },
+              {
+                "title": "Cancel path: a dismissed menu (undefined) opens no panel (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs, defaults to daemon, renders gateway.status() (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "the shared shell styles form controls with theme variables — selects/dropdowns do not fall back to the browser white ground",
+                "result": "pass"
+              },
+              {
+                "title": "Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "a setHtml throw (e.g. panel disposed mid-render) degrades to a logged no-op — never an unhandled rejection or a sync throw",
+                "result": "pass"
+              },
+              {
+                "title": "single-instance: a second open reveals the same panel + switches tab, and after user-close a later open creates fresh",
+                "result": "pass"
+              },
+              {
+                "title": "openRepoConfiguration creates/reveals the separate Repo Configuration shell (single-instance)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a late switchTab/refresh after the panel was disposed is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the empty selectRepo option clears the selection back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)",
+                "result": "pass"
+              },
+              {
+                "title": "a {repoRegisterProviders} message forwards a validated RepoProviderRegistration to onRepoRegisterProviders; malformed ones are silent no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "the repo bootstrap script posts repoRegisterProviders with the checked data-provider values",
+                "result": "pass"
+              },
+              {
+                "title": "S001: openModelTiers always opens/reveals the panel (never a no-op); with no modelTiersRenderer it renders the placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a {kind:'tierField'} modelTiersWrite forwards a validated ModelTiersWrite; a {kind:'coreFloor'} one too; malformed ones are silent no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a modelTiersRenderer throw degrades to an error body; an onModelTiersWrite throw is caught",
+                "result": "pass"
+              },
+              {
+                "title": "the model-tiers bootstrap script posts modelTiersWrite for both a tier field change and the core-floor change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "9c8cbbd68",
+        "ranAt": "2026-10-30T13:25:05.107Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tiers.test.ts / webview-host.test.ts: createModelTiersWriteHandler's refresh callback, wired exactly as in extension.ts's panelHost construction, invokes openModelTiers after a resolved write",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "createModelTiersWriteHandler: refresh wired exactly as extension.ts does (refresh: () => panelHost.openModelTiers()) invokes openModelTiers after a resolved write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 387,
+            "titles": [
+              {
+                "title": "renderModelTiers: one labelled card per tier (core/mid/cheap), not a flat field list",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: a tier resolved to the host-set family shows its cloud/local hosting badge; an unresolved model is flagged not-supported inline",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: the panel-foot Core-floor <select> is bound to the current insrc.models.coreFloor value",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: a {kind:'tierField'} write maps to ['models','tiers',tier,field]; a {kind:'coreFloor'} write maps to ['models','coreFloor']",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: refresh() runs on an accepted write and on a refused write, never on a rejected one",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: refresh wired exactly as extension.ts does (refresh: () => panelHost.openModelTiers()) invokes openModelTiers after a resolved write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "4afea5886",
+        "ranAt": "2026-10-30T13:43:40.452Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tiers.test.ts: a tier card shows a cloud/local hosting badge matching its resolved family's hosting",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "renderModelTiers: a tier resolved to the host-set family shows its cloud/local hosting badge; an unresolved model is flagged not-supported inline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tiers.test.ts: a tier whose configured model is not in the catalog renders the not-supported note inline, matching mocks/model-tiers-grouped.html",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "renderModelTiers: a tier resolved to the host-set family shows its cloud/local hosting badge; an unresolved model is flagged not-supported inline",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "renderModelTiers: an open vendor family with a model it no longer lists renders the not-listed styling inline (distinct from not-supported)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tier-picker.test.ts: tierStatus returns floor-raised for every tier ranked below coreFloor, and omits it when coreFloor is 'cheap'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "model-tier-picker.test.ts: tierStatus returns floor-raised for every tier ranked below coreFloor, and omits it when coreFloor is 'cheap'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tiers.test.ts: createModelTiersWriteHandler maps a { kind: 'coreFloor', value } write to the insrc.models.coreFloor key",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+                "title": "createModelTiersWriteHandler: a {kind:'tierField'} write maps to ['models','tiers',tier,field]; a {kind:'coreFloor'} write maps to ['models','coreFloor']",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 398,
+            "titles": [
+              {
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: the host family is offered next to today's; its models carry cloud/local marks, no 'Enter another model id', efforts only where the model has them, one whole-tier write",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: an undeclared current model on the host family is 'not supported — the tier will not run'; a vendor family and a host-less answer keep today's items",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: reopening the picker after a save on the host family marks the saved family, model and effort as current",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: currentTier remains exported with unchanged resolution behavior",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: tierStatus classifies ok/not-supported/not-listed/floor-raised across a host-set family, an open vendor family, an unresolvable runner, and all three coreFloor values",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: tierStatus returns floor-raised for every tier ranked below coreFloor, and omits it when coreFloor is 'cheap'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 425,
+            "titles": [
+              {
+                "title": "renderModelTiers: one labelled card per tier (core/mid/cheap), not a flat field list",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: a tier resolved to the host-set family shows its cloud/local hosting badge; an unresolved model is flagged not-supported inline",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: an open vendor family with a model it no longer lists renders the not-listed styling inline (distinct from not-supported)",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: three identically-configured tiers (all resolving to the same default) render as three independent, separately-editable cards",
+                "result": "pass"
+              },
+              {
+                "title": "renderModelTiers: the panel-foot Core-floor <select> is bound to the current insrc.models.coreFloor value",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: a {kind:'tierField'} write maps to ['models','tiers',tier,field]; a {kind:'coreFloor'} write maps to ['models','coreFloor']",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: refresh() runs on an accepted write and on a refused write, never on a rejected one",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: refresh wired exactly as extension.ts does (refresh: () => panelHost.openModelTiers()) invokes openModelTiers after a resolved write",
+                "result": "pass"
+              },
+              {
+                "title": "createModelTiersWriteHandler: two rapid writes to the same control are each forwarded and handled independently, in arrival order, with no debouncing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

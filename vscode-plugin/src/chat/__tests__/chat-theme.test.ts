@@ -373,6 +373,9 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.popup .item .sub',
     '.popup .item.dis',
     '.popup .item.dis:hover',
+    // Provider glyph slots (inline currentColor SVG icons on the run button + popup rows).
+    '.pico',
+    '.pico svg',
     '.popup .item.sel .chk',
     '.popup .item.sel .lbl',
     '.popup .item:hover',

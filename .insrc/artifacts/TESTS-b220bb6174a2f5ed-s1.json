@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s1",
     "createdAt": "2026-10-29T19:58:32.650Z",
-    "updatedAt": "2026-10-30T03:59:07.459Z",
+    "updatedAt": "2026-10-30T04:03:49.167Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -327,6 +327,292 @@
               },
               {
                 "title": "model-registry.test.ts: effortLevels over five families keeps today's levels and order",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "a4f470c5b",
+        "ranAt": "2026-10-30T04:03:49.167Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-check.test.ts: the unknown-model check refuses a host family",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-check.test.ts",
+                "title": "model-check.test.ts: the unknown-model check refuses a host family",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "config-write-models.test.ts: the tier write's model check treats a host family as not open to unlisted ids",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/config-write-models.test.ts",
+                "title": "config-write-models.test.ts: the tier write's model check treats a host family as not open to unlisted ids",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: an approved-model store entry naming ollama-claude is skipped",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: an approved-model store entry naming ollama-claude is skipped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to ollama-claude, not cli-claude",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/attribution.test.ts",
+                "title": "attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to ollama-claude, not cli-claude",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/config-write-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1020,
+            "titles": [
+              {
+                "title": "config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias",
+                "result": "pass"
+              },
+              {
+                "title": "config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes",
+                "result": "pass"
+              },
+              {
+                "title": "config-write-models.test.ts: writes adding or changing models.byRepo.<repo>.tiers (directly or through a parent object) are refused with 'per-repo-tier'; tasks / coreFloor and unrelated writes succeed",
+                "result": "pass"
+              },
+              {
+                "title": "config-write-models.test.ts: the tier write's model check treats a host family as not open to unlisted ids",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-check.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10220,
+            "titles": [
+              {
+                "title": "model-check.test.ts: Codex check — efforts from `debug models`, ultra rejected despite a successful run, unlisted model rejects every effort, no inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreachable vs refusing (Codex) — ENOENT and timeout give 'could not be reached', turn.failed gives 'refused the model'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Codex) — probe prompt on stdin, temp cwd; no turn.completed or nonzero exit without refusal give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: one at a time — concurrent checks never overlap CLI children; a failing first check does not stop the second",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: invalid params refused with no CLI call",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: the unknown-model check refuses a host family",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: ModelCheckResult carries exactly the sc4 fields",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: Claude check — recognised-unconfirmed / rejected, never accepted; inputLimit from modelUsage including the alias-vs-canonical key and ambiguous cases",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: run protocol (Claude) — is_error with exit 1 refuses; subtype error_max_turns and exit 1 with a success envelope give 'gave unreadable output'",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: unreadable `claude --help` with a successful run gives runs:true and every effort rejected",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: decisions — guards, approved/rejected profiles, consumed and evicted checks",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: store write — created, appended verbatim, write-failed for malformed / versionless / string / version-2 stores and a failing rename",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: after unreadable effort discovery approve with an effort is invalid-efforts and approve with [] succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "model-check.test.ts: DecisionResult shapes; each written profile passes profileProblem and reads back through buildModelRegistry and getModelRegistry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 745,
+            "titles": [
+              {
+                "title": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: host() is 'ollama' only for ollama-claude and cliKind() is 'claude' for it",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier on a host family resolves a declared model and alias",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: an effort a host model does not list is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier on a host family with an undeclared model returns model undefined and fallback 'model-not-supported' and substitutes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged with a host family present, including the unlisted and rejected fallbacks",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: effortLevels over five families keeps today's levels and order",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: an approved-model store entry naming ollama-claude is skipped",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 404,
+            "titles": [
+              {
+                "title": "attributionOf returns the stored aggregate when present (authoritative)",
+                "result": "pass"
+              },
+              {
+                "title": "attributionOf preserves multiplicity — repeated identical rows are not deduped",
+                "result": "pass"
+              },
+              {
+                "title": "attributionOf on a zero-output NEW artifact returns [] (empty aggregate is authoritative)",
+                "result": "pass"
+              },
+              {
+                "title": "attributionOf shims a legacy scalar into a single (legacy)-role stamp",
+                "result": "pass"
+              },
+              {
+                "title": "attributionOf on a pre-attribution artifact (neither field) returns [] — no fabricated model",
+                "result": "pass"
+              },
+              {
+                "title": "modelSummary collapses a homogeneous run to a single runner:model",
+                "result": "pass"
+              },
+              {
+                "title": "modelSummary renders a heterogeneous run as mixed(...)",
+                "result": "pass"
+              },
+              {
+                "title": "modelSummary of a legacy artifact returns its original scalar label unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "modelSummary of a fully-unattributed artifact reads \"unknown\"",
+                "result": "pass"
+              },
+              {
+                "title": "singleModelAttribution wraps a client label into one (client)-role stamp",
+                "result": "pass"
+              },
+              {
+                "title": "singleModelAttribution parses an ollama:<model> label into runner+model",
+                "result": "pass"
+              },
+              {
+                "title": "attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families",
+                "result": "pass"
+              },
+              {
+                "title": "attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to ollama-claude, not cli-claude",
                 "result": "pass"
               }
             ],

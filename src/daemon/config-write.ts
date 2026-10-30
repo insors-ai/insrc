@@ -71,7 +71,8 @@ function rejectedIn(registry: ModelRegistry, tier: unknown): { family: FamilyId;
 	const model = at(tier, ['model']);
 	if (typeof runner !== 'string' || typeof model !== 'string') return undefined;
 	const family = registry.families().find(f => f.id === runner);
-	if (family === undefined || registry.cliKind(family.id) === undefined) return undefined;
+	// Only a vendor CLI family (a CLI kind and no host) carries rejected ids.
+	if (family === undefined || registry.cliKind(family.id) === undefined || registry.host(family.id) !== undefined) return undefined;
 	const rejected = registry.rejected(family.id as CliFamilyId).includes(model);
 	return rejected && registry.find(family.id, model) === undefined ? { family: family.id, model } : undefined;
 }

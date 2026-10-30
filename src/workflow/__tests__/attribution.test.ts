@@ -114,3 +114,14 @@ test('attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<lis
 	assert.equal(stampOf('gpt-6-astra').runner, 'cli-codex');
 	assert.equal(stampOf('opus').runner, 'cli-claude');
 });
+
+test("attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to ollama-claude, not cli-claude", () => {
+	const fresh = singleModelAttribution('ollama-claude:glm-5.3:cloud').outputs[0]!;
+	assert.deepEqual([fresh.runner, fresh.model], ['ollama-claude', 'glm-5.3:cloud']);
+	const bare = singleModelAttribution('ollama-claude').outputs[0]!;
+	assert.equal(bare.runner, 'ollama-claude');
+	const legacy = attributionOf(meta({ model: 'ollama-claude:kimi-k3:cloud' }))[0]!;
+	assert.deepEqual([legacy.runner, legacy.model], ['ollama-claude', 'ollama-claude:kimi-k3:cloud'], 'a historical artifact keeps its raw label');
+	// The vendor family keeps its own labels.
+	assert.equal(singleModelAttribution('claude').outputs[0]!.runner, 'cli-claude');
+});

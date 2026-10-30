@@ -6772,6 +6772,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "filesystem-read",
           "readFileSync"
         ],
@@ -6780,9 +6784,9 @@
           "readFileSync"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "7c65897d5b5f5ea8444ccacfafb3e7ef6c35e3fa4eabbbed9bfea6a2272a0ea6",
-      "sourceDigest": "8b6860414a2be3c9745eefd034de544de0cd5b0f4d6c674cd8d04fd95b5d7c40",
+      "siteCount": 14,
+      "sitesDigest": "4a0d581f9093f418348d6c553ad8ee8d1934ef50c23bbfb03bcfcac3f863c961",
+      "sourceDigest": "b01b6ef9bb4c79c863851e180a67ee82cc11dc2672c57020a4fd32d27bd2e272",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -8142,7 +8146,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "d07f6b4a93bfb32ab9b3a5fd6c02dfd6ab1203aaa4d342d59f8b52fbd01fab7c",
-      "sourceDigest": "987c61104e13449702cb45304a8367eb3beddf137bf7ea4ecd49ea312d3dd8ce",
+      "sourceDigest": "6af172e833b195a520e4f344528c45809b1abd6424405635aa6407585afaefdc",
       "boundaries": [
         "serialization"
       ]
@@ -14291,7 +14295,7 @@
       ],
       "siteCount": 16,
       "sitesDigest": "40c37e01db0c9d72c610c83df0a7d95b6f671eec98a316c783d0494e1bc0a0a1",
-      "sourceDigest": "fc02843286bbe6afd61e6275e0580d323dfff825ff227d202bb1b2e4e374fc00",
+      "sourceDigest": "f2dc16709b6bd35332fa858fc2c818ca547bf6336b263a279fac56906ee7be18",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14376,7 +14380,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "2304578cc597a834292c2ce8ef9bd354497d295570e26d06a412d098b728de84",
-      "sourceDigest": "2cdf49537627f2a8f73bd1da1d4234e4bda8085a9905e27a1f78e8073232b7b2",
+      "sourceDigest": "f6e62b6d2d5f6c43e61ba2fdc4f918b5d28d60d7aaa19b406033853041252461",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -15211,7 +15215,7 @@
       ],
       "siteCount": 11,
       "sitesDigest": "47243428038cdd8201733dbb487c6d136f6f929258413aa436c22b6d4af121a9",
-      "sourceDigest": "19c05d614a7cc8c51738cb252d752ba0aae370bab78061bdfee83536f54a5c0c",
+      "sourceDigest": "2da508f026372394c9d9c2e53ad0f2b983dee56ee553788e6674471ba5003675",
       "boundaries": [
         "diagnostic",
         "provider-factory",

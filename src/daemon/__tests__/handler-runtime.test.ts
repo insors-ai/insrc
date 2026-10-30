@@ -102,7 +102,7 @@ test('handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approv
 	}
 	// The handlers reach model-check.ts: refusals that need no CLI and write nothing.
 	assert.deepEqual(await runtime.rpcHandlers['models.check']!({ family: 'ollama', modelId: 'm', claimedEfforts: [] }),
-		{ error: 'invalid-params: family must be a CLI family of the model definitions', recoverable: false });
+		{ error: 'invalid-params: family must be a vendor CLI family of the model definitions', recoverable: false });
 	for (const m of ['models.approve', 'models.reject']) {
 		assert.deepEqual(await runtime.rpcHandlers[m]!({ checkId: 'never-issued', efforts: [] }),
 			{ ok: false, reason: 'unknown-check', detail: 'no pending check never-issued; run models.check again' }, m);

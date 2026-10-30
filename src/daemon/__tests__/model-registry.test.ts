@@ -401,3 +401,17 @@ test("model-registry.test.ts: effortLevels over five families keeps today's leve
 	assert.deepEqual(getModelRegistry().effortLevels(), today, 'host efforts that add no new level leave the union as it was');
 	assert.deepEqual(today, ['low', 'high', 'ultra', 'max']);
 });
+
+test('model-registry.test.ts: an approved-model store entry naming ollama-claude is skipped', () => {
+	const hostEntry = profile({ family: 'ollama-claude' as never, modelId: 'kimi:cloud', status: 'approved', efforts: ['low'], decidedAt: '2026-10-01T00:00:00Z' });
+	assert.equal(profileProblem(hostEntry), "unknown family 'ollama-claude'");
+	use(withHost(), { version: 1, profiles: [
+		hostEntry,
+		profile({ family: 'ollama-claude' as never, modelId: 'glm:cloud', status: 'rejected', decidedAt: '2026-10-02T00:00:00Z' }),
+	] });
+	const r = getModelRegistry();
+	assert.deepEqual(r.models('ollama-claude').map(m => [m.id, m.source]), [['glm:cloud', 'shipped'], ['qwen:local', 'shipped']]);
+	assert.equal(r.find('ollama-claude', 'kimi:cloud'), undefined);
+	assert.equal(r.resolveTier('core', { runner: 'ollama-claude', model: 'kimi:cloud' }).fallback?.reason, 'model-not-supported');
+	assert.equal(r.resolveTier('core', { runner: 'ollama-claude', model: 'glm:cloud' }).model?.id, 'glm:cloud', 'a rejected entry does not hide a declared model');
+});

@@ -234,15 +234,15 @@ test('model-check.test.ts: invalid params refused with no CLI call', async () =>
 	const seen: string[][] = [];
 	const run: NonNullable<ModelCheckDeps['run']> = async (_c, args) => { seen.push([...args]); return { stdout: '', stderr: '', exitCode: 0, timedOut: false, durationMs: 0 }; };
 	const cases: Array<[unknown, RegExp]> = [
-		[{ family: 'ollama', modelId: 'm', claimedEfforts: [] }, /family must be a CLI family/],
-		[{ family: 'cli-gemini', modelId: 'm', claimedEfforts: [] }, /family must be a CLI family/],
+		[{ family: 'ollama', modelId: 'm', claimedEfforts: [] }, /family must be a vendor CLI family/],
+		[{ family: 'cli-gemini', modelId: 'm', claimedEfforts: [] }, /family must be a vendor CLI family/],
 		[{ family: 'cli-codex', modelId: '', claimedEfforts: [] }, /modelId must be a non-empty string/],
 		[{ family: 'cli-codex', modelId: 7, claimedEfforts: [] }, /modelId must be a non-empty string/],
 		[{ family: 'cli-codex', modelId: 'm', claimedEfforts: 'high' }, /claimedEfforts must be an array of non-empty strings/],
 		[{ family: 'cli-codex', modelId: 'm', claimedEfforts: [''] }, /claimedEfforts must be an array/],
 		[{ family: 'cli-codex', modelId: 'gpt-a', claimedEfforts: [] }, /gpt-a is already a model or alias of cli-codex/],
 		[{ family: 'cli-codex', modelId: 'ay', claimedEfforts: [] }, /ay is already a model or alias of cli-codex/],
-		[null, /family must be a CLI family/],
+		[null, /family must be a vendor CLI family/],
 	];
 	for (const [params, reason] of cases) {
 		const r = await checkModel(params, deps({ run }));
@@ -252,6 +252,18 @@ test('model-check.test.ts: invalid params refused with no CLI call', async () =>
 		assert.equal((r as { recoverable: boolean }).recoverable, false);
 	}
 	assert.deepEqual(seen, []);
+});
+
+test('model-check.test.ts: the unknown-model check refuses a host family', async () => {
+	const seen: string[][] = [];
+	const run: NonNullable<ModelCheckDeps['run']> = async (_c, args) => { seen.push([...args]); return { stdout: '', stderr: '', exitCode: 0, timedOut: false, durationMs: 0 }; };
+	// ollama-claude runs the claude CLI, but only the models it declares: no check of an unlisted id.
+	assert.equal(registry.cliKind('ollama-claude'), 'claude');
+	for (const modelId of ['kimi-k9:cloud', 'claude-new-1']) {
+		const r = await checkModel({ family: 'ollama-claude', modelId, claimedEfforts: [] }, deps({ run }));
+		assert.deepEqual(r, { error: 'invalid-params: family must be a vendor CLI family of the model definitions', recoverable: false }, modelId);
+	}
+	assert.deepEqual(seen, [], 'no CLI call');
 });
 
 test('model-check.test.ts: unreadable `codex debug models` with a successful run gives runs:true and every effort rejected', async () => {

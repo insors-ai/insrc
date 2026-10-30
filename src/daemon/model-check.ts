@@ -345,8 +345,10 @@ export async function checkModel(params: unknown, deps: ModelCheckDeps = {}): Pr
 	const registry = deps.registry ?? getModelRegistry();
 	const p = isRecord(params) ? params : {};
 	const family = p['family'];
-	const kind = typeof family === 'string' && registry.families().some(f => f.id === family) ? registry.cliKind(family as CliFamilyId) : undefined;
-	if (kind === undefined) return invalid('family must be a CLI family of the model definitions');
+	// Only a vendor CLI family is open to unlisted ids; an Ollama-hosted family runs only what it declares.
+	const known = typeof family === 'string' && registry.families().some(f => f.id === family);
+	const kind = known && registry.host(family as CliFamilyId) === undefined ? registry.cliKind(family as CliFamilyId) : undefined;
+	if (kind === undefined) return invalid('family must be a vendor CLI family of the model definitions');
 	const modelId = p['modelId'];
 	if (typeof modelId !== 'string' || modelId.trim().length === 0) return invalid('modelId must be a non-empty string');
 	const claimedRaw = p['claimedEfforts'];

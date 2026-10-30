@@ -211,3 +211,17 @@ test("config-write-models.test.ts: writes adding or changing models.byRepo.<repo
 	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'coreFloor'], value: 'mid' }) as { ok: boolean }).ok, true);
 	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'tiers'], value: null }) as { ok: boolean }).ok, true);
 });
+
+test("config-write-models.test.ts: the tier write's model check treats a host family as not open to unlisted ids", async () => {
+	// Ids rejected in the vendor families are not rejected on the host family, which keeps no rejected
+	// ids of its own: the write is not refused as 'rejected-model' (an undeclared host model is refused
+	// at resolution as 'model-not-supported', never checked or approved as a vendor id).
+	for (const model of ['gpt-gone', 'claude-back', 'kimi:cloud']) {
+		reset();
+		const r = await write({ path: 'models.tiers.mid', value: { runner: 'ollama-claude', model, effort: '' } }) as { ok: boolean; reason?: string | undefined };
+		assert.equal(r.ok, true, model);
+		assert.notEqual(r.reason, 'rejected-model', model);
+		const written = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { models: { tiers: { mid: { runner: string; model: string } } } };
+		assert.deepEqual([written.models.tiers.mid.runner, written.models.tiers.mid.model], ['ollama-claude', model]);
+	}
+});

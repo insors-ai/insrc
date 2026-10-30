@@ -2,7 +2,7 @@
  * Story E20260921ad0d45c9:S001 / t6 — activation shell tests.
  * Uses fakes for the ipc client + status surface; no VS Code host.
  */
-import { test } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,11 @@ import type { StatusSnapshot, StatusSurface } from '../surfaces/status-surface.j
 import type { IpcClient, DaemonReachability, DaemonStatus } from '../../../src/shared/ipc-client.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+// VS Code owns the real event loop; this standalone fixture owns a ref while
+// exercising production's intentionally unrefed probe deadlines.
+let keepAlive:ReturnType<typeof setInterval>;
+before(()=>{keepAlive=setInterval(()=>{},1000);});
+after(()=>clearInterval(keepAlive));
 const PKG = join(HERE, '..');
 
 class FakeStatus implements StatusSurface {
@@ -44,10 +49,7 @@ test('runReachabilityProbe pushes the derived running/stopped/errored state into
   }
 });
 
-test('runReachabilityProbe degrades a hung probe to errored within the bounded deadline', async (t) => {
-  // Production correctly unrefs its deadline. This test owns a ref while it
-  // waits, so a standalone test worker cannot exit before observing the result.
-  const keepAlive=setInterval(()=>{},1000);t.after(()=>clearInterval(keepAlive));
+test('runReachabilityProbe degrades a hung probe to errored within the bounded deadline', async () => {
   const status = new FakeStatus();
   // A reachability() that never settles — the bounded timeout must win.
   const hung = clientReturning(() => new Promise<DaemonReachability>(() => {}));

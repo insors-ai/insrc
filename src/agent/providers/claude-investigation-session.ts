@@ -9,7 +9,9 @@ export { nativeReviewMcpConfiguration,nativeInvestigationEnvironment,INVESTIGATI
 export const CLAUDE_INVESTIGATION_ADAPTER='claude-scoped-v1';
 export function claudeInvestigationArgs(schema:StructuredSchema,modelArgs:readonly string[],cwd:string,indexed:boolean):string[]{
  const allowed=scopedReviewToolCatalog(indexed).map(t=>`mcp__insrc-scoped-review__${t.name}`).join(',');
- return ['--print','--output-format','json','--json-schema',JSON.stringify(schema),'--safe-mode','--setting-sources','',
+ // Safe mode disables even explicitly configured MCP servers, including our bridge.
+ // Keep launch restrictions explicit; qualification still requires runtime evidence.
+ return ['--print','--output-format','json','--json-schema',JSON.stringify(schema),'--setting-sources','',
   '--settings',join(cwd,'investigation-settings.json'),'--strict-mcp-config','--mcp-config',join(cwd,'investigation-mcp.json'),
   '--tools','','--allowedTools',allowed,'--disable-slash-commands','--permission-mode','dontAsk','--permission-prompts','none',
   '--no-session-persistence','--system-prompt',INVESTIGATION_SYSTEM_PROMPT,...modelArgs];

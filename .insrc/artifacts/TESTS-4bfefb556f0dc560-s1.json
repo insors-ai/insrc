@@ -8,12 +8,12 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "94b6255b1db2b955c9a56a3dd2ad19b31c8a845a6c9ffa3727d46ef3158a787f",
-        "at": "2026-10-30T11:36:56.471Z",
+        "number": 6,
+        "contentHash": "cf0f331067a94dda93f377aadb62897dc01ceff196263eaae7fd567556761937",
+        "at": "2026-10-30T12:00:33.228Z",
         "by": {
-          "id": "insrc:build",
-          "kind": "system",
+          "id": "codex:controller",
+          "kind": "agent",
           "properties": {}
         }
       },
@@ -23,11 +23,11 @@
     "epicHash": "4bfefb556f0dc560",
     "storyId": "s1",
     "createdAt": "2026-10-30T09:51:03.769Z",
-    "updatedAt": "2026-10-30T11:36:56.421Z",
+    "updatedAt": "2026-10-30T12:00:33.221Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T09:20:29.318Z",
     "epicSlug": "complete-native-review-isolation-qualification-so",
-    "revision": 5
+    "revision": 6
   },
   "body": {
     "tasks": [
@@ -562,6 +562,38 @@
         ],
         "files": [],
         "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t6",
+        "commit": "0e3944245663c72242973b3b64dcf66cdcfe316d",
+        "ranAt": "2026-10-30T12:00:33.221Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "Approved current qualification evaluation readiness and reconciliation enable one real scoped plan-investigation-v1 review with accepted per-block checkpoints and final publication",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "/tmp/real-review-acceptance-failure.json; run 73d62ba429aef16c4dba044f6234d6cd8e7561af5256fafe245b1ea7356da3e7. Live attempt cancelled after 298563ms; 36 scoped reads (9 refused), zero progress calls or accepted checkpoints, no publication. Legacy restored. Smoke handoff cannot pass without the required completed real review."
+            }
+          },
+          {
+            "name": "Activation handoff lists concrete verified evidence references real review result and remaining explicit default activation signoff",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "/tmp/real-review-acceptance-failure.json; run 73d62ba429aef16c4dba044f6234d6cd8e7561af5256fafe245b1ea7356da3e7. Live attempt cancelled after 298563ms; 36 scoped reads (9 refused), zero progress calls or accepted checkpoints, no publication. Legacy restored. Smoke handoff cannot pass without the required completed real review."
+            }
+          }
+        ],
+        "files": [],
+        "note": "Actual live acceptance failure reported by builder; no extra paid validation/review round invoked to restate the known failure. This is not a daemon task verdict; t6 remains incomplete. Existing passed task evidence retained."
       }
     ]
   },

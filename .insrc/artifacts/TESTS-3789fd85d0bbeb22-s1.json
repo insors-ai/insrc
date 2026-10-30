@@ -27,7 +27,8 @@
     "standalone": true,
     "epicCreatedAt": "2026-10-30T06:17:07.224Z",
     "epicSlug": "capture-live-review-inventory-active-isolation",
-    "revision": 4
+    "revision": 4,
+    "repoPath": "/home/subho/work/dev/insors/insrc"
   },
   "body": {
     "tasks": [

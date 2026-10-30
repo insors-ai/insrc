@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 4 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -107,3 +107,17 @@ the gate ran no test: every named test of this Task was reported by the builder
 **live: Current canonical qualification independent evaluation readiness and reconciliation pass normal production admission**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/approved-review-admission.json; /tmp/final-review-readiness-approvals.jsonl; /tmp/current-activation-approvals.jsonl. Normal InvestigationAdoptionPolicy.evidence/adapter/assertQualified passed both modes against actual canonical approval history, installed CLI images, current source/profile/catalog/launch/policy. No source/authority overrides and no LLM invocation. Selection supplied only for bounded admission checking; persisted default remains legacy.
+
+## t6
+
+Run at 2026-10-30T12:00:33.221Z on commit `0e3944245663c72242973b3b64dcf66cdcfe316d`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+Actual live acceptance failure reported by builder; no extra paid validation/review round invoked to restate the known failure. This is not a daemon task verdict; t6 remains incomplete. Existing passed task evidence retained.
+
+**live: Approved current qualification evaluation readiness and reconciliation enable one real scoped plan-investigation-v1 review with accepted per-block checkpoints and final publication**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: /tmp/real-review-acceptance-failure.json; run 73d62ba429aef16c4dba044f6234d6cd8e7561af5256fafe245b1ea7356da3e7. Live attempt cancelled after 298563ms; 36 scoped reads (9 refused), zero progress calls or accepted checkpoints, no publication. Legacy restored. Smoke handoff cannot pass without the required completed real review.
+
+**smoke: Activation handoff lists concrete verified evidence references real review result and remaining explicit default activation signoff**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: /tmp/real-review-acceptance-failure.json; run 73d62ba429aef16c4dba044f6234d6cd8e7561af5256fafe245b1ea7356da3e7. Live attempt cancelled after 298563ms; 36 scoped reads (9 refused), zero progress calls or accepted checkpoints, no publication. Legacy restored. Smoke handoff cannot pass without the required completed real review.

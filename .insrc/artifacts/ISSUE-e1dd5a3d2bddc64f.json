@@ -22,7 +22,40 @@
     "epicSlug": "approve-bounded-native-review-acceptance-scope",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "532c74b43fbd98f6a9aa3d2f8e589f574c4545571c4394714b0cd2fd02eedeae",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:46:00.243Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "c32aa60534232f36",
+      "storyId": "s6",
+      "slug": "STORY-c32aa60534232f36-s6"
+    }
   },
   "body": {
     "title": "Approve bounded native review acceptance scope",

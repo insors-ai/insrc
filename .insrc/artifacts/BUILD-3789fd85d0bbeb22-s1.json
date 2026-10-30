@@ -6,14 +6,14 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "92d2f61a3fa5ec7c3adda61cf7a70c4e4764306aa4c194503e3a6a9394bd032b",
-        "at": "2026-10-30T09:14:34.891Z",
+        "number": 6,
+        "contentHash": "cebb6f66b69f5da94c3c146e8c016eeaa3dcf63aeec02bc7304a236d7e339bcf",
+        "at": "2026-10-30T11:46:45.558Z",
         "by": {
-          "id": "insrc:approval",
-          "kind": "system",
+          "id": "codex:controller",
+          "kind": "agent",
           "properties": {}
         }
       },
@@ -41,7 +41,7 @@
     "schemaVersion": 1,
     "epicHash": "3789fd85d0bbeb22",
     "storyId": "s1",
-    "revision": 5,
+    "revision": 6,
     "updatedAt": "2026-10-30T09:06:12.024Z",
     "authoredBy": "controller",
     "standalone": true,
@@ -282,7 +282,7 @@
         "timestamp": "2026-10-30T09:14:34.174Z"
       }
     ],
-    "commit": "39bb4c53e"
+    "commit": "39bb4c53e48fb22959786feff3ad6c5ef0679a66"
   },
   "citations": []
 }

@@ -22,7 +22,39 @@
     "epicSlug": "qualify-final-indexed-impact-review-activation",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "db1661b55471930e52c86dbe86c4d2f2bc3ed5348a6eb1c62f556f65c8078454",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:24:38.692Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "f29a3e27b3282f6e",
+      "slug": "EPIC-f29a3e27b3282f6e"
+    }
   },
   "body": {
     "title": "Qualify final indexed-impact review activation",

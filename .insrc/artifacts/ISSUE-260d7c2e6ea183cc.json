@@ -22,7 +22,39 @@
     "epicSlug": "adjudicate-review-protocol-evaluation-oracle",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "17a48cb4a469e618dd419bf92c472436e0b550d88484fc4d66a5a29ff3e3de9c",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:24:40.111Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "260d7c2e6ea183cc",
+      "slug": "EPIC-260d7c2e6ea183cc"
+    }
   },
   "body": {
     "title": "Adjudicate review protocol evaluation oracle",

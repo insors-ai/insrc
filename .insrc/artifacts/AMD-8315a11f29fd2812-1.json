@@ -15,7 +15,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "a0bc3ff78e02130805da4e3bcf8091e3f96f2aed6abb6e647b51975a73accec2",
@@ -26,7 +26,16 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:24:41.229Z"
+      }
     },
     "revision": 1
   },

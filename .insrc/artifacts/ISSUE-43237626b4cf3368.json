@@ -22,7 +22,39 @@
     "epicSlug": "qualify-final-source-only-review-activation",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cfd6abb3f8992d94f3d7a05d4522ac8cbb3a5f3b81f15b3336b46675d7fb6b2f",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:24:37.186Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "43237626b4cf3368",
+      "slug": "EPIC-43237626b4cf3368"
+    }
   },
   "body": {
     "title": "Qualify final source-only review activation",

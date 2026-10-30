@@ -260,3 +260,53 @@ test("provider-from-registry.test.ts: the run label of an ollama-claude shaper n
 	assert.equal(shaperModelLabel(refused, { registry }), 'ollama-claude', 'no model: the bare family id, never the vendor CLI kind');
 	assert.equal(singleModelAttribution('ollama-claude').outputs[0]!.runner, 'ollama-claude');
 });
+
+// ── provider construction for the Ollama-hosted family (Story s2 · t4) ───────
+
+const OLLAMA_HOST = 'http://ollama.example:12345';
+
+test('provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none', async () => {
+	const { familyProvider } = await import('../shaper-provider.js');
+	useConfig({ local: { host: OLLAMA_HOST } });
+	const registry = getModelRegistry();
+	const p = familyProvider(registry, 'ollama-claude', registry.find('ollama-claude', 'glm:cloud'), { effort: 'low' }) as Cli;
+	assert.ok(p instanceof CliProvider);
+	assert.deepEqual([kindOf(p), p.defaultModel, p.effort, p.ollama], ['claude', 'glm:cloud', 'low', { host: OLLAMA_HOST, hosting: 'cloud' }]);
+	// Through the tier path too.
+	const cfg = assembleConfig(parseTiering({ tiers: { core: { runner: 'ollama-claude', model: 'glm:cloud' } } }), SHAPER, DEPTH, registry);
+	assert.deepEqual((buildShaperProvider(cfg, { registry }) as Cli).ollama, { host: OLLAMA_HOST, hosting: 'cloud' });
+	// Vendor families: no target.
+	for (const [family, model] of [['cli-codex', 'gpt-x'], ['cli-claude', 'z'], ['cli-vibe', 'va']] as const) {
+		assert.equal((familyProvider(registry, family, registry.find(family, model)) as Cli).ollama, undefined, family);
+	}
+});
+
+test('provider-from-registry.test.ts: an effort a host model does not list is not forwarded', async () => {
+	const { familyProvider } = await import('../shaper-provider.js');
+	const registry = getModelRegistry();
+	const warn = mock.method(getLogger('analyze:context:shaper-provider'), 'warn', () => undefined);
+	try {
+		const p = familyProvider(registry, 'ollama-claude', registry.find('ollama-claude', 'glm:cloud'), { effort: 'high' }) as Cli;
+		assert.deepEqual([p.defaultModel, p.effort], ['glm:cloud', undefined]);
+		assert.ok(p.ollama !== undefined);
+		assert.deepEqual(warn.mock.calls.map(c => c.arguments[0]), [{ family: 'ollama-claude', model: 'glm:cloud', effort: 'high' }]);
+	} finally {
+		warn.mock.restore();
+	}
+});
+
+test('provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError', async () => {
+	const { ModelNotSupportedError } = await import('../../../daemon/model-registry.js');
+	const { familyProvider } = await import('../shaper-provider.js');
+	const registry = getModelRegistry();
+	const refusal = (e: unknown): boolean => e instanceof ModelNotSupportedError && e.family === 'ollama-claude' && e.requested === 'kimi-k9:cloud';
+	const cfg = assembleConfig(parseTiering({ tiers: { core: { runner: 'ollama-claude', model: 'kimi-k9:cloud' } } }), SHAPER, DEPTH, registry);
+	assert.throws(() => buildShaperProvider(cfg, { registry }), refusal);
+	// 'build' is a critical role on the core tier.
+	useConfig({ tiers: { core: { runner: 'ollama-claude', model: 'kimi-k9:cloud' } } });
+	const repo = join(home, 'repo');
+	assert.throws(() => createRoleRouter({}).resolveProviderForRole('build', loadAnalyzeConfig(), repo), refusal);
+	assert.throws(() => resolveValidateProvider(repo), refusal);
+	// The backstop: familyProvider itself never builds a host-family provider without a model.
+	assert.throws(() => familyProvider(registry, 'ollama-claude', undefined), (e: unknown) => e instanceof ModelNotSupportedError);
+});

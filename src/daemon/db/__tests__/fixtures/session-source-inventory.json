@@ -2300,6 +2300,10 @@
           "captureAnalysisDiagnostics(log).emit"
         ],
         [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
           "provider-adapter",
           "CliProvider"
         ],
@@ -2336,9 +2340,9 @@
           "OllamaProvider"
         ]
       ],
-      "siteCount": 18,
-      "sitesDigest": "a64ec2fe06169854c8f726d219a5ceb3a294e6bf74e8e3fd982f0cb24b9c5aec",
-      "sourceDigest": "f5c9432a1070c0d8c697180fd836360ac41289a20ce616159c95c624ef9db152",
+      "siteCount": 19,
+      "sitesDigest": "9e2cb7bf68464d214d60536d85edc88e72705ed3e8292719bba8cbda47d11aac",
+      "sourceDigest": "034937afedbc3885ccbc24f03700911b5ad567bdb124f0646a8e5e46a431ebca",
       "boundaries": [
         "diagnostic",
         "provider-adapter",

@@ -42,7 +42,7 @@ import type { CliFamilyId, EffortLevel, FamilyId } from '../../daemon/model-cata
 import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
-import { CliProvider } from '../../agent/providers/cli-provider.js';
+import { CliProvider, type OllamaTarget } from '../../agent/providers/cli-provider.js';
 import { OllamaProvider } from '../../agent/providers/ollama.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
@@ -232,9 +232,17 @@ export function familyProvider(
 			captureAnalysisDiagnostics(log).emit('warn', () => [{ family, model: model?.id ?? '(cli default)', effort: opts.effort }, 'provider: the model does not accept this effort; running at the CLI default effort']);
 		}
 		const inputBudgetChars = model?.inputLimit?.unit === 'chars' ? model.inputLimit.max : undefined;
+		// An Ollama-hosted family runs its CLI against Ollama, only on a declared model.
+		let ollama: OllamaTarget | undefined;
+		if (registry.host(family) !== undefined) {
+			if (model === undefined) throw new ModelNotSupportedError(family, '(none)', 'provider');
+			ollama = { host: loadLocalProviderConfig().host, hosting: model.hosting ?? 'cloud' };
+			captureAnalysisDiagnostics(log).emit('info', () => [{ family, model: model.id, hosting: ollama!.hosting, host: ollama!.host }, 'provider: the CLI runs against Ollama']);
+		}
 		return new CliProvider({
 			kind,
 			...(model !== undefined ? { model: model.id } : {}),
+			...(ollama !== undefined ? { ollama } : {}),
 			...(effort !== undefined ? { effort } : {}),
 			...(inputBudgetChars !== undefined ? { inputBudgetChars } : {}),
 			...(opts.cliTimeoutMs !== undefined ? { timeoutMs: opts.cliTimeoutMs } : {}),
@@ -312,6 +320,11 @@ export function buildShaperProvider(
 	// per-run caller (arg or ambient client-provider context) > the default family.
 	// See resolveShaperKind and shaperSelection.
 	const { registry, family, model, effort, source } = shaperSelection(cfg, overrides);
+	// A refused tier on an Ollama-hosted family names the model it asked for.
+	if (model === undefined && registry.host(family) !== undefined) {
+		const requested = overrides?.roleModel !== undefined && overrides.roleModel !== '' ? overrides.roleModel : cfg.shaperModel;
+		throw new ModelNotSupportedError(family, requested, 'shaper provider');
+	}
 	captureAnalysisDiagnostics(log).emit('info', () => [{ family, model: model?.id ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs }, 'shaper provider: built from the model definitions']);
 	return familyProvider(registry, family, model, { effort, cliTimeoutMs: overrides?.cliTimeoutMs });
 }

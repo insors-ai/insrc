@@ -325,6 +325,10 @@ export function activate(context: vscode.ExtensionContext): void {
     createPanel: () => {
       const panel = vscode.window.createWebviewPanel('insrc.connections', 'Connections', vscode.ViewColumn.Active,
         { enableScripts: true, localResourceRoots: [] });
+      panel.iconPath = {
+        light: vscode.Uri.file(join(context.extensionPath, 'media', 'connections-icon.svg')),
+        dark: vscode.Uri.file(join(context.extensionPath, 'media', 'connections-icon-dark.svg')),
+      };
       return { ...webviewChannel(panel), onVisibility: listener => {
         panel.onDidChangeViewState(event => listener(event.webviewPanel.visible));
       } };

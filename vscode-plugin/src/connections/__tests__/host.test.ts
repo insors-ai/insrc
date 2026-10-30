@@ -92,7 +92,7 @@ test('CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, acce
 
 test('CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON',()=>{
  const key={repoRoot:'/fixture/repo-a',scope:'temporary' as const,id:'fixture'};
- const base:ConnectionRenderView={viewId:'fixture',generation:1,list:{roots:[key.repoRoot],repoRoot:key.repoRoot,filter:'all',search:'',listState:'ready',counts:{all:0,saved:0,temporary:0},matchingCount:0,stale:false,canMutate:true},rows:[],choices:connectionDriverChoices(descriptors),draft:null,formId:0,blocked:false,valid:false,test:{status:'idle',tookMs:null,message:'',cleanupUnverified:false},operations:[],confirmation:null,dirty:false,error:'',notice:''};
+ const base:ConnectionRenderView={canCreateDraft:true,viewId:'fixture',generation:1,list:{roots:[key.repoRoot],repoRoot:key.repoRoot,filter:'all',search:'',listState:'ready',counts:{all:0,saved:0,temporary:0},matchingCount:0,stale:false,canMutate:true},rows:[],choices:connectionDriverChoices(descriptors),draft:null,formId:0,blocked:false,valid:false,test:{status:'idle',tookMs:null,message:'',cleanupUnverified:false},operations:[],confirmation:null,dirty:false,error:'',notice:''};
  const dom=new RendererHarness(connectionManagerDocument(nonce,'fixture',1));let formId=0;
  for(const descriptor of descriptors){const d=new ConnectionDraft(descriptor,key);if(descriptor.secretSlots[0])d.setCredential(descriptor.secretSlots[0],'replace','fixture-only-blank-mask');
   dom.deliver({type:'render',view:{...base,draft:d.view,formId:++formId}});assert.equal(dom.el('error').textContent,'',descriptor.kind);assert.equal(dom.el('kind').children.length,29);assert.equal(dom.all().some(e=>e.tag==='textarea'),false);
@@ -105,4 +105,16 @@ test('CM-S5-RENDER-TS: real renderer covers every descriptor, all list states an
  const nats=new ConnectionDraft(descriptors.find(d=>d.kind==='nats')!,key);nats.setCredentialAddresses('options.servers',['nats://fixture.invalid:4222']);
  dom.deliver({type:'render',view:{...base,draft:nats.view,formId:++formId}});const controls=dom.all(dom.el('credentials'));const add=controls.find(e=>e.tag==='button'&&e.textContent==='Add replacement address');assert.ok(add);add.fire('click');
  assert.equal(dom.all(dom.el('credentials')).filter(e=>e.type==='password').length,2);const remove=dom.all(dom.el('credentials')).find(e=>e.tag==='button'&&e.textContent==='Remove replacement address');assert.ok(remove);remove.fire('click');assert.equal(dom.all(dom.el('credentials')).filter(e=>e.type==='password').length,1);
+});
+
+
+test('CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names',()=>{
+ const html=connectionManagerDocument(nonce,'layout',1);
+ assert.ok(html.indexOf('<section class="detail"')<html.indexOf('<section class="list"'));
+ assert.match(html,/\.manager\{display:flex;flex-direction:column/);
+ for(const id of ['close','add','refresh','previous','next','remove']){
+  const button=new RegExp('<button[^>]*id="'+id+'"[^>]*>([\\s\\S]*?)</button>').exec(html);
+  assert.ok(button,id);assert.match(button[0],/aria-label="[^"]+"/);assert.match(button[0],/title="[^"]+"/);
+  assert.match(button[1]!,/^<svg /);assert.match(button[1]!,/aria-hidden="true"/);assert.match(button[1]!,/focusable="false"/);
+ }
 });

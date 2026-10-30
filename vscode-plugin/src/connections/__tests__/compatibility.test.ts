@@ -60,3 +60,22 @@ test('CM-S5-COMPAT-TS: shared capability decisions pinned read-only metadata and
   assert.deepEqual(await f.peer.legacyList(),[{id:'legacy-saved',kind:'postgres',family:'rdbms'}]);assert.equal(f.peer.legacyWrites(),0);
  }finally{await f.close();}
 });
+
+
+test('CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused',async()=>{
+ const f=await fixture();try{
+  f.peer.setCapabilities('normal',['workbench-sessions','session-delegation']);
+  await f.host.open();assert.equal(f.panel.dom!.el('add').disabled,true);
+  f.panel.dom!.choose('root',f.peer.f.root);
+  await until(()=>f.panel.view.list.listState==='upgrade-required'&&f.panel.view.canCreateDraft);
+  const dom=f.panel.dom!;assert.equal(dom.el('add').disabled,false);assert.equal(f.panel.view.notice,'');
+  dom.click('add');assert.equal(dom.el('id').disabled,false);assert.equal(dom.el('kind').disabled,false);assert.equal(dom.el('scope').disabled,false);
+  dom.choose('kind','csv');dom.input('id','throwaway');field(f.panel,'path','source.csv');
+  assert.equal(f.panel.view.draft?.key.id,'throwaway');assert.equal(f.panel.view.valid,true);
+  assert.equal(dom.el('save').disabled,true);assert.equal(dom.el('test').disabled,true);assert.match(dom.el('form-guidance').textContent,/Draft only/);
+  dom.click('save');dom.click('test');assert.equal(f.peer.calls.filter(call=>['ticket','mutate','test'].includes(call)).length,0);assert.equal(f.peer.legacyWrites(),0);
+  // Loss of metadata revokes local draft editing too; never reuse a stale catalog.
+  f.peer.setCapabilities('normal',['safe-read']);dom.click('refresh');await until(()=>!f.panel.view.canCreateDraft&&f.panel.view.list.listState==='upgrade-required');
+  assert.equal(dom.el('id').disabled,true);dom.input('id','must-not-apply');assert.equal(f.panel.view.draft?.key.id,'throwaway');
+ }finally{await f.close();}
+});

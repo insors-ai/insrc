@@ -30,6 +30,7 @@ export interface ConnectionRenderView {
  readonly viewId:string;readonly generation:number;
  readonly list:Pick<ManagerProjection,'roots'|'repoRoot'|'filter'|'search'|'listState'|'counts'|'matchingCount'|'stale'|'canMutate'>;
  readonly rows:readonly {readonly key:ConnectionKey;readonly revision:string;readonly kind:string;readonly label:string;readonly family:string;readonly selected:boolean}[];
+ readonly canCreateDraft:boolean;
  readonly choices:readonly {readonly kind:string;readonly family:string;readonly enabled:boolean;readonly guidance:string|null}[];
  readonly draft:DraftView|null;readonly formId:number;readonly blocked:boolean;readonly valid:boolean;
  readonly test:DraftTestView;readonly operations:readonly MutationView[];

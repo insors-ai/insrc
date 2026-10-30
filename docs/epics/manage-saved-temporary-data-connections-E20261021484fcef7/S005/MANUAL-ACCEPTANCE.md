@@ -17,3 +17,14 @@ Record the installed package hashes, IDE versions, root/project selections, step
 - Disposable PostgreSQL/Redis and native/converted file sources retain rows/bytes after both-scope Test/Save/Delete/Discard. Unsupported/limited files refuse safely. SQL Server remains pending because unavailable.
 
 Do not infer live acceptance from headless tests, diagrams, build success, or installation. Source/provider/worker-affinity prerequisites and historical suite failures remain independent release blockers.
+
+
+## VS Code feedback recheck
+
+- Confirm the Connections editor tab has its database icon in light/dark themes.
+- Confirm registration is above the list at wide and narrow widths, including keyboard order.
+- Hover/focus Add, Refresh, Previous/Next, Delete/Discard and Close: icon-only controls have names/tooltips; temporary removal says Discard.
+- Select a registered repository, click Add, choose CSV/JSON/Parquet and scope, and edit fields. A metadata-only daemon must allow this local draft and explicitly explain why Save/Test are unavailable.
+- Against an isolated enabled signed test daemon only, Save/Test and successful list refresh remain available. The installed production daemon currently advertises safe-read and driver-descriptors only; a VSIX update alone cannot enable actual creation.
+
+Details: UI-FEEDBACK.md. Earlier acceptance results remain historical.

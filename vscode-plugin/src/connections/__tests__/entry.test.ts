@@ -49,5 +49,12 @@ test('CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equiv
     const activation = readFileSync(new URL('../../extension.ts', import.meta.url), 'utf8');
     assert.match(activation, /registerConnectionCommands/); assert.match(activation, /daemonData.registeredRepos\(\)/);
     assert.match(activation, /localResourceRoots: \[\]/);
+    const connectionsPanel=activation.slice(activation.indexOf("createWebviewPanel('insrc.connections'"),activation.indexOf('context.subscriptions.push(connectionManager'));
+    assert.match(connectionsPanel,/panel.iconPath =/);
+    for(const filename of ['connections-icon.svg','connections-icon-dark.svg']){
+      assert.ok(connectionsPanel.includes(filename));
+      const svg=readFileSync(new URL('../../../media/'+filename,import.meta.url),'utf8');
+      assert.match(svg,/<svg/);assert.doesNotMatch(svg,/<script|href=/);
+    }
   } finally { registrations.dispose(); host.dispose(); probes.dispose(); removals.dispose(); await f.close(); }
 });

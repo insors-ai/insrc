@@ -2,7 +2,7 @@
   "uxDefinition": {
     "type": "AdaptiveCard",
     "version": "1.5",
-    "narrative": "Shared layout/state schematic for VSCode extension and native JetBrains Connections manager. Both use the same scoped rows, safe draft and truthful recovery; JetBrains application Settings explicitly selects an open project before a project-owned manager. This is design preview only. Implemented in dedicated TypeScript webview and native Swing manager. Save, Test, Remove and recovery actions have independent advertised-capability admission. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence.",
+    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove still require their advertised features and daemon authorization. Live UI validation belongs to the user; this schematic is not execution evidence.",
     "body": [
       {
         "type": "TextBlock",
@@ -27,181 +27,170 @@
         "description": "Explicit selection in multiroot workspaces; retained selected root remains independent of active editor."
       },
       {
-        "type": "Input.ChoiceSet",
-        "id": "filter",
-        "label": "Connection scope",
-        "choices": [
+        "type": "Container",
+        "description": "VS Code top registration section. Pure local draft editing is independent of session admission; no daemon write is implied.",
+        "items": [
           {
-            "title": "All (3)",
-            "value": "all"
+            "type": "TextBlock",
+            "text": "Connection registration",
+            "description": "Draft remains on safe failed operations; not on temporary expiry.",
+            "wrap": true
           },
           {
-            "title": "Saved repository (2)",
-            "value": "saved"
+            "type": "TextBlock",
+            "text": "Add: plus icon. Close manager: X icon. Both have tooltips and accessible names.",
+            "description": "Static SVG icons follow the VS Code theme; no external font or network asset.",
+            "wrap": true
           },
           {
-            "title": "Temporary session (1)",
-            "value": "temporary"
+            "type": "Input.Text",
+            "id": "id",
+            "label": "Connection ID",
+            "placeholder": "orders-preview",
+            "description": "Required unique ID; fixed during edit."
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "id": "driver",
+            "label": "Driver",
+            "choices": [
+              {
+                "title": "Parquet",
+                "value": "parquet"
+              },
+              {
+                "title": "CSV",
+                "value": "csv"
+              },
+              {
+                "title": "JSON",
+                "value": "json"
+              },
+              {
+                "title": "PostgreSQL",
+                "value": "postgres"
+              }
+            ],
+            "description": "Illustrative subset; actual picker offers every validated daemon descriptor with actionable unsupported guidance."
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "id": "scope",
+            "label": "Lifetime",
+            "choices": [
+              {
+                "title": "Saved repository (default)",
+                "value": "saved"
+              },
+              {
+                "title": "Temporary session",
+                "value": "temporary"
+              }
+            ],
+            "description": "Scope independent of driver family; fixed during edit."
+          },
+          {
+            "type": "Input.Text",
+            "id": "path",
+            "label": "File path",
+            "placeholder": "data/orders.parquet",
+            "description": "Illustrative descriptor field; host validates descriptor-specific schema. No arbitrary raw config editor."
+          },
+          {
+            "type": "TextBlock",
+            "text": "Temporary connections stay available when this manager closes or you switch repositories. They expire when the workbench ends, after lease loss, or when the daemon restarts.",
+            "description": "Always visible before temporary Add; temporary configs/credentials are memory-only.",
+            "wrap": true
+          },
+          {
+            "type": "ActionSet",
+            "description": "Test optional and does not persist. Save/Test consume the identical captured draft; duplicate submission blocked.",
+            "actions": [
+              {
+                "type": "Action.Submit",
+                "title": "Test draft",
+                "description": "Preview Test draft; actual implementation uses validated controller intent, not direct daemon calls."
+              },
+              {
+                "type": "Action.Submit",
+                "title": "Save connection",
+                "description": "Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls."
+              }
+            ]
+          },
+          {
+            "type": "TextBlock",
+            "text": "Credential slots use native masked Keep / Replace / Clear controls in the implementation. Stored values are never returned.",
+            "description": "No unmasked password input in this schematic renderer.",
+            "wrap": true
+          },
+          {
+            "type": "TextBlock",
+            "text": "Draft only: the connected daemon has not enabled connection creation or testing. Save and Test require an enabled compatible daemon.",
+            "description": "Alternative unavailable state shown when valid public metadata exists but workbench-session capabilities are absent. The fields remain editable; no ticket, mutation, test or legacy write is sent.",
+            "wrap": true
           }
-        ],
-        "description": "Counts from successful authoritative selected-root snapshot before filtering; no counts inferred on read error."
+        ]
       },
       {
-        "type": "ColumnSet",
-        "description": "Master/detail layout stacks when narrow; keyboard order follows header, list, draft and actions.",
-        "columns": [
+        "type": "Container",
+        "description": "VS Code bottom connections section with scope filters, local search, counts and snapshot states.",
+        "items": [
           {
-            "type": "Column",
-            "width": 1,
-            "description": "Connection list with scope badges and distinct loading/failure/empty states.",
-            "items": [
+            "type": "TextBlock",
+            "text": "Connections \u00b7 3 matching",
+            "description": "Matching count after selected scope/search.",
+            "wrap": true
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "id": "filter",
+            "label": "Connection scope",
+            "choices": [
               {
-                "type": "TextBlock",
-                "text": "Connections \u00b7 3 matching",
-                "description": "Matching count after selected scope/search.",
-                "wrap": true
+                "title": "All (3)",
+                "value": "all"
               },
               {
-                "type": "Input.Text",
-                "id": "search",
-                "label": "Search connections",
-                "placeholder": "ID, label or driver",
-                "description": "Local filter of current authoritative root; no probes."
+                "title": "Saved repository (2)",
+                "value": "saved"
               },
               {
-                "type": "TextBlock",
-                "text": "warehouse \u00b7 PostgreSQL \u00b7 Saved repository\norders \u00b7 Parquet \u00b7 Temporary session\ncache \u00b7 Redis \u00b7 Saved repository",
-                "description": "Safe row metadata only; full repo/scope/ID/revision retained in host selection.",
-                "wrap": true
-              },
+                "title": "Temporary session (1)",
+                "value": "temporary"
+              }
+            ],
+            "description": "Counts from successful authoritative selected-root snapshot before filtering; no counts inferred on read error."
+          },
+          {
+            "type": "Input.Text",
+            "id": "search",
+            "label": "Search connections",
+            "placeholder": "ID, label or driver",
+            "description": "Local filter of current authoritative root; no probes."
+          },
+          {
+            "type": "TextBlock",
+            "text": "warehouse \u00b7 PostgreSQL \u00b7 Saved repository\norders \u00b7 Parquet \u00b7 Temporary session\ncache \u00b7 Redis \u00b7 Saved repository",
+            "description": "Safe row metadata only; full repo/scope/ID/revision retained in host selection.",
+            "wrap": true
+          },
+          {
+            "type": "ActionSet",
+            "description": "VS Code Refresh, Previous/Next and Delete/Discard use icons with tooltips and accessible names. Select a list row to edit above; Add is in the top registration section.",
+            "actions": [
               {
-                "type": "ActionSet",
-                "description": "Actions route the same guarded manager state as palette and Settings. Saved row action is Delete, temporary is Discard.",
-                "actions": [
-                  {
-                    "type": "Action.Submit",
-                    "title": "Add connection",
-                    "description": "Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls."
-                  },
-                  {
-                    "type": "Action.Submit",
-                    "title": "Edit selected",
-                    "description": "Preview Edit selected; actual implementation uses validated controller intent, not direct daemon calls."
-                  },
-                  {
-                    "type": "Action.Submit",
-                    "title": "Discard selected",
-                    "description": "Preview Discard selected; actual implementation uses validated controller intent, not direct daemon calls."
-                  }
-                ]
-              },
-              {
-                "type": "TextBlock",
-                "text": "Read error: Connections could not be read. Retry.\nEmpty filter: No connections match this filter.\nEmpty registry: No connections yet.",
-                "description": "Alternative state copy, not simultaneous production messages; unavailable reads never become empty state.",
-                "wrap": true
+                "type": "Action.Submit",
+                "title": "Discard selected",
+                "description": "Preview Discard selected; actual implementation uses validated controller intent, not direct daemon calls."
               }
             ]
           },
           {
-            "type": "Column",
-            "width": 2,
-            "description": "Add form; editing fixes ID, kind and scope. Native secret widgets rendered separately and always masked.",
-            "items": [
-              {
-                "type": "TextBlock",
-                "text": "Add connection",
-                "description": "Draft remains on safe failed operations; not on temporary expiry.",
-                "wrap": true
-              },
-              {
-                "type": "Input.Text",
-                "id": "id",
-                "label": "Connection ID",
-                "placeholder": "orders-preview",
-                "description": "Required unique ID; fixed during edit."
-              },
-              {
-                "type": "Input.ChoiceSet",
-                "id": "driver",
-                "label": "Driver",
-                "choices": [
-                  {
-                    "title": "Parquet",
-                    "value": "parquet"
-                  },
-                  {
-                    "title": "CSV",
-                    "value": "csv"
-                  },
-                  {
-                    "title": "JSON",
-                    "value": "json"
-                  },
-                  {
-                    "title": "PostgreSQL",
-                    "value": "postgres"
-                  }
-                ],
-                "description": "Illustrative subset; actual picker offers every validated daemon descriptor with actionable unsupported guidance."
-              },
-              {
-                "type": "Input.ChoiceSet",
-                "id": "scope",
-                "label": "Lifetime",
-                "choices": [
-                  {
-                    "title": "Saved repository (default)",
-                    "value": "saved"
-                  },
-                  {
-                    "title": "Temporary session",
-                    "value": "temporary"
-                  }
-                ],
-                "description": "Scope independent of driver family; fixed during edit."
-              },
-              {
-                "type": "Input.Text",
-                "id": "path",
-                "label": "File path",
-                "placeholder": "data/orders.parquet",
-                "description": "Illustrative descriptor field; host validates descriptor-specific schema. No arbitrary raw config editor."
-              },
-              {
-                "type": "TextBlock",
-                "text": "Temporary connections stay available when this manager closes or you switch repositories. They expire when the workbench ends, after lease loss, or when the daemon restarts.",
-                "description": "Always visible before temporary Add; temporary configs/credentials are memory-only.",
-                "wrap": true
-              },
-              {
-                "type": "ActionSet",
-                "description": "Test optional and does not persist. Save/Test consume the identical captured draft; duplicate submission blocked.",
-                "actions": [
-                  {
-                    "type": "Action.Submit",
-                    "title": "Test draft",
-                    "description": "Preview Test draft; actual implementation uses validated controller intent, not direct daemon calls."
-                  },
-                  {
-                    "type": "Action.Submit",
-                    "title": "Add connection",
-                    "description": "Preview Add connection; actual implementation uses validated controller intent, not direct daemon calls."
-                  },
-                  {
-                    "type": "Action.Submit",
-                    "title": "Cancel draft",
-                    "description": "Preview Cancel draft; actual implementation uses validated controller intent, not direct daemon calls."
-                  }
-                ]
-              },
-              {
-                "type": "TextBlock",
-                "text": "Credential slots use native masked Keep / Replace / Clear controls in the implementation. Stored values are never returned.",
-                "description": "No unmasked password input in this schematic renderer.",
-                "wrap": true
-              }
-            ]
+            "type": "TextBlock",
+            "text": "Read error: Connections could not be read. Retry.\nEmpty filter: No connections match this filter.\nEmpty registry: No connections yet.",
+            "description": "Alternative state copy, not simultaneous production messages; unavailable reads never become empty state.",
+            "wrap": true
           }
         ]
       },

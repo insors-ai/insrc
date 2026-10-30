@@ -1,5 +1,6 @@
 /** Workbench-memory view host. Only explicit, checked intents reach privileged owner ports. */
 import { randomUUID } from 'node:crypto';
+import { IpcLaneError } from '../../../src/shared/ipc-client.js';
 import { makeNonce } from '../panels/html.js';
 import { ConnectionsWorkbenchOwner,ConnectionOwnerError } from './session-owner.js';
 import type { ConnectionPanel,ConnectionRenderView,ConnectionIntent } from './types.js';
@@ -12,7 +13,7 @@ import type { DraftNavigation } from '../../../src/shared/connection-manager/dra
 import type { ConnectionMutationController,MutationTimer } from '../../../src/shared/connection-manager/controller.js';
 import type { ConnectionDraftTests } from '../../../src/shared/connection-manager/test-controller.js';
 import type { ConnectionRemovals } from '../../../src/shared/connection-manager/removal.js';
-import { decodeDriverDescriptors } from '../../../src/shared/connection-manager/wire.js';
+import { decodeDriverDescriptors,decodeManagementCapabilities } from '../../../src/shared/connection-manager/wire.js';
 import type { ClientDriverDescriptor } from '../../../src/shared/connection-manager/wire.js';
 import type { ConnectionScope,SafeConnection } from '../../../src/shared/connection-management.js';
 import { connectionActionSupported,connectionOperationSupported } from '../../../src/shared/connection-manager/capabilities.js';
@@ -28,7 +29,7 @@ export interface ConnectionsHostPorts {
 const PREFIX='db.connections.v2.';
 export class ConnectionsManagerHost {
  #ports:ConnectionsHostPorts;#panel:ConnectionPanel|null=null;#viewId='';#generation=0;#formId=0;#ready=false;#visible=true;#disposed=false;#publishing=false;
- #model:ConnectionManagerState=createConnectionManager([],'');#draft:ConnectionDraft|null=null;#descriptors:readonly ClientDriverDescriptor[]=[];#descriptorEpoch='';
+ #model:ConnectionManagerState=createConnectionManager([],'');#draft:ConnectionDraft|null=null;#descriptors:readonly ClientDriverDescriptor[]=[];#descriptorEpoch='';#descriptorRoot='';
  #pending:(()=>void|Promise<void>)|null=null;#error='';#notice='';#read:AbortController|null=null;#subscriptions:MutationTimer[]=[];
  constructor(ports:ConnectionsHostPorts){
   this.#ports=ports;
@@ -40,9 +41,10 @@ export class ConnectionsManagerHost {
    else if(view.status==='upgrade-required')this.#dispatch({type:'unavailable',code:'upgrade-required'});
   }),ports.owner.onTemporaryInvalidated(()=>{
    if(this.#disposed)return;
+   const hadTemporary=this.#draft?.view.key.scope==='temporary'||this.#model.rows.some(row=>row.key.scope==='temporary');
    if(this.#draft?.view.key.scope==='temporary'){this.#draft.clear();this.#draft=null;this.#pending=null;this.#bump();}
    try{ports.removals.cancel();}catch{/* Already disposed with the workbench. */}
-   this.#notice='Temporary connections expired with their owner. Refresh or choose a registered repository to reconnect.';this.#dispatch({type:'temporary-ended'});
+   if(hadTemporary)this.#notice='Temporary connections expired with their owner. Refresh or choose a registered repository to reconnect.';this.#dispatch({type:'temporary-ended'});
   }),ports.mutations.onChange(()=>this.#publish()),ports.tests.onChange(()=>this.#publish()),ports.removals.onChange(()=>this.#publish()),
   ports.mutations.observeRefresh((key,revision)=>{
    if(this.#disposed||this.#model.repoRoot!==key.repoRoot)return undefined;
@@ -62,15 +64,22 @@ export class ConnectionsManagerHost {
   this.#publish();for(const effect of transition.effects)void this.#load(effect);
  }
  async #load(identity:ManagerEffect):Promise<void>{
-  this.#read?.abort();const controller=new AbortController();this.#read=controller;
+  this.#descriptorRoot='';this.#read?.abort();const controller=new AbortController();this.#read=controller;
   try{
+   // Public metadata can open a local draft before workbench-session admission.
+   // It never grants Save, Test or removal authority.
+   let capabilities;
+   try{capabilities=decodeManagementCapabilities(await this.#ports.owner.requestSaved(identity.repoRoot,PREFIX+'capabilities',{repoRoot:identity.repoRoot},controller.signal));}
+   catch(error){throw new ConnectionOwnerError(error instanceof IpcLaneError&&error.code!=='remote-error'?'offline':'upgrade-required');}
+   if(!['safe-read','driver-descriptors'].every(feature=>capabilities.features.includes(feature)))throw new ConnectionOwnerError('upgrade-required');
+   if(controller.signal.aborted||this.#disposed)return;
+   if(capabilities.daemonEpoch!==identity.daemonEpoch){this.#descriptorRoot='';this.#dispatch({type:'epoch',value:capabilities.daemonEpoch});if(this.#model.repoRoot===identity.repoRoot)this.#dispatch({type:'refresh'});return;}
+   const descriptors=decodeDriverDescriptors(await this.#ports.owner.requestSaved(identity.repoRoot,PREFIX+'drivers',{},controller.signal));
+   if(controller.signal.aborted||this.#disposed)return;
+   this.#descriptors=descriptors;this.#descriptorEpoch=identity.daemonEpoch;this.#descriptorRoot=identity.repoRoot;
    const owner=await this.#ports.owner.selectRoot(identity.repoRoot);
    if(controller.signal.aborted||this.#disposed)return;
    if(owner.daemonEpoch!==identity.daemonEpoch){if(owner.daemonEpoch)this.#dispatch({type:'epoch',value:owner.daemonEpoch});if(this.#model.repoRoot===identity.repoRoot)this.#dispatch({type:'refresh'});return;}
-   if(this.#descriptorEpoch!==identity.daemonEpoch){
-    const descriptors=decodeDriverDescriptors(await this.#ports.owner.requestSaved(identity.repoRoot,PREFIX+'drivers',{},controller.signal));
-    if(controller.signal.aborted||this.#disposed)return;this.#descriptors=descriptors;this.#descriptorEpoch=identity.daemonEpoch;
-   }
    const rows=await this.#ports.owner.requestTemporary(identity.repoRoot,owner,PREFIX+'list',{repoRoot:identity.repoRoot},controller.signal);
    if(!controller.signal.aborted)this.#dispatch({...identity,type:'list-result',rows});
   }catch(error){
@@ -112,13 +121,17 @@ export class ConnectionsManagerHost {
     controls:{save:!!draft&&connectionActionSupported(features,draft.key.scope,draft.mode),test:!!draft&&connectionActionSupported(features,draft.key.scope,'test'),remove:!!projection.selected&&connectionActionSupported(features,projection.selected.key.scope,'remove'),operations:Object.fromEntries(operations.map(r=>[r.recordId,['reconcile','replay','activation','cleanup','refresh','dismiss'].filter(action=>connectionOperationSupported(features,r.key.scope,r.mode,action))]))},
     list:{roots:projection.roots,repoRoot:projection.repoRoot,filter:projection.filter,search:projection.search,listState:projection.listState,counts:projection.counts,matchingCount:projection.matchingCount,stale:projection.stale,canMutate:projection.canMutate},
     rows:projection.rows.filter(r=>visible.has(JSON.stringify(r.key))).map(r=>({key:r.key,revision:r.revision,kind:r.kind,label:r.label??r.key.id,family:r.effectiveFamily,selected:!!projection.selected&&sameConnectionKey(projection.selected.key,r.key)&&projection.selected.revision===r.revision})),
-    choices:connectionDriverChoices(this.#descriptors),draft,formId:this.#formId,blocked:!!draft&&this.#ports.mutations.isBlocked(draft.key),valid,
+    canCreateDraft:this.#canCreateDraft(),choices:connectionDriverChoices(this.#descriptors),draft,formId:this.#formId,blocked:!!draft&&this.#ports.mutations.isBlocked(draft.key),valid,
     test:this.#ports.tests.view,operations,confirmation:this.#ports.removals.view.confirmation,dirty:this.#pending!==null||this.#ports.removals.view.resolveDirty,error:this.#error,notice:this.#notice};
    this.#panel.postMessage({type:'render',view});
   }finally{this.#publishing=false;}
  }
+ #canCreateDraft():boolean{
+  const model=this.#model;
+  return !this.#disposed&&!model.closed&&!!model.repoRoot&&model.roots.includes(model.repoRoot)&&this.#descriptorRoot===model.repoRoot&&this.#descriptorEpoch===model.daemonEpoch&&['ready','empty-registry','empty-filter','upgrade-required'].includes(model.listState)&&connectionDriverChoices(this.#descriptors).some(choice=>choice.enabled);
+ }
  #editable():ConnectionDraft{
-  const draft=this.#draft;if(!draft||!projectConnectionManager(this.#model).canMutate||this.#ports.mutations.isBlocked(draft.view.key))throw new Error('Action unavailable');return draft;
+  const draft=this.#draft;if(!draft||!(draft.view.mode==='create'?this.#canCreateDraft():projectConnectionManager(this.#model).canMutate)||this.#ports.mutations.isBlocked(draft.view.key))throw new Error('Action unavailable');return draft;
  }
  #allow(key:ConnectionKey,action:ConnectionAction):boolean{
   if(connectionActionSupported(this.#ports.owner.features(key.repoRoot),key.scope,action))return true;
@@ -157,7 +170,7 @@ export class ConnectionsManagerHost {
      if(row&&projectConnectionManager(this.#model).canMutate)this.#navigate({type:'row',key:row.key,revision:row.revision},()=>this.#select(row));break;
     }
     case 'add':{
-     if(!projectConnectionManager(this.#model).canMutate)return;const first=connectionDriverChoices(this.#descriptors).find(d=>d.enabled);if(!first)return;
+     if(!this.#canCreateDraft())return;const first=connectionDriverChoices(this.#descriptors).find(d=>d.enabled);if(!first)return;
      this.#navigate({type:'kind',value:first.kind},()=>this.#newDraft(first.kind,this.#model.filter==='temporary'?'temporary':'saved'));break;
     }
     case 'scope':case 'kind':{

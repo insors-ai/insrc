@@ -1,0 +1,13 @@
+# VS Code manual feedback correction — 2026-10-30
+
+User authorization: “can’t proceed as I can’t add any connection, fix the given feedback.” This corrects existing S005 tasks t18 (renderer/host), t20 (entry/icon), and t30 (implementation preview). The user explicitly replaced the old two-pane layout with registration above list. Approved LLD/PLAN remain historical; implementation definitions and regenerated companion show the corrected layout.
+
+Implemented: themed Connections tab icon; registration above list at all widths and in DOM/keyboard order; icon-only Add, Refresh, Previous, Next, Delete/Discard, Close controls with accessible labels and tooltips. Dynamic removal labels preserve the static SVG icon.
+
+Add root cause: installed daemon capabilities version 2 advertises only safe-read and driver-descriptors. The host previously required a session before even loading descriptors, disabling the whole editor. It now strictly decodes public metadata before requesting session admission, and allows a local create draft for the selected registered root and current daemon epoch. Unsupported/malformed metadata and failed reads revoke draft eligibility. Save/Test/Remove retain independent capability admission and daemon authorization; no fallback to legacy writes. Initial admission refusal no longer reports a nonexistent temporary owner as expired.
+
+Actual creation on the installed daemon remains blocked by upstream prerequisites. A metadata-only daemon supports draft editing, not Save/Test. Fully enabled signed disposable daemon fixtures cover actual Saved/Temporary creation and recovery; their injected fake driver factories do not establish real SQL/KV/file-source coverage. No production gate, daemon installation or daemon restart was changed.
+
+Validation: extension TypeScript noEmit passed. All 31 VS Code Connections tests passed with Node v22.23.2, zero failed/skipped. Added regression coverage exercises metadata-only draft editing, zero privileged/legacy writes, catalog revocation, DOM section order and accessible icons. Entry coverage checks both themed icon files and wiring. Raw output: evidence/ui-feedback/connections-tests.txt. Initial sandbox-only socket failures were rerun with disposable Unix-socket test permission; first real run exposed missing-method classification, corrected and passed in the final 31-test run.
+
+Builder inspection checked metadata root/epoch correlation and abort checks, stale and unavailable states, retained action authority, no new persistent/renderer sinks, static SVG accessibility and section order. This is builder inspection, not independent code-review approval. The generated implementation preview was source-checked, not visually accepted. Live UI checks remain assigned to the user.

@@ -29,6 +29,9 @@ import { spawn } from 'node:child_process';
 
 import type { DocumentIR, RenderedDocumentShell } from '../types.js';
 import { renderNarrativeBand } from './narrative.js';
+import {
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, fontFaceCssForArtifacts, pageCssFor,
+} from '../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from './code-ref-script.js';
 
 // ── t1 · oversized predicate ───────────────────────────────────────────────
@@ -216,30 +219,74 @@ export function assembleFallbackShell(
 	const diagramStyle = narrative !== '' ? ' style="height:65vh"' : '';
 	const init = `
 (function () {
+  var panzoomInstance = null;
   var svg = document.querySelector('#docgen-diagram svg');
   if (svg && window.svgPanZoom) {
     svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
     svg.style.maxWidth = 'none';
-    window.svgPanZoom(svg, { controlIconsEnabled: true, fit: true, center: true, minZoom: 0.2, maxZoom: 20 });
+    panzoomInstance = window.svgPanZoom(svg, { controlIconsEnabled: true, fit: true, center: true, minZoom: 0.2, maxZoom: 20 });
   }
+  window.insrcPz = panzoomInstance ? {
+    fit: function () { panzoomInstance.fit(); },
+    reset: function () { panzoomInstance.reset(); },
+    zoomTo: function (s) { panzoomInstance.zoomTo(s); },
+    getT: function () { return { s: panzoomInstance.getZoom(), x: 0, y: 0 }; },
+    setT: function (t) { if (t && typeof t.s === 'number') panzoomInstance.zoomTo(t.s); },
+  } : null;
+  // theme toggle for the fallback shell (page-level; the SVG is pre-rendered)
+  var mode = (function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';})();
+  function applyMode(m){
+    mode=m;document.body.setAttribute('data-theme',m);
+    document.querySelectorAll('style[data-iv-mode]').forEach(function(s){s.disabled=(s.getAttribute('data-iv-mode')!==m);});
+    try{localStorage.setItem('insrc-theme-mode',m);}catch(e){}
+    var t=document.getElementById('iv-theme');if(t)t.setAttribute('aria-pressed',m==='dark'?'true':'false');
+  }
+  var tb=document.getElementById('iv-theme');if(tb)tb.addEventListener('click',function(){applyMode(mode==='dark'?'light':'dark');});
+  applyMode(mode);
+  var ex=document.getElementById('iv-export');
+  if(ex)ex.addEventListener('click',function(){
+    var s=document.querySelector('#docgen-diagram svg');if(!s)return;
+    var c=s.cloneNode(true);c.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    var r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    var vb=c.viewBox&&c.viewBox.baseVal;var w=vb&&vb.width?vb.width:800,h=vb&&vb.height?vb.height:600;
+    r.setAttribute('width',w);r.setAttribute('height',h);
+    r.setAttribute('fill',mode==='dark'?'#102D1A':'#FFFFFF');
+    c.insertBefore(r,c.firstChild);
+    var st=document.createElementNS('http://www.w3.org/2000/svg','style');
+    st.textContent=document.body.getAttribute('data-iv-export-css')||'';
+    c.insertBefore(st,c.firstChild);
+    var a=document.createElement('a');
+    a.href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(c));
+    a.download='diagram.svg';a.click();
+  });
 })();`;
+	const pageCss = `${fontFaceCssForArtifacts()}
+<style data-iv-mode="light">${pageCssFor('light')}
+  html, body { margin: 0; height: 100%; }
+  #docgen-diagram { width: 100%; height: 100vh; background: var(--iv-bg); }
+  #docgen-diagram svg { width: 100%; height: 100%; }
+  [data-insrc-path] { cursor: pointer; }
+</style>
+<style data-iv-mode="dark" disabled>${pageCssFor('dark')}
+  html, body { margin: 0; height: 100%; }
+  #docgen-diagram { width: 100%; height: 100vh; background: var(--iv-bg); }
+  #docgen-diagram svg { width: 100%; height: 100%; }
+  [data-insrc-path] { cursor: pointer; }
+</style>
+<style>${DIAGRAM_OVERRIDES_CSS}</style>`;
 	const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="insrc-theme" content="${THEME_VERSION}">
 <title>${escapeHtml(ir.scopeDescription)}</title>
-<style>
-  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
-  #docgen-diagram { width: 100%; height: 100vh; }
-  #docgen-diagram svg { width: 100%; height: 100%; }
-  #docgen-error { color: #b00020; padding: 8px; font-family: monospace; }
-  [data-insrc-path] { cursor: pointer; }
-</style>
+${pageCss}
 </head>
-<body>
-<div id="docgen-error"></div>
-<div id="docgen-diagram"${diagramStyle}>${svg}</div>${narrative}
+<body class="insrc-viewer" data-theme="light" data-iv-export-css="${escapeHtml(fontFaceCssForArtifacts() + '\n' + DIAGRAM_OVERRIDES_CSS)}">
+<div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button></div>
+<div class="iv-err" id="iv-err" role="alert"></div>
+<div id="docgen-diagram" class="insrc-viewer-diagram"${diagramStyle}>${svg}</div>${narrative}
 <script>${svgPanZoom}</script>
 <script>${CODE_REF_SCRIPT}</script>
 <script>${init}</script>

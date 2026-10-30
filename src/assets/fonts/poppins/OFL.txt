@@ -1,0 +1,8 @@
+Poppins font family — Copyright 2020 The Poppins Project Authors (https://github.com/googlefonts/poppins)
+Licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org).
+
+Files: poppins-400.woff2 (Regular), poppins-600.woff2 (SemiBold), poppins-700.woff2 (Bold),
+latin subset, downloaded at build time from the Fontsource CDN
+(https://cdn.jsdelivr.net/fontsource/fonts/poppins@latest/latin-<weight>-normal.woff2),
+which mirrors the google/fonts repository. Packaged here so generated artifacts embed the
+font offline (base64 data URIs) — no runtime CDN request (NFR3).

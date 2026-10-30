@@ -124,3 +124,51 @@ test('assembleShell: the s5 fallback backend is ALSO self-contained offline (bot
 		assert.equal(out.value.supportsZoomPan, true);
 	}
 });
+
+// ── E20261030486751c3:S001 (t4) — both docgen outputs consume the shared branded policy ──
+
+test('assembleShell: the primary Mermaid shell is branded — shared classes, theme meta, fonts, controls, no theme neutral / old colors', async () => {
+	const ir: DocumentIR = {
+		docType: 'component-dependency', scopeDescription: 'repo',
+		derived: { nodes: [{ id: 'a', label: 'A', kind: 'component' }], edges: [] },
+		narrated: { sections: [] }, generatedAtRevision: 'r1',
+	};
+	const out = await assembleShell(ir, { renderSvg: async () => ({ status: 'unavailable' as const, triedBinaries: [], reason: '' }) } as never);
+	assert.ok(isOk(out));
+	if (!isOk(out)) return;
+	const html = out.value.html;
+	assert.match(html, /<meta name="insrc-theme" content="insors-brand-1">/);
+	assert.match(html, /<body class="insrc-viewer" data-theme="light"/);
+	assert.match(html, /id="docgen-diagram" class="insrc-viewer-diagram"/, 'shared diagram wrapper class — the override selector matches this DOM too (round-2 fix)');
+	assert.match(html, /<style data-iv-mode="light">/);
+	assert.match(html, /<style data-iv-mode="dark" disabled>/);
+	assert.match(html, /@font-face\{font-family:'Poppins'/);
+	assert.match(html, /\.insrc-viewer-diagram svg \.relationshipLabel\{fill:#102D1A!important\}/);
+	for (const id of ['iv-theme', 'iv-export', 'iv-err', 'iv-src', 'iv-zfit']) assert.match(html, new RegExp(`id="${id}"`), id);
+	assert.match(html, /window\.insrcPz\s*=/, 'svg-pan-zoom is exposed to the theme boot as the pz adapter');
+	assert.doesNotMatch(html, /theme: 'neutral'/, 'theme neutral is gone');
+	assert.doesNotMatch(html, /#b00020/, 'the old fixed error color is gone');
+	assert.doesNotMatch(html, /\.insrc-artifact/, 'chat-embed namespace untouched');
+	assert.doesNotMatch(html, /<script[^>]*\bsrc=/i, 'still fully offline');
+});
+
+test('assembleShell: the fallback subprocess shell is branded too (shared classes + meta + theme toggle + export)', async () => {
+	const nodes = Array.from({ length: 70 }, (_, i) => ({ id: `n${i}`, label: `C${i}`, kind: 'component' }));
+	const bigIR: DocumentIR = {
+		docType: 'component-dependency', scopeDescription: 'whole repo',
+		derived: { nodes, edges: [] }, narrated: { sections: [] }, generatedAtRevision: 'r1',
+	};
+	const fakeRenderer = { renderSvg: async () => ({ status: 'ok' as const, svg: '<svg xmlns="http://www.w3.org/2000/svg"><g/></svg>', tool: 'dot' as const }) };
+	const out = await assembleShell(bigIR, fakeRenderer);
+	assert.ok(isOk(out));
+	if (!isOk(out)) return;
+	const html = out.value.html;
+	assert.match(html, /<meta name="insrc-theme" content="insors-brand-1">/);
+	assert.match(html, /<body class="insrc-viewer" data-theme="light"/);
+	assert.match(html, /id="docgen-diagram" class="insrc-viewer-diagram"/);
+	assert.match(html, /<style data-iv-mode="light">/);
+	assert.match(html, /@font-face\{font-family:'Poppins'/);
+	for (const id of ['iv-theme', 'iv-export']) assert.match(html, new RegExp(`id="${id}"`), id);
+	assert.doesNotMatch(html, /\.insrc-artifact/);
+	assert.doesNotMatch(out.value.html, /<script[^>]*\bsrc=/i);
+});

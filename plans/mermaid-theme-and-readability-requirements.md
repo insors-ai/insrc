@@ -137,3 +137,15 @@ Validation must include actual rendered inspection, not only assertions that the
 - Runtime upgrade need, version stamping, and regeneration workflow for saved artifacts.
 
 Implementation must follow insrc's tracked workflow, independent review, and explicit approval discipline. Existing diagram-review requirements remain applicable. The brand direction is established here; exact production mappings, readability behavior, and export results still require design and rendered verification.
+
+## Implementation note — theme versioning & regeneration (R14)
+
+Implemented by Story E20261030486751c3:S001: every generated artifact (workflow
+companion and docgen output, both the primary Mermaid path and the subprocess
+fallback) stamps `<meta name="insrc-theme" content="insors-brand-1">` from
+`THEME_VERSION` in `src/artifact-theme/theme.ts`. Saved self-contained HTML files
+keep working unchanged and are never rewritten in place. To apply a newer theme
+to old artifacts, regenerate them through the owning surface: re-run the
+workflow stage that produced the companion, or call `insrc_docgen` again for a
+docgen document. Presentation-only regeneration never touches the approved model
+semantics or the approval history.

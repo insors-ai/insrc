@@ -21,7 +21,11 @@
     "epicSlug": "keep-idle-sweep-release-from-abandoning",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-30T19:45:17.556Z",
+    "parentRef": {
+      "slug": "keep-idle-sweep-release-from-abandoning"
+    }
   },
   "body": {
     "title": "Keep an idle-sweep release from abandoning a compaction in progress",

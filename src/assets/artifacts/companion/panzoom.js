@@ -41,8 +41,9 @@
 	function init(opts) {
 		var vp = byId(opts && opts.viewport);
 		var st = byId(opts && opts.stage);
+		var MIN_FIT = (opts && typeof opts.minFitScale === 'number') ? opts.minFitScale : 0; // readable floor for the initial fit
 		if (!vp || !st) {
-			return { fit: function () {}, reset: function () {} };
+			return { fit: function () {}, reset: function () {}, zoomTo: function () {}, getT: function () { return null; }, setT: function () {} };
 		}
 		var label = byId(opts.zoomLabel);
 		var s = 1, x = 0, y = 0;
@@ -67,7 +68,7 @@
 			var w = st.scrollWidth, h = st.scrollHeight;
 			var W = vp.clientWidth, H = vp.clientHeight;
 			if (!w || !h || !W || !H) { return; }
-			s = Math.min(Math.min(W / w, H / h) * FIT_MARGIN, MAX_FIT_SCALE);
+			s = Math.max(Math.min(Math.min(W / w, H / h) * FIT_MARGIN, MAX_FIT_SCALE), MIN_FIT);
 			x = (W - w * s) / 2;
 			y = (H - h * s) / 2;
 			apply();
@@ -127,9 +128,16 @@
 		bind(opts.fit, fit);
 		bind(opts.reset, reset);
 
+		function zoomTo(ns) {
+			var p = centre();
+			zoomAt(ns / s, p[0], p[1]);
+		}
+		function getT() { return { s: s, x: x, y: y }; }
+		function setT(t) { if (t) { s = t.s; x = t.x; y = t.y; apply(); } }
+
 		apply();
 		if (opts.fitOnLoad) { setTimeout(fit, 0); }
-		return { fit: fit, reset: reset };
+		return { fit: fit, reset: reset, zoomTo: zoomTo, getT: getT, setT: setT };
 	}
 
 	window.insrcPanZoom = { init: init };

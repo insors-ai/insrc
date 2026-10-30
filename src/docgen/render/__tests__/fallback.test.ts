@@ -125,7 +125,9 @@ test('assembleFallbackShell: sc3 shape, inlined SVG + svg-pan-zoom, offline (ac2
 	assert.match(shell.html, /<svg xmlns=/);                   // the SVG inlined directly (not escaped)
 	assert.match(shell.html, /SVGPANZOOM-BUNDLE/);             // the bundle inlined
 	assert.match(shell.html, /window\.svgPanZoom\(/);          // init wires pan/zoom
-	assert.doesNotMatch(shell.html, /mermaid/i);               // no mermaid on the fallback path
+	// no Mermaid RUNTIME on the fallback path (the word may appear in shared page CSS selectors like pre.mermaid)
+	assert.doesNotMatch(shell.html, /<pre class="mermaid">/);
+	assert.doesNotMatch(shell.html, /mermaid\.run\(/);
 	// the OFFLINE guarantee: no external fetch
 	assert.doesNotMatch(shell.html, /<script[^>]*\bsrc=/i);
 	assert.doesNotMatch(shell.html, /<link[^>]*\bhref=/i);

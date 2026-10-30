@@ -21,7 +21,11 @@
     "epicSlug": "answer-abort-finished-run-status-board",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-30T19:45:07.727Z",
+    "parentRef": {
+      "slug": "answer-abort-finished-run-status-board"
+    }
   },
   "body": {
     "title": "Answer the abort of a finished run the status board evicted as the single-thread daemon does",

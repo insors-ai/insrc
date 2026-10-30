@@ -28,6 +28,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { docgenAssetDir } from '../../../docgen/render/shell.js';
+import {
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, fontFaceCssForArtifacts, mermaidConfigFor, pageCssFor, viewerBootScript,
+} from '../../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from '../../../docgen/render/code-ref-script.js';
 import { DiagramGenerationError } from './render.js';
 import { escapeHtml } from './html-escape.js';
@@ -152,63 +155,66 @@ function narrativeHtml(narrative: string | undefined): string {
 
 const PANZOOM_IDS = "viewport:'vp',stage:'stage',zoomLabel:'zl',zoomIn:'zin',zoomOut:'zout',fit:'zfit',reset:'z100'";
 
-/** The page's own boot script. A Mermaid page fits once the diagram is drawn
- *  (its size is unknown until then); an HTML page fits on load. */
-function bootScript(visual: CompanionVisual): string {
-	if (visual.kind === 'html') {
-		return `window.insrcPanZoom.init({${PANZOOM_IDS},fitOnLoad:true});`;
-	}
-	return [
-		`var pz=window.insrcPanZoom.init({${PANZOOM_IDS}});`,
-		"mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'neutral'});",
-		"mermaid.run({querySelector:'#stage pre.mermaid'}).then(function(){",
-		"document.querySelectorAll('#stage svg').forEach(function(svg){var vb=svg.viewBox&&svg.viewBox.baseVal;",
-		"if(vb&&vb.width){svg.setAttribute('width',vb.width);svg.setAttribute('height',vb.height);svg.style.maxWidth='none';}});",
-		'pz.fit();',
-		'if(window.insrcMarkCodeRefs)window.insrcMarkCodeRefs();',
-		"}).catch(function(err){document.getElementById('stage').textContent='Diagram could not be drawn: '+err;});",
+/** Readable floor for the initial framing: mermaid fontSize is 20px, so a
+ *  0.8 scale keeps labels at 16px (R6/R11); Fit stays a separate action. */
+const MIN_FIT_SCALE = 16 / 20;
+
+/** The page CSS: packaged Poppins @font-face + per-mode page CSS (two style
+ *  tags the boot script toggles) + diagram overrides + the structural rules
+ *  re-skinned onto the iv-* custom properties. All scoped under .insrc-viewer
+ *  (R15); the diagram overrides under .insrc-viewer-diagram so they match both
+ *  shells' DOM. */
+function pageStyle(): string {
+	const structural = [
+		'.insrc-viewer .page{max-width:1180px;margin:0 auto;padding:28px 28px 48px}',
+		'.insrc-viewer header.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:18px;border-bottom:2px solid var(--iv-border)}',
+		'.insrc-viewer .hdr .proj{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--iv-muted);font-weight:600}',
+		'.insrc-viewer .hdr h1{margin:4px 0 0;font-size:24px;color:var(--iv-text)}',
+		'.insrc-viewer .hdr .kind{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;color:var(--iv-text);background:var(--iv-inset);border:1px solid var(--iv-border);border-radius:10px;padding:2px 10px}',
+		'.insrc-viewer table.ref{border-collapse:collapse;font-size:13px;min-width:380px}',
+		'.insrc-viewer table.ref th{text-align:left;font-weight:600;color:var(--iv-text);background:var(--iv-inset);padding:6px 12px;border:1px solid var(--iv-border);width:120px;white-space:nowrap}',
+		'.insrc-viewer table.ref td{padding:6px 12px;border:1px solid var(--iv-border);background:var(--iv-bg);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--iv-text)}',
+		'.insrc-viewer section.blk{margin-top:26px}',
+		'.insrc-viewer section.blk>h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--iv-text);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--iv-border)}',
+		'.insrc-viewer .context{font-size:13px;color:var(--iv-text);background:var(--iv-inset);border-left:3px solid var(--iv-accent);padding:8px 12px;border-radius:0 4px 4px 0;margin:0 0 10px}',
+		'.insrc-viewer .narr p{margin:0 0 8px;max-width:900px;color:var(--iv-text)}',
+		'.insrc-viewer .vp-wrap{border:1px solid var(--iv-border);border-radius:8px;background:var(--iv-bg);overflow:hidden}',
+		'.insrc-viewer .desc h3{font-size:14px;margin:18px 0 8px;color:var(--iv-text)}',
+		'.insrc-viewer .desc p.lead{margin:0 0 10px;color:var(--iv-muted)}',
+		'.insrc-viewer td.missing{color:var(--iv-muted)}',
+		'.insrc-viewer [data-insrc-path]{cursor:pointer}',
+		'.insrc-viewer .tag{display:inline-block;font-size:11px;border-radius:9px;padding:1px 8px;background:var(--iv-inset);color:var(--iv-text);border:1px solid var(--iv-border)}',
+		'.insrc-viewer .tag.pk{background:#FDF3D0;color:#5A4A00}.insrc-viewer .tag.fk{background:#E4EDFB;color:#1F3A6E}',
+		'.insrc-viewer .tag.call{background:var(--iv-inset);color:var(--iv-text)}.insrc-viewer .tag.ret{background:#E7F5EA;color:#1A5C2E}',
+		'.insrc-viewer .pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--iv-active-bg);color:var(--iv-active-text);font-size:10px;font-weight:700;text-align:center}',
+		'.insrc-viewer footer.ft{margin-top:30px;padding-top:10px;border-top:1px dashed var(--iv-border);font-size:12px;color:var(--iv-muted);display:flex;justify-content:space-between}',
 	].join('');
+	const fonts = fontFaceCssForArtifacts();
+	const light = `<style data-iv-mode="light">${pageCssFor('light')}${structural}</style>`;
+	const dark = `<style data-iv-mode="dark" disabled>${pageCssFor('dark')}${structural}</style>`;
+	const overrides = `<style>${DIAGRAM_OVERRIDES_CSS}</style>`;
+	return `${fonts}${light}${dark}${overrides}`;
 }
 
-const STYLE = [
-	'*{box-sizing:border-box}',
-	"body{margin:0;background:#f3f5f8;color:#1b1f24;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}",
-	'.page{max-width:1180px;margin:0 auto;padding:28px 28px 48px}',
-	'header.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:18px;border-bottom:2px solid #1f3a8a}',
-	'.hdr .proj{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#5b6673;font-weight:600}',
-	'.hdr h1{margin:4px 0 0;font-size:24px;color:#0f1d4a}',
-	'.hdr .kind{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;color:#1f3a8a;background:#e6ecfb;border-radius:10px;padding:2px 10px}',
-	'table.ref{border-collapse:collapse;font-size:13px;min-width:380px}',
-	'table.ref th{text-align:left;font-weight:600;color:#44505e;background:#eef1f6;padding:6px 12px;border:1px solid #d6dbe1;width:120px;white-space:nowrap}',
-	'table.ref td{padding:6px 12px;border:1px solid #d6dbe1;background:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}',
-	'table.ref a{color:#1f6feb;text-decoration:none}',
-	'section.blk{margin-top:26px}',
-	'section.blk>h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:#1f3a8a;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #d6dbe1}',
-	'.context{font-size:13px;color:#44505e;background:#eef1f6;border-left:3px solid #1f3a8a;padding:8px 12px;border-radius:0 4px 4px 0;margin:0 0 10px}',
-	'.narr p{margin:0 0 8px;max-width:900px}',
-	'.vp-wrap{border:1px solid #c9d0d9;border-radius:8px;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(16,22,26,.06)}',
-	'.vp-bar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f7f8fa;border-bottom:1px solid #e1e5ea;font-size:12px;color:#5b6673}',
-	'.vp-bar .sp{flex:1}',
-	'.vp-bar button{font:inherit;font-size:12px;border:1px solid #c9d0d9;background:#fff;border-radius:4px;padding:3px 9px;cursor:pointer;color:#1b1f24}',
-	'.vp-bar button:hover{background:#eef1f6}',
-	'.vp-bar .zl{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}',
-	'.vp{position:relative;height:62vh;min-height:380px;overflow:hidden;cursor:grab;background:#fff;background-image:radial-gradient(#e3e7ec 1px,transparent 1px);background-size:18px 18px}',
-	'.vp.drag{cursor:grabbing}',
-	'.stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}',
-	'.stage pre.mermaid{margin:0;background:transparent}',
-	'.desc h3{font-size:14px;margin:18px 0 8px;color:#0f1d4a}',
-	'.desc p.lead{margin:0 0 10px;color:#44505e}',
-	'table.dt{border-collapse:collapse;width:100%;font-size:13px;background:#fff;margin-bottom:6px}',
-	'table.dt th{text-align:left;background:#eef1f6;color:#44505e;font-weight:600;padding:7px 10px;border:1px solid #d6dbe1}',
-	'table.dt td{padding:7px 10px;border:1px solid #d6dbe1;vertical-align:top}',
-	'td.missing{color:#9aa4af}',
-	'[data-insrc-path]{cursor:pointer}',
-	'.tag{display:inline-block;font-size:11px;border-radius:9px;padding:1px 8px;background:#eef1f6;color:#44505e}',
-	'.tag.pk{background:#fde9c9;color:#8a5300}.tag.fk{background:#dcebff;color:#174ea6}',
-	'.tag.call{background:#e6ecfb;color:#1f3a8a}.tag.ret{background:#e7f5ea;color:#1a7f37}',
-	'.pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#cf6a00;color:#fff;font-size:10px;font-weight:700;text-align:center}',
-	'footer.ft{margin-top:30px;padding-top:10px;border-top:1px dashed #c9d0d9;font-size:12px;color:#8b95a1;display:flex;justify-content:space-between}',
-].join('');
+/** The export CSS carried on the root for the SVG serializer (R12). */
+function exportCssAttr(): string {
+	return fontFaceCssForArtifacts() + '\n' + DIAGRAM_OVERRIDES_CSS;
+}
+
+/** The page's own boot script. Pan/zoom is the existing insrcPanZoom runtime
+ *  (corrected with the readable minFitScale + transform accessors), exposed to
+ *  the theme boot script as window.insrcPz; the theme script owns mode select,
+ *  re-render, initial framing, export and error states. */
+function bootScript(visual: CompanionVisual): string {
+	if (visual.kind === 'html') {
+		return `window.insrcPanZoom.init({${PANZOOM_IDS},fitOnLoad:true,minFitScale:${MIN_FIT_SCALE}});`;
+	}
+	return [
+		`var pz=window.insrcPanZoom.init({${PANZOOM_IDS},minFitScale:${MIN_FIT_SCALE}});`,
+		'window.insrcPz={fit:function(){pz.fit();},reset:function(){pz.reset();},zoomTo:function(s){pz.zoomTo(s);},getT:function(){return pz.getT();},setT:function(t){pz.setT(t);}};',
+		viewerBootScript({ initialMode: 'light', configs: { light: mermaidConfigFor('light'), dark: mermaidConfigFor('dark') } }),
+	].join('\n');
+}
 
 /**
  * Render one companion page. Pure apart from its inputs: the same header,
@@ -233,9 +239,10 @@ export function renderCompanionPage(header: CompanionHeader, page: CompanionPage
 	return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="insrc-theme" content="${THEME_VERSION}">
 <title>${esc(header.projectName)} · ${esc(page.title)}</title>
-<style>${STYLE}${visualStyle}</style></head>
-<body><div class="page">
+${pageStyle()}<style>${visualStyle}</style></head>
+<body><div class="page insrc-viewer" data-theme="light" data-iv-export-css="${esc(exportCssAttr())}">
 <header class="hdr">
 <div><div class="proj">${esc(header.projectName)}</div><h1>${esc(page.title)}</h1><span class="kind">${esc(page.kindLabel)}</span></div>
 <table class="ref">
@@ -247,8 +254,10 @@ export function renderCompanionPage(header: CompanionHeader, page: CompanionPage
 </header>
 <section class="blk narr"><h2>Narrative</h2><p class="context">${esc(header.contextLine)}</p>${narrativeHtml(page.narrative)}</section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
-<div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in">+</button><button id="zfit" title="Fit to view">Fit</button><button id="z100" title="Actual size">1:1</button></div>
-<div class="vp" id="vp"><div class="stage" id="stage">${visualHtml}</div></div>
+<div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-theme" title="Toggle light/dark" aria-label="toggle light/dark theme" aria-pressed="false">◐</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
+<div class="iv-err" id="iv-err" role="alert"></div>
+<div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage">${visualHtml}</div></div>
+<pre class="iv-src" id="iv-src"></pre>
 </div></section>
 <section class="blk desc"><h2>Description</h2>${description}</section>
 <footer class="ft"><span>Generated by insrc · companion of ${esc(header.sourceDoc.id)}</span><span>${esc(header.date)}</span></footer>

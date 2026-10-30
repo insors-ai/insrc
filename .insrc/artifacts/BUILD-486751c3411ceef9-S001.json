@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "486751c3411ceef9",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T19:37:31.977Z",
+    "updatedAt": "2026-10-30T21:26:49.145Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T19:19:13.160Z",
+    "epicSlug": "shared-insors-branded-light-dark-mermaid"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": false
+      }
+    ],
+    "summary": "t6 final state: typecheck clean (tsc exit 0, daemon verdict), build exit 0, regen smoke green (companion + docgen both branded: theme meta, shared classes, Poppins, ER override, no neutral/old colors, no remote refs). Affected suites all green: artifact-theme 19, companion+docgen wide 236, admin-worker 4, indexing-worker 4, debug-mcp 9. The full-repo sweep has failures ONLY in subsystems this Story never touches (CM-S3/CM-S4 connection sandbox tests, Ollama transport, docSummary IPC, SIGTERM shutdown); the 4 sweep failures my earlier vibe work caused (admin/indexing worker method-list pins, 2 mcpStatusWith pins) are fixed and green. doc-summary-restore-ipc verified failing identically at pristine HEAD. Regen route documented in plans/mermaid-theme-and-readability-requirements.md (R14).",
+    "testRecord": {
+      "md": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/TESTS.md"
+    },
+    "changeLog": [],
+    "commit": "4afe8a18a"
+  }
+}

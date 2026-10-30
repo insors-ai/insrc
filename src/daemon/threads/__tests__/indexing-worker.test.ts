@@ -157,12 +157,14 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			['daemon.compact', undefined],
 			['repo.add', { path: SECOND }],
 			['repo.remove', { path: SECOND }],
+			['mcp.register', { path: 42 }],
 		];
 		// What each call must answer: its handler really ran (not just "not an unknown method").
 		const ok = (r: ReplyEnvelope): void => { assert.equal(r.error, undefined); assert.deepEqual(r.result, { ok: true }); };
 		const expect: Record<string, (r: ReplyEnvelope) => void> = {
 			'repo.stats': r => { assert.equal(r.error, undefined); assert.ok(Array.isArray(r.result) && (r.result as { repoPath: string }[]).some(x => x.repoPath === REPO)); },
 			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
+			'mcp.register': r => assert.equal(r.error, 'Cannot register providers: repo path must be a string (got number)', 'its own validation ran'),
 			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },
 			'docSummary.restoreFromBackup': r => assert.equal(r.error, 'docSummary.restoreFromBackup: backupPath must be a string', 'its own validation ran'),
 			// A job held running: today's busy refusal, from the worker's real queue.

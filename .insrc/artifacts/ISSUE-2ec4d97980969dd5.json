@@ -21,7 +21,11 @@
     "epicSlug": "make-router-session-test-ts-type",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-30T19:45:39.246Z",
+    "parentRef": {
+      "slug": "make-router-session-test-ts-type"
+    }
   },
   "body": {
     "title": "Make router-session.test.ts type-check clean",

@@ -118,6 +118,7 @@ after(async () => {
 });
 
 const ADMIN_READS: [string, unknown][] = [
+	['mcp.status', {}],
 	['daemon.status', undefined], ['daemon.debug-status', undefined], ['repo.list', undefined], ['config.show', undefined],
 	['config.catalog', undefined], ['guide.list', undefined], ['guide.get', { workflow: 'build' }], ['daemon.updateOutcome', undefined],
 ];

@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { runSetModelTier, type QuickPickItemLike, type SetModelTierDeps } from '../model-tier-picker.js';
+import { runSetModelTier, currentTier, tierStatus, type QuickPickItemLike, type SetModelTierDeps, type Tier } from '../model-tier-picker.js';
 import type { ModelDefinitions } from '../definitions.js';
 import type { ConfigWriteResult } from '../../config/types.js';
 
@@ -357,4 +357,31 @@ test('model-tier-picker.test.ts: reopening the picker after a save on the host f
   assert.equal(r.shown[2]!.find((x) => x.value === 'hl:7b')?.description, 'local (current)');
   assert.deepEqual(r.writes, [], 'the CLI default the daemon already uses');
   assert.match(r.messages.at(-1)!, /core tier is unchanged \(hl:7b \(ollama-claude\)\)/);
+});
+
+/** A config.json raw-config snapshot naming one tier's runner/model/effort (any tier, not just core). */
+const rawTier = (tier: Tier, runner: string, model: string, effort = '') => ({ models: { tiers: { [tier]: { runner, model, effort } } } });
+
+test('model-tier-picker.test.ts: currentTier remains exported with unchanged resolution behavior', () => {
+  // Unset -> the default family's default for the tier, unchanged from the picker's own resolution.
+  assert.deepEqual(currentTier(DEFS, {}, 'core'), { runner: 'cli-codex', model: 'x-a', effort: 'lo' });
+  // A configured, resolvable runner+model is returned as configured.
+  assert.deepEqual(currentTier(DEFS, rawTier('core', 'cli-claude', 'c-big', 'deep'), 'core'), { runner: 'cli-claude', model: 'c-big', effort: 'deep' });
+  // An unknown runner falls back to the default family's default, exactly as an unset tier does.
+  assert.deepEqual(currentTier(DEFS, { models: { tiers: { core: { runner: 'no-such-runner', model: 'x' } } } }, 'core'), { runner: 'cli-codex', model: 'x-a', effort: 'lo' });
+});
+
+test("model-tier-picker.test.ts: tierStatus classifies ok/not-supported/not-listed/floor-raised across a host-set family, an open vendor family, an unresolvable runner, and all three coreFloor values", () => {
+  // A resolvable model on an open vendor family, at the floor: ok.
+  assert.deepEqual(tierStatus(DEFS, rawTier('core', 'cli-claude', 'c-big'), 'core', 'core'), { kind: 'ok' });
+  // Below coreFloor with an otherwise-fine model: floor-raised.
+  assert.deepEqual(tierStatus(DEFS, rawTier('cheap', 'cli-claude', 'c-big'), 'cheap', 'mid'), { kind: 'floor-raised', to: 'mid' });
+  // coreFloor at the lowest tier never raises anything.
+  assert.deepEqual(tierStatus(DEFS, rawTier('cheap', 'cli-claude', 'c-big'), 'cheap', 'cheap'), { kind: 'ok' });
+  // An open vendor family (host undefined) with a model it no longer lists: not-listed, independent of the floor.
+  assert.deepEqual(tierStatus(DEFS, rawTier('core', 'cli-claude', 'c-gone'), 'core', 'core'), { kind: 'not-listed', model: 'c-gone' });
+  // An unresolvable runner (unknown/stale) is also not-listed, reported directly rather than through currentTier's default-family fallback.
+  assert.deepEqual(tierStatus(DEFS, rawTier('core', 'no-such-runner', 'x'), 'core', 'core'), { kind: 'not-listed', model: 'x' });
+  // A host-set (closed-list) family with a model it no longer lists: not-supported.
+  assert.deepEqual(tierStatus(HOSTED, rawTier('core', 'ollama-claude', 'gone:cloud'), 'core', 'core'), { kind: 'not-supported', model: 'gone:cloud' });
 });

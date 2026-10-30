@@ -86,7 +86,7 @@ export type DecisionResult =
   | { readonly ok: false; readonly reason: string; readonly detail: string };
 
 /** A tier as config.json holds it. */
-interface TierValue {
+export interface TierValue {
   readonly runner: string;
   readonly model: string;
   readonly effort: string;
@@ -94,7 +94,19 @@ interface TierValue {
 
 /** The three global tiers, in the canonical order. */
 const TIERS = ['core', 'mid', 'cheap'] as const;
-type Tier = (typeof TIERS)[number];
+export type Tier = (typeof TIERS)[number];
+
+/**
+ * A tier's status for display: `ok` (nothing to flag), `floor-raised` (the
+ * configured model resolves fine, but insrc.models.coreFloor raises this tier
+ * to a stronger one), or `not-supported` / `not-listed` (the configured model
+ * does not resolve against the daemon's current catalog — see {@link tierStatus}).
+ */
+export type TierStatus =
+  | { readonly kind: 'ok' }
+  | { readonly kind: 'floor-raised'; readonly to: Tier }
+  | { readonly kind: 'not-supported'; readonly model: string }
+  | { readonly kind: 'not-listed'; readonly model: string };
 
 /** A short human hint per tier. */
 const TIER_HINT: Record<Tier, string> = {
@@ -146,7 +158,7 @@ function configuredFields(raw: Record<string, unknown>, tier: Tier): Partial<Tie
  * for the tier, at the configured effort, else the default's effort. An effort the
  * resolved model does not accept is dropped by the daemon, so it is shown as ''.
  */
-function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier): TierValue | undefined {
+export function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier): TierValue | undefined {
   const configured = configuredFields(raw, tier);
   const configuredFamily = configured.runner !== undefined ? familyOf(defs, configured.runner) : undefined;
   let value: TierValue;
@@ -162,6 +174,30 @@ function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier:
   const resolved = familyOf(defs, value.runner);
   const model = resolved !== undefined ? servedModel(resolved, value.model) : undefined;
   return model !== undefined && value.effort !== '' && !model.efforts.includes(value.effort) ? { ...value, effort: '' } : value;
+}
+
+/**
+ * This tier's display status. Checks the configured runner/model against the
+ * daemon's current catalog FIRST, independent of {@link currentTier}'s fallback
+ * (which would otherwise silently substitute the default family for an unknown
+ * runner and lose the distinction): an unresolved runner, or a configured model
+ * the resolved family does not serve, is `not-supported` when the family runs on
+ * a host (Ollama's closed list — the same split {@link pickModel}'s inline marker
+ * already applies) or `not-listed` otherwise (an open vendor family; the daemon
+ * runs its default instead). Only once the configured model resolves cleanly is
+ * the tier checked against `coreFloor`: `floor-raised` when this tier ranks below
+ * it, else `ok`.
+ */
+export function tierStatus(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier, coreFloor: Tier): TierStatus {
+  const configured = configuredFields(raw, tier);
+  if (configured.runner !== undefined) {
+    const family = familyOf(defs, configured.runner);
+    if (family === undefined) return { kind: 'not-listed', model: configured.model ?? configured.runner };
+    if (configured.model !== undefined && servedModel(family, configured.model) === undefined) {
+      return { kind: family.host !== undefined ? 'not-supported' : 'not-listed', model: configured.model };
+    }
+  }
+  return TIERS.indexOf(tier) > TIERS.indexOf(coreFloor) ? { kind: 'floor-raised', to: coreFloor } : { kind: 'ok' };
 }
 
 /** What a failed request means for this flow, as one message. */

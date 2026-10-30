@@ -86,12 +86,14 @@ window.addEventListener('message', function (event) {
 vscode.postMessage({ type: 'ready' });`;
 
 /**
- * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the two
+ * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the three
  * sanctioned repo message shapes). Static — it reads only host-rendered DOM data.
  * The repo <select> change posts {type:'selectRepo',repoPath}; each per-repo form
  * field change posts {type:'repoWrite',repoPath,segments,value} (value '' -> null to
- * clear the override). The form's data-repo carries the selected repoPath and each
- * field's data-segments carries the dot-joined trailing path under models.byRepo.
+ * clear the override); the Providers section's button posts
+ * {type:'repoRegisterProviders',repoPath,clients} with the checked data-provider
+ * values. The form's data-repo carries the selected repoPath and each field's
+ * data-segments carries the dot-joined trailing path under models.byRepo.
  */
 const REPO_BOOTSTRAP = `const vscode = acquireVsCodeApi();
 const sel = document.getElementById('insrc-repo-select');
@@ -105,7 +107,15 @@ for (const el of document.querySelectorAll('[data-segments]')) {
     if (!Array.isArray(segments)) return;
     vscode.postMessage({ type: 'repoWrite', repoPath: repoPath, segments: segments, value: el.value === '' ? null : el.value });
   });
-}`;
+}
+const regBtn = document.getElementById('insrc-register-providers');
+if (regBtn) { regBtn.addEventListener('click', function () {
+  var clients = [];
+  for (const el of document.querySelectorAll('input[data-provider]')) {
+    if (el.checked) clients.push(el.getAttribute('data-provider'));
+  }
+  vscode.postMessage({ type: 'repoRegisterProviders', repoPath: repoPath, clients: clients });
+}); }`;
 
 /** Build the sc9 WebviewPanelHost over its injected boundaries. Never throws. */
 export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanelHost {
@@ -304,14 +314,15 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
 
   /**
    * Handle a webview->host message for the Repo Configuration panel (S007). Validates
-   * the shape ({selectRepo,repoPath} / {repoWrite,repoPath,segments,value}), skips a
-   * late message after the panel was disposed/replaced, re-renders on a repo select,
-   * and forwards a validated RepoConfigWrite to the injected sink. Never throws.
+   * the shape ({selectRepo,repoPath} / {repoWrite,repoPath,segments,value} /
+   * {repoRegisterProviders,repoPath,clients}), skips a late message after the panel
+   * was disposed/replaced, re-renders on a repo select, and forwards a validated
+   * RepoConfigWrite / RepoProviderRegistration to the injected sinks. Never throws.
    */
   const handleRepoMessage = (panel: PanelHandle, message: unknown): void => {
     if (repoPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
     if (typeof message !== 'object' || message === null) return;
-    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown };
+    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; clients?: unknown };
     if (msg.type === 'selectRepo' && typeof msg.repoPath === 'string') {
       // The empty option ('') clears the selection back to the picker-only view.
       repoSelectedRepo = msg.repoPath.length > 0 ? msg.repoPath : undefined;
@@ -335,6 +346,25 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
         });
       } catch (err) {
         logger.warn(`insrc: the repo-config write handler failed — ${errText(err)}`);
+      }
+      return;
+    }
+    if (
+      msg.type === 'repoRegisterProviders' &&
+      typeof msg.repoPath === 'string' &&
+      Array.isArray(msg.clients) &&
+      msg.clients.every((c) => typeof c === 'string')
+    ) {
+      // The host owns no registration — it forwards a validated
+      // RepoProviderRegistration to the sink (extension.ts runs the
+      // consent-gated mcp.register IPC, k4). Never-throw.
+      try {
+        deps.onRepoRegisterProviders?.({
+          repoPath: msg.repoPath,
+          clients: msg.clients as readonly string[],
+        });
+      } catch (err) {
+        logger.warn(`insrc: the provider-registration handler failed — ${errText(err)}`);
       }
       return;
     }

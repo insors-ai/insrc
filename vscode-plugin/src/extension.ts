@@ -8,6 +8,7 @@
  */
 import { existsSync, readFileSync, readdirSync, watch as fsWatch } from 'node:fs';
 import { execFile } from 'node:child_process';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import * as vscode from 'vscode';
@@ -48,7 +49,7 @@ import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
-import { renderRepoConfig, createRepoConfigWriteHandler } from './panels/repo-config.js';
+import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler } from './panels/repo-config.js';
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
@@ -140,6 +141,7 @@ export function activate(context: vscode.ExtensionContext): void {
     getExtension: (id) => vscode.extensions.getExtension(id) !== undefined,
     appName: vscode.env.appName,
     uriScheme: vscode.env.uriScheme,
+    homePathExists: (relPath) => existsSync(join(homedir(), relPath)),
   };
   const registry = createHostRegistry(HOST_SPECS, {
     env,
@@ -215,7 +217,7 @@ export function activate(context: vscode.ExtensionContext): void {
       setLastSeen: (v) => context.globalState.update(LAST_SEEN_PLUGIN_VERSION_KEY, v),
     },
     // Reload the window when the user accepts the post-update nudge: a reload
-    // respawns the MCP host so claude/codex reconnect to the freshly updated daemon.
+    // respawns the MCP host so claude/codex/vibe reconnect to the freshly updated daemon.
     reloadWindow: () =>
       Promise.resolve(vscode.commands.executeCommand('workbench.action.reloadWindow')).then(() => undefined),
   }));
@@ -438,6 +440,7 @@ export function activate(context: vscode.ExtensionContext): void {
     repoRenderer: renderRepoConfig({
       registeredRepos: () => daemonData.registeredRepos(),
       rawConfig: () => configGateway.rawConfig(),
+      mcpRegistration: () => daemonData.mcpRegistration(),
     }),
     // S007: the consent-gated per-repo write sink. Reuses the sc8 writeKeyPath ARRAY
     // form (config.write) — no new daemon capability (k3); gated by sc4 (k4); the
@@ -450,6 +453,17 @@ export function activate(context: vscode.ExtensionContext): void {
       logger: panelLog,
       refresh: () => panelHost.openRepoConfiguration(),
       offerRestart,
+    }),
+    // Post-setup provider registration: the repo form's Providers section posts
+    // the checked (unregistered) providers; the sink consent-gates and calls the
+    // daemon's mcp.register (steering injection + per-client MCP registration).
+    onRepoRegisterProviders: createRepoRegisterProvidersHandler({
+      consent,
+      status,
+      logger: panelLog,
+      registeredRepos: () => daemonData.registeredRepos(),
+      registerProviders: (repoPath, steering) => client.rpc('mcp.register', { path: repoPath, steering }),
+      refresh: () => panelHost.openRepoConfiguration(),
     }),
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2
@@ -493,7 +507,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // (default false). When enabled, wire createChatPanelHost with the real injected
   // vscode channel seams (mirroring the status panel at :305), the memento-backed
   // sc4 ChatSessionStore (chat history extension-local, k3), and the sc5
-  // ProviderRegistry over the installed claude/codex CLIs. The chat command is
+  // ProviderRegistry over the installed claude/codex/vibe CLIs. The chat command is
   // registered ONLY when the flag is on, so the surface is invisible until opted in.
   const chatEnabled = vscode.workspace.getConfiguration().get<boolean>('insrc.chat.enabled') === true;
   // E2 s4: the docs-review pane, when the chat gate creates one, is also where the

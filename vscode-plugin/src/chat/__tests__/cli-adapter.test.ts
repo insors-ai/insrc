@@ -31,6 +31,8 @@ import {
   CLAUDE_PERMISSION_TURN,
   CLAUDE_PERMISSION_IDLESS,
   CODEX_PERMISSION_TURN,
+  VIBE_TEXT_TURN,
+  VIBE_TOOL_TURN,
   type FakeProcScript,
 } from './fixtures.js';
 
@@ -372,9 +374,9 @@ test('capabilities.resume is true for both providers; a resume request passes th
 // ---- ProviderRegistry -------------------------------------------------------
 
 test('ProviderRegistry.available lists only installed agentic CLIs (never Ollama)', () => {
-  const { deps } = depsFor({ lines: [] }, ['claude']);
+  const { deps } = depsFor({ lines: [] }, ['claude', 'vibe']);
   const reg = createProviderRegistry(deps);
-  assert.deepEqual([...reg.available], ['claude']);
+  assert.deepEqual([...reg.available], ['claude', 'vibe']);
   assert.ok(!(reg.available as string[]).includes('ollama'), 'ollama is never a member (k4)');
 });
 
@@ -785,6 +787,73 @@ test('S004 t4: codex buildArgs — undefined/review keep today argv; auto adds -
     await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'auto' })));
     assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '--dangerously-bypass-approvals-and-sandbox', '--', 'hi']);
   }
+});
+
+// ---- vibe provider -----------------------------------------------------------
+
+test('vibe: streaming text turn maps to assistant-deltas + a synthesized done(ok) carrying the sessionId', async () => {
+  const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+  const reg = createProviderRegistry(deps);
+  const events = await collect(reg.get('vibe').run(REQ({ provider: 'vibe' })));
+  assert.deepEqual(events.map((e) => e.kind), ['assistant-delta', 'assistant-delta', 'done']);
+  assert.deepEqual(events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text), ['Hello ', 'world']);
+  const done = events.at(-1) as { ok: boolean; sessionId?: string };
+  assert.equal(done.ok, true, 'vibe streams no terminal line; the adapter synthesizes done on exit 0');
+  assert.equal(done.sessionId, 'sess-vibe-1');
+  assert.equal(spawner.calls[0]!.command, 'vibe');
+  assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi']);
+  assert.equal(spawner.calls[0]!.closeInput, true, 'vibe reads stdin as the prompt, so input is closed and the prompt is positional');
+});
+
+test('vibe: tool_call (arguments_json string) maps to tool-call with command + mcp present; tool_result correlates the command', async () => {
+  const { deps } = depsFor({ lines: VIBE_TOOL_TURN }, ['vibe']);
+  const events = await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+  const tools = events.filter((e) => e.kind === 'tool-call') as Array<{ tool: string; command?: string; callId?: string; mcp?: { server: string; name: string }; present?: readonly string[] }>;
+  assert.equal(tools.length, 2);
+  assert.equal(tools[0]!.tool, 'bash');
+  assert.equal(tools[0]!.command, 'npm test', 'command parsed out of the arguments_json string');
+  assert.equal(tools[0]!.callId, 'call-1');
+  assert.equal(tools[1]!.tool, 'mcp_insrc_insrc_present');
+  assert.deepEqual(tools[1]!.mcp, { server: 'insrc', name: 'insrc_present' });
+  assert.deepEqual(tools[1]!.present, ['LLD-x-S001']);
+  const res = events.find((e) => e.kind === 'tool-result') as { output: string; command?: string; callId?: string };
+  assert.equal(res.output, 'all green');
+  assert.equal(res.command, 'npm test', 'the tool_result correlates the command via tool_call_id');
+  assert.equal(res.callId, 'call-1');
+});
+
+test('vibe: argv — resume, --add-dir, and the permission-mode flags', async () => {
+  {
+    const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi']);
+  }
+  {
+    const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'auto' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--auto-approve', '--', 'hi']);
+  }
+  {
+    const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'manual' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--agent', 'ask', '--', 'hi']);
+  }
+  {
+    const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'edit-auto' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--agent', 'accept-edits', '--', 'hi']);
+  }
+  {
+    const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', resume: { provider: 'vibe', nativeSessionId: 'sess-vibe-9' }, readDirs: ['/tmp/att'] })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--resume', 'sess-vibe-9', '--add-dir', '/tmp/att', '--', 'hi']);
+  }
+});
+
+test('ProviderRegistry.available lists vibe alongside claude/codex when installed', () => {
+  const { deps } = depsFor({ lines: [] }, ['claude', 'codex', 'vibe']);
+  const reg = createProviderRegistry(deps);
+  assert.deepEqual([...reg.available], ['claude', 'codex', 'vibe']);
 });
 
 // ---- S004 t5: mapLine permission branch + pending registry + decide -----------

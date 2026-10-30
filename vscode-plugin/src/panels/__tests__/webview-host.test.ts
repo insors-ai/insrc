@@ -78,6 +78,7 @@ function makeHost(opts: {
   onDetailAction?: WebviewPanelHostDeps['onDetailAction'];
   repoRenderer?: WebviewPanelHostDeps['repoRenderer'];
   onRepoConfigWrite?: WebviewPanelHostDeps['onRepoConfigWrite'];
+  onRepoRegisterProviders?: WebviewPanelHostDeps['onRepoRegisterProviders'];
 } = {}): {
   host: ReturnType<typeof createWebviewPanelHost>;
   created: FakePanel[];
@@ -104,6 +105,7 @@ function makeHost(opts: {
     onDetailAction: opts.onDetailAction,
     repoRenderer: opts.repoRenderer,
     onRepoConfigWrite: opts.onRepoConfigWrite,
+    onRepoRegisterProviders: opts.onRepoRegisterProviders,
   };
   return { host: createWebviewPanelHost(deps), created, offered, warns };
 }
@@ -616,4 +618,32 @@ test('S007: a repoRenderer throw (config read reject) degrades to an error body;
 test('source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)', () => {
   const src = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
   assert.doesNotMatch(src, /from ['"]vscode['"]/, 'the host core must not import vscode');
+});
+
+test('a {repoRegisterProviders} message forwards a validated RepoProviderRegistration to onRepoRegisterProviders; malformed ones are silent no-ops', async () => {
+  const regs: unknown[] = [];
+  const { host, created } = makeHost({
+    repoRenderer: async () => `<div>body</div>`,
+    onRepoRegisterProviders: (r) => regs.push(r),
+  });
+  host.openRepoConfiguration();
+  await tick();
+
+  created[0]!.injectMessage({ type: 'repoRegisterProviders', repoPath: '/repo/a', clients: ['codex', 'vibe'] });
+  assert.deepEqual(regs, [{ repoPath: '/repo/a', clients: ['codex', 'vibe'] }], 'a valid registration is forwarded');
+
+  created[0]!.injectMessage({ type: 'repoRegisterProviders', repoPath: '/repo/a', clients: 'codex' }); // not an array
+  created[0]!.injectMessage({ type: 'repoRegisterProviders', clients: ['codex'] }); // missing repoPath
+  created[0]!.injectMessage({ type: 'repoRegisterProviders', repoPath: '/repo/a', clients: [42] }); // non-string client
+  assert.equal(regs.length, 1, 'malformed registration messages are not forwarded');
+});
+
+test('the repo bootstrap script posts repoRegisterProviders with the checked data-provider values', () => {
+  const src = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
+  const m = src.match(/const REPO_BOOTSTRAP = `([\s\S]*?)`;/);
+  assert.ok(m, 'REPO_BOOTSTRAP exists');
+  const boot = m[1]!;
+  assert.match(boot, /getElementById\('insrc-register-providers'\)/, 'the register button is wired');
+  assert.match(boot, /querySelectorAll\('input\[data-provider\]'\)/, 'checked providers are collected');
+  assert.match(boot, /type: 'repoRegisterProviders', repoPath: repoPath, clients: clients/, 'posts the sanctioned message shape');
 });

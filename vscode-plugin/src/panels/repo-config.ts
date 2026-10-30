@@ -27,10 +27,11 @@
 
 import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
 import { escapeHtml } from './html.js';
-import type { RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoRef } from './types.js';
+import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
+import type { McpClient, McpClientOutcome, SteeringSelection } from '../../../src/shared/types.js';
 
 /** The tier names a role or the core floor may choose ('' = use the global choice). */
 const TIER_CHOICES = ['core', 'mid', 'cheap'] as const;
@@ -113,15 +114,55 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
       .join('');
     const floor = tierRow('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
 
+    // The Providers section: per-provider MCP registration state from the
+    // daemon's mcp.status read — already-registered providers render as
+    // non-checkable; only unregistered, available ones are checkboxes.
+    let providers: string;
+    try {
+      providers = renderProvidersSection(await deps.mcpRegistration());
+    } catch {
+      providers = `<p class="hint">Provider registration state is unavailable right now.</p>`;
+    }
+
     return (
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
       `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
       `<h3>Role tiers</h3><table class="role-tiers">${roles}</table>` +
       `<h3>Core floor</h3><table class="core-floor">${floor}</table>` +
+      `<h3>Providers</h3>${providers}` +
       `</section>`
     );
   };
+}
+
+/** Human label for a provider client id. */
+function providerLabel(client: string): string {
+  return client === 'claude' ? 'Claude Code' : client === 'codex' ? 'Codex' : client === 'vibe' ? 'Mistral Vibe' : client;
+}
+
+/** The Providers section: registered providers are shown checked + disabled;
+ *  unavailable CLIs disabled; only unregistered available ones are checkable. */
+function renderProvidersSection(regs: readonly McpRegistrationView[]): string {
+  const rows = regs.map((r) => {
+    const label = providerLabel(r.client);
+    if (r.registered) {
+      return `<label class="provider"><input type="checkbox" checked disabled> ${escapeHtml(label)} — registered</label>`;
+    }
+    if (!r.available) {
+      return `<label class="provider"><input type="checkbox" disabled> ${escapeHtml(label)} — CLI not found on PATH</label>`;
+    }
+    return `<label class="provider"><input type="checkbox" data-provider="${escapeHtml(r.client)}"> ${escapeHtml(label)}</label>`;
+  });
+  const checkable = regs.some((r) => r.available && !r.registered);
+  const button = checkable
+    ? `<button id="insrc-register-providers" type="button">Register selected providers</button>`
+    : '';
+  return (
+    `<p class="hint">Register the insrc MCP server (and inject the steering block) for a provider in this repo. Already-registered providers are not checkable.</p>` +
+    `<div class="providers">${rows.join('')}</div>` +
+    button
+  );
 }
 
 /**
@@ -174,6 +215,94 @@ export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write:
         deps.refresh(); // truthful re-render from fresh config (accepted-ok OR refused).
       } catch (err) {
         deps.logger.warn(`insrc: the per-repo config write failed — ${err instanceof Error ? err.message : String(err)}`);
+      }
+    })();
+  };
+}
+
+// ---- provider registration sink (post-setup `mcp.register`) -----------------
+
+/** The known provider clients a repo form may check. */
+const KNOWN_PROVIDERS: readonly McpClient[] = ['claude', 'codex', 'vibe'];
+
+/** Injected inputs for the consent-gated provider-registration orchestration. */
+export interface RepoRegisterProvidersDeps {
+  readonly consent: ConsentGate;
+  readonly status: StatusSurface;
+  readonly logger: { warn(message: string): void };
+  readonly registeredRepos: () => Promise<readonly RepoRef[]>;
+  /** The daemon's `mcp.register`: steering injection + per-client MCP registration. */
+  readonly registerProviders: (repoPath: string, steering: SteeringSelection) => Promise<{
+    readonly ok: boolean;
+    readonly mcp?: { readonly clients: readonly McpClientOutcome[] } | undefined;
+    readonly steering?: unknown;
+  }>;
+  /** Re-render the panel after a registration (truthful). */
+  readonly refresh: () => void;
+}
+
+/** Map the checked provider clients to the daemon's SteeringSelection flags
+ *  (claude → CLAUDE.md + claude client, codex → AGENTS.md + codex client,
+ *  vibe → vibe client; vibe reads the same AGENTS.md block via the agents flag). */
+export function steeringForClients(clients: readonly string[]): SteeringSelection {
+  return {
+    claude: clients.includes('claude'),
+    agents: clients.includes('codex'),
+    vibe: clients.includes('vibe'),
+  };
+}
+
+/**
+ * Build the consent-gated provider-registration handler (the host's
+ * onRepoRegisterProviders sink). Validates the repo is registered and the
+ * clients are known providers, prompts sc4 consent, and ONLY on 'accepted'
+ * calls the daemon's `mcp.register` — the full setup (steering-block injection
+ * into the repo's client files + MCP registration per selected client).
+ * Surfaces the outcome via sc2 and re-renders. Never throws.
+ */
+export function createRepoRegisterProvidersHandler(deps: RepoRegisterProvidersDeps): (reg: RepoProviderRegistration) => void {
+  return (reg: RepoProviderRegistration): void => {
+    if (
+      typeof reg !== 'object' ||
+      reg === null ||
+      typeof reg.repoPath !== 'string' ||
+      reg.repoPath.length === 0 ||
+      !Array.isArray(reg.clients) ||
+      !reg.clients.every((c) => typeof c === 'string') ||
+      reg.clients.length === 0 ||
+      !reg.clients.every((c) => (KNOWN_PROVIDERS as readonly string[]).includes(c))
+    ) {
+      return;
+    }
+    void (async () => {
+      try {
+        const repos = await deps.registeredRepos();
+        if (!repos.some((r) => r.path === reg.repoPath)) {
+          deps.logger.warn(`insrc: ignoring a provider registration for an unregistered repo (${reg.repoPath})`);
+          return;
+        }
+        const labels = reg.clients.map(providerLabel);
+        const outcome = await deps.consent.ask({
+          title: 'Register providers for this repo?',
+          detail: `Register ${labels.join(', ')} for ${reg.repoPath}: inject the insrc steering block into the repo's client files and register the insrc MCP server for each. Reversible.`,
+          acceptLabel: 'Register',
+          items: labels,
+        });
+        if (outcome !== 'accepted') return; // declined / dismissed — write NOTHING (k4).
+        const result = await deps.registerProviders(reg.repoPath, steeringForClients(reg.clients));
+        const mcpLine = (result.mcp?.clients ?? [])
+          .filter((c) => c.action !== 'skipped')
+          .map((c) => `${c.client} ${c.action}${c.note !== undefined && c.note !== '' ? ` (${c.note})` : ''}`)
+          .join(', ');
+        deps.status.set({
+          state: deps.status.current().state,
+          detail: result.ok
+            ? `provider registration for ${reg.repoPath}${mcpLine ? `: ${mcpLine}` : ' — nothing to do'}`
+            : `provider registration refused for ${reg.repoPath}`,
+        });
+        deps.refresh();
+      } catch (err) {
+        deps.logger.warn(`insrc: the provider registration failed — ${err instanceof Error ? err.message : String(err)}`);
       }
     })();
   };

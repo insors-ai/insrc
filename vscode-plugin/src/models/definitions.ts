@@ -26,7 +26,7 @@ export interface DefinedModel {
 export interface DefinedFamily {
   readonly id: string;
   /** Present for a CLI family; absent for the local (Ollama) family. */
-  readonly cliKind?: 'claude' | 'codex' | undefined;
+  readonly cliKind?: 'claude' | 'codex' | 'vibe' | undefined;
   readonly displayName: string;
   readonly tierDefaults?: Readonly<Record<string, { readonly model: string; readonly effort?: string | undefined }>> | undefined;
   readonly toolLoopModel?: string | undefined;

@@ -20,7 +20,7 @@ import { AssessmentError } from '../shared/understanding.js';
 
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { injectSteeringBlock, type SteeringSelection } from './steering-inject.js';
-import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
+import { registerMcpClients, probeMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import { getDb } from '../db/client.js';
@@ -377,6 +377,51 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			await removeRepo(db, path);
 			log.info({ repo: path }, 'repo removed (entities + relations + sessions + turns purged)');
 			return { ok: true };
+		},
+
+		// Read-only probe: is the insrc MCP server already registered for each
+		// known client (claude/codex via `mcp list`, vibe via its config.toml)?
+		// Lets a settings UI list providers with only the unregistered ones
+		// checkable. Never throws; an unanswerable client is available:false.
+		'mcp.status': async () => probeMcpClients(),
+
+		// Post-setup provider registration for an ALREADY-registered repo: the
+		// same steering-block injection + per-client MCP registration repo.add
+		// performs, without re-adding the repo. Per-section guarded exactly like
+		// repo.add — a failure never fails the call.
+		'mcp.register': async (params) => {
+			const rawPath = (params as { path?: unknown })?.path;
+			let normalisedPath: string;
+			try {
+				normalisedPath = validateRepoPath(rawPath);
+			} catch (err) {
+				const reason = err instanceof InvalidRepoPathError ? err.message : `unexpected validation error: ${(err as Error).message}`;
+				throw new Error(`Cannot register providers: ${reason}`);
+			}
+			const repos = await listRepos(db);
+			if (!repos.some(r => r.path === normalisedPath)) {
+				throw new Error(`Cannot register providers: ${normalisedPath} is not a registered repo`);
+			}
+			const sel = (params as { steering?: SteeringSelection }).steering ?? {};
+			let steering: Awaited<ReturnType<typeof injectSteeringBlock>> | undefined;
+			let mcp: Awaited<ReturnType<typeof registerMcpClients>> | undefined;
+			if (sel.claude === true || sel.agents === true || sel.vibe === true) {
+				try {
+					steering = await injectSteeringBlock(normalisedPath, sel);
+				} catch (err) {
+					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'steering injection failed; MCP registration proceeds regardless');
+				}
+				try {
+					mcp = await registerMcpClients(daemonInstallRoot(), sel);
+				} catch (err) {
+					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'mcp registration failed');
+				}
+			}
+			return {
+				ok: true,
+				...(steering !== undefined ? { steering } : {}),
+				...(mcp !== undefined ? { mcp } : {}),
+			};
 		},
 
 		'repo.list': async () => {

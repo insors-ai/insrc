@@ -46,6 +46,8 @@
       "models": [
         { "id": "mistral-large-latest", "displayName": "Mistral Large", "efforts": ["low", "medium", "high", "xhigh", "max"] },
         { "id": "mistral-vibe-cli-latest", "aliases": ["mistral-medium-3.5"], "displayName": "Mistral Medium 3.5 (Vibe default)", "efforts": ["low", "medium", "high", "xhigh", "max"] },
+        { "id": "zai-glm-5-3", "aliases": ["glm-5-3"], "displayName": "GLM 5.3 (Mistral-hosted)", "efforts": ["low", "high", "max"] },
+        { "id": "zai-glm-5-3-flash", "aliases": ["glm-5-3-flash"], "displayName": "GLM 5.3 Flash (Mistral-hosted)", "efforts": ["low", "high", "max"] },
         { "id": "devstral-latest", "displayName": "Devstral (coding)", "efforts": ["low", "medium", "high", "xhigh", "max"] },
         { "id": "mistral-small-latest", "displayName": "Mistral Small", "efforts": ["low", "medium", "high", "xhigh", "max"] }
       ],

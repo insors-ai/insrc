@@ -45,7 +45,7 @@ const RECORDED_RPC = [
 	'db.testConnection', 'docSummary.restoreFromBackup', 'docgen.generate', 'docgen.list', 'entity.closure',
 	'entity.summary', 'entity.unreachable', 'gate.resolve', 'guide.get', 'guide.list', 'handoff.cleanup',
 	'handoff.discard-orphan', 'handoff.list-orphans', 'handoff.mode-a.resolve', 'index.file', 'keys.delete', 'keys.get',
-	'keys.list', 'keys.set', 'locate.inferParents', 'models.approve', 'models.check', 'models.definitions', 'models.reject', 'models.resolveRole', 'ollama.list', 'ollama.search', 'plan.delete', 'plan.get',
+	'keys.list', 'keys.set', 'locate.inferParents', 'mcp.register', 'mcp.status', 'models.approve', 'models.check', 'models.definitions', 'models.reject', 'models.resolveRole', 'ollama.list', 'ollama.search', 'plan.delete', 'plan.get',
 	'plan.next_step', 'plan.reset_stale', 'plan.save', 'plan.step_update', 'plan_get', 'plan_next_step',
 	'plan_step_update', 'prefs.confirm.list', 'prefs.confirm.resolve', 'prefs.discard', 'prefs.edit', 'prefs.list',
 	'providers.check', 'providers.getConfig', 'providers.listModels', 'providers.setConfig', 'providers.testKey',
@@ -133,4 +133,17 @@ test("the session purge's tmp directory is the id's direct child of the tmp root
 	assert.equal(sessionTmpDir(root, 's-1f2e'), join(root, 's-1f2e'));
 	assert.equal(sessionTmpDir(root, 'abc..def'), join(root, 'abc..def'));
 	for (const id of ['..', '.', '', 'a/b', 'a/../..', '..\\x', 'a\0b']) assert.equal(sessionTmpDir(root, id), undefined, JSON.stringify(id));
+});
+
+test('handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.register refuses a malformed path before touching the store', async () => {
+	const runtime = buildHandlerRuntime({
+		db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
+		startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+	});
+	assert.equal(typeof runtime.rpcHandlers['mcp.register'], 'function');
+	assert.equal(typeof runtime.rpcHandlers['mcp.status'], 'function');
+	assert.equal(methodClasses.classOf('mcp.register'), 'indexing');
+	assert.equal(methodClasses.classOf('mcp.status'), 'admin');
+	// A non-string path is refused by validateRepoPath before the repo store is read.
+	await assert.rejects(runtime.rpcHandlers['mcp.register']!({ path: 42 }), /Cannot register providers/);
 });

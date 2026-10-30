@@ -252,3 +252,39 @@ test('registerMcpClients never rejects even if the injected run throws', async (
 	assert.equal(byClient(r, 'claude').action, 'failed');
 	assert.match(byClient(r, 'claude').note ?? '', /unexpected/);
 });
+
+// ---------------------------------------------------------------------------
+// probeMcpClients (the read-only mcp.status probe)
+// ---------------------------------------------------------------------------
+
+import { probeMcpClients } from '../mcp-register.js';
+
+test('probeMcpClients: per-client availability + registration from the same pre-checks registration uses; never throws', async () => {
+  const { deps } = stub((bin, args) => {
+    if (bin === 'claude' && isList(args)) return ok('insrc: node ... - Connected\n');
+    if (bin === 'codex' && isList(args)) return ok('other: node ...\n');
+    if (bin === 'vibe' && args[0] === '--version') return ok('vibe 3.0.3\n');
+    return ok();
+  }, () => '[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\n');
+  const r = await probeMcpClients(deps);
+  assert.deepEqual(r.clients, [
+    { client: 'claude', available: true, registered: true },
+    { client: 'codex', available: true, registered: false },
+    { client: 'vibe', available: true, registered: true },
+  ]);
+});
+
+test('probeMcpClients: an unreachable CLI resolves available:false, registered:false; a vibe without config text is registered:false', async () => {
+  const { deps } = stub((bin, args) => {
+    if (bin === 'claude') return { code: -1, stdout: '', stderr: '', spawnError: 'spawn claude ENOENT' };
+    if (bin === 'codex' && isList(args)) return { code: 2, stdout: '', stderr: 'boom' };
+    if (bin === 'vibe') return ok('vibe 3.0.3\n');
+    return ok();
+  }, () => undefined);
+  const r = await probeMcpClients(deps);
+  assert.deepEqual(r.clients, [
+    { client: 'claude', available: false, registered: false },
+    { client: 'codex', available: false, registered: false },
+    { client: 'vibe', available: true, registered: false },
+  ]);
+});

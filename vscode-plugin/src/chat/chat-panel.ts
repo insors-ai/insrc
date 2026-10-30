@@ -693,8 +693,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const cause = classifyFailure(error);
       log.warn(`[chat-queue] message ${q.message.key} failed: cause ${cause}, acted ${q.acted}, attempt ${q.message.attempts}: ${error}`);
       if (cause === 'auth' && !disposed) {
-        const cli = /\b(claude|codex)\b/i.exec(error)?.[1]?.toLowerCase();
-        const how = cli === 'codex' ? 'run `codex login` in a terminal' : cli === 'claude' ? 'run `claude` in a terminal and sign in with /login' : 'sign in to the CLI in a terminal';
+        const cli = /\b(claude|codex|vibe)\b/i.exec(error)?.[1]?.toLowerCase();
+        const how = cli === 'codex' ? 'run `codex login` in a terminal' : cli === 'claude' ? 'run `claude` in a terminal and sign in with /login' : cli === 'vibe' ? 'run `vibe --setup` (or set MISTRAL_API_KEY) in a terminal' : 'sign in to the CLI in a terminal';
         persistInfo(q.session, `queue-signin-${q.message.turnId}`, `${cli ?? 'The CLI'} is not signed in — ${how}, then resend this message.`);
       }
       return endQueued({ kind: 'failed', error, acted: q.acted, cause });

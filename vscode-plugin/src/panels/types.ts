@@ -49,6 +49,9 @@ export interface DaemonDataGateway {
   status(): Promise<DaemonStatusView>;
   workflowChain(): Promise<WorkflowChainView>;
   mcpClients(): Promise<readonly McpClientView[]>;
+  /** Per-provider MCP registration state (the daemon's `mcp.status` read): what is
+   *  already registered, so a settings UI can offer only the rest. */
+  mcpRegistration(): Promise<readonly McpRegistrationView[]>;
   registeredRepos(): Promise<readonly RepoRef[]>;
   scanOrphans(): Promise<readonly OrphanProcess[]>;
 }
@@ -74,6 +77,15 @@ export interface WorkflowChainRow {
 export interface McpClientView {
   readonly host: string;
   readonly wired: boolean;
+}
+
+/** One provider's MCP registration state (`mcp.status`): `available` = its CLI is
+ *  on PATH and answerable; `registered` = the insrc MCP server is already in its
+ *  config. Providers already registered render as non-checkable in settings. */
+export interface McpRegistrationView {
+  readonly client: string;
+  readonly available: boolean;
+  readonly registered: boolean;
 }
 
 /** One stray daemon/mcp process the scan found (s6 consent-gated kill consumes it). */
@@ -176,6 +188,8 @@ export interface RepoConfigRendererDeps {
   registeredRepos(): Promise<readonly RepoRef[]>;
   /** The raw ~/.insrc/config.json (config.show) — the source of per-repo overrides. */
   rawConfig(): Promise<Record<string, unknown>>;
+  /** Per-provider MCP registration state (mcp.status) — the Providers section source. */
+  mcpRegistration(): Promise<readonly McpRegistrationView[]>;
 }
 
 /**
@@ -189,6 +203,18 @@ export interface RepoConfigWrite {
   readonly repoPath: string;
   readonly segments: readonly string[];
   readonly value: unknown;
+}
+
+/**
+ * One provider-registration request emitted by the Repo Configuration form's
+ * Providers section: the repo plus the CHECKED (not yet registered) provider
+ * clients to register. The host forwards it to the injected sink; extension.ts
+ * maps clients to a SteeringSelection (claude→claude, codex→agents, vibe→vibe)
+ * and calls the daemon's `mcp.register` (steering injection + MCP registration).
+ */
+export interface RepoProviderRegistration {
+  readonly repoPath: string;
+  readonly clients: readonly string[];
 }
 
 /** One choice offered in the status-bar menu (VS Code's `QuickPickItem` satisfies it). */
@@ -257,6 +283,13 @@ export interface WebviewPanelHostDeps {
    * config.write, k4); the host performs no write itself.
    */
   readonly onRepoConfigWrite?: ((write: RepoConfigWrite) => void) | undefined;
+  /**
+   * OPTIONAL sink for a provider registration (the repo form's Providers section).
+   * The form posts {type:'repoRegisterProviders', repoPath, clients}; the host
+   * forwards a validated RepoProviderRegistration here. extension.ts owns the
+   * effect (the consent-gated `mcp.register` IPC, k4); the host performs none itself.
+   */
+  readonly onRepoRegisterProviders?: ((reg: RepoProviderRegistration) => void) | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

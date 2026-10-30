@@ -69,7 +69,7 @@ function currentCoreFloor(raw: Record<string, unknown>): Tier {
 
 /** The cloud/local hosting badge for a resolved family's model, or '' when the family is an open vendor family (no badge in the mock). */
 function hostingBadge(hosting: 'cloud' | 'local' | undefined): string {
-  return hosting === undefined ? '' : ` <span class="hosting-chip ${hosting}">${hosting}</span>`;
+  return hosting === undefined ? '' : ` <span class="hosting-chip ${escapeHtml(hosting)}">${escapeHtml(hosting)}</span>`;
 }
 
 /** The inline status note for a tier, matching the approved mock's .note.ok/.note.err blocks. */

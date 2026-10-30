@@ -149,3 +149,18 @@ test('createModelTiersWriteHandler: two rapid writes to the same control are eac
     { segments: ['models', 'tiers', 'core', 'model'], value: 'second' },
   ], 'both writes reach writeKeyPath, independently, in the order they arrived — no debouncing or coalescing');
 });
+
+test('renderModelTiers: every daemon-sourced field (family displayName, model id/displayName, hosting) is HTML-escaped — a stored script tag is never echoed raw', async () => {
+  const evil: ModelDefinitions = {
+    version: 1,
+    defaultFamily: 'evil',
+    families: [{
+      id: 'evil', cliKind: 'claude', host: 'ollama', displayName: '<script>x</script>',
+      models: [{ id: '<img onerror=alert(1)>', aliases: [], efforts: [], source: 'shipped', hosting: 'cloud' }],
+    }],
+  };
+  const html = await renderModelTiers({ modelDefinitions: async () => evil, rawConfig: async () => ({}) })();
+  assert.doesNotMatch(html, /<script>x<\/script>/, 'a family displayName is never echoed raw');
+  assert.doesNotMatch(html, /<img onerror=alert\(1\)>/, 'a model id is never echoed raw');
+  assert.match(html, /&lt;script&gt;x&lt;\/script&gt;/, 'the family displayName is escaped, not dropped');
+});

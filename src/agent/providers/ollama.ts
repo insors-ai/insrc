@@ -40,7 +40,7 @@ const TRANSIENT_RETRY_BASE_DELAY_MS = 5_000;
 // 300s completion header-timeout (Epic ba132c185fe45860, S002). A local ollama
 // tags query is sub-second when up; when down we want to fail fast to an
 // available:false signal rather than hang the picker.
-const OLLAMA_LIST_TIMEOUT_MS = 4_000;
+export const OLLAMA_LIST_TIMEOUT_MS = 4_000;
 
 /** One installed model, structurally compatible with the daemon's sc2 ModelInfo
  *  (kept local so this agent-layer file does not import from the daemon layer). */

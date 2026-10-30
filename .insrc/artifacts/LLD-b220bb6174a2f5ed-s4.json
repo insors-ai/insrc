@@ -1,0 +1,657 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793347664489-1sl1yl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T08:11:21.388Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 216891,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicHash": "b220bb6174a2f5ed",
+    "epicSlug": "run-claude-codex-ollama-models",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1793292978249-2ujf5k",
+    "hldEffectiveHash": "ca5bac7aee6017131c5204a57baa27e41f2e27c7cfda243bf4d4fdb1d0a3748a",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's acceptance mapping (ac1–ac4) matches S004's actual acceptance criteria in the Epic DEF, and each is addressed by a stated design change.",
+          "evidence": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/DEF.md:132-135 defines S004 ac1 (runner offered), ac2 (only declared models, cloud/local marks, efforts only where supported), ac3 (undeclared model refused with reason, tier unchanged), ac4 (picker/settings show the actually-used runner/model/effort). The LLD's §6 acceptance mapping and §5 error/edge cases address each: ac1 via pickFamily (unchanged, already lists every family), ac2 via pickModel's cloud/local marks + withheld enter-id, ac3 via applyTier's 'only listed models' refusal, ac4 via currentTier/modelDescription's '(current)' marks. [files: docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/DEF.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today, model-tier-picker.ts's pickModel offers 'Enter another model id…' for every family with a cliKind (regardless of host), and sync-engine.ts's applyTier branches its undeclared-model refusal message on cliKind!==undefined, not on host.",
+          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:342: `if (family.cliKind !== undefined) items.push({ label: 'Enter another model id…', ... })`. vscode-plugin/src/config/sync-engine.ts:187-190: `} else if (chosen === undefined) { return revert(family.cliKind !== undefined ? \"...run 'insrc: Set model tier' to check and approve it...\" : \"...only listed ${family.displayName} models can be used...\"); }`. Since the new 'ollama-claude' family (src/assets/models/cloud-model-catalog.json:70-83) has cliKind:'claude' AND host:'ollama', both of today's checks currently give it the wrong (vendor-CLI) treatment — exactly the bug the LLD states it is fixing. [files: vscode-plugin/src/models/model-tier-picker.ts, vscode-plugin/src/config/sync-engine.ts, src/assets/models/cloud-model-catalog.json]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The plugin's definitions.ts types (DefinedFamily/DefinedModel) today carry no host or hosting field, so the LLD's 'field-add' framing is accurate.",
+          "evidence": "vscode-plugin/src/models/definitions.ts:15-35 — DefinedModel (lines 15-23) and DefinedFamily (lines 26-35) have no host/hosting fields; confirms citation c3's claim. [files: vscode-plugin/src/models/definitions.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc1 (host on FamilyDefinitionEntry, hosting on ModelDefinitionEntry) already exists on the daemon side with the exact shape the LLD assumes, and is reused, not re-specified, by this Story.",
+          "evidence": "src/daemon/model-definitions.ts:40-67 declares `readonly hosting?: ModelHosting | undefined` on ModelDefinitionEntry and `readonly host?: FamilyHost | undefined` on FamilyDefinitionEntry; src/assets/models/cloud-model-catalog.json:70-83 ships a live 'ollama-claude' family with host:'ollama' and models carrying hosting:'cloud'. The LLD's DefinedFamily/DefinedModel field-adds in vscode-plugin exactly mirror these already-shipped daemon types; the plugin side is the only genuinely new code. [files: src/daemon/model-definitions.ts, src/assets/models/cloud-model-catalog.json, vscode-plugin/src/models/definitions.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc2's 'model-not-supported' fallback reason, which this Story's picker/sync mirrors for an undeclared host-family model, already exists on the daemon side.",
+          "evidence": "Grep for 'model-not-supported' across src/ returns matches in src/daemon/model-registry.ts and src/config/analyze.ts (plus their test files), confirming the fallback reason this LLD's error paths (§5) assume is already implemented, not invented for this Story. [files: src/daemon/model-registry.ts, src/config/analyze.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's listed call sites for the DefinedFamily/DefinedModel field-adds point to the real locations that must change.",
+          "evidence": "definitions.ts:26-35 matches the current DefinedFamily interface exactly (read lines 25-35); model-tier-picker.ts:323-345 covers the real pickModel function (lines 324-345) including the cliKind-gated enter-id push at :342; sync-engine.ts:187-190 matches the real cliKind-gated refusal branch (lines 187-191) that must be re-gated on host. The DefinedModel call site model-tier-picker.ts:310-320 is slightly offset from the real modelDescription function (313-322) and its use inside pickModel (336-339), a minor citation imprecision that does not change which function needs editing. [files: vscode-plugin/src/models/definitions.ts, vscode-plugin/src/models/model-tier-picker.ts, vscode-plugin/src/config/sync-engine.ts]",
+          "action": "none — citation line offset is cosmetic, not a functional gap",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing persisted changes shape, and an older daemon's answer (no host/hosting) parses unchanged because the new fields are optional.",
+          "evidence": "The LLD adds only `host?: 'ollama' | undefined` and `hosting?: 'cloud' | 'local' | undefined` as optional fields on existing interfaces (mirroring the daemon's already-optional FamilyHost/ModelHosting fields in src/daemon/model-definitions.ts:50,60); TypeScript optional-field parsing of a JSON answer that omits them yields `undefined` with no runtime effect, and the config-sync tier write/mirror logic (sync-engine.ts applyTier, lines 202-219) is untouched in shape — only the refusal-message branch condition changes. [files: vscode-plugin/src/config/sync-engine.ts, src/daemon/model-definitions.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Story's contract details and data-model changes touch only s4-owned VS Code plugin files (definitions.ts, model-tier-picker.ts, sync-engine.ts), none of s1 (daemon definitions/catalog/registry), s2 (CLI provider/Ollama target), s3 (terminal UI panes), or s5 (JetBrains settings).",
+          "evidence": "All call sites and contract/API entries in LLD §2–§3 name only vscode-plugin/src/models/definitions.ts, vscode-plugin/src/models/model-tier-picker.ts and vscode-plugin/src/config/sync-engine.ts; no src/daemon/**, src/cli/panes/**, or jetbrains-plugin/** paths appear anywhere in the contract/data-model/migration sections, consistent with the adjacentBoundaries table's exclusions. [files: vscode-plugin/src/models/definitions.ts, vscode-plugin/src/models/model-tier-picker.ts, vscode-plugin/src/config/sync-engine.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each stated failure (settings-editor undeclared model, daemon write refusal, stale configured model on picker reopen, daemon-down/older-daemon) names a real, checkable detection point in the existing code that the LLD's change hooks into.",
+          "evidence": "Detection points cited — `servedModel(family, model)` returning undefined (definitions.ts:50-52, already present), `gateway.writeKeyPath` returning `{ok:false}` (sync-engine.ts:202-208, already present), pickModel's current-model-not-found branch (model-tier-picker.ts:332-335, already present), and `classifyDaemonFailure` (definitions.ts:79-89, already present) — are all real, existing hooks; the LLD only changes which message/branch each produces for a host family, not the detection mechanism itself. [files: vscode-plugin/src/models/definitions.ts, vscode-plugin/src/config/sync-engine.ts, vscode-plugin/src/models/model-tier-picker.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion (ac1–ac4) maps to at least one named test subject in an existing, real test file.",
+          "evidence": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts and vscode-plugin/src/config/__tests__/sync-engine.test.ts both exist and already exercise the exact seams the LLD's new subjects extend (fake SetModelTierDeps / fake gateway+settings+notifier, confirmed by reading both files); the acceptance mapping table ties ac1→family-offer+family-switch tests, ac2→model-list/cloud-local/effort tests, ac3→sync-engine refusal test, ac4→picker-reopen+native-key-mirror tests, leaving no criterion unmapped. [files: vscode-plugin/src/models/__tests__/model-tier-picker.test.ts, vscode-plugin/src/config/__tests__/sync-engine.test.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing literal-scan test in model-tier-picker.test.ts, which the LLD claims 'stays green', does not get broken by the planned change since no new runner/model id literals are introduced.",
+          "evidence": "model-tier-picker.test.ts:185-195 scans the source for literal family ids (cli-claude|cli-codex|ollama) and every shipped model id/alias from cloud-model-catalog.json. The LLD's planned pickModel/modelDescription changes gate on `family.host`/`model.hosting` (structural fields), never on a literal family or model id string, so the scan's invariant is preserved by design. [files: vscode-plugin/src/models/__tests__/model-tier-picker.test.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-30T08:11:25.609Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-30T08:21:43.877Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story lets a VS Code user set a tier to the Claude tool on an Ollama model, from the 'insrc: Set model tier' picker or the native insrc.models.tiers settings. The runner already appears because the picker lists every family the daemon declares; this Story marks each of its models cloud or local, removes 'Enter another model id' for it, shows a configured model it does not declare as 'not supported, the tier will not run', and makes the settings sync refuse such a model with the reason that only listed models can be used. The family is recognised by the definitions' host mark, never by name.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Model the new runner as a new family in the model definitions (alternative a1). The definitions file, its validator and the definitions answer gain one family, 'ollama-claude', with the CLI kind 'claude' and a host mark 'ollama'; every model of that family carries a hosting mark, 'cloud' or 'local'. Tier settings, effort filtering and provider construction keep their one per-family path. A family with the Ollama host mark builds the existing CLI provider with an Ollama target applied to that subprocess only, and clients use the host mark to show cloud/local and to never offer unlisted model ids for that family. Scope change 2026-10-29 (user decision): the Codex-on-Ollama family is withdrawn, because Ollama's cloud models ignore a requested output format and the Codex tool depends on it (DEF non-goal, citation c9 of the DEF).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Ollama-hosted CLI families in the definitions answer",
+          "purpose": "The wire shape every consumer reads to know the new family, that it runs a CLI on Ollama, and which of its models are cloud or local.",
+          "interfaceSketch": "type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama' | 'ollama-claude';\ntype FamilyHost = 'ollama';\ntype ModelHosting = 'cloud' | 'local';\ninterface FamilyDefinitionEntry {\n  readonly id: FamilyId;\n  readonly displayName: string;\n  readonly cliKind?: 'claude' | 'codex';\n  /** Present only on the new family: the CLI runs against Ollama. */\n  readonly host?: FamilyHost;\n  readonly models: readonly ModelDefinitionEntry[];\n}\ninterface ModelDefinitionEntry {\n  readonly id: string;\n  readonly displayName: string;\n  readonly aliases?: readonly string[];\n  readonly efforts: readonly string[];\n  readonly inputLimit?: { readonly unit: 'chars' | 'tokens'; readonly max: number };\n  /** Required on every model of a family with host; absent elsewhere. */\n  readonly hosting?: ModelHosting;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c5"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Tier resolution on an Ollama-hosted family",
+          "purpose": "How the daemon reports the tier it actually runs when the tier names a host family, including a model the definitions do not declare, so the run layer and every settings surface show the same outcome.",
+          "interfaceSketch": "type FallbackReason = /* existing reasons */ string | 'model-not-supported';\ninterface TierResolution {\n  readonly family: FamilyId;\n  /** undefined when the configured model is not declared for a host family. */\n  readonly model: ResolvedModel | undefined;\n  readonly effort: string | undefined;\n  readonly fallback?: { readonly reason: FallbackReason; readonly configured: string };\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The VS Code tier picker's family and model steps, the settings write validation that refuses an undeclared model for a host family, the cloud/local labels and the withheld 'enter another id' item stay inside s4."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "The shipped definitions entry for the new family and its models (which cloud and local models are supported), the catalog validator's four-member check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "How the CLI provider points a run at Ollama (the claude environment, applied only to that subprocess), the pre-run checks that Ollama answers and the model is available or signed in for a cloud model, the failure messages that name the cause, and the time limit that keeps a run from waiting forever stay inside s2."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The terminal UI's runner list, model list with cloud/local labels, effort step and the withheld 'enter another id' path for host families, and its display of the resolved tier, stay inside s3."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The JetBrains Settings page's family and model selectors, the cloud/local labels, the filter that keeps host families out of the model-check flow, and its display of the resolved tier stay inside s5."
+        }
+      ],
+      "rolloutPhase": "Phase B — run on Ollama and expose in settings",
+      "nonFunctional": {
+        "performance": "No added cost on today's runners. A run on a host family adds one Ollama reachability and model-availability check before the CLI starts; a run never waits beyond the existing CLI time limit.",
+        "security": "The Ollama settings are applied only to the started subprocess's environment or arguments; the user's own CLI configuration files and the daemon's environment are never changed. No API key is stored; the claude CLI gets the placeholder token Ollama accepts locally.",
+        "observability": "The daemon logs the family, model, hosting and Ollama target of each host-family run, and a failed pre-run check logs which check failed; the tier resolution reported to clients names a 'model-not-supported' fallback.",
+        "durability": "Nothing new is persisted: tier settings keep their stored shape, and the new families live in the shipped definitions file."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "DefinedFamily",
+          "signature": "interface DefinedFamily { readonly id: string; readonly cliKind?: 'claude' | 'codex' | 'vibe' | undefined; /** Present when the family runs its CLI on a host (Ollama). */ readonly host?: 'ollama' | undefined; readonly displayName: string; readonly tierDefaults?: ...; readonly toolLoopModel?: string | undefined; readonly rejectedModels?: readonly string[] | undefined; readonly models: readonly DefinedModel[] }",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "The plugin's view of one family in the models.definitions answer, now carrying sc1's host mark."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "An older daemon's answer without host parses as today (host undefined)."
+          ]
+        },
+        {
+          "name": "DefinedModel",
+          "signature": "interface DefinedModel { readonly id: string; readonly aliases: readonly string[]; readonly displayName?: string | undefined; readonly efforts: readonly string[]; readonly source: 'shipped' | 'user-approved'; readonly installed?: boolean | undefined; /** Models of a family with a host: where the model runs. */ readonly hosting?: 'cloud' | 'local' | undefined }",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "The plugin's view of one model, now carrying sc1's hosting mark."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Absent for vendor and plain Ollama models."
+          ]
+        },
+        {
+          "name": "modelDescription",
+          "signature": "function modelDescription(m: DefinedModel, isCurrent: boolean): string | undefined",
+          "parameters": [
+            {
+              "name": "m",
+              "type": "DefinedModel",
+              "purpose": "The model being listed.",
+              "optional": false
+            },
+            {
+              "name": "isCurrent",
+              "type": "boolean",
+              "purpose": "Whether it is the tier's current model.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "As today (aliases, user-approved, not installed, current), and the model's hosting ('cloud' or 'local') when it has one."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Vendor and plain Ollama models get exactly today's marks."
+          ]
+        },
+        {
+          "name": "pickModel",
+          "signature": "async function pickModel(deps: SetModelTierDeps, family: DefinedFamily, models: readonly DefinedModel[], currentModel: string | undefined): Promise<PickItem | undefined>",
+          "parameters": [
+            {
+              "name": "family",
+              "type": "DefinedFamily",
+              "purpose": "The chosen family.",
+              "optional": false
+            },
+            {
+              "name": "models",
+              "type": "readonly DefinedModel[]",
+              "purpose": "The family's declared models.",
+              "optional": false
+            },
+            {
+              "name": "currentModel",
+              "type": "string | undefined",
+              "purpose": "The tier's current model when the family is unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<PickItem | undefined>",
+            "meaning": "The picked item. For a family with a host: the declared models with their cloud/local mark; no 'Enter another model id…' item; a current model the family does not declare is shown as '(current, not supported — the tier will not run): <id>' with description 'not supported by <displayName>'. Other families: unchanged ('Enter another model id…' for a CLI family, '(current, not listed — runs the default)')."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The models.check flow (checkUnlisted) is never reachable for a family with a host."
+          ]
+        },
+        {
+          "name": "applyTier",
+          "signature": "const applyTier = async (tier: string, changes: readonly ChangedKey[]): Promise<readonly string[]>",
+          "parameters": [
+            {
+              "name": "tier",
+              "type": "string",
+              "purpose": "The tier whose native keys changed.",
+              "optional": false
+            },
+            {
+              "name": "changes",
+              "type": "readonly ChangedKey[]",
+              "purpose": "The changed insrc.models.tiers.<tier>.* keys.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<readonly string[]>",
+            "meaning": "As today: the keys needing a restart, or [] after a refusal (the native keys reverted to their last-known values)."
+          },
+          "errors": [
+            {
+              "type": "refusal (notifier.error + revert)",
+              "condition": "The model is not one the family declares and the family has a host: \"insrc: '<model>' is not a listed <displayName> model; only listed <displayName> models can be used (<ids>) — <tier> tier not changed\"."
+            },
+            {
+              "type": "refusal (notifier.error + revert)",
+              "condition": "The daemon's config.write refuses the tier (its own host-family gate): 'insrc: daemon rejected the <tier> tier — <reason>'."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "A vendor CLI family keeps the 'run insrc: Set model tier to check and approve it' message; plain Ollama keeps the 'only listed' message.",
+            "A refused edit writes nothing and the tier keeps its previous setting."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DefinedFamily",
+        "change": "field-add",
+        "details": "Adds host?: 'ollama' (sc1), read to recognise a family whose models are a closed list.",
+        "schemaDiff": "+ readonly host?: 'ollama' | undefined;",
+        "callSites": [
+          "vscode-plugin/src/models/definitions.ts:26-35",
+          "vscode-plugin/src/models/model-tier-picker.ts:323-345",
+          "vscode-plugin/src/config/sync-engine.ts:187-190"
+        ]
+      },
+      {
+        "entity": "DefinedModel",
+        "change": "field-add",
+        "details": "Adds hosting?: 'cloud' | 'local' (sc1), shown in the model picker.",
+        "schemaDiff": "+ readonly hosting?: 'cloud' | 'local' | undefined;",
+        "callSites": [
+          "vscode-plugin/src/models/definitions.ts:15-23",
+          "vscode-plugin/src/models/model-tier-picker.ts:310-320"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reads host on a family and hosting on a model from models.definitions; the family is never named by id in the plugin (model-tier-picker.ts's literal-scan test stays green)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Mirrors the daemon's resolution for a host family in the picker: a declared model runs as configured (an effort it does not take is shown dropped, as currentTier does today); an undeclared model is shown as not supported and not run, with no substitute."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A user types a model the Claude-on-Ollama runner does not declare into insrc.models.tiers.<tier>.model (or sets the runner and a foreign model together) in the Settings editor.",
+          "detection": "applyTier finds the family has a host and servedModel(family, model) returns undefined.",
+          "response": "notifier.error(\"insrc: '<model>' is not a listed <displayName> model; only listed <displayName> models can be used (<ids>) — <tier> tier not changed\"), then the changed native keys are reverted to their last-known values; nothing is written to the daemon.",
+          "userImpact": "The change is refused with the reason and the tier keeps its previous setting (ac3); the user is not sent to a model-check flow the daemon refuses for this runner.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The plugin's check passes but the daemon refuses the write (e.g. the definitions changed between the plugin's read and the write).",
+          "detection": "gateway.writeKeyPath returns ok:false (the daemon's config.write gate refuses an undeclared host-family model).",
+          "response": "The existing path: 'insrc: daemon rejected the <tier> tier — <reason>' and the native keys are reverted.",
+          "userImpact": "Same outcome as above, with the daemon's own reason.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tier is configured (hand-edited config) on the Claude-on-Ollama runner with a model it does not declare, and the user opens the picker and keeps that family.",
+          "detection": "pickModel finds the current model is not among the family's models and the family has a host.",
+          "response": "The list shows '(current, not supported — the tier will not run): <id>' with 'not supported by <displayName>' above the declared models, and offers no 'Enter another model id…'.",
+          "userImpact": "The user sees the tier does not run (the daemon's model-not-supported refusal) and picks a listed model; they are not told it runs a default.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon is down or an older daemon answers the definitions without host or hosting.",
+          "detection": "deps.definitions() rejects (classifyDaemonFailure), or the family entry has no host field.",
+          "response": "Daemon down: the existing not-running / older-daemon messages. No host field: the family is treated as today's CLI families (no cloud/local marks, 'Enter another model id…' offered, the 'check and approve' settings message).",
+          "userImpact": "No new failure mode; marks and refusals appear once the daemon is s1 or later.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Picking the Claude-on-Ollama family in the picker.",
+          "expected": "The model list shows only its declared models, each with 'cloud' or 'local' among its marks, plus Refresh; no 'Enter another model id…'."
+        },
+        {
+          "input": "A declared host model with no efforts (e.g. deepseek-v4-pro:cloud).",
+          "expected": "pickEffort is skipped and the tier is written with effort '' (the CLI default), as for any model with no efforts."
+        },
+        {
+          "input": "Setting only insrc.models.tiers.<tier>.runner to the Claude-on-Ollama family id in settings.",
+          "expected": "A family switch: the tier takes the family's first declared model (familyDefault, no tierDefaults) with effort '', written as one whole tier and mirrored into the model/effort keys."
+        },
+        {
+          "input": "A host model given by an alias in settings.",
+          "expected": "Served (servedModel matches aliases); written with the canonical id."
+        },
+        {
+          "input": "An effort the declared host model does not take, set in settings.",
+          "expected": "Refused as today ('effort ... is not accepted by <model>'), or dropped on a family switch."
+        },
+        {
+          "input": "A saved Claude-on-Ollama tier, picker reopened.",
+          "expected": "currentTier reports the saved runner, model and effort (an effort the model does not take shown as ''); the model is marked '(current)' with its cloud/local mark."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every family, model and effort the picker and the settings sync offer or accept comes from the daemon's models.definitions answer; model-tier-picker.ts names no runner or model literal (its literal-scan test stays green).",
+          "source": "c1"
+        },
+        {
+          "text": "The picker writes the whole tier {runner, model, effort} once at ['models','tiers',tier]; the settings sync writes the whole tier and mirrors it into the native keys, and reverts every changed key on a refusal.",
+          "source": "c2"
+        },
+        {
+          "text": "Vendor CLI families keep 'Enter another model id…', the models.check / approve flow and the 'check and approve it' settings message; plain Ollama keeps the 'only listed models' message.",
+          "source": "c1"
+        },
+        {
+          "text": "The plugin's definitions types stay structural mirrors of the daemon's answer; an answer without the new fields parses unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (vscode-plugin/src/**/__tests__/*.test.ts; npm test in vscode-plugin); the picker runs over the fake SetModelTierDeps seams and the settings sync over its fake gateway/settings/notifier, as in model-tier-picker.test.ts and sync-engine.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The tier picker over a fake definitions answer that includes a family with a host.",
+          "subjects": [
+            "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: the family step offers the Claude-on-Ollama family next to today's families; picking it lists only its declared models, each with its cloud/local mark, and no 'Enter another model id…'; picking a model with efforts offers '' plus its own levels, a model with none skips the effort step; one whole-tier write.",
+            "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: a configured undeclared model on the host family is listed as '(current, not supported — the tier will not run)'; a vendor family keeps '(current, not listed — runs the default)' and 'Enter another model id…'; an answer without host shows no marks and offers 'Enter another model id…'.",
+            "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: after a tier is saved on the Claude-on-Ollama family, reopening the picker (configShow returns the saved tier) marks that family and model as current with its cloud/local mark and the saved effort as current; an effort the model does not take is shown as the CLI default."
+          ],
+          "fixturesNeeded": [
+            "A fake definitions answer adding a family with host 'ollama', cliKind 'claude', no tierDefaults, and models with hosting 'cloud' (with efforts, one with an alias) and 'local' (no efforts)."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The native settings sync for a host family.",
+          "subjects": [
+            "vscode-plugin/src/config/__tests__/sync-engine.test.ts: setting insrc.models.tiers.<tier>.model to a model the Claude-on-Ollama family does not declare is refused with 'only listed <family> models can be used', reverts every changed key and writes nothing; a vendor family's unlisted model keeps the 'check and approve it' message.",
+            "vscode-plugin/src/config/__tests__/sync-engine.test.ts: setting only the runner to the Claude-on-Ollama family takes its first declared model with effort '' and writes the whole tier, mirrored into the native model/effort keys; a declared model (or alias) with a listed effort is written with the canonical id."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "model-tier-picker.test.ts: the family step offers the Claude-on-Ollama family next to today's families",
+            "sync-engine.test.ts: setting only the runner to the Claude-on-Ollama family takes its first declared model and writes the whole tier"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "model-tier-picker.test.ts: picking the host family lists only its declared models with cloud/local marks and no 'Enter another model id…'; efforts only where the model has them"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "sync-engine.test.ts: an undeclared model for the Claude-on-Ollama family is refused with 'only listed models can be used', every changed key is reverted and nothing is written"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "model-tier-picker.test.ts: reopening the picker after a save shows the saved runner, model (with its mark) and effort as current",
+            "sync-engine.test.ts: the written tier is mirrored into the native runner/model/effort keys"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The VS Code picker (vscode-plugin/src/models/model-tier-picker.ts) already lists every family the definitions declare, including the Claude-on-Ollama one, but shows no cloud/local mark, offers 'Enter another model id…' (the models.check flow the daemon refuses for a host family) and shows an undeclared current model as '(current, not listed — runs the default)'. The settings sync (vscode-plugin/src/config/sync-engine.ts applyTier) refuses an undeclared model but tells the user to check and approve it with 'insrc: Set model tier', which is impossible for a host family. The plugin's definitions types (vscode-plugin/src/models/definitions.ts) do not carry host or hosting.",
+      "stateAfter": "The plugin reads host and hosting from the definitions answer: the picker marks each host-family model cloud or local, withholds 'Enter another model id…' for it and shows an undeclared current model as not supported (the tier will not run); the settings sync refuses an undeclared host-family model with 'only listed models can be used' and reverts. Vendor and plain Ollama families are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional host field to the plugin's family type and the optional hosting field to its model type.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Make the picker show the cloud/local mark, withhold the enter-id item and show the not-supported current-model notice for a family with a host.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Make the settings sync's refusal of an undeclared model on a family with a host use the 'only listed models' reason, and note in the tier setting descriptions that the Claude-on-Ollama runner accepts only its listed models.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Client-only display and validation change: nothing persisted changes, the tier keys and the whole-tier write keep their shape, and an answer from an older daemon (no host/hosting) behaves as today.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Host-aware picker and settings validation over the definitions answer",
+        "oneLineSummary": "Add host/hosting to the plugin's definitions types; the picker labels models cloud/local, withholds 'Enter another model id' and shows an undeclared current model as not supported for a host family; the settings sync refuses an undeclared host-family model with an 'only listed models' reason.",
+        "approach": "vscode-plugin/src/models/definitions.ts: DefinedFamily gains `host?: 'ollama'` and DefinedModel gains `hosting?: 'cloud' | 'local'`, mirroring sc1; the family is recognised by `host`, never by id. model-tier-picker.ts: modelDescription adds the model's hosting ('cloud' / 'local') to its marks; pickModel adds 'Enter another model id…' only for a family with a cliKind and no host; a configured model a host family does not declare is shown as '(current, not supported — the tier will not run)' instead of '(current, not listed — runs the default)'. pickFamily already lists every family, pickEffort already skips a model with no efforts and offers only the model's own, and saveTier already writes the whole tier once and reports the daemon's refusal. sync-engine.ts applyTier: an undeclared model on a family with a host is refused with 'only listed <displayName> models can be used (<ids>)' (the existing non-CLI wording) instead of the 'check and approve it' wording, then reverted to the last-known values as today. package.json tier setting descriptions mention that the Claude-on-Ollama runner accepts only its listed models.",
+        "pros": [
+          "Smallest change: the existing picker and sync-engine paths, data source and tests are reused; three source files plus the setting descriptions.",
+          "Same rule as the daemon (s1 refuses the check and the write for host families) and the TUI (s3), recognised by the host mark.",
+          "No new IPC, no daemon change; s5 untouched."
+        ],
+        "cons": [
+          "The picker mirrors the daemon's tier resolution rather than asking for it (the same trade-off currentTier already makes).",
+          "Native settings stay free-text strings, so the runner list is not a dropdown in the Settings editor; the picker is the guided path."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "a1 plus dynamic enum dropdowns in the native settings",
+        "oneLineSummary": "As a1, and additionally contribute the families and models as enum choices for the insrc.models.tiers.* settings so the Settings editor offers the runners and models as dropdowns.",
+        "approach": "Everything in a1, plus: the static package.json contributions cannot carry daemon-sourced enums, so the extension would have to register a dynamic configuration schema (not supported by the VS Code API for contributed settings) or replace the native keys with a webview settings page listing families and models with cloud/local labels. The sync engine would keep validating writes.",
+        "pros": [
+          "The Settings editor itself would show the runner and model choices."
+        ],
+        "cons": [
+          "VS Code cannot change contributed setting enums at runtime; a webview settings page is a new surface far beyond the Story and duplicates the picker.",
+          "Hard-coding enums in package.json would violate k4 (one definitions answer) and the literal scan rule."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Adds nothing ac1-ac4 need, violates k4 (a second runner/model list) or requires a new settings surface (L); a1 satisfies ac1-ac4, sc1, sc2 and k1-k6 at cost S."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: The VS Code tier picker (insrc: Set model tier) — vscode-plugin/src/models/model-tier-picker.ts:300-345",
+      "quotedText": "'Enter another model id…' (the models.check flow, checkUnlisted :353-445) is added for every family with a cliKind (:342)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: The native VS Code settings for tiers — vscode-plugin/src/config/sync-engine.ts:141-219",
+      "quotedText": "On success it writes the whole tier with gateway.writeKeyPath and mirrors the written value into the native keys; a daemon refusal (refusalText) reverts too."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: The VS Code plugin's view of the definitions answer — vscode-plugin/src/models/definitions.ts:14-63",
+      "quotedText": "Neither type carries the daemon's `host` (family) or `hosting` (model) fields that s1 added to the definitions answer"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: Tests to extend — vscode-plugin/src/models/__tests__/model-tier-picker.test.ts:81",
+      "quotedText": "drives the picker over fake seams ... with a fake definitions answer, asserting offered items and the single whole-tier write"
+    }
+  ]
+}

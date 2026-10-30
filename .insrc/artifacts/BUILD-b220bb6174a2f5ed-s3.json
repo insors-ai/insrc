@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "b220bb6174a2f5ed",
+    "storyId": "s3",
+    "createdAt": "2026-10-30T06:40:16.334Z",
+    "updatedAt": "2026-10-30T08:07:21.044Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicSlug": "run-claude-codex-ollama-models",
+    "approvedAt": "2026-10-30T08:07:21.276Z",
+    "reviewOverride": {
+      "reason": "manual code review: 0 HIGH / 0 MED; LOW findings 1-2 fixed in 83f7a2625, 3-4 accepted (cosmetic / outside s3)",
+      "at": "2026-10-30T08:07:21.276Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Re-validated after the code-review fix that dropped an assertion which could not fail (the default family is a vendor CLI family by type).",
+    "testRecord": {
+      "md": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/cli/__tests__/model-tiers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T07:54:20.022Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/model-tiers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T07:54:20.022Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui-models.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T07:54:20.022Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/ModelTiersPane.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T07:54:20.022Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-literal-scan.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T07:54:20.022Z"
+      }
+    ],
+    "commit": "245a92568"
+  }
+}

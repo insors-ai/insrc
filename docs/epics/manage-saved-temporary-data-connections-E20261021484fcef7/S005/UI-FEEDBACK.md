@@ -35,3 +35,12 @@ User clarification: “no, keep the new connection also below the list.”
 Required layout: the connections list comes first, with both new connection registration and editing an existing selected connection below it. This supersedes the earlier registration-above-list requirement. Preserve the draft and its validation/actions when placing the form, and keep DOM/keyboard order consistent with the visible order.
 
 Status: recorded for implementation. No runtime layout change or UI verification is claimed by this entry.
+
+
+## Pending manual feedback — 2026-10-31: fixed registration message section
+
+Registration messages appear in a fixed message section at the bottom of the Connections panel. The section occupies two lines, shows the latest message, and includes the number of messages. It remains at the bottom while the connections list and New/Edit form are scrolled.
+
+Clicking the message section opens a popup where the user can cycle through the collected registration messages. Keep the section and popup keyboard-accessible and preserve the existing safe-message handling.
+
+Status: recorded for implementation. No runtime message-section or popup change is claimed by this entry.

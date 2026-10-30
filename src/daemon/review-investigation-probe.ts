@@ -13,7 +13,10 @@ import { loadAnalyzeConfig } from '../config/analyze.js';
 import { createInvestigationPolicy, admitInvestigationRequest } from '../workflow/code-review/investigation/continuation-policy.js';
 import { createInvestigationProbeFixture } from './review-investigation-probe-fixtures.js';
 import { InvestigationReplySchema } from '../shared/review-investigation.js';
-import { claudeInvestigationAdapter } from '../agent/providers/claude-investigation-session.js';
+import { claudeCompactInvestigationAdapter } from '../agent/providers/claude-investigation-session.js';
+import { reviewProtocolSchemaFor, reviewModelProtocolFor } from '../shared/review-isolation-evidence.js';
+import { investigationBoundaryManifest,compactExecutionBoundaryDigest } from '../agent/providers/investigation-boundary.js';
+import { nativeInvestigationEnvironment } from '../agent/providers/native-investigation-session.js';
 import { codexInvestigationAdapter } from '../agent/providers/codex-investigation-session.js';
 import { nativeReviewMcpConfiguration } from '../agent/providers/native-investigation-session.js';
 import { inspectInstalledInvestigation } from '../agent/providers/native-investigation-installation.js';
@@ -170,29 +173,32 @@ export async function executeInstalledProbe(request: Start, status: Investigatio
   assertOwner(); signal.throwIfAborted();
   const { provider, resolution } = createRoleRouter({ cliTimeoutMs: 300000 }).resolveProviderForRole('review', loadAnalyzeConfig(), request.repo);
   if (!provider.runInvestigationProbe || !provider.getReviewBudgetProfile || !['cli-claude', 'cli-codex'].includes(resolution.runner)) throw Error('Unsupported review probe provider');
-  const kind = resolution.runner === 'cli-claude' ? 'claude' : 'codex', adapter = kind === 'claude' ? claudeInvestigationAdapter : codexInvestigationAdapter;
+  const kind = resolution.runner === 'cli-claude' ? 'claude' : 'codex', adapter = kind === 'claude' ? claudeCompactInvestigationAdapter : codexInvestigationAdapter;
+  const schema=reviewProtocolSchemaFor(adapter.version),protocol=reviewModelProtocolFor(adapter.version);
   const policy = createInvestigationPolicy(provider), profile = provider.getReviewBudgetProfile('reviewer-session');
-  const budget = { policy: policy.budget, admitted: admitInvestigationRequest(policy, { probeId: status.probeId, sourceMode: request.sourceMode }, InvestigationReplySchema),
+  const budget = { policy: policy.budget, admitted: admitInvestigationRequest(policy, { probeId: status.probeId, sourceMode: request.sourceMode }, schema),
     outputAllowanceTokens: profile.completionReserveTokens, reviewId: status.probeId, callId: status.attemptId, stage: 'probe', role: 'review', attempt: 1 };
   const assertCurrent = () => { assertOwner(); signal.throwIfAborted(); };
   const fixture = await createInvestigationProbeFixture({ registeredRepos, probeId: status.probeId, attemptId: status.attemptId,
-    sourceMode: request.sourceMode, budget, signal, assertCurrent });
+    sourceMode: request.sourceMode, budget, signal, assertCurrent,protocol });
   try {
     let binary: string | undefined;
     for (const directory of (process.env['PATH'] ?? '').split(delimiter)) try { binary = realpathSync(join(directory, kind)); break; } catch { /* Continue PATH lookup. */ }
     if (!binary) throw Error('Selected CLI is not installed');
     const installed = inspectInstalledInvestigation(kind, binary, fixture.cwd), indexed = request.sourceMode === 'indexed-impact';
     const modelArgs = ['--model', resolution.model, ...(resolution.effort ? kind === 'claude' ? ['--effort', resolution.effort] : ['-c', `model_reasoning_effort=${resolution.effort}`] : [])];
-    const args = adapter.args(InvestigationReplySchema, modelArgs, fixture.cwd, indexed), command = nativeReviewMcpConfiguration(fixture.cwd, indexed).mcpServers['insrc-scoped-review'];
+    const args = adapter.args(schema, modelArgs, fixture.cwd, indexed), command = nativeReviewMcpConfiguration(fixture.cwd, indexed).mcpServers['insrc-scoped-review'];
     const pins = [...installed.images, ...[command.command, command.args.find(p => /\/insrc-review-bridge\.(?:ts|js)$/.test(p))!].map(path => ({ path: realpathSync(path), digest: investigationFileDigest(realpathSync(path)) }))];
-    const identity: NativeAdapterIdentity = { kind, adapterVersion: adapter.version, binaryVersion: installed.version,
+    const boundary=protocol==='compact-v1'?investigationBoundaryManifest():null;
+    let identity: NativeAdapterIdentity = { kind, adapterVersion: adapter.version, binaryVersion: installed.version,...(boundary?{nativeCodeDigest:boundary.digest}:{}),
       binary: { path: binary, digest: investigationFileDigest(binary) }, runtimeFiles: [...new Map(pins.filter(p => p.path !== binary).map(p => [p.path, p])).values()],
-      profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(indexed), launchDigest: adapter.launchDigest(args, fixture.cwd, InvestigationReplySchema) };
+      profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(indexed,protocol), launchDigest: adapter.launchDigest(args, fixture.cwd, schema) };
+    if(boundary)identity={...identity,executionBoundaryDigest:compactExecutionBoundaryDigest(identity,args,fixture.cwd,adapter.configuration(fixture.cwd,indexed),nativeInvestigationEnvironment())};
     const source = fileURLToPath(new URL('../../', import.meta.url));
     await pinIdentity(identity);
     const grant = issueInvestigationProbeGrant({ origin: 'installed-probe', probeId: status.probeId, attemptId: status.attemptId,
       repo: request.repo, cwd: fixture.cwd, sourceMode: request.sourceMode, identity, budget, deadlineAt: Date.now() + 300000, assertCurrent, observe,
-      runtime: { requestId: request.requestId, sourceCommit: readInstalledCommit(source), sourceDigest: investigationSourceDigest(source), fixture } });
+      runtime: { requestId: request.requestId, sourceCommit: readInstalledCommit(source), sourceDigest: identity.executionBoundaryDigest??investigationSourceDigest(source), fixture } });
     return await provider.runInvestigationProbe({ grant, signal });
   } finally { await fixture.close(); }
 }

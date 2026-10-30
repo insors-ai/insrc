@@ -14,8 +14,11 @@ import { ScopedReviewBridge } from './review-investigation-bridge.js';
 import { startNativeReviewBroker } from '../mcp/review-investigation-native.js';
 import { createProbeCanaries, CANARY_SIGNAL_BYTES } from './review-investigation-canaries.js';
 import { nativeReviewMcpConfiguration } from '../agent/providers/native-investigation-session.js';
+import type { ReviewModelProtocol } from '../shared/review-investigation-compact.js';
+import { sourceReference } from '../workflow/code-review/investigation/source.js';
 
 interface ProbeFixtureOptions {
+  readonly protocol?: ReviewModelProtocol | undefined;
   readonly registeredRepos: readonly string[];
   readonly probeId: string;
   readonly attemptId: string;
@@ -87,14 +90,16 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     const address = network.address(); if (!address || typeof address === 'string') throw Error('Probe listener unavailable');
     const blockIds = ['probe-block-1', 'probe-block-2'] as const;
     const subjectDigest = digestValue({ probeId: options.probeId, attemptId: options.attemptId, blockIds, marker });
+    const compact = options.protocol === 'compact-v1';
+    const blocks = blockIds.map((blockId,index) => ({blockId,kind:'text',oldPath:`probe-${index+1}.txt`,newPath:`probe-${index+1}.txt`,oldBlob:String(index+1).repeat(40),newBlob:String(index+3).repeat(40),oldLines:[1,1],newLines:[1,1]}));
     const turn: InvestigationTurnV1 = { runId: `probe-${options.probeId}`, subjectDigest, generation: 1,
       attemptId: options.attemptId, requestDigest: digestValue({ marker, subjectDigest }), policyDigest: digestValue(options.budget.policy),
-      assignment: [...blockIds], navigationRefs: blockIds.map(id => `fixture:${id}`), unresolvedRefs: [], priorAcceptedCheckpoint: 'probe-initial',
+      assignment: [...blockIds], navigationRefs: compact?blocks.map(b=>sourceReference({kind:'blob',oid:b.oldBlob,start:1,end:1})):blockIds.map(id => `fixture:${id}`), unresolvedRefs: [], priorAcceptedCheckpoint: 'probe-initial',
       limits: { attemptMs: 300000, activeMsRemaining: 300000, continuationsRemaining: 1, inclusiveTokenLimit: 128000 } };
     let state: InvestigationState = { ledger: { runId: turn.runId, subjectDigest, evidence: [], coverage: [], findings: [] },
       sequence: 0, checkpoint: 'probe-initial', accepted: [], consumedActiveMs: 0, attempts: 1, uncertainProgressId: null, usage: [] };
     const tools: InvestigationTools = {
-      seed: { probeOnly: true, scope: { subjectDigest, packets: [{ blocks: blockIds.map(blockId => ({ blockId })) }] } },
+      seed: compact?{probeOnly:true,scope:{subjectDigest,tasks:[],contracts:[],packets:[{commitId:'a'.repeat(40),parentId:'b'.repeat(40),blocks}]},obligations:[]}:{ probeOnly: true, scope: { subjectDigest, packets: [{ blocks: blockIds.map(blockId => ({ blockId })) }] } },
       impact: { mode: options.sourceMode, index: null, queryChangedEntityCallers: options.sourceMode === 'indexed-impact' ? async () => [] : null },
       execution: { budget: options.budget, timeoutMs: 300000, stallMs: 300000, internalRetry: false },
       read: async reference => {
@@ -119,7 +124,7 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
         return receipt;
       },
     };
-    const grant = bridge.issue({ repo: cwd, turn, tools, peer: 'native-cli', signal, ttlMs: 300000,
+    const grant = bridge.issue({ repo: cwd, turn, tools, peer: 'native-cli', signal, ttlMs: 300000,protocol:options.protocol,
       assertCurrent: options.assertCurrent, state: () => state });
     broker = await startNativeReviewBroker(cwd, grant.binding, async raw => {
       try {
@@ -133,7 +138,7 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
         if (trafficGuard) { try { trafficGuard(trafficChars); } catch { failure = cause; abort.abort(); } }
         throw cause;
       }
-    });
+    },options.protocol);
     const configuration = nativeReviewMcpConfiguration(cwd, options.sourceMode === 'indexed-impact');
     writeFileSync(join(cwd, 'investigation-mcp.json'), JSON.stringify(configuration), { mode: 0o600 });
     writeFileSync(join(cwd, 'investigation-settings.json'), JSON.stringify(CLAUDE_INVESTIGATION_SETTINGS), { mode: 0o600 });

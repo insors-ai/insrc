@@ -19,7 +19,7 @@ import { NATIVE_REVIEW_BINDING_ENV,startNativeReviewBroker,nativeReviewBindingPa
 import { inspectQualifiedInvestigationBinding,investigationBindingIdentity,investigationBindingDirectory,trackInvestigationInvocation,InvestigationQualificationError } from './investigation-session.js';
 import type { NativeAdapterIdentity } from './investigation-session.js';
 import { preflightProviderReviewBudget,reviewWireSchemaJson } from './review-budget.js';
-import { CLAUDE_V2_ADAPTER } from '../../shared/review-isolation-evidence.js';
+import { isClaudeCapabilityAdapter } from '../../shared/review-isolation-evidence.js';
 import { CLAUDE_DIAGNOSTIC_BYTES,managedPolicySnapshot,prepareClaudeDiagnostic,readClaudeDiagnostic } from './claude-investigation-diagnostics.js';
 import { readClaudeSourcePolicyDiagnostics } from './claude-investigation-policy.js';
 
@@ -90,7 +90,7 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
  // Scripted fixtures retain their explicit non-production partition. Every
  // installed v2 invocation rechecks native startup policy before granting any
  // scoped operation, including the final reply; a 24h probe is not a waiver.
- const debugPath=input.adapter.version===CLAUDE_V2_ADAPTER&&input.evidenceScope!=='scripted-fixture'?join(cwd,'investigation-debug.log'):undefined;
+ const debugPath=isClaudeCapabilityAdapter(input.adapter.version)&&input.evidenceScope!=='scripted-fixture'?join(cwd,'investigation-debug.log'):undefined;
  let diagnosticWatch:ReturnType<typeof setInterval>|undefined;
  const checkNativePolicy=()=>{
   if(!debugPath)return;

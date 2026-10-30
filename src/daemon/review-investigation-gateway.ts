@@ -97,6 +97,11 @@ async function productionProbeService(): Promise<InvestigationProbeService> {
  const pending=probeService;
  try{return await pending;}catch(cause){if(probeService===pending)probeService=undefined;throw cause;}
 }
+/** Owning-daemon replay only; a pilot never promotes caller-supplied evidence. */
+export async function readInstalledInvestigationProbe(repo:string,probeId:string):Promise<unknown>{
+ const result=await (await productionProbeService()).dispatch({version:1,operation:'export',repo,probeId});
+ if(result['next']!=='exported'||!result['report'])throw Error('Installed probe is not complete');return result['report'];
+}
 /** Separate parser/dispatcher: probe packets never enter review or legacy routes. */
 export async function probeTransport(raw:unknown,service:()=>Promise<InvestigationProbeService>=productionProbeService):Promise<Record<string,unknown>>{
  try{

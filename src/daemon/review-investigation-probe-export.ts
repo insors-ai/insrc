@@ -11,7 +11,7 @@ import { createRoleRouter } from '../analyze/context/role-router.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
 import { installedSourceMatches } from './installed-commit.js';
 import { investigationSourceDigest } from './review-investigation-adoption.js';
-import { claudeInvestigationAdapter } from '../agent/providers/claude-investigation-session.js';
+import { claudeInvestigationAdapter,claudeCompactInvestigationAdapter } from '../agent/providers/claude-investigation-session.js';
 import { codexInvestigationAdapter } from '../agent/providers/codex-investigation-session.js';
 import { InvestigationReplySchema } from '../shared/review-investigation.js';
 import { readProbeCanaryEvidence } from './review-investigation-canaries.js';
@@ -20,12 +20,14 @@ import { scopedReviewCatalogDigest } from '../shared/review-investigation-catalo
 import { inspectInstalledInvestigation, assertInstalledImagesPinned } from '../agent/providers/native-investigation-installation.js';
 import { reconstructClaudeQualification, sourcePolicyHostSchema } from '../agent/providers/claude-investigation-qualification.js';
 import { readClaudeDiagnostic } from '../agent/providers/claude-investigation-diagnostics.js';
-import { CLAUDE_V2_ADAPTER } from '../shared/review-isolation-evidence.js';
+import { CLAUDE_V3_ADAPTER,isClaudeCapabilityAdapter,reviewModelProtocolFor,reviewProtocolSchemaFor } from '../shared/review-isolation-evidence.js';
+import { investigationBoundaryManifest,compactExecutionBoundaryDigest } from '../agent/providers/investigation-boundary.js';
+import { nativeInvestigationEnvironment } from '../agent/providers/native-investigation-session.js';
 import type { ProcessGroupResult } from '../shared/process-group.js';
 
 function replayClaudeV2(report:InvestigationProbeExport) {
  const identity=report.status.identity;
- if(identity?.adapterVersion!==CLAUDE_V2_ADAPTER)return;
+ if(!identity||!isClaudeCapabilityAdapter(identity.adapterVersion))return;
  if(report.phases?.length!==2||!report.canaries||report.status.endedAt===null)throw Error('Incomplete v2 phase proof');
  const root=dirname(report.canaries.manifestPath),cwd=join(root,'cwd'),files=report.evidenceFiles??[];
  const required=(kind:NonNullable<InvestigationProbeExport['evidenceFiles']>[number]['kind'],name:string)=>{
@@ -36,7 +38,8 @@ function replayClaudeV2(report:InvestigationProbeExport) {
  const source=required('source-policy','source-policy-host.json'),brokerFile=required('host-checks','host-checks.json');
  const host=sourcePolicyHostSchema.parse(JSON.parse(readFileSync(source.path,'utf8')));
  if(host.probeId!==report.status.probeId||host.attemptId!==report.status.attemptId)throw Error('Foreign v2 policy observation');
- for(const [path,value]of Object.entries(claudeInvestigationAdapter.configuration(cwd,report.status.sourceMode==='indexed-impact')))
+ const adapter=identity.adapterVersion===CLAUDE_V3_ADAPTER?claudeCompactInvestigationAdapter:claudeInvestigationAdapter;
+ for(const [path,value]of Object.entries(adapter.configuration(cwd,report.status.sourceMode==='indexed-impact')))
   if(!files.some(f=>f.kind==='configuration'&&f.path===path)||digestValue(JSON.parse(readFileSync(path,'utf8')))!==digestValue(value))throw Error('V2 source policy configuration changed');
  const broker=JSON.parse(readFileSync(brokerFile.path,'utf8')) as {positiveBefore:boolean;positiveAfter:boolean;crossRunRejected:number;approvalRejected:boolean};
  const proof=reconstructClaudeQualification({identity,sourceMode:report.status.sourceMode,cwd,endedAt:report.status.endedAt,
@@ -85,7 +88,7 @@ export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExp
   for(const check of ['cross-run','approval'] as const){
    const observation=report.status.observations.find(o=>o.check===check);
    const verdict=check==='cross-run'?(alive?(host['crossRunRejected']===6?'observed-denied':'observed-allowed'):'unverifiable'):
-    alive&&!host['approvalRejected']?'observed-allowed':report.candidate?.identity.adapterVersion==='claude-scoped-v2'&&alive&&host['approvalRejected']?'observed-denied':'unverifiable';
+    alive&&!host['approvalRejected']?'observed-allowed':isClaudeCapabilityAdapter(report.candidate?.identity.adapterVersion??'')&&alive&&host['approvalRejected']?'observed-denied':'unverifiable';
    if(!observation||observation.observationDigest!==digestValue(host)||observation.verdict!==verdict)throw Error('Host boundary evidence promoted or changed');
   }
   for(const phase of report.phases){
@@ -106,7 +109,7 @@ export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExp
  if(report.candidate){
   if(!report.status.identity)throw Error('Missing pinned probe identity');
   inspectUnsignedIsolationEvidence(report.candidate,report.status.identity,report.status.repo,report.status.sourceMode==='indexed-impact',
-   ['claude-scoped-v1','claude-scoped-v2','codex-scoped-v1']);
+   ['claude-scoped-v1','claude-scoped-v2',CLAUDE_V3_ADAPTER,'codex-scoped-v1']);
   if((report.evidenceFiles??[]).filter(f=>f.kind==='native-output'||f.kind==='checkpoint-journal').length!==2)throw Error('Candidate lacks independent raw evidence');
   const journal=report.evidenceFiles!.find(f=>f.kind==='checkpoint-journal')!,output=report.evidenceFiles!.find(f=>f.kind==='native-output')!;
   const events=readFileSync(journal.path,'utf8').split('\n').filter(Boolean).map(line=>JSON.parse(line) as {value?:{kind?:string;receipt?:{sequence?:number}}});
@@ -124,18 +127,22 @@ export function validateInstalledProbeExport(input:unknown):InvestigationProbeEx
  const report=validateUnsignedProbeExport(input);
  if(report.candidate||report.phases){
   const root=fileURLToPath(new URL('../../',import.meta.url));
-  if(!installedSourceMatches(root,report.sourceCommit,['src','package-lock.json'])||report.sourceDigest!==investigationSourceDigest(root))throw Error('Probe source is stale');
+  if(report.status.identity?.adapterVersion===CLAUDE_V3_ADAPTER){
+   const boundary=investigationBoundaryManifest(root);if(report.status.identity.nativeCodeDigest!==boundary.digest||report.status.identity.executionBoundaryDigest!==report.sourceDigest)throw Error('Probe execution boundary is stale');
+  }else if(!installedSourceMatches(root,report.sourceCommit,['src','package-lock.json'])||report.sourceDigest!==investigationSourceDigest(root))throw Error('Probe source is stale');
   const {provider,resolution}=createRoleRouter({cliTimeoutMs:300000}).resolveProviderForRole('review',loadAnalyzeConfig(),report.status.repo);
   const kind=resolution.runner==='cli-claude'?'claude':resolution.runner==='cli-codex'?'codex':null;
   const identity=report.candidate?.identity??report.status.identity;
-  if(!identity||!kind||!provider.getReviewBudgetProfile||kind!==identity.kind||digestValue(provider.getReviewBudgetProfile('reviewer-session'))!==identity.profileDigest||identity.catalogDigest!==scopedReviewCatalogDigest(report.status.sourceMode==='indexed-impact'))throw Error('Probe review role/catalog is stale');
-  const adapter=kind==='claude'?claudeInvestigationAdapter:codexInvestigationAdapter;
+  if(!identity||!kind||!provider.getReviewBudgetProfile||kind!==identity.kind||digestValue(provider.getReviewBudgetProfile('reviewer-session'))!==identity.profileDigest||identity.catalogDigest!==scopedReviewCatalogDigest(report.status.sourceMode==='indexed-impact',reviewModelProtocolFor(identity.adapterVersion)))throw Error('Probe review role/catalog is stale');
+  const adapter=kind==='claude'?(identity.adapterVersion===CLAUDE_V3_ADAPTER?claudeCompactInvestigationAdapter:claudeInvestigationAdapter):codexInvestigationAdapter;
+  const schema=reviewProtocolSchemaFor(identity.adapterVersion);
   const args=['--model',resolution.model,...(resolution.effort?kind==='claude'?['--effort',resolution.effort]:['-c',`model_reasoning_effort=${resolution.effort}`]:[])];
   const cwd=report.candidate?.effective.cwd??readProbeCanaryEvidence(report.canaries!.manifestPath).manifest.cwd;
   const installed=inspectInstalledInvestigation(kind,identity.binary.path,cwd);
   if(installed.version!==identity.binaryVersion)throw Error('Probe runtime version is stale');
   assertInstalledImagesPinned(identity,installed.images);
-  if(adapter.launchDigest(adapter.args(InvestigationReplySchema,args,cwd,report.status.sourceMode==='indexed-impact'),cwd,InvestigationReplySchema)!==identity.launchDigest)throw Error('Probe launch environment changed');
+  if(adapter.launchDigest(adapter.args(schema,args,cwd,report.status.sourceMode==='indexed-impact'),cwd,schema)!==identity.launchDigest)throw Error('Probe launch environment changed');
+  if(identity.adapterVersion===CLAUDE_V3_ADAPTER&&compactExecutionBoundaryDigest(identity,adapter.args(schema,args,cwd,report.status.sourceMode==='indexed-impact'),cwd,adapter.configuration(cwd,report.status.sourceMode==='indexed-impact'),nativeInvestigationEnvironment())!==identity.executionBoundaryDigest)throw Error('Probe normalized execution policy changed');
   if(report.phases){
    if(kind!=='claude'||adapter.launchDigest(claudeInvestigationControlArgs(args,cwd,report.status.sourceMode==='indexed-impact'),cwd,CLAUDE_PROBE_CONTROL_SCHEMA)!==report.phases[0]!.launchDigest)throw Error('Probe control launch environment changed');
    for(const [path,value] of Object.entries(adapter.configuration(cwd,report.status.sourceMode==='indexed-impact')))

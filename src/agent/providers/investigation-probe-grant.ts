@@ -61,3 +61,7 @@ export function consumeInvestigationProbeGrant(grant: InvestigationProbeGrant, s
 export function revokeInvestigationProbeGrant(grant: InvestigationProbeGrant): void {
   grants.delete(grant);
 }
+/** Metadata selection only; the probe still consumes and authenticates the grant before launch. */
+export function investigationProbeAdapterVersion(grant: InvestigationProbeGrant): string {
+ const context=grants.get(grant);if(!context)throw Error('Untrusted or already consumed probe grant');return context.identity.adapterVersion;
+}

@@ -1,12 +1,18 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { z } from 'zod';
 import { InvestigationReplySchema } from './review-investigation.js';
+import { CompactFinalAckSchema } from './review-investigation-compact.js';
 import { digestValue } from '../workflow/code-review/investigation/identity.js';
 
 export const ISOLATION_CHECKS = ['effective-inventory', 'raw-filesystem', 'shell', 'network', 'approval', 'cross-run',
   'builtin-tools', 'user-mcp', 'project-mcp', 'plugins', 'hooks', 'repository-instructions', 'durable-progress', 'cancellation-exit'] as const;
 export const CAPABILITY_BOUNDARY = 'review-agent-capabilities-v1' as const;
 export const CLAUDE_V2_ADAPTER = 'claude-scoped-v2';
+export const CLAUDE_V3_ADAPTER = 'claude-scoped-v3';
+export const isClaudeCapabilityAdapter = (version: string) => version === CLAUDE_V2_ADAPTER || version === CLAUDE_V3_ADAPTER;
+export const reviewModelProtocolFor = (version: string) => version === CLAUDE_V3_ADAPTER ? 'compact-v1' as const : 'bound-v1' as const;
+export const reviewProtocolSchemaFor = (version: string) => version === CLAUDE_V3_ADAPTER ? CompactFinalAckSchema : InvestigationReplySchema;
+export const reviewProtocolSchemaDigestFor = (version: string) => digestValue(JSON.parse(JSON.stringify(reviewProtocolSchemaFor(version))));
 // TypeBox schemas carry symbol metadata; bind the JSON schema sent on the wire.
 export const REVIEW_PROTOCOL_SCHEMA_DIGEST = digestValue(JSON.parse(JSON.stringify(InvestigationReplySchema)));
 export const ISOLATION_BASES = ['native-catalog', 'native-source-policy-control', 'native-permission-broker',
@@ -37,7 +43,7 @@ export function boundaryEvidenceValid(adapter: string, input: unknown): boolean 
   const parsed = z.object(boundaryEvidenceFields).passthrough().safeParse(input);
   if (!parsed.success) return false;
   const value = parsed.data;
-  if (adapter !== CLAUDE_V2_ADAPTER)
+  if (!isClaudeCapabilityAdapter(adapter))
     return value.boundary === undefined && value.protocolTools === undefined && value.evidenceBasis === undefined;
   return value.boundary === CAPABILITY_BOUNDARY && value.protocolTools?.length === 1 &&
     value.evidenceBasis?.length === ISOLATION_CHECKS.length && new Set(value.evidenceBasis.map(b => b.check)).size === ISOLATION_CHECKS.length &&

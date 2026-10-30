@@ -8,7 +8,11 @@ import { join } from 'node:path';
 import { CliProvider } from '../cli-provider.js';
 import { issueInvestigationProbeGrant } from '../investigation-probe-grant.js';
 import { investigationFileDigest, inspectQualifiedInvestigationBinding, qualifyInvestigationAdapter, inspectUnsignedIsolationEvidence } from '../investigation-session.js';
-import { claudeInvestigationAdapter } from '../claude-investigation-session.js';
+import { claudeInvestigationAdapter,claudeCompactInvestigationAdapter } from '../claude-investigation-session.js';
+import { investigationBoundaryManifest,compactExecutionBoundaryDigest } from '../investigation-boundary.js';
+import { nativeInvestigationEnvironment } from '../native-investigation-session.js';
+import { CLAUDE_V3_ADAPTER,reviewProtocolSchemaFor } from '../../../shared/review-isolation-evidence.js';
+import type { NativeAdapterIdentity } from '../investigation-session.js';
 import { codexInvestigationAdapter } from '../codex-investigation-session.js';
 import { installedInvestigationImages } from '../native-investigation-installation.js';
 import { nativeReviewMcpConfiguration } from '../native-investigation-session.js';
@@ -51,12 +55,15 @@ writeFileSync(new URL('./observed.json',import.meta.url),JSON.stringify({args:ar
 if(existsSync(new URL('./early-exit',import.meta.url))){process.stdout.write(JSON.stringify({type:'result',result:'I denied everything',structured_output:{tools:[],hooks:[],plugins:[]}}));process.exit(0);}
 const config=JSON.parse(readFileSync(process.cwd()+'/investigation-binding-'+process.env.INSRC_REVIEW_NATIVE_BINDING_ID+'.json','utf8'));
 const {expiresAt,...binding}=config.binding;
-async function call(progress){return new Promise((yes,no)=>{const s=createConnection(config.socket);let text='';s.on('error',no);s.on('connect',()=>s.write(JSON.stringify({...binding,operation:'progress',progress})+'\\n'));s.on('data',c=>{text+=c;const end=text.indexOf('\\n');if(end<0)return;const r=JSON.parse(text.slice(0,end));s.destroy();if(r.ok)yes(r.result);else no(Error('refused'));});});}
-for(let i=0;i<2;i++)await call({runId:turn.runId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,progressId:'p'+i,expectedSequence:i,blockId:'probe-block-'+(i+1),disposition:'unverified',evidenceIds:[],notes:'synthetic',coverageUpdates:[],findings:[],outstandingWork:[]});
+async function call(operation,data){return new Promise((yes,no)=>{const s=createConnection(config.socket);let text='';s.on('error',no);s.on('connect',()=>s.write(JSON.stringify({...binding,...(config.version===2?{protocol:'compact-v1'}:{}),operation,...data})+'\\n'));s.on('data',c=>{text+=c;const end=text.indexOf('\\n');if(end<0)return;const r=JSON.parse(text.slice(0,end));s.destroy();if(r.ok)yes(r.result);else no(Error('refused'));});});}
+for(let i=0;i<2;i++){
+ if(config.version===2){await call('read',{target:{kind:'change',blockId:'b'+(i+1),side:'before'}});await call('progress',{progress:{blockId:'b'+(i+1),disposition:'unverified',evidence:[],notes:'synthetic',unresolved:[],assessments:[],findings:[]}});}
+ else await call('progress',{progress:{runId:turn.runId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,progressId:'p'+i,expectedSequence:i,blockId:'probe-block-'+(i+1),disposition:'unverified',evidenceIds:[],notes:'synthetic',coverageUpdates:[],findings:[],outstandingWork:[]}});
+}
 setInterval(()=>{},1000);
 `;
 
-async function fixture(kind: 'claude' | 'codex' = 'claude', qualifying = false) {
+async function fixture(kind: 'claude' | 'codex' = 'claude', qualifying = false, compact = false) {
   const repo = mkdtempSync(join(tmpdir(), 'native-probe-test-'));
   if (kind === 'codex') {
     mkdirSync(join(repo, 'bin'));
@@ -70,23 +77,42 @@ async function fixture(kind: 'claude' | 'codex' = 'claude', qualifying = false) 
   const provider = new CliProvider({ kind, binPath: binary });
   if (qualifying) writeFileSync(join(repo,'v2-native'),'explicit scripted native evidence, not installed qualification');
   const f = continuationFixture(), policy = createInvestigationPolicy(provider), probeId = randomUUID(), attemptId = randomUUID();
-  const budget = { policy: policy.budget, admitted: admitInvestigationRequest(policy, { turn: f.turn, seed: f.context.seed }, InvestigationReplySchema),
+  const schema=compact?reviewProtocolSchemaFor(CLAUDE_V3_ADAPTER):InvestigationReplySchema;
+  const budget = { policy: policy.budget, admitted: admitInvestigationRequest(policy, { turn: f.turn, seed: f.context.seed }, schema),
     outputAllowanceTokens: policy.budget.profile.completionReserveTokens, reviewId: probeId, callId: attemptId, stage: 'probe', role: 'probe', attempt: 1 };
   const abort = new AbortController();
   const probe = await createInvestigationProbeFixture({ registeredRepos: [repo], probeId, attemptId,
-    sourceMode: 'source-only', budget, signal: abort.signal, assertCurrent: () => {} });
+    sourceMode: 'source-only', budget, signal: abort.signal, assertCurrent: () => {},protocol:compact?'compact-v1':'bound-v1' });
   const command = nativeReviewMcpConfiguration(probe.cwd, false).mcpServers['insrc-scoped-review'];
   const file = (path: string) => ({ path: realpathSync(path), digest: investigationFileDigest(realpathSync(path)) });
-  const adapter = kind === 'claude' ? claudeInvestigationAdapter : codexInvestigationAdapter;
-  const profile = provider.getReviewBudgetProfile('reviewer-session'), args = adapter.args(InvestigationReplySchema, [], probe.cwd, false);
-  const identity = { kind, adapterVersion: adapter.version, binaryVersion: qualifying ? CLAUDE_PROBE_TELEMETRY_VERSION : 'explicitly-nonqualifying-fixture',
+  const adapter = kind === 'claude' ? compact?claudeCompactInvestigationAdapter:claudeInvestigationAdapter : codexInvestigationAdapter;
+  const profile = provider.getReviewBudgetProfile('reviewer-session'), args = adapter.args(schema, [], probe.cwd, false);
+  let identity:NativeAdapterIdentity = { kind, adapterVersion: adapter.version, binaryVersion: qualifying ? CLAUDE_PROBE_TELEMETRY_VERSION : 'explicitly-nonqualifying-fixture',
     binary: file(binary), runtimeFiles: [...installedInvestigationImages(kind, binary, probe.cwd).filter(pin => pin.path !== binary), file(command.command), file(command.args.find(p => p.endsWith('insrc-review-bridge.ts'))!)],
-    profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(false), launchDigest: adapter.launchDigest(args, probe.cwd, InvestigationReplySchema) };
+    profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(false,compact?'compact-v1':'bound-v1'), launchDigest: adapter.launchDigest(args, probe.cwd, schema) };
+  if(compact){identity={...identity,nativeCodeDigest:investigationBoundaryManifest().digest};identity={...identity,executionBoundaryDigest:compactExecutionBoundaryDigest(identity,args,probe.cwd,adapter.configuration(probe.cwd,false),nativeInvestigationEnvironment())};}
   const context = { origin: 'installed-probe' as const, probeId, attemptId, repo, cwd: probe.cwd, sourceMode: 'source-only' as const,
     identity, budget, deadlineAt: Date.now() + 30_000, assertCurrent: () => {}, observe: async () => {},
-    runtime: { requestId: randomUUID(), sourceCommit: 'a'.repeat(40), sourceDigest: 'b'.repeat(64), fixture: probe } };
+    runtime: { requestId: randomUUID(), sourceCommit: 'a'.repeat(40), sourceDigest: identity.executionBoundaryDigest??'b'.repeat(64), fixture: probe } };
   return { repo, provider, probe, abort, context, close: async () => { await probe.dispose(); rmSync(repo, { recursive: true, force: true }); } };
 }
+
+test('Compact installed-probe plumbing replays active canaries typed reads durable ACKs and cancellation without relabelling v2 evidence',async()=>{
+ const f=await fixture('claude',true,true);
+ try{
+  const report=await f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal});
+  assert.equal(report.status.state,'completed');assert.deepEqual(report.status.missingEvidence,[]);
+  assert.equal(report.candidate?.identity.adapterVersion,CLAUDE_V3_ADAPTER);
+  assert.equal(report.candidate?.effective.protocolTools?.[0]?.schemaDigest,digestValue(JSON.parse(JSON.stringify(reviewProtocolSchemaFor(CLAUDE_V3_ADAPTER)))));
+  assert.ok(report.canaries?.checks.every(c=>c.controlObserved&&!c.restrictedObserved));
+  const checked=validateUnsignedProbeExport(report);
+  assert.equal(checked.candidate!.identity.catalogDigest,scopedReviewCatalogDigest(false,'compact-v1'));
+  assert.equal(f.probe.state().accepted.length,2);assert.equal(readFileSync(join(f.repo,'calls.txt'),'utf8'),'called\ncalled\n');
+  assert.throws(()=>validateUnsignedProbeExport({...report,candidate:{...report.candidate,identity:{...report.candidate!.identity,adapterVersion:'claude-scoped-v2'}}}));
+  // Scripted process events exercise the collector/replay, never certify the
+  // user's installed Claude or create production approval/activation evidence.
+ }finally{await f.close();}
+});
 
 test('Trusted probe executes one control and one restricted phase with exact pins and bounded cancellation', async () => {
   const f = await fixture();

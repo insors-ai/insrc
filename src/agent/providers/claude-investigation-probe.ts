@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { PROBE_OBSERVATION_BYTES } from '../../shared/review-investigation-probe.js';
 import { scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
 import { readClaudeInvestigationEvents } from './claude-investigation-events.js';
-import { CLAUDE_V2_ADAPTER, REVIEW_PROTOCOL_SCHEMA_DIGEST } from '../../shared/review-isolation-evidence.js';
+import { isClaudeCapabilityAdapter, reviewProtocolSchemaDigestFor, reviewModelProtocolFor } from '../../shared/review-isolation-evidence.js';
 import { digestValue } from '../../workflow/code-review/investigation/identity.js';
 
 export const CLAUDE_PROBE_TELEMETRY_VERSION = '2.1.310 (Claude Code)';
@@ -29,9 +29,9 @@ export function collectClaudeProbeObservations(result: ProcessGroupResult, ident
   const init = events.find(event => event['type'] === 'system' && event['subtype'] === 'init');
   if (!init) return missing('Claude result envelope does not expose complete effective inventory or independent denial probes');
   const observations = missing('Claude init hints do not prove hooks, instruction/config sources, credential handling and every required denial');
-  const v2 = identity.adapterVersion === CLAUDE_V2_ADAPTER;
-  const schemaBound = v2 && identity.schemaDigest === REVIEW_PROTOCOL_SCHEMA_DIGEST && init['claude_code_version'] === '2.1.310';
-  const expected = scopedReviewToolCatalog(identity.sourceMode === 'indexed-impact').map(t => `mcp__insrc-scoped-review__${t.name}`);
+  const v2 = isClaudeCapabilityAdapter(identity.adapterVersion ?? '');
+  const schemaBound = v2 && identity.schemaDigest === reviewProtocolSchemaDigestFor(identity.adapterVersion!) && init['claude_code_version'] === '2.1.310';
+  const expected = scopedReviewToolCatalog(identity.sourceMode === 'indexed-impact',reviewModelProtocolFor(identity.adapterVersion ?? '')).map(t => `mcp__insrc-scoped-review__${t.name}`);
   const add = (check: InvestigationProbeObservation['check'], detail: string) => {
     if (!observations.some(o => o.check === check)) observations.push({ ...common, check, verdict: 'observed-allowed', detail });
   };

@@ -7,7 +7,8 @@ import type { QualifiedInvestigationSessionBinding } from '../../shared/types.js
 import type { InvestigationTools,InvestigationTurnV1,InvestigationState } from '../../workflow/code-review/investigation/continuation-types.js';
 import { digestValue,snapshotValue,freezeValue } from '../../workflow/code-review/investigation/identity.js';
 import { scopedReviewCatalogDigest } from '../../shared/review-investigation-catalog.js';
-import { boundaryEvidenceValid, CLAUDE_V2_ADAPTER, REVIEW_PROTOCOL_SCHEMA_DIGEST } from '../../shared/review-isolation-evidence.js';
+import { boundaryEvidenceValid, isClaudeCapabilityAdapter, reviewProtocolSchemaDigestFor, reviewModelProtocolFor, CLAUDE_V3_ADAPTER } from '../../shared/review-isolation-evidence.js';
+import { investigationBoundaryManifest } from './investigation-boundary.js';
 import type { CapabilityBoundaryEvidence } from '../../shared/review-isolation-evidence.js';
 import { managedPolicySnapshot } from './claude-investigation-diagnostics.js';
 
@@ -18,6 +19,8 @@ function refuse(message:string):never{throw new InvestigationQualificationError(
 const inside=(root:string,path:string)=>{const rel=relative(root,path);return rel===''||(!isAbsolute(rel)&&rel!=='..'&&!rel.startsWith('../'));};
 export interface IsolationFile {readonly path:string;readonly digest:string;}
 export interface NativeAdapterIdentity {
+ readonly nativeCodeDigest?:string|undefined;
+ readonly executionBoundaryDigest?:string|undefined;
  readonly kind:'claude'|'codex';readonly adapterVersion:string;readonly binaryVersion:string;
  readonly binary:IsolationFile;readonly runtimeFiles:readonly IsolationFile[];
  readonly profileDigest:string;readonly catalogDigest:string;readonly launchDigest:string;
@@ -76,7 +79,8 @@ export function investigationFileDigest(path:string):string{
  }finally{closeSync(fd);}
 }
 function checkFiles(q:Pick<NativeInvestigationQualification,'identity'|'effective'>,repo:string){
- if(q.identity.adapterVersion===CLAUDE_V2_ADAPTER&&managedPolicySnapshot().some(p=>p.state!=='absent'))refuse('Managed policy changed or cannot be verified');
+ if(q.identity.adapterVersion===CLAUDE_V3_ADAPTER&&(!q.identity.executionBoundaryDigest||q.identity.nativeCodeDigest!==investigationBoundaryManifest().digest))refuse('Native execution boundary changed or is unknown');
+ if(isClaudeCapabilityAdapter(q.identity.adapterVersion)&&managedPolicySnapshot().some(p=>p.state!=='absent'))refuse('Managed policy changed or cannot be verified');
  const cwd=realpathSync(q.effective.cwd),stat=lstatSync(q.effective.cwd);
  if(!stat.isDirectory()||stat.isSymbolicLink()||(stat.mode&0o077)!==0||inside(repo,cwd)||inside(cwd,repo))refuse('Reviewer working directory is not isolated from the repository');
  for(const f of [q.identity.binary,...q.identity.runtimeFiles,...q.effective.configFiles]){
@@ -91,9 +95,9 @@ function inspectIsolationData(input:NativeIsolationEvidence,expected:NativeAdapt
  const evidence=snapshotValue(input),identity=snapshotValue(expected),repo=realpathSync(repoPath),effective=evidence.effective;
  if(evidence.version!==1||!supportedAdapterVersions.includes(identity.adapterVersion)||!identity.binaryVersion.trim()||digestValue(evidence.identity)!==digestValue(identity))refuse('Unsupported or unproven adapter/binary/profile identity');
  if(!boundaryEvidenceValid(identity.adapterVersion,effective))refuse('Unsupported or incomplete isolation boundary evidence');
- if(identity.adapterVersion===CLAUDE_V2_ADAPTER&&effective.protocolTools?.[0]?.schemaDigest!==REVIEW_PROTOCOL_SCHEMA_DIGEST)refuse('Protocol output schema differs from qualification');
- if(![identity.profileDigest,identity.catalogDigest,identity.launchDigest].every(d=>/^[a-f0-9]{64}$/.test(d))||identity.catalogDigest!==scopedReviewCatalogDigest(indexed)
-  ||digestValue(effective.catalog)!==scopedReviewCatalogDigest(indexed))refuse('Effective scoped tool catalogue differs');
+ if(isClaudeCapabilityAdapter(identity.adapterVersion)&&effective.protocolTools?.[0]?.schemaDigest!==reviewProtocolSchemaDigestFor(identity.adapterVersion))refuse('Protocol output schema differs from qualification');
+ if(![identity.profileDigest,identity.catalogDigest,identity.launchDigest].every(d=>/^[a-f0-9]{64}$/.test(d))||identity.catalogDigest!==scopedReviewCatalogDigest(indexed,reviewModelProtocolFor(identity.adapterVersion))
+  ||digestValue(effective.catalog)!==scopedReviewCatalogDigest(indexed,reviewModelProtocolFor(identity.adapterVersion)))refuse('Effective scoped tool catalogue differs');
  if([effective.builtinTools,effective.inheritedConfigSources,effective.plugins,effective.hooks,effective.repositoryInstructions,effective.credentialCopies].some(values=>!Array.isArray(values)||values.length)
   ||digestValue(effective.mcpServers)!==digestValue(['insrc-scoped-review'])||effective.auth!=='existing-cli-oauth'||!effective.configFiles.length)refuse('Inherited configuration/tools or replaced OAuth authority');
  if(!Number.isSafeInteger(evidence.validUntil)||evidence.validUntil<=now||evidence.validUntil>now+86400000)refuse('Isolation evidence expired or validity unbounded');

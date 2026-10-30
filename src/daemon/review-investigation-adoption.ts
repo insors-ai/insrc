@@ -44,7 +44,7 @@ import {readApprovedEvidence} from './review-investigation-approval.js';
 /** Historical engine governance records can retain the checkout path where
  * authored. Bind this one known predecessor to the current canonical store and
  * audited history; never rewrite its metadata or relax review subject readers. */
-async function readPredecessorHld(work:CanonicalReviewWorkAdapter){
+export async function readPredecessorHld(work:CanonicalReviewWorkAdapter){
  await work.options.assertRegistered();const id=`HLD-${PREDECESSOR_EPIC}`,head=await work.options.canonical.readHeadSnapshot(id);if(!head)return null;
  const artifact=decodeArtifactHead(id,JSON.stringify(head.head)).artifact,integrity=checkIntegrity({description:artifact.description,payload:artifact.payload,lifecycle:artifact.lifecycle},await work.options.canonical.history.log(id));
  if(!integrity.ok||artifact.lifecycle.stale||approvalStateOf(head.head.meta)!=='approved'||artifact.lifecycle.approval?.revision!==head.revision)refuse('Predecessor HLD lacks current audited approval');return head;
@@ -61,20 +61,29 @@ export function investigationSourceDigest(root=fileURLToPath(new URL('../../',im
  files.push('package-lock.json','src/prompts/steering-block.md','src/daemon/installed-commit.ts','src/daemon/handler-runtime.ts','src/daemon/steps/code-review-step/handler.ts','src/daemon/threads/method-class.ts','src/mcp/server.ts','src/mcp/review-investigation-bridge.ts','src/mcp/review-investigation-native.ts','src/bin/insrc-review-bridge.ts','src/analyze/context/role-router.ts');
  return digestValue([...new Set(files)].sort().map(path=>({path,digest:investigationFileDigest(join(root,path))})));
 }
-export function readInvestigationSelection(){
- try{const raw=JSON.parse(readFileSync(PATHS.config,'utf8')) as {codeReview?:{engine?:unknown;investigationReadinessRef?:unknown;predecessorReconciliationRef?:unknown}};return {engine:raw.codeReview?.engine??'legacy',readiness:raw.codeReview?.investigationReadinessRef,reconciliation:raw.codeReview?.predecessorReconciliationRef};}
- catch{return {engine:'legacy',readiness:undefined,reconciliation:undefined};}
+export interface InvestigationSelection {
+ readonly engine:unknown;readonly readiness:unknown;readonly reconciliation:unknown;
+ readonly enabled?:boolean|undefined;readonly sourceProbe?:unknown;readonly indexedProbe?:unknown;readonly activation?:unknown;
+}
+export function readInvestigationSelection():InvestigationSelection{
+ try{const raw=JSON.parse(readFileSync(PATHS.config,'utf8')) as {codeReview?:Record<string,unknown>};return {engine:raw.codeReview?.['engine']??'legacy',readiness:raw.codeReview?.['investigationReadinessRef'],reconciliation:raw.codeReview?.['predecessorReconciliationRef'],
+  enabled:raw.codeReview?.['investigationEnabled']===true,sourceProbe:raw.codeReview?.['investigationSourceProbeRef'],indexedProbe:raw.codeReview?.['investigationIndexedProbeRef'],activation:raw.codeReview?.['investigationActivationRef']};}
+ catch{return {engine:'legacy',readiness:undefined,reconciliation:undefined,enabled:false};}
+}
+export function assertInvestigationAvailability(selection:InvestigationSelection){
+ if(selection.enabled===false||selection.enabled!==true&&selection.engine!=='plan-investigation-v1')refuse('Investigation scheduling is disabled; legacy remains selected');
 }
 export interface InvestigationAdoptionDeps {
  readonly work:CanonicalReviewWorkAdapter;
  readonly selection?:typeof readInvestigationSelection|undefined;
  readonly sourceDigest?:typeof investigationSourceDigest|undefined;
+ readonly compactProbe?:((repo:string,probeId:string)=>Promise<unknown>)|undefined;
 }
 /** Evaluate pins before selecting a provider. No config boolean, fixture result,
  * raw CLI claim or draft predecessor record is an activation authority. */
 export class InvestigationAdoptionPolicy {
  constructor(private readonly deps:InvestigationAdoptionDeps){}
- assertSelected(){if((this.deps.selection??readInvestigationSelection)().engine!=='plan-investigation-v1')refuse('Investigation scheduling is disabled; legacy remains selected');}
+ assertSelected(){assertInvestigationAvailability((this.deps.selection??readInvestigationSelection)());}
  async evidence(mode:'source-only'|'indexed-impact'){
   this.assertSelected();const selection=(this.deps.selection??readInvestigationSelection)();if(typeof selection.readiness!=='string'||typeof selection.reconciliation!=='string')refuse('Version-pinned readiness and reconciliation approvals are required');
   const readiness=readinessSchema.parse(issueData(await readApprovedEvidence(this.deps.work,selection.readiness)));
@@ -98,6 +107,8 @@ export class InvestigationAdoptionPolicy {
   return {readiness,report,evidence,evaluation};
  }
  async adapter(repo:string,mode:'source-only'|'indexed-impact'):Promise<InvestigationDaemonAdapter>{
+  const selection=(this.deps.selection??readInvestigationSelection)();
+  if(selection.enabled===true){this.assertSelected();const {compactInvestigationAdapter}=await import('./review-investigation-compact-adoption.js');return compactInvestigationAdapter(this.deps,repo,mode);}
   const pins=await this.evidence(mode),{provider,resolution}=createRoleRouter({cliTimeoutMs:300000}).resolveProviderForRole('review',loadAnalyzeConfig(),repo);
   if(!provider.runReviewSession||!provider.getReviewBudgetProfile||!['cli-claude','cli-codex'].includes(resolution.runner))refuse('Review role has no independently qualified native investigation backend');
   const kind=resolution.runner==='cli-claude'?'claude':'codex',profile=provider.getReviewBudgetProfile('reviewer-session'),policy=createInvestigationPolicy(provider);
@@ -118,7 +129,7 @@ export class InvestigationAdoptionPolicy {
 }
 export function productionInvestigationAdmission(options:Pick<InvestigationRepositoryOptions,'repoId'|'repoPath'|'canonical'|'assertRegistered'>){
  const policyFor=async()=>{
-  const selection=readInvestigationSelection();let work=new CanonicalReviewWorkAdapter(options),reference=selection.readiness;
+  const selection=readInvestigationSelection(),activationReference=selection.enabled===true&&typeof selection.activation==='string'&&selection.activation.startsWith('repo:');let work=new CanonicalReviewWorkAdapter(options),reference=activationReference?selection.activation:selection.readiness;
   // Engine-wide evidence may live in a separately registered governance repo;
   // projects do not need copies of the engine's predecessor design artifacts.
   if(typeof reference==='string'&&reference.startsWith('repo:')){
@@ -126,9 +137,9 @@ export function productionInvestigationAdmission(options:Pick<InvestigationRepos
    const repo=realpathSync(match[1]!);const {lookupRepoId}=await import('../db/repos.js');const id=await lookupRepoId(repo);if(id===undefined)refuse('Evidence repository must already be registered');
    const {lifecycleFor}=await import('./lifecycle-registry.js');work=new CanonicalReviewWorkAdapter({repoId:String(id),repoPath:repo,canonical:lifecycleFor(repo).store,assertRegistered:async()=>{if(await lookupRepoId(repo)!==id)refuse('Evidence repository registration changed');}});reference=match[2]!;
   }
-  return new InvestigationAdoptionPolicy({work,selection:()=>({...selection,readiness:reference})});
+  return new InvestigationAdoptionPolicy({work,selection:()=>({...selection,...(activationReference?{activation:reference}:{readiness:reference})})});
  };
- return {assertSelected:()=>{if(readInvestigationSelection().engine!=='plan-investigation-v1')refuse('Investigation scheduling is disabled; legacy remains selected');},
+  return {assertSelected:()=>assertInvestigationAvailability(readInvestigationSelection()),
  assertReady:async(_operation:'start'|'resume'|'publish',mode:'source-only'|'indexed-impact'='source-only')=>{await (await policyFor()).adapter(options.repoPath,mode);},daemonAdapter:async(_subject:unknown,mode:'source-only'|'indexed-impact')=>(await policyFor()).adapter(options.repoPath,mode)};
 }
 

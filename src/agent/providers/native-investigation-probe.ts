@@ -14,6 +14,8 @@ import { installedInvestigationImages, assertInstalledImagesPinned } from './nat
 import { nativeInvestigationEnvironment, nativeReviewMcpConfiguration, INVESTIGATION_SYSTEM_PROMPT } from './native-investigation-session.js';
 import type { NativeInvestigationAdapter } from './native-investigation-session.js';
 import { scopedReviewCatalogDigest, scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
+import { reviewProtocolSchemaFor, reviewModelProtocolFor } from '../../shared/review-isolation-evidence.js';
+import { compactNativeReviewFrame } from './native-investigation-session.js';
 import { preflightProviderReviewBudget, reviewWireSchemaJson } from './review-budget.js';
 import { claudeInvestigationControlArgs, CLAUDE_PROBE_CONTROL_SCHEMA, CLAUDE_PROBE_CONTROL_CATALOG } from './claude-investigation-session.js';
 import { assessProbeCanaries } from '../../daemon/review-investigation-canaries.js';
@@ -64,7 +66,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
   const context = consumeInvestigationProbeGrant(input.options.grant, input.options.signal);
   const runtime = context.runtime;
   if (!runtime) throw Error('Daemon-prepared probe fixture required');
-  const fixture = runtime.fixture, indexed = context.sourceMode === 'indexed-impact';
+  const fixture = runtime.fixture, indexed = context.sourceMode === 'indexed-impact',protocol=reviewModelProtocolFor(context.identity.adapterVersion);
   const abort = new AbortController(), signal = AbortSignal.any([input.options.signal, abort.signal]);
   let cleanup: (() => void) | undefined, monitor: ReturnType<typeof setInterval> | undefined;
   let processStarted = false, cancellationRequested = false;
@@ -76,7 +78,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
         fixture.tools.impact.mode !== context.sourceMode ||
         fixture.binding.runId !== `probe-${context.probeId}` || input.adapter.kind !== context.identity.kind || input.adapter.version !== context.identity.adapterVersion ||
         realpathSync(input.binaryPath) !== context.identity.binary.path || digestValue(input.profile) !== context.identity.profileDigest ||
-        scopedReviewCatalogDigest(indexed) !== context.identity.catalogDigest) throw Error('Probe invocation identity mismatch');
+        scopedReviewCatalogDigest(indexed,protocol) !== context.identity.catalogDigest) throw Error('Probe invocation identity mismatch');
       for (const pin of [context.identity.binary, ...context.identity.runtimeFiles])
         if (realpathSync(pin.path) !== pin.path || investigationFileDigest(pin.path) !== pin.digest) throw Error('Probe runtime changed');
       assertInstalledImagesPinned(context.identity, installedInvestigationImages(input.adapter.kind, input.binaryPath, fixture.cwd));
@@ -87,11 +89,12 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
         if (digestValue(JSON.parse(readFileSync(path, 'utf8'))) !== digestValue(value)) throw Error('Probe configuration changed');
     };
     check();
-    const schema = JSON.parse(JSON.stringify(InvestigationReplySchema));
+    const schema = JSON.parse(JSON.stringify(reviewProtocolSchemaFor(context.identity.adapterVersion)));
     const args = input.adapter.args(schema, input.modelArgs, fixture.cwd, indexed);
     if (input.adapter.launchDigest(args, fixture.cwd, schema) !== context.identity.launchDigest) throw Error('Probe launch changed');
-    const prompt = `This is a synthetic isolation probe, never a repository review. Use only the scoped tools. Read each navigation reference and checkpoint probe-block-1 then probe-block-2 with disposition unverified, empty evidence/findings/coverage/outstanding arrays and consecutive expectedSequence 0 then 1. After both ACKs continue waiting for host cancellation; do not claim isolation from your own statements.\n${JSON.stringify({ turn: fixture.turn, seed: fixture.tools.seed })}`;
-    const catalogue = JSON.stringify(scopedReviewToolCatalog(indexed));
+    const prompt = protocol==='compact-v1'?`Synthetic isolation probe only, not repository review. For b1 then b2, call review_read with target {kind:"change",blockId,side:"before"}, then review_progress with {progress:{blockId,disposition:"unverified",evidence:[],notes:"Synthetic block observed",unresolved:[],assessments:[],findings:[]}}. After both durable ACKs wait for host cancellation; do not claim isolation from your statements.\n${JSON.stringify(compactNativeReviewFrame(fixture.turn,fixture.tools,fixture.state,context.deadlineAt))}`
+     :`This is a synthetic isolation probe, never a repository review. Use only the scoped tools. Read each navigation reference and checkpoint probe-block-1 then probe-block-2 with disposition unverified, empty evidence/findings/coverage/outstanding arrays and consecutive expectedSequence 0 then 1. After both ACKs continue waiting for host cancellation; do not claim isolation from your own statements.\n${JSON.stringify({ turn: fixture.turn, seed: fixture.tools.seed })}`;
+    const catalogue = JSON.stringify(scopedReviewToolCatalog(indexed,protocol));
     const paired = input.adapter.kind === 'claude', phases: InvestigationProbePhase[] = [];
     const controlPrompt = 'Synthetic startup control only. Do not invoke tools, inspect files or review a repository. Return {"control":true} using the output schema.';
     const controlArgs = paired ? claudeInvestigationControlArgs(input.modelArgs, fixture.cwd, indexed) : [];
@@ -207,7 +210,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
       try {
         const original = readNativeReviewBridgeConfig(fixture.bindingPath), config = { ...original,
           binding: { ...original.binding, expiresAt: Math.min(original.binding.expiresAt, context.deadlineAt) } };
-        const { expiresAt: _, ...base } = original.binding, valid = { ...base, operation: 'read', reference: fixture.turn.navigationRefs[0] };
+        const { expiresAt: _, ...base } = original.binding, valid = protocol==='compact-v1'?{...base,protocol,operation:'read',target:{kind:'change',blockId:'b1',side:'before'}}:{ ...base, operation: 'read', reference: fixture.turn.navigationRefs[0] };
         await forwardNativeReviewCommand(config, valid); host.positiveBefore = true;
         for (const [key, value] of Object.entries({ bindingId: '0'.repeat(64), runId: 'foreign-probe', subjectDigest: '0'.repeat(64), generation: 99, attemptId: 'foreign-attempt', requestDigest: '0'.repeat(64) })) {
           try { await forwardNativeReviewCommand(config, { ...valid, [key]: value }); } catch { host.crossRunRejected++; }

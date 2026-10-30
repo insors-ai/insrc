@@ -3,7 +3,7 @@ import { join, dirname } from 'node:path';
 import type { StructuredSchema } from '../../shared/types.js';
 import { scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
 import { digestValue } from '../../workflow/code-review/investigation/identity.js';
-import { CLAUDE_V2_ADAPTER } from '../../shared/review-isolation-evidence.js';
+import { CLAUDE_V2_ADAPTER,CLAUDE_V3_ADAPTER } from '../../shared/review-isolation-evidence.js';
 import { runNativeInvestigationSession,nativeReviewMcpConfiguration,nativeInvestigationEnvironment,INVESTIGATION_SYSTEM_PROMPT } from './native-investigation-session.js';
 import type { NativeInvestigationInvocation,NativeInvestigationAdapter } from './native-investigation-session.js';
 export { nativeReviewMcpConfiguration,nativeInvestigationEnvironment,INVESTIGATION_SYSTEM_PROMPT } from './native-investigation-session.js';
@@ -37,5 +37,7 @@ export function claudeInvestigationControlArgs(modelArgs:readonly string[],cwd:s
 const adapter:NativeInvestigationAdapter={kind:'claude',version:CLAUDE_INVESTIGATION_ADAPTER,args:claudeInvestigationArgs,launchDigest:claudeInvestigationLaunchDigest,
  configuration:(cwd,indexed)=>({[join(cwd,'investigation-settings.json')]:CLAUDE_INVESTIGATION_SETTINGS,[join(cwd,'investigation-mcp.json')]:nativeReviewMcpConfiguration(cwd,indexed)})};
 export { adapter as claudeInvestigationAdapter };
+export const claudeCompactInvestigationAdapter:NativeInvestigationAdapter={...adapter,version:CLAUDE_V3_ADAPTER,modelProtocol:'compact-v1',
+ launchDigest:(args,cwd)=>digestValue({adapter:CLAUDE_V3_ADAPTER,args,cwd,environment:nativeInvestigationEnvironment(),auth:'existing-cli-oauth'})};
 export type ClaudeInvestigationInvocation=Omit<NativeInvestigationInvocation,'adapter'>;
-export const runClaudeInvestigationSession=(input:ClaudeInvestigationInvocation)=>runNativeInvestigationSession({...input,adapter});
+export const runClaudeInvestigationSession=(input:ClaudeInvestigationInvocation)=>runNativeInvestigationSession({...input,adapter:input.binding.adapterVersion===CLAUDE_V3_ADAPTER?claudeCompactInvestigationAdapter:adapter});

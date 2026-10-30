@@ -62,7 +62,9 @@ import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars 
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { InvestigationQualificationError } from './investigation-session.js';
-import { runClaudeInvestigationSession, claudeInvestigationAdapter } from './claude-investigation-session.js';
+import { runClaudeInvestigationSession, claudeInvestigationAdapter,claudeCompactInvestigationAdapter } from './claude-investigation-session.js';
+import { investigationProbeAdapterVersion } from './investigation-probe-grant.js';
+import { CLAUDE_V3_ADAPTER } from '../../shared/review-isolation-evidence.js';
 import { runCodexInvestigationSession, codexInvestigationAdapter } from './codex-investigation-session.js';
 import { runNativeInvestigationProbe } from './native-investigation-probe.js';
 import { collectClaudeProbeObservations } from './claude-investigation-probe.js';
@@ -463,7 +465,7 @@ export class CliProvider implements LLMProvider {
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
   async runInvestigationProbe(options: InvestigationProbeOptions): Promise<InvestigationProbeExport> {
-    return runNativeInvestigationProbe({ options, adapter: this.kind === 'claude' ? claudeInvestigationAdapter : codexInvestigationAdapter,
+    return runNativeInvestigationProbe({ options, adapter: this.kind === 'claude' ? investigationProbeAdapterVersion(options.grant)===CLAUDE_V3_ADAPTER?claudeCompactInvestigationAdapter:claudeInvestigationAdapter : codexInvestigationAdapter,
       binaryPath: resolveBin(this.binPath), modelArgs: this.modelArgs(), profile: this.getReviewBudgetProfile('reviewer-session'),
       collect: this.kind === 'claude' ? collectClaudeProbeObservations : collectCodexProbeObservations,
       invoke: (args, prompt, execution) => runInProcessGroup(execution.binaryPath, args, { ...execution, stdin: prompt }) });

@@ -6,7 +6,7 @@ import { readClaudeSourcePolicyDiagnostics } from './claude-investigation-policy
 import { collectClaudeProbeObservations } from './claude-investigation-probe.js';
 import { readClaudeInvestigationEvents } from './claude-investigation-events.js';
 import { MANAGED_POLICY_PATHS } from './claude-investigation-diagnostics.js';
-import { CLAUDE_V2_ADAPTER, CAPABILITY_BOUNDARY, REVIEW_PROTOCOL_SCHEMA_DIGEST, ISOLATION_CHECKS, isolationBasisFor } from '../../shared/review-isolation-evidence.js';
+import { isClaudeCapabilityAdapter, reviewProtocolSchemaDigestFor, reviewModelProtocolFor, CAPABILITY_BOUNDARY, ISOLATION_CHECKS, isolationBasisFor } from '../../shared/review-isolation-evidence.js';
 import { scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
 import { probeCandidateSchema } from '../../shared/review-investigation-probe.js';
 import type { InvestigationProbeExport, InvestigationProbeObservation } from '../../shared/review-investigation-probe.js';
@@ -37,7 +37,7 @@ export interface ClaudeQualificationInputs {
  */
 export function reconstructClaudeQualification(input: ClaudeQualificationInputs) {
   const {identity,raw,host,broker,canaries,files,cwd} = input;
-  if (identity.adapterVersion !== CLAUDE_V2_ADAPTER || identity.kind !== 'claude' ||
+  if (!isClaudeCapabilityAdapter(identity.adapterVersion) || identity.kind !== 'claude' ||
     !host.processStarted || !host.cancellationRequested || host.externallyCancelled ||
     raw.aborted !== true || raw.exitSignal !== 'SIGKILL' || raw.spawnError || raw.timedOut || raw.stalled || raw.outputLimitExceeded || raw.observerFailed) return;
   if (!readClaudeSourcePolicyDiagnostics(input.diagnostics,identity.binaryVersion)) return;
@@ -46,7 +46,7 @@ export function reconstructClaudeQualification(input: ClaudeQualificationInputs)
   if (!broker.positiveBefore || !broker.positiveAfter || broker.crossRunRejected!==6 || !broker.approvalRejected ||
     canaries.checks.length!==4 || canaries.checks.some(c=>!c.controlObserved||c.restrictedObserved)) return;
   const native = collectClaudeProbeObservations(raw,{attemptId:host.attemptId,launchDigest:identity.launchDigest,effectiveDigest:'0'.repeat(64),
-    binaryVersion:identity.binaryVersion,sourceMode:input.sourceMode,adapterVersion:identity.adapterVersion,schemaDigest:REVIEW_PROTOCOL_SCHEMA_DIGEST});
+    binaryVersion:identity.binaryVersion,sourceMode:input.sourceMode,adapterVersion:identity.adapterVersion,schemaDigest:reviewProtocolSchemaDigestFor(identity.adapterVersion)});
   if (native.some(o=>o.verdict==='observed-allowed') || !['builtin-tools','shell','network','raw-filesystem'].every(check=>native.some(o=>o.check===check&&o.verdict==='observed-denied'))) return;
   const events=readClaudeInvestigationEvents(raw.stdout,true),init=events.find(e=>e['type']==='system'&&e['subtype']==='init');
   if (!init || init['permissionMode']!=='dontAsk') return;
@@ -60,8 +60,8 @@ export function reconstructClaudeQualification(input: ClaudeQualificationInputs)
   if (configFiles.length!==2 || !['investigation-settings.json','investigation-mcp.json'].every(name=>configFiles.some(f=>f.path===join(cwd,name)))) return;
   const allDigests=files.map(f=>f.digest).filter((v,i,a)=>a.indexOf(v)===i);
   const effective={cwd,configFiles,builtinTools:[],inheritedConfigSources:[],mcpServers:['insrc-scoped-review'],plugins:[],hooks:[],repositoryInstructions:[],credentialCopies:[],auth:'existing-cli-oauth' as const,
-    catalog:JSON.parse(JSON.stringify(scopedReviewToolCatalog(input.sourceMode==='indexed-impact'))) as unknown[],boundary:CAPABILITY_BOUNDARY,
-    protocolTools:[{name:'StructuredOutput' as const,schemaDigest:REVIEW_PROTOCOL_SCHEMA_DIGEST}],
+    catalog:JSON.parse(JSON.stringify(scopedReviewToolCatalog(input.sourceMode==='indexed-impact',reviewModelProtocolFor(identity.adapterVersion)))) as unknown[],boundary:CAPABILITY_BOUNDARY,
+    protocolTools:[{name:'StructuredOutput' as const,schemaDigest:reviewProtocolSchemaDigestFor(identity.adapterVersion)}],
     evidenceBasis:ISOLATION_CHECKS.map(check=>({check,basis:isolationBasisFor(check),policyVersion:1 as const,rawDigests:allDigests}))};
   const effectiveDigest=digestValue(effective);
   const candidate=probeCandidateSchema.parse({version:1,identity,effective,validUntil:input.endedAt+86400000,trace:{effectiveDigest,

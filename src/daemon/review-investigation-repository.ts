@@ -45,6 +45,7 @@ import { InvestigationControllerHost } from './review-investigation-controller.j
 import type { InvestigationEnvelope } from '../shared/review-investigation-wire.js';
 
 export interface InvestigationDaemonAdapter {
+ readonly modelProtocol?:import('../shared/review-investigation-compact.js').ReviewModelProtocol|undefined;
  readonly provider:LLMProvider;readonly modelLabel:string;readonly compatibilityDigest?:string|undefined;
  readonly assertQualified:()=>Promise<void>;
  readonly execute:(turn:InvestigationTurnV1,tools:InvestigationTools,signal:AbortSignal,runtime:NativeInvestigationRuntime)=>Promise<InvestigationReplyV1>;
@@ -113,7 +114,7 @@ export class InvestigationRepository {
   if(start.sourceMode==='indexed-impact')basis=appendImpactRequirements(basis,subject.packets.flatMap(packet=>packet.blocks.map(block=>({category:'impact' as const,requirementRef:`impact:selected-block:${packet.packetId}/${block.blockId}`,text:`Assess caller applicability for selected block ${block.blockId}. Missing entity mappings, deletions and empty/partial discovery remain required work; do not infer no impact.`,needs:'inspection' as const,allowNotApplicable:false}))));
   const manifest:RecoveryManifest={version:1,runId:id,subjectDigest:subject.subjectDigest,policyDigest:policy.digest,basis,policy,receipts:[],
    initial:{ledger:initializeReviewLedger(basis),sequence:0,checkpoint:'initial',accepted:[],consumedActiveMs:0,attempts:0,uncertainProgressId:null,usage:[]},
-   compatibility:{engine:1,evidence:1,toolsDigest:scopedReviewCatalogDigest(start.sourceMode==='indexed-impact'),providerDigest:digestValue({profile:policy.budget.profile,role:'review',tier:'core',reviewerParty,adapterDigest:daemon?.compatibilityDigest??null})}};
+   compatibility:{engine:1,evidence:1,toolsDigest:scopedReviewCatalogDigest(start.sourceMode==='indexed-impact',daemon?.modelProtocol??'bound-v1'),providerDigest:digestValue({profile:policy.budget.profile,role:'review',tier:'core',reviewerParty,adapterDigest:daemon?.compatibilityDigest??null})}};
   const prepared:Prepared={manifest,sources,authorParty,reviewerParty,controller,daemon,modelLabel:controller?'client':daemon!.modelLabel};this.prepared.set(id,prepared);return prepared;
  }
  private admissionTail:Promise<void>=Promise.resolve();
@@ -171,7 +172,8 @@ export class InvestigationRepository {
   const {descriptor,store}=await this.service.open(runId),view=store.replay();let fresh=true,available=true,reason:string|null=null;
   try{await this.assertFresh(descriptor,view.manifest);}catch{fresh=false;}
   try{await this.options.assertReady('resume',descriptor.start.sourceMode);}catch{available=false;reason='Investigation execution is disabled or readiness is unavailable.';}
-  const compatibility=recoveryCompatibility(view,{...view.manifest,compatibility:{...view.manifest.compatibility,toolsDigest:scopedReviewCatalogDigest(descriptor.start.sourceMode==='indexed-impact')}},fresh);
+  const indexed=descriptor.start.sourceMode==='indexed-impact',protocol=view.manifest.compatibility.toolsDigest===scopedReviewCatalogDigest(indexed,'compact-v1')?'compact-v1':'bound-v1';
+  const compatibility=recoveryCompatibility(view,{...view.manifest,compatibility:{...view.manifest.compatibility,toolsDigest:scopedReviewCatalogDigest(indexed,protocol)}},fresh);
   let receipt=null,error=null;
   if(view.lifecycle.completionReceipt)try{receipt=await readReviewCompletion(store,{canonical:this.options.canonical,actor:{id:'insrc:review-status',kind:'system',properties:{}},current:()=>this.completionContext(descriptor,view.manifest)});}catch{error={code:'completion-receipt-unavailable',retryable:false};}
   const projection=investigationStatus({view,compatibility,readiness:{available,reason},receipt,error,preflight:this.hosts.get(runId)?.admission()??this.preflights.get(runId)});

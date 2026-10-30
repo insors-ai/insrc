@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793351968153-zxwa8i",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T09:20:29.318Z",
+    "epicCreatedAt": "2026-10-30T09:20:29.318Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 61164,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "4bfefb556f0dc560",
+    "epicSlug": "complete-native-review-isolation-qualification-so",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9f98fc4fd747d991bd893d3ad2950479b54a572d08b9c0794336cfd31d3daf52",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:21:47.593Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "4bfefb556f0dc560",
+      "slug": "EPIC-4bfefb556f0dc560"
+    }
+  },
+  "body": {
+    "title": "Complete native review isolation qualification so activation can succeed",
+    "reproduction": "On installed commit 6693bf60f8f424a65c7bff1d18c22313d9d993db with Claude Code 2.1.310, run one serial control/restricted pair for each source-only and indexed-impact mode. Probe IDs 51a933dd-b081-4e1f-b222-1ba6d19dc85a and 60962171-c7ff-46b4-8dd5-2b2a93339ddb both fail: native init exposes StructuredOutput and cc-plugin-agents-md, cc-plugin-telemetry, cc-plugin-plugin-authoring with builtin provenance. Controls exercise all four synthetic canaries; restricted canaries do not fire. Both restricted processes accept two durable scoped ACKs and are actually cancelled. Independently inspect the runner return: even with no failures it always chooses unsupported/cancelled, exports no candidate, and cannot reach completed qualification. Expected: accurate native capability classification, disabled unwanted customizations, and a reachable qualification result when all approved checks are genuinely proved, followed by real production acceptance and explicit activation signoff.",
+    "rootCause": "The shared restricted launch supplies an empty settings object and does not explicitly disable default builtin plugins. The collector treats every non-scoped-MCP tool, including the schema-output mechanism, as a builtin leak and every listed plugin as a customization leak; this conflates inventory entries with their verified capability meaning. More fundamentally runNativeInvestigationProbe computes missing evidence but never constructs a completed candidate: its terminal success branch is unconditionally unsupported. Some required checks (effective configuration provenance, native approval behavior, instruction/customization isolation) have no sufficient evidence producer. Installed export validation can validate a candidate but the real runner cannot produce one. These are diagnosed implementation gaps; absence of canary hits alone is not proof of denial.",
+    "fixIntent": "Correct the existing launch/collector/qualification path as one bounded bugfix. Disable unwanted plugins and instruction/hooks through supported session-local controls, preserve CLI OAuth and the scoped MCP bridge, classify any protocol-only schema tool using explicit version-bound evidence rather than blanket exemptions, and reject unknown or executable capabilities. Supply independently checkable evidence for the actual required isolation properties and construct a candidate only when every required property is proven. If a property is unattainable under the existing contract, expose the precise incompatibility and resolve the contract explicitly rather than silently weakening it. Verify negative fixtures, tampering/version/foreign-scope refusal, both serial installed modes, then an actual review through the new engine and a concrete activation handoff. No automatic retries, global credential/config changes, signing keys, automatic activation, or legacy deletion. This fix is incomplete if it only changes failed into unsupported."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/claude-investigation-session.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/claude-investigation-probe.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/native-investigation-probe.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-probe-export.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "/tmp/inventory-canaries-live-acceptance.json"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "https://code.claude.com/docs/en/settings-reference#enabledplugins"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/BUILD-3789fd85d0bbeb22-s1.json"
+    }
+  ]
+}

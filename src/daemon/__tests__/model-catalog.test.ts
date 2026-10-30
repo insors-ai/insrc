@@ -265,9 +265,11 @@ test('model-catalog.test.ts: hosting on a vendor or plain-Ollama model fails', (
 		/families\[1\] \(cli-codex\): host is only allowed on an Ollama-hosted family/);
 });
 
-test('model-catalog.test.ts: the three existing families validate as before', () => {
+test('model-catalog.test.ts: the existing families validate as before', () => {
 	useAsset(JSON.stringify(valid()));
-	const [claude, codex, ollama] = validateModelCatalog().families;
+	const families = validateModelCatalog().families;
+	const byId = (id: string) => families.find(f => f.id === id);
+	const [claude, codex, ollama, vibe] = [byId('cli-claude'), byId('cli-codex'), byId('ollama'), byId('cli-vibe')];
 	assert.deepEqual(claude, {
 		id: 'cli-claude', cliKind: 'claude', displayName: 'Claude',
 		models: [
@@ -289,5 +291,11 @@ test('model-catalog.test.ts: the three existing families validate as before', ()
 		models: [{ id: 'qwen:1b', efforts: [], inputLimit: { unit: 'tokens', max: 8192 } }],
 		toolLoopModel: 'qwen:1b',
 	});
-	for (const f of [claude, codex, ollama]) assert.ok(!('host' in f!), `${f!.id} has no host`);
+	assert.deepEqual(vibe, {
+		id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe',
+		models: [{ id: 'vibe-big', aliases: ['vbig'], efforts: ['low', 'max'] }, { id: 'vibe-small', efforts: ['low'] }],
+		tierDefaults: { core: { model: 'vbig' }, mid: { model: 'vibe-big' }, cheap: { model: 'vibe-small' } },
+		summariserModel: 'vibe-small',
+	});
+	for (const f of [claude, codex, ollama, vibe]) assert.ok(!('host' in f!), `${f!.id} has no host`);
 });

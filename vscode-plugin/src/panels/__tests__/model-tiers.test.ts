@@ -50,6 +50,21 @@ test('renderModelTiers: a tier resolved to the host-set family shows its cloud/l
   assert.match(html2, /<div class="note err">[^]*gone[^]*is not supported by this runner/);
 });
 
+test('renderModelTiers: an open vendor family with a model it no longer lists renders the not-listed styling inline (distinct from not-supported)', async () => {
+  const gone = { models: { tiers: { core: { runner: 'cli-claude', model: 'c-gone' } } } };
+  const html = await renderModelTiers({ modelDefinitions: async () => DEFS, rawConfig: async () => gone })();
+  assert.match(html, /<div class="note err">[^]*c-gone[^]*is not listed by this runner/);
+});
+
+test('renderModelTiers: three identically-configured tiers (all resolving to the same default) render as three independent, separately-editable cards', async () => {
+  // raw={} -> every tier falls back to the SAME default family/model (cli-claude/c-big).
+  const html = await renderModelTiers({ modelDefinitions: async () => DEFS, rawConfig: async () => ({}) })();
+  assert.equal((html.match(/<div class="tier">/g) ?? []).length, 3, 'three distinct cards, even though all resolve identically');
+  for (const tier of ['core', 'mid', 'cheap'] as const) {
+    assert.match(html, new RegExp(`<select data-tier="${tier}" data-field="runner">[^]*?<option value="cli-claude" selected>`), `${tier}'s own runner select is independently rendered`);
+  }
+});
+
 test('renderModelTiers: the panel-foot Core-floor <select> is bound to the current insrc.models.coreFloor value', async () => {
   const html = await renderModelTiers({ modelDefinitions: async () => DEFS, rawConfig: async () => ({ models: { coreFloor: 'cheap' } }) })();
   assert.match(html, /<select data-field="coreFloor">[^]*<option value="cheap" selected>/);
@@ -119,4 +134,18 @@ test("createModelTiersWriteHandler: refresh wired exactly as extension.ts does (
   handler({ kind: 'coreFloor', value: 'mid' });
   await Promise.resolve();
   assert.equal(opens, 1, "the extension.ts-style refresh callback re-opens (re-renders) the Model Tiers panel after a resolved write");
+});
+
+test('createModelTiersWriteHandler: two rapid writes to the same control are each forwarded and handled independently, in arrival order, with no debouncing', async () => {
+  const { deps, calls } = fakeDeps();
+  const handler = createModelTiersWriteHandler(deps);
+  // Two changes to the same field, fired back-to-back before either resolves.
+  handler({ kind: 'tierField', tier: 'core', field: 'model', value: 'first' });
+  handler({ kind: 'tierField', tier: 'core', field: 'model', value: 'second' });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(calls, [
+    { segments: ['models', 'tiers', 'core', 'model'], value: 'first' },
+    { segments: ['models', 'tiers', 'core', 'model'], value: 'second' },
+  ], 'both writes reach writeKeyPath, independently, in the order they arrived — no debouncing or coalescing');
 });

@@ -385,3 +385,21 @@ test("model-tier-picker.test.ts: tierStatus classifies ok/not-supported/not-list
   // A host-set (closed-list) family with a model it no longer lists: not-supported.
   assert.deepEqual(tierStatus(HOSTED, rawTier('core', 'ollama-claude', 'gone:cloud'), 'core', 'core'), { kind: 'not-supported', model: 'gone:cloud' });
 });
+
+test("model-tier-picker.test.ts: tierStatus returns floor-raised for every tier ranked below coreFloor, and omits it when coreFloor is 'cheap'", () => {
+  const ranks: Record<Tier, number> = { core: 0, mid: 1, cheap: 2 };
+  for (const coreFloor of ['core', 'mid', 'cheap'] as const) {
+    for (const tier of ['core', 'mid', 'cheap'] as const) {
+      const status = tierStatus(DEFS, rawTier(tier, 'cli-claude', 'c-big'), tier, coreFloor);
+      if (ranks[tier] > ranks[coreFloor]) {
+        assert.deepEqual(status, { kind: 'floor-raised', to: coreFloor }, `${tier} below coreFloor=${coreFloor} is floor-raised`);
+      } else {
+        assert.deepEqual(status, { kind: 'ok' }, `${tier} at or above coreFloor=${coreFloor} is ok`);
+      }
+    }
+  }
+  // coreFloor='cheap' (the lowest tier) never raises anything, for any tier.
+  for (const tier of ['core', 'mid', 'cheap'] as const) {
+    assert.deepEqual(tierStatus(DEFS, rawTier(tier, 'cli-claude', 'c-big'), tier, 'cheap'), { kind: 'ok' });
+  }
+});

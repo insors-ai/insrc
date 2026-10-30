@@ -1,0 +1,174 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793334565267-z8fzwn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T04:30:45.079Z",
+    "epicCreatedAt": "2026-10-30T04:20:27.493Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 79347,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a832f5b2560d917f",
+    "epicSlug": "remove-signing-keys-from-review-activation",
+    "storyId": "s1",
+    "lldRunId": "wf-1793333884419-pqrofu",
+    "lldEffectiveHash": "a832f5b2560d917fc9db4719903a0439fc8fa9a27658d13575cba4312ca2ba2e",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "beefb4e5fc3f639c4859598aaab7f65e33a3af120aefdce528d7d802aa2c16e0",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T04:31:57.650Z"
+      }
+    },
+    "rangeBase": "dfb5f0721301d65dd742e46bcc17b9c238137c55"
+  },
+  "body": {
+    "summary": {
+      "prose": "Remove the signing-key gate using existing canonical approvals as record authority, while retaining installed runtime isolation validation and stale-evidence checks. Implement the localized gate change with focused regressions, then align operator guidance and run the affected build checks. Activation remains a separate signoff.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Replace signature verification with canonical evidence authority",
+        "summary": "Make signature optional deprecated bounded metadata; remove crypto verifier/key IO and verifyProbe seam; preserve approved-reference/digest revalidation on qualification use and existing isolation/file checks. Update focused adoption and qualification regression tests.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Approved unsigned installed-probe records require no key or signature; legacy bounded signatures are inert.",
+          "Draft, stale, tampered and raw export records remain refused.",
+          "Incomplete isolation evidence, changed runtime pins and stale canonical authority still fail qualification; no engine default flip."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Approved installed probe without signature is accepted without trust-key provisioning"
+          },
+          {
+            "level": "integration",
+            "name": "Draft stale and tampered evidence remain refused"
+          },
+          {
+            "level": "integration",
+            "name": "Legacy signature metadata is inert and bounded"
+          },
+          {
+            "level": "integration",
+            "name": "Qualification still rejects incomplete isolation evidence, changed runtime pins and stale canonical authority"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Update activation guidance and verify affected boundary",
+        "summary": "Remove signer/trust-key provisioning from operator prerequisites and runbook; describe canonical approved record authority and retained isolation/signoff checks. Run affected focused tests and build. Use the mandatory final Story code-review gate once; do not launch repeated legacy review rounds.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Runbook and operator prerequisites no longer require signer/key provisioning, while preserving runtime evidence and explicit activation signoff.",
+          "Affected focused tests and build pass; no new live claims or activation state change."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Operator prerequisites and runbook omit signer/trust-key provisioning and preserve runtime isolation and explicit signoff"
+          },
+          {
+            "level": "integration",
+            "name": "Affected activation and native qualification regressions and build pass"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Approved installed probe without signature is accepted without trust-key provisioning",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Draft stale and tampered evidence remain refused",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy signature metadata is inert and bounded",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Qualification still rejects incomplete isolation evidence, changed runtime pins and stale canonical authority",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Operator prerequisites and runbook omit signer/trust-key provisioning and preserve runtime isolation and explicit signoff",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges/errorPaths/testStrategy/migration",
+      "quotedText": "Remove cryptographic signature and trust key requirement; preserve approved canonical and installed runtime evidence validation."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy/migration/summary",
+      "quotedText": "Update operator guidance and focused verification; no implicit activation or data rewrite."
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793333884419-pqrofu",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T04:20:27.493Z",
+    "epicCreatedAt": "2026-10-30T04:20:27.493Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 142621,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a832f5b2560d917f",
+    "epicSlug": "remove-signing-keys-from-review-activation",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793333884419-pqrofu",
+    "hldEffectiveHash": "a832f5b2560d917fc9db4719903a0439fc8fa9a27658d13575cba4312ca2ba2e",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive change to the canonical installed-probe schema and adoption authority checks across daemon/provider boundaries; reuse runtime qualification rather than introduce any new subsystem.",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ea753ad74a31bb336ea998c453422ddedbb7242c8607be747c62a83ad170841a",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-10-30T04:25:50.590Z",
+        "report": {
+          "entityId": "LLD-a832f5b2560d917f-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-1963aac4de210e99b9d32cdc9e8b04cd"
+        }
+      },
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T04:29:10.546Z"
+      }
+    },
+    "rangeBase": "dfb5f0721301d65dd742e46bcc17b9c238137c55"
+  },
+  "body": {
+    "summary": {
+      "prose": "Remove external signing and key provisioning from review activation. An approved canonical installed-probe record supplies the evidence; the daemon continues validating isolation observations, installation pins, freshness and runtime files. This change does not activate the engine or remove remaining verification gates.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Remove signing keys from review activation"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Canonical installed-probe report",
+        "change": "field-modify",
+        "details": "Existing version:1/kind/origin/evidence envelope remains; signature becomes optional deprecated inert metadata for backward compatibility, with the existing string bound if present. No key read or cryptographic signature verification. Each readiness record owns exactly one reference per source mode to an approved immutable probe revision; each probe embeds one NativeIsolationEvidence snapshot. Reference direction and cardinality unchanged. Old signed records need no rewrite; unsigned records require normal canonical approval.",
+        "callSites": [
+          "src/daemon/review-investigation-adoption.ts",
+          "src/daemon/__tests__/review-investigation-adoption.test.ts"
+        ]
+      },
+      {
+        "entity": "Installed qualification authority",
+        "change": "invariant-change",
+        "details": "Remove verifyInstalledProbeSignature and verifyProbe injection seam. Keep verifyInstalled callback: re-read approved evidence reference on every use; require same approved reference and evidence digest. Existing qualifyInvestigationAdapter still validates exact identity, schema, required denial observations, ACK/cancel ordering, expiry and private runtime files before issuing its WeakMap handle. No raw export/model claim/scripted fixture becomes authority automatically.",
+        "callSites": [
+          "src/daemon/review-investigation-adoption.ts",
+          "src/agent/providers/investigation-session.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Raw unsigned export, draft, stale or edited canonical probe submitted",
+          "detection": "readApprovedEvidence rejects missing current approval, revision/hash/history mismatch; export envelope does not match installed-probe schema",
+          "response": "Refuse activation with not-ready; no fallback or approval write",
+          "userImpact": "Correct or approve the actual evidence record",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing denial observations, changed installation or expired evidence",
+          "detection": "Existing qualification schema, exact identity, file pins and expiry checks",
+          "response": "Refuse qualification and active-use revalidation",
+          "userImpact": "Rerun affected runtime checks and approve updated record",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Valid approved probe without signature and no trust key file",
+          "expected": "Proceed to unchanged runtime evidence checks; no key IO"
+        },
+        {
+          "input": "Legacy approved report contains bounded signature metadata",
+          "expected": "Accept metadata without using it as authority; all canonical/runtime checks still required"
+        },
+        {
+          "input": "Approved report changes after qualification",
+          "expected": "verifyInstalled callback reloads canonical reference and refuses stale/different digest"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Exact installation, configuration, source-mode and scoped inventory validation remain required; no automatic production authority for fixture/model claims.",
+          "source": "c1"
+        },
+        {
+          "text": "Canonical approval and runtime WeakMap handles remain the authority boundaries; activation signoff remains separate.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx, as src/daemon/__tests__/review-investigation-adoption.test.ts",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Prove canonical approval replaces crypto without weakening production refusal",
+          "subjects": [
+            "Approved installed probe without signature is accepted without trust-key provisioning",
+            "Draft stale and tampered evidence remain refused",
+            "Legacy signature metadata is inert and bounded",
+            "Qualification still rejects incomplete isolation evidence, changed runtime pins and stale canonical authority"
+          ],
+          "fixturesNeeded": [
+            "Existing adoption canonical store fixtures and native qualification fixture"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Operator guidance reflects the actual activation boundary",
+          "subjects": [
+            "Operator prerequisites and runbook omit signer/trust-key provisioning and preserve runtime isolation and explicit signoff"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Approved installed probe without signature is accepted without trust-key provisioning",
+            "Legacy signature metadata is inert and bounded"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Draft stale and tampered evidence remain refused",
+            "Qualification still rejects incomplete isolation evidence, changed runtime pins and stale canonical authority"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Operator prerequisites and runbook omit signer/trust-key provisioning and preserve runtime isolation and explicit signoff"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "c1: adoption requires signature in approved installed-probe report plus external public key; runtime qualification independently validates isolation and files.",
+      "stateAfter": "Approved installed-probe report is read through existing canonical approval validation; signature is optional legacy metadata. Runtime isolation checks remain unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Deploy report parser and canonical revalidation changes plus focused regressions; update operator prerequisites/runbook.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "For future evidence, approve unsigned installed-probe reports through existing workflow; no automatic record conversion, config selection or activation.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Existing signed version-1 reports retain their schema and approval hashes; optional bounded signature is ignored. Older daemon versions still require signed records and cannot consume newly approved unsigned reports. Rollback leaves legacy engine selected until its own prerequisites hold. No key deleted or created.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Approved canonical record",
+        "oneLineSummary": "Use the existing approved probe record as authority; remove crypto.",
+        "approach": "Require versioned installed-probe evidence from the canonical approved record. Remove signature and key verification, retaining all identity/isolation/file checks and canonical freshness verification on every qualification use.",
+        "pros": [
+          "Uses existing approval history and runtime validation",
+          "No signing service or private keys"
+        ],
+        "cons": [
+          "Local canonical store and approving user remain the trust boundary"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Daemon private attestation database",
+        "oneLineSummary": "Replace signatures with a new daemon-owned probe registry.",
+        "approach": "Persist a daemon-private authority registry mapping probe evidence digests to launch observations and consult it during production activation in addition to canonical approvals.",
+        "pros": [
+          "Direct runtime producer correlation"
+        ],
+        "cons": [
+          "Adds persistence, retention and migration machinery beyond the requested removal"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Meets removal but introduces an unnecessary new authority store and lifecycle."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/review-investigation-adoption.ts",
+      "quotedText": "Analyzer locates verifier and qualifier but omits dynamic calls; direct source confirms two signature calls in adoption evidence() and assertQualified(). Canonical readApprovedEvidence already enforces approved revision/hash/history. Keep verifyInstalled callback as live canonical-reference/digest revalidation rather than crypto. Report schema, adoption tests and runbook/operator prerequisite text change; provider evidence structure remains intact."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/investigation-session.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "user:2026-10-30",
+      "quotedText": "point 1 I get, point 2 is overengineering"
+    }
+  ]
+}

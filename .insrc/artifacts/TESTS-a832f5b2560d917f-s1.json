@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "0c57a8ffefa1b5db832551c3ec02b78a4ded2d19584231e538e5dfbf81ff2ae7",
+        "at": "2026-10-30T04:34:24.479Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a832f5b2560d917f",
+    "storyId": "s1",
+    "createdAt": "2026-10-30T04:34:24.430Z",
+    "updatedAt": "2026-10-30T04:34:24.430Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T04:20:27.493Z",
+    "epicSlug": "remove-signing-keys-from-review-activation",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d106c6883",
+        "ranAt": "2026-10-30T04:34:24.430Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Approved installed probe without signature is accepted without trust-key provisioning",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Approved installed probe without signature is accepted without trust-key provisioning",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Draft stale and tampered evidence remain refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Draft stale and tampered evidence remain refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Legacy signature metadata is inert and bounded",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Legacy signature metadata is inert and bounded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Qualification still rejects incomplete isolation evidence, changed runtime pins and stale canonical authority",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 770,
+            "titles": [
+              {
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9661,
+            "titles": [
+              {
+                "title": "Approved installed probe without signature is accepted without trust-key provisioning",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy signature metadata is inert and bounded",
+                "result": "pass"
+              },
+              {
+                "title": "Draft stale and tampered evidence remain refused",
+                "result": "pass"
+              },
+              {
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              },
+              {
+                "title": "An exact start replay never schedules another completed or paused attempt",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

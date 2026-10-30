@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f1b4d6df-1577-4d2f-a7a5-9e700fb21c57",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T04:31:58.037Z",
+    "epicCreatedAt": "2026-10-30T04:20:27.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a832f5b2560d917f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Replace signature verification with canonical evidence authority",
+      "parent": {
+        "entityId": "STORY-a832f5b2560d917f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a832f5b2560d917f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "24cab20b7e9071803525047ae265c5c28d16367748ad5ef4226318f41a97f297",
+        "at": "2026-10-30T04:31:58.040Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T04:31:58.041Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replace signature verification with canonical evidence authority",
+    "summary": "Make signature optional deprecated bounded metadata; remove crypto verifier/key IO and verifyProbe seam; preserve approved-reference/digest revalidation on qualification use and existing isolation/file checks. Update focused adoption and qualification regression tests.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Approved unsigned installed-probe records require no key or signature; legacy bounded signatures are inert.",
+      "Draft, stale, tampered and raw export records remain refused.",
+      "Incomplete isolation evidence, changed runtime pins and stale canonical authority still fail qualification; no engine default flip."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Approved installed probe without signature is accepted without trust-key provisioning"
+      },
+      {
+        "level": "integration",
+        "name": "Draft stale and tampered evidence remain refused"
+      },
+      {
+        "level": "integration",
+        "name": "Legacy signature metadata is inert and bounded"
+      },
+      {
+        "level": "integration",
+        "name": "Qualification still rejects incomplete isolation evidence, changed runtime pins and stale canonical authority"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

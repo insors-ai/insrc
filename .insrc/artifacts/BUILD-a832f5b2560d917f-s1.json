@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f61c7fc264c3148be1866d8340ed01ac85c4ffaf186815f5ecd7322c311d1b5",
+        "at": "2026-10-30T04:36:00.588Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-63f1389f-e065-46c8-a966-f2bade81dd10",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T04:34:24.430Z",
+    "epicCreatedAt": "2026-10-30T04:20:27.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a832f5b2560d917f",
+    "storyId": "s1",
+    "revision": 1,
+    "updatedAt": "2026-10-30T04:34:24.430Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "remove-signing-keys-from-review-activation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Removed cryptographic installed-probe signature/key verification. Canonical approved reference and digest are revalidated on qualification use; native isolation checks remain. Nine focused tests and typecheck passed; commit d106c6883.",
+    "testRecord": {
+      "md": "docs/standalone/remove-signing-keys-from-review-activation-E20261030a832f5b2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/investigation-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:34:24.430Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-adoption.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:34:24.430Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-adoption.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T04:34:24.430Z"
+      }
+    ],
+    "commit": "d106c6883"
+  },
+  "citations": []
+}

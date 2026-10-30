@@ -48,15 +48,14 @@ ACKs and a host-requested SIGKILL exit are required for progress/cancellation
 observations. A naturally completed process cannot be labelled cancelled.
 Subprocess counts are not model-call counts; unavailable counters remain null.
 
-Independent handoff, in order:
+Activation handoff, in order:
 
 1. Inspect the bounded raw files and independently establish **every** required
    inventory/denial/progress/cancellation fact for the exact installation, mode,
    launch and configuration. An unsupported report alone is insufficient.
-2. An independent attestor signs the unchanged installed-probe evidence format
-   described below, using an externally provisioned key. The daemon neither
-   creates nor receives the private key. Provision the public trust anchor
-   separately. Do not relabel scripted fixtures or self-sign missing facts.
+2. Record the verified evidence in the installed-probe format described below.
+   No cryptographic signature, external signer or trust-key provisioning is
+   required. Do not relabel scripted fixtures or fill in unobserved facts.
 3. Publish version-pinned canonical probe, oracle/evaluation and readiness
    records through the tracked workflows and obtain explicit approvals. The
    oracle requires a real independent person actor; a system approval or a JSON
@@ -163,17 +162,18 @@ Installed probes must independently demonstrate denied filesystem, shell,
 network, approval, cross-run, built-in-tool, user/project MCP, plugin, hook and
 repository-instruction access, multiple durable ACKs and cancellation/process
 exit. Adapter flags and scripted fixtures alone do not establish isolation.
-The signed report has `version:1`, `kind:"review-investigation-installed-probe"`,
-`origin:"installed-probe"`, `evidence` (`NativeIsolationEvidence`) and `signature`.
-The signature covers UTF-8 `JSON.stringify(snapshotValue(evidence))`, verified
-with the independently provisioned Ed25519 public trust anchor
-`~/.insrc/review-probe-trust.pem` (owned by the daemon user and not group/world
-writable). The request/report cannot choose that key. No key or credential is
-created or copied by activation. Missing proof/key means unsupported activation.
+The report has `version:1`, `kind:"review-investigation-installed-probe"`,
+`origin:"installed-probe"` and `evidence` (`NativeIsolationEvidence`). It must be
+stored in an approved, revision-and-digest-pinned canonical ISSUE. The daemon
+rechecks canonical approval and evidence digest whenever qualification is used,
+alongside the unchanged runtime identity, isolation, file and expiry checks.
+No signing key or signature is required or read. A legacy `signature` field is
+accepted only as optional bounded metadata, never as authority. Raw diagnostic
+exports do not grant qualification. Missing runtime proof still prevents activation.
 
 No installed binary is certified by the repository's deterministic tests.
-Publishing readiness reports, provisioning an independent probe trust anchor,
-approving the pending reconciliation, enabling opt-in, live model comparisons
+Publishing readiness reports, approving the pending reconciliation,
+enabling opt-in, live model comparisons
 and changing the default are separate operator decisions.
 
 ## Status, detach and rollback

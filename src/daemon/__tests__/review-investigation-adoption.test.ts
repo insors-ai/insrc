@@ -64,7 +64,9 @@ test('Opt in readiness and rollback retain status while refusing unsupported res
   });
   await t.test('Draft stale and tampered evidence remain refused',async()=>{
    const stale=await put('ISSUE-8888888888888888',{kind:'initial'});
-   await put('ISSUE-8888888888888888',{kind:'edited'},false);
+   // Deliberately alter the approved head; do not read it through put(), whose
+   // own integrity check may reject the tamper before the assertion below.
+   await store.write({id:'ISSUE-8888888888888888',description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{title:'Edited fixture',reproduction:'Fixture',rootCause:'Fixture',fixIntent:JSON.stringify({kind:'edited'})},citations:[]}},actor);
    await assert.rejects(()=>readApprovedEvidence(work,stale));
    await assert.rejects(()=>readApprovedEvidence(work,draft));
    await assert.rejects(()=>readApprovedEvidence(work,probe.replace(/#[a-f0-9]+$/,'#'+'0'.repeat(64))));

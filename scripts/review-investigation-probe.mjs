@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {mkdtempSync,writeFileSync} from 'node:fs';
 
 export const PROBE_PREREQUISITES=Object.freeze([
- 'independent-installed-probe-attestation-and-trust-anchor','approved-mode-specific-probe-record',
+ 'verified-installed-runtime-isolation-evidence','approved-mode-specific-probe-record',
  'independently-approved-oracle-and-evaluation','approved-readiness-record','approved-predecessor-AMD',
  'approved-commit-parent-block-scope-and-complete-BUILD','explicit-test-opt-in','actual-production-acceptance-and-activation-signoff',
 ]);

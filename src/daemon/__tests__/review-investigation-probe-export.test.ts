@@ -55,7 +55,7 @@ test('Unsigned raw evidence export rejects changed bytes and foreign fixture roo
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
-test('IPC-only operator client reports missing attestation/readiness prerequisites without invoking production review', async () => {
+test('IPC-only operator client reports runtime isolation and approval prerequisites without signing keys', async () => {
   const { runProbeOperator } = await import('../../../scripts/review-investigation-probe.mjs');
   const calls: string[] = [];
   const call = async (method: string, params: unknown) => {
@@ -65,7 +65,10 @@ test('IPC-only operator client reports missing attestation/readiness prerequisit
   };
   const prerequisites = await runProbeOperator(['prerequisites', '--repo', '/registered'], call);
   assert.equal(prerequisites.activationReady, false); assert.equal(prerequisites.verification, 'not-established-by-this-client');
-  assert.ok(prerequisites.required.includes('independent-installed-probe-attestation-and-trust-anchor'));
+  assert.ok(prerequisites.required.includes('verified-installed-runtime-isolation-evidence'));
+  assert.ok(prerequisites.required.includes('approved-mode-specific-probe-record'));
+  assert.ok(prerequisites.required.includes('actual-production-acceptance-and-activation-signoff'));
+  assert.equal(prerequisites.required.some((item: string) => /attestation|trust-anchor|signing-key/.test(item)), false);
   const requestId = randomUUID();
   const first = await runProbeOperator(['start', '--repo', '/registered', '--mode', 'source-only', '--request-id', requestId], call);
   assert.equal(first.command.requestId, requestId);

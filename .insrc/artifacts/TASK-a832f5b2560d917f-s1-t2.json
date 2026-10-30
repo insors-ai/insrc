@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6a1320b5-81eb-4bfa-80cb-a85988aa6ec1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T04:31:58.042Z",
+    "epicCreatedAt": "2026-10-30T04:20:27.493Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a832f5b2560d917f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Update activation guidance and verify affected boundary",
+      "parent": {
+        "entityId": "STORY-a832f5b2560d917f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a832f5b2560d917f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a832f5b2560d917f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7e2ecc4a6107736937c4771e5c740a94bac8fbdfaa6782fc512cb6214d041ef9",
+        "at": "2026-10-30T04:31:58.045Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T04:31:58.046Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update activation guidance and verify affected boundary",
+    "summary": "Remove signer/trust-key provisioning from operator prerequisites and runbook; describe canonical approved record authority and retained isolation/signoff checks. Run affected focused tests and build. Use the mandatory final Story code-review gate once; do not launch repeated legacy review rounds.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Runbook and operator prerequisites no longer require signer/key provisioning, while preserving runtime evidence and explicit activation signoff.",
+      "Affected focused tests and build pass; no new live claims or activation state change."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Operator prerequisites and runbook omit signer/trust-key provisioning and preserve runtime isolation and explicit signoff"
+      },
+      {
+        "level": "integration",
+        "name": "Affected activation and native qualification regressions and build pass"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

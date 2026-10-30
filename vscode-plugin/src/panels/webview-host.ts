@@ -592,6 +592,29 @@ function shellHtml(title: string, content: string, nonce: string, bootstrap?: st
     }
     button:hover { background: var(--vscode-button-hoverBackground, #1177bb); }
     button:disabled { opacity: 0.5; cursor: default; }
+    /* Model Tiers panel (Story S001): one card per tier + the core-floor footer. */
+    .panel-head p { opacity: 0.75; margin: 2px 0 10px; }
+    .tier-list { display: flex; flex-direction: column; }
+    .tier { border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c); padding: 10px 0; }
+    .tier:last-child { border-bottom: none; }
+    .tier-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+    .tier-name { display: flex; align-items: baseline; gap: 8px; }
+    .tier-name b { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tier-purpose { font-size: 0.85em; opacity: 0.7; }
+    .floor-badge { font-size: 0.75em; opacity: 0.85; white-space: nowrap; border: 1px solid var(--vscode-panel-border, #666); border-radius: 10px; padding: 1px 8px; }
+    .controls { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 120px; }
+    .field label { font-size: 0.8em; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.04em; }
+    .hosting-chip { display: inline-flex; align-items: center; font-size: 0.7em; border-radius: 9px; padding: 0 6px; margin-left: 4px; font-weight: 600; vertical-align: 1px; }
+    .hosting-chip.cloud { background: var(--vscode-charts-blue, #1b3a52); color: var(--vscode-editor-foreground, #7ec8f5); }
+    .hosting-chip.local { background: var(--vscode-charts-green, #1e3a24); color: var(--vscode-editor-foreground, #81c995); }
+    .note { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; font-size: 0.9em; border-radius: 4px; padding: 5px 8px; }
+    .note.ok { opacity: 0.8; }
+    .note.err { background: var(--vscode-inputValidation-errorBackground, #5a1d1d); color: var(--vscode-inputValidation-errorForeground, var(--vscode-errorForeground, #f33)); }
+    .note .dot { flex: 0 0 auto; margin-top: 0.1em; }
+    .panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--vscode-panel-border, #3c3c3c); }
+    .foot-field { display: flex; align-items: center; gap: 8px; }
+    .foot-hint { font-size: 0.85em; opacity: 0.7; }
   </style></head><body><h2>${escapeHtml(title)}</h2>${content}${script}</body></html>`;
 }
 

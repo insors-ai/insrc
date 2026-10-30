@@ -72,9 +72,14 @@ function hostingBadge(hosting: 'cloud' | 'local' | undefined): string {
   return hosting === undefined ? '' : ` <span class="hosting-chip ${escapeHtml(hosting)}">${escapeHtml(hosting)}</span>`;
 }
 
-/** The inline status note for a tier, matching the approved mock's .note.ok/.note.err blocks. */
-function statusNote(status: TierStatus): string {
-  if (status.kind === 'ok') return `<div class="note ok"><span class="dot">●</span><span>Running as configured.</span></div>`;
+/**
+ * The inline status note for a tier, matching the approved mock's .note.ok/.note.err
+ * blocks. The hosting badge, when present, rides inline in the 'ok' note text
+ * ('Running as configured. cloud') — matching the mock's placement exactly
+ * (mocks/model-tiers-grouped.html:132), not the model dropdown.
+ */
+function statusNote(status: TierStatus, hosting: 'cloud' | 'local' | undefined): string {
+  if (status.kind === 'ok') return `<div class="note ok"><span class="dot">●</span><span>Running as configured.${hostingBadge(hosting)}</span></div>`;
   if (status.kind === 'floor-raised') return `<div class="note ok"><span class="dot">●</span><span>Raised to ${escapeHtml(status.to)} by the core floor.</span></div>`;
   const reason = status.kind === 'not-supported' ? 'is not supported by this runner — the tier will not run' : 'is not listed by this runner — the daemon runs its default instead';
   return `<div class="note err"><span class="dot">⚠</span><span><b>${escapeHtml(status.model)}</b> ${reason}. Pick a listed model above.</span></div>`;
@@ -109,10 +114,10 @@ function tierCard(tier: Tier, defs: ModelDefinitions, raw: Record<string, unknow
     `<div class="tier-head"><div class="tier-name"><b>${escapeHtml(tier)}</b><span class="tier-purpose">${escapeHtml(TIER_HINT[tier])}</span></div></div>` +
     `<div class="controls">` +
     `<div class="field"><label>Runner</label><select data-tier="${tier}" data-field="runner">${runnerOptions}</select></div>` +
-    `<div class="field"><label>Model</label><select data-tier="${tier}" data-field="model">${modelOptions.join('')}</select>${hostingBadge(model?.hosting)}</div>` +
+    `<div class="field"><label>Model</label><select data-tier="${tier}" data-field="model">${modelOptions.join('')}</select></div>` +
     `<div class="field"><label>Effort</label><select data-tier="${tier}" data-field="effort"${efforts.length === 0 ? ' disabled' : ''}>${effortOptions || '<option value="">—</option>'}</select></div>` +
     `</div>` +
-    statusNote(status) +
+    statusNote(status, model?.hosting) +
     `</div>`
   );
 }
@@ -128,7 +133,7 @@ export function renderModelTiers(deps: ModelTiersRendererDeps): ModelTiersRender
     const cards = TIERS.map((tier) => tierCard(tier, defs, raw, coreFloor)).join('');
     const floorOptions = TIERS.map((t) => `<option value="${t}"${t === coreFloor ? ' selected' : ''}>${t[0]!.toUpperCase()}${t.slice(1)}</option>`).join('');
     return (
-      `<div class="panel-head"><h1>Model Tiers</h1><p>Which tool and model each tier runs. Pulled live from the daemon.</p></div>` +
+      `<div class="panel-head"><p>Which tool and model each tier runs. Pulled live from the daemon.</p></div>` +
       `<div class="tier-list">${cards}</div>` +
       `<div class="panel-foot">` +
       `<div class="foot-field"><label class="foot-hint">Core floor</label><select data-field="coreFloor">${floorOptions}</select></div>` +

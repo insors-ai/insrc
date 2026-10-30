@@ -8,13 +8,16 @@ async function until(predicate:()=>boolean):Promise<void>{const deadline=Date.no
 
 
 test('CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery',async()=>{
- const f=await fixture();try {
+ const f=await fixture({multipleRoots:true});try {
   const draft=f.draft('lost');f.setFault('after');
   const submitting=f.controller.submit(draft);await assert.rejects(f.controller.submit(draft),{code:'busy'});
   let record=await submitting;assert.equal(record.phase,'unknown');assert.equal(record.canReplay,false);assert.equal(draft.view.dirty,true);
   const operationId=(JSON.parse(f.requests[0]!) as MutationRequest).operationId;
   assert.equal(f.f.store.snapshot.file.connections.length,1);assert.ok(f.f.counts.writes>0);assert.equal(f.f.store.snapshot.file.connections.length,1);
+  f.owner.setRegisteredRoots(f.roots);await f.owner.selectRoot(f.roots[1]!);
   record=await f.controller.reconcile(record.recordId);
+  assert.equal(record.phase,'committed');assert.equal(record.refresh,'failed');assert.equal(f.owner.view.repoRoot,f.roots[1]);
+  await f.owner.selectRoot(f.f.root);record=await f.controller.retryRefresh(record.recordId);
   assert.equal(record.phase,'committed');assert.equal(record.outcome?.operationId,operationId);assert.equal(record.outcome?.registration,'persisted');assert.equal(record.refresh,'complete');
   assert.equal(draft.view.discarded,true);assert.equal(f.calls.filter(c=>c==='mutate').length,1);assert.equal(f.calls.filter(c=>c==='ticket').length,1);
   assert.ok(!JSON.stringify(f.controller.records).includes('fixture-only-private'));assert.equal(JSON.stringify(f.controller),'{}');

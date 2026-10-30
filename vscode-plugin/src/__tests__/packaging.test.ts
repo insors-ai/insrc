@@ -17,7 +17,8 @@ import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, existsSync, rmSync
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createRequire } from 'node:module';
+import { createRequire, builtinModules } from 'node:module';
+import ts from 'typescript';
 import { execFileSync } from 'node:child_process';
 import Module from 'node:module';
 
@@ -60,8 +61,8 @@ test('the 7 durable ad0d45c9 contributes.commands are preserved + the config/pan
   assert.ok(!ids.includes('insrc.status.menu'), 'insrc.status.menu is a status-bar command, not a palette entry');
   assert.deepEqual(
     ids.slice().sort(),
-    [...shipped, 'insrc.settings.refresh', 'insrc.status.detailed', 'insrc.status.repoConfig', 'insrc.models.setTier', 'insrc.chat.open', 'insrc.chat.docsReview', 'insrc.delivery.openBoard'].sort(),
-    'the 7 shipped commands + insrc.settings.refresh + the 2 S004 panel commands + the S003 model-picker command + the dev-chat insrc.chat.open + the S007 insrc.chat.docsReview command + the E2 insrc.delivery.openBoard command, no others',
+    [...shipped, 'insrc.settings.refresh', 'insrc.status.detailed', 'insrc.status.repoConfig', 'insrc.models.setTier', 'insrc.chat.open', 'insrc.chat.docsReview', 'insrc.delivery.openBoard', 'insrc.openDataSources', 'insrc.connections.add', 'insrc.connections.edit', 'insrc.connections.test', 'insrc.connections.remove'].sort(),
+    'all shipped commands plus the five approved S005 Connections routes, no unintended additions',
   );
 });
 
@@ -219,15 +220,24 @@ test('the emitted out/uninstall.js, run as `node out/uninstall.js` under a temp 
     // node: builtin or the external 'vscode' — NOT the bare substrings 'lmdb'/
     // 'analyze/' etc., which appear only as ~/.insrc path-name string constants
     // and doc comments in the shared paths module, not as imported daemon code.
-    const allowedRequire = /^(node:[a-z_/]+|vscode)$/;
+    const allowedRequire = new Set([...builtinModules,...builtinModules.map(name=>`node:${name}`),'vscode']);
     // Daemon storage/parse LIBRARIES would only enter the bundle via a require —
     // assert none did (belt-and-braces on top of the allowlist).
     const forbiddenLibs = ['lancedb', '@lancedb', '@duckdb', 'tree-sitter', 'lmdb-js'];
     for (const name of ['extension.js', 'uninstall.js']) {
       const src = readFileSync(join(out, name), 'utf8');
-      const requires = [...src.matchAll(/require\("([^"]+)"\)/g)].map((m) => m[1]!);
+      // Parse actual calls: Ajv contains inert code-generation string literals
+      // spelling require(...), which are not external runtime dependencies.
+      const requires:string[]=[];
+      const source=ts.createSourceFile(name,src,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS);
+      const visit=(node:ts.Node):void=>{
+        if(ts.isCallExpression(node)&&ts.isIdentifier(node.expression)&&node.expression.text==='require'){
+          const argument=node.arguments[0];assert.ok(argument&&ts.isStringLiteral(argument),'external requires must be literal');requires.push(argument.text);
+        }
+        ts.forEachChild(node,visit);
+      };visit(source);
       for (const spec of requires) {
-        assert.match(spec, allowedRequire, `${name} require("${spec}") — only node builtins + vscode may be required (k5)`);
+        assert.ok(allowedRequire.has(spec), `${name} require("${spec}") — only node builtins + vscode may be required (k5)`);
       }
       for (const lib of forbiddenLibs) {
         assert.ok(!requires.includes(lib), `${name} must not require daemon library '${lib}' (k5)`);

@@ -33,6 +33,9 @@ export function createConnectionsMutationController(owner:ConnectionsWorkbenchOw
    return response;
   },
   refresh:async key=>{
+   // A late commit for an offscreen root must not retarget the visible owner.
+   // Keep its refresh phase retryable until that repository is selected again.
+   if(owner.view.repoRoot!==key.repoRoot)throw new ConnectionOwnerError('stale-view');
    const view=await owner.selectRoot(key.repoRoot);
    return await owner.requestTemporary(key.repoRoot,view,'db.connections.v2.list',{repoRoot:key.repoRoot});
   },

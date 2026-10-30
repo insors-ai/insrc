@@ -28,7 +28,7 @@ internal fun createProjectMutationOwner(owner:ConnectionsSessionOwner,timing:Mut
     val controller=ConnectionMutationController(MutationPorts(
         now=timing.now,timer=timing.timer,sessionStamp=::stamp,
         call={key,method,params,expected->if(!ConnectionActions.mutation(owner.features(key.repoRoot),key.scope,method,params))CompletableFuture.failedFuture(ConnectionOwnerException("upgrade-required"))else if(key.scope=="saved")owner.requestSaved(key.repoRoot,method,params).result else temporary(key,method,params,expected)},
-        refresh={key,_->owner.selectRoot(key.repoRoot).thenCompose{view->owner.requestTemporary(key.repoRoot,view,"db.connections.v2.list",JsonObject().apply{addProperty("repoRoot",key.repoRoot)}).result}},
+        refresh={key,_->if(owner.view.repoRoot!=key.repoRoot)CompletableFuture.failedFuture(ConnectionOwnerException("stale-view"))else owner.selectRoot(key.repoRoot).thenCompose{view->owner.requestTemporary(key.repoRoot,view,"db.connections.v2.list",JsonObject().apply{addProperty("repoRoot",key.repoRoot)}).result}},
         expireTemporary={owner.expireTemporary()},
     ))
     val revocation=owner.onTemporaryInvalidated{lifetime.incrementAndGet()

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -449,3 +449,25 @@ no test files to run; reported as failed by the builder: CM-S5-UI-VSCODE: actual
 **live: CM-S5-UI-VSCODE: actual extension host light/dark/highcontrast, keyboard, Settings/routes and all manager state flows against isolated daemon**
 
 Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t26/result.json; no live UI actions were verified; CUA existing-window misbinding, copied-app timeouts/invalid binding, and isolated positive-peer socket replacement invalidate acceptance. Default fixture mutation regression and backend typecheck passed.
+
+## t30
+
+Run at 2026-10-30T04:17:45.737Z on commit `878dbc47d`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission | `src/shared/__tests__/connection-manager-release.test.ts` |
+
+**smoke: CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits | `src/shared/__tests__/connection-manager-release.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/connection-manager-release.test.ts` | 0 | 2 | 3.9 s |  |

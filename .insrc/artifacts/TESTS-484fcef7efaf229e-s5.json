@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T04:08:46.065Z",
+    "updatedAt": "2026-10-30T04:17:45.737Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1268,6 +1268,59 @@
         ],
         "files": [],
         "note": "no test files to run; reported as failed by the builder: CM-S5-UI-VSCODE: actual extension host light/dark/highcontrast, keyboard, Settings/routes and all manager state flows against isolated daemon"
+      },
+      {
+        "taskId": "t30",
+        "commit": "878dbc47d",
+        "ranAt": "2026-10-30T04:17:45.737Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-release.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3934,
+            "titles": [
+              {
+                "title": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
       }
     ]
   }

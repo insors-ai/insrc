@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -143,3 +143,13 @@ Run at 2026-10-30T05:50:08.655Z on commit `437c25b2a`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/provider-from-registry.test.ts` | 0 | 10 | 0.9 s |  |
+
+## t5
+
+Run at 2026-10-30T05:52:10.104Z on commit `980b6210f`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: cli-ollama.live.test.ts: completeStructured on glm-5.3:cloud returns a schema-valid answer, and a missing model fails with 'model-unavailable'**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/evidence/t5/live-run.txt (INSRC_LIVE_TESTS=1 run on 2026-10-30, Ollama 0.40.13 signed in, claude CLI; ok 1, pass 1, fail 0); without INSRC_LIVE_TESTS the test is skipped (skipped 1)

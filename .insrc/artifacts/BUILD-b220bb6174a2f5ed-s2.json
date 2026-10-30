@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s2",
     "createdAt": "2026-10-30T05:35:31.740Z",
-    "updatedAt": "2026-10-30T05:50:08.655Z",
+    "updatedAt": "2026-10-30T05:52:10.104Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "familyProvider sets the Ollama target (models.local.host, model hosting) for ollama-claude and never builds a host-family provider without a model; buildShaperProvider refuses a refused tier naming the requested model, covering the shaper, router roles and resolveValidateProvider.",
+    "summary": "New INSRC_LIVE_TESTS-gated live test: the real claude CLI on glm-5.3:cloud through the local Ollama returned a schema-valid structured answer (about 8 s), and a missing model failed with 'model-unavailable'; skipped without the gate.",
     "testRecord": {
       "md": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/TESTS.md"
     },
@@ -38,58 +42,72 @@
           "file": "src/agent/providers/__tests__/cli-ollama.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/ollama-target.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
       },
       {
         "target": {
           "file": "src/agent/providers/ollama-target.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
       },
       {
         "target": {
           "file": "src/agent/providers/ollama.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/provider-from-registry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
       },
       {
         "target": {
           "file": "src/analyze/context/shaper-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:50:08.655Z"
+        "timestamp": "2026-10-30T05:52:10.104Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/evidence/t5/live-run.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T05:52:10.104Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-ollama.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T05:52:10.104Z"
       }
     ],
-    "commit": "437c25b2a"
+    "commit": "980b6210f"
   }
 }

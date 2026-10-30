@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s2",
     "createdAt": "2026-10-30T05:35:31.740Z",
-    "updatedAt": "2026-10-30T05:50:08.655Z",
+    "updatedAt": "2026-10-30T05:52:10.104Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -536,6 +536,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "980b6210f",
+        "ranAt": "2026-10-30T05:52:10.104Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cli-ollama.live.test.ts: completeStructured on glm-5.3:cloud returns a schema-valid answer, and a missing model fails with 'model-unavailable'",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/evidence/t5/live-run.txt (INSRC_LIVE_TESTS=1 run on 2026-10-30, Ollama 0.40.13 signed in, claude CLI; ok 1, pass 1, fail 0); without INSRC_LIVE_TESTS the test is skipped (skipped 1)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

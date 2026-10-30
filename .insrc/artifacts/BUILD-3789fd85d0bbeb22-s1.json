@@ -6,18 +6,30 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 4,
-        "contentHash": "e3e0843c4c42f544a41d0e337324b8c49401cbb67e9a8761f798d0b2b694841d",
-        "at": "2026-10-30T09:07:45.423Z",
+        "number": 5,
+        "contentHash": "92d2f61a3fa5ec7c3adda61cf7a70c4e4764306aa4c194503e3a6a9394bd032b",
+        "at": "2026-10-30T09:14:34.891Z",
         "by": {
-          "id": "insrc:build",
+          "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T09:14:35.199Z",
+        "override": {
+          "reason": "User explicitly approved with override. The review HIGH claims a missing integration test mapping, but the exact named test is mapped in TESTS to four daemon-executed passing cases. The three MED findings concern function structure and argument-builder refactoring and are accepted for this build. All four task gates passed. This approves the diagnostic implementation only: both installed isolation probes failed on native built-in plugins/StructuredOutput; no isolation qualification, activation, or legacy engine deletion is approved."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-6a387fed-292c-42bf-b6d7-12088363984e",
@@ -29,7 +41,7 @@
     "schemaVersion": 1,
     "epicHash": "3789fd85d0bbeb22",
     "storyId": "s1",
-    "revision": 4,
+    "revision": 5,
     "updatedAt": "2026-10-30T09:06:12.024Z",
     "authoredBy": "controller",
     "standalone": true,
@@ -64,192 +76,213 @@
           "file": "src/agent/providers/__tests__/claude-investigation-events.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-events.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/agent/providers/native-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/review-investigation-probe-fixtures.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-canaries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-export.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "src/shared/review-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-3789fd85d0bbeb22-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-3789fd85d0bbeb22-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-3789fd85d0bbeb22-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-3789fd85d0bbeb22-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-3789fd85d0bbeb22-s1-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-3789fd85d0bbeb22-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-3789fd85d0bbeb22-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "docs/review-investigation.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
       },
       {
         "target": {
           "file": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/sequence-diagram.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T09:06:12.024Z"
+        "timestamp": "2026-10-30T09:14:34.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-3789fd85d0bbeb22-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:14:34.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-3789fd85d0bbeb22-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:14:34.174Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/capture-live-review-inventory-active-isolation-E202610303789fd85/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T09:14:34.174Z"
       }
     ],
-    "commit": "6693bf60f"
+    "commit": "39bb4c53e"
   },
   "citations": []
 }

@@ -4,6 +4,9 @@ import { realpathSync } from 'node:fs';
 import { parseReviewInvestigationCommand,ReviewIntegrationError } from '../shared/review-investigation.js';
 import { digestValue,freezeValue,snapshotValue } from '../workflow/code-review/investigation/identity.js';
 import type { InvestigationTools,InvestigationTurnV1,InvestigationReplyV1,InvestigationState } from '../workflow/code-review/investigation/continuation-types.js';
+import { parseCompactCommand } from '../shared/review-investigation-compact.js';
+import type { ReviewModelProtocol } from '../shared/review-investigation-compact.js';
+import { CompactReviewFacade } from './review-investigation-compact.js';
 
 export interface ScopedReviewBinding {
  readonly version:1;readonly engine:'plan-investigation-v1';readonly bindingId:string;readonly repo:string;
@@ -11,12 +14,14 @@ export interface ScopedReviewBinding {
  readonly expiresAt:number;
 }
 export interface ScopedReviewGrant {
+ readonly protocol?:ReviewModelProtocol|undefined;
  readonly repo:string;readonly turn:InvestigationTurnV1;readonly tools:InvestigationTools;
  /** Authenticated transport role supplied by the daemon, never an MCP argument. */
  readonly peer:'controller'|'native-cli';readonly signal:AbortSignal;readonly ttlMs:number;
  readonly assertCurrent:()=>void;readonly state:()=>InvestigationState;
 }
 interface Entry {
+ readonly compact:CompactReviewFacade|null;
  readonly binding:ScopedReviewBinding;readonly grant:ScopedReviewGrant;
  readonly resolve:(reply:InvestigationReplyV1)=>void;readonly reject:(cause:unknown)=>void;
  readonly timer:ReturnType<typeof setTimeout>;readonly onAbort:()=>void;
@@ -34,7 +39,8 @@ export class ScopedReviewBridge {
   let resolve!:(reply:InvestigationReplyV1)=>void,reject!:(cause:unknown)=>void;
   const done=new Promise<InvestigationReplyV1>((yes,no)=>{resolve=yes;reject=no;});void done.catch(()=>{});
   const onAbort=()=>{void this.revoke(binding.bindingId);},timer=setTimeout(onAbort,grant.ttlMs);timer.unref();
-  const entry:Entry={binding,grant,resolve,reject,timer,onAbort,revoked:false,busy:null,busyDigest:null,reply:null};
+  const compact=grant.protocol==='compact-v1'?new CompactReviewFacade(grant.turn,grant.tools,grant.state,binding.expiresAt,this.now):null;
+  const entry:Entry={binding,grant,compact,resolve,reject,timer,onAbort,revoked:false,busy:null,busyDigest:null,reply:null};
   this.entries.set(binding.bindingId,entry);this.runs.set(binding.runId,binding.bindingId);grant.signal.addEventListener('abort',onAbort,{once:true});
   if(grant.signal.aborted)onAbort();return {binding,done};
  }
@@ -46,27 +52,39 @@ export class ScopedReviewBridge {
   const entry=this.entries.get(bindingId);if(!entry)throw new ReviewIntegrationError('identity-conflict','Unknown scoped review capability');this.check(entry,peer);return entry.binding;
  }
  async dispatch(raw:unknown,peer:ScopedReviewGrant['peer']):Promise<unknown>{
-  const command=parseReviewInvestigationCommand(raw);
+  const command=raw&&typeof raw==='object'&&'protocol' in raw?parseCompactCommand(raw):parseReviewInvestigationCommand(raw);
   if(!('bindingId' in command))throw new ReviewIntegrationError('invalid-command','Only scoped review operations are accepted');
   const entry=this.entries.get(command.bindingId);if(!entry)throw new ReviewIntegrationError('identity-conflict','Unknown scoped review capability');
   this.check(entry,peer);const b=entry.binding;
   if(command.repo!==b.repo||command.runId!==b.runId||command.subjectDigest!==b.subjectDigest||command.generation!==b.generation||command.attemptId!==b.attemptId||command.requestDigest!==b.requestDigest)throw new ReviewIntegrationError('identity-conflict','Scoped command binding mismatch');
+  const compact='protocol' in command?entry.compact:null;
+  if(Boolean(entry.compact)!==('protocol' in command))throw new ReviewIntegrationError('invalid-command','Scoped protocol does not match admitted session');
   if(entry.busy){if(entry.busyDigest===digestValue(command))return entry.busy;throw new ReviewIntegrationError('identity-conflict','Different scoped calls must be serial');}
+  if(entry.reply&&compact){
+   if(command.operation==='reply'&&digestValue(compact.replyPayload(command.reply as Parameters<CompactReviewFacade['replyPayload']>[0]))===digestValue(entry.reply))return {result:{accepted:true},view:compact.status()};
+   throw new ReviewIntegrationError('identity-conflict','Scoped session already replied');
+  }
   if(entry.reply){if(command.operation==='reply'&&digestValue(command.reply)===digestValue(entry.reply))return {accepted:true};throw new ReviewIntegrationError('identity-conflict','Scoped session already replied');}
   const work=(async()=>{
+   const translated='protocol' in command?command.operation==='read'?{...command,reference:compact!.read(command.target)}
+    :command.operation==='progress'?{...command,progress:compact!.progressPayload(command.progress)}
+    :command.operation==='reply'?{...command,reply:compact!.replyPayload(command.reply)}:command:command;
    let result:unknown;
-   switch(command.operation){
-    case 'read':result=await entry.grant.tools.read(command.reference);break;
+   switch(translated.operation){
+    case 'read':{
+     if(translated.reference===null){result={absent:true,hint:'This changed side has no textual span. Read the other side or use a pinned context target.'};break;}
+     const read=await entry.grant.tools.read(translated.reference);result=compact?compact.presentRead(read):read;break;
+    }
     case 'impact':{
      const query=entry.grant.tools.impact.queryChangedEntityCallers;if(entry.grant.tools.impact.mode!=='indexed-impact'||!query)throw new ReviewIntegrationError('invalid-command','Caller capability unavailable');
      // sc3 durably records an impact obligation before acquisition. Surface its
      // ACK/row identities so the reviewer never has to guess a sequence or hash.
-     let evidence:unknown,error:string|null=null;try{evidence=await query(command.entityRef);}catch{this.check(entry,peer);evidence=[];error='impact-unavailable';}
-     const state=entry.grant.state();result={evidence,error,progress:{sequence:state.sequence,acceptedBlockReceiptIds:state.accepted.map(a=>a.receipt.progressId),coverage:state.ledger.coverage}};break;
+     let evidence:unknown,error:string|null=null;try{const values=await query(translated.entityRef);evidence=compact?values.map(value=>compact.presentImpact(value)):values;}catch{this.check(entry,peer);evidence=[];error='impact-unavailable';}
+     const state=entry.grant.state();result=compact?{evidence,error}:{evidence,error,progress:{sequence:state.sequence,acceptedBlockReceiptIds:state.accepted.map(a=>a.receipt.progressId),coverage:state.ledger.coverage}};break;
     }
-    case 'progress':result=await entry.grant.tools.progress(command.progress);break;
+    case 'progress':{const receipt=await entry.grant.tools.progress(translated.progress);result=compact?{accepted:true,blockId:command.operation==='progress'&&'protocol' in command?command.progress.blockId:receipt.blockId}:receipt;break;}
     case 'reply':{
-     const r=command.reply,state=entry.grant.state(),ids=state.accepted.map(a=>a.receipt.progressId);
+     const r=translated.reply,state=entry.grant.state(),ids=state.accepted.map(a=>a.receipt.progressId);
      const scope=entry.grant.tools.seed['scope'] as {packets?:readonly {blocks:readonly {blockId:string}[]}[]}|undefined;
      const known=new Set([...state.ledger.coverage.map(row=>row.requirementRef),...(scope?.packets??[]).flatMap(p=>p.blocks.map(block=>block.blockId))]);
      if(r.runId!==b.runId||r.subjectDigest!==b.subjectDigest||r.generation!==b.generation||r.attemptId!==b.attemptId||r.coverageUpdates.length||r.findings.length||r.lastAcceptedSequence!==state.sequence
@@ -74,7 +92,7 @@ export class ScopedReviewBridge {
      this.check(entry,peer);entry.reply=snapshotValue(r);entry.resolve(entry.reply);result={accepted:true};break;
     }
    }
-   this.check(entry,peer);return result;
+   this.check(entry,peer);return compact?{result,view:compact.status(translated.operation==='progress'||translated.operation==='impact')}:result;
   })();entry.busy=work;entry.busyDigest=digestValue(command);
   try{return await work;}finally{entry.busy=null;entry.busyDigest=null;}
  }

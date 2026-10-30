@@ -8,5 +8,5 @@ const bindingId=process.env[NATIVE_REVIEW_BINDING_ENV];
 const config=readNativeReviewBridgeConfig(resolveNativeReviewBindingPath(path,bindingId));
 if(config.binding.bindingId!==bindingId)throw Error('Private invocation binding mismatch');
 const indexed=process.argv[3]==='indexed-impact';
-const server=createScopedReviewMcpServer(config.binding,indexed,command=>forwardNativeReviewCommand(config,command));
+const server=createScopedReviewMcpServer(config.binding,indexed,command=>forwardNativeReviewCommand(config,command),config.version===2?'compact-v1':'bound-v1');
 await server.connect(new StdioServerTransport());

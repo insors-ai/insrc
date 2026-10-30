@@ -6,7 +6,11 @@ import { Value } from '@sinclair/typebox/value';
 import type { QualifiedInvestigationSessionBinding,ReviewSessionOpts,StructuredSchema } from '../../shared/types.js';
 import type { ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import { InvestigationReplySchema } from '../../shared/review-investigation.js';
-import { scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
+import { scopedReviewToolCatalog,scopedReviewCatalogDigest } from '../../shared/review-investigation-catalog.js';
+import { CompactFinalAckSchema,compactToolError } from '../../shared/review-investigation-compact.js';
+import type { ReviewModelProtocol } from '../../shared/review-investigation-compact.js';
+import { CompactReviewFacade } from '../../daemon/review-investigation-compact.js';
+import type { InvestigationTools,InvestigationTurnV1,InvestigationState } from '../../workflow/code-review/investigation/continuation-types.js';
 import { digestValue } from '../../workflow/code-review/investigation/identity.js';
 import { InvestigationError } from '../../workflow/code-review/investigation/continuation-types.js';
 import type { InvestigationReplyV1 } from '../../workflow/code-review/investigation/continuation-types.js';
@@ -31,11 +35,19 @@ export function nativeInvestigationEnvironment(source:NodeJS.ProcessEnv=process.
 }
 const activeDirectories=new Set<string>();
 export interface NativeInvestigationAdapter {
+ readonly modelProtocol?:ReviewModelProtocol|undefined;
  readonly kind:'claude'|'codex';readonly version:string;
  readonly args:(schema:StructuredSchema,modelArgs:readonly string[],cwd:string,indexed:boolean)=>string[];
  readonly launchDigest:(args:readonly string[],cwd:string,schema:StructuredSchema)=>string;
  readonly configuration:(cwd:string,indexed:boolean)=>Readonly<Record<string,unknown>>;
  readonly prepareLaunch?:((cwd:string,schema:StructuredSchema)=>()=>void)|undefined;
+}
+export function compactNativeReviewFrame(turn:InvestigationTurnV1,tools:InvestigationTools,state:()=>InvestigationState,expiresAt:number){
+ return new CompactReviewFacade(turn,tools,state,expiresAt).view();
+}
+export function acceptedNativeReviewReply(protocol:ReviewModelProtocol,result:unknown,reply:InvestigationReplyV1|undefined):InvestigationReplyV1{
+ if(!reply||(protocol==='compact-v1'?!Value.Check(CompactFinalAckSchema,result):!Value.Check(InvestigationReplySchema,result)||digestValue(result)!==digestValue(reply)))throw new InvestigationQualificationError('Native final output does not match accepted scoped reply');
+ return reply;
 }
 export interface NativeInvestigationInvocation {
  readonly adapter:NativeInvestigationAdapter;
@@ -49,8 +61,10 @@ export interface NativeInvestigationInvocation {
 export function runNativeInvestigationSession(input:NativeInvestigationInvocation):Promise<InvestigationReplyV1>{return trackInvestigationInvocation(input.binding,()=>executeNativeInvestigationSession(input));}
 async function executeNativeInvestigationSession(input:NativeInvestigationInvocation):Promise<InvestigationReplyV1>{
  const startedAt=performance.now();
- const {binding,opts}=input,pinned=investigationBindingIdentity(binding),indexed=binding.tools.impact.mode==='indexed-impact';
+ const {binding,opts}=input,pinned=investigationBindingIdentity(binding),indexed=binding.tools.impact.mode==='indexed-impact',protocol=input.adapter.modelProtocol??'bound-v1';
  if(pinned.kind!==input.adapter.kind||pinned.adapterVersion!==input.adapter.version)throw new InvestigationQualificationError('Unsupported native investigation adapter');
+ if(pinned.catalogDigest!==scopedReviewCatalogDigest(indexed,protocol))throw new InvestigationQualificationError('Native model protocol differs from qualified catalog');
+ if(protocol==='compact-v1'&&digestValue(input.schema)!==digestValue(JSON.parse(JSON.stringify(CompactFinalAckSchema))))throw new InvestigationQualificationError('Compact native protocol requires its pinned acknowledgement schema');
  const cwd=investigationBindingDirectory(binding),args=input.adapter.args(input.schema,input.modelArgs,cwd,indexed);
  const actual:NativeAdapterIdentity={...pinned,binary:{...pinned.binary,path:realpathSync(input.binaryPath)},profileDigest:digestValue(input.profile),launchDigest:input.adapter.launchDigest(args,cwd,input.schema)};
  const verified=await inspectQualifiedInvestigationBinding(binding,actual,input.evidenceScope!=='scripted-fixture'),runtime=verified.runtime;
@@ -65,7 +79,8 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
  const command=nativeReviewMcpConfiguration(cwd,indexed).mcpServers['insrc-scoped-review'];
  for(const path of [command.command,command.args.find(p=>p.endsWith('/insrc-review-bridge.ts')||p.endsWith('/insrc-review-bridge.js'))!])if(!pinned.runtimeFiles.some(f=>f.path===realpathSync(path)))throw new InvestigationQualificationError('MCP runtime is not pinned by qualification');
  if(activeDirectories.has(cwd))throw new InvestigationQualificationError('Qualified isolated directory already has an active session');
- const prompt=`${input.prompt}\n\n${JSON.stringify({turn:verified.turn,seed:binding.tools.seed,coverage:runtime.state().ledger.coverage,navigation:runtime.navigation??null})}`,wireSchema=reviewWireSchemaJson(input.profile,input.schema),catalog=JSON.stringify(scopedReviewToolCatalog(indexed));
+ const frame=protocol==='compact-v1'?compactNativeReviewFrame(verified.turn,binding.tools,runtime.state,Date.now()+timeoutMs):{turn:verified.turn,seed:binding.tools.seed,coverage:runtime.state().ledger.coverage,navigation:runtime.navigation??null};
+ const prompt=`${input.prompt}${protocol==='compact-v1'?'\nAssess one focus block and call review_progress before changing focus. Read related files as needed for accuracy. Use only explicit expectation members and returned evidence aliases; retain uncertainty. Finish or yield through review_reply, then emit only {"acknowledged":true}.':''}\n\n${JSON.stringify(frame)}`,wireSchema=reviewWireSchemaJson(input.profile,input.schema),catalog=JSON.stringify(scopedReviewToolCatalog(indexed,protocol));
  let extraChars=0;
  // Native debug files are bounded host evidence; their contents are never
  // appended to this model prompt or tool conversation.
@@ -85,17 +100,18 @@ async function executeNativeInvestigationSession(input:NativeInvestigationInvoca
  try{
   abort.signal.throwIfAborted();
   if(debugPath){prepareClaudeDiagnostic(debugPath,true);diagnosticWatch=setInterval(()=>{try{if(statSync(debugPath).size>CLAUDE_DIAGNOSTIC_BYTES)throw Error('Diagnostic bound');}catch(cause){policyFailure=cause;abort.abort();}},5);}
-  const grant=bridge.issue({repo:verified.repo,turn:verified.turn,tools:binding.tools,peer:'native-cli',signal:abort.signal,ttlMs:timeoutMs,assertCurrent:runtime.assertCurrent,state:runtime.state});
+  const grant=bridge.issue({repo:verified.repo,turn:verified.turn,tools:binding.tools,peer:'native-cli',signal:abort.signal,ttlMs:timeoutMs,assertCurrent:runtime.assertCurrent,state:runtime.state,protocol});
   void grant.done.then(value=>{reply=value;},()=>{});
   broker=await startNativeReviewBroker(cwd,grant.binding,async command=>{
-   try{try{checkNativePolicy();}catch(cause){policyFailure=cause;abort.abort();throw cause;}extraChars+=JSON.stringify(command).length;admit();const result=await bridge.dispatch(command,'native-cli');extraChars+=JSON.stringify(result).length;admit();return result;}
+   try{try{checkNativePolicy();}catch(cause){policyFailure=cause;abort.abort();throw cause;}extraChars+=JSON.stringify(command).length;admit();
+    let result:unknown;try{result=await bridge.dispatch(command,'native-cli');}catch(cause){extraChars+=protocol==='compact-v1'?JSON.stringify(compactToolError(cause)).length:'Scoped review operation refused.'.length;admit();throw cause;}
+    extraChars+=JSON.stringify(result).length;admit();return result;}
    catch(cause){if(cause instanceof InvestigationError&&cause.code==='budget-refused'){budgetFailure=cause;abort.abort();}throw cause;}
-  });
+  },protocol);
   runtime.assertCurrent();launchCleanup=input.adapter.prepareLaunch?.(cwd,input.schema);
   const remaining=Math.min(timeoutMs,opts.deadlineMs-Math.ceil(performance.now()-startedAt));if(remaining<=0)throw new InvestigationQualificationError('Native attempt deadline elapsed before launch');
   let result:unknown;try{result=await input.invoke(args,prompt,{cwd,binaryPath:actual.binary.path,timeoutMs:remaining,stallMs:Math.min(stallMs,remaining),signal:abort.signal,env:{...nativeInvestigationEnvironment(),[NATIVE_REVIEW_BINDING_ENV]:grant.binding.bindingId}});}catch(cause){throw policyFailure??budgetFailure??cause;}
   runtime.assertCurrent();if(policyFailure||budgetFailure)throw policyFailure??budgetFailure;checkNativePolicy();admit();
-  if(!reply||!Value.Check(InvestigationReplySchema,result)||digestValue(result)!==digestValue(reply))throw new InvestigationQualificationError('Native final output does not match accepted scoped reply');
-  return reply;
+  return acceptedNativeReviewReply(protocol,result,reply);
  }finally{abort.abort();if(diagnosticWatch)clearInterval(diagnosticWatch);opts.signal.removeEventListener('abort',onAbort);try{await bridge.shutdown();if(broker)await broker.close();}finally{try{launchCleanup?.();if(debugPath&&policyFailure){try{unlinkSync(debugPath);}catch{/* Private failed diagnostic only. */}}}finally{activeDirectories.delete(cwd);}}}
 }

@@ -4,10 +4,9 @@ import { z } from 'zod';
 import { installedSourceMatches } from './installed-commit.js';
 import { checkIntegrity } from '../workflow/artifact-core/lifecycle.js';
 import { decodeArtifactHead } from '../workflow/artifact-core/decode.js';
-import { constants,openSync,closeSync,readFileSync,fstatSync,readdirSync,realpathSync } from 'node:fs';
+import { readFileSync,readdirSync,realpathSync } from 'node:fs';
 import { join,delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verify } from 'node:crypto';
 import { PATHS } from '../shared/paths.js';
 import { ReviewIntegrationError } from '../shared/review-investigation.js';
 import { scopedReviewCatalogDigest } from '../shared/review-investigation-catalog.js';
@@ -30,7 +29,9 @@ import type { HeadSnapshot } from '../workflow/artifact-core/store.js';
 const text=z.string().min(1).max(4096),digest=z.string().regex(/^[a-f0-9]{64}$/),oid=z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/);
 export const readinessSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-readiness'),wire:z.literal(1),canonical:z.literal(1),
  sourceCommit:oid,sourceDigest:digest,evaluationRef:text,backendRefs:z.object({'source-only':text,'indexed-impact':text}).strict()}).strict();
-const probeSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-installed-probe'),origin:z.literal('installed-probe'),evidence:z.unknown(),signature:z.string().min(1).max(4096)}).strict();
+// Legacy signatures are bounded metadata only. Authority comes from current
+// canonical approval; native qualification still verifies runtime isolation.
+const probeSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-installed-probe'),origin:z.literal('installed-probe'),evidence:z.unknown(),signature:z.string().min(1).max(4096).optional()}).strict();
 export const PREDECESSOR_EPIC='8315a11f29fd2812';
 export const RECONCILIATION_CLAUSE='For explicit plan-investigation-v1 CODE reviews only, Epic c32aa60534232f36 supersedes predecessor S002/S003 chunk/gather and S005 new CODE-review controller frames. Legacy and pre-S005 saved states retain their original adapters; DEF/HLD/LLD and all other design reviews retain the predecessor pipeline. No automatic migration, default flip or live quality/token-savings claim. Adoption requires current readiness evidence and independent installed-backend qualification; rollback disables new turns, drains active attempts, and preserves status, cancel, usage, accepted receipts and frozen publication reconciliation.';
 function refuse(message:string):never{throw new ReviewIntegrationError('not-ready',message);}
@@ -60,19 +61,13 @@ export function readInvestigationSelection(){
  try{const raw=JSON.parse(readFileSync(PATHS.config,'utf8')) as {codeReview?:{engine?:unknown;investigationReadinessRef?:unknown;predecessorReconciliationRef?:unknown}};return {engine:raw.codeReview?.engine??'legacy',readiness:raw.codeReview?.investigationReadinessRef,reconciliation:raw.codeReview?.predecessorReconciliationRef};}
  catch{return {engine:'legacy',readiness:undefined,reconciliation:undefined};}
 }
-/** Fixed daemon installation trust anchor. Neither wire packets nor a proposed
- * report can choose a signing key. No keys or credentials are generated/copied. */
-export function verifyInstalledProbeSignature(evidence:NativeIsolationEvidence,signature:string,keyPath=join(PATHS.insrc,'review-probe-trust.pem')){
- const fd=openSync(keyPath,constants.O_RDONLY|constants.O_NOFOLLOW);try{const stat=fstatSync(fd);if(!stat.isFile()||stat.size>16384||(stat.mode&0o022)!==0||(process.getuid&&stat.uid!==process.getuid()))refuse('Unsafe installed-probe trust anchor');const key=readFileSync(fd,'utf8');if(!verify(null,Buffer.from(JSON.stringify(snapshotValue(evidence))),key,Buffer.from(signature,'base64')))refuse('Installed-probe signature did not verify');}finally{closeSync(fd);}
-}
 export interface InvestigationAdoptionDeps {
  readonly work:CanonicalReviewWorkAdapter;
  readonly selection?:typeof readInvestigationSelection|undefined;
  readonly sourceDigest?:typeof investigationSourceDigest|undefined;
- readonly verifyProbe?:typeof verifyInstalledProbeSignature|undefined;
 }
 /** Evaluate pins before selecting a provider. No config boolean, fixture result,
- * unsigned CLI claim or draft predecessor record is an activation authority. */
+ * raw CLI claim or draft predecessor record is an activation authority. */
 export class InvestigationAdoptionPolicy {
  constructor(private readonly deps:InvestigationAdoptionDeps){}
  assertSelected(){if((this.deps.selection??readInvestigationSelection)().engine!=='plan-investigation-v1')refuse('Investigation scheduling is disabled; legacy remains selected');}
@@ -87,7 +82,6 @@ export class InvestigationAdoptionPolicy {
   const predecessor=await readPredecessorHld(this.deps.work);const currentPerformance=(predecessor?.head.body['nonFunctional'] as Record<string,unknown>|undefined)?.['performance'];
   if(!predecessor||(currentPerformance!==amendment['oldTarget']&&currentPerformance!==RECONCILIATION_CLAUSE))refuse('Predecessor reconciliation no longer applies to the installed HLD');
   const report=probeSchema.parse(issueData(await readApprovedEvidence(this.deps.work,readiness.backendRefs[mode]))),evidence=snapshotValue(report.evidence) as NativeIsolationEvidence;
-  (this.deps.verifyProbe??verifyInstalledProbeSignature)(evidence,report.signature);
   const rawEvaluation=issueData(await readApprovedEvidence(this.deps.work,readiness.evaluationRef));
   const {readApprovedEvaluationOracle,verifyStoredEvaluation}=await import('./review-investigation-evaluation.js');
   const oracleReference=z.object({adjudicationRef:text}).passthrough().parse(rawEvaluation).adjudicationRef;
@@ -106,7 +100,7 @@ export class InvestigationAdoptionPolicy {
   const installed=inspectInstalledInvestigation(kind,binary,cwd);assertInstalledImagesPinned(pins.evidence.identity,installed.images);
   const expected:NativeAdapterIdentity={...pins.evidence.identity,binaryVersion:installed.version,kind,adapterVersion:kind==='claude'?CLAUDE_INVESTIGATION_ADAPTER:CODEX_INVESTIGATION_ADAPTER,binary:{path:binary,digest:investigationFileDigest(binary)},profileDigest:digestValue(profile),catalogDigest:scopedReviewCatalogDigest(mode==='indexed-impact'),launchDigest:kind==='claude'?claudeInvestigationLaunchDigest(args,cwd):codexInvestigationLaunchDigest(args,cwd,schema)};
   let qualification:NativeInvestigationQualification;
-  const assertQualified=async()=>{const current=await this.evidence(mode);qualification=await qualifyInvestigationAdapter(current.readiness.backendRefs[mode],expected,repo,mode==='indexed-impact',{origin:'installed-probe',read:async()=>current.evidence,verifyInstalled:async(reference,digest)=>{if(reference!==current.readiness.backendRefs[mode]||digest!==digestValue(current.evidence))refuse('Probe authority binding changed');(this.deps.verifyProbe??verifyInstalledProbeSignature)(current.evidence,current.report.signature);}},[expected.adapterVersion]);};
+  const assertQualified=async()=>{const current=await this.evidence(mode);qualification=await qualifyInvestigationAdapter(current.readiness.backendRefs[mode],expected,repo,mode==='indexed-impact',{origin:'installed-probe',read:async()=>current.evidence,verifyInstalled:async(reference,digest)=>{const fresh=await this.evidence(mode);if(reference!==fresh.readiness.backendRefs[mode]||digest!==digestValue(fresh.evidence))refuse('Probe authority binding changed');}},[expected.adapterVersion]);};
   await assertQualified();const bindings=new Map<string,QualifiedInvestigationSessionBinding>();
   return {provider,modelLabel:`${resolution.runner}:${resolution.model}`,compatibilityDigest:digestValue(expected),assertQualified,execute:async(turn,tools,signal,runtime)=>{
    await assertQualified();const binding=createQualifiedInvestigationBinding(qualification,turn,tools,runtime);bindings.set(turn.runId,binding);

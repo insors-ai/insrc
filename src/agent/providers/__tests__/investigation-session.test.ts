@@ -34,6 +34,14 @@ test('Effective native isolation qualification rejects inherited tools and unpro
   await assert.rejects(()=>qualify(evidence,identity,[]),/Unsupported or unproven/);
   await assert.rejects(()=>qualify(evidence,{...identity,binaryVersion:'unproven'}),/identity/);
   await assert.rejects(()=>qualifyInvestigationAdapter('unproven-installed',identity,repo,false,{origin:'installed-probe',read:async()=>evidence},['claude-scoped-v1']),/independent verification/);
+  // Canonical authority is rechecked on use even without cryptographic keys.
+  let approved=true;
+  const installed=await qualifyInvestigationAdapter('approved:probe',identity,repo,false,{origin:'installed-probe',read:async()=>evidence,verifyInstalled:async(ref,digest)=>{
+   assert.equal(ref,'approved:probe');assert.equal(digest,digestValue(evidence));if(!approved)throw Error('Canonical approval became stale');
+  }},['claude-scoped-v1']);
+  const installedBinding=createQualifiedInvestigationBinding(installed,f.turn,tools);
+  await inspectQualifiedInvestigationBinding(installedBinding,identity);
+  approved=false;await assert.rejects(()=>inspectQualifiedInvestigationBinding(installedBinding,identity),/Canonical approval became stale/);
   // A fixture reader's extra 'installed' claim is not the verifier's authority origin.
   const claimed=await qualify({...evidence,origin:'installed-probe'} as NativeIsolationEvidence);assert.equal(claimed.origin,'scripted-fixture');
   for(const field of ['builtinTools','inheritedConfigSources','plugins','hooks','repositoryInstructions','credentialCopies'] as const){

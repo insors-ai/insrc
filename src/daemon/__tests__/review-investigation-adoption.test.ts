@@ -3,16 +3,13 @@ import {readApprovedEvaluationOracle,scriptedEvaluationRecord,evaluateReviewReco
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateKeyPairSync,sign } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { fixture,budget } from './review-investigation-fixtures.js';
 import { InvestigationRepository } from '../review-investigation-repository.js';
-import { InvestigationAdoptionPolicy,readApprovedEvidence,approvedEvidenceReference,RECONCILIATION_CLAUSE,PREDECESSOR_EPIC,verifyInstalledProbeSignature,preparePredecessorReconciliation } from '../review-investigation-adoption.js';
+import { InvestigationAdoptionPolicy,readApprovedEvidence,approvedEvidenceReference,RECONCILIATION_CLAUSE,PREDECESSOR_EPIC,preparePredecessorReconciliation } from '../review-investigation-adoption.js';
 import { CanonicalReviewWorkAdapter } from '../review-investigation-work.js';
 import { LifecycleService } from '../../workflow/artifact-core/lifecycle-service.js';
 import { emptyLifecycle } from '../../workflow/artifact-core/decode.js';
-import { digestValue,snapshotValue } from '../../workflow/code-review/investigation/identity.js';
+import { digestValue } from '../../workflow/code-review/investigation/identity.js';
 import { scopedReviewCatalogDigest } from '../../shared/review-investigation-catalog.js';
 import { investigationCapabilities } from '../review-investigation-gateway.js';
 import { handleCodeReviewStep,DEFAULT_DEPS } from '../steps/code-review-step/handler.js';
@@ -20,7 +17,7 @@ import { rawControllerCall } from '../steps/code-review-step/__tests__/controlle
 import type { NativeIsolationEvidence } from '../../agent/providers/investigation-session.js';
 import type { InvestigationTurnV1 } from '../../workflow/code-review/investigation/continuation-types.js';
 
-test('Opt in readiness and rollback retain status while refusing unsupported resumes',async()=>{
+test('Opt in readiness and rollback retain status while refusing unsupported resumes',async(t)=>{
  const f=await fixture(true,false,false);try{
   let enabled=true;const repository=new InvestigationRepository({...f.repository.options,assertReady:async()=>{if(!enabled)throw Error('Disabled');},assertExecutionAllowed:()=>{if(!enabled)throw Error('Rollback');}});
   const accepted=await repository.start(f.start as Parameters<InvestigationRepository['start']>[0],budget),frame=await repository.advance(accepted.descriptor.runId,budget),turn=frame.turn as InvestigationTurnV1;
@@ -32,9 +29,7 @@ test('Opt in readiness and rollback retain status while refusing unsupported res
   const work=f.repository.work,lifecycle=new LifecycleService({store:f.repository.options.canonical}),actor={id:'github:fixture',kind:'person' as const,properties:{}};
   const put=async(id:string,data:unknown,approve=true,by:typeof actor|{id:string;kind:'agent';properties:{}}=actor)=>{await f.repository.options.canonical.write({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{title:'Protocol fixture only',reproduction:'Fixture',rootCause:'Fixture',fixIntent:JSON.stringify(data)},citations:[]}},by);if(approve)await lifecycle.apply(id,'approve',actor);const head=(await work.readCanonicalHead(id))!;return approvedEvidenceReference(id,head);};
   const unsignedEvidence={identity:{profileDigest:'a'.repeat(64),adapterVersion:'candidate-script-v1'}} as NativeIsolationEvidence;
-  const keys=generateKeyPairSync('ed25519'),keyPath=join(f.dir,'probe-trust.pem');writeFileSync(keyPath,keys.publicKey.export({type:'spki',format:'pem'}),{mode:0o600});
-  const signature=sign(null,Buffer.from(JSON.stringify(snapshotValue(unsignedEvidence))),keys.privateKey).toString('base64');verifyInstalledProbeSignature(unsignedEvidence,signature,keyPath);assert.throws(()=>verifyInstalledProbeSignature(unsignedEvidence,Buffer.from('invalid').toString('base64'),keyPath));
-  const probe=await put('ISSUE-1111111111111111',{version:1,kind:'review-investigation-installed-probe',origin:'installed-probe',evidence:unsignedEvidence,signature});
+  const probe=await put('ISSUE-1111111111111111',{version:1,kind:'review-investigation-installed-probe',origin:'installed-probe',evidence:unsignedEvidence});
   const oracleData=evaluationOracleSchema.parse(JSON.parse(readFileSync(new URL('./fixtures/review-evaluation-oracle.v1.json',import.meta.url),'utf8')));
   const adjudication=await put('ISSUE-2222222222222222',oracleData,true,{id:'insrc:oracle-author',kind:'agent',properties:{}});
   const oracle=await readApprovedEvaluationOracle(work,adjudication),binding={sourceCommit:f.commitId,sourceDigest:'b'.repeat(64),profileDigest:'a'.repeat(64),policyDigest:'c'.repeat(64),catalogDigest:scopedReviewCatalogDigest(false),schemaVersion:1 as const,adapterVersion:'candidate-script-v1',fixtureVersion:oracleData.fixtureVersion,oracleDigest:oracle.oracleDigest};
@@ -44,7 +39,7 @@ test('Opt in readiness and rollback retain status while refusing unsupported res
   const readiness=await put('ISSUE-4444444444444444',{version:1,kind:'review-investigation-readiness',wire:1,canonical:1,sourceCommit:f.commitId,sourceDigest:'b'.repeat(64),evaluationRef:evaluation,backendRefs:{'source-only':probe,'indexed-impact':probe}});
   // Draft and wrong predecessor records never authorize execution.
   const draft=await put('ISSUE-5555555555555555',{kind:'draft'},false);await assert.rejects(()=>readApprovedEvidence(work,draft));
-  const policy=new InvestigationAdoptionPolicy({work,selection:()=>({engine:'legacy',readiness,reconciliation:draft}),sourceDigest:()=> 'b'.repeat(64),verifyProbe:(_e,s)=>verifyInstalledProbeSignature(unsignedEvidence,s,keyPath)});await assert.rejects(()=>policy.evidence('source-only'),/disabled/);
+  const policy=new InvestigationAdoptionPolicy({work,selection:()=>({engine:'legacy',readiness,reconciliation:draft}),sourceDigest:()=> 'b'.repeat(64)});await assert.rejects(()=>policy.evidence('source-only'),/disabled/);
   const missing=new InvestigationAdoptionPolicy({work,selection:()=>({engine:'plan-investigation-v1',readiness,reconciliation:draft}),sourceDigest:()=> 'b'.repeat(64)});await assert.rejects(()=>missing.evidence('source-only'),/draft/);
   assert.equal(investigationCapabilities().defaultEngine,'legacy');assert.match(RECONCILIATION_CLAUSE,/CODE reviews only/);assert.match(RECONCILIATION_CLAUSE,/DEF\/HLD\/LLD/);assert.equal(PREDECESSOR_EPIC,'8315a11f29fd2812');
   await put(`ISSUE-${PREDECESSOR_EPIC}`,{kind:'predecessor-anchor'});
@@ -52,12 +47,34 @@ test('Opt in readiness and rollback retain status while refusing unsupported res
   const writeBody=async(id:string,body:Record<string,unknown>)=>{await store.write({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body,citations:[]}},actor);await lifecycle.apply(id,'approve',actor,{override:{reason:'Synthetic test setup; no installed backend certification'}});return approvedEvidenceReference(id,(await work.readCanonicalHead(id))!);};
   await writeBody(`HLD-${PREDECESSOR_EPIC}`,{nonFunctional:{performance:'Legacy performance target'}});
   const reconciliation=await writeBody(`AMD-${PREDECESSOR_EPIC}-1`,{amendment:{type:'nonFunctional.retarget',property:'performance',oldTarget:'Legacy performance target',newTarget:RECONCILIATION_CLAUSE}});
-  const candidate=new InvestigationAdoptionPolicy({work,selection:()=>({engine:'plan-investigation-v1',readiness,reconciliation}),sourceDigest:()=> 'b'.repeat(64),verifyProbe:(_e,s)=>verifyInstalledProbeSignature(unsignedEvidence,s,keyPath)});
-  assert.equal((await candidate.evidence('source-only')).readiness.sourceCommit,f.commitId);
+  const candidate=new InvestigationAdoptionPolicy({work,selection:()=>({engine:'plan-investigation-v1',readiness,reconciliation}),sourceDigest:()=> 'b'.repeat(64)});
+  await t.test('Approved installed probe without signature is accepted without trust-key provisioning',async()=>{
+   const loaded=await candidate.evidence('source-only');assert.equal(loaded.readiness.sourceCommit,f.commitId);assert.equal(loaded.report.signature,undefined);
+  });
+  let probeCase=0;
+  const policyWithProbe=async(data:unknown)=>{
+   const ref=await put(`ISSUE-${String(6000000000000000+probeCase++)}`,data);
+   const ready=await put(`ISSUE-${String(7000000000000000+probeCase++)}`,{...(await candidate.evidence('source-only')).readiness,backendRefs:{'source-only':ref,'indexed-impact':ref}});
+   return new InvestigationAdoptionPolicy({work,selection:()=>({engine:'plan-investigation-v1',readiness:ready,reconciliation}),sourceDigest:()=> 'b'.repeat(64)});
+  };
+  await t.test('Legacy signature metadata is inert and bounded',async()=>{
+   const base={version:1,kind:'review-investigation-installed-probe',origin:'installed-probe',evidence:unsignedEvidence};
+   assert.equal((await (await policyWithProbe({...base,signature:'not-a-cryptographic-signature'})).evidence('source-only')).report.signature,'not-a-cryptographic-signature');
+   await assert.rejects(()=>(async()=> (await policyWithProbe({...base,signature:'x'.repeat(4097)})).evidence('source-only'))());
+  });
+  await t.test('Draft stale and tampered evidence remain refused',async()=>{
+   const stale=await put('ISSUE-8888888888888888',{kind:'initial'});
+   await put('ISSUE-8888888888888888',{kind:'edited'},false);
+   await assert.rejects(()=>readApprovedEvidence(work,stale));
+   await assert.rejects(()=>readApprovedEvidence(work,draft));
+   await assert.rejects(()=>readApprovedEvidence(work,probe.replace(/#[a-f0-9]+$/,'#'+'0'.repeat(64))));
+   const raw=await policyWithProbe({version:1,kind:'review-investigation-probe-observations',origin:'unsigned-installed-observations',evidence:unsignedEvidence});
+   await assert.rejects(()=>raw.evidence('source-only'));
+  });
   const oldHead=await store.readHeadSnapshot(`HLD-${PREDECESSOR_EPIC}`),proposal=await preparePredecessorReconciliation(work,lifecycle);assert.equal(proposal.pendingExternalApproval,true);assert.equal((await preparePredecessorReconciliation(work,lifecycle)).id,proposal.id);assert.equal((await store.readHeadSnapshot(`HLD-${PREDECESSOR_EPIC}`))!.digest,oldHead!.digest);const pending=(await work.readCanonicalHead(proposal.id))!;await assert.rejects(()=>readApprovedEvidence(work,approvedEvidenceReference(proposal.id,pending)),/draft/);
   await assert.rejects(()=>candidate.evidence('indexed-impact'),/Evaluation/);
   await assert.rejects(()=>candidate.adapter(f.dir,'source-only')); // No real installed qualification in this fixture.
-  // A signed, approved fixture-shaped report still cannot become a real native backend.
+  // An approved fixture-shaped report still cannot become a real native backend.
   const invalid=new InvestigationAdoptionPolicy({work,selection:()=>({engine:'plan-investigation-v1',readiness,reconciliation:adjudication}),sourceDigest:()=> 'b'.repeat(64)});await assert.rejects(()=>invalid.adapter(f.dir,'source-only'));
  }finally{f.close();}
 });

@@ -76,6 +76,39 @@ test('the core floor renders in its own <details>/section, separate from the rol
   assert.doesNotMatch(html, /<details[^>]*>(?:(?!<\/details>).)*Core floor/s, "the core floor is its own section, not nested inside a role-group <details>");
 });
 
+test("repo-config.test.ts: all roles at 'global' still render all 34 rows across both groups", async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(REPOS[0]!.path);
+  assert.equal((html.match(/class="role-row"/g) ?? []).length, 35, '34 role rows + 1 core-floor row, all rendered at the global default');
+  assert.match(html, /<span class="count">14<\/span>/, 'the critical group still reports 14 at all-global');
+  assert.match(html, /<span class="count">20<\/span>/, 'the peripheral group still reports 20 at all-global');
+  const ids = new Set([...html.matchAll(/data-segments="([^"]+)"/g)].map((m) => m[1]));
+  assert.equal(ids.size, 35, '34 distinct role segments + 1 coreFloor segment, not duplicates');
+});
+
+test("repo-config.test.ts: a repo switch always renders the default open/closed groups afresh (no stale collapse state carried between repos)", async () => {
+  const deps = { registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] };
+  const first = await renderRepoConfig(deps)(REPOS[0]!.path);
+  const second = await renderRepoConfig(deps)(REPOS[1]!.path);
+  for (const html of [first, second]) {
+    assert.match(html, /<details class="section" open><summary class="section-head">Critical roles/, 'critical is open on every fresh render, regardless of repo');
+    assert.match(html, /<details class="section"><summary class="section-head">Peripheral roles/, 'peripheral is closed on every fresh render, regardless of repo');
+  }
+});
+
+test("repo-config.test.ts: no checkable providers omits the 'Register selected providers' button", async () => {
+  const allRegistered = REGS.map((r) => ({ ...r, registered: true, available: true }));
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => allRegistered })(REPOS[0]!.path);
+  assert.doesNotMatch(html, /insrc-register-providers/, 'nothing checkable -> no register button');
+});
+
+test("repo-config.test.ts: an mcpRegistration() rejection degrades only the Providers section to a hint paragraph; role groups and core floor still render", async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => { throw new Error('mcp.status down'); } })(REPOS[0]!.path);
+  assert.match(html, /registration state is unavailable/, 'the Providers section degrades to a hint paragraph');
+  assert.match(html, /<details class="section" open><summary class="section-head">Critical roles/, 'the critical role group still renders despite the Providers failure');
+  assert.match(html, /<details class="section"><summary class="section-head">Peripheral roles/, 'the peripheral role group still renders despite the Providers failure');
+  assert.match(html, /<div class="section"><div class="section-head">Core floor<\/div>/, 'the core floor section still renders despite the Providers failure');
+});
+
 test('renderRepoConfig: an unregistered selected repo falls back to picker-only', async () => {
   const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })('/not/registered');
   assert.doesNotMatch(html, /insrc-repo-form/, 'a stale selection that is no longer registered renders no form');

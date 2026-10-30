@@ -219,20 +219,13 @@ A new daemon handler (next to models.resolveRole in src/daemon/model-definitions
 
 - Item alt2: alternatives were scored against ac1-ac3, sc1 and sc2; Epic constraints k1-k6 are reflected in the notes but not as separate score entries (partial), as in the s1 and s2 LLDs where k1-k6 were treated as a pre-filter gate.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q96bb9add` — Item alt2: alternatives were scored against ac1-ac3, sc1 and sc2; Epic constraints k1-k6 are reflected in the notes but not as separate score entries (partial), as in the s1 and s2 LLDs where k1-k6 were treated as a pre-filter gate.
+  - **resolved**: Pre-filter gate (mirror s1/s2) — Same decision as the s1 and s2 LLDs: k1-k6 are must-meet constraints applied before scoring; a1 meets them. _(2026-10-30T06:32:52.858Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-30T06:22:31.096Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `s1 bundle: The terminal UI's Model Tiers pane: how families, models and efforts are offered and how a tier is shown` — "Each edit writes the whole tier { runner, model, effort } to models.tiers.<tier> via config.write."
+- **[[c2]]** `analyze-bundle` `s1 bundle: What the definitions answer and the daemon's tier resolution give the TUI for ollama-claude (s1, s2)` — "an undeclared one resolves to no model with fallback 'model-not-supported' and nothing runs"
+- **[[c3]]** `analyze-bundle` `s1 bundle: Constraints and test patterns for the TUI change` — "the TUI must recognise a host family by its `host` field, not by id"

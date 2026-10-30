@@ -182,7 +182,8 @@ export interface ResolvedRole {
 	readonly effort?:     EffortLevel | undefined;
 	readonly inputLimit?: InputLimit | undefined;
 	readonly fallback?:   { readonly reason: FallbackReason; readonly requested: string } | undefined;
-	readonly cli?:        { readonly kind: 'claude' | 'codex' | 'vibe' } | undefined;
+	/** `ollama` is present for an Ollama-hosted family with a declared model: the CLI runs against that server. */
+	readonly cli?:        { readonly kind: 'claude' | 'codex' | 'vibe'; readonly ollama?: { readonly host: string; readonly hosting: ModelHosting } | undefined } | undefined;
 	readonly ollama?:     { readonly host: string; readonly numCtx: number; readonly numPredict: number } | undefined;
 }
 
@@ -210,6 +211,9 @@ export function resolveRoleWire(params: unknown, deps: ResolveRoleDeps = DEFAULT
 	const r = resolveRole(role, cfg, repoPath, { registry });
 	const model = registry.find(r.runner, r.model);
 	const kind = registry.cliKind(r.runner);
+	const ollamaTarget = registry.host(r.runner) !== undefined && model !== undefined
+		? { ollama: { host: loadLocalProviderConfig().host, hosting: model.hosting ?? 'cloud' as const } }
+		: {};
 	return {
 		tier:   r.tier,
 		family: r.runner,
@@ -218,7 +222,7 @@ export function resolveRoleWire(params: unknown, deps: ResolveRoleDeps = DEFAULT
 		...(model?.inputLimit !== undefined ? { inputLimit: model.inputLimit } : {}),
 		...(r.fallback !== undefined ? { fallback: r.fallback } : {}),
 		...(kind !== undefined
-			? { cli: { kind } }
+			? { cli: { kind, ...ollamaTarget } }
 			: { ollama: { host: loadLocalProviderConfig().host, numCtx: ollamaContextWindow(registry, model), numPredict: cfg.shaper.ollamaNumPredict } }),
 	};
 }

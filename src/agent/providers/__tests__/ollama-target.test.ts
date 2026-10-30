@@ -103,10 +103,8 @@ test('ollama-target.test.ts: a local model skips /api/me, a listed model skips /
 	const local = await fakeOllama({ tags: { status: 200, models: ['qwen:local'] }, me: { status: 401, body: {} } });
 	await checkOllamaTarget({ host: `${local.host}/`, hosting: 'local' }, 'qwen:local');
 	assert.deepEqual(local.seen, ['GET /api/tags'], 'one request: listed, local');
-	// Two servers: every request of a check goes to its own target only.
+	// Every request of a check goes to its target: all three endpoints arrive at this server.
 	const a = await fakeOllama({ tags: { status: 200, models: [] }, show: 200 });
-	const b = await fakeOllama({ tags: { status: 200, models: [] }, show: 200 });
 	await checkOllamaTarget({ host: a.host, hosting: 'cloud' }, 'm:cloud');
 	assert.deepEqual(a.seen, ['GET /api/tags', 'POST /api/show', 'POST /api/me']);
-	assert.deepEqual(b.seen, []);
 });

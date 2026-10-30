@@ -294,3 +294,14 @@ test('DIFF-COMPAT: controller execution resolves the critical review role over d
   const tokens = await resolveControllerReviewExecution('claude', dir, async () => ({ ...role, inputLimit: { unit: 'tokens', max: 1000 } })); assert.equal(tokens.provider.inputBudgetChars, 3000);
  } finally { await new Promise<void>(resolve => server.close(() => resolve())); rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('controller-review.test.ts: an Ollama-hosted or refused review role is not the invoking controller CLI', async () => {
+	const hosted = { tier: 'core', family: 'ollama-claude', model: 'glm-5.3:cloud', cli: { kind: 'claude', ollama: { host: 'http://localhost:11434', hosting: 'cloud' } } };
+	const refused = { tier: 'core', family: 'ollama-claude', model: 'kimi-k9:cloud', fallback: { reason: 'model-not-supported', requested: 'kimi-k9:cloud' }, cli: { kind: 'claude' } };
+	for (const role of [hosted, refused]) {
+		await assert.rejects(resolveControllerReviewExecution('claude', '/repo', async () => role), /does not select the invoking controller CLI/, role.model);
+	}
+	// The controller's own vendor CLI still resolves.
+	const own = await resolveControllerReviewExecution('claude', '/repo', async () => ({ tier: 'core', family: 'cli-claude', model: 'claude-sonnet-5', cli: { kind: 'claude' } }));
+	assert.deepEqual([own.client, own.provider.defaultModel, own.provider.ollama], ['claude', 'claude-sonnet-5', undefined]);
+});

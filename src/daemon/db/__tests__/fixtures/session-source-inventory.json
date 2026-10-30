@@ -861,7 +861,7 @@
       ],
       "siteCount": 204,
       "sitesDigest": "18737727b49505e2bbb3ded18032891f601140e681ff8e29c2e9b010c654cee9",
-      "sourceDigest": "b7c317eff4cdce36d0b45e693bdf7738b929af7c38179323050696cd444363b0",
+      "sourceDigest": "fe42d4ae08f4d778a0b14a475e0fcf6dbea5033665b4758c14a44797dea6dfae",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -6765,7 +6765,7 @@
       ],
       "siteCount": 17,
       "sitesDigest": "1bc33f09158cd04616279138d68425568e82c3410eeaa9b3f5e96ada8c1ac514",
-      "sourceDigest": "d6a67b063e367799e8187707b0e6d36f0e958b8912de03a89f79947630d27f10",
+      "sourceDigest": "4e10568e9f6e2833e8668c441e0471a6dd54db7f33cdfc759f819f3bdb03c652",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14382,7 +14382,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "326304d8c5625ccfca11092963eed7382d88406254ad07d562e3c187d7c65c1a",
-      "sourceDigest": "781f97d8efa30a7b4c055c840482a39e500e0f9f8885045c918b1927d9ccb0cb",
+      "sourceDigest": "f5f02d4e73bf60db820cd9dbc69500e7bea1ff93ff7daf47a54298e19d5737bb",
       "boundaries": [
         "provider-adapter",
         "provider-factory",
@@ -31936,12 +31936,16 @@
         ],
         [
           "provider-adapter",
+          "UnsupportedBoundedInputError"
+        ],
+        [
+          "provider-adapter",
           "verifyBoundedCli"
         ]
       ],
-      "siteCount": 39,
-      "sitesDigest": "711052aab8e5968e1896be4f12b6257aee15db72a75a0731bb317bd7341033e4",
-      "sourceDigest": "5cd65fbad9fd9bad12a4e4ebb3ec1355d781c2346f41be73ae76d1ef09803013",
+      "siteCount": 40,
+      "sitesDigest": "8c813d499cc02322c24fcb13c4942b193faadfa1f85b38452fa55fe357ad2c4b",
+      "sourceDigest": "b8ae20de6b252ece7d53398c754b260b1b70342c5a4c9a30e8d425e488550f58",
       "boundaries": [
         "diagnostic",
         "filesystem-open",
@@ -35701,7 +35705,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "8ae25b5587abb4b59aa201048ef59b93560a5b28cb8142bb0b85f578ed860609",
-      "sourceDigest": "6b18d187433c3b415badf96bbdd767f0f1d157a6603f610056584c4c051d480a",
+      "sourceDigest": "edf06ededf9f0b8af3b7d88f493a24a7441c01f7628552c53122fd78509a2251",
       "boundaries": [
         "diagnostic",
         "provider-adapter",

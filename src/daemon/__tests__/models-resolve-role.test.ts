@@ -106,3 +106,13 @@ test('models-resolve-role.test.ts: CLI and Ollama tiers match the router and pro
 		assert.deepEqual(resolveRoleWire(bad, { config: () => cfg, registry: getModelRegistry }), { error: 'invalid-params: role and repoPath (non-empty strings) are required', recoverable: false }, JSON.stringify(bad));
 	}
 });
+
+test("models-resolve-role.test.ts: an ollama-claude role carries the Ollama target; a refused one carries none and names 'model-not-supported'", () => {
+	const declared = resolveWith(configOf({ tiers: { core: { runner: 'ollama-claude', model: 'glm:cloud' } } }), CRITICAL);
+	assert.deepEqual([declared.family, declared.model, declared.cli], ['ollama-claude', 'glm:cloud', { kind: 'claude', ollama: { host: loadLocalProviderConfig().host, hosting: 'cloud' } }]);
+	assert.equal(declared.ollama, undefined, 'no plain-Ollama settings');
+	const refused = resolveWith(configOf({ tiers: { core: { runner: 'ollama-claude', model: 'kimi-k9:cloud' } } }), CRITICAL);
+	assert.deepEqual([refused.cli, refused.fallback], [{ kind: 'claude' }, { reason: 'model-not-supported', requested: 'kimi-k9:cloud' }]);
+	// A vendor family still carries the CLI kind alone.
+	assert.deepEqual(resolveWith(configOf({ tiers: { core: { runner: 'cli-claude', model: 'claude-a' } } }), CRITICAL).cli, { kind: 'claude' });
+});

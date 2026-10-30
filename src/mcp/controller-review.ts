@@ -36,6 +36,9 @@ export async function resolveControllerReviewExecution(client: StepClient, repo:
  const raw = await fetchRole(repo);
  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new UnsupportedBoundedInputError('The daemon returned no review role policy');
  const role = raw as Record<string, unknown>, cli = role['cli'] as { kind?: unknown } | undefined;
+ // An Ollama-hosted or refused role is not the invoking controller's own CLI.
+ const fallback = role['fallback'] as { reason?: unknown } | undefined;
+ if ((cli as { ollama?: unknown } | undefined)?.ollama !== undefined || fallback?.reason === 'model-not-supported') throw new UnsupportedBoundedInputError('The daemon review role policy does not select the invoking controller CLI');
  if (cli?.kind !== client || typeof role['model'] !== 'string' || role['model'].length === 0 || !['core', 'mid', 'cheap'].includes(String(role['tier']))) throw new UnsupportedBoundedInputError('The daemon review role policy does not select the invoking controller CLI');
  const effort = role['effort'];
  if (effort !== undefined && (typeof effort !== 'string' || effort.length === 0)) throw new UnsupportedBoundedInputError('Invalid review role effort');

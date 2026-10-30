@@ -64,7 +64,7 @@ export async function checkOllamaTarget(target: OllamaTarget, model: string, dep
 	let names: string[];
 	try {
 		const tags = await call('/api/tags');
-		if (!tags.ok) unreachable(`/api/tags answered ${tags.status}`);
+		if (!tags.ok) { await tags.body?.cancel(); unreachable(`/api/tags answered ${tags.status}`); }
 		const list = (await tags.json() as { models?: Array<{ name?: unknown }> }).models ?? [];
 		names = list.map(m => m.name).filter((n): n is string => typeof n === 'string');
 	} catch (err) {
@@ -74,10 +74,13 @@ export async function checkOllamaTarget(target: OllamaTarget, model: string, dep
 
 	if (!names.includes(model)) {
 		let status: number;
-		try { status = (await call('/api/show', { model })).status; }
-		catch (err) { return unreachable(`/api/show failed: ${(err as Error).message}`); }
+		try {
+			const show = await call('/api/show', { model });
+			status = show.status;
+			await show.body?.cancel();
+		} catch (err) { return unreachable(`/api/show failed: ${(err as Error).message}`); }
 		if (status === 404) fail('model-unavailable', `model ${model} is not available in Ollama at ${target.host}; run \`ollama pull ${model}\``);
-		if (status !== 200) unreachable(`/api/show answered ${status}`);
+		if (status !== 200) fail('model-unavailable', `Ollama at ${target.host} answered ${status} when asked for model ${model}; check the model name and the Ollama server log`);
 	}
 
 	if (target.hosting !== 'cloud') return;

@@ -92,3 +92,22 @@ test('review-resolve-role.test.ts: reviewArtifact builds its provider from a fak
 	const src = readFileSync(new URL('../workflow.ts', import.meta.url), 'utf8');
 	assert.doesNotMatch(src, /\b(createRoleRouter|loadAnalyzeConfig|getModelRegistry|shippedModelRegistry|ModelRegistry)\b/);
 });
+
+test('review-resolve-role.test.ts: an ollama-claude review role builds a claude provider pointed at Ollama; a refused one is refused', async () => {
+	const target = { host: 'http://ollama.example:11434', hosting: 'cloud' as const };
+	const hosted: ResolvedRole = { tier: 'core', family: 'ollama-claude', model: 'glm-5.3:cloud', cli: { kind: 'claude', ollama: target } };
+	const c = capture();
+	await reviewArtifact(REPO, MD, c.reviewFile, async () => hosted);
+	const p = c.seen[0]?.provider;
+	assert.ok(p instanceof CliProvider);
+	assert.deepEqual([(p as unknown as { kind: string }).kind, p.defaultModel, p.ollama], ['claude', 'glm-5.3:cloud', target]);
+	// A vendor CLI answer gets no Ollama target.
+	const v = capture();
+	await reviewArtifact(REPO, MD, v.reviewFile, async () => ({ tier: 'core', family: 'cli-claude', model: 'claude-a', cli: { kind: 'claude' } }));
+	assert.equal((v.seen[0]?.provider as InstanceType<typeof CliProvider>).ollama, undefined);
+	// Refused: nothing runs.
+	const refused: ResolvedRole = { tier: 'core', family: 'ollama-claude', model: 'kimi-k9:cloud', fallback: { reason: 'model-not-supported', requested: 'kimi-k9:cloud' }, cli: { kind: 'claude' } };
+	const r = capture();
+	await assert.rejects(reviewArtifact(REPO, MD, r.reviewFile, async () => refused), /cannot review: model 'kimi-k9:cloud' is not supported by ollama-claude \(model-not-supported\)/);
+	assert.equal(r.seen.length, 0);
+});

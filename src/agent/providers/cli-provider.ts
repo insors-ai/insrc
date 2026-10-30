@@ -388,10 +388,11 @@ export class CliProvider implements LLMProvider {
 		if (chars > cap) throw new InputTooLargeError(`Complete normalized input ${chars} exceeds ${cap} characters`, '', { actualChars: chars, maxChars: cap });
 		const dir = mkdtempSync(join(tmpdir(), 'insrc-isolated-'));
 		try {
+			// The Ollama check comes first: a server that cannot serve the run starts no process at all.
+			await this.checkOllama();
 			verifyBoundedCli(this.kind, this.binPath, dir);
 			if (this.kind !== 'claude') throw new UnsupportedBoundedInputError('No verified tool-free invocation is available for this CLI');
 			const args = boundedClaudeArgs(wireSchema, this.modelArgs(opts));
-			await this.checkOllama();
 			const out = await runInProcessGroup(this.binPath, args, {
 				cwd: dir, stdin: serialiseMessages(messages), env: this.withOllama(boundedClaudeEnv()) ?? boundedClaudeEnv(),
 				timeoutMs: opts.timeoutMs ?? this.timeoutMs,
@@ -724,7 +725,8 @@ export class CliProvider implements LLMProvider {
 	private withOllama(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv | undefined {
 		if (this.ollama === undefined) return undefined;
 		const env: NodeJS.ProcessEnv = { ...base, ANTHROPIC_BASE_URL: this.ollama.host, ANTHROPIC_AUTH_TOKEN: 'ollama', ANTHROPIC_API_KEY: '' };
-		delete env['CLAUDE_CODE_OAUTH_TOKEN'];
+		// No vendor login, and no Bedrock/Vertex mode that would send the run to another cloud.
+		for (const key of ['CLAUDE_CODE_OAUTH_TOKEN', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX']) delete env[key];
 		return env;
 	}
 
@@ -745,7 +747,7 @@ export class CliProvider implements LLMProvider {
 	private async runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
 		await this.checkOllama();
 		return new Promise((resolve, reject) => {
-			const env = exec?.env ?? this.withOllama(process.env);
+			const env = this.withOllama(exec?.env ?? process.env) ?? exec?.env;
 			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal, env);
 			r.then(out => {
 				if (out.exitCode !== 0) {

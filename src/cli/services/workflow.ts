@@ -271,6 +271,9 @@ export async function reviewArtifact(
 /** The provider the daemon's answer names: a CLI family's binary, or Ollama
  *  at the daemon's host and context size. */
 function reviewProvider(r: ResolvedRole): LLMProvider {
+	if (r.fallback?.reason === 'model-not-supported') {
+		throw new Error(`cannot review: model '${r.fallback.requested}' is not supported by ${r.family} (model-not-supported)`);
+	}
 	if (r.cli !== undefined) {
 		const inputBudgetChars = r.inputLimit?.unit === 'chars' ? r.inputLimit.max : undefined;
 		return new CliProvider({
@@ -278,6 +281,7 @@ function reviewProvider(r: ResolvedRole): LLMProvider {
 			model: r.model,
 			...(r.effort !== undefined ? { effort: r.effort } : {}),
 			...(inputBudgetChars !== undefined ? { inputBudgetChars } : {}),
+			...(r.cli.ollama !== undefined ? { ollama: r.cli.ollama } : {}),
 		});
 	}
 	if (r.ollama === undefined) throw new Error(`cannot review: the daemon named no provider settings for ${r.family}:${r.model}`);

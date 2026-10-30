@@ -26,7 +26,7 @@ import { OllamaTargetError } from '../ollama-target.js';
 import { getLogger } from '../../../shared/logger.js';
 
 const FLAGS = '--safe-mode --no-session-persistence --system-prompt --tools --disable-slash-commands --setting-sources --strict-mcp-config --mcp-config';
-const VARS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN', 'INSRC_TEST_SENTINEL'] as const;
+const VARS = ['ANTHROPIC_BASE_URL', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN', 'INSRC_TEST_SENTINEL', 'CLAUDE_CODE_USE_BEDROCK'] as const;
 
 interface Run { readonly args: string[]; readonly env: Record<string, string | null>; readonly start: number; readonly end: number }
 
@@ -35,7 +35,7 @@ let bin: string;
 const calls = (): Run[] => existsSync(join(dir, 'calls.jsonl'))
 	? readFileSync(join(dir, 'calls.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l) as Run)
 	: [];
-const reset = (): void => { rmSync(join(dir, 'calls.jsonl'), { force: true }); };
+const reset = (): void => { rmSync(join(dir, 'calls.jsonl'), { force: true }); rmSync(join(dir, 'help.log'), { force: true }); };
 
 const saved: Record<string, string | undefined> = {};
 before(() => {
@@ -44,7 +44,7 @@ before(() => {
 	writeFileSync(bin, `#!/usr/bin/env node
 import { appendFileSync } from 'node:fs';
 const args = process.argv.slice(2);
-if (args.includes('--help')) { process.stdout.write(${JSON.stringify(FLAGS)}); process.exit(0); }
+if (args.includes('--help')) { appendFileSync(${JSON.stringify(join(dir, 'help.log'))}, 'help\\n'); process.stdout.write(${JSON.stringify(FLAGS)}); process.exit(0); }
 const start = Date.now();
 let stdin = ''; for await (const c of process.stdin) stdin += c;
 await new Promise(r => setTimeout(r, 60));
@@ -68,7 +68,7 @@ const TARGET: OllamaTarget = { host: 'http://ollama.test:11555', hosting: 'cloud
 const schema = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } }, additionalProperties: false };
 /** A pre-run check that passes, so these tests reach the fake claude. */
 const passing = async (): Promise<void> => {};
-const ollamaEnv = { ANTHROPIC_BASE_URL: TARGET.host, ANTHROPIC_AUTH_TOKEN: 'ollama', ANTHROPIC_API_KEY: '', CLAUDE_CODE_OAUTH_TOKEN: null };
+const ollamaEnv = { ANTHROPIC_BASE_URL: TARGET.host, ANTHROPIC_AUTH_TOKEN: 'ollama', ANTHROPIC_API_KEY: '', CLAUDE_CODE_OAUTH_TOKEN: null, CLAUDE_CODE_USE_BEDROCK: null };
 
 /** Run every claude entry point once on `p`; returns the recorded runs in call order. */
 async function everyEntryPoint(p: CliProvider): Promise<Run[]> {
@@ -112,13 +112,13 @@ test("cli-ollama.test.ts: providers without an Ollama target (claude, codex) sta
 	const runs = await everyEntryPoint(vendor);
 	assert.equal(runs.length, 4);
 	for (const r of runs) {
-		assert.deepEqual(r.env, { ANTHROPIC_BASE_URL: 'https://vendor.example', ANTHROPIC_AUTH_TOKEN: null, ANTHROPIC_API_KEY: null, CLAUDE_CODE_OAUTH_TOKEN: 'vendor-token', INSRC_TEST_SENTINEL: 'daemon-env' }, 'the daemon environment, as inherited today');
+		assert.deepEqual(r.env, { ANTHROPIC_BASE_URL: 'https://vendor.example', ANTHROPIC_AUTH_TOKEN: null, ANTHROPIC_API_KEY: null, CLAUDE_CODE_OAUTH_TOKEN: 'vendor-token', INSRC_TEST_SENTINEL: 'daemon-env', CLAUDE_CODE_USE_BEDROCK: null }, 'the daemon environment, as inherited today');
 		assert.equal(r.args[r.args.indexOf('--model') + 1], 'claude-sonnet-5');
 	}
 	// The bounded path keeps its allow-list unchanged.
 	reset();
 	await vendor.completeStructured([{ role: 'user', content: 'evidence' }], schema, { boundedInput: { maxInputChars: 10_000, contextMode: 'isolated-structured' } });
-	assert.deepEqual(calls()[0]!.env, { ANTHROPIC_BASE_URL: null, ANTHROPIC_AUTH_TOKEN: null, ANTHROPIC_API_KEY: null, CLAUDE_CODE_OAUTH_TOKEN: 'vendor-token', INSRC_TEST_SENTINEL: null });
+	assert.deepEqual(calls()[0]!.env, { ANTHROPIC_BASE_URL: null, ANTHROPIC_AUTH_TOKEN: null, ANTHROPIC_API_KEY: null, CLAUDE_CODE_OAUTH_TOKEN: 'vendor-token', INSRC_TEST_SENTINEL: null, CLAUDE_CODE_USE_BEDROCK: null });
 	// A codex provider takes no target either.
 	assert.equal(new CliProvider({ kind: 'codex', model: 'gpt-x' }).ollama, undefined);
 });
@@ -151,6 +151,7 @@ test('cli-ollama.test.ts: a failing pre-run check on each entry point throws Oll
 		await assert.rejects(p.runEditSession('edit', { cwd: dir }), isRefusal);
 		await assert.rejects(p.runReviewSession('review', schema, { cwd: dir, deadlineMs: 20_000 }), isRefusal);
 		assert.deepEqual(calls(), [], 'no claude process started');
+		assert.equal(existsSync(join(dir, 'help.log')), false, 'not even the bounded path\'s --help probe');
 		assert.equal(checks, 5, 'one check per call, never retried');
 		const logged = warn.mock.calls.map(c => c.arguments[0] as Record<string, unknown>).filter(f => f['cause'] !== undefined);
 		assert.equal(logged.length, 5);
@@ -183,4 +184,20 @@ test('cli-ollama.test.ts: a provider without an Ollama target never runs the pre
 	const targeted = new CliProvider({ kind: 'claude', binPath: bin, model: 'glm-5.3:cloud', ollama: TARGET, ollamaCheck: spy, timeoutMs: 20_000 });
 	await everyEntryPoint(targeted);
 	assert.equal(checks, 4);
+});
+
+test('cli-ollama.test.ts: an Ollama-targeted run drops Bedrock/Vertex mode from its environment; a vendor run keeps it', async () => {
+	const saved = process.env['CLAUDE_CODE_USE_BEDROCK'];
+	process.env['CLAUDE_CODE_USE_BEDROCK'] = '1';
+	try {
+		reset();
+		await new CliProvider({ kind: 'claude', binPath: bin, model: 'glm-5.3:cloud', ollama: TARGET, ollamaCheck: passing, timeoutMs: 20_000 }).complete([{ role: 'user', content: 'hi' }]);
+		await new CliProvider({ kind: 'claude', binPath: bin, model: 'claude-sonnet-5', timeoutMs: 20_000 }).complete([{ role: 'user', content: 'hi' }]);
+		const [ollamaRun, vendorRun] = calls();
+		assert.equal(ollamaRun!.env['CLAUDE_CODE_USE_BEDROCK'], null);
+		assert.equal(ollamaRun!.env['ANTHROPIC_BASE_URL'], TARGET.host);
+		assert.equal(vendorRun!.env['CLAUDE_CODE_USE_BEDROCK'], '1', 'vendor runs inherit the daemon environment unchanged');
+	} finally {
+		if (saved === undefined) delete process.env['CLAUDE_CODE_USE_BEDROCK']; else process.env['CLAUDE_CODE_USE_BEDROCK'] = saved;
+	}
 });

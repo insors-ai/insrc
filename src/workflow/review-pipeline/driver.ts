@@ -18,6 +18,7 @@
 
 import { CliStallError, InputTooLargeError } from '../../agent/providers/cli-provider.js';
 import { UnsupportedBoundedInputError } from '../../agent/providers/bounded-input.js';
+import { OllamaTargetError } from '../../agent/providers/ollama-target.js';
 import { ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
@@ -70,7 +71,8 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		} catch (err) {
 			throwIfAborted(signal);
    assertJobDeadline(job, adapter, now());
-			if (isAbortError(err) || err instanceof UnsupportedBoundedInputError || (err instanceof Error && 'code' in err && err.code === 'unsupported-bounded-input')) throw err;
+			// An Ollama server that cannot serve the review fails it with the cause; nothing is judged on it.
+			if (isAbortError(err) || err instanceof OllamaTargetError || err instanceof UnsupportedBoundedInputError || (err instanceof Error && 'code' in err && err.code === 'unsupported-bounded-input')) throw err;
 			// Matched by name, as today: a session that ran out its time fails the review, never re-issued.
 			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
 			const failure = classify(err);

@@ -81,3 +81,18 @@ test('DIFF-ADMISSION: isolated pipeline calls require enforcement and forward th
 	await runReviewJob(createReviewJob(adapter, 'daemon', snapshot, 5_000), adapter, enforcing);
 	assert.equal(calls, 1);
 });
+
+test('bounded-input.test.ts: a review whose provider fails the Ollama pre-run check fails with that cause, once, and records nothing as not judged', async () => {
+	const { OllamaTargetError } = await import('../ollama-target.js');
+	const snapshot = toySnapshot([atom(1)]);
+	// Even a stage that would record a failed call and go on must fail on an Ollama refusal.
+	const adapter = toyAdapter(snapshot, { onCallFailure: 'record-not-judged' });
+	let calls = 0;
+	const provider = { completeStructured: async () => {
+		calls++;
+		throw new OllamaTargetError('account-unavailable', 'http://localhost:11434', 'glm-5.3:cloud', 'Ollama could not check the ollama.com account (status 503); try again later');
+	} } as unknown as LLMProvider;
+	await assert.rejects(runReviewJob(createReviewJob(adapter, 'daemon', snapshot, 5_000), adapter, provider),
+		(e: unknown) => e instanceof OllamaTargetError && e.cause === 'account-unavailable');
+	assert.equal(calls, 1, 'not re-issued');
+});

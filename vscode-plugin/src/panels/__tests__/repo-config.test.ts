@@ -53,6 +53,29 @@ test('renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPat
   assert.match(missing, new RegExp(`data-segments="${seg(['tasks', 'review'])}"><option value="" selected>global</option>`), 'a missing byRepo entry -> all-global form');
 });
 
+test('renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table', async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(REPOS[0]!.path);
+  assert.doesNotMatch(html, /<table/, 'no flat table — roles render as grouped rows, not <tr>s');
+  const critical = /<details class="section" open><summary class="section-head">Critical roles <span class="count">(\d+)<\/span><\/summary>([^]*?)<\/details>/.exec(html);
+  const peripheral = /<details class="section"><summary class="section-head">Peripheral roles <span class="count">(\d+)<\/span><\/summary>([^]*?)<\/details>/.exec(html);
+  assert.ok(critical, 'the critical group is open (no explicit open attr elsewhere -> this regex)');
+  assert.ok(peripheral, 'the peripheral group is present and closed (no "open" attribute)');
+  assert.equal(critical![1], '14', '14 critical roles');
+  assert.equal(peripheral![1], '20', '20 peripheral roles');
+  assert.equal((critical![2]!.match(/class="role-row"/g) ?? []).length, 14, 'the critical group renders exactly its 14 role rows');
+  assert.equal((peripheral![2]!.match(/class="role-row"/g) ?? []).length, 20, 'the peripheral group renders exactly its 20 role rows');
+});
+
+test('the core floor renders in its own <details>/section, separate from the role groups', async () => {
+  const raw = { models: { byRepo: { [REPOS[0]!.path]: { coreFloor: 'mid' } } } };
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => raw, mcpRegistration: async () => [] })(REPOS[0]!.path);
+  const floorSection = /<div class="section"><div class="section-head">Core floor<\/div><div class="floor-row">([^]*?)<\/div><\/div>/.exec(html);
+  assert.ok(floorSection, 'the core floor has its own section, distinct from the role-group <details>');
+  assert.match(floorSection![1]!, /data-segments="[^"]*coreFloor[^"]*"/, 'the floor row still carries the coreFloor write segments');
+  assert.match(floorSection![1]!, /<option value="mid" selected>mid<\/option>/, 'the stored core-floor tier is selected');
+  assert.doesNotMatch(html, /<details[^>]*>(?:(?!<\/details>).)*Core floor/s, "the core floor is its own section, not nested inside a role-group <details>");
+});
+
 test('renderRepoConfig: an unregistered selected repo falls back to picker-only', async () => {
   const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })('/not/registered');
   assert.doesNotMatch(html, /insrc-repo-form/, 'a stale selection that is no longer registered renders no form');

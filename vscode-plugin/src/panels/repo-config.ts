@@ -26,6 +26,7 @@
  */
 
 import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
+import type { Criticality, RoleDescriptor } from '../../../src/config/role-taxonomy.js';
 import { escapeHtml } from './html.js';
 import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
@@ -54,7 +55,7 @@ function isRepoModelWrite(segments: readonly string[]): boolean {
   return (segments.length === 2 && segments[0] === 'tasks' && segments[1] !== '') || (segments.length === 1 && segments[0] === 'coreFloor');
 }
 
-/** A table row: a label and a tier <select> carrying its write segments; '' (global) clears the repo's choice. */
+/** A role row: a label and a tier <select> carrying its write segments; '' (global) clears the repo's choice. */
 function tierRow(label: string, segments: readonly string[], current: string): string {
   // The segments are carried as a JSON array (NOT a dot-joined string): a role id is
   // dotted (`context.assemble`) and a naive split('.') would mis-nest it — the hazard the
@@ -62,7 +63,31 @@ function tierRow(label: string, segments: readonly string[], current: string): s
   const options = ['', ...TIER_CHOICES]
     .map((t) => `<option value="${t}"${t === current ? ' selected' : ''}>${t === '' ? 'global' : t}</option>`)
     .join('');
-  return `<tr><td>${escapeHtml(label)}</td><td><select data-segments="${escapeHtml(JSON.stringify(segments))}">${options}</select></td></tr>`;
+  return `<div class="role-row"><span>${escapeHtml(label)}</span><select data-segments="${escapeHtml(JSON.stringify(segments))}">${options}</select></div>`;
+}
+
+/** The section heading for a criticality group (exhaustive — a future
+ *  Criticality member is a compile-time error here, not a silently-dropped role). */
+function groupLabel(c: Criticality): string {
+  switch (c) {
+    case 'critical':
+      return 'Critical roles';
+    case 'peripheral':
+      return 'Peripheral roles';
+  }
+}
+
+/** One <details> section of role rows for a single criticality, open only for 'critical'. */
+function roleGroupSection(criticality: Criticality, roles: readonly RoleDescriptor[], raw: Record<string, unknown>, active: string): string {
+  const rows = roles
+    .map((role) => tierRow(role.id, ['tasks', role.id], readStringAt(raw, ['models', 'byRepo', active, 'tasks', role.id]) ?? ''))
+    .join('');
+  return (
+    `<details class="section"${criticality === 'critical' ? ' open' : ''}>` +
+    `<summary class="section-head">${groupLabel(criticality)} <span class="count">${roles.length}</span></summary>` +
+    `<div class="rows">${rows}</div>` +
+    `</details>`
+  );
 }
 
 /** Read a nested string at `path` in an unknown object tree, or undefined. */
@@ -109,10 +134,12 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
     // The per-repo form: the tier each role uses (tasks) and the core floor — what a repo
     // may choose. Pre-filled from the daemon's stored value; 'global' = no repo choice.
     const raw = await deps.rawConfig();
-    const roles = reasoningRoleTaxonomy().roles
-      .map((role) => tierRow(role.id, ['tasks', role.id], readStringAt(raw, ['models', 'byRepo', active, 'tasks', role.id]) ?? ''))
+    const allRoles = reasoningRoleTaxonomy().roles;
+    const groups = (['critical', 'peripheral'] as const)
+      .map((c) => roleGroupSection(c, allRoles.filter((r) => r.criticality === c), raw, active))
       .join('');
     const floor = tierRow('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
+    const floorSection = `<div class="section"><div class="section-head">Core floor</div><div class="floor-row">${floor}</div></div>`;
 
     // The Providers section: per-provider MCP registration state from the
     // daemon's mcp.status read — already-registered providers render as
@@ -132,8 +159,8 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
       `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
-      `<h3>Role tiers</h3><table class="role-tiers">${roles}</table>` +
-      `<h3>Core floor</h3><table class="core-floor">${floor}</table>` +
+      groups +
+      floorSection +
       `<h3>Providers</h3>${providers}` +
       `</section>`
     );

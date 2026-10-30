@@ -30,6 +30,7 @@ import {
 	type EffortLevel,
 	type FamilyId,
 	type InputLimit,
+	type ModelHosting,
 	type TierDefault,
 } from './model-catalog.js';
 import { familyForClient, getModelRegistry, type FallbackReason, type ModelRegistry } from './model-registry.js';
@@ -44,6 +45,8 @@ export interface ModelDefinitionEntry {
 	/** Ollama models only, when the definitions give it: approximate memory (MB) at base context. */
 	readonly memoryMb?:    number | undefined;
 	readonly source:       'shipped' | 'user-approved';
+	/** Models of an Ollama-hosted family only: where the model runs. */
+	readonly hosting?:     ModelHosting | undefined;
 	/** Ollama models only; absent when Ollama did not answer. */
 	readonly installed?:   boolean | undefined;
 }
@@ -52,6 +55,8 @@ export interface ModelDefinitionEntry {
 export interface FamilyDefinitionEntry {
 	readonly id:               FamilyId;
 	readonly cliKind?:         'claude' | 'codex' | 'vibe' | undefined;
+	/** Ollama-hosted families only: the CLI runs against Ollama. */
+	readonly host?:            'ollama' | undefined;
 	readonly displayName:      string;
 	readonly tierDefaults?:    Readonly<Record<TierName, TierDefault>> | undefined;
 	readonly summariserModel?: string | undefined;
@@ -110,16 +115,19 @@ export function projectDefinitions(
 			...(m.inputLimit !== undefined ? { inputLimit: m.inputLimit } : {}),
 			...(m.memoryMb !== undefined ? { memoryMb: m.memoryMb } : {}),
 			source:  m.source,
+			...(m.hosting !== undefined ? { hosting: m.hosting } : {}),
 			...(!cli && installed !== undefined ? { installed: installed.includes(m.id) } : {}),
 		}));
+		// Only a vendor CLI family (a CLI kind and no host) carries rejected ids.
 		// A rejected id the family also serves (a later shipped file lists it) is
 		// served as shipped, as the registry resolves it, so it is not "rejected".
-		const rejected = cli
+		const rejected = cli && f.host === undefined
 			? registry.rejected(f.id as CliFamilyId).filter(id => registry.find(f.id, id) === undefined)
 			: undefined;
 		return {
 			id:          f.id,
 			...(f.cliKind !== undefined ? { cliKind: f.cliKind } : {}),
+			...(f.host !== undefined ? { host: f.host } : {}),
 			displayName: f.displayName,
 			...(f.tierDefaults !== undefined ? { tierDefaults: f.tierDefaults } : {}),
 			...(f.summariserModel !== undefined ? { summariserModel: f.summariserModel } : {}),

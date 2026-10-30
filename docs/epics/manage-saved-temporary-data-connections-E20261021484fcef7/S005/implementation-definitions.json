@@ -2,7 +2,7 @@
   "uxDefinition": {
     "type": "AdaptiveCard",
     "version": "1.5",
-    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence. File sources put File path first, explain optional Label, and use a native Browse dialog. Separate persistent Save/Test messages distinguish missing inputs from disabled daemon capabilities; delayed picker results cannot replace an edited or hidden draft. User policy correction: the daemon enables connection management by default; pending release-audit evidence no longer controls runtime capabilities. Real authorization, registry recovery, signed revisions/tickets and session ownership still apply. Existing unavailable-state examples remain compatibility/recovery alternatives. File selection now uses an accessible icon-only file-open button for both primary data paths and database Schema Source paths; path reset buttons are not used as file selectors. The native selection targets the exact allowlisted field, and a schema-source selection populates its fixed format before validation.",
+    "narrative": "VS Code implementation schematic after manual feedback: connections list above both New and Edit forms at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence. File sources put File path first, explain optional Label, and use a native Browse dialog. Persistent Save/Test guidance distinguishes missing inputs from disabled daemon capabilities; delayed picker results cannot replace an edited or hidden draft. User policy correction: the daemon enables connection management by default; pending release-audit evidence no longer controls runtime capabilities. Real authorization, registry recovery, signed revisions/tickets and session ownership still apply. Existing unavailable-state examples remain compatibility/recovery alternatives. File selection now uses an accessible icon-only file-open button for both primary data paths and database Schema Source paths; path reset buttons are not used as file selectors. The native selection targets the exact allowlisted field, and a schema-source selection populates its fixed format before validation. User-approved October 31 correction: datasource-specific local SVG badges appear in the icon-capable keyboard picker, list and edit view. Each row has its own Delete/Discard icon targeting its exact key and revision, including when a different draft is open. A fixed two-line bottom message section shows the latest registration status and retained count; clicking opens a modal with Previous/Next cycling and recovery controls. Safe history stays in workbench memory, retains at most 200 messages per selected repository, survives manager close/reopen and clears on repository switch or workbench disposal. No draft values, credentials or raw exception messages enter the history.",
     "body": [
       {
         "type": "TextBlock",
@@ -24,11 +24,73 @@
             "value": "analytics"
           }
         ],
-        "description": "Explicit selection in multiroot workspaces; retained selected root remains independent of active editor."
+        "description": "Initially defaults to the registered repository containing the opened path; manual root selection and retained drafts take precedence on reopen."
       },
       {
         "type": "Container",
-        "description": "VS Code top registration section. Pure local draft editing is independent of session admission; no daemon write is implied.",
+        "description": "VS Code top connections section with scope filters, local search, counts and snapshot states.",
+        "items": [
+          {
+            "type": "TextBlock",
+            "text": "Connections \u00b7 3 matching",
+            "description": "Matching count after selected scope/search.",
+            "wrap": true
+          },
+          {
+            "type": "Input.ChoiceSet",
+            "id": "filter",
+            "label": "Connection scope",
+            "choices": [
+              {
+                "title": "All (3)",
+                "value": "all"
+              },
+              {
+                "title": "Saved repository (2)",
+                "value": "saved"
+              },
+              {
+                "title": "Temporary session (1)",
+                "value": "temporary"
+              }
+            ],
+            "description": "Counts from successful authoritative selected-root snapshot before filtering; no counts inferred on read error."
+          },
+          {
+            "type": "Input.Text",
+            "id": "search",
+            "label": "Search connections",
+            "placeholder": "ID, label or driver",
+            "description": "Local filter of current authoritative root; no probes."
+          },
+          {
+            "type": "TextBlock",
+            "text": "warehouse \u00b7 PostgreSQL \u00b7 Saved repository\norders \u00b7 Parquet \u00b7 Temporary session\ncache \u00b7 Redis \u00b7 Saved repository",
+            "description": "Safe row metadata only; full repo/scope/ID/revision retained in host selection.",
+            "wrap": true
+          },
+          {
+            "type": "ActionSet",
+            "description": "VS Code Refresh and Previous/Next use icons; each list row has its own Delete/Discard icon. Select a row to edit below; Add is in the lower registration section. Type icons appear beside every connection.",
+            "actions": [
+              {
+                "type": "Action.Submit",
+                "title": "Discard selected",
+                "description": "Preview Discard selected; actual implementation uses validated controller intent, not direct daemon calls."
+              }
+            ]
+          },
+          {
+            "type": "TextBlock",
+            "text": "Read error: Connections could not be read. Retry.\nEmpty filter: No connections match this filter.\nEmpty registry: No connections yet.",
+            "description": "Alternative state copy, not simultaneous production messages; unavailable reads never become empty state.",
+            "wrap": true
+          }
+        ]
+      },
+      {
+        "type": "Container",
+        "description": "VS Code lower New/Edit registration section. Pure local draft editing is independent of session admission; no daemon write is implied.",
         "items": [
           {
             "type": "TextBlock",
@@ -158,67 +220,11 @@
             "text": "Database form alternative: Schema Source \u2192 Schema file path has a file-open icon, with Select schema file tooltip. This schema file describes the database; it is separate from a Parquet data source.",
             "description": "Schematic alternative state; both forms are not displayed simultaneously in the implementation.",
             "wrap": true
-          }
-        ]
-      },
-      {
-        "type": "Container",
-        "description": "VS Code bottom connections section with scope filters, local search, counts and snapshot states.",
-        "items": [
-          {
-            "type": "TextBlock",
-            "text": "Connections \u00b7 3 matching",
-            "description": "Matching count after selected scope/search.",
-            "wrap": true
-          },
-          {
-            "type": "Input.ChoiceSet",
-            "id": "filter",
-            "label": "Connection scope",
-            "choices": [
-              {
-                "title": "All (3)",
-                "value": "all"
-              },
-              {
-                "title": "Saved repository (2)",
-                "value": "saved"
-              },
-              {
-                "title": "Temporary session (1)",
-                "value": "temporary"
-              }
-            ],
-            "description": "Counts from successful authoritative selected-root snapshot before filtering; no counts inferred on read error."
-          },
-          {
-            "type": "Input.Text",
-            "id": "search",
-            "label": "Search connections",
-            "placeholder": "ID, label or driver",
-            "description": "Local filter of current authoritative root; no probes."
           },
           {
             "type": "TextBlock",
-            "text": "warehouse \u00b7 PostgreSQL \u00b7 Saved repository\norders \u00b7 Parquet \u00b7 Temporary session\ncache \u00b7 Redis \u00b7 Saved repository",
-            "description": "Safe row metadata only; full repo/scope/ID/revision retained in host selection.",
-            "wrap": true
-          },
-          {
-            "type": "ActionSet",
-            "description": "VS Code Refresh, Previous/Next and Delete/Discard use icons with tooltips and accessible names. Select a list row to edit above; Add is in the top registration section.",
-            "actions": [
-              {
-                "type": "Action.Submit",
-                "title": "Discard selected",
-                "description": "Preview Discard selected; actual implementation uses validated controller intent, not direct daemon calls."
-              }
-            ]
-          },
-          {
-            "type": "TextBlock",
-            "text": "Read error: Connections could not be read. Retry.\nEmpty filter: No connections match this filter.\nEmpty registry: No connections yet.",
-            "description": "Alternative state copy, not simultaneous production messages; unavailable reads never become empty state.",
+            "text": "Datasource icons: local SVG type badges in the dropdown, list and edit view.",
+            "description": "Keyboard-capable listbox; type names remain readable. No external icon font or network requests.",
             "wrap": true
           }
         ]
@@ -286,6 +292,24 @@
             "type": "Action.Submit",
             "title": "Cancel navigation",
             "description": "Preview Cancel navigation; actual implementation uses validated controller intent, not direct daemon calls."
+          }
+        ]
+      },
+      {
+        "type": "Container",
+        "description": "Fixed two-line message section at the bottom of the panel.",
+        "items": [
+          {
+            "type": "TextBlock",
+            "text": "4 messages \u00b7 latest: Saved connection registered.",
+            "description": "Compact latest safe registration message with retained count; maximum 200 per repository in workbench memory.",
+            "wrap": true
+          },
+          {
+            "type": "TextBlock",
+            "text": "Click to open Registration messages: Previous \u00b7 4 / 4 \u00b7 Next \u00b7 Close messages",
+            "description": "Modal popup cycles safe message history; operation recovery controls remain available inside.",
+            "wrap": true
           }
         ]
       }

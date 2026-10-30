@@ -58,3 +58,16 @@ Status: recorded for implementation. No runtime icons or dropdown changes are cl
 Place an icon-only delete/discard button on each connection row in the list, replacing the shared list-level delete control. Each button targets its own row's connection, independently of the currently selected or edited connection. Provide a tooltip and accessible name appropriate to Saved deletion or Temporary discard. Preserve the existing confirmation, dirty-draft handling, capability checks and exact connection identity safeguards.
 
 Status: recorded for implementation. No runtime row-action change is claimed by this entry.
+
+
+## Feedback batch implementation — 2026-10-31
+
+The pending October 31 layout, message-section, datasource-icon and row-delete items above are implemented in VS Code 0.5.21. List precedes both New and Edit forms in DOM and visual order. Each row has its own capability-gated Delete/Discard icon with captured key/revision; existing dirty-draft and removal confirmations remain authoritative. Cancel restores row focus; stale, filtered and unavailable targets cannot issue a removal.
+
+All 29 datasource types have distinct locally bundled SVG monogram badges in the keyboard-accessible type picker, list and edit view. These are type badges rather than third-party logos; readable names remain alongside them and theme tokens govern contrast. No downloaded assets or additional dependencies.
+
+A fixed two-line footer shows the latest registration message and retained count; clicking opens a native modal with wrapping Previous/Next message navigation. Recovery actions are available inside the same popup. History retains the latest 200 safe status messages per selected repository in workbench memory, survives manager close/reopen, and clears on root switch/disposal. Re-rendering does not duplicate messages. Draft values, passwords, raw RPC exceptions and webview persistence are excluded. Input guidance stays near fields; transient registration outcomes appear in the footer/history.
+
+User feedback explicitly supersedes the historical two-pane and registration-above-list task/design copy. Structured implementation definitions and generated UX companion now reflect the revised flow. Ownership and daemon IPC contracts are unchanged; JetBrains layout is unchanged. Companion source was inspected; live native UI/theme acceptance remains assigned to the user.
+
+Validation: 39 Connections tests passed, including new type-picker keyboard/icon, history cycling/retention/bound and per-row dirty/stale-target cases; both implementation artifact checks and root/extension typechecks passed. Early test-only assertions assumed a shorter validation message or no retained-draft notice on reopen; those expectations were corrected. Independent completion review and live UI acceptance are not claimed.

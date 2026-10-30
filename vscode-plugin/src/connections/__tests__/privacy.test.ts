@@ -63,7 +63,7 @@ test('CM-S5-PRIVACY-TS: actual client lifetime effects cannot reach persistence 
       dom.click('save');await until(()=>panel.view.list.counts.temporary===1&&panel.view.draft===null);
       otherPanel.dom!.click('refresh');await until(()=>otherPanel.view.list.listState==='empty-registry');
       const otherEvents=JSON.stringify(otherPanel.posts);assert.ok(!canaries.some(value=>otherEvents.includes(value)));
-      dom.el('rows').children[0]!.fire('click');dom.click('remove');dom.click('confirm-accept');await until(()=>panel.view.list.counts.temporary===0&&panel.view.operations.some(record=>record.removal?.state==='removed'));
+      dom.row(0).fire('click');dom.selectedRemove().fire('click');dom.click('confirm-accept');await until(()=>panel.view.list.counts.temporary===0&&panel.view.operations.some(record=>record.removal?.state==='removed'));
       // Recreate, obtain an authenticated lease-expired reply, then reconnect.
       const value=f.draft('expiry-preview','temporary');assert.equal((await f.controller.submit(value)).phase,'committed');
       f.advanceOwnerClock(90000);await f.controller.submit(f.draft('expiry-rejected','temporary'));await until(()=>f.owner.view.status==='expired');

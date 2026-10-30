@@ -9,6 +9,7 @@ export class Element {
  constructor(readonly tag:string,readonly dom:RendererHarness){}
  get textContent():string{return this.#text+this.children.map(c=>c.textContent).join('');}
  set textContent(text:string){this.#text=String(text);for(const c of this.children)c.parent=null;this.children=[];}
+ contains(element:Element|null):boolean{return !!element&&this.dom.all(this).includes(element);}
  get firstChild():Element|null{return this.children[0]??null;}
  get isConnected():boolean{return this===this.dom.body||!!this.parent?.isConnected;}
  appendChild(child:Element):Element{child.parent?.removeChild(child);this.children.push(child);child.parent=this;return child;}
@@ -35,6 +36,9 @@ export class RendererHarness {
   const poison=(name:string)=>new Proxy(()=>{}, {get:()=>{this.sinkCalls.push(name);throw new Error('Forbidden renderer sink');},apply:()=>{this.sinkCalls.push(name);throw new Error('Forbidden renderer sink');}});
   runInNewContext(CONNECTION_MANAGER_SCRIPT,{document,window:{addEventListener:(k:string,fn:(event:{data:unknown})=>void)=>this.#window.set(k,fn),localStorage:poison('localStorage'),sessionStorage:poison('sessionStorage'),indexedDB:poison('indexedDB')},localStorage:poison('localStorage'),sessionStorage:poison('sessionStorage'),indexedDB:poison('indexedDB'),fetch:poison('fetch'),navigator:{sendBeacon:poison('telemetry')},console:poison('console'),acquireVsCodeApi:()=>({postMessage:(value:unknown)=>{const copied=structuredClone(value);this.posted.push(copied);post(copied);},getState:()=>{this.sinkCalls.push('getState');throw new Error('Persistent state read');},setState:()=>{this.sinkCalls.push('setState');throw new Error('Persistent state write');}})});
  }
+ row(index:number):Element{return this.el('rows').children[index]!.children[0]!;}
+ rowRemove(index:number):Element{return this.el('rows').children[index]!.children[1]!;}
+ selectedRemove():Element{const row=this.all(this.el('rows')).find(e=>e.getAttribute('data-row')&&e.getAttribute('aria-pressed')==='true');if(!row)throw new Error('No selected connection row');return row.parent!.children[1]!;}
  all(root=this.body):Element[]{return[root,...root.children.flatMap(c=>this.all(c))];}
  el(id:string):Element{const e=this.elements.get(id);if(!e)throw new Error('Missing DOM control '+id);return e;}
  deliver(value:unknown):void{this.#window.get('message')?.({data:structuredClone(value)});}

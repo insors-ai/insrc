@@ -1,4 +1,5 @@
 /** Workbench-memory view host. Only explicit, checked intents reach privileged owner ports. */
+import { CONNECTION_PROBLEMS } from './messages.js';
 import { randomUUID } from 'node:crypto';
 import { isAbsolute, relative, sep } from 'node:path';
 import { IpcLaneError } from '../../../src/shared/ipc-client.js';
@@ -43,6 +44,7 @@ export class ConnectionsManagerHost {
  #ports:ConnectionsHostPorts;#panel:ConnectionPanel|null=null;#viewId='';#generation=0;#formId=0;#ready=false;#visible=true;#disposed=false;#publishing=false;
  #model:ConnectionManagerState=createConnectionManager([],'');#draft:ConnectionDraft|null=null;#descriptors:readonly ClientDriverDescriptor[]=[];#descriptorEpoch='';#descriptorRoot='';
  #picking=false;
+ #messages:{id:number;text:string}[]=[];#messageId=0;#messageRoot:string|null=null;#messageSeen=new Map<string,string>();
  #pending:(()=>void|Promise<void>)|null=null;#error='';#notice='';#read:AbortController|null=null;#subscriptions:MutationTimer[]=[];
  constructor(ports:ConnectionsHostPorts){
   this.#ports=ports;
@@ -134,14 +136,35 @@ export class ConnectionsManagerHost {
    const draft=this.#draft?.view??null,validationMessages=this.#draft?this.#validationMessages(this.#draft):[],valid=!!draft&&validationMessages.length===0;
    const operations=this.#ports.mutations.records.filter(r=>r.key.repoRoot===this.#model.repoRoot);
    const features=this.#ports.owner.features(projection.repoRoot??'');
+   if(this.#messageRoot!==projection.repoRoot){this.#messageRoot=projection.repoRoot;this.#messages=[];this.#messageSeen.clear();}
+   this.#collectMessages(operations);
    const view:ConnectionRenderView={viewId:this.#viewId,generation:this.#generation,
     controls:{save:!!draft&&connectionActionSupported(features,draft.key.scope,draft.mode),test:!!draft&&connectionActionSupported(features,draft.key.scope,'test'),remove:!!projection.selected&&connectionActionSupported(features,projection.selected.key.scope,'remove'),operations:Object.fromEntries(operations.map(r=>[r.recordId,['reconcile','replay','activation','cleanup','refresh','dismiss'].filter(action=>connectionOperationSupported(features,r.key.scope,r.mode,action))]))},
     list:{roots:projection.roots,repoRoot:projection.repoRoot,filter:projection.filter,search:projection.search,listState:projection.listState,counts:projection.counts,matchingCount:projection.matchingCount,stale:projection.stale,canMutate:projection.canMutate},
-    rows:projection.rows.filter(r=>visible.has(JSON.stringify(r.key))).map(r=>({key:r.key,revision:r.revision,kind:r.kind,label:r.label?.trim()?r.label:r.key.id,family:r.effectiveFamily,selected:!!projection.selected&&sameConnectionKey(projection.selected.key,r.key)&&projection.selected.revision===r.revision})),
+    rows:projection.rows.filter(r=>visible.has(JSON.stringify(r.key))).map(r=>({key:r.key,revision:r.revision,kind:r.kind,label:r.label?.trim()?r.label:r.key.id,family:r.effectiveFamily,selected:!!projection.selected&&sameConnectionKey(projection.selected.key,r.key)&&projection.selected.revision===r.revision,canRemove:projection.canMutate&&connectionActionSupported(features,r.key.scope,'remove')&&!this.#ports.mutations.isBlocked(r.key)})),
     canCreateDraft:this.#canCreateDraft(),canBrowseFile:!!this.#ports.pickFile&&!this.#picking,validationMessages,choices:connectionDriverChoices(this.#descriptors),draft,formId:this.#formId,blocked:!!draft&&this.#ports.mutations.isBlocked(draft.key),valid,
-    test:this.#ports.tests.view,operations,confirmation:this.#ports.removals.view.confirmation,dirty:this.#pending!==null||this.#ports.removals.view.resolveDirty,error:this.#error,notice:this.#notice};
+    messages:this.#messages.map(message=>({...message})),test:this.#ports.tests.view,operations,confirmation:this.#ports.removals.view.confirmation,dirty:this.#pending!==null||this.#ports.removals.view.resolveDirty,error:this.#error,notice:this.#notice};
    this.#panel.postMessage({type:'render',view});
   }finally{this.#publishing=false;}
+ }
+ /** Retain only safe status copy, never drafts, credential values or raw RPC errors. */
+ #collectMessages(operations:readonly import('../../../src/shared/connection-manager/controller.js').MutationView[]):void {
+  const record=(channel:string,text:string)=>{
+   if(this.#messageSeen.get(channel)===text)return;this.#messageSeen.set(channel,text);
+   if(!text)return;this.#messages.push({id:++this.#messageId,text});
+   if(this.#messages.length>200)this.#messages.shift();
+  };
+  record('error',this.#error);record('notice',this.#notice);
+  const probe=this.#ports.tests.view;record('test',probe.status==='idle'?'':probe.message+(probe.cleanupUnverified?' Worker cleanup is not yet verified.':''));
+  for(const operation of operations){
+   const prefix=operation.key.scope==='temporary'?'Temporary connection':'Saved connection';
+   const status=operation.outcome
+    ?prefix+(operation.outcome.registration==='removed'?' removed.':' registered.')+(operation.outcome.activation==='active'?' Ready to use.':operation.outcome.activation==='pending'?' Activation pending.':operation.outcome.activation==='failed'?' Activation failed; use recovery actions.':'')+(operation.outcome.credentialCleanup==='pending'?' Credential cleanup pending.':'')+(operation.refresh==='failed'?' List refresh failed; use recovery actions.':'')+(operation.removal?' '+operation.removal.safeMessage:'')
+    :prefix+' operation: '+operation.phase.replace(/-/g,' ')+'.'+(operation.errorCode?' '+(CONNECTION_PROBLEMS[operation.errorCode]??'Review the operation recovery actions.'):'');
+   record(operation.recordId,status);
+  }
+  const active=new Set(['error','notice','test',...operations.map(operation=>operation.recordId)]);
+  for(const channel of this.#messageSeen.keys())if(!active.has(channel))this.#messageSeen.delete(channel);
  }
  #setField(draft:ConnectionDraft,path:readonly string[],value:unknown):void{
   // The fixed schema-source format is hidden in the form; populate it with its path.
@@ -192,7 +215,7 @@ export class ConnectionsManagerHost {
  async #handle(intent:ConnectionIntent):Promise<void>{
   if(this.#disposed)return;if(intent.type==='ready'){this.#ready=true;this.#publish();return;}
   if((this.#pending||this.#ports.removals.view.resolveDirty||this.#ports.removals.view.confirmation)&&!['dirty','removal','cancel-test'].includes(intent.type))return;
-  this.#error='';
+  this.#error='';this.#messageSeen.delete('error');
   try{
    switch(intent.type){
     case 'root':
@@ -240,8 +263,8 @@ export class ConnectionsManagerHost {
     case 'test':{const draft=this.#editable();if(!this.#allow(draft.view.key,'test'))break;const issues=this.#validationMessages(draft);if(issues.length){this.#error=issues.join(' ');break;}const epoch=this.#ports.owner.view.daemonEpoch;if(epoch)await this.#ports.tests.test(draft,{key:draft.view.key,daemonEpoch:epoch,viewGeneration:this.#generation});break;}
     case 'cancel-test':this.#ports.tests.cancel();break;
     case 'save':{const draft=this.#editable();if(!this.#allow(draft.view.key,draft.view.mode))break;const issues=this.#validationMessages(draft);if(issues.length){this.#error=issues.join(' ');break;}this.#ports.tests.cancel();await this.#ports.mutations.submit(draft);break;}
-    case 'remove':{
-     const selected=this.#model.selected,row=selected&&this.#model.rows.find(r=>sameConnectionKey(r.key,selected.key)&&r.revision===selected.revision);
+    case 'remove':case 'remove-row':{
+     const selected=intent.type==='remove-row'?{key:intent.key,revision:intent.revision}:this.#model.selected,row=selected&&this.#model.rows.find(r=>sameConnectionKey(r.key,selected.key)&&r.revision===selected.revision);
      if(row&&projectConnectionManager(this.#model).canMutate&&projectConnectionManager(this.#model).visibleKeys.some(k=>sameConnectionKey(k,row.key))&&this.#allow(row.key,'remove')){this.#ports.removals.begin(row,this.#draft??undefined);this.#bump();}break;
     }
     case 'dirty':{
@@ -269,7 +292,7 @@ export class ConnectionsManagerHost {
   this.#publish();
  }
  dispose():void{
-  if(this.#disposed)return;this.#draft?.clear();this.#draft=null;this.#pending=null;this.#read?.abort();this.#bindTest();this.#disposed=true;
+  if(this.#disposed)return;this.#draft?.clear();this.#draft=null;this.#pending=null;this.#read?.abort();this.#bindTest();this.#disposed=true;this.#messages=[];this.#messageSeen.clear();
   for(const subscription of this.#subscriptions)subscription.dispose();this.#subscriptions=[];const panel=this.#panel;this.#panel=null;panel?.dispose();
  }
 }

@@ -26,10 +26,10 @@
     "src/shared/connection-manager/wire.ts": "5ce1aee76bab3ea7be696b4ec8a0454217c42243d5a9df6d7edaee1500215820",
     "src/shared/ipc-client.ts": "a06f7a2ca4ec1604c515f08b0eff028c5d32fb79bdffdf6bd4f315e0a25e9617",
     "vscode-plugin/src/connections/gateway.ts": "df8de3e005eb0f48c71abfaeab02e7986a9cfe17becc44889aebaf81bb660042",
-    "vscode-plugin/src/connections/host.ts": "74aadb7921b19b40231e692fa652aae00a6b8be92e15cac8c1492b8fe77745d0",
-    "vscode-plugin/src/connections/renderer.ts": "e87c6ee1a110ac04bc5800b307b30f907bcd050168620e5870f4b4b803f18b6f",
+    "vscode-plugin/src/connections/host.ts": "6ae4d6e04668837cad66d061f521f26608cf2532a6a6c805ec1254064f6eb300",
+    "vscode-plugin/src/connections/renderer.ts": "9cd7642c06234e022edf495dce90ed32410712758a6080f685e3b376a5de085e",
     "vscode-plugin/src/connections/session-owner.ts": "1b46559ccc3a9bd99ae661072de5f7f932395f7922ae75dd81744294ec3aafde",
-    "vscode-plugin/src/connections/types.ts": "103433775701ba95792340567fe8a24223c80ef55b9de08132a6ef33a63e886b",
+    "vscode-plugin/src/connections/types.ts": "75e7a0c03a1ef111f2a6c75ac02da612f7f30fde7e1c449ebf316a1775b86f0a",
     "vscode-plugin/src/connections/wiring.ts": "e43a2a9537568838c1f81a14d1f25ac5c883d8ad5a793f77513261a84fc5f455",
     "vscode-plugin/src/extension.ts": "29a8bb0206245e68b1b3c64582a3638ac6b6707cb2453dbb2ad2f5aade65d7b1",
     "vscode-plugin/media/connections-icon.svg": "906740fece600ce9bb10456432eb63d4ccb8eabef4bdecaa5fe497c0e8d4d586",
@@ -39,7 +39,9 @@
     "src/daemon/db/management-state.ts": "fe16b12c4bc2eeb69f20373fcfd4e30b10f28bc980b98fda74c3e9673ee76436",
     "src/daemon/db/draft-test.ts": "02ab82a15da246b04e5dffdc94001ede1117eb2aab3d6156eeb6b2d83952f051",
     "src/daemon/connection-management-rpc.ts": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3",
-    "src/daemon/index.ts": "fdbd345eac8d9eac28136747f5fea41a18c860758c88398f34a26a204ae7663d"
+    "src/daemon/index.ts": "fdbd345eac8d9eac28136747f5fea41a18c860758c88398f34a26a204ae7663d",
+    "vscode-plugin/src/connections/datasource-icons.ts": "0102b0e726998c0fd864812642a0f3a86b09accedce3151d6e68c1ca34fea609",
+    "vscode-plugin/src/connections/messages.ts": "b1ddc2923809257f0ff45fc3a1919c96d118eeb26701e219ae7fe9ea6940a4ed"
   },
   "externalPrerequisites": {
     "S001": "pending",

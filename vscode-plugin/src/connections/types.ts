@@ -15,7 +15,7 @@ export type ConnectionIntent=Header&(
  | {readonly type:'root'|'search'|'id'|'kind';readonly value:string}
  | {readonly type:'filter';readonly value:ScopeFilter}
  | {readonly type:'scope';readonly value:ConnectionScope}
- | {readonly type:'select';readonly key:ConnectionKey;readonly revision:string}
+ | {readonly type:'select'|'remove-row';readonly key:ConnectionKey;readonly revision:string}
  | {readonly type:'browse-file';readonly path:readonly string[]}
  | {readonly type:'field';readonly path:readonly string[];readonly value:unknown}
  | {readonly type:'reset-field';readonly path:readonly string[]}
@@ -30,10 +30,11 @@ export interface ConnectionRenderView {
  readonly controls:import('../../../src/shared/connection-manager/capabilities.js').ConnectionControls;
  readonly viewId:string;readonly generation:number;
  readonly list:Pick<ManagerProjection,'roots'|'repoRoot'|'filter'|'search'|'listState'|'counts'|'matchingCount'|'stale'|'canMutate'>;
- readonly rows:readonly {readonly key:ConnectionKey;readonly revision:string;readonly kind:string;readonly label:string;readonly family:string;readonly selected:boolean}[];
+ readonly rows:readonly {readonly key:ConnectionKey;readonly revision:string;readonly kind:string;readonly label:string;readonly family:string;readonly selected:boolean;readonly canRemove?:boolean|undefined}[];
  readonly canCreateDraft:boolean;readonly canBrowseFile:boolean;readonly validationMessages:readonly string[];
  readonly choices:readonly {readonly kind:string;readonly family:string;readonly enabled:boolean;readonly guidance:string|null}[];
  readonly draft:DraftView|null;readonly formId:number;readonly blocked:boolean;readonly valid:boolean;
+ readonly messages?:readonly {readonly id:number;readonly text:string}[]|undefined;
  readonly test:DraftTestView;readonly operations:readonly MutationView[];
  readonly confirmation:RemovalConfirmation|null;readonly dirty:boolean;readonly error:string;readonly notice:string;
 }
@@ -48,7 +49,7 @@ export function parseConnectionIntent(value:unknown):ConnectionIntent|null {
   if(simple.has(type))fields=[];
   else if(['root','search','id','kind'].includes(type)){if(!text(o['value']))return null;fields=['value'];}
   else if(type==='filter'||type==='scope'){if(!(type==='filter'?['all','saved','temporary']:['saved','temporary']).includes(o['value'] as string))return null;fields=['value'];}
-  else if(type==='select'){parseConnectionKey(o['key']);if(!text(o['revision'])||!o['revision'])return null;fields=['key','revision'];}
+  else if(type==='select'||type==='remove-row'){parseConnectionKey(o['key']);if(!text(o['revision'])||!o['revision'])return null;fields=['key','revision'];}
   else if(type==='browse-file'){
    if(!Array.isArray(o['path'])||!['[\"path\"]','[\"schemaSource\",\"path\"]'].includes(JSON.stringify(o['path'])))return null;fields=['path'];
   }else if(type==='field'||type==='reset-field'){

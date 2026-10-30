@@ -210,7 +210,16 @@
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-30T05:25:22.093Z"
+    "approvedAt": "2026-10-30T05:25:22.093Z",
+    "questionResolutions": {
+      "q2800c4c8": {
+        "question": "Item alt2: alternatives were scored against ac1-ac4, sc1 and sc2; Epic constraints k1-k6 are reflected in the notes but not as separate score entries (partial), as in the s1 LLD where k1-k6 were treated as a pre-filter gate.",
+        "status": "resolved",
+        "choice": "Pre-filter gate (mirror s1 LLD)",
+        "rationale": "Same decision as the s1 LLD: k1-k6 are must-meet constraints applied before scoring; a1 meets them.",
+        "resolvedAt": "2026-10-30T05:26:50.086Z"
+      }
+    }
   },
   "body": {
     "summary": {

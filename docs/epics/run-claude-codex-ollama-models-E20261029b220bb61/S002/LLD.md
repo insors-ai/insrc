@@ -335,22 +335,14 @@ The bounded tool-free path would have to verify the launcher passes its allow-li
 - Resolved 2026-10-30 (user decision): ac3 means serial per caller, as for today's runners; separate daemon sessions may run Ollama-targeted claude at the same time. Alternative a2's process-wide gate is not built.
 - The signed-out answer of POST /api/me was not probed (Ollama was signed in); checkOllamaTarget treats any non-200 answer, or a 200 without an account id, as not signed in. /api/me is reached with plain fetch because the ollama npm client has no call for it (it offers list and show).
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q2800c4c8` — Item alt2: alternatives were scored against ac1-ac4, sc1 and sc2; Epic constraints k1-k6 are reflected in the notes but not as separate score entries (partial), as in the s1 LLD where k1-k6 were treated as a pre-filter gate.
+  - **resolved**: Pre-filter gate (mirror s1 LLD) — Same decision as the s1 LLD: k1-k6 are must-meet constraints applied before scoring; a1 meets them. _(2026-10-30T05:26:50.086Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-30T05:17:56.463Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| error-paths | The specific Ollama HTTP behaviours checkOllamaTarget relies on (/api/tags listing, /api/show 404 for an unlisted model, /api/me 200-with-account-id for sign-in, the ':cloud' tag convention) behave exactly as described against a real Ollama server. | These are claims about the external Ollama server's HTTP API, not about this repository's own code — no file in this repo defines or constrains Ollama's /api/me or /api/show response shape, so a repo-grounded probe cannot confirm or refute them; the HLD cites this as citation c3 'analyze-bundle' output (an external research finding) rather than a code citation, and the LLD's own §11 open questions already flags that the signed-out /api/me response was never actually probed live. | flagged as an external, repo-ungroundable claim; the LLD itself discloses the same gap in its open questions |
+- **[[c1]]** `analyze-bundle` `s1 bundle: How CliProvider starts the claude CLI subprocess and where its environment is set` — "Every claude invocation except the tool-free bounded path goes through the private runClaude (:696-712), which calls runSubprocess (:1078-1094) with NO env argument"
+- **[[c2]]** `analyze-bundle` `s1 bundle: How a tier on a family becomes a provider, and what happens today for an ollama-claude tier` — "familyProvider builds CliProvider({ kind: registry.cliKind(family), model, effort, inputBudgetChars, timeoutMs }) for any family with a CLI kind"
+- **[[c3]]** `analyze-bundle` `s1 bundle: Ollama host configuration and the calls available for a pre-run check` — "POST /api/me with a JSON body answers 200 with the signed-in ollama.com account"
+- **[[c4]]** `analyze-bundle` `s1 bundle: One-at-a-time model calls and the existing test patterns for CliProvider subprocesses` — "No process-wide gate serialises CLI or Ollama calls in src/agent/providers or src/analyze/context; serial calls are a caller convention"

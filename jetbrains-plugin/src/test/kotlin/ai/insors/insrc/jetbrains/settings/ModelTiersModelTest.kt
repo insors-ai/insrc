@@ -267,11 +267,12 @@ class ModelTiersModelTest {
         assertEquals("(current, not supported): gone:cloud", gone.selectedModelChoice("core").label)
         gone.selectEffort("core", "max") // not accepted: only the CLI default is offered for an undeclared model
         assertEquals(listOf(""), gone.effortOptions("core"))
+        assertEquals("", gone.currentEffort("core"), "an effort the undeclared model cannot take is not selected")
 
         // An edit still on the undeclared model is refused; nothing undeclared is written.
         val dirty = ModelTiersModel(catalog("core.runner" to "ollama-claude", "core.model" to "gone:cloud", "core.effort" to "max"), hostedDefs)
         dirty.selectEffort("core", "")
-        assertEquals(mapOf("core" to "choose a listed model for the core tier first (gone:cloud is not listed)"), dirty.unsavable())
+        assertEquals(mapOf("core" to "choose a listed model for the core tier first (gone:cloud is not supported by FakeH)"), dirty.unsavable())
         assertEquals(emptyList<PendingWrite>(), dirty.collectWrites())
 
         // A vendor family keeps today's note and marker.

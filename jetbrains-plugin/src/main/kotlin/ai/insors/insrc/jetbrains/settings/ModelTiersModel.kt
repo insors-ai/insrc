@@ -231,7 +231,12 @@ class ModelTiersModel(
         when {
             !dirty(s) -> null
             s.pendingModel.isEmpty() -> tier to "choose a model for the $tier tier first"
-            pendingModelDef(s) == null -> tier to "choose a listed model for the $tier tier first (${s.pendingModel} is not listed)"
+            pendingModelDef(s) == null -> {
+                // A family on a host refuses the model outright (the tier will not run), so say so.
+                val hosted = family(s.pendingRunner)?.takeIf { it.host != null }
+                val why = if (hosted != null) "is not supported by ${hosted.displayName}" else "is not listed"
+                tier to "choose a listed model for the $tier tier first (${s.pendingModel} $why)"
+            }
             else -> null
         }
     }.toMap()

@@ -1,0 +1,615 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793350039391-64wnc9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T08:50:21.692Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 182288,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicHash": "b220bb6174a2f5ed",
+    "epicSlug": "run-claude-codex-ollama-models",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1793292978249-2ujf5k",
+    "hldEffectiveHash": "ca5bac7aee6017131c5204a57baa27e41f2e27c7cfda243bf4d4fdb1d0a3748a",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Story's three acceptance criteria (ac1-ac3 from DEF.md) are each mapped to concrete, existing or planned test subjects, and the adjacent-scope block correctly excludes s1-s4 work.",
+          "evidence": "DEF.md ac1-ac3 for S005 (runner offered, cloud/local labels + effort gating + Check-model exclusion, reopen shows resolved tier/not-supported note) match LLD §6's acceptance mapping table line-for-line. HLD.md §6.5 states s5's scope ('family and model selectors, cloud/local labels, filter that keeps host families out of the model-check flow, display of resolved tier') and matches LLD §1's adjacent-scope exclusions for s1-s4 verbatim. [files: docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/DEF.md, docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/HLD.md]",
+          "action": "Read DEF.md acceptance criteria for S005 and HLD.md §6.5; compared against LLD §1 and §6.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's resolve() note text for an unlisted model reads '... is not listed for <family> — the daemon runs its default for the tier instead', and CurrentNotInCatalog has no 'hosted' flag and labels '(current, not listed): <id>' — exactly what the design's 'State before' / migration section claims.",
+          "evidence": "ModelTiersModel.kt:93 reads: `notes += \"$model is not listed for ${configuredFamily.displayName} — the daemon runs its default for the tier instead\"`; line 297: `data class CurrentNotInCatalog(val id: String) : ModelChoice { override val label: String = \"(current, not listed): $id\" }`. ModelCheckFlow.kt:63 reads `definitions.families.filter { it.cliKind != null }` — offers every CLI family, matching the design's claim it currently offers the host family too. [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt]",
+          "action": "Read ModelTiersModel.kt and ModelCheckFlow.kt in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "host/hosting are genuinely new to the JetBrains DTOs (not already present) but already exist on the daemon wire side (s1, shipped), so this Story's 'new' claim and its 'reused' dependency on sc1/sc2 are both accurate.",
+          "evidence": "jetbrains-plugin ModelDefinitions.kt (current) has no host/hosting fields on DefinedFamilyDto/DefinedModelDto. src/daemon/model-definitions.ts already defines and wire-serializes `host` on FamilyDefinitionEntry and `hosting` on ModelDefinitionEntry (lines 50, 60, 119, 131), and model-catalog.ts defines `FamilyHost = 'ollama'` and `ModelHosting = 'cloud'|'local'` — s1's BUILD.md confirms s1 (host/hosting on the wire) shipped at commit ccae14700. [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt, src/daemon/model-definitions.ts, src/daemon/model-catalog.ts, docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S001/BUILD.md]",
+          "action": "Read current ModelDefinitions.kt (JetBrains) vs src/daemon/model-definitions.ts and model-catalog.ts; read S001/BUILD.md.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The cited call-site line ranges for the field-adds (ModelDefinitions.kt:111-141 parser, ModelTiersModel.kt:83-117 resolve, ModelTiersModel.kt:172-190/297 modelOptions+CurrentNotInCatalog, ModelCheckFlow.kt:63 families()) correspond to the real functions that must change.",
+          "evidence": "parseModelDefinitions spans lines 111-142 (cited 111-141, off by one at the closing brace only); resolve() spans 83-116 (cited 83-117); modelOptions spans 172-184 and CurrentNotInCatalog is declared exactly at line 297 (cited 172-190/297); ModelCheckFlow.families() is exactly at line 63 (cited :63). [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt]",
+          "action": "Read full file contents and compared line numbers against the LLD's §3 call-site citations and §9 [[c3]] citation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "parseModelDefinitions already uses a nonBlank-and-skip-if-absent pattern for every optional field, so adding host/hosting the same way will make an older daemon's answer (missing those keys) parse with host=null/hosting=null, not fail, matching the design's stated postcondition.",
+          "evidence": "parseModelDefinitions (ModelDefinitions.kt:111-142) builds every optional field via `nonBlank(f[\"key\"])`, which returns null when the key is absent/blank, and a missing/malformed model or family is simply skipped (`?: return@mapNotNull null` only for required id fields) — the same mechanism the design proposes reusing for host/hosting. [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt]",
+          "action": "Read parseModelDefinitions implementation end-to-end.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's adjacent-scope table (s1-s4 exclusions) matches the HLD's own story-boundary section for this Epic, so s5 is not redesigning work owned elsewhere.",
+          "evidence": "HLD.md §6 (lines ~44-128) assigns sc1/sc2 ownership to s1 and lists s2 (CLI run path), s3 (terminal UI), s4 (VS Code) boundaries in wording nearly identical to the LLD §1 adjacent-scope block, and s5's own boundary line 128 ('family and model selectors, cloud/local labels, filter ... display of the resolved tier') matches the LLD's Summary exactly. [files: docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/HLD.md]",
+          "action": "Read HLD.md §6 story-boundary section and compared to LLD §1.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'tier configured on an undeclared host-family model' error path's detection step ('resolve() finds the configured family has a host and served(family, model) returns null') is implementable against the current resolve()/served() code shape, and its daemon-side wording source ('model-not-supported', model=undefined) is real.",
+          "evidence": "ModelTiersModel.kt already has `served(family, idOrAlias)` (line 62-63) and the exact `if (found == null)` branch in resolve() (line 92) that the design proposes extending with a host-family check. On the daemon side, model-registry.ts:65-77 defines `ModelNotSupportedError`/`FallbackReason = 'model-not-supported'` and line 295-296 shows the host-family refusal path returning `model: undefined` — confirming nothing is substituted, consistent with the design's 'the tier will not run' wording. [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt, src/daemon/model-registry.ts]",
+          "action": "Read ModelTiersModel.kt resolve()/served() and src/daemon/model-registry.ts fallback-reason code.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three test files the LLD names (ModelDefinitionsGatewayTest.kt, ModelTiersModelTest.kt, ModelCheckFlowTest.kt) exist, and the acceptance-mapping table's criteria (ac1-ac3) correspond 1:1 to the subjects described in those files.",
+          "evidence": "All three test files exist at the paths cited in LLD §6 Test strategy. The node bridge `jetbrains-plugin/__tests__/s7-gradle.test.ts` (cited as the gate that runs Kotlin tests) also exists. The acceptance-mapping table's ac1/ac2/ac3 rows reference subjects (runnerOptions+selectRunner; modelOptions/effortOptions/families() exclusion/gateway parsing; reopen-resolves-with-no-note + undeclared-model-noted) that are each individually itemized under 'Subjects' in the Test levels section. [files: jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt, jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt, jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt, jetbrains-plugin/__tests__/s7-gradle.test.ts]",
+          "action": "Glob-checked existence of all three Kotlin test files plus the gate bridge test; cross-checked the acceptance-mapping table against the Test levels subjects list.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-30T08:50:24.376Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story lets a JetBrains user set a tier to the Claude tool on an Ollama model from insrc's Settings. The runner already appears in the Model Tiers runner list because it lists every family the daemon declares; this Story marks each of its models cloud or local in the model list, keeps it out of the Check model dialog, and shows a configured model it does not declare as 'not supported, the tier will not run' instead of saying the daemon runs a default. The family is recognised by the definitions' host mark, never by name.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Model the new runner as a new family in the model definitions (alternative a1). The definitions file, its validator and the definitions answer gain one family, 'ollama-claude', with the CLI kind 'claude' and a host mark 'ollama'; every model of that family carries a hosting mark, 'cloud' or 'local'. Tier settings, effort filtering and provider construction keep their one per-family path. A family with the Ollama host mark builds the existing CLI provider with an Ollama target applied to that subprocess only, and clients use the host mark to show cloud/local and to never offer unlisted model ids for that family. Scope change 2026-10-29 (user decision): the Codex-on-Ollama family is withdrawn, because Ollama's cloud models ignore a requested output format and the Codex tool depends on it (DEF non-goal, citation c9 of the DEF).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Ollama-hosted CLI families in the definitions answer",
+          "purpose": "The wire shape every consumer reads to know the new family, that it runs a CLI on Ollama, and which of its models are cloud or local.",
+          "interfaceSketch": "type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama' | 'ollama-claude';\ntype FamilyHost = 'ollama';\ntype ModelHosting = 'cloud' | 'local';\ninterface FamilyDefinitionEntry {\n  readonly id: FamilyId;\n  readonly displayName: string;\n  readonly cliKind?: 'claude' | 'codex';\n  /** Present only on the new family: the CLI runs against Ollama. */\n  readonly host?: FamilyHost;\n  readonly models: readonly ModelDefinitionEntry[];\n}\ninterface ModelDefinitionEntry {\n  readonly id: string;\n  readonly displayName: string;\n  readonly aliases?: readonly string[];\n  readonly efforts: readonly string[];\n  readonly inputLimit?: { readonly unit: 'chars' | 'tokens'; readonly max: number };\n  /** Required on every model of a family with host; absent elsewhere. */\n  readonly hosting?: ModelHosting;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c5"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Tier resolution on an Ollama-hosted family",
+          "purpose": "How the daemon reports the tier it actually runs when the tier names a host family, including a model the definitions do not declare, so the run layer and every settings surface show the same outcome.",
+          "interfaceSketch": "type FallbackReason = /* existing reasons */ string | 'model-not-supported';\ninterface TierResolution {\n  readonly family: FamilyId;\n  /** undefined when the configured model is not declared for a host family. */\n  readonly model: ResolvedModel | undefined;\n  readonly effort: string | undefined;\n  readonly fallback?: { readonly reason: FallbackReason; readonly configured: string };\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The JetBrains Settings page's family and model selectors, the cloud/local labels, the filter that keeps host families out of the model-check flow, and its display of the resolved tier stay inside s5."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "The shipped definitions entry for the new family and its models (which cloud and local models are supported), the catalog validator's four-member check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "How the CLI provider points a run at Ollama (the claude environment, applied only to that subprocess), the pre-run checks that Ollama answers and the model is available or signed in for a cloud model, the failure messages that name the cause, and the time limit that keeps a run from waiting forever stay inside s2."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The terminal UI's runner list, model list with cloud/local labels, effort step and the withheld 'enter another id' path for host families, and its display of the resolved tier, stay inside s3."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The VS Code tier picker's family and model steps, the settings write validation that refuses an undeclared model for a host family, the cloud/local labels and the withheld 'enter another id' item stay inside s4."
+        }
+      ],
+      "rolloutPhase": "Phase B — run on Ollama and expose in settings",
+      "nonFunctional": {
+        "performance": "No added cost on today's runners. A run on a host family adds one Ollama reachability and model-availability check before the CLI starts; a run never waits beyond the existing CLI time limit.",
+        "security": "The Ollama settings are applied only to the started subprocess's environment or arguments; the user's own CLI configuration files and the daemon's environment are never changed. No API key is stored; the claude CLI gets the placeholder token Ollama accepts locally.",
+        "observability": "The daemon logs the family, model, hosting and Ollama target of each host-family run, and a failed pre-run check logs which check failed; the tier resolution reported to clients names a 'model-not-supported' fallback.",
+        "durability": "Nothing new is persisted: tier settings keep their stored shape, and the new families live in the shipped definitions file."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "DefinedFamilyDto",
+          "signature": "data class DefinedFamilyDto(val id: String, val cliKind: String?, val displayName: String, val tierDefaults: Map<String, TierDefaultDto>, val toolLoopModel: String?, val models: List<DefinedModelDto>, /** 'ollama' when the family runs its CLI on a host; null otherwise. */ val host: String? = null)",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "The plugin's view of one family, now carrying sc1's host mark."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "An older daemon's answer without host parses with host = null."
+          ]
+        },
+        {
+          "name": "DefinedModelDto",
+          "signature": "data class DefinedModelDto(val id: String, val aliases: List<String>, val displayName: String?, val efforts: List<String>, val source: String, val installed: Boolean?, /** 'cloud' or 'local' on a host family's model; null otherwise. */ val hosting: String? = null)",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "The plugin's view of one model, now carrying sc1's hosting mark."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Null for vendor and plain Ollama models."
+          ]
+        },
+        {
+          "name": "parseModelDefinitions",
+          "signature": "internal fun parseModelDefinitions(data: Map<String, Any?>): ModelDefinitionsDto?",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "Map<String, Any?>",
+              "purpose": "The models.definitions answer.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ModelDefinitionsDto?",
+            "meaning": "As today, and each family's host and each model's hosting read when present (non-blank strings), else null."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A malformed family or model is still skipped as today."
+          ]
+        },
+        {
+          "name": "resolve",
+          "signature": "private fun resolve(tier: String): Resolved",
+          "parameters": [
+            {
+              "name": "tier",
+              "type": "String",
+              "purpose": "core / mid / cheap.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Resolved",
+            "meaning": "As today; for a configured model a family with a host does not declare, the note reads '<model> is not supported by <displayName> — the tier will not run' instead of '… the daemon runs its default for the tier instead'."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Vendor and plain Ollama tiers resolve and note exactly as before."
+          ]
+        },
+        {
+          "name": "label",
+          "signature": "private fun label(m: DefinedModelDto): String",
+          "parameters": [
+            {
+              "name": "m",
+              "type": "DefinedModelDto",
+              "purpose": "The model being listed in the combo.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "String",
+            "meaning": "As today, followed by ' — cloud' or ' — local' when the model has a hosting mark."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Vendor and plain Ollama labels are unchanged."
+          ]
+        },
+        {
+          "name": "modelOptions",
+          "signature": "fun modelOptions(tier: String): List<ModelChoice>",
+          "parameters": [
+            {
+              "name": "tier",
+              "type": "String",
+              "purpose": "core / mid / cheap.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "List<ModelChoice>",
+            "meaning": "As today; the non-selectable current marker for a host family reads '(current, not supported): <id>' (ModelChoice.CurrentNotInCatalog carries whether its family has a host)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Only declared models are selectable; unsavable still keeps an undeclared model from being written."
+          ]
+        },
+        {
+          "name": "families",
+          "signature": "fun families(): List<DefinedFamilyDto>",
+          "parameters": [],
+          "returns": {
+            "type": "List<DefinedFamilyDto>",
+            "meaning": "The families the Check model… dialog offers: those with a cliKind and no host."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The Ollama-hosted family is never offered for a check (the daemon refuses it, s1)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DefinedFamilyDto",
+        "change": "field-add",
+        "details": "Adds host: String? (sc1), defaulting to null.",
+        "schemaDiff": "+ val host: String? = null",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt:12-35",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt:111-141",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:83-117",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt:63"
+        ]
+      },
+      {
+        "entity": "DefinedModelDto",
+        "change": "field-add",
+        "details": "Adds hosting: String? (sc1), defaulting to null.",
+        "schemaDiff": "+ val hosting: String? = null",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt:12-35",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:141-163"
+        ]
+      },
+      {
+        "entity": "ModelChoice.CurrentNotInCatalog",
+        "change": "field-add",
+        "details": "Adds hosted: Boolean = false so its label reads '(current, not supported): <id>' for a host family and '(current, not listed): <id>' otherwise.",
+        "schemaDiff": "- data class CurrentNotInCatalog(val id: String)\n+ data class CurrentNotInCatalog(val id: String, val hosted: Boolean = false)",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:172-190",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:297"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Parses host on a family and hosting on a model from models.definitions; recognises the host family by host, never by id."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Mirrors the daemon's resolution for a host family on the Settings page: a declared model runs as configured (an effort it does not take is shown dropped); an undeclared one is noted as not supported, the tier will not run."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The tier is configured (hand-edited config, or a model removed later) on the Claude-on-Ollama runner with a model it does not declare, and the Settings page opens.",
+          "detection": "resolve() finds the configured family has a host and served(family, model) returns null.",
+          "response": "The tier row's note reads '<model> is not supported by <displayName> — the tier will not run'; the model combo shows the non-selectable '(current, not supported): <id>' marker above the declared models; unsavable() refuses to save an edit still on that model ('choose a listed model for the <tier> tier first').",
+          "userImpact": "The user sees the tier does not run (the daemon's model-not-supported refusal) and picks a listed model; nothing undeclared is written.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The user opens Check model… to try an unlisted id for the Claude-on-Ollama runner.",
+          "detection": "ModelCheckFlow.families() filters out families whose host is set.",
+          "response": "The dialog's family list offers only vendor CLI families; the host family is not there.",
+          "userImpact": "No check the daemon would refuse is offered; the runner accepts only its listed models.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon is down or an older daemon answers the definitions without host or hosting.",
+          "detection": "gateway.modelDefinitions() fails (existing ModelDefinitionsResult.Failed path), or parseModelDefinitions finds no host / hosting keys.",
+          "response": "Daemon down: the existing failure message and hidden rows until Refresh. No host field: host and hosting are null, so the family behaves as today's CLI families (no marks, offered in Check model, the 'runs its default' note).",
+          "userImpact": "No new failure mode; labels and the not-supported note appear once the daemon is s1 or later.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Selecting the Claude-on-Ollama runner in a tier's runner combo.",
+          "expected": "selectRunner takes the family's first declared model (no tierDefaults, no toolLoopModel) with effort '', and the model combo lists only its declared models, each labelled '— cloud' or '— local'."
+        },
+        {
+          "input": "A declared host model with no efforts (e.g. deepseek-v4-pro:cloud).",
+          "expected": "effortOptions offers only '' (the CLI default)."
+        },
+        {
+          "input": "A host model configured by alias.",
+          "expected": "Served (served() matches aliases); the tier shows the canonical id and its label with the hosting mark."
+        },
+        {
+          "input": "A configured effort the declared host model does not take.",
+          "expected": "The existing note 'stored effort ... is not accepted by <model> — the daemon drops it' and the effort shown as ''."
+        },
+        {
+          "input": "A tier saved on the Claude-on-Ollama runner, Settings reopened.",
+          "expected": "resolve() returns the saved runner, canonical model and effort, the model listed and labelled with its hosting, no note."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every runner, model and effort the Settings page offers comes from the daemon's models.definitions answer; the plugin keeps no family or model list and names no family id.",
+          "source": "c2"
+        },
+        {
+          "text": "Writes are one whole tier {runner, model, effort} per dirty, savable tier; an unlisted model is never written (unsavable).",
+          "source": "c2"
+        },
+        {
+          "text": "Vendor CLI families stay in Check model… and keep the 'not listed — the daemon runs its default' note; plain Ollama is unchanged.",
+          "source": "c3"
+        },
+        {
+          "text": "The DTOs stay structural mirrors of the daemon's answer: a malformed family or model is skipped, and an answer without the new keys parses unchanged.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "JUnit 5 (org.junit.jupiter) under Gradle in jetbrains-plugin/ (jetbrains-plugin/build.gradle.kts), run per test class; Kotlin tests reach the insrc build gate through the node bridge jetbrains-plugin/__tests__/s7-gradle.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Parsing the definitions answer with the new marks.",
+          "subjects": [
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt: an answer with a family host 'ollama' and models hosting 'cloud'/'local' parses them onto DefinedFamilyDto.host and DefinedModelDto.hosting; an answer without them parses with null."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The headless Model Tiers model and the Check model flow over a fake definitions answer with a host family.",
+          "subjects": [
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: runnerOptions offers the host family next to today's; selectRunner to it takes its first declared model with effort ''; modelOptions lists only its declared models, labelled '— cloud' / '— local'; effortOptions offers '' plus the model's efforts (only '' for a model with none); collectWrites writes the whole tier.",
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: a configured undeclared model on the host family is noted 'not supported by <family> — the tier will not run', shown as '(current, not supported)' and refused by unsavable; a vendor family keeps 'the daemon runs its default' and '(current, not listed)'; a host-less answer behaves as a vendor family.",
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: a catalog snapshot holding a tier saved on the host family resolves to that runner, canonical model and effort with no note (reopen); an effort the model does not take is shown dropped.",
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt: families() excludes the host family and keeps the vendor CLI families; with host absent the family is offered."
+          ],
+          "fixturesNeeded": [
+            "A fake ModelDefinitionsDto adding a family with cliKind 'claude', host 'ollama', no tierDefaults, and models with hosting 'cloud' (with efforts and an alias) and 'local' (no efforts)."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "ModelTiersModelTest.kt: runnerOptions offers the host family next to today's; selectRunner to it takes its first declared model"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "ModelTiersModelTest.kt: modelOptions lists only the host family's declared models labelled cloud/local; effortOptions only where the model has efforts",
+            "ModelCheckFlowTest.kt: families() excludes the host family",
+            "ModelDefinitionsGatewayTest.kt: host and hosting are parsed"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "ModelTiersModelTest.kt: a catalog snapshot holding a tier saved on the host family resolves to that runner, model and effort with no note",
+            "ModelTiersModelTest.kt: an undeclared host-family model is noted not supported, the tier will not run"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The JetBrains Model Tiers settings (jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt over daemon/ModelDefinitions.kt) already list every family the definitions declare, including the Claude-on-Ollama one, but the DTOs drop host and hosting, so models carry no cloud/local mark, an undeclared host-family model is noted as 'the daemon runs its default for the tier instead' (wrong: nothing runs), and settings/ModelCheckFlow.kt offers the host family in Check model…, whose check the daemon refuses.",
+      "stateAfter": "The plugin parses host and hosting: the model combo labels a host family's models cloud or local, an undeclared host-family model is noted 'not supported — the tier will not run' with a '(current, not supported)' marker, and Check model… offers only vendor CLI families. Vendor and plain Ollama behaviour is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add nullable host to the family DTO and nullable hosting to the model DTO, and read them in the definitions parser.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Show the hosting in the model combo label and the not-supported note and marker for a host family in the tier model.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Exclude families with a host from the Check model flow's family list.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Plugin-internal change: the new DTO fields default to null, nothing persisted changes, tier writes keep their whole-tier shape, and an older daemon's answer (no host/hosting) renders as today.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Host-aware DTOs, tier model and check-flow filter over the definitions answer",
+        "oneLineSummary": "Parse host/hosting into the plugin's DTOs; ModelTiersModel labels a host family's models cloud/local and reports an undeclared host-family model as not supported (the tier will not run); ModelCheckFlow keeps host families out of Check model.",
+        "approach": "daemon/ModelDefinitions.kt: DefinedFamilyDto gains `host: String?` and DefinedModelDto gains `hosting: String?`, read by parseModelDefinitions (absent on an older daemon, so null). settings/ModelTiersModel.kt: label() appends ' — cloud' / ' — local' from hosting; resolve() notes, for a configured model a host family does not declare, '<model> is not supported by <family> — the tier will not run' instead of 'the daemon runs its default for the tier instead'; the non-selectable current marker reads '(current, not supported): <id>' for a host family (ModelChoice.CurrentNotInCatalog gains the label choice). runnerOptions already lists every family with models (ac1); effortOptions already offers only '' plus the model's own efforts (ac2); unsavable/collectWrites already refuse to write an unlisted model and write whole tiers; resolve/onSaved already report the saved tier on reopen (ac3). settings/ModelCheckFlow.kt: families() returns families with a cliKind and no host, so the Check model… dialog never offers the host family. The family is recognised by host, never by id.",
+        "pros": [
+          "Smallest change: three Kotlin files plus tests, reusing the headless model, its tests and the existing gate bridge.",
+          "Same rule as the daemon (s1), the TUI (s3) and VS Code (s4), keyed on the host mark.",
+          "No daemon or IPC change; older daemons behave as today."
+        ],
+        "cons": [
+          "The model mirrors the daemon's tier resolution rather than asking for it, as it already does for vendor families."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Ask the daemon for each tier's resolution",
+        "oneLineSummary": "Add a per-tier resolution request to the daemon and render the Settings page's current tier and notes from it, plus a1's labels and check-flow filter.",
+        "approach": "A new daemon IPC returning resolveTierWith's TierResolution for core/mid/cheap (including fallback 'model-not-supported'); DaemonGateway gains a call for it; ModelTiersModel takes the resolution instead of computing resolve() itself. The cloud/local labels and the Check model filter still need a1's DTO fields.",
+        "pros": [
+          "The displayed tier is exactly what the daemon computes."
+        ],
+        "cons": [
+          "A new daemon IPC outside s5's boundary (s1 owns sc2), so an HLD amendment, and every client would be expected to adopt it.",
+          "Still needs all of a1's changes; one more request and a new older-daemon failure mode."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Same on ac1-ac3 but partial on sc2 and k4 (new IPC outside s5's boundary) and strictly more work, since it still needs a1's changes."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: The JetBrains plugin's view of the definitions answer — jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt:111-141",
+      "quotedText": "parsed structurally by parseModelDefinitions"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: The Model Tiers state machine and its Swing shell — jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:83-117",
+      "quotedText": "unsavable/collectWrites never write an unlisted model and write whole tiers"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: The Check model flow — jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt:63",
+      "quotedText": "families() (:63) returns every family with a cliKind"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: Tests to extend — jetbrains-plugin/__tests__/s7-gradle.test.ts",
+      "quotedText": "Kotlin tests reach the insrc build gate through the node bridge"
+    }
+  ]
+}

@@ -11,7 +11,10 @@
  * { runner, model, effort } with one config.write — so a runner is never saved
  * with another family's model. A model its family does not serve is typed with
  * `n` and goes through the unknown-model check screen; the pane never saves it
- * directly. All config I/O goes through the daemon (config.show / config.write).
+ * directly. A family with a `host` runs its CLI on Ollama (Epic b220bb61, Story
+ * s3): its models are a closed list labelled cloud or local, `n` is withheld,
+ * and an undeclared model is shown as not supported (the tier does not run).
+ * All config I/O goes through the daemon (config.show / config.write).
  */
 
 import { Box, Text, useInput } from 'ink';
@@ -169,24 +172,30 @@ export function ModelTiersPane(): ReactElement {
 		if (input === 'R' && restartPending) { restart(); return; }
 		if (cur.kind === 'tier') {
 			const tier = eff.tiers[cur.tier];
+			const family = familyOf(defs, tier.runner);
+			const hosted = family?.host !== undefined;
 			if (input === 'f') {
-				const family = nextInCycle(defs.families.map(f => f.id), tier.runner);
-				if (family !== undefined) saveTier(cur.tier, switchFamily(defs, cur.tier, family));
+				const next = nextInCycle(defs.families.map(f => f.id), tier.runner);
+				if (next !== undefined) saveTier(cur.tier, switchFamily(defs, cur.tier, next));
 				return;
 			}
 			if (input === 'm') {
-				const models = familyOf(defs, tier.runner)?.models.map(m => m.id) ?? [];
+				const models = family?.models.map(m => m.id) ?? [];
 				const next = nextInCycle(models, tier.model);
 				if (next !== undefined) saveTier(cur.tier, switchModel(defs, tier, next));
 				return;
 			}
 			if (input === 'e') {
+				if (tier.notSupported) { ui.toast(`${tier.model} is not supported by ${family?.displayName ?? tier.runner}: pick a listed model with m`); return; }
 				if (!tier.served) { ui.toast(`${tier.model} is not a listed model: pick one with m, or check it with n`); return; }
-				const next = nextInCycle(effortChoices(defs, tier), tier.effort ?? '');
+				const choices = effortChoices(defs, tier);
+				if (hosted && choices.length <= 1) { ui.toast('this model takes no effort setting'); return; }
+				const next = nextInCycle(choices, tier.effort ?? '');
 				if (next !== undefined) saveTier(cur.tier, { ...tier, effort: next });
 				return;
 			}
-			if (input === 'n') { setPrompt({ kind: 'model', tier: cur.tier }); ui.capture(true); return; }
+			// A family on a host offers only its listed models: no typed id, no unknown-model check.
+			if (input === 'n' && !hosted) { setPrompt({ kind: 'model', tier: cur.tier }); ui.capture(true); return; }
 			return;
 		}
 		if (input === 'e') {
@@ -254,14 +263,17 @@ export function ModelTiersPane(): ReactElement {
 					const family = familyOf(defs, tier.runner)?.displayName ?? tier.runner;
 					const model = servedModel(defs, tier.runner, tier.model);
 					const aliases = model !== undefined && model.aliases.length > 0 ? ` (${model.aliases.join(', ')})` : '';
+					const hosting = tier.hosting !== undefined ? ` [${tier.hosting}]` : '';
 					// A served model that does not take the configured effort runs at the CLI's default effort.
 					const effortRejected = model !== undefined && tier.effort !== undefined && tier.effort !== '' && !model.efforts.includes(tier.effort);
 					return (
 						<Text key={t} {...hi(sel === i)}>
-							{`${rowMark(i)}${t.padEnd(5)} ${family} / ${tier.model || '(cli default)'}${aliases} / ${tier.effort ? tier.effort : '(cli default effort)'}`}
+							{`${rowMark(i)}${t.padEnd(5)} ${family} / ${tier.model || '(cli default)'}${aliases}${hosting} / ${tier.effort ? tier.effort : '(cli default effort)'}`}
 							<Text dimColor> {eff.tierSource[t] === 'default' ? '(default)' : '(set)'}</Text>
 							{effortRejected && <Text color="yellow"> not accepted — runs at the CLI default</Text>}
-							{!tier.served && <Text color="yellow"> not served: runs the default until approved and the daemon restarted</Text>}
+							{tier.notSupported
+								? <Text color="red"> not supported by {family}: the tier will not run; pick a listed model with m</Text>
+								: !tier.served && <Text color="yellow"> not served: runs the default until approved and the daemon restarted</Text>}
 						</Text>
 					);
 				})}
@@ -294,7 +306,7 @@ export function ModelTiersPane(): ReactElement {
 			)}
 			<Box marginTop={1}>
 				<KeyHints hints={cur.kind === 'tier'
-					? [['↑/↓', 'select'], ['f', 'family'], ['m', 'model'], ['n', 'new model id'], ['e', 'effort'], ...(restartPending ? [['R', 'restart daemon'] as const] : []), ['r', 'reload']]
+					? [['↑/↓', 'select'], ['f', 'family'], ['m', 'model'], ...(familyOf(defs, eff.tiers[cur.tier].runner)?.host !== undefined ? [] : [['n', 'new model id'] as const]), ['e', 'effort'], ...(restartPending ? [['R', 'restart daemon'] as const] : []), ['r', 'reload']]
 					: [['↑/↓', 'select'], ['e', 'edit'], ...(restartPending ? [['R', 'restart daemon'] as const] : []), ['r', 'reload']]} />
 			</Box>
 		</Panel>

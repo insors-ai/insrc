@@ -467,3 +467,133 @@ test('tui-models.test.ts: a lost connection reads as daemon down; r waits for a 
 	assert.doesNotMatch(frame, /the tier was not saved/);
 	r.unmount();
 });
+
+/** DEFS plus a family that runs its CLI on Ollama (Epic b220bb61, Story s3): no
+ *  tierDefaults, a cloud model with efforts and an alias, a local one without. */
+const HOSTED_DEFS: ModelDefinitionsResult = {
+	...DEFS,
+	families: [...DEFS.families, {
+		id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'FakeH',
+		models: [
+			{ id: 'hc:cloud', aliases: ['hc'], efforts: ['low', 'max'], source: 'shipped', hosting: 'cloud' },
+			{ id: 'hl:7b', aliases: [], efforts: [], source: 'shipped', hosting: 'local' },
+		],
+	}],
+};
+
+/** tiersServices over HOSTED_DEFS. */
+function hostedServices(tiers: Record<string, unknown>) {
+	const s = tiersServices(tiers);
+	s.svc.models.definitions = async () => HOSTED_DEFS;
+	return s;
+}
+
+test("tui-models.test.ts: 'f' reaches the Ollama-hosted runner and writes its first declared model as a whole tier, labelled cloud or local", async () => {
+	const tiers: Record<string, unknown> = { core: { runner: 'ollama', model: 'loc:1', effort: '' } };
+	const { svc, writes } = hostedServices(tiers);
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(stdin, '5', 'f'); await settle();
+	assert.deepEqual(writes, [['models.tiers.core', { runner: 'ollama-claude', model: 'hc:cloud', effort: '' }]]);
+	assert.match(lastFrame() ?? '', /core\s+FakeH \/ hc:cloud \(hc\) \[cloud\] \/ \(cli default effort\) \(set\)/);
+	// The plain local and vendor runners still carry no label; f moves on from the hosted runner to the first family.
+	assert.doesNotMatch(lastFrame() ?? '', /mid[^\n]*\[(cloud|local)\]/);
+	await press(stdin, 'f');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core', { runner: 'cli-claude', model: 'c-big', effort: '' }]);
+	unmount();
+});
+
+test("tui-models.test.ts: on a host-family tier 'm' and 'e' cycle only declared values, 'n' is hidden and opens nothing, and a model with no efforts says so", async () => {
+	const tiers: Record<string, unknown> = { core: { runner: 'ollama-claude', model: 'hc:cloud', effort: '' } };
+	const { svc, writes } = hostedServices(tiers);
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(stdin, '5');
+	let frame = lastFrame() ?? '';
+	assert.match(frame, /m model\s+e effort/, 'the key hints skip n on a host-family tier');
+	assert.doesNotMatch(frame, /new model id/);
+	await press(stdin, 'n');
+	assert.doesNotMatch(lastFrame() ?? '', /model id for/, 'n opens no prompt');
+	assert.equal(writes.length, 0);
+
+	// e cycles '' + the model's own efforts; m cycles the declared models (the effort the new one lacks is dropped).
+	await press(stdin, 'e');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core', { runner: 'ollama-claude', model: 'hc:cloud', effort: 'low' }]);
+	await press(stdin, 'e');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core', { runner: 'ollama-claude', model: 'hc:cloud', effort: 'max' }]);
+	await press(stdin, 'm');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core', { runner: 'ollama-claude', model: 'hl:7b', effort: '' }]);
+	assert.match(lastFrame() ?? '', /core\s+FakeH \/ hl:7b \[local\]/);
+	assert.equal(writes.length, 3, 'one write per edit');
+
+	// e on a model with no efforts: said so, nothing written.
+	await press(stdin, 'e');
+	assert.equal(writes.length, 3);
+	assert.match(lastFrame() ?? '', /this model takes no effort setting/);
+	// m wraps back to the first declared model.
+	await press(stdin, 'm');
+	assert.deepEqual(writes.at(-1), ['models.tiers.core', { runner: 'ollama-claude', model: 'hc:cloud', effort: '' }]);
+	for (const [path, value] of writes) {
+		assert.equal(path, 'models.tiers.core');
+		assert.deepEqual(Object.keys(value as object).sort(), ['effort', 'model', 'runner']);
+	}
+	// A vendor tier still offers n.
+	await press(stdin, 'j');
+	frame = lastFrame() ?? '';
+	assert.match(frame, /n new model id/);
+	unmount();
+});
+
+test("tui-models.test.ts: an undeclared host-family model shows 'not supported ... will not run'; a vendor unserved model keeps the vendor note", async () => {
+	const tiers: Record<string, unknown> = {
+		core:  { runner: 'ollama-claude', model: 'gone:cloud', effort: 'low' },
+		cheap: { runner: 'cli-codex', model: 'x-unknown', effort: '' },
+	};
+	const { svc, writes } = hostedServices(tiers);
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(stdin, '5');
+	let frame = lastFrame() ?? '';
+	assert.match(frame, /core\s+FakeH \/ gone:cloud \/ low \(set\)[\s│]+not[\s│]+supported[\s│]+by[\s│]+FakeH:[\s│]+the[\s│]+tier[\s│]+will[\s│]+not[\s│]+run;[\s│]+pick[\s│]+a[\s│]+listed[\s│]+model[\s│]+with[\s│]+m/);
+	assert.doesNotMatch(frame, /core[^\n]*not served/, 'not the vendor note');
+	assert.match(frame, /cheap\s+FakeX \/ x-unknown \/ \(cli default effort\) \(set\) not served: runs the default/);
+
+	await press(stdin, 'e');
+	assert.match(lastFrame() ?? '', /gone:cloud is not supported by FakeH: pick a listed model with m/);
+	assert.equal(writes.length, 0);
+
+	// The vendor tier: its toast, and n still opens the typed-id prompt.
+	await press(stdin, 'j', 'j', 'e');
+	assert.match(lastFrame() ?? '', /x-unknown is not a listed model: pick one with m, or check it with n/);
+	await press(stdin, 'n');
+	frame = lastFrame() ?? '';
+	assert.match(frame, /cheap model id for FakeX/);
+	assert.equal(writes.length, 0);
+	unmount();
+});
+
+test('tui-models.test.ts: a tier saved on the Ollama-hosted runner shows its runner, model, cloud/local label and effort after reload', async () => {
+	// A hand-edited mid tier names an effort its local model does not take.
+	const tiers: Record<string, unknown> = {
+		core: { runner: 'ollama', model: 'loc:1', effort: '' },
+		mid:  { runner: 'ollama-claude', model: 'hl:7b', effort: 'max' },
+	};
+	const { svc, writes } = hostedServices(tiers);
+	let r = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '5', 'f', 'e'); await settle();
+	assert.deepEqual(writes, [
+		['models.tiers.core', { runner: 'ollama-claude', model: 'hc:cloud', effort: '' }],
+		['models.tiers.core', { runner: 'ollama-claude', model: 'hc:cloud', effort: 'low' }],
+	]);
+	r.unmount();
+
+	// A fresh pane reads the saved config back from config.show.
+	r = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	await press(r.stdin, '5');
+	const frame = r.lastFrame() ?? '';
+	assert.match(frame, /core\s+FakeH \/ hc:cloud \(hc\) \[cloud\] \/ low \(set\)/);
+	assert.match(frame, /mid\s+FakeH \/ hl:7b \[local\] \/ max \(set\) not accepted — runs at the CLI default/);
+	r.unmount();
+});

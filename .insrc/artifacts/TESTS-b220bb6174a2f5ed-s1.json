@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s1",
     "createdAt": "2026-10-29T19:58:32.650Z",
-    "updatedAt": "2026-10-30T03:55:04.862Z",
+    "updatedAt": "2026-10-30T03:59:07.459Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -114,6 +114,219 @@
               },
               {
                 "title": "model-catalog.test.ts: the existing families validate as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "962f3f0a8",
+        "ranAt": "2026-10-30T03:59:07.459Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-registry.test.ts: host() is 'ollama' only for ollama-claude and cliKind() is 'claude' for it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: host() is 'ollama' only for ollama-claude and cliKind() is 'claude' for it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: resolveTier on a host family resolves a declared model and alias",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: resolveTier on a host family resolves a declared model and alias",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: an effort a host model does not list is dropped",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: an effort a host model does not list is dropped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: resolveTier on a host family with an undeclared model returns model undefined and fallback 'model-not-supported' and substitutes nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: resolveTier on a host family with an undeclared model returns model undefined and fallback 'model-not-supported' and substitutes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged, including the unlisted and rejected fallbacks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged with a host family present, including the unlisted and rejected fallbacks",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-registry.test.ts: effortLevels over five families keeps today's levels and order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: effortLevels over five families keeps today's levels and order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports the refusal without reading a missing model",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/tier-resolution.test.ts",
+                "title": "tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports the refusal without reading a missing model",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/tier-resolution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1335,
+            "titles": [
+              {
+                "title": "tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids",
+                "result": "pass"
+              },
+              {
+                "title": "tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort",
+                "result": "pass"
+              },
+              {
+                "title": "tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions",
+                "result": "pass"
+              },
+              {
+                "title": "tier-resolution.test.ts: a tier's own effort applies when no separate efforts entry exists; an efforts entry ('' included) wins",
+                "result": "pass"
+              },
+              {
+                "title": "tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports the refusal without reading a missing model",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 895,
+            "titles": [
+              {
+                "title": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: host() is 'ollama' only for ollama-claude and cliKind() is 'claude' for it",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier on a host family resolves a declared model and alias",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: an effort a host model does not list is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier on a host family with an undeclared model returns model undefined and fallback 'model-not-supported' and substitutes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged with a host family present, including the unlisted and rejected fallbacks",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: effortLevels over five families keeps today's levels and order",
                 "result": "pass"
               }
             ],

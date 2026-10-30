@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2ab0484d51a0556c",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T16:57:07.771Z",
+    "updatedAt": "2026-10-30T16:57:07.771Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Reuses an already-fully-built feature (vscode-plugin/src/connections/* + command insrc.openDataSources) with zero new backend/data model work. The change is mechanical and has one obvious approach (add a MenuItem row + a switch branch + a PanelHost method that delegates to the existing command), but it touches 3 files across what are effectively 2 concerns (the panels module's menu/host surface, and extension.ts's wiring of panelHost to the connections host), which is more than a single-file trivial guard/rename/constant.",
+    "epicCreatedAt": "2026-10-30T16:42:09.809Z",
+    "epicSlug": "add-manage-connections-entry-insrc-status",
+    "approvedAt": "2026-10-30T17:47:49.796Z",
+    "reviewOverride": {
+      "reason": "insrc_code_review_step is not used while the code-review framework is being rewritten (standing project rule). A manual code review was run instead via a general-purpose subagent over commit 88b18069d, which found no issues; tsc clean and the full test suite (1507 pass / 5 pre-existing unrelated fail, no regressions) were re-verified. User explicitly approved: \"approve, commit/push ALL pending changes, then rebuild plugin\".",
+      "at": "2026-10-30T17:47:49.796Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/add-manage-connections-entry-insrc-status-E202610302ab0484d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T16:57:07.771Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T16:57:07.771Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T16:57:07.771Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/webview-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T16:57:07.771Z"
+      }
+    ],
+    "commit": "88b18069d"
+  }
+}

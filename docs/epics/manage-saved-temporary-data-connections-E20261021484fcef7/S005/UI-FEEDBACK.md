@@ -22,3 +22,5 @@ The full VS Code extension sweep covered all 115 test files in that snapshot usi
 The first tracked t18 validation lost its daemon connection after mapped tests passed. After daemon reachability returned, the retry passed all checks, mapped tests and both root/extension typechecks. This is a task-validation verdict, not independent post-build code review or live UI acceptance.
 
 The t20 entry/icon validation gate also passed. Task30 inventory checks initially found stale consumer hashes; the inventory now pins committed source 63966e4ad, including both icon assets, excluding unrelated in-flight activation edits. The regenerated narrative preserves the capability/acceptance statements checked by the existing artifact guard. Both task30 checks pass after alignment; initial failures are retained in evidence.
+
+Final tracked results: t18, t20 and t30 validation gates all passed. No independent post-build code review or live UI acceptance is claimed; actual creation on the installed daemon remains unavailable. Runtime package remains pinned to 63966e4ad; subsequent commits contain documentation, inventory and validation evidence only.

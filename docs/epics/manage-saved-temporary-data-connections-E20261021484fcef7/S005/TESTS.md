@@ -452,7 +452,7 @@ Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/man
 
 ## t30
 
-Run at 2026-10-30T04:17:45.737Z on commit `878dbc47d`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T12:07:23.111Z on commit `341b98a7b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission**
 
@@ -470,7 +470,7 @@ Run at 2026-10-30T04:17:45.737Z on commit `878dbc47d`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-release.test.ts` | 0 | 2 | 3.9 s |  |
+| `src/shared/__tests__/connection-manager-release.test.ts` | 0 | 2 | 0.4 s |  |
 
 ## t31
 

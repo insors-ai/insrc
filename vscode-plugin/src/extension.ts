@@ -446,7 +446,9 @@ export function activate(context: vscode.ExtensionContext): void {
     repoRenderer: renderRepoConfig({
       registeredRepos: () => daemonData.registeredRepos(),
       rawConfig: () => configGateway.rawConfig(),
-      mcpRegistration: () => daemonData.mcpRegistration(),
+      // Forward the selected repo so mcp.status also probes the repo's own
+      // project-layer .vibe/config.toml for vibe (vibe merges layers by name).
+      mcpRegistration: (repoPath?: string) => daemonData.mcpRegistration(repoPath),
     }),
     // S007: the consent-gated per-repo write sink. Reuses the sc8 writeKeyPath ARRAY
     // form (config.write) — no new daemon capability (k3); gated by sc4 (k4); the

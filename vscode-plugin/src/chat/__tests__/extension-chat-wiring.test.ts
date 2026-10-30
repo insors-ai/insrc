@@ -372,3 +372,8 @@ test("extension wiring: a restored chat tab gets the chat's current title, since
   assert.match(read(CHAT_PANEL), /export const CHAT_PANEL_TITLE = 'insrc ctrl';/);
   assert.match(read(CHAT_PANEL), /title: CHAT_PANEL_TITLE \}/, 'a fresh panel uses the same title');
 });
+
+test('extension wiring: the repo-config panel probes mcp.status WITH the selected repo path, so the project-layer .vibe/config.toml counts for vibe', () => {
+  const src = read(EXT).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  assert.match(src, /mcpRegistration: \(repoPath\?: string\) => daemonData\.mcpRegistration\(repoPath\)/, 'the selected repo path is forwarded to the daemon probe');
+});

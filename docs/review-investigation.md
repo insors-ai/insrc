@@ -138,6 +138,14 @@ The client's prerequisite list states what still needs independent verification;
 it does not claim to have audited configured approvals or activation readiness.
 No probe, export or passing software test changes `codeReview.engine`.
 
+Readiness version 2 references `evaluationRefs.source-only` and
+`evaluationRefs.indexed-impact` separately, alongside the existing two
+`backendRefs`. One readiness record owns references to two approved evaluations
+and two approved installed probes; it does not own their approvals. Each mode's
+source/profile/policy/adapter/oracle/catalog checks are unchanged. Version 1
+retains its single `evaluationRef` and can authorize only a mode whose catalog
+matches that evaluation; there is no cross-mode or weaker fallback.
+
 `legacy` remains the default. S6 adds `plan-investigation-v1` without changing
 DEF/HLD/LLD review, legacy controller frames, or already saved review states.
 An unknown engine/version/state is refused; it never becomes a HEAD diff.

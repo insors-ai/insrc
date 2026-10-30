@@ -27,8 +27,12 @@ import type { QualifiedInvestigationSessionBinding,StructuredSchema } from '../s
 import type { HeadSnapshot } from '../workflow/artifact-core/store.js';
 
 const text=z.string().min(1).max(4096),digest=z.string().regex(/^[a-f0-9]{64}$/),oid=z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/);
-export const readinessSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-readiness'),wire:z.literal(1),canonical:z.literal(1),
- sourceCommit:oid,sourceDigest:digest,evaluationRef:text,backendRefs:z.object({'source-only':text,'indexed-impact':text}).strict()}).strict();
+const readinessFields={kind:z.literal('review-investigation-readiness'),wire:z.literal(1),canonical:z.literal(1),
+ sourceCommit:oid,sourceDigest:digest,backendRefs:z.object({'source-only':text,'indexed-impact':text}).strict()};
+export const readinessSchema=z.discriminatedUnion('version',[
+ z.object({...readinessFields,version:z.literal(1),evaluationRef:text}).strict(),
+ z.object({...readinessFields,version:z.literal(2),evaluationRefs:z.object({'source-only':text,'indexed-impact':text}).strict()}).strict(),
+]);
 // Legacy signatures are bounded metadata only. Authority comes from current
 // canonical approval; native qualification still verifies runtime isolation.
 const probeSchema=z.object({version:z.literal(1),kind:z.literal('review-investigation-installed-probe'),origin:z.literal('installed-probe'),evidence:z.unknown(),signature:z.string().min(1).max(4096).optional()}).strict();
@@ -82,7 +86,11 @@ export class InvestigationAdoptionPolicy {
   const predecessor=await readPredecessorHld(this.deps.work);const currentPerformance=(predecessor?.head.body['nonFunctional'] as Record<string,unknown>|undefined)?.['performance'];
   if(!predecessor||(currentPerformance!==amendment['oldTarget']&&currentPerformance!==RECONCILIATION_CLAUSE))refuse('Predecessor reconciliation no longer applies to the installed HLD');
   const report=probeSchema.parse(issueData(await readApprovedEvidence(this.deps.work,readiness.backendRefs[mode]))),evidence=snapshotValue(report.evidence) as NativeIsolationEvidence;
-  const rawEvaluation=issueData(await readApprovedEvidence(this.deps.work,readiness.evaluationRef));
+  // Each mode has a different catalogue. Keep every existing pin/adjudication
+  // check, selecting the approved evaluation for this mode rather than trying
+  // to make one digest certify two catalogues. Legacy v1 remains unchanged.
+  const evaluationRef=readiness.version===2?readiness.evaluationRefs[mode]:readiness.evaluationRef;
+  const rawEvaluation=issueData(await readApprovedEvidence(this.deps.work,evaluationRef));
   const {readApprovedEvaluationOracle,verifyStoredEvaluation}=await import('./review-investigation-evaluation.js');
   const oracleReference=z.object({adjudicationRef:text}).passthrough().parse(rawEvaluation).adjudicationRef;
   const evaluation=verifyStoredEvaluation(rawEvaluation,await readApprovedEvaluationOracle(this.deps.work,oracleReference));

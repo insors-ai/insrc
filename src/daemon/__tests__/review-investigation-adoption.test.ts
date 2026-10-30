@@ -51,6 +51,22 @@ test('Opt in readiness and rollback retain status while refusing unsupported res
   await t.test('Approved installed probe without signature is accepted without trust-key provisioning',async()=>{
    const loaded=await candidate.evidence('source-only');assert.equal(loaded.readiness.sourceCommit,f.commitId);assert.equal(loaded.report.signature,undefined);
   });
+  await t.test('Versioned readiness validates each mode against its own approved evaluation without a weaker fallback',async()=>{
+   const indexedBinding={...binding,catalogDigest:scopedReviewCatalogDigest(true)};
+   const indexedEvaluation=await put('ISSUE-3434343434343434',evaluateReviewRecords(oracle,
+    scriptedEvaluationRecord(indexedBinding,observations,[['indexed fixture baseline']],'indexed-baseline'),
+    scriptedEvaluationRecord(indexedBinding,observations,[['indexed fixture candidate']],'indexed-candidate')));
+   const data={version:2,kind:'review-investigation-readiness',wire:1,canonical:1,sourceCommit:f.commitId,sourceDigest:'b'.repeat(64),
+    evaluationRefs:{'source-only':evaluation,'indexed-impact':indexedEvaluation},backendRefs:{'source-only':probe,'indexed-impact':probe}};
+   const select=async(value:unknown)=>{const ready=await put('ISSUE-4545454545454545',value);return new InvestigationAdoptionPolicy({work,selection:()=>({engine:'plan-investigation-v1',readiness:ready,reconciliation}),sourceDigest:()=> 'b'.repeat(64)});};
+   const modes=await select(data);
+   assert.equal((await modes.evidence('source-only')).evaluation.catalogDigest,scopedReviewCatalogDigest(false));
+   assert.equal((await modes.evidence('indexed-impact')).evaluation.catalogDigest,scopedReviewCatalogDigest(true));
+   const swapped=await select({...data,evaluationRefs:{'source-only':indexedEvaluation,'indexed-impact':evaluation}});
+   await assert.rejects(()=>swapped.evidence('source-only'),/Evaluation evidence/);await assert.rejects(()=>swapped.evidence('indexed-impact'),/Evaluation evidence/);
+   const missing=await select({...data,evaluationRefs:{'source-only':evaluation}});await assert.rejects(()=>missing.evidence('indexed-impact'));
+   await assert.rejects(()=>candidate.evidence('indexed-impact'),/Evaluation evidence/,'v1 never silently certifies an incompatible mode');
+  });
   let probeCase=0;
   const policyWithProbe=async(data:unknown)=>{
    const ref=await put(`ISSUE-${String(6000000000000000+probeCase++)}`,data);

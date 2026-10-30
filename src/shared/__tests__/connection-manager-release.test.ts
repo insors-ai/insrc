@@ -12,14 +12,14 @@ const json=(name:string)=>JSON.parse(readFileSync(join(directory,name),'utf8'));
 
 test('CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence',async()=>{
  const inventory=json('consumer-inventory.json');
- assert.equal(inventory.releaseEnabled,true);assert.equal(inventory.producerPolicyModified,true);
+ assert.equal(inventory.releaseEnabled,false);assert.equal(inventory.producerPolicyModified,true);assert.equal(inventory.runtimeEnabled,true);
  for(const [file,digest] of Object.entries(inventory.files)){
   assert.ok(existsSync(file),file);
   // The shared activation file also has independently owned in-flight changes.
   if(file!=='vscode-plugin/src/extension.ts')assert.equal(createHash('sha256').update(readFileSync(file)).digest('hex'),digest,file);
  }
  for(const state of Object.values(inventory.externalPrerequisites))assert.match(String(state),/^pending/);
- const matrix=json('acceptance-matrix.json');assert.equal(matrix.subjects.length,20);assert.equal(matrix.manualAcceptance.owner,'user');assert.equal(matrix.manualAcceptance.status,'pending');assert.equal(matrix.releaseEnabled,true);
+ const matrix=json('acceptance-matrix.json');assert.equal(matrix.subjects.length,20);assert.equal(matrix.manualAcceptance.owner,'user');assert.equal(matrix.manualAcceptance.status,'pending');assert.equal(matrix.releaseEnabled,false);assert.equal(matrix.runtimeEnabled,true);
  assert.equal((await connectionManagementEnablement()).ready,true);
  assert.equal((await connectionManagementEnablement(undefined,['sc5','sc6'])).ready,true);
  const temporary=mkdtempSync(join(tmpdir(),'s5-gate-'));

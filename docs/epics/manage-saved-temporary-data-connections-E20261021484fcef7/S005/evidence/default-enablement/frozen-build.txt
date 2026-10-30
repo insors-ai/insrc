@@ -1,0 +1,18 @@
+
+> @insrc/backend@0.2.1 build
+> tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs
+
+[check-model-definitions] model definitions v1 valid (/private/tmp/cm-default-final-p1jq4md3/src/assets/models)
+[15:47:19] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+    [35mmodule[39m: "daemon:model-catalog"
+    [35mdir[39m: "/private/tmp/cm-default-final-p1jq4md3/src/assets/models"
+    [35mversion[39m: 1
+    [35mmodels[39m: {
+      "cli-claude": 4,
+      "cli-codex": 7,
+      "cli-vibe": 6,
+      "ollama": 2,
+      "ollama-claude": 6
+    }
+[copy-assets] copied prompts/ -> /private/tmp/cm-default-final-p1jq4md3/out/prompts
+[copy-assets] copied assets/ -> /private/tmp/cm-default-final-p1jq4md3/out/assets

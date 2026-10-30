@@ -1,5 +1,5 @@
 {
-  "releaseEnabled": true,
+  "releaseEnabled": false,
   "producerPolicyModified": true,
   "files": {
     "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/ManageConnectionsAction.kt": "7ad979d3baed00f59b28574c72eec4cad5c5c18ece1c1439fd3657ffaee850d6",
@@ -61,5 +61,8 @@
       "todo": 3
     }
   },
-  "runtimePolicy": "Enabled by default by explicit user instruction 2026-10-30; pending audit evidence is not runtime authorization."
+  "runtimePolicy": "Enabled by default by explicit user instruction 2026-10-30; pending audit evidence is not runtime authorization.",
+  "runtimeEnabled": true,
+  "releaseAuditStatus": "pending; independent of runtime availability by explicit user decision",
+  "sourceCommit": "19e6110fd"
 }

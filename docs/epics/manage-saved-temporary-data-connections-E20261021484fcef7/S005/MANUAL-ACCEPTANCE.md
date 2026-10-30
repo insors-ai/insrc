@@ -42,3 +42,5 @@ Details: UI-FEEDBACK.md. Earlier acceptance results remain historical.
 ## Default enablement (supersedes historical production-gate restrictions above)
 
 The user explicitly enabled this feature by default. After updating/restarting the daemon, a fresh registered repository should advertise sessions, Test and Saved creation/update/removal; completed inputs should enable Test and Save. No special test daemon or release-evidence flag is required. Existing legacy registries still require their offline migration, and corrupt/partial state still requires recovery. Earlier acceptance failures and pending service coverage remain historical evidence.
+
+For the insrc repository, use `test-fixtures/connection-management/v1/manual-orders.parquet` (five synthetic rows). The existing source policy requires a path within the selected registered repository; the earlier ~/work/temp absolute path is outside that boundary.

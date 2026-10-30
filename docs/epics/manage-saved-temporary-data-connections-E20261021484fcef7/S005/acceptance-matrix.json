@@ -1,5 +1,5 @@
 {
-  "releaseEnabled": true,
+  "releaseEnabled": false,
   "fixturesAreAcceptance": false,
   "subjects": [
     {
@@ -334,23 +334,26 @@
     },
     {
       "subject": "CM-S5-GATE",
-      "requirement": "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates",
+      "requirement": "Runtime connection management is enabled by default per explicit user decision, preserving actual authorization and keeping historical release-audit verification independent and pending.",
       "acceptance": "pending",
       "fixtureEvidenceOnly": true,
       "requiredEvidence": "implemented-consumer-tests",
       "consumerTestFiles": [
         "src/shared/__tests__/connection-manager-corpus.test.ts",
         "src/daemon/db/__tests__/connection-management-rpc.test.ts",
-        "src/daemon/db/__tests__/connection-session-rpc.test.ts"
+        "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+        "src/daemon/db/__tests__/management-defaults.test.ts"
       ],
-      "evidenceStatus": "Automated results recorded in evidence/t32/summary.json; manual UI/service and upstream prerequisites remain pending.",
+      "evidenceStatus": "See DEFAULT-ENABLEMENT.md and evidence/default-enablement. The legacy task validator still applies the superseded requirement; its failed policy verdict is retained.",
       "remainingTask": "t30",
       "automatedFilesExecuted": [
         "src/shared/__tests__/connection-manager-corpus.test.ts",
         "src/daemon/db/__tests__/connection-management-rpc.test.ts",
         "src/daemon/db/__tests__/connection-session-rpc.test.ts"
       ],
-      "automatedVerification": "passed"
+      "automatedVerification": "passed",
+      "supersededRequirement": "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates",
+      "runtimePolicyVerification": "passed real local Parquet Test/Save/reopen/removal and authorization checks; manual client acceptance pending"
     }
   ],
   "limits": "Coverage pointers do not convert fixtures or headless tests into live acceptance. Original 12 conceptual transcripts remain reference examples; the 16 production-model scenarios and 18 wire decisions are compared directly across actual consumers.",
@@ -373,5 +376,7 @@
     "pluginVerifier": "pending-offline-IDE-unavailable"
   },
   "packagesReadyForManualInstallation": true,
-  "runtimePolicy": "User explicitly enabled the feature by default; manual acceptance and historical failures remain recorded independently."
+  "runtimePolicy": "User explicitly enabled the feature by default; manual acceptance and historical failures remain recorded independently.",
+  "runtimeEnabled": true,
+  "releaseAuditStatus": "pending; independent of runtime availability by explicit user decision"
 }

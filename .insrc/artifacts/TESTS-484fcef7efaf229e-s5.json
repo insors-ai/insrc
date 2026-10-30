@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T15:00:03.874Z",
+    "updatedAt": "2026-10-30T15:46:04.211Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1303,8 +1303,8 @@
       },
       {
         "taskId": "t30",
-        "commit": "b9c5bc2ea",
-        "ranAt": "2026-10-30T15:00:03.874Z",
+        "commit": "19e6110fd",
+        "ranAt": "2026-10-30T15:46:04.211Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1314,7 +1314,17 @@
             "cases": [
               {
                 "file": "src/shared/__tests__/connection-manager-release.test.ts",
-                "title": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+                "title": "CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+                "title": "CM-DEFAULT: runtime is enabled independently of unverified release evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+                "title": "CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen and removal with real file driver",
                 "result": "pass"
               }
             ],
@@ -1336,13 +1346,34 @@
         ],
         "files": [
           {
+            "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2669,
+            "titles": [
+              {
+                "title": "CM-DEFAULT: runtime is enabled independently of unverified release evidence",
+                "result": "pass"
+              },
+              {
+                "title": "CM-DEFAULT: fresh initialization refuses unregistered legacy symlink and interrupted roots without modifying their data",
+                "result": "pass"
+              },
+              {
+                "title": "CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen and removal with real file driver",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/shared/__tests__/connection-manager-release.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 435,
+            "durationMs": 406,
             "titles": [
               {
-                "title": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+                "title": "CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
                 "result": "pass"
               },
               {

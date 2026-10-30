@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -452,13 +452,15 @@ Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/man
 
 ## t30
 
-Run at 2026-10-30T15:00:03.874Z on commit `b9c5bc2ea`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T15:46:04.211Z on commit `19e6110fd`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission | `src/shared/__tests__/connection-manager-release.test.ts` |
+| pass | CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence | `src/shared/__tests__/connection-manager-release.test.ts` |
+| pass | CM-DEFAULT: runtime is enabled independently of unverified release evidence | `src/daemon/db/__tests__/management-defaults.test.ts` |
+| pass | CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen and removal with real file driver | `src/daemon/db/__tests__/management-defaults.test.ts` |
 
 **smoke: CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits**
 
@@ -470,6 +472,7 @@ Run at 2026-10-30T15:00:03.874Z on commit `b9c5bc2ea`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/management-defaults.test.ts` | 0 | 3 | 2.7 s |  |
 | `src/shared/__tests__/connection-manager-release.test.ts` | 0 | 2 | 0.4 s |  |
 
 ## t31

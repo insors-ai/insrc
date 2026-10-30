@@ -37,7 +37,7 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 		const valid = { version: 2, ready: true, sourceFiles: build.sourceFiles, compiledFiles: build.compiledFiles, inventoryFile: 'inventory.json', testReportFile: 'report.json', inventoryDigest: digest(inventoryBytes), testReportDigest: digest(reportBytes), scopes };
 		const path = join(directory, 'proof.json');
 		const compiled = await import(new URL('out/daemon/db/management-enablement.js', root).href) as typeof import('../management-enablement.js');
-		for (const verify of [connectionManagementEnablement, compiled.verifyConnectionManagementRelease]) {
+		for (const verify of [verifyConnectionManagementRelease, compiled.verifyConnectionManagementRelease]) {
 			const check = async (proof: unknown) => { await writeFile(path, JSON.stringify(proof)); return (await verify(pathToFileURL(path), ['sc5'])).ready; };
 			assert.equal(await check(valid), true, 'a complete current build must be a positive verification control');
    assert.equal((await verify(pathToFileURL(path),['sc6'])).ready,true,'sc6 standalone verification still consumes full session prerequisites');

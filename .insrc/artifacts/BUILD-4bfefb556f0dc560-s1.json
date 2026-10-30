@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "8696d3e6ed380037bfb2147d1e8bdf33d784a01ba076fc6d6598b876e9d1524b",
-        "at": "2026-10-30T10:53:53.166Z",
+        "number": 5,
+        "contentHash": "067f4c9d08841cb41da6c8ff43d7c36462ab76a9518302349847106c818860af",
+        "at": "2026-10-30T11:40:29.602Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "4bfefb556f0dc560",
     "storyId": "s1",
-    "revision": 4,
-    "updatedAt": "2026-10-30T10:50:36.072Z",
+    "revision": 5,
+    "updatedAt": "2026-10-30T11:36:56.421Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "complete-native-review-isolation-qualification-so"
@@ -52,9 +52,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "Actual installed Claude v2 source-only and indexed-impact probes completed on03959efd1 with independently exported candidates and no missing checks; real controls, two durable ACKs and SIGKILL exit verified. Canonical probe records ISSUE-9ff1c86fdd7adcbc and ISSUE-f29a3e27b3282f6e are prepared, not approved. Earlier attempts failed solely from host-only diagnostic text being mischarged as model context; corrected without changing128K cap or byte bounds.16 focused regression tests/build passed. Readiness and real new-engine acceptance remain pending.",
+    "summary": "Approved actual installed qualifications for both modes, independent person-adjudicated oracle, mode-specific deterministic evaluations, readiness v2 and predecessor code-only reconciliation. Both modes pass unchanged adoption and installed adapter qualification with actual registered repository identity; default remains legacy. Real acceptance remains t6.",
     "testRecord": {
       "md": "docs/standalone/complete-native-review-isolation-qualification-so-E202610304bfefb55/S001/TESTS.md"
     },
@@ -64,227 +68,374 @@
           "file": "src/agent/providers/__tests__/claude-investigation-v2.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/investigation-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/native-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-export.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/daemon/review-investigation-probe-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/shared/review-investigation-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/shared/review-isolation-evidence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/native-investigation-probe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-diagnostics.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/claude-investigation-qualification.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "src/agent/providers/native-investigation-session.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-4bfefb556f0dc560-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-4bfefb556f0dc560-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-4bfefb556f0dc560-s1-t6.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-4bfefb556f0dc560-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-4bfefb556f0dc560-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "docs/review-investigation.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-9ff1c86fdd7adcbc.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-f29a3e27b3282f6e.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "docs/standalone/verify-installed-native-review-qualification-indexed-E20261030f29a3e27/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
       },
       {
         "target": {
           "file": "docs/standalone/verify-installed-native-review-qualification-source-E202610309ff1c86f/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T10:50:36.072Z"
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-adoption.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-adoption.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-260d7c2e6ea183cc.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-43237626b4cf3368.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-6976db3b0ae15f78.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-9ff1c86fdd7adcbc.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-f29a3e27b3282f6e.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/adjudicate-review-protocol-evaluation-oracle-E20261030260d7c2e/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/qualify-final-indexed-impact-review-activation-E202610306976db3b/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/qualify-final-source-only-review-activation-E2026103043237626/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-8315a11f29fd2812-1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-8315a11f29fd2812-1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-260d7c2e6ea183cc.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-2a016fecfd2800fd.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-43237626b4cf3368.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-52d4c807091e0da8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-6976db3b0ae15f78.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-94bcfc51783b73fd.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/authorize-current-two-mode-review-readiness-E2026103052d4c807/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/verify-indexed-impact-review-protocol-conformance-E202610302a016fec/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/verify-source-only-review-protocol-conformance-E2026103094bcfc51/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T11:36:56.421Z"
       }
     ],
-    "commit": "61f43754a"
+    "commit": "8a2a4be75"
   },
   "citations": []
 }

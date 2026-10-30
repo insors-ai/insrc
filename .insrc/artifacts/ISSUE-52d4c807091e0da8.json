@@ -22,7 +22,39 @@
     "epicSlug": "authorize-current-two-mode-review-readiness",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "31c8b93aeef39e0eed5b2c7562690c5d7699904dbe1e12525060c0c57b275078",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:34:31.591Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "52d4c807091e0da8",
+      "slug": "EPIC-52d4c807091e0da8"
+    }
   },
   "body": {
     "title": "Authorize current two-mode review readiness",

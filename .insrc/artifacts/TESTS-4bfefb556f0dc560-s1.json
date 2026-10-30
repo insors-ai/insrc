@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "7e2cd74a9c34afd1535e6dc4c3a0ab3a12fb532a150e7fbca02faaec5704a836",
-        "at": "2026-10-30T10:50:36.097Z",
+        "number": 5,
+        "contentHash": "94b6255b1db2b955c9a56a3dd2ad19b31c8a845a6c9ffa3727d46ef3158a787f",
+        "at": "2026-10-30T11:36:56.471Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "4bfefb556f0dc560",
     "storyId": "s1",
     "createdAt": "2026-10-30T09:51:03.769Z",
-    "updatedAt": "2026-10-30T10:50:36.072Z",
+    "updatedAt": "2026-10-30T11:36:56.421Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T09:20:29.318Z",
     "epicSlug": "complete-native-review-isolation-qualification-so",
-    "revision": 4
+    "revision": 5
   },
   "body": {
     "tasks": [
@@ -536,6 +536,27 @@
             "reported": {
               "result": "pass",
               "evidence": "/tmp/qualification-fix-live-acceptance.json; /tmp/live-insrc-probe-v2-admission-fixed-run.json; actual probes dd88812b-0a8e-4cec-9946-c0f8cdf434f0 and ab926476-faf4-48e3-9c4e-4638c0e787d6 completed with exported candidates/no missing evidence on03959efd1. Canonical draft mode records .insrc/artifacts/ISSUE-9ff1c86fdd7adcbc.json and ISSUE-f29a3e27b3282f6e.json; safe drained restart logs /tmp/qualification-fix-daemon-restart-2.log. Failed earlier IDs remain in /tmp/live-insrc-probe-v2-qualification-run.json, not promoted. Corrected admission arithmetic /tmp/v2-probe-admission-analysis.jsonl; focused tests/build /tmp/qualification-fix-t4-admission-tests.log and /tmp/qualification-fix-t4-build.log."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t5",
+        "commit": "8a2a4be75",
+        "ranAt": "2026-10-30T11:36:56.421Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Current canonical qualification independent evaluation readiness and reconciliation pass normal production admission",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/approved-review-admission.json; /tmp/final-review-readiness-approvals.jsonl; /tmp/current-activation-approvals.jsonl. Normal InvestigationAdoptionPolicy.evidence/adapter/assertQualified passed both modes against actual canonical approval history, installed CLI images, current source/profile/catalog/launch/policy. No source/authority overrides and no LLM invocation. Selection supplied only for bounded admission checking; persisted default remains legacy."
             }
           }
         ],

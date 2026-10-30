@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -97,3 +97,13 @@ the gate ran no test: every named test of this Task was reported by the builder
 **live: Installed source-only and indexed-impact probes each complete with a validated candidate using one serial control restricted pair**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/qualification-fix-live-acceptance.json; /tmp/live-insrc-probe-v2-admission-fixed-run.json; actual probes dd88812b-0a8e-4cec-9946-c0f8cdf434f0 and ab926476-faf4-48e3-9c4e-4638c0e787d6 completed with exported candidates/no missing evidence on03959efd1. Canonical draft mode records .insrc/artifacts/ISSUE-9ff1c86fdd7adcbc.json and ISSUE-f29a3e27b3282f6e.json; safe drained restart logs /tmp/qualification-fix-daemon-restart-2.log. Failed earlier IDs remain in /tmp/live-insrc-probe-v2-qualification-run.json, not promoted. Corrected admission arithmetic /tmp/v2-probe-admission-analysis.jsonl; focused tests/build /tmp/qualification-fix-t4-admission-tests.log and /tmp/qualification-fix-t4-build.log.
+
+## t5
+
+Run at 2026-10-30T11:36:56.421Z on commit `8a2a4be75`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: Current canonical qualification independent evaluation readiness and reconciliation pass normal production admission**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/approved-review-admission.json; /tmp/final-review-readiness-approvals.jsonl; /tmp/current-activation-approvals.jsonl. Normal InvestigationAdoptionPolicy.evidence/adapter/assertQualified passed both modes against actual canonical approval history, installed CLI images, current source/profile/catalog/launch/policy. No source/authority overrides and no LLM invocation. Selection supplied only for bounded admission checking; persisted default remains legacy.

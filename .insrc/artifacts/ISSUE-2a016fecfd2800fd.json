@@ -22,7 +22,39 @@
     "epicSlug": "verify-indexed-impact-review-protocol-conformance",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd77fe334d3fb48b885139ce7d9648e998c851122a892cad842806fc604f0030",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:34:30.308Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "94bcfc51783b73fd",
+      "slug": "EPIC-94bcfc51783b73fd"
+    }
   },
   "body": {
     "title": "Verify indexed-impact review protocol conformance",

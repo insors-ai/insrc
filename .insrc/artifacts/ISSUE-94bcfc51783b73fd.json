@@ -22,7 +22,39 @@
     "epicSlug": "verify-source-only-review-protocol-conformance",
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ffa817df4421507179bf349974fb3c1260cda3783acfcc40e550b2e1280b5b44",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "unix:subho",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-30T11:34:28.999Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "94bcfc51783b73fd",
+      "slug": "EPIC-94bcfc51783b73fd"
+    }
   },
   "body": {
     "title": "Verify source-only review protocol conformance",

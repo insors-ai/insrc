@@ -1,0 +1,23 @@
+<!-- insrc:artifact ISSUE-e1dd5a3d2bddc64f -->
+
+# Approve bounded native review acceptance scope
+
+## Reproduction
+
+Run one real source-only plan-investigation-v1 review against completed native-inventory Story 3789fd85d0bbeb22/s1, using only commit 5530046288ad1dd7fc33af2a6308b76f237250ec relative to parent 97f3eb7ec683097ce640130e12b38d758d1331f1. Inspection found exactly 13 changed blocks across seven files: src/agent/providers/claude-investigation-events.ts, src/agent/providers/claude-investigation-probe.ts, src/agent/providers/claude-investigation-session.ts, src/agent/providers/cli-provider.ts, src/agent/providers/native-investigation-probe.ts, src/agent/providers/__tests__/claude-investigation-events.test.ts and src/agent/providers/__tests__/native-investigation-fixtures.ts. This is a bounded acceptance packet for native startup capture, not a complete re-review of the Story's other commits or the current fix Story.
+
+## Root cause
+
+The new engine refuses unapproved scope and generic HEAD differences. The existing BUILD-3789fd85d0bbeb22-s1 has four passed tasks, but records commit 39bb4c53e. Git uniquely resolves it to 39bb4c53e48fb22959786feff3ad6c5ef0679a66, the identical object; new admission requires the full object ID. Approval of this proposal explicitly authorizes that metadata-only expansion via canonical audited content update, preserving task evidence, without claiming a new BUILD approval or clearing previous findings. No normalization has been applied yet. Acceptance will use current approved readiness and Claude qualification under bounded test opt-in, restore legacy selection afterward, and retain actual checkpoint/publication/usage evidence. Default activation, final current-Story code review and legacy removal remain separate.
+
+## Fix intent
+
+{"kind":"review-scope-v1","attestations":[{"commitId":"5530046288ad1dd7fc33af2a6308b76f237250ec","parentId":"97f3eb7ec683097ce640130e12b38d758d1331f1","rootArtifactId":"LLD-3789fd85d0bbeb22-s1","storyId":"s1","buildArtifactId":"BUILD-3789fd85d0bbeb22-s1","sourceCommit":"39bb4c53e48fb22959786feff3ad6c5ef0679a66","exclusive":true,"blockIds":["block-dfb34fe9b1235d7854152ffff01876efe6d4aa293458bbc4db289b96155e83d3","block-e4092f557c4a85ba72d0c2896e22da053f928d406f8ae2046f5466a9b59b2e84","block-5a96885dc57eafec8f25beb93137e71ae2872521778d4f736d75823c4ebd0c91","block-8709be79390a6288ff1ffcf62d6541fe7c17e05b09801131e31b711d17a6531b","block-a1a7b0479afb991d1a99e03cfd065e6b164a3a15286949e24e8e56598f4f45b1","block-c84bdbb084527763a27e18fb8901ef1a1b2c687f16770dc0f8ca31250a2aa6a8","block-dab004e9dbbf272e992cd797ba8bde456046a0000c5294d5d2803c2777bc74ce","block-5beee66cfdce9d2f2150199d34c016468a6d2b164667fc4bb5be3c97ee864c79","block-cd3496c2cd5b1864b6fba241f41790bd1f425ccf8c3fa5e29d8907c348376a5d","block-00e2eac4da48a3816c16bb12a3bc64e5acb639e45954c271629de6566701989f","block-6976e570a73e169ef115df9cd252ca68c9fbb70d35aabb4c5f394ce46e76dc5b","block-47dfaf1e0b6bc2b22298f4277872ba17ed477970165669d268d4ba2ba2ef11ac","block-d9055348557491be910cbc2d5bfbeb614f557b8f25b62ce1992945c444160bd1"]}]}
+
+## Citations
+
+- **[[c1]]** `prior-artifact` `BUILD-3789fd85d0bbeb22-s1`
+- **[[c2]]** `prior-artifact` `LLD-3789fd85d0bbeb22-s1`
+- **[[c3]]** `prior-artifact` `PLAN-3789fd85d0bbeb22-s1`
+- **[[c4]]** `doc` `docs/review-investigation.md`
+- **[[c5]]** `step-output` `/tmp/real-review-scope-summary.json`

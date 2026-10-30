@@ -185,7 +185,8 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
         chosen = fallback.model;
         if (chosenEffort === '') chosenEffort = fallback.effort;
       } else if (chosen === undefined) {
-        return revert(family.cliKind !== undefined
+        // Only a vendor CLI family's model can be checked and approved; Ollama, and a CLI family on a host, take only their listed models.
+        return revert(family.cliKind !== undefined && family.host === undefined
           ? `insrc: '${model}' is not a model the daemon lists for ${family.displayName} — run 'insrc: Set model tier' to check and approve it — ${tier} tier not changed`
           : `insrc: '${model}' is not a listed ${family.displayName} model; only listed ${family.displayName} models can be used (${family.models.map((m) => m.id).join(', ')}) — ${tier} tier not changed`);
       }

@@ -175,3 +175,79 @@ test('manifest-key-map-engine.test.ts: native tier edits over the real merged ke
   await h.edit({ [K('runner')]: '', [K('model')]: '', [K('effort')]: '' });
   assert.deepEqual(h.writes, [[['models', 'tiers', 'core'], null]]);
 });
+
+/** DEFS plus a family that runs its CLI on Ollama (Epic b220bb61, Story s4): no tierDefaults,
+ *  a cloud model with efforts and an alias, a local one without. */
+const HOSTED: ModelDefinitions = {
+  ...DEFS,
+  families: [...DEFS.families, {
+    id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'FakeH',
+    models: [
+      { id: 'hc:cloud', aliases: ['hc'], efforts: ['low', 'max'], source: 'shipped', hosting: 'cloud' },
+      { id: 'hl:7b', aliases: [], efforts: [], source: 'shipped', hosting: 'local' },
+    ],
+  }],
+};
+const hosted = async () => HOSTED;
+const tierOf = (h: ReturnType<typeof harness>) => [h.native.get(K('runner')), h.native.get(K('model')), h.native.get(K('effort'))];
+
+test("manifest-key-map-engine.test.ts: an undeclared model for the host family is refused with 'only listed models can be used' and reverted; a vendor or host-less family keeps 'check and approve it'; a daemon refusal reverts", async () => {
+  let h = harness({ definitions: hosted });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('runner')]: 'ollama-claude', [K('model')]: 'gone:cloud' });
+  assert.deepEqual(h.writes, []);
+  assert.match(h.errors.join('\n'), /'gone:cloud' is not a listed FakeH model; only listed FakeH models can be used \(hc:cloud, hl:7b\) — core tier not changed/);
+  assert.doesNotMatch(h.errors.join('\n'), /check and approve/);
+  assert.deepEqual(tierOf(h), ['cli-codex', 'x-a', 'lo'], 'every changed key reverted');
+
+  // A vendor CLI family keeps the check-and-approve message.
+  h = harness({ definitions: hosted });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('model')]: 'x-new' });
+  assert.match(h.errors.join('\n'), /'x-new' is not a model the daemon lists for FakeX — run 'insrc: Set model tier' to check and approve it/);
+
+  // An older daemon answers without host: the same family is a vendor CLI family again.
+  const old: ModelDefinitions = { ...HOSTED, families: HOSTED.families.map((f) => {
+    if (f.host === undefined) return f;
+    const { host: _host, ...rest } = f;
+    return rest;
+  }) };
+  h = harness({ definitions: async () => old });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('runner')]: 'ollama-claude', [K('model')]: 'gone:cloud' });
+  assert.deepEqual(h.writes, []);
+  assert.match(h.errors.join('\n'), /'gone:cloud' is not a model the daemon lists for FakeH — run 'insrc: Set model tier' to check and approve it/);
+
+  // The daemon's own refusal of a host-family write reverts every changed key with its reason.
+  h = harness({ definitions: hosted, results: [{ ok: false, reason: 'model-not-supported', detail: 'models.tiers.core: hc:cloud is not supported' }] });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('runner')]: 'ollama-claude', [K('model')]: 'hc:cloud', [K('effort')]: '' });
+  assert.equal(h.writes.length, 1, 'the plugin accepts it and asks the daemon');
+  assert.match(h.errors.join('\n'), /daemon rejected the core tier — model-not-supported — models\.tiers\.core: hc:cloud is not supported/);
+  assert.deepEqual(tierOf(h), ['cli-codex', 'x-a', 'lo']);
+});
+
+test('manifest-key-map-engine.test.ts: a runner-only switch to the host family writes its first declared model as the whole tier and mirrors the native keys; an alias is written canonically; an effort the model does not take is refused', async () => {
+  // Runner only: the family's first declared model (no tierDefaults); the old effort 'lo' it does not take is dropped.
+  let h = harness({ definitions: hosted });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('runner')]: 'ollama-claude' });
+  assert.deepEqual(h.writes, [[['models', 'tiers', 'core'], { runner: 'ollama-claude', model: 'hc:cloud', effort: '' }]]);
+  assert.deepEqual(tierOf(h), ['ollama-claude', 'hc:cloud', ''], 'mirrored into the native keys');
+  assert.deepEqual(h.errors, []);
+
+  // A declared model by alias, with an effort it takes: the canonical id.
+  h = harness({ definitions: hosted });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('runner')]: 'ollama-claude', [K('model')]: 'hc', [K('effort')]: 'max' });
+  assert.deepEqual(h.writes, [[['models', 'tiers', 'core'], { runner: 'ollama-claude', model: 'hc:cloud', effort: 'max' }]]);
+  assert.equal(h.native.get(K('model')), 'hc:cloud');
+
+  // An effort the declared model does not take is refused and reverted.
+  h = harness({ definitions: hosted });
+  await h.engine.pullFromDaemon();
+  await h.edit({ [K('runner')]: 'ollama-claude', [K('model')]: 'hl:7b', [K('effort')]: 'max' });
+  assert.deepEqual(h.writes, []);
+  assert.match(h.errors.join('\n'), /effort 'max' is not accepted by hl:7b \(it takes none\)/);
+  assert.deepEqual(tierOf(h), ['cli-codex', 'x-a', 'lo']);
+});

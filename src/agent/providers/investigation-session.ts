@@ -7,6 +7,8 @@ import type { QualifiedInvestigationSessionBinding } from '../../shared/types.js
 import type { InvestigationTools,InvestigationTurnV1,InvestigationState } from '../../workflow/code-review/investigation/continuation-types.js';
 import { digestValue,snapshotValue,freezeValue } from '../../workflow/code-review/investigation/identity.js';
 import { scopedReviewCatalogDigest } from '../../shared/review-investigation-catalog.js';
+import { boundaryEvidenceValid, CLAUDE_V2_ADAPTER, REVIEW_PROTOCOL_SCHEMA_DIGEST } from '../../shared/review-isolation-evidence.js';
+import type { CapabilityBoundaryEvidence } from '../../shared/review-isolation-evidence.js';
 
 export class InvestigationQualificationError extends Error {
  constructor(message:string){super(message);this.name='InvestigationQualificationError';}
@@ -19,7 +21,7 @@ export interface NativeAdapterIdentity {
  readonly binary:IsolationFile;readonly runtimeFiles:readonly IsolationFile[];
  readonly profileDigest:string;readonly catalogDigest:string;readonly launchDigest:string;
 }
-export interface EffectiveInvestigationIsolation {
+export interface EffectiveInvestigationIsolation extends CapabilityBoundaryEvidence {
  readonly cwd:string;readonly configFiles:readonly IsolationFile[];
  readonly builtinTools:readonly string[];readonly inheritedConfigSources:readonly string[];
  readonly mcpServers:readonly string[];readonly plugins:readonly string[];readonly hooks:readonly string[];
@@ -86,6 +88,8 @@ function inspectIsolationData(input:NativeIsolationEvidence,expected:NativeAdapt
  supportedAdapterVersions:readonly string[],now=Date.now()){
  const evidence=snapshotValue(input),identity=snapshotValue(expected),repo=realpathSync(repoPath),effective=evidence.effective;
  if(evidence.version!==1||!supportedAdapterVersions.includes(identity.adapterVersion)||!identity.binaryVersion.trim()||digestValue(evidence.identity)!==digestValue(identity))refuse('Unsupported or unproven adapter/binary/profile identity');
+ if(!boundaryEvidenceValid(identity.adapterVersion,effective))refuse('Unsupported or incomplete isolation boundary evidence');
+ if(identity.adapterVersion===CLAUDE_V2_ADAPTER&&effective.protocolTools?.[0]?.schemaDigest!==REVIEW_PROTOCOL_SCHEMA_DIGEST)refuse('Protocol output schema differs from qualification');
  if(![identity.profileDigest,identity.catalogDigest,identity.launchDigest].every(d=>/^[a-f0-9]{64}$/.test(d))||identity.catalogDigest!==scopedReviewCatalogDigest(indexed)
   ||digestValue(effective.catalog)!==scopedReviewCatalogDigest(indexed))refuse('Effective scoped tool catalogue differs');
  if([effective.builtinTools,effective.inheritedConfigSources,effective.plugins,effective.hooks,effective.repositoryInstructions,effective.credentialCopies].some(values=>!Array.isArray(values)||values.length)

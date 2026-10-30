@@ -33,6 +33,8 @@ export interface NativeProbeInvocationIdentity {
   readonly attemptId: string; readonly launchDigest: string; readonly effectiveDigest: string;
   readonly binaryVersion: string;
   readonly sourceMode?: 'source-only' | 'indexed-impact' | undefined;
+  readonly adapterVersion?: string | undefined;
+  readonly schemaDigest?: string | undefined;
 }
 
 /** A distinct synthetic-only bootstrap. Never calls production qualification
@@ -149,7 +151,8 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
       check: 'cancellation-exit', verdict: 'observed-allowed', observationDigest: digestValue({ aborted: result.aborted, exitSignal: result.exitSignal, durationMs: result.durationMs }),
       detail: 'Host cancellation followed by actual process-group exit' });
     if (!rawOverflow && !result.outputLimitExceeded && !result.observerFailed && !fixture.error())
-      observations.push(...(input.collect?.(result, { ...provenance, binaryVersion: context.identity.binaryVersion, sourceMode: context.sourceMode }) ?? []));
+      observations.push(...(input.collect?.(result, { ...provenance, binaryVersion: context.identity.binaryVersion, sourceMode: context.sourceMode,
+        adapterVersion: context.identity.adapterVersion, schemaDigest: digestValue(schema) }) ?? []));
     let canaries: InvestigationProbeExport['canaries'];
     if (paired) {
       const controlSignals = fixture.canaries.signals('control'), restrictedSignals = fixture.canaries.signals('restricted');

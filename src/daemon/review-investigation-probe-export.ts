@@ -77,7 +77,7 @@ export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExp
  if(report.candidate){
   if(!report.status.identity)throw Error('Missing pinned probe identity');
   inspectUnsignedIsolationEvidence(report.candidate,report.status.identity,report.status.repo,report.status.sourceMode==='indexed-impact',
-   ['claude-scoped-v1','codex-scoped-v1']);
+   ['claude-scoped-v1','claude-scoped-v2','codex-scoped-v1']);
   if((report.evidenceFiles??[]).filter(f=>f.kind==='native-output'||f.kind==='checkpoint-journal').length!==2)throw Error('Candidate lacks independent raw evidence');
   const journal=report.evidenceFiles!.find(f=>f.kind==='checkpoint-journal')!,output=report.evidenceFiles!.find(f=>f.kind==='native-output')!;
   const events=readFileSync(journal.path,'utf8').split('\n').filter(Boolean).map(line=>JSON.parse(line) as {value?:{kind?:string;receipt?:{sequence?:number}}});

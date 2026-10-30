@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { randomUUID } from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync, openSync, closeSync, fsyncSync, fstatSync, constants, realpathSync, rmSync } from 'node:fs';
+import { CLAUDE_INVESTIGATION_SETTINGS } from '../agent/providers/claude-investigation-session.js';
 import { tmpdir } from 'node:os';
 import { join, relative, isAbsolute } from 'node:path';
 import { createServer } from 'node:net';
@@ -135,7 +136,7 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
     });
     const configuration = nativeReviewMcpConfiguration(cwd, options.sourceMode === 'indexed-impact');
     writeFileSync(join(cwd, 'investigation-mcp.json'), JSON.stringify(configuration), { mode: 0o600 });
-    writeFileSync(join(cwd, 'investigation-settings.json'), '{}', { mode: 0o600 });
+    writeFileSync(join(cwd, 'investigation-settings.json'), JSON.stringify(CLAUDE_INVESTIGATION_SETTINGS), { mode: 0o600 });
     signal.addEventListener('abort', onAbort, { once: true });
     signal.throwIfAborted();
     return { root, cwd, turn, tools, binding: grant.binding, bindingPath: broker.bindingPath,

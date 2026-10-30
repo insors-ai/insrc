@@ -8,7 +8,8 @@ import { codexStrictSchema } from '../structured-output.js';
 import { createInvestigationPolicy } from '../../../workflow/code-review/investigation/continuation-policy.js';
 import { CliProvider } from '../cli-provider.js';
 import { tmpdir } from 'node:os';
-import { runClaudeInvestigationSession,nativeReviewMcpConfiguration,claudeInvestigationArgs,claudeInvestigationLaunchDigest,nativeInvestigationEnvironment } from '../claude-investigation-session.js';
+import { runClaudeInvestigationSession,nativeReviewMcpConfiguration,claudeInvestigationArgs,claudeInvestigationLaunchDigest,nativeInvestigationEnvironment,CLAUDE_INVESTIGATION_ADAPTER,CLAUDE_INVESTIGATION_SETTINGS } from '../claude-investigation-session.js';
+import { CAPABILITY_BOUNDARY, ISOLATION_CHECKS, isolationBasisFor } from '../../../shared/review-isolation-evidence.js';
 import { qualifyInvestigationAdapter,createQualifiedInvestigationBinding,investigationFileDigest,drainInvestigationInvocation,ISOLATION_DENIAL_PROBES } from '../investigation-session.js';
 import type { NativeIsolationEvidence } from '../investigation-session.js';
 import { scopedReviewCatalogDigest,scopedReviewToolCatalog } from '../../../shared/review-investigation-catalog.js';
@@ -42,17 +43,18 @@ export async function exerciseNativeInvestigationSessions(kind:'claude'|'codex')
    f.provider.getReviewBudgetProfile=()=>profile;const policy=createInvestigationPolicy(f.provider);
    const context={...f.context,policy,backend:{...f.context.backend,qualification:{...f.context.backend.qualification,profileDigest:digestValue(profile)}}};
    const manifest={...f.manifest,policy,policyDigest:policy.digest},baseTurn={...f.turn,policyDigest:policy.digest};
-   const run=codex?runCodexInvestigationSession:runClaudeInvestigationSession,buildArgs=codex?codexInvestigationArgs:claudeInvestigationArgs,version=kind+'-scoped-v1';
+   const run=codex?runCodexInvestigationSession:runClaudeInvestigationSession,buildArgs=codex?codexInvestigationArgs:claudeInvestigationArgs,version=codex?'codex-scoped-v1':CLAUDE_INVESTIGATION_ADAPTER;
    const bin=join(f.repo,`fake-${kind}.mjs`);writeFileSync(bin,`#!${process.execPath}\n${actor}`);chmodSync(bin,0o700);writeFileSync(join(f.repo,'mode.txt'),mode);
    const schema=JSON.parse(JSON.stringify(InvestigationReplySchema)),modelArgs:string[]=[],args=buildArgs(schema,modelArgs,cwd,false),mcp=nativeReviewMcpConfiguration(cwd,false);
    if(codex){assert.ok(args.includes('--ignore-user-config'));assert.ok(args.includes('--ignore-rules'));assert.ok(args.includes('--strict-config'));for(const name of CODEX_INVESTIGATION_DISABLED_FEATURES)assert.ok(args.includes(name));
     const table=args.find(a=>a.startsWith('mcp_servers='))!;const parsed=JSON.parse(execFileSync('python3',['-c','import tomllib,json,sys; print(json.dumps(tomllib.loads(sys.stdin.read())))'],{input:table,encoding:'utf8'}));assert.deepEqual(parsed.mcp_servers['insrc-scoped-review'].args,mcp.mcpServers['insrc-scoped-review'].args);
    }else{assert.equal(args[args.indexOf('--output-format')+1],'stream-json');assert.ok(args.includes('--verbose'));assert.ok(args.includes('--include-hook-events'));assert.ok(!args.includes('--safe-mode'));assert.ok(!args.includes('--bare'));assert.ok(args.includes('--strict-mcp-config'));assert.equal(args[args.indexOf('--tools')+1],'');assert.equal(args[args.indexOf('--setting-sources')+1],'');assert.equal(args[args.indexOf('--permission-mode')+1],'dontAsk');}
-   const settings=join(cwd,'investigation-settings.json'),mcpFile=join(cwd,'investigation-mcp.json');if(!codex)writeFileSync(settings,'{}',{mode:0o600});writeFileSync(mcpFile,JSON.stringify(mcp),{mode:0o600});
+   const settings=join(cwd,'investigation-settings.json'),mcpFile=join(cwd,'investigation-mcp.json');if(!codex)writeFileSync(settings,JSON.stringify(CLAUDE_INVESTIGATION_SETTINGS),{mode:0o600});writeFileSync(mcpFile,JSON.stringify(mcp),{mode:0o600});
    const file=(path:string)=>({path:realpathSync(path),digest:investigationFileDigest(realpathSync(path))});
    const command=mcp.mcpServers['insrc-scoped-review'],entry=command.args.find(p=>p.endsWith('/insrc-review-bridge.ts')||p.endsWith('/insrc-review-bridge.js'))!;
    const identity={kind,adapterVersion:version,binaryVersion:'scripted-fixture',binary:file(bin),runtimeFiles:[file(command.command),file(entry)],profileDigest:digestValue(profile),catalogDigest:scopedReviewCatalogDigest(false),launchDigest:codex?codexInvestigationLaunchDigest(args,cwd,schema):claudeInvestigationLaunchDigest(args,cwd)};
-   const effective={cwd,configFiles:[...(!codex?[file(settings)]:[]),file(mcpFile)],builtinTools:[],inheritedConfigSources:[],mcpServers:['insrc-scoped-review'],plugins:[],hooks:[],repositoryInstructions:[],credentialCopies:[],auth:'existing-cli-oauth' as const,catalog:JSON.parse(JSON.stringify(scopedReviewToolCatalog(false))) as unknown[]};
+   const effective={cwd,configFiles:[...(!codex?[file(settings)]:[]),file(mcpFile)],builtinTools:[],inheritedConfigSources:[],mcpServers:['insrc-scoped-review'],plugins:[],hooks:[],repositoryInstructions:[],credentialCopies:[],auth:'existing-cli-oauth' as const,catalog:JSON.parse(JSON.stringify(scopedReviewToolCatalog(false))) as unknown[],
+    ...(!codex?{boundary:CAPABILITY_BOUNDARY,protocolTools:[{name:'StructuredOutput' as const,schemaDigest:digestValue(schema)}],evidenceBasis:ISOLATION_CHECKS.map(check=>({check,basis:isolationBasisFor(check),policyVersion:1 as const,rawDigests:[digestValue('scripted-fixture-only')]}))}:{})};
    const evidence:NativeIsolationEvidence={version:1,identity,effective,validUntil:Date.now()+60000,trace:{effectiveDigest:digestValue(effective),events:[...ISOLATION_DENIAL_PROBES.map(capability=>({kind:'denied' as const,capability})),{kind:'block-ack',sequence:1},{kind:'block-ack',sequence:2},{kind:'cancel-requested'},{kind:'process-exited',cancelled:true}]}};
    const q=await qualifyInvestigationAdapter(`fixture:${kind}-isolation`,identity,f.repo,false,{origin:'scripted-fixture',read:async()=>evidence},[version]);assert.equal(q.origin,'scripted-fixture');
    const broad={...effective,builtinTools:['exec_command'],mcpServers:['insrc-scoped-review','inherited-insrc']};

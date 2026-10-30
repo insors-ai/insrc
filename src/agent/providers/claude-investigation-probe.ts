@@ -6,6 +6,8 @@ import { createHash } from 'node:crypto';
 import { PROBE_OBSERVATION_BYTES } from '../../shared/review-investigation-probe.js';
 import { scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
 import { readClaudeInvestigationEvents } from './claude-investigation-events.js';
+import { CLAUDE_V2_ADAPTER, REVIEW_PROTOCOL_SCHEMA_DIGEST } from '../../shared/review-isolation-evidence.js';
+import { digestValue } from '../../workflow/code-review/investigation/identity.js';
 
 export const CLAUDE_PROBE_TELEMETRY_VERSION = '2.1.310 (Claude Code)';
 
@@ -27,13 +29,17 @@ export function collectClaudeProbeObservations(result: ProcessGroupResult, ident
   const init = events.find(event => event['type'] === 'system' && event['subtype'] === 'init');
   if (!init) return missing('Claude result envelope does not expose complete effective inventory or independent denial probes');
   const observations = missing('Claude init hints do not prove hooks, instruction/config sources, credential handling and every required denial');
+  const v2 = identity.adapterVersion === CLAUDE_V2_ADAPTER;
+  const schemaBound = v2 && identity.schemaDigest === REVIEW_PROTOCOL_SCHEMA_DIGEST && init['claude_code_version'] === '2.1.310';
+  const expected = scopedReviewToolCatalog(identity.sourceMode === 'indexed-impact').map(t => `mcp__insrc-scoped-review__${t.name}`);
   const add = (check: InvestigationProbeObservation['check'], detail: string) => {
     if (!observations.some(o => o.check === check)) observations.push({ ...common, check, verdict: 'observed-allowed', detail });
   };
   if (Array.isArray(init['tools'])) {
     const tools = init['tools'].filter((tool): tool is string => typeof tool === 'string');
-    const broad = tools.filter(tool => !tool.startsWith('mcp__insrc-scoped-review__'));
+    const broad = tools.filter(tool => v2 ? !expected.includes(tool) && !(schemaBound && tool === 'StructuredOutput') : !tool.startsWith('mcp__insrc-scoped-review__'));
     if (broad.length) add('builtin-tools', 'Native init advertises tools outside the dedicated scoped MCP server');
+    if (v2 && new Set(tools).size !== tools.length) add('builtin-tools', 'Native init advertises duplicate capabilities');
     if (tools.includes('Bash') || tools.includes('Shell')) add('shell', 'Native init advertises a shell tool');
     if (tools.includes('Read') || tools.includes('Glob') || tools.includes('Grep')) add('raw-filesystem', 'Native init advertises unscoped filesystem tools');
     if (tools.includes('WebFetch') || tools.includes('WebSearch')) add('network', 'Native init advertises unscoped network tools');
@@ -47,8 +53,14 @@ export function collectClaudeProbeObservations(result: ProcessGroupResult, ident
   if (identity.sourceMode !== undefined && typeof init['session_id'] === 'string' &&
     Array.isArray(init['tools']) && init['tools'].every(t => typeof t === 'string')) {
     const actual = init['tools'] as string[];
-    const expected = scopedReviewToolCatalog(identity.sourceMode === 'indexed-impact').map(t => `mcp__insrc-scoped-review__${t.name}`);
-    if (actual.length === expected.length && expected.every(t => actual.includes(t))) {
+    const available = v2 ? [...expected, 'StructuredOutput'] : expected;
+    const nativeV2 = schemaBound && init['permissionMode'] === 'dontAsk' &&
+      Array.isArray(init['plugins']) && init['plugins'].length === 0 &&
+      Array.isArray(init['skills']) && init['skills'].length === 0 &&
+      Array.isArray(init['slash_commands']) && init['slash_commands'].length === 0 &&
+      Array.isArray(init['mcp_servers']) && init['mcp_servers'].length === 1 &&
+      digestValue(init['mcp_servers']) === digestValue([{ name: 'insrc-scoped-review', status: 'connected', source: 'dynamic' }]);
+    if ((!v2 || nativeV2) && actual.length === available.length && new Set(actual).size === actual.length && available.every(t => actual.includes(t))) {
       for (const check of ['builtin-tools', 'shell', 'raw-filesystem', 'network'] as const)
         observations.push({ ...common, check, verdict: 'observed-denied', detail: 'Complete native startup tool inventory exposes only the pinned scoped bridge; no OS-level sandbox claim' });
     }

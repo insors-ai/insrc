@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { z } from 'zod';
 import { reviewBudgetDeclarationSchema } from './review-controller-budget-schema.js';
+import { ISOLATION_CHECKS, boundaryEvidenceFields, boundaryEvidenceValid } from './review-isolation-evidence.js';
 
 export const PROBE_ATTEMPT_MS = 300_000;
 export const PROBE_CONTEXT_TOKENS = 128_000;
@@ -28,11 +29,7 @@ export const investigationProbeCommandSchema = z.discriminatedUnion('operation',
 ]);
 export type InvestigationProbeCommand = z.infer<typeof investigationProbeCommandSchema>;
 
-export const PROBE_REQUIRED_CHECKS = [
-  'effective-inventory', 'raw-filesystem', 'shell', 'network', 'approval', 'cross-run',
-  'builtin-tools', 'user-mcp', 'project-mcp', 'plugins', 'hooks', 'repository-instructions',
-  'durable-progress', 'cancellation-exit',
-] as const;
+export const PROBE_REQUIRED_CHECKS = ISOLATION_CHECKS;
 export const probeObservationSchema = z.object({
   check: z.enum(PROBE_REQUIRED_CHECKS),
   verdict: z.enum(['observed-denied', 'observed-allowed', 'unverifiable']),
@@ -46,6 +43,7 @@ export type InvestigationProbeObservation = z.infer<typeof probeObservationSchem
 export const probeCandidateSchema = z.object({
   version: z.literal(1), identity: probeIdentitySchema,
   effective: z.object({ cwd: text, configFiles: z.array(file).min(1).max(64),
+    ...boundaryEvidenceFields,
     builtinTools: z.array(text).max(128), inheritedConfigSources: z.array(text).max(128),
     mcpServers: z.array(text).max(128), plugins: z.array(text).max(128), hooks: z.array(text).max(128),
     repositoryInstructions: z.array(text).max(128), credentialCopies: z.array(text).max(128),
@@ -57,7 +55,10 @@ export const probeCandidateSchema = z.object({
     z.object({ kind: z.literal('cancel-requested') }).strict(),
     z.object({ kind: z.literal('process-exited'), cancelled: z.literal(true) }).strict(),
   ])).max(256) }).strict(), validUntil: time,
-}).strict();
+}).strict().superRefine((value, ctx) => {
+  if (!boundaryEvidenceValid(value.identity.adapterVersion, value.effective))
+    ctx.addIssue({ code: 'custom', message: 'Unsupported or incomplete isolation boundary evidence' });
+});
 
 export const probeUsageSchema = z.object({
   modelCalls: time.nullable(), inputTokens: time.nullable(), outputTokens: time.nullable(),

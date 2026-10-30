@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s2",
     "createdAt": "2026-10-30T05:35:31.740Z",
-    "updatedAt": "2026-10-30T05:41:21.989Z",
+    "updatedAt": "2026-10-30T05:46:03.459Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -346,6 +346,92 @@
               },
               {
                 "title": "ollama-target.test.ts: a local model skips /api/me, a listed model skips /api/show, and every request goes to target.host",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5388b6197",
+        "ranAt": "2026-10-30T05:46:03.459Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cli-ollama.test.ts: a failing pre-run check on each entry point throws OllamaTargetError, logs the cause and starts no claude process",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+                "title": "cli-ollama.test.ts: a failing pre-run check on each entry point throws OllamaTargetError, logs the cause and starts no claude process",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+                "title": "cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+                "title": "cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3642,
+            "titles": [
+              {
+                "title": "cli-ollama.test.ts: every claude entry point on an Ollama-targeted provider starts claude with --model <id> and the three Ollama variables, without CLAUDE_CODE_OAUTH_TOKEN, and leaves process.env unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: the bounded path on an Ollama-targeted provider gets the allow-list plus the three Ollama variables",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: an Ollama target with kind codex or without a model is refused at construction",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: a failing pre-run check on each entry point throws OllamaTargetError, logs the cause and starts no claude process",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check",
                 "result": "pass"
               }
             ],

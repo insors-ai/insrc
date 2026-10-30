@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s2",
     "createdAt": "2026-10-30T05:35:31.740Z",
-    "updatedAt": "2026-10-30T05:41:21.989Z",
+    "updatedAt": "2026-10-30T05:46:03.459Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "New checkOllamaTarget pre-run check with four named causes (ollama-unreachable, model-unavailable, not-signed-in, account-unavailable per Ollama's WhoamiHandler); verified against the local Ollama (glm-5.3:cloud and qwen3.8:27b pass, a missing model gives model-unavailable).",
+    "summary": "An Ollama-targeted CliProvider runs the pre-run check (injectable seam, default checkOllamaTarget) before every claude spawn, logs a failure with its cause, starts no process and never retries an OllamaTargetError; vendor providers never run it. t1's tests pass a stub check.",
     "testRecord": {
       "md": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/TESTS.md"
     },
@@ -30,44 +34,44 @@
           "file": "src/agent/providers/__tests__/cli-ollama.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:41:21.989Z"
+        "timestamp": "2026-10-30T05:46:03.459Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:41:21.989Z"
+        "timestamp": "2026-10-30T05:46:03.459Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:41:21.989Z"
+        "timestamp": "2026-10-30T05:46:03.459Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/ollama-target.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:41:21.989Z"
+        "timestamp": "2026-10-30T05:46:03.459Z"
       },
       {
         "target": {
           "file": "src/agent/providers/ollama-target.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:41:21.989Z"
+        "timestamp": "2026-10-30T05:46:03.459Z"
       },
       {
         "target": {
           "file": "src/agent/providers/ollama.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T05:41:21.989Z"
+        "timestamp": "2026-10-30T05:46:03.459Z"
       }
     ],
-    "commit": "15155ec65"
+    "commit": "5388b6197"
   }
 }

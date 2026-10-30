@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -87,3 +87,31 @@ Run at 2026-10-30T05:41:21.989Z on commit `15155ec65`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/agent/providers/__tests__/ollama-target.test.ts` | 0 | 4 | 1 s |  |
+
+## t3
+
+Run at 2026-10-30T05:46:03.459Z on commit `5388b6197`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: cli-ollama.test.ts: a failing pre-run check on each entry point throws OllamaTargetError, logs the cause and starts no claude process**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cli-ollama.test.ts: a failing pre-run check on each entry point throws OllamaTargetError, logs the cause and starts no claude process | `src/agent/providers/__tests__/cli-ollama.test.ts` |
+
+**unit: cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap | `src/agent/providers/__tests__/cli-ollama.test.ts` |
+
+**unit: cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check | `src/agent/providers/__tests__/cli-ollama.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/cli-ollama.test.ts` | 0 | 7 | 3.6 s |  |

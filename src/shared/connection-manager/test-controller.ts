@@ -1,8 +1,8 @@
 /** Workbench-memory probe ownership. Terminal replies are not worker-drain notifications. */
 import { randomUUID } from 'node:crypto';
-import type { ConnectionKey, DraftTestRequest } from '../connection-management.js';
+import type { ConnectionKey, DraftTestRequest, ManagementErrorCode } from '../connection-management.js';
 import type { ConnectionDraft } from './draft.js';
-import { decodeDraftTestResult } from './wire.js';
+import { decodeDraftTestResult, decodeMutationOutcome } from './wire.js';
 
 export interface DraftTestIdentity {readonly key:ConnectionKey;readonly daemonEpoch:string;readonly viewGeneration:number}
 /** Captured privileged transport. Neither this object nor its methods cross into the renderer. */
@@ -17,6 +17,17 @@ interface Reservation {
  requestId:string;pending:boolean;canceled:boolean;unsubscribe:(()=>void)|null;
 }
 const messages:Record<DraftTestView['status'],string>={idle:'',testing:'Testing connection…',reachable:'Connection is reachable.',failed:'Connection test failed.',timeout:'Connection test timed out.',canceled:'Connection test canceled.',unavailable:'Connection test unavailable. Retry after cleanup completes.'};
+const rejectedMessages:Partial<Record<ManagementErrorCode,string>>={
+ 'invalid-input':'Check the connection settings. File and schema paths must point to readable files inside the selected repository.',
+ 'busy':'Connection test is busy. Wait for earlier tests to finish, then retry.',
+ 'conflict':'The connection changed. Refresh it and test again.',
+ 'not-found':'The connection no longer exists. Refresh and reopen it.',
+ 'secret-unavailable':'Connection credentials are unavailable. Re-enter them and retry.',
+ 'registry-unreadable':'The connection registry cannot be read. Check the daemon diagnostics.',
+ 'recovery-required':'The connection registration requires recovery. Check the daemon diagnostics.',
+ 'upgrade-required':'The connected daemon does not support this connection test. Update or reconnect it.',
+ 'session-expired':'The connection session expired. Reconnect and test again.'
+};
 const sameKey=(a:ConnectionKey,b:ConnectionKey):boolean=>a.repoRoot===b.repoRoot&&a.scope===b.scope&&a.id===b.id;
 const sameView=(a:DraftTestIdentity|null,b:DraftTestIdentity):boolean=>!!a&&sameKey(a.key,b.key)&&a.daemonEpoch===b.daemonEpoch&&a.viewGeneration===b.viewGeneration;
 const route=(key:ConnectionKey):string=>JSON.stringify([key.repoRoot,key.scope]);
@@ -31,8 +42,8 @@ export class ConnectionDraftTests {
  get view():DraftTestView{return this.#state;}
  onChange(listener:()=>void):{dispose():void}{this.#admit();this.#listeners.add(listener);return{dispose:()=>{this.#listeners.delete(listener);}};}
  #admit():void {if(this.#disposed)throw new DraftTestStateError('disposed');}
- #publish(status:DraftTestView['status'],cleanupUnverified=false,tookMs:number|null=null):void {
-  this.#state=Object.freeze({status,tookMs,message:messages[status],cleanupUnverified});
+ #publish(status:DraftTestView['status'],cleanupUnverified=false,tookMs:number|null=null,message=messages[status]):void {
+  this.#state=Object.freeze({status,tookMs,message,cleanupUnverified});
   for(const listener of [...this.#listeners])try{listener();}catch{/* View publication cannot release a probe. */}
  }
  /** Root, selection, navigation and close all invalidate the previous local view, including A→B→A. */
@@ -69,7 +80,18 @@ export class ConnectionDraftTests {
   try {
    const response=source.run({requestId,draftRevision:revision,key:input.key,...(input.expectedRevision?{expectedRevision:input.expectedRevision}:{}),publicPatch:input.publicPatch,credentials:input.credentials});
    this.#publish('testing');
-   const result=decodeDraftTestResult(await response,{key:input.key,daemonEpoch:identity.daemonEpoch,requestId,draftRevision:revision});
+   const reply=await response;
+   let rejection:ReturnType<typeof decodeMutationOutcome>|undefined;
+   try{rejection=decodeMutationOutcome(reply);}catch{/* A normal probe result uses its own strict codec. */}
+   if(rejection?.status==='rejected'){
+    // No worker starts for a fresh rejected request. Busy or an earlier unknown attempt
+    // still needs authoritative admission on the same captured transport.
+    const uncertain=!!previous||rejection.code==='busy';
+    if(!uncertain&&this.#reservations.get(slot)===r)this.#reservations.delete(slot);
+    if(current())this.#publish(rejection.code==='busy'?'unavailable':'failed',uncertain,null,rejectedMessages[rejection.code]??'The connection test was rejected. Check the connection settings and retry.');
+    return this.#state;
+   }
+   const result=decodeDraftTestResult(reply,{key:input.key,daemonEpoch:identity.daemonEpoch,requestId,draftRevision:revision});
    if(current())this.#publish(result.status,result.status!=='reachable',result.tookMs);
    // Reachable is produced only after child close. Other statuses may precede cleanup.
    if(result.status==='reachable'&&this.#reservations.get(slot)===r)this.#reservations.delete(slot);

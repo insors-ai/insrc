@@ -1,0 +1,9 @@
+# Connection Test rejection correction — 2026-10-30
+
+The installed daemon was enabled. A read-only real IPC test reached the repo-contained Parquet fixture successfully. The original external ~/work/temp sample was rejected before a worker started: generic path exceptions became recovery-required; the TypeScript client tried to decode that rejection as a worker result and displayed unverified cleanup.
+
+Path validation now returns the existing invalid-input code for missing, unreadable, outside-root or malformed SQLite paths. Cancellation remains an abort, and repo containment is retained. The client strictly decodes structured rejection codes and displays fixed actionable copy without exposing the raw error. A fresh non-busy rejection releases its local reservation. Busy and previous uncertain attempts retain their captured source and cleanup warning; malformed replies and transport failures remain uncertain. IPC fields and codes are unchanged.
+
+Relevant validation: root and extension TypeScript checks passed; 45 connection-manager/backend probe tests passed, plus the runtime path test passed with malformed URL coverage. The real default-enabled Parquet integration verifies outside-root rejection followed by successful Test/Save/reopen/remove. New client coverage verifies private-message redaction, retry success, busy handling and retained source after earlier uncertainty. Backend build and package verification are recorded below when complete.
+
+For manual testing select the insrc repository, Parquet driver and test-fixtures/connection-management/v1/manual-orders.parquet. External paths remain rejected. VS Code 0.5.19 needs installation and Reload Window; the backend change needs the daemon updater/restart. We did not restart the daemon or perform live UI acceptance. Historical release-audit and external prerequisite statuses remain pending.

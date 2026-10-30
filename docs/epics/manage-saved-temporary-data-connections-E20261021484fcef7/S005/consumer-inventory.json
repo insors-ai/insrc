@@ -22,7 +22,7 @@
     "src/shared/connection-manager/draft.ts": "67f2cb26a528ac5dd6b4ed08bac912a21da95303525f52a65f433132dde84cd2",
     "src/shared/connection-manager/model.ts": "baaf42ea685f34280ae6becef7e21acfa6df68826b7b5a1bcfb6245e4d7c7ca3",
     "src/shared/connection-manager/removal.ts": "e265879e80342c4d89096f010da62b68cc8b2cd1117463abc04842c6eb7cc545",
-    "src/shared/connection-manager/test-controller.ts": "70d0fd7e655cac713e5a83bd5487c67d81a6b8b66145355736b96a0893ec4d20",
+    "src/shared/connection-manager/test-controller.ts": "05aec801b1992e3e6ebfe54c1f46612ec547d4e65f05bdba4ef34330614753f2",
     "src/shared/connection-manager/wire.ts": "5ce1aee76bab3ea7be696b4ec8a0454217c42243d5a9df6d7edaee1500215820",
     "src/shared/ipc-client.ts": "a06f7a2ca4ec1604c515f08b0eff028c5d32fb79bdffdf6bd4f315e0a25e9617",
     "vscode-plugin/src/connections/gateway.ts": "df8de3e005eb0f48c71abfaeab02e7986a9cfe17becc44889aebaf81bb660042",

@@ -29,6 +29,7 @@ async function fixture(){
  const path=join(a,'fixture.csv');writeFileSync(path,'id,name\n1,fixture\n');const bytes=readFileSync(path);
  const supervisor=new DraftTestSupervisor(),lanes:PersistentIpcLane[]=[],calls:{request:DraftTestRequest;connection:string;claimed:boolean}[]=[],cancels:string[]=[];
  const runtime=new ConnectionSessionRpc({enabled:async()=>true,isRegistered:async root=>[a,b].includes(root),createOverlay:(root,handle,context)=>createTemporaryOverlay(root,handle,context),dropOverlay:overlay=>overlay.close()});
+ let rejected:unknown=null;
  let preparation:ReturnType<typeof deferred>|null=null,reply:ReturnType<typeof deferred>|null=null,change:((r:DraftTestResult)=>DraftTestResult)|null=null;
  const gates:ReturnType<typeof deferred>[]=[];
  const handlers:RpcHandlers=Object.fromEntries(CONNECTION_SESSION_METHODS.map(m=>[m,(p,c)=>runtime.call(m,p,c!)]));
@@ -36,6 +37,7 @@ async function fixture(){
  handlers[prefix+'test']=async(p,c)=>{
   const request=p as DraftTestRequest;assert.ok(c);calls.push({request,connection:c.connectionIdentity,claimed:!!c.connectionSession});
   if(request.key.scope==='temporary')await runtime.accessFor(c,request.key.repoRoot);else assert.equal(c.connectionSession,undefined);
+  if(rejected!==null)return rejected;
   const wait=preparation,delivery=reply,alter=change;
   const result=await supervisor.run(p,request.key.scope==='temporary'?await runtime.probeContext(c,request):c,async()=>{
    if(wait)await wait.promise;
@@ -56,6 +58,7 @@ async function fixture(){
   const d=new ConnectionDraft(descriptor,k,current);if(!edit)d.setField(['path'],path);return d;
  };
  return{a,b,owner,tests,supervisor,lanes,calls,cancels,key,identity,draft,
+  reject:(value:unknown)=>{rejected=value;},
   holdPreparation:()=>{preparation=deferred();gates.push(preparation);return preparation;},clearPreparation:()=>{preparation=null;},
   holdReply:()=>{reply=deferred();gates.push(reply);return reply;},clearReply:()=>{reply=null;},change:(fn:typeof change)=>{change=fn;},
   close:async()=>{for(const g of gates)g.resolve();tests.dispose();owner.dispose();await owner.whenDisposed();for(const l of lanes)l.dispose();await supervisor.shutdown();await server.close();await runtime.close();assert.deepEqual(readFileSync(path),bytes);rmSync(dir,{recursive:true,force:true});}};
@@ -130,5 +133,21 @@ test('CM-S5-TEST-TS: real supervisor timeout keeps its transport and never treat
   const count=f.lanes.length;await f.tests.test(d,i);assert.equal(f.tests.view.status,'unavailable');assert.equal(f.supervisor.activeCount,1);
   assert.equal(f.lanes.length,count);assert.equal(f.calls[0]!.connection,f.calls[1]!.connection);
   gate.resolve();f.clearPreparation();await until(()=>f.supervisor.activeCount===0);await f.tests.test(d,i);assert.equal(f.tests.view.status,'reachable');
+ }finally{await f.close();}
+});
+
+
+test('CM-S5-TEST-TS: known input rejection is actionable without false worker cleanup, while prior uncertainty keeps its source',async()=>{
+ const f=await fixture();try{
+  const d=f.draft(),i=f.identity();f.tests.setView(i);
+  const rejected={status:'rejected',code:'invalid-input',message:'PRIVATE_PATH_EXCEPTION_CANARY'};
+  f.reject(rejected);await f.tests.test(d,i);
+  assert.equal(f.tests.view.status,'failed');assert.equal(f.tests.view.cleanupUnverified,false);assert.match(f.tests.view.message,/inside the selected repository/);assert.equal(f.supervisor.activeCount,0);assert.ok(!JSON.stringify(f.tests.view).includes('PRIVATE_PATH_EXCEPTION_CANARY'));
+  f.reject(null);await f.tests.test(d,i);assert.equal(f.tests.view.status,'reachable');
+  f.change(r=>({...r,daemonEpoch:'wrong-epoch'}));await f.tests.test(d,i);assert.equal(f.tests.view.cleanupUnverified,true);
+  const source=f.calls.at(-1)!.connection,lanes=f.lanes.length;
+  f.reject(rejected);await f.tests.test(d,i);assert.equal(f.tests.view.status,'failed');assert.equal(f.tests.view.cleanupUnverified,true);assert.equal(f.calls.at(-1)!.connection,source);assert.equal(f.lanes.length,lanes);
+  f.reject(null);f.change(null);await f.tests.test(d,i);assert.equal(f.tests.view.status,'reachable');assert.equal(f.tests.view.cleanupUnverified,false);assert.equal(f.calls.at(-1)!.connection,source);
+  f.reject({...rejected,code:'busy'});await f.tests.test(d,i);assert.equal(f.tests.view.status,'unavailable');assert.equal(f.tests.view.cleanupUnverified,true);assert.match(f.tests.view.message,/busy/);
  }finally{await f.close();}
 });

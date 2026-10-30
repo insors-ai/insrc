@@ -54,6 +54,8 @@ test('CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen a
   const caps=await connectionManagementRpc('db.connections.v2.capabilities',{repoRoot:root},context) as {features:string[]};
   for(const feature of ['workbench-sessions','session-delegation','draft-test','test-cancellation','saved-create','saved-update','saved-remove'])assert.ok(caps.features.includes(feature),feature);
   const key={repoRoot:root,scope:'saved' as const,id:'orders'},publicPatch={kind:'parquet',path:'orders.parquet',label:''};
+  const invalid=await connectionManagementRpc('db.connections.v2.test',{key,requestId:randomUUID(),draftRevision:0,publicPatch:{...publicPatch,path:'../outside.parquet'},credentials:{}},context) as {status:string;code:string};
+  assert.equal(invalid.status,'rejected');assert.equal(invalid.code,'invalid-input');assert.ok(!JSON.stringify(invalid).includes('outside.parquet'));await Promise.all(drains);
   const probe=await connectionManagementRpc('db.connections.v2.test',{key,requestId:randomUUID(),draftRevision:1,publicPatch,credentials:{}},context) as DraftTestResult;
   assert.equal(probe.status,'reachable',JSON.stringify(probe));await Promise.all(drains);
   const ticket=await connectionManagementRpc('db.connections.v2.ticket',{key,mode:'create'},context) as OperationTicket;

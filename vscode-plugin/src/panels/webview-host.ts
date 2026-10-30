@@ -615,6 +615,23 @@ function shellHtml(title: string, content: string, nonce: string, bootstrap?: st
     .panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--vscode-panel-border, #3c3c3c); }
     .foot-field { display: flex; align-items: center; gap: 8px; }
     .foot-hint { font-size: 0.85em; opacity: 0.7; }
+    /* Repo Configuration panel (Story S001): role tiers grouped by criticality
+       (native <details>/<summary> needs no custom chevron or toggle-class rule)
+       plus status-card Providers. */
+    .section { border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c); padding: 10px 0; }
+    .section:last-child { border-bottom: none; }
+    .section-head { font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: baseline; gap: 8px; }
+    .section-head::marker { color: var(--vscode-icon-foreground, #c5c5c5); }
+    .count { font-size: 11px; opacity: 0.7; border: 1px solid var(--vscode-panel-border, #666); border-radius: 9px; padding: 0 7px; }
+    .rows { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+    .role-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 2px; border-radius: 4px; }
+    .role-row:hover { background: var(--vscode-list-hoverBackground, #2a2d2e); }
+    .floor-row { display: flex; align-items: center; gap: 10px; }
+    .provider-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 8px; border: 1px solid var(--vscode-panel-border, #3c3c3c); border-radius: 6px; margin-bottom: 4px; }
+    .status-chip { font-size: 10.5px; border-radius: 9px; padding: 1px 8px; white-space: nowrap; }
+    .status-chip.ok { background: var(--vscode-charts-green, #1e3a24); color: var(--vscode-editor-foreground, #81c995); }
+    .status-chip.warn { background: var(--vscode-charts-yellow, #3a2f12); color: var(--vscode-editor-foreground, #e8b94a); }
+    .status-chip.off { opacity: 0.7; }
   </style></head><body><h2>${escapeHtml(title)}</h2>${content}${script}</body></html>`;
 }
 

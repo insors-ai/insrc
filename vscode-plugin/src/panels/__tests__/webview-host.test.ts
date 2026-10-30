@@ -758,3 +758,22 @@ test('the model-tiers bootstrap script posts modelTiersWrite for both a tier fie
   assert.match(boot, /querySelector\('select\[data-field="coreFloor"\]'\)/, 'the core-floor select is wired');
   assert.match(boot, /kind: 'coreFloor', value: floor\.value/, 'posts the sanctioned coreFloor shape');
 });
+
+// ---- Story S001 (Repo Configuration regroup): shared shellHtml CSS ----
+
+test("the shared shellHtml style block defines .section/.section-head/.count/.rows/.role-row/.provider-row/.status-chip/.floor-row rules", async () => {
+  const { host, created } = makeHost();
+  host.openDetailedStatus();
+  await tick();
+  const html = created[0]!.html;
+  assert.match(html, /\.section\s*\{[^}]*border-bottom/, '.section is a bordered group container');
+  assert.match(html, /\.section-head\s*\{[^}]*cursor:\s*pointer/, '.section-head (the <summary>) is clickable');
+  assert.match(html, /\.count\s*\{[^}]*border/, '.count is the role-count badge');
+  assert.match(html, /\.rows\s*\{[^}]*display:\s*flex/, '.rows lays out the role rows');
+  assert.match(html, /\.role-row\s*\{[^}]*display:\s*flex/, '.role-row is a flex row');
+  assert.match(html, /\.provider-row\s*\{[^}]*border/, '.provider-row is a bordered status card');
+  assert.match(html, /\.status-chip\s*\{[^}]*border-radius/, '.status-chip is a pill badge');
+  assert.match(html, /\.floor-row\s*\{[^}]*display:\s*flex/, '.floor-row lays out the core-floor control');
+  assert.doesNotMatch(html, /\.chev\b/, 'no .chev rule — native <details>/<summary> needs no custom chevron');
+  assert.doesNotMatch(html, /\.collapsed\b/, 'no .collapsed rule — native <details>/<summary> tracks its own open/closed state');
+});

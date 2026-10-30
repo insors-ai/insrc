@@ -172,18 +172,23 @@ function providerLabel(client: string): string {
   return client === 'claude' ? 'Claude Code' : client === 'codex' ? 'Codex' : client === 'vibe' ? 'Mistral Vibe' : client;
 }
 
-/** The Providers section: registered providers are shown checked + disabled;
- *  unavailable CLIs disabled; only unregistered available ones are checkable. */
+/** The Providers section: a status-card row per provider — registered shows a
+ *  'registered' chip (no checkbox); unavailable shows a 'CLI not found on PATH'
+ *  chip (no checkbox); only unregistered + available ones stay checkable,
+ *  alongside a 'not registered' chip. */
 function renderProvidersSection(regs: readonly McpRegistrationView[]): string {
   const rows = regs.map((r) => {
     const label = providerLabel(r.client);
     if (r.registered) {
-      return `<label class="provider"><input type="checkbox" checked disabled> ${escapeHtml(label)} — registered</label>`;
+      return `<div class="provider-row"><span>${escapeHtml(label)}</span><span class="status-chip ok">registered</span></div>`;
     }
     if (!r.available) {
-      return `<label class="provider"><input type="checkbox" disabled> ${escapeHtml(label)} — CLI not found on PATH</label>`;
+      return `<div class="provider-row"><span>${escapeHtml(label)}</span><span class="status-chip off">CLI not found on PATH</span></div>`;
     }
-    return `<label class="provider"><input type="checkbox" data-provider="${escapeHtml(r.client)}"> ${escapeHtml(label)}</label>`;
+    return (
+      `<div class="provider-row"><label><input type="checkbox" data-provider="${escapeHtml(r.client)}"> ${escapeHtml(label)}</label>` +
+      `<span class="status-chip warn">not registered</span></div>`
+    );
   });
   const checkable = regs.some((r) => r.available && !r.registered);
   const button = checkable

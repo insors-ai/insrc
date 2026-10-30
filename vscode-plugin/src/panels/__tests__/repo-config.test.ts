@@ -285,10 +285,10 @@ const REGS: McpRegistrationView[] = [
 test('renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable', async () => {
   const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => REGS })(REPOS[0]!.path);
   assert.match(html, /<h3>Providers<\/h3>/, 'the section renders in the repo form');
-  assert.match(html, /<input type="checkbox" checked disabled> Claude Code — registered/, 'registered provider is checked and NOT checkable');
+  assert.match(html, /Claude Code<\/span><span class="status-chip ok">registered<\/span>/, 'registered provider shows a registered chip, no checkbox');
   assert.doesNotMatch(html, /data-provider="claude"/, 'a registered provider carries no data-provider checkbox');
-  assert.match(html, /<input type="checkbox" data-provider="codex"> Codex/, 'an unregistered available provider is checkable');
-  assert.match(html, /<input type="checkbox" disabled> Mistral Vibe — CLI not found on PATH/, 'an unavailable provider is disabled with the reason');
+  assert.match(html, /<input type="checkbox" data-provider="codex"> Codex<\/label><span class="status-chip warn">not registered<\/span>/, 'an unregistered available provider is checkable, with a not-registered chip');
+  assert.match(html, /Mistral Vibe<\/span><span class="status-chip off">CLI not found on PATH<\/span>/, 'an unavailable provider shows a CLI-not-found chip, no checkbox');
   assert.match(html, /id="insrc-register-providers"/, 'the register button renders when a provider is checkable');
 
   const none = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => REGS.map(r => ({ ...r, registered: true, available: true })) })(REPOS[0]!.path);
@@ -301,6 +301,17 @@ test('renderRepoConfig: Providers section — registered = checked+disabled, unr
   const oldDaemon = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => { throw new Error('mcp.status failed: unknown method: mcp.status'); } })(REPOS[0]!.path);
   assert.match(oldDaemon, /predates provider registration/, 'an old daemon (unknown method) gets an update hint, not the bare unavailable text');
   assert.match(oldDaemon, /insrc: Update daemon/, 'the hint names the update command');
+});
+
+test("renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one", async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => REGS })(REPOS[0]!.path);
+  const row = (client: string): string => (new RegExp(`<div class="provider-row">(?:(?!</div>).)*${client}(?:(?!</div>).)*</div>`, 's').exec(html) ?? [''])[0]!;
+  assert.doesNotMatch(row('Claude Code'), /<input/, "a registered provider's row has no checkbox");
+  assert.match(row('Claude Code'), /<span class="status-chip ok">registered<\/span>/, "a registered provider's row has a registered chip");
+  assert.match(row('Codex'), /<input type="checkbox" data-provider="codex">/, "an available-unregistered provider's row keeps its checkable input");
+  assert.match(row('Codex'), /<span class="status-chip warn">not registered<\/span>/, "an available-unregistered provider's row has a not-registered chip");
+  assert.doesNotMatch(row('Mistral Vibe'), /<input/, "an unavailable provider's row has no checkbox");
+  assert.match(row('Mistral Vibe'), /<span class="status-chip off">CLI not found on PATH<\/span>/, "an unavailable provider's row has a CLI-not-found chip");
 });
 
 test('steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)', () => {

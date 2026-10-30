@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-10-30T05:35:31.740Z  ·  **Updated:** 2026-10-30T05:52:10.104Z
+**Standalone:** no  ·  **Created:** 2026-10-30T05:35:31.740Z  ·  **Updated:** 2026-10-30T06:10:46.789Z
 
-**Commit:** 980b6210f
+**Commit:** cd26e5325
 
 ## Summary
 
@@ -22,13 +22,21 @@ New INSRC_LIVE_TESTS-gated live test: the real claude CLI on glm-5.3:cloud throu
 
 ## Changes
 
-- `src/agent/providers/__tests__/cli-ollama.test.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
-- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
-- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-30T05:52:10.104Z)
-- `src/agent/providers/__tests__/ollama-target.test.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
-- `src/agent/providers/ollama-target.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
 - `src/agent/providers/ollama.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
 - `src/analyze/context/__tests__/provider-from-registry.test.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
 - `src/analyze/context/shaper-provider.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
 - `docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/evidence/t5/live-run.txt` — **insrc-build** (2026-10-30T05:52:10.104Z)
 - `src/agent/providers/__tests__/cli-ollama.live.test.ts` — **insrc-build** (2026-10-30T05:52:10.104Z)
+- `src/agent/providers/__tests__/cli-ollama.test.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/agent/providers/__tests__/ollama-target.test.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/agent/providers/ollama-target.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/agent/providers/__tests__/bounded-input.test.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/cli/services/__tests__/review-resolve-role.test.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/cli/services/workflow.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/daemon/__tests__/models-resolve-role.test.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/daemon/model-definitions.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/mcp/__tests__/controller-review.test.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/mcp/controller-review.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)
+- `src/workflow/review-pipeline/driver.ts` — **insrc-build** (2026-10-30T06:10:46.789Z)

@@ -4,10 +4,15 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s2",
     "createdAt": "2026-10-30T05:35:31.740Z",
-    "updatedAt": "2026-10-30T05:52:10.104Z",
+    "updatedAt": "2026-10-30T06:10:46.789Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
-    "epicSlug": "run-claude-codex-ollama-models"
+    "epicSlug": "run-claude-codex-ollama-models",
+    "approvedAt": "2026-10-30T06:10:47.376Z",
+    "reviewOverride": {
+      "reason": "Manual code review (code-review tool being rewritten): 2 HIGH, 2 MED and 4 LOW fixed in cd26e5325, 2 LOW accepted; full sweep failures are outside s2 (user approval 2026-10-30).",
+      "at": "2026-10-30T06:10:47.376Z"
+    }
   },
   "body": {
     "tasks": [
@@ -37,41 +42,6 @@
       "md": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/TESTS.md"
     },
     "changeLog": [
-      {
-        "target": {
-          "file": "src/agent/providers/__tests__/cli-ollama.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T05:52:10.104Z"
-      },
-      {
-        "target": {
-          "file": "src/agent/providers/cli-provider.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T05:52:10.104Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T05:52:10.104Z"
-      },
-      {
-        "target": {
-          "file": "src/agent/providers/__tests__/ollama-target.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T05:52:10.104Z"
-      },
-      {
-        "target": {
-          "file": "src/agent/providers/ollama-target.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-30T05:52:10.104Z"
-      },
       {
         "target": {
           "file": "src/agent/providers/ollama.ts"
@@ -106,8 +76,112 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-10-30T05:52:10.104Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/ollama-target.test.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/ollama-target.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/review-resolve-role.test.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/workflow.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/models-resolve-role.test.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-definitions.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/controller-review.test.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/controller-review.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/driver.ts",
+          "version": "cd26e5325"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T06:10:46.789Z"
       }
     ],
-    "commit": "980b6210f"
+    "commit": "cd26e5325"
   }
 }

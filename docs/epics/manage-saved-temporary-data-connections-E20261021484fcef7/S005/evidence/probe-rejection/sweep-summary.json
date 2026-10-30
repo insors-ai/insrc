@@ -1,0 +1,1521 @@
+{
+  "commit": "7bb98c890",
+  "files": 116,
+  "results": [
+    {
+      "file": "vscode-plugin/src/__tests__/activation.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 15,
+        "pass": 15,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.57,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/__tests__/packaging.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.19,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/__tests__/uninstall.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.37,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/approval-queue.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-failure.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+      "exitCode": 1,
+      "timedOut": true,
+      "counts": {},
+      "seconds": 60.03,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.17,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 3.91,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.03,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.93,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.37,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.57,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.46,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.36,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 93,
+        "pass": 92,
+        "fail": 1,
+        "skipped": 0
+      },
+      "seconds": 30.35,
+      "failures": [
+        "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group"
+      ]
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/design-tokens.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.82,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 228,
+        "pass": 224,
+        "fail": 0,
+        "skipped": 4
+      },
+      "seconds": 21.14,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/docs-sections.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.49,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/edit-governor.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.14,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/group-lock.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 15,
+        "pass": 15,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.35,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/link-markup.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.36,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/link-opener.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.35,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/live-cli.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 8,
+        "pass": 0,
+        "fail": 0,
+        "skipped": 8
+      },
+      "seconds": 0.35,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/markers.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/mocks-contract.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 75,
+        "pass": 75,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.35,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/resolve-within.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/review-column.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.42,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/review-icon.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.72,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.86,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.35,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.18,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/session-output.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.43,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 27,
+        "pass": 27,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/session-title.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/stream-events.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.47,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 32,
+        "pass": 32,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.85,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.42,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.43,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/key-map.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.35,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.34,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.44,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/seam.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.35,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.95,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 2.32,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 9.24,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 14.74,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/entry.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.57,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 9.61,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.24,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 3.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/privacy.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 6.81,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.45,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 1.03,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/daemon/__tests__/bundle.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.24,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 15,
+        "pass": 15,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 46,
+        "pass": 46,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.39,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-icon.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.4,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.31,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.69,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/details-memory.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.26,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/epic-records.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 23,
+        "pass": 23,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.24,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/hosts/__tests__/activation.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.24,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/hosts/__tests__/adapter.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/hosts/__tests__/commands.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.3,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/onboarding/__tests__/activation.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.24,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/debug-renderer.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.24,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 10,
+        "pass": 9,
+        "fail": 1,
+        "skipped": 0
+      },
+      "seconds": 0.24,
+      "failures": [
+        "source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)"
+      ]
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/log-tail.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/model-tiers.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/orphan-kill.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.28,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/process-scan.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.26,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.29,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 37,
+        "pass": 37,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.41,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/surfaces/__tests__/surfaces.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 8,
+        "pass": 7,
+        "fail": 1,
+        "skipped": 0
+      },
+      "seconds": 0.24,
+      "failures": [
+        "S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway"
+      ]
+    },
+    {
+      "file": "vscode-plugin/src/workspace/__tests__/commands.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    },
+    {
+      "file": "vscode-plugin/src/workspace/__tests__/registrar.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0
+      },
+      "seconds": 0.25,
+      "failures": []
+    }
+  ],
+  "totals": {
+    "tests": 1345,
+    "pass": 1330,
+    "fail": 3,
+    "skipped": 12
+  }
+}

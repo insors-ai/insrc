@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "7bb98c890",
+  "version": "0.5.19",
+  "package": "vscode-plugin/insrc-vscode-0.5.19-s005-7bb98c890.vsix",
+  "sha256": "af03ebc7e0fae17f63f7dd62f9dbef8413a875bfffd7eb6891c759c1f00d77fb",
+  "zipVerified": true,
+  "bundleVerified": true,
+  "backendBuildPassed": true,
+  "liveUI": "pending-user-manual",
+  "daemonRestarted": false
+}

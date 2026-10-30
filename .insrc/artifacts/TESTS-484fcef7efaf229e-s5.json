@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-30T16:43:16.460Z",
+    "updatedAt": "2026-10-30T18:05:14.854Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -660,8 +660,8 @@
       },
       {
         "taskId": "t14",
-        "commit": "fac5f6b05",
-        "ranAt": "2026-10-29T17:40:57.921Z",
+        "commit": "7bb98c890",
+        "ranAt": "2026-10-30T18:05:14.854Z",
         "testsPassed": true,
         "tests": [
           {
@@ -673,6 +673,11 @@
                 "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
                 "title": "CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior",
                 "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+                "title": "CM-S5-TEST-TS: known input rejection is actionable without false worker cleanup, while prior uncertainty keeps its source",
+                "result": "pass"
               }
             ],
             "files": []
@@ -683,7 +688,7 @@
             "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 13945,
+            "durationMs": 13985,
             "titles": [
               {
                 "title": "CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior",
@@ -691,6 +696,10 @@
               },
               {
                 "title": "CM-S5-TEST-TS: real supervisor timeout keeps its transport and never treats the result as drain",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TEST-TS: known input rejection is actionable without false worker cleanup, while prior uncertainty keeps its source",
                 "result": "pass"
               }
             ],

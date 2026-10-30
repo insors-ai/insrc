@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 61 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -236,19 +236,20 @@ Run at 2026-10-30T04:28:27.227Z on commit `be26a144e`. Tests check: **passed**. 
 
 ## t14
 
-Run at 2026-10-29T17:40:57.921Z on commit `fac5f6b05`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-30T18:05:14.854Z on commit `7bb98c890`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior | `vscode-plugin/src/connections/__tests__/draft-test.test.ts` |
+| pass | CM-S5-TEST-TS: known input rejection is actionable without false worker cleanup, while prior uncertainty keeps its source | `vscode-plugin/src/connections/__tests__/draft-test.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/draft-test.test.ts` | 0 | 2 | 13.9 s |  |
+| `vscode-plugin/src/connections/__tests__/draft-test.test.ts` | 0 | 3 | 14 s |  |
 
 ## t15
 

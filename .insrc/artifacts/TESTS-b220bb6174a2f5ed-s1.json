@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s1",
     "createdAt": "2026-10-29T19:58:32.650Z",
-    "updatedAt": "2026-10-30T04:03:49.167Z",
+    "updatedAt": "2026-10-30T04:07:05.302Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -613,6 +613,97 @@
               },
               {
                 "title": "attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to ollama-claude, not cli-claude",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2b0806e86",
+        "ranAt": "2026-10-30T04:07:05.302Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-definitions.test.ts",
+                "title": "model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-definitions.test.ts: a host-family model with efforts lists them and one without lists []",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-definitions.test.ts",
+                "title": "model-definitions.test.ts: a host-family model with efforts lists them and one without lists []",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-definitions.test.ts",
+                "title": "model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-definitions.test.ts",
+                "title": "model-definitions.test.ts: every sc3 field of a fixture file, aliases always a list, optional fields omitted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-definitions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 648,
+            "titles": [
+              {
+                "title": "model-definitions.test.ts: every sc3 field of a fixture file, aliases always a list, optional fields omitted",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: user-approved after shipped; unlisted rejected id only in rejectedModels; a rejected id the file lists is served as shipped and left out of rejectedModels",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: installed exact-match true/false, absent when the lister rejects, unlisted installed models absent",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: a host-family model with efforts lists them and one without lists []",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed",
                 "result": "pass"
               }
             ],

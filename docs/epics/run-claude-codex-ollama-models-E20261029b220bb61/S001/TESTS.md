@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -136,3 +136,32 @@ Run at 2026-10-30T04:03:49.167Z on commit `a4f470c5b`. Tests check: **passed**. 
 | `src/daemon/__tests__/model-check.test.ts` | 0 | 15 | 10.2 s |  |
 | `src/daemon/__tests__/model-registry.test.ts` | 0 | 15 | 0.7 s |  |
 | `src/workflow/__tests__/attribution.test.ts` | 0 | 13 | 0.4 s |  |
+
+## t4
+
+Run at 2026-10-30T04:07:05.302Z on commit `2b0806e86`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting | `src/daemon/__tests__/model-definitions.test.ts` |
+
+**unit: model-definitions.test.ts: a host-family model with efforts lists them and one without lists []**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | model-definitions.test.ts: a host-family model with efforts lists them and one without lists [] | `src/daemon/__tests__/model-definitions.test.ts` |
+
+**unit: model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed | `src/daemon/__tests__/model-definitions.test.ts` |
+| pass | model-definitions.test.ts: every sc3 field of a fixture file, aliases always a list, optional fields omitted | `src/daemon/__tests__/model-definitions.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/model-definitions.test.ts` | 0 | 7 | 0.6 s |  |

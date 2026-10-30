@@ -33,7 +33,7 @@ const isTierRow = (row) => TIER_ROW.test(row.path);
 const TIER_FIELD = { runner: 'model family (runner)', model: 'model', effort: 'reasoning effort' };
 /** A tier row's description, naming no family, model or effort (those are the daemon's). */
 const tierDescription = (row) => { const [, tier, field] = TIER_ROW.exec(row.path); return `The ${tier} tier's ${TIER_FIELD[field]}.`; };
-const TIER_NOTE = ' Valid values come from the daemon\'s model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family that runs its CLI on Ollama accepts only its listed models.';
+const TIER_NOTE = ' Valid values come from the daemon\'s model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.';
 const jsonType = (t) => (t === 'enum' ? 'string' : t);
 
 /** The manifest with every catalog-backed key regenerated from `catalog`. */

@@ -185,8 +185,10 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
 test('model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config', () => {
   const src = readFileSync(join(HERE, '..', 'model-tier-picker.ts'), 'utf8');
   const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-  assert.doesNotMatch(code, /['"`](cli-claude|cli-codex|ollama)['"`]/, 'no runner literal');
-  const shipped = JSON.parse(readFileSync(join(HERE, '..', '..', '..', '..', 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ models: Array<{ id: string; aliases?: string[] }> }> };
+  const shipped = JSON.parse(readFileSync(join(HERE, '..', '..', '..', '..', 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ id: string; models: Array<{ id: string; aliases?: string[] }> }> };
+  // Every shipped family id, including the Ollama-hosted one (Epic b220bb61, Story s4).
+  assert.ok(shipped.families.length >= 5, 'the shipped families are read');
+  for (const f of shipped.families) assert.doesNotMatch(code, new RegExp(`['"\`]${f.id}['"\`]`), `no runner literal '${f.id}'`);
   for (const f of shipped.families) for (const m of f.models) for (const name of [m.id, ...(m.aliases ?? [])]) {
     assert.ok(!code.includes(`'${name}'`) && !code.includes(`"${name}"`), `no model literal '${name}'`);
   }
@@ -309,7 +311,9 @@ test("model-tier-picker.test.ts: the host family is offered next to today's; its
   assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'ollama-claude', model: 'hl:7b', effort: '' } }]);
   // Vendor and plain Ollama models carry no hosting mark.
   r = await run({ picks: ['core', 'cli-claude'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
-  assert.ok(r.shown[2]!.every((x) => !/\b(cloud|local)\b/.test(x.description ?? '')), 'no cloud/local mark on a vendor family');
+  assert.deepEqual(r.shown[2]!.map((x) => x.description), ['alias cb', '(user-approved)', 'checked by the daemon before it can be used', undefined]);
+  r = await run({ picks: ['core', 'ollama'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.deepEqual(r.shown[2]!.map((x) => x.description), [undefined, '(not installed)', undefined]);
 });
 
 test("model-tier-picker.test.ts: an undeclared current model on the host family is 'not supported — the tier will not run'; a vendor family and a host-less answer keep today's items", async () => {

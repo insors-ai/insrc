@@ -18,7 +18,8 @@
  * decision. Nothing is saved then — the running daemon does not yet serve the
  * model — so the tier is written only after a restart that brings the daemon back
  * (restartDaemon resolves true), and the approval is never sent twice. Ollama has
- * no such flow: only listed Ollama models can be used.
+ * no such flow, nor has a CLI family that runs on a host (its `host` is set): only
+ * their listed models can be used.
  *
  * Everything is injected via {@link SetModelTierDeps}, so the whole flow is
  * unit-testable over fakes WITHOUT vscode; extension.ts binds the real seams.

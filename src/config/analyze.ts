@@ -230,6 +230,11 @@ function tierSetting(tiering: TieringOverride, tier: TierName, registry: ModelRe
  *  fallback (decision A). */
 export function resolveTierWith(tiering: TieringOverride, tier: TierName, registry: ModelRegistry): TierResolution {
 	const resolution = registry.resolveTier(tier, tierSetting(tiering, tier, registry));
+	if (resolution.model === undefined) {
+		log.warn({ tier, runner: resolution.family, requested: resolution.fallback?.requested, reason: resolution.fallback?.reason },
+			`models.tiers.${tier}: model '${resolution.fallback?.requested}' is not supported by ${resolution.family} (model-not-supported); the tier will not run`);
+		return resolution;
+	}
 	if (resolution.droppedEffort !== undefined) {
 		log.warn({ tier, model: resolution.model.id, effort: resolution.droppedEffort },
 			`models.tiers.${tier}: model ${resolution.model.id} does not accept effort '${resolution.droppedEffort}'; running at the CLI's default effort`);
@@ -242,7 +247,8 @@ export function resolveTierWith(tiering: TieringOverride, tier: TierName, regist
 }
 
 function tierModelOf(r: TierResolution): TierModel {
-	return { runner: r.family, model: r.model.id, ...(r.effort !== undefined ? { effort: r.effort } : {}) };
+	// A refused tier reports what was set; its fallback says why it is not used.
+	return { runner: r.family, model: r.model?.id ?? r.fallback?.requested ?? '', ...(r.effort !== undefined ? { effort: r.effort } : {}) };
 }
 
 /** The tier as the registry resolves it (canonical model id, accepted effort).

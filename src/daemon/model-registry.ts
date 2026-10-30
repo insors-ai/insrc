@@ -62,11 +62,14 @@ export interface ResolvedModel extends ModelDefinition {
 	readonly source: 'shipped' | 'user-approved';
 }
 
-export type FallbackReason = 'unlisted-model' | 'rejected-model';
+/** 'model-not-supported': a host family names a model it does not declare;
+ *  nothing is substituted and the resolution carries no model. */
+export type FallbackReason = 'unlisted-model' | 'rejected-model' | 'model-not-supported';
 
 export interface TierResolution {
 	readonly family:         FamilyId;
-	readonly model:          ResolvedModel;
+	/** undefined only for a host family's undeclared model ('model-not-supported'). */
+	readonly model:          ResolvedModel | undefined;
 	readonly effort?:        EffortLevel | undefined;
 	readonly droppedEffort?: EffortLevel | undefined;
 	readonly fallback?:      { readonly reason: FallbackReason; readonly requested: string } | undefined;
@@ -91,6 +94,8 @@ export interface ModelRegistry {
 	summariserModel(family: CliFamilyId): ResolvedModel;
 	toolLoopModel(): ResolvedModel;
 	cliKind(family: FamilyId): 'claude' | 'codex' | 'vibe' | undefined;
+	/** 'ollama' for an Ollama-hosted family; undefined for every other family. */
+	host(family: FamilyId): 'ollama' | undefined;
 	/** De-duplicated union of every served model's efforts, by first appearance. */
 	effortLevels(): readonly EffortLevel[];
 	resolveTier(tier: TierName, setting: TierSetting): TierResolution;
@@ -105,7 +110,7 @@ export interface ModelRegistry {
 export function familyForClient(client: StepClient | undefined, registry: ModelRegistry = getModelRegistry()): FamilyId | undefined {
 	if (client === undefined) return undefined;
 	if (registry.cliKind(registry.defaultFamily()) === client) return registry.defaultFamily();
-	return registry.families().find(f => f.cliKind === client)?.id;
+	return registry.families().find(f => f.cliKind === client && f.host === undefined)?.id;
 }
 
 let storePathOverride: string | undefined;
@@ -263,6 +268,7 @@ export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonl
 		summariserModel: (family: CliFamilyId) => find(family, familyOf(family).summariserModel!)!,
 		toolLoopModel: () => find('ollama', familyOf('ollama').toolLoopModel!)!,
 		cliKind: (family: FamilyId) => familyOf(family).cliKind,
+		host: (family: FamilyId) => familyOf(family).host,
 		effortLevels: () => efforts,
 		resolveTier(tier: TierName, setting: TierSetting): TierResolution {
 			const found = find(setting.runner, setting.model);
@@ -273,8 +279,12 @@ export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonl
 					? { family: setting.runner, model: found, effort }
 					: { family: setting.runner, model: found, droppedEffort: effort };
 			}
+			// A host family runs only what it declares: refuse, substitute nothing.
+			if (familyOf(setting.runner).host !== undefined) {
+				return { family: setting.runner, model: undefined, fallback: { reason: 'model-not-supported', requested: setting.model } };
+			}
 			// Only a vendor CLI family carries rejected ids / tier defaults; the
-			// local and Ollama-hosted families fall back to the default family.
+			// local family falls back to the default family.
 			const runner = setting.runner;
 			const vendorCli = runner === 'cli-claude' || runner === 'cli-codex' || runner === 'cli-vibe' ? runner : undefined;
 			const reason: FallbackReason =

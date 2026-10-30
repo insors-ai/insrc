@@ -193,6 +193,8 @@ export function resolveValidateProvider(repoPath: string): ValidateProvider {
 	const family = registry.defaultFamily();
 	const def = registry.tierDefault(family, resolution.tier);
 	const chosen = registry.resolveTier(resolution.tier, { runner: family, model: def.model, ...(def.effort !== undefined ? { effort: def.effort } : {}) });
+	// A vendor family's tier default is always declared, so it always resolves.
+	if (chosen.model === undefined) throw new Error(`build-step[validate]: tier default '${def.model}' of ${family} did not resolve`);
 	log.warn({ runner: resolution.runner, model: resolution.model, tier: resolution.tier, family: chosen.family, substitute: chosen.model.id },
 		"build-step[validate]: the 'build' tier resolved to a non-CLI runner; edit sessions require a CLI — running the default family's tier default");
 	return familyProvider(registry, chosen.family, chosen.model, { effort: chosen.effort }) as CliProvider;

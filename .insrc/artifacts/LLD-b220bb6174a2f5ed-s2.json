@@ -209,7 +209,8 @@
       "reviewedAt": "2026-10-30T05:17:56.463Z",
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-10-30T05:25:22.093Z"
   },
   "body": {
     "summary": {

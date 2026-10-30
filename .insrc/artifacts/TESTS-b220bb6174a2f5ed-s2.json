@@ -1,0 +1,271 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b220bb6174a2f5ed",
+    "storyId": "s2",
+    "createdAt": "2026-10-30T05:35:31.740Z",
+    "updatedAt": "2026-10-30T05:37:12.338Z",
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicSlug": "run-claude-codex-ollama-models"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e7074cb44",
+        "ranAt": "2026-10-30T05:37:12.338Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cli-ollama.test.ts: every claude entry point on an Ollama-targeted provider starts claude with --model <id> and the three Ollama variables, without CLAUDE_CODE_OAUTH_TOKEN, and leaves process.env unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+                "title": "cli-ollama.test.ts: every claude entry point on an Ollama-targeted provider starts claude with --model <id> and the three Ollama variables, without CLAUDE_CODE_OAUTH_TOKEN, and leaves process.env unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-ollama.test.ts: the bounded path on an Ollama-targeted provider gets the allow-list plus the three Ollama variables",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+                "title": "cli-ollama.test.ts: the bounded path on an Ollama-targeted provider gets the allow-list plus the three Ollama variables",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+                "title": "cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-ollama.test.ts: an Ollama target with kind codex or without a model is refused at construction",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+                "title": "cli-ollama.test.ts: an Ollama target with kind codex or without a model is refused at construction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cli-vibe.test.ts, bounded-input.test.ts, cli-subprocess.test.ts and cli-failure-message.test.ts stay green",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+                "title": "complete() runs `vibe -p --output text` with the prompt on stdin and the model pinned via VIBE_ACTIVE_MODEL",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+                "title": "DIFF-TRANSPORT: bounded Claude dispatch preserves explicit input and disables ambient tools/history/project context",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+                "title": "a timed-out CLI child is killed with its process group, so a grandchild it started is gone",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+                "title": "completeStructured and complete run the CLI in opts.cwd when it is given",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-failure-message.test.ts",
+                "title": "the provider itself throws that error for a claude and a codex CLI that exit non-zero, once, with a long output in the default directory",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/bounded-input.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1548,
+            "titles": [
+              {
+                "title": "DIFF-TRANSPORT: bounded Claude dispatch preserves explicit input and disables ambient tools/history/project context",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-ADMISSION: unsupported CLI isolation and oversized normalized schemas make zero model calls",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-TRANSPORT: Codex schema normalization is counted before isolation admission",
+                "result": "pass"
+              },
+              {
+                "title": "DIFF-ADMISSION: isolated pipeline calls require enforcement and forward the authoritative job cap",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-failure-message.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1499,
+            "titles": [
+              {
+                "title": "the message of a failed claude call gives the CLI's own error text first and in full, wherever it stands in the output",
+                "result": "pass"
+              },
+              {
+                "title": "a long CLI output is written whole to a file the message names, and is never cut",
+                "result": "pass"
+              },
+              {
+                "title": "the API's refusal of a request is not retried as transient; an overloaded or rate-limited call still is",
+                "result": "pass"
+              },
+              {
+                "title": "a long output with no envelope keeps the error output in the message, and the file is private and old files are removed",
+                "result": "pass"
+              },
+              {
+                "title": "whether a failure is retried is decided on what the CLI said, not on figures elsewhere in its output",
+                "result": "pass"
+              },
+              {
+                "title": "the provider itself throws that error for a claude and a codex CLI that exit non-zero, once, with a long output in the default directory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-ollama.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1393,
+            "titles": [
+              {
+                "title": "cli-ollama.test.ts: every claude entry point on an Ollama-targeted provider starts claude with --model <id> and the three Ollama variables, without CLAUDE_CODE_OAUTH_TOKEN, and leaves process.env unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: the bounded path on an Ollama-targeted provider gets the allow-list plus the three Ollama variables",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables",
+                "result": "pass"
+              },
+              {
+                "title": "cli-ollama.test.ts: an Ollama target with kind codex or without a model is refused at construction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4267,
+            "titles": [
+              {
+                "title": "a timed-out CLI child is killed with its process group, so a grandchild it started is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured and complete run the CLI in opts.cwd when it is given",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured without opts.cwd runs the CLI in the inherited working directory",
+                "result": "pass"
+              },
+              {
+                "title": "a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run that narrates before answering yields its last agent message to completeStructured and complete",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7691,
+            "titles": [
+              {
+                "title": "vibeLastAssistantText: bare array, wrapped messages, string content, no assistant",
+                "result": "pass"
+              },
+              {
+                "title": "complete() runs `vibe -p --output text` with the prompt on stdin and the model pinned via VIBE_ACTIVE_MODEL",
+                "result": "pass"
+              },
+              {
+                "title": "complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default applies)",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() parses the last assistant message of the json output and validates it against the schema",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() surfaces a stable error after retries are exhausted",
+                "result": "pass"
+              },
+              {
+                "title": "runEditSession() runs headless with --auto-approve inside the repo cwd",
+                "result": "pass"
+              },
+              {
+                "title": "runReviewSession() restricts tools to read_file + the insrc MCP tools and validates the schema-shaped answer",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

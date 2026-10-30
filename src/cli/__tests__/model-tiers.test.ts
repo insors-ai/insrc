@@ -49,9 +49,9 @@ const role = (eff: ReturnType<typeof computeEffectiveTiers>, id: string) => eff.
 
 test('empty tiering: tiers = the definitions\' tier defaults as canonical ids (source default), coreFloor = mid (default)', () => {
 	const eff = computeEffectiveTiers({});
-	assert.deepEqual(eff.tiers.core, { runner: 'cli-codex', model: 'fx', effort: 'turbo', served: true });
-	assert.deepEqual(eff.tiers.mid, { runner: 'cli-codex', model: 'fx-lite-1', effort: 'lo', served: true });
-	assert.deepEqual(eff.tiers.cheap, { runner: 'cli-codex', model: 'fx-lite-1', served: true });
+	assert.deepEqual(eff.tiers.core, { runner: 'cli-codex', model: 'fx', effort: 'turbo', served: true, notSupported: false });
+	assert.deepEqual(eff.tiers.mid, { runner: 'cli-codex', model: 'fx-lite-1', effort: 'lo', served: true, notSupported: false });
+	assert.deepEqual(eff.tiers.cheap, { runner: 'cli-codex', model: 'fx-lite-1', served: true, notSupported: false });
 	assert.equal(eff.tierSource.core, 'default');
 	assert.equal(eff.coreFloor, 'mid');
 	assert.equal(eff.coreFloorSource, 'default');
@@ -76,7 +76,7 @@ test('empty tiering: a peripheral role resolves to its taxonomy default (mid/che
 test('a configured tier model overrides the default and is marked source=config', () => {
 	const t: AnalyzeTiering = { tiers: { mid: { runner: 'cli-claude', model: 'fc-big' } } };
 	const eff = computeEffectiveTiers(t);
-	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'fc-big', served: true });
+	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'fc-big', served: true, notSupported: false });
 	assert.equal(eff.tierSource.mid, 'config');
 	assert.equal(eff.tierSource.core, 'default'); // untouched tier stays default
 });
@@ -220,4 +220,62 @@ test('model-tiers.test.ts: tier edit helpers (family without tierDefaults, effor
 	assert.deepEqual(resolveTypedModel(FAKE, 'cli-claude', 'fc-new'), { kind: 'check' });
 	assert.deepEqual(resolveTypedModel(FAKE, 'ollama', 'loc:9'), { kind: 'refused', reason: 'only listed Fake Local models are selectable' });
 	assert.equal(tierPath('mid'), 'models.tiers.mid');
+});
+
+/** FAKE plus a family that runs its CLI on Ollama (Epic b220bb61, Story s3): no
+ *  tierDefaults, a cloud model with efforts (and an alias) and a local one without. */
+const HOSTED: ModelDefinitionsResult = {
+	...FAKE,
+	families: [...FAKE.families, {
+		id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Fake Hosted',
+		models: [
+			{ id: 'hc:cloud', aliases: ['hc'], efforts: ['low', 'max'], source: 'shipped', hosting: 'cloud' },
+			{ id: 'hl:7b', aliases: [], efforts: [], source: 'shipped', hosting: 'local' },
+		],
+	}],
+};
+const hostedTier = (model: string) => compute({ tiers: { core: { runner: 'ollama-claude', model, effort: '' } } }, HOSTED).tiers.core;
+
+test("model-tiers.test.ts: computeEffectiveTiers marks a host family's served model with its hosting and an undeclared one as notSupported; vendor, plain Ollama and host-less families are unchanged", () => {
+	assert.deepEqual(hostedTier('hc:cloud'), { runner: 'ollama-claude', model: 'hc:cloud', effort: '', served: true, hosting: 'cloud', notSupported: false });
+	assert.deepEqual([hostedTier('hl:7b').hosting, hostedTier('hl:7b').notSupported], ['local', false]);
+	// A configured alias is served with its hosting (the pane shows the canonical id).
+	assert.deepEqual([hostedTier('hc').served, hostedTier('hc').hosting], [true, 'cloud']);
+	// An undeclared model: not served, not supported, no hosting.
+	const missing = hostedTier('gone:cloud');
+	assert.deepEqual([missing.served, missing.notSupported, 'hosting' in missing], [false, true, false]);
+
+	// A vendor CLI's unserved model, and plain Ollama, carry no hosting and notSupported false.
+	const vendor = compute({ tiers: {
+		core:  { runner: 'cli-codex', model: 'gpt-unknown', effort: '' },
+		mid:   { runner: 'ollama', model: 'loc:1', effort: '' },
+	} }, HOSTED).tiers;
+	assert.deepEqual([vendor.core.served, vendor.core.notSupported, 'hosting' in vendor.core], [false, false, false]);
+	assert.deepEqual([vendor.mid.served, vendor.mid.notSupported, 'hosting' in vendor.mid], [true, false, false]);
+	// Default tiers (from the default family) are not host tiers either.
+	assert.equal(compute({}, HOSTED).tiers.core.notSupported, false);
+
+	// An older daemon answers without `host`: the family computes as a vendor family.
+	const old: ModelDefinitionsResult = { ...HOSTED, families: HOSTED.families.map(f => {
+		if (f.host === undefined) return f;
+		const { host: _host, ...rest } = f;
+		return rest;
+	}) };
+	const oldTier = compute({ tiers: { core: { runner: 'ollama-claude', model: 'gone:cloud', effort: '' } } }, old).tiers.core;
+	assert.deepEqual([oldTier.served, oldTier.notSupported, 'hosting' in oldTier], [false, false, false]);
+	assert.equal('hosting' in compute({ tiers: { core: { runner: 'ollama-claude', model: 'hc:cloud', effort: '' } } }, old).tiers.core, false);
+	assert.deepEqual(resolveTypedModel(old, 'ollama-claude', 'other:cloud'), { kind: 'check' });
+});
+
+test("model-tiers.test.ts: resolveTypedModel refuses an unlisted id for a host family and keeps 'check' for a vendor CLI family; switchFamily to the host family takes its first declared model", () => {
+	assert.deepEqual(resolveTypedModel(HOSTED, 'ollama-claude', 'other:cloud'), { kind: 'refused', reason: 'only listed Fake Hosted models are selectable' });
+	assert.deepEqual(resolveTypedModel(HOSTED, 'ollama-claude', 'hc'), { kind: 'served', model: 'hc:cloud' });
+	assert.deepEqual(resolveTypedModel(HOSTED, 'cli-claude', 'fc-new'), { kind: 'check' });
+	// No tierDefaults: the family's first declared model with the CLI-default effort, for every tier.
+	for (const t of ['core', 'mid', 'cheap'] as const) {
+		assert.deepEqual(switchFamily(HOSTED, t, 'ollama-claude'), { runner: 'ollama-claude', model: 'hc:cloud', effort: '' });
+	}
+	// Effort choices are unchanged: '' then the model's own; only '' for a model with none.
+	assert.deepEqual(effortChoices(HOSTED, { runner: 'ollama-claude', model: 'hc:cloud' }), ['', 'low', 'max']);
+	assert.deepEqual(effortChoices(HOSTED, { runner: 'ollama-claude', model: 'hl:7b' }), ['']);
 });

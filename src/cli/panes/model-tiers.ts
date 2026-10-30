@@ -44,9 +44,13 @@ export interface EffectiveRole {
 
 /** A tier as the pane shows it: the configured or default {runner, model, effort},
  *  and whether its family serves the model (an unserved one runs the tier default
- *  until it is approved and the daemon restarted). */
+ *  until it is approved and the daemon restarted). A family with a `host` runs a
+ *  CLI on Ollama: its served model carries `hosting`, and a model it does not
+ *  declare is `notSupported` (the tier does not run; nothing is substituted). */
 export interface EffectiveTier extends TierModel {
-	readonly served: boolean;
+	readonly served:       boolean;
+	readonly hosting?:     'cloud' | 'local' | undefined;
+	readonly notSupported: boolean;
 }
 
 export interface EffectiveTiers {
@@ -87,6 +91,18 @@ export function familyDefaultTier(defs: ModelDefinitionsResult, familyId: string
 	return pick !== undefined ? { runner: family.id, model: pick, effort: '' } : undefined;
 }
 
+/** Whether `familyId` serves `model`, and for a family with a host the model's
+ *  hosting or that the model is not supported. */
+function hostStatus(defs: ModelDefinitionsResult, familyId: string, model: string): Pick<EffectiveTier, 'served' | 'hosting' | 'notSupported'> {
+	const served = servedModel(defs, familyId, model);
+	const hosted = familyOf(defs, familyId)?.host !== undefined;
+	return {
+		served:       served !== undefined,
+		...(hosted && served?.hosting !== undefined ? { hosting: served.hosting } : {}),
+		notSupported: hosted && served === undefined,
+	};
+}
+
 /**
  * Resolve the effective tiers, tier models, coreFloor, and per-role tiers by
  * overlaying `tiering` (config) onto the definitions' defaults + the role
@@ -101,13 +117,15 @@ export function computeEffectiveTiers(tiering: AnalyzeTiering, defs: ModelDefini
 	for (const t of TIER_NAMES) {
 		const configured = tiering.tiers?.[t];
 		if (configured !== undefined) {
-			tiers[t] = { ...configured, served: servedModel(defs, configured.runner, configured.model) !== undefined };
+			tiers[t] = { ...configured, ...hostStatus(defs, configured.runner, configured.model) };
 			tierSource[t] = 'config';
 			continue;
 		}
 		const def = familyDefaultTier(defs, defs.defaultFamily, t);
 		const effort = tiering.efforts?.[t] ?? def?.effort;
-		tiers[t] = { runner: def?.runner ?? defs.defaultFamily, model: def?.model ?? '', ...(effort !== undefined ? { effort } : {}), served: def !== undefined };
+		const runner = def?.runner ?? defs.defaultFamily;
+		const model  = def?.model ?? '';
+		tiers[t] = { runner, model, ...(effort !== undefined ? { effort } : {}), ...(def !== undefined ? hostStatus(defs, runner, model) : { served: false, notSupported: false }) };
 		tierSource[t] = 'default';
 	}
 
@@ -175,7 +193,7 @@ export function nextInCycle(list: readonly string[], current: string | undefined
 
 /** What a typed model id means for a family: a model it serves (by id or alias),
  *  an id to check through the family's CLI, or a refusal (a family without a
- *  CLI only offers its listed models). */
+ *  CLI, or one running its CLI on a host, only offers its listed models). */
 export type TypedModel =
 	| { readonly kind: 'served'; readonly model: string }
 	| { readonly kind: 'check' }
@@ -186,7 +204,7 @@ export function resolveTypedModel(defs: ModelDefinitionsResult, familyId: string
 	if (model !== undefined) return { kind: 'served', model: model.id };
 	const family = familyOf(defs, familyId);
 	if (family === undefined) return { kind: 'refused', reason: `unknown family ${familyId}` };
-	if (family.cliKind === undefined) return { kind: 'refused', reason: `only listed ${family.displayName} models are selectable` };
+	if (family.cliKind === undefined || family.host !== undefined) return { kind: 'refused', reason: `only listed ${family.displayName} models are selectable` };
 	return { kind: 'check' };
 }
 

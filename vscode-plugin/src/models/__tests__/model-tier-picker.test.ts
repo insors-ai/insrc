@@ -281,3 +281,76 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
 });
 
 type DecisionResultLike = { ok: true; restartRequired?: boolean } | { ok: false; reason: string; detail: string };
+
+/** DEFS plus a family that runs its CLI on Ollama (Epic b220bb61, Story s4): no tierDefaults,
+ *  a cloud model with efforts and an alias, a local one without. */
+const HOSTED: ModelDefinitions = {
+  ...DEFS,
+  families: [...DEFS.families, {
+    id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'FakeH',
+    models: [
+      { id: 'hc:cloud', aliases: ['hc'], efforts: ['low', 'max'], source: 'shipped', hosting: 'cloud' },
+      { id: 'hl:7b', aliases: [], efforts: [], source: 'shipped', hosting: 'local' },
+    ],
+  }],
+};
+const hosted = async () => HOSTED;
+
+test("model-tier-picker.test.ts: the host family is offered next to today's; its models carry cloud/local marks, no 'Enter another model id', efforts only where the model has them, one whole-tier write", async () => {
+  let r = await run({ picks: ['core', 'ollama-claude', 'hc:cloud', 'max'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.deepEqual(r.shown[1]!.map((x) => [x.label, x.description]), [['FakeC', 'cli-claude'], ['FakeX', 'cli-codex (current)'], ['FakeLocal', 'ollama'], ['FakeH', 'ollama-claude']]);
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['hc:cloud', 'alias hc cloud'], ['hl:7b', 'local'], ['$(refresh) Refresh', undefined]], 'only declared models, marked; no typed-id entry');
+  assert.deepEqual(r.shown[3]!.map((x) => x.label), ['CLI default', 'low', 'max']);
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'ollama-claude', model: 'hc:cloud', effort: 'max' } }]);
+
+  // A model with no efforts skips the effort step and writes the CLI default.
+  r = await run({ picks: ['core', 'ollama-claude', 'hl:7b'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.equal(r.shown.length, 3, 'tier, family, model — no effort step');
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'ollama-claude', model: 'hl:7b', effort: '' } }]);
+  // Vendor and plain Ollama models carry no hosting mark.
+  r = await run({ picks: ['core', 'cli-claude'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.ok(r.shown[2]!.every((x) => !/\b(cloud|local)\b/.test(x.description ?? '')), 'no cloud/local mark on a vendor family');
+});
+
+test("model-tier-picker.test.ts: an undeclared current model on the host family is 'not supported — the tier will not run'; a vendor family and a host-less answer keep today's items", async () => {
+  let r = await run({ picks: ['core', 'ollama-claude'], raw: TIER('ollama-claude', 'gone:cloud'), defs: hosted });
+  assert.deepEqual([r.shown[2]![0]!.label, r.shown[2]![0]!.description], ['(current, not supported — the tier will not run): gone:cloud', 'not supported by FakeH']);
+  assert.ok(!r.shown[2]!.some((x) => x.kind === 'enter-id'), 'no typed-id entry');
+  assert.deepEqual(r.writes, []);
+
+  // A vendor CLI family keeps the 'runs the default' notice and the typed-id entry.
+  r = await run({ picks: ['core', 'cli-claude'], raw: TIER('cli-claude', 'c-gone'), defs: hosted });
+  assert.deepEqual([r.shown[2]![0]!.label, r.shown[2]![0]!.description], ['(current, not listed — runs the default): c-gone', 'not served by FakeC']);
+  assert.ok(r.shown[2]!.some((x) => x.label === 'Enter another model id…'));
+
+  // An older daemon answers without host or hosting: the family is a vendor CLI family again.
+  const old: ModelDefinitions = { ...HOSTED, families: HOSTED.families.map((f) => {
+    if (f.host === undefined) return f;
+    const { host: _host, ...rest } = f;
+    return { ...rest, models: rest.models.map(({ hosting: _hosting, ...m }) => m) };
+  }) };
+  r = await run({ picks: ['core', 'ollama-claude'], raw: TIER('ollama-claude', 'gone:cloud'), defs: async () => old });
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [
+    ['(current, not listed — runs the default): gone:cloud', 'not served by FakeH'],
+    ['hc:cloud', 'alias hc'], ['hl:7b', undefined],
+    ['Enter another model id…', 'checked by the daemon before it can be used'], ['$(refresh) Refresh', undefined],
+  ]);
+});
+
+test('model-tier-picker.test.ts: reopening the picker after a save on the host family marks the saved family, model and effort as current', async () => {
+  const saved = await run({ picks: ['core', 'ollama-claude', 'hc:cloud', 'max'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  const written = saved.writes[0]!.value as { runner: string; model: string; effort: string };
+  // Reopen over the saved tier: family, model (with its mark) and effort are current; re-picking them writes nothing.
+  let r = await run({ picks: ['core', 'ollama-claude', 'hc:cloud', 'max'], raw: TIER(written.runner, written.model, written.effort), defs: hosted });
+  assert.equal(r.shown[1]!.find((x) => x.value === 'ollama-claude')?.description, 'ollama-claude (current)');
+  assert.equal(r.shown[2]!.find((x) => x.value === 'hc:cloud')?.description, 'alias hc cloud (current)');
+  assert.equal(r.shown[3]!.find((x) => x.value === 'max')?.description, '(current)');
+  assert.deepEqual(r.writes, []);
+  assert.match(r.messages.at(-1)!, /core tier is unchanged \(hc:cloud \(ollama-claude, effort max\)\)/);
+
+  // An effort the model does not take is shown as the CLI default the daemon uses.
+  r = await run({ picks: ['core', 'ollama-claude', 'hl:7b'], raw: TIER('ollama-claude', 'hl:7b', 'max'), defs: hosted });
+  assert.equal(r.shown[2]!.find((x) => x.value === 'hl:7b')?.description, 'local (current)');
+  assert.deepEqual(r.writes, [], 'the CLI default the daemon already uses');
+  assert.match(r.messages.at(-1)!, /core tier is unchanged \(hl:7b \(ollama-claude\)\)/);
+});

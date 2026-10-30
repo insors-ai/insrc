@@ -20,6 +20,8 @@ export interface DefinedModel {
   readonly source: 'shipped' | 'user-approved';
   /** Ollama only; absent when Ollama did not answer. */
   readonly installed?: boolean | undefined;
+  /** Models of a family with a host: where the model runs. */
+  readonly hosting?: 'cloud' | 'local' | undefined;
 }
 
 /** One model family (runner), as the daemon serves it. */
@@ -27,6 +29,8 @@ export interface DefinedFamily {
   readonly id: string;
   /** Present for a CLI family; absent for the local (Ollama) family. */
   readonly cliKind?: 'claude' | 'codex' | 'vibe' | undefined;
+  /** Present when the family runs its CLI on a host (Ollama): its models are a closed list. */
+  readonly host?: 'ollama' | undefined;
   readonly displayName: string;
   readonly tierDefaults?: Readonly<Record<string, { readonly model: string; readonly effort?: string | undefined }>> | undefined;
   readonly toolLoopModel?: string | undefined;

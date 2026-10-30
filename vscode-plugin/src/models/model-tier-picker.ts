@@ -310,12 +310,13 @@ async function pickEmpty(deps: SetModelTierDeps, family: DefinedFamily): Promise
   return picked?.kind === 'refresh';
 }
 
-/** The marks after a model's id: its aliases, user-approved, not installed, current. */
+/** The marks after a model's id: its aliases, user-approved, not installed, its hosting (cloud / local), current. */
 function modelDescription(m: DefinedModel, isCurrent: boolean): string | undefined {
   const marks = [
     ...(m.aliases.length > 0 ? [`alias ${m.aliases.join(', ')}`] : []),
     ...(m.source === 'user-approved' ? ['(user-approved)'] : []),
     ...(m.installed === false ? ['(not installed)'] : []),
+    ...(m.hosting !== undefined ? [m.hosting] : []),
     ...(isCurrent ? ['(current)'] : []),
   ];
   return marks.length > 0 ? marks.join(' ') : undefined;
@@ -331,15 +332,17 @@ async function pickModel(
   const items: PickItem[] = [];
   const current = currentModel !== undefined ? models.find((m) => m.id === currentModel || m.aliases.includes(currentModel)) : undefined;
   if (currentModel !== undefined && current === undefined) {
-    items.push({ label: `(current, not listed — runs the default): ${currentModel}`, description: `not served by ${family.displayName}`, kind: 'current-not-listed' });
+    items.push(family.host !== undefined
+      ? { label: `(current, not supported — the tier will not run): ${currentModel}`, description: `not supported by ${family.displayName}`, kind: 'current-not-listed' }
+      : { label: `(current, not listed — runs the default): ${currentModel}`, description: `not served by ${family.displayName}`, kind: 'current-not-listed' });
   }
   for (const m of models) {
     const desc = modelDescription(m, m === current);
     const label = m.displayName !== undefined && m.displayName.length > 0 ? m.displayName : m.id;
     items.push(desc === undefined ? { label, kind: 'model', value: m.id } : { label, description: desc, kind: 'model', value: m.id });
   }
-  // Only a CLI family's models can be checked; Ollama offers only its listed models.
-  if (family.cliKind !== undefined) items.push({ label: 'Enter another model id…', description: 'checked by the daemon before it can be used', kind: 'enter-id' });
+  // Only a vendor CLI family's models can be checked; Ollama, and a CLI family on a host, offer only their listed models.
+  if (family.cliKind !== undefined && family.host === undefined) items.push({ label: 'Enter another model id…', description: 'checked by the daemon before it can be used', kind: 'enter-id' });
   items.push({ label: '$(refresh) Refresh', kind: 'refresh' });
   return deps.pick(items, { placeHolder: `Select a ${family.displayName} model` });
 }

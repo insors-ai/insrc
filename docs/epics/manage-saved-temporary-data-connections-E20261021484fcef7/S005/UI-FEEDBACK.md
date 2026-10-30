@@ -24,3 +24,12 @@ The first tracked t18 validation lost its daemon connection after mapped tests p
 The t20 entry/icon validation gate also passed. Task30 inventory checks initially found stale consumer hashes; the inventory now pins committed source 63966e4ad, including both icon assets, excluding unrelated in-flight activation edits. The regenerated narrative preserves the capability/acceptance statements checked by the existing artifact guard. Both task30 checks pass after alignment; initial failures are retained in evidence.
 
 Final tracked results: t18, t20 and t30 validation gates all passed. No independent post-build code review or live UI acceptance is claimed; actual creation on the installed daemon remains unavailable. Runtime package remains pinned to 63966e4ad; subsequent commits contain documentation, inventory and validation evidence only.
+
+
+## Pending manual feedback — 2026-10-31: edit form below the list
+
+User feedback: “the edit view of the connection should show below the connection list, not above.”
+
+Required layout depends on the form mode: new connection registration stays above the connections list; editing an existing selected connection appears below the list. Preserve the draft and its validation/actions when placing the form, and keep DOM/keyboard order consistent with the visible order.
+
+Status: recorded for implementation. No runtime layout change or UI verification is claimed by this entry.

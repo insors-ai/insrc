@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { readFileSync, realpathSync, writeFileSync, statSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync, statSync, renameSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { InvestigationReplySchema } from '../../shared/review-investigation.js';
 import { PROBE_ATTEMPT_MS, PROBE_OBSERVATION_BYTES, PROBE_REQUIRED_CHECKS, probeExportSchema } from '../../shared/review-investigation-probe.js';
@@ -17,6 +17,27 @@ import { scopedReviewCatalogDigest, scopedReviewToolCatalog } from '../../shared
 import { preflightProviderReviewBudget, reviewWireSchemaJson } from './review-budget.js';
 import { claudeInvestigationControlArgs, CLAUDE_PROBE_CONTROL_SCHEMA, CLAUDE_PROBE_CONTROL_CATALOG } from './claude-investigation-session.js';
 import { assessProbeCanaries } from '../../daemon/review-investigation-canaries.js';
+import { CLAUDE_DIAGNOSTIC_BYTES, managedPolicySnapshot, prepareClaudeDiagnostic, readClaudeDiagnostic } from './claude-investigation-diagnostics.js';
+import { reconstructClaudeQualification } from './claude-investigation-qualification.js';
+import type { ClaudeQualificationInputs, SourcePolicyHost } from './claude-investigation-qualification.js';
+
+async function invokeProbePhase(input: NativeProbeInvocation, args: readonly string[], prompt: string,
+  execution: ProcessGroupOpts & {readonly binaryPath:string}, abort: AbortController, diagnosticPath?: string) {
+  if (!diagnosticPath) return {result:await input.invoke(args,prompt,execution),diagnostic:undefined};
+  prepareClaudeDiagnostic(diagnosticPath);
+  let overflow=false;
+  const watch=setInterval(()=>{try{if(statSync(diagnosticPath).size>CLAUDE_DIAGNOSTIC_BYTES){overflow=true;abort.abort();}}catch{overflow=true;abort.abort();}},5);
+  try {
+    const result=await input.invoke(args,prompt,execution);
+    if(overflow)throw Error('Native diagnostic capture exceeded its bound');
+    return {result,diagnostic:readClaudeDiagnostic(diagnosticPath)};
+  } catch(cause) {
+    // Discard an unsafe/oversized private capture only after invoke has drained
+    // the process; never retain an unbounded log as evidence.
+    try{unlinkSync(diagnosticPath);}catch{/* The owning attempt reports failure. */}
+    throw cause;
+  } finally {clearInterval(watch);}
+}
 
 export interface NativeProbeInvocation {
   readonly options: InvestigationProbeOptions;
@@ -87,13 +108,19 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
     let trafficChars = 0;
     fixture.setTrafficGuard(chars => { trafficChars = chars; admit(chars); });
     let controlBytes = 0, controlDuration = 0;
-    const extraFiles: { kind: 'control-output' | 'canary-manifest' | 'canary-signals' | 'host-checks'; path: string }[] = [];
+    const extraFiles: { kind: 'control-output' | 'canary-manifest' | 'canary-signals' | 'host-checks' | 'native-diagnostic' | 'control-diagnostic' | 'source-policy'; path: string }[] = [];
+    let restrictedDiagnostic='';
+    let sourceHost:SourcePolicyHost|undefined,hostBoundary:ClaudeQualificationInputs['broker']|undefined;
+    if(paired)fixture.reserveDiagnosticBytes(2*CLAUDE_DIAGNOSTIC_BYTES);
     if (paired) {
       check(); fixture.canaries.assertCurrent(); fixture.canaries.activate('control');
       const controlStarted = Date.now(), remaining = Math.min(PROBE_ATTEMPT_MS, context.deadlineAt - controlStarted);
       if (remaining < 1) throw Error('Probe deadline elapsed before control');
-      const control = await input.invoke(controlArgs, controlPrompt, { binaryPath: context.identity.binary.path, cwd: fixture.cwd,
-        stdin: controlPrompt, timeoutMs: remaining, signal, maxOutputBytes: 64 * 1024, env: nativeInvestigationEnvironment() });
+      const controlDiagnosticPath=join(fixture.root,'native-control-debug.log');
+      const captured = await invokeProbePhase(input,controlArgs, controlPrompt, { binaryPath: context.identity.binary.path, cwd: fixture.cwd,
+        stdin: controlPrompt, timeoutMs: remaining, signal, maxOutputBytes: 64 * 1024, env: nativeInvestigationEnvironment() },abort,controlDiagnosticPath);
+      const control=captured.result;
+      extraFiles.push({kind:'control-diagnostic',path:controlDiagnosticPath});
       check(); fixture.canaries.assertCurrent(); // invoke returns only after actual process-group drain.
       const raw = JSON.stringify(control), path = join(fixture.root, 'native-control-output.json');
       controlBytes = Buffer.byteLength(raw); controlDuration = control.durationMs;
@@ -111,7 +138,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
         throw Error('Probe control failed; no restricted retry or fallback');
       // Count both phases' reserves and the actual control transcript before
       // allowing any restricted traffic, rather than reusing a per-call 128K cap.
-      reservedControl = controlCost(control.stdout.length + control.stderr.length); admit(0);
+      reservedControl = controlCost(control.stdout.length + control.stderr.length + (captured.diagnostic?.text.length??0)); admit(0);
       fixture.canaries.activate('restricted');
     }
     const timeoutMs = Math.min(PROBE_ATTEMPT_MS, context.deadlineAt - Date.now());
@@ -123,17 +150,27 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
       }
       if (fixture.error()) abort.abort();
     }, 5);
-    const restrictedStarted = Date.now();
-    const result = await input.invoke(args, prompt, { binaryPath: context.identity.binary.path, cwd: fixture.cwd,
-      timeoutMs, signal, stdin: prompt, maxOutputBytes: paired ? Math.floor((PROBE_OBSERVATION_BYTES - controlBytes - 65536) / 6) : PROBE_OBSERVATION_BYTES, onSpawn: () => { processStarted = true; },
-      env: { ...nativeInvestigationEnvironment(), [NATIVE_REVIEW_BINDING_ENV]: fixture.binding.bindingId } });
+    const restrictedStarted = Date.now(),policyBefore=paired?managedPolicySnapshot():[];
+    const captured = await invokeProbePhase(input,args, prompt, { binaryPath: context.identity.binary.path, cwd: fixture.cwd,
+      timeoutMs, signal, stdin: prompt, maxOutputBytes: paired ? Math.floor((PROBE_OBSERVATION_BYTES - controlBytes - 2*CLAUDE_DIAGNOSTIC_BYTES - 65536) / 6) : PROBE_OBSERVATION_BYTES, onSpawn: () => { processStarted = true; },
+      env: { ...nativeInvestigationEnvironment(), [NATIVE_REVIEW_BINDING_ENV]: fixture.binding.bindingId } },abort,paired?join(fixture.cwd,'investigation-debug.log'):undefined);
+    const result=captured.result;
+    if(paired){
+      restrictedDiagnostic=captured.diagnostic!.text;
+      const path=join(fixture.root,'native-restricted-debug.log');renameSync(join(fixture.cwd,'investigation-debug.log'),path);
+      extraFiles.push({kind:'native-diagnostic',path});
+      sourceHost={version:1,probeId:context.probeId,attemptId:context.attemptId,phase:'restricted',before:policyBefore,after:managedPolicySnapshot(),
+        processStarted,cancellationRequested,externallyCancelled:input.options.signal.aborted};
+      const hostPath=join(fixture.root,'source-policy-host.json');writeFileSync(hostPath,JSON.stringify(sourceHost),{mode:0o600,flag:'wx'});
+      extraFiles.push({kind:'source-policy',path:hostPath});
+    }
     check(false);
     // Retain the actual bounded runtime output for independent attestation.
     // It remains private diagnostic data, never a model-supplied proof object.
     const raw = JSON.stringify(result), rawOverflow = Buffer.byteLength(raw) + controlBytes > PROBE_OBSERVATION_BYTES;
     if (!rawOverflow) { fixture.reserveDiagnosticBytes(Buffer.byteLength(raw)); writeFileSync(join(fixture.root, 'native-output.json'), raw, { mode: 0o600, flag: 'wx' }); }
     let exceededBudget = false;
-    if (!rawOverflow && !result.outputLimitExceeded) try { admit(trafficChars + result.stdout.length + result.stderr.length); } catch { exceededBudget = true; }
+    if (!rawOverflow && !result.outputLimitExceeded) try { admit(trafficChars + result.stdout.length + result.stderr.length + restrictedDiagnostic.length); } catch { exceededBudget = true; }
     // ProcessGroupResult is returned only after actual process-group teardown.
     const state = fixture.state(), effectiveDigest = digestValue(input.adapter.configuration(fixture.cwd, indexed));
     if (paired) phases.push({ phase: 'restricted', probeId: context.probeId, attemptId: context.attemptId,
@@ -177,6 +214,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
         await forwardNativeReviewCommand(config, valid); host.positiveAfter = true;
       } catch { /* Missing live positive control is unverified, never a denial. */ }
       const path = join(fixture.root, 'host-checks.json'); writeFileSync(path, JSON.stringify(host), { mode: 0o600, flag: 'wx' });
+      hostBoundary=host;
       extraFiles.push({ kind: 'host-checks', path });
       observations.push({ ...provenance, check: 'cross-run', verdict: host.positiveBefore && host.positiveAfter ? (host.crossRunRejected === 6 ? 'observed-denied' : 'observed-allowed') : 'unverifiable',
         observationDigest: digestValue(host), detail: 'Foreign capability refusals tested between successful scoped reads' });
@@ -185,10 +223,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
       extraFiles.push({ kind: 'canary-manifest', path: fixture.canaries.manifestPath },
         ...Object.values(fixture.canaries.signalPaths).map(path => ({ kind: 'canary-signals' as const, path })));
     }
-    for (const observation of observations) await context.observe(observation);
     const expected = (check: string) => check === 'durable-progress' || check === 'cancellation-exit' ? 'observed-allowed' : 'observed-denied';
-    const observed = new Set(observations.filter(o => o.verdict === expected(o.check)).map(o => o.check));
-    const missingEvidence = PROBE_REQUIRED_CHECKS.filter(check => !observed.has(check));
     const failed = rawOverflow || exceededBudget || Date.now() > context.deadlineAt || result.outputLimitExceeded || result.observerFailed || fixture.error() || result.spawnError ||
       observations.some(o => o.verdict !== 'unverifiable' && o.verdict !== expected(o.check)) ||
       result.timedOut || result.stalled || (!result.aborted && result.exitCode !== 0);
@@ -198,13 +233,22 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
       ...Object.keys(input.adapter.configuration(fixture.cwd,indexed)).map(path=>({kind:'configuration' as const,path})),
       ...extraFiles,
     ].map(file=>({...file,digest:investigationFileDigest(file.path),bytes:statSync(file.path).size}));
+    const endedAt=Date.now();
+    let proof=!failed&&sourceHost&&hostBoundary&&canaries?reconstructClaudeQualification({identity:context.identity,sourceMode:context.sourceMode,
+      cwd:fixture.cwd,endedAt,raw:result,diagnostics:restrictedDiagnostic,host:sourceHost,broker:hostBoundary,canaries,files:evidenceFiles}):undefined;
+    if(proof){observations.splice(0,observations.length,...proof.observations);if(phases[1])phases[1]={...phases[1],effectiveDigest:proof.candidate.trace.effectiveDigest};}
+    const observed = new Set(observations.filter(o => o.verdict === expected(o.check)).map(o => o.check));
+    const missingEvidence = PROBE_REQUIRED_CHECKS.filter(check => !observed.has(check));
+    for (const observation of observations) await context.observe(observation);
+    if(input.options.signal.aborted)proof=undefined;
     return probeExportSchema.parse({ version: 1, kind: 'review-investigation-probe-observations', origin: 'unsigned-installed-observations',
       sourceCommit: runtime.sourceCommit, sourceDigest: runtime.sourceDigest,
       evidenceFiles,
       ...(paired ? { phases, canaries } : {}),
+      ...(proof?{candidate:proof.candidate}:{}),
       status: { version: 1, probeId: context.probeId, requestId: runtime.requestId, attemptId: context.attemptId, repo: context.repo,
-        sourceMode: context.sourceMode, state: failed ? 'failed' : input.options.signal.aborted ? 'cancelled' : 'unsupported',
-        identity: context.identity, startedAt, endedAt: Date.now(), observations, missingEvidence,
+        sourceMode: context.sourceMode, state: input.options.signal.aborted ? 'cancelled' : failed ? 'failed' : proof?'completed':'unsupported',
+        identity: context.identity, startedAt, endedAt, observations, missingEvidence,
         usage: { modelCalls: null, inputTokens: null, outputTokens: null, latencyMs: processStarted ? result.durationMs + controlDuration : null } } });
   } finally {
     if (monitor) clearInterval(monitor);

@@ -87,7 +87,7 @@ export const probeExportSchema = z.object({
   origin: z.literal('unsigned-installed-observations'),
   sourceCommit: z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/), sourceDigest: digest,
   status: probeStatusSchema, candidate: probeCandidateSchema.optional(),
-  evidenceFiles: z.array(z.object({kind:z.enum(['native-output','control-output','checkpoint-journal','configuration','canary-manifest','canary-signals','host-checks']),path:text,digest,bytes:time}).strict()).max(16).optional(),
+  evidenceFiles: z.array(z.object({kind:z.enum(['native-output','control-output','checkpoint-journal','configuration','canary-manifest','canary-signals','host-checks','native-diagnostic','control-diagnostic','source-policy']),path:text,digest,bytes:time}).strict()).max(16).optional(),
   phases: z.array(probePhaseSchema).min(1).max(2).optional(),
   canaries: z.object({ manifestPath: text, manifestDigest: digest,
     checks: z.array(z.object({ capability: z.enum(['hooks','plugins','repository-instructions','project-mcp']),

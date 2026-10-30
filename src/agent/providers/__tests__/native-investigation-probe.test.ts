@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CliProvider } from '../cli-provider.js';
 import { issueInvestigationProbeGrant } from '../investigation-probe-grant.js';
-import { investigationFileDigest, inspectQualifiedInvestigationBinding } from '../investigation-session.js';
+import { investigationFileDigest, inspectQualifiedInvestigationBinding, qualifyInvestigationAdapter, inspectUnsignedIsolationEvidence } from '../investigation-session.js';
 import { claudeInvestigationAdapter } from '../claude-investigation-session.js';
 import { codexInvestigationAdapter } from '../codex-investigation-session.js';
 import { installedInvestigationImages } from '../native-investigation-installation.js';
@@ -21,6 +21,7 @@ import { digestValue } from '../../../workflow/code-review/investigation/identit
 import { runInProcessGroup } from '../../../shared/process-group.js';
 import type { QualifiedInvestigationSessionBinding } from '../../../shared/types.js';
 import { validateUnsignedProbeExport } from '../../../daemon/review-investigation-probe-export.js';
+import { CLAUDE_PROBE_TELEMETRY_VERSION } from '../claude-investigation-probe.js';
 
 const actor = `import {readFileSync,appendFileSync,writeFileSync,existsSync} from 'node:fs';
 import {createConnection} from 'node:net';
@@ -36,6 +37,13 @@ if(argv.includes('--plugin-dir')){
 }
 const {turn}=JSON.parse(input.split('\\n').at(-1));
 const schemaPath=argv[argv.indexOf('--output-schema')+1];
+if(existsSync(new URL('./v2-native',import.meta.url))){
+ const diagnostics=['Broken symlink or missing file encountered for settings.json at path: /etc/claude-code/managed-settings.json','Found 4 plugins (0 enabled, 4 disabled)','cc-plugin-sec-default@builtin not seated: no managed settings and not a Team or Enterprise organization (max)','Registered 0 hooks from 0 plugins','Initialized versioned plugins system with 0 plugins'];
+ if(existsSync(new URL('./policy-missing',import.meta.url)))diagnostics.pop();
+ if(existsSync(new URL('./diagnostic-flood',import.meta.url))){writeFileSync(argv[argv.indexOf('--debug-file')+1],'x'.repeat(1024*1024));setInterval(()=>{},1000);await new Promise(()=>{});}
+ writeFileSync(argv[argv.indexOf('--debug-file')+1],diagnostics.map(m=>'2026-10-30T09:33:20.000Z [DEBUG] '+m).join('\\n')+'\\n');
+ process.stdout.write(JSON.stringify({type:'system',subtype:'init',session_id:'scripted-v2',claude_code_version:'2.1.310',tools:['StructuredOutput','mcp__insrc-scoped-review__review_read','mcp__insrc-scoped-review__review_progress','mcp__insrc-scoped-review__review_reply'],plugins:[],skills:[],slash_commands:[],permissionMode:'dontAsk',mcp_servers:[{name:'insrc-scoped-review',status:'connected',source:'dynamic'}]})+'\\n');
+}
 if(existsSync(new URL('./restricted-leak',import.meta.url))){const {record}=await import(process.cwd()+'/../synthetic-config/canary-record.mjs');record('hooks',{hook_event_name:'SessionStart'});}
 
 writeFileSync(new URL('./observed.json',import.meta.url),JSON.stringify({args:argv,home:process.env.HOME,codexHome:process.env.CODEX_HOME,schema:argv.includes('--output-schema')?JSON.parse(readFileSync(schemaPath,'utf8')):null,hasApiKey:process.env.ANTHROPIC_API_KEY!==undefined,hasNodeOptions:process.env.NODE_OPTIONS!==undefined}));
@@ -47,7 +55,7 @@ for(let i=0;i<2;i++)await call({runId:turn.runId,subjectDigest:turn.subjectDiges
 setInterval(()=>{},1000);
 `;
 
-async function fixture(kind: 'claude' | 'codex' = 'claude') {
+async function fixture(kind: 'claude' | 'codex' = 'claude', qualifying = false) {
   const repo = mkdtempSync(join(tmpdir(), 'native-probe-test-'));
   if (kind === 'codex') {
     mkdirSync(join(repo, 'bin'));
@@ -59,6 +67,7 @@ async function fixture(kind: 'claude' | 'codex' = 'claude') {
   const binary = kind === 'codex' ? join(repo, 'bin', 'codex.js') : join(repo, 'fake-claude.mjs');
   writeFileSync(binary, `#!${process.execPath}\n${actor}`); chmodSync(binary, 0o700);
   const provider = new CliProvider({ kind, binPath: binary });
+  if (qualifying) writeFileSync(join(repo,'v2-native'),'explicit scripted native evidence, not installed qualification');
   const f = continuationFixture(), policy = createInvestigationPolicy(provider), probeId = randomUUID(), attemptId = randomUUID();
   const budget = { policy: policy.budget, admitted: admitInvestigationRequest(policy, { turn: f.turn, seed: f.context.seed }, InvestigationReplySchema),
     outputAllowanceTokens: policy.budget.profile.completionReserveTokens, reviewId: probeId, callId: attemptId, stage: 'probe', role: 'probe', attempt: 1 };
@@ -69,7 +78,7 @@ async function fixture(kind: 'claude' | 'codex' = 'claude') {
   const file = (path: string) => ({ path: realpathSync(path), digest: investigationFileDigest(realpathSync(path)) });
   const adapter = kind === 'claude' ? claudeInvestigationAdapter : codexInvestigationAdapter;
   const profile = provider.getReviewBudgetProfile('reviewer-session'), args = adapter.args(InvestigationReplySchema, [], probe.cwd, false);
-  const identity = { kind, adapterVersion: adapter.version, binaryVersion: 'explicitly-nonqualifying-fixture',
+  const identity = { kind, adapterVersion: adapter.version, binaryVersion: qualifying ? CLAUDE_PROBE_TELEMETRY_VERSION : 'explicitly-nonqualifying-fixture',
     binary: file(binary), runtimeFiles: [...installedInvestigationImages(kind, binary, probe.cwd).filter(pin => pin.path !== binary), file(command.command), file(command.args.find(p => p.endsWith('insrc-review-bridge.ts'))!)],
     profileDigest: digestValue(profile), catalogDigest: scopedReviewCatalogDigest(false), launchDigest: adapter.launchDigest(args, probe.cwd, InvestigationReplySchema) };
   const context = { origin: 'installed-probe' as const, probeId, attemptId, repo, cwd: probe.cwd, sourceMode: 'source-only' as const,
@@ -100,6 +109,58 @@ test('Trusted probe executes one control and one restricted phase with exact pin
     await assert.rejects(() => large.provider.runInvestigationProbe({ grant, signal: large.abort.signal }));
     assert.equal(existsSync(join(large.repo, 'calls.txt')), false, 'inclusive admission refuses before launch');
   } finally { await large.close(); }
+});
+
+test('Complete paired host evidence emits a completed Claude v2 candidate and qualifies through installed authority', async () => {
+  const f=await fixture('claude',true);
+  try {
+    const report=await f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal});
+    assert.equal(report.status.state,'completed');assert.deepEqual(report.status.missingEvidence,[]);
+    assert.ok(report.candidate);assert.equal(report.candidate.effective.protocolTools?.[0]?.name,'StructuredOutput');
+    assert.equal(report.candidate.effective.evidenceBasis?.length,14);
+    assert.ok(report.canaries?.checks.every(c=>c.controlObserved&&!c.restrictedObserved&&c.verdict==='unverifiable'),'raw silence is not rewritten as proof');
+    const checked=validateUnsignedProbeExport(report);let verified=0;
+    // This explicitly synthetic authority exercises the installed-origin
+    // verification callback. It does not publish/approve production evidence or
+    // certify this scripted binary as the real installed CLI.
+    const q=await qualifyInvestigationAdapter('synthetic-installed-authority',f.context.identity,f.repo,false,{
+      origin:'installed-probe',read:async()=>checked.candidate!,verifyInstalled:async(reference,digest)=>{
+        verified++;assert.equal(reference,'synthetic-installed-authority');assert.equal(digest,digestValue(checked.candidate));
+        inspectUnsignedIsolationEvidence(checked.candidate!,f.context.identity,f.repo,false,['claude-scoped-v2']);
+      }},['claude-scoped-v2']);
+    assert.equal(verified,1);assert.equal(q.origin,'installed-probe');
+    assert.equal(readFileSync(join(f.repo,'calls.txt'),'utf8'),'called\ncalled\n');
+    for(const file of report.evidenceFiles??[])assert.ok(file.bytes<=8*1024*1024);
+  } finally {await f.close();}
+});
+
+test('Internal post-ACK cancellation qualifies only after actual process drain while operator cancellation stays cancelled', async () => {
+  const f=await fixture('claude',true);
+  try {
+    const running=f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal});
+    const watch=setInterval(()=>{if(f.probe.state().sequence>=1)f.abort.abort();},1);
+    let report;try{report=await running;}finally{clearInterval(watch);}
+    assert.equal(report.status.state,'cancelled');assert.equal(report.candidate,undefined);
+    const phase=report.phases?.at(-1);assert.equal(phase?.aborted,true);assert.equal(phase?.exitSignal,'SIGKILL');
+  } finally {await f.close();}
+});
+
+test('A reachable v2 candidate still refuses inactive controls missing native policy and restricted leaks', async () => {
+  for(const [marker,expected] of [['control-claims','unsupported'],['policy-missing','unsupported'],['restricted-leak','failed']] as const){
+    const f=await fixture('claude',true);
+    try{writeFileSync(join(f.repo,marker),'synthetic negative case');const report=await f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal});
+      assert.equal(report.status.state,expected,marker);assert.equal(report.candidate,undefined,marker);
+    }finally{await f.close();}
+  }
+});
+
+test('Oversized native diagnostics drain the process and are discarded without a retry', async () => {
+  const f=await fixture('claude',true);
+  try{writeFileSync(join(f.repo,'diagnostic-flood'),'synthetic overflow');
+    await assert.rejects(()=>f.provider.runInvestigationProbe({grant:issueInvestigationProbeGrant(f.context),signal:f.abort.signal}),/diagnostic|Diagnostic/);
+    assert.equal(readFileSync(join(f.repo,'calls.txt'),'utf8'),'called\ncalled\n');
+    assert.equal(existsSync(join(f.probe.cwd,'investigation-debug.log')),false);
+  }finally{await f.close();}
 });
 
 test('Codex probe preserves strict schema cleanup and actual process drain', async () => {

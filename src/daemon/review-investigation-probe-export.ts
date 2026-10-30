@@ -30,7 +30,7 @@ export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExp
   if(path!==file.path||isAbsolute(rel)||rel.startsWith('../')||!root?.startsWith('insrc-p-')||!stat.isFile()||stat.isSymbolicLink()||stat.nlink!==1||
    (stat.mode&0o077)||stat.size>PROBE_OBSERVATION_BYTES||stat.size!==file.bytes||investigationFileDigest(path)!==file.digest)throw Error('Probe evidence file is stale or unsafe');
   const owner=lstatSync(dirname(path));if(!owner.isDirectory()||(owner.mode&0o077))throw Error('Unsafe evidence directory');
-  if(!['native-output.json','native-control-output.json','observations.jsonl','investigation-mcp.json','investigation-settings.json','canary-manifest.json','canary-control.jsonl','canary-restricted.jsonl','host-checks.json'].includes(basename(path)))throw Error('Unsupported probe evidence file');
+  if(!['native-output.json','native-control-output.json','observations.jsonl','investigation-mcp.json','investigation-settings.json','canary-manifest.json','canary-control.jsonl','canary-restricted.jsonl','host-checks.json','native-control-debug.log','native-restricted-debug.log','source-policy-host.json'].includes(basename(path)))throw Error('Unsupported probe evidence file');
   if(fixtureRoot&&fixtureRoot!==root)throw Error('Probe evidence spans different fixture roots');fixtureRoot=root;
   if(file.kind==='checkpoint-journal')for(const line of readFileSync(path,'utf8').split('\n').filter(Boolean)){
    const event=JSON.parse(line) as {probeId?:unknown;attemptId?:unknown};
@@ -57,7 +57,7 @@ export function validateUnsignedProbeExport(input:unknown):InvestigationProbeExp
   for(const check of ['cross-run','approval'] as const){
    const observation=report.status.observations.find(o=>o.check===check);
    const verdict=check==='cross-run'?(alive?(host['crossRunRejected']===6?'observed-denied':'observed-allowed'):'unverifiable'):
-    alive&&!host['approvalRejected']?'observed-allowed':'unverifiable';
+    alive&&!host['approvalRejected']?'observed-allowed':report.candidate?.identity.adapterVersion==='claude-scoped-v2'&&alive&&host['approvalRejected']?'observed-denied':'unverifiable';
    if(!observation||observation.observationDigest!==digestValue(host)||observation.verdict!==verdict)throw Error('Host boundary evidence promoted or changed');
   }
   for(const phase of report.phases){

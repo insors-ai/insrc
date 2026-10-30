@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, mkdirSync, writeFileSync, openSync, closeSync, fsyncSync, fstatSync, constants, realpathSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, openSync, closeSync, fsyncSync, fstatSync, lstatSync, constants, realpathSync, rmSync } from 'node:fs';
 import { CLAUDE_INVESTIGATION_SETTINGS } from '../agent/providers/claude-investigation-session.js';
 import { tmpdir } from 'node:os';
 import { join, relative, isAbsolute } from 'node:path';
@@ -143,8 +143,11 @@ export async function createInvestigationProbeFixture(options: ProbeFixtureOptio
       journalPath, canaryPath, canaries, syntheticConfig: shadow, networkUrl: `http://127.0.0.1:${address.port}/`,
       state: () => snapshotValue(state), error: () => failure,
       reserveDiagnosticBytes: (bytes: number) => {
-        if (!Number.isSafeInteger(bytes) || bytes < 0 || journal === undefined ||
-          bytes + fstatSync(journal).size > journalLimit()) throw Error('Aggregate probe retention bound');
+        // An external cancellation closes the journal before the CLI finishes
+        // draining. Its immutable bytes still count toward retained evidence.
+        const stat = journal === undefined ? lstatSync(journalPath) : fstatSync(journal);
+        if (!Number.isSafeInteger(bytes) || bytes < 0 || !stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || (stat.mode & 0o077) ||
+          bytes + stat.size > journalLimit()) throw Error('Aggregate probe retention bound');
         diagnosticBytes += bytes;
       },
       setTrafficGuard: (guard: (chars: number) => void) => {

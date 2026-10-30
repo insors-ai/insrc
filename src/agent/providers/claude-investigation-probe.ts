@@ -45,6 +45,17 @@ export function collectClaudeProbeObservations(result: ProcessGroupResult, ident
     if (tools.includes('WebFetch') || tools.includes('WebSearch')) add('network', 'Native init advertises unscoped network tools');
   }
   if (Array.isArray(init['plugins']) && init['plugins'].length) add('plugins', 'Native init advertises loaded plugins');
+  if (v2) {
+    if (typeof init['permissionMode'] === 'string' && init['permissionMode'] !== 'dontAsk') add('approval', 'Native permission mode differs from restricted policy');
+    if ((Array.isArray(init['skills']) && init['skills'].length) || (Array.isArray(init['slash_commands']) && init['slash_commands'].length))
+      add('repository-instructions', 'Native startup advertises unexpected skills or commands');
+    if (Array.isArray(init['mcp_servers'])) for (const server of init['mcp_servers']) {
+      if (!server || typeof server !== 'object') continue;
+      const entry = server as Record<string, unknown>;
+      if (entry['name'] !== 'insrc-scoped-review' || entry['source'] !== 'dynamic')
+        add(entry['source'] === 'project' || entry['source'] === 'local' ? 'project-mcp' : 'user-mcp', 'Native startup advertises a foreign or inherited MCP server');
+    }
+  }
   for (const event of events) if (event['type'] === 'system' &&
     ['hook_started', 'hook_response', 'hook_progress'].includes(String(event['subtype'])))
     add('hooks', 'Native stream reports a hook running in the restricted launch');

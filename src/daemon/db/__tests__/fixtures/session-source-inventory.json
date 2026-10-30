@@ -263,6 +263,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "provider-adapter",
           "make"
         ],
@@ -436,6 +440,22 @@
         ],
         [
           "provider-adapter",
+          "this.checkOllama"
+        ],
+        [
+          "provider-adapter",
+          "this.checkOllama"
+        ],
+        [
+          "provider-use",
+          "this.checkOllama"
+        ],
+        [
+          "provider-use",
+          "this.checkOllama"
+        ],
+        [
+          "provider-adapter",
           "this.completeBoundedStructured"
         ],
         [
@@ -589,6 +609,14 @@
         [
           "provider-use",
           "this.modelArgs"
+        ],
+        [
+          "provider-adapter",
+          "this.ollamaCheck"
+        ],
+        [
+          "provider-use",
+          "this.ollamaCheck"
         ],
         [
           "provider-adapter",
@@ -831,9 +859,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 197,
-      "sitesDigest": "740a2e445c1e3d96a854454656a67a51bc82dc9ddc1fbf14ac3f47a6ce977618",
-      "sourceDigest": "431eb459ea814553a9d0e2e76a816b2579d80203fed29a16fbe8e2323ddcfc5b",
+      "siteCount": 204,
+      "sitesDigest": "18737727b49505e2bbb3ded18032891f601140e681ff8e29c2e9b010c654cee9",
+      "sourceDigest": "b7c317eff4cdce36d0b45e693bdf7738b929af7c38179323050696cd444363b0",
       "boundaries": [
         "diagnostic",
         "filesystem-open",

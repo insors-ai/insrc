@@ -70,6 +70,7 @@ import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './st
 import { completeInputChars } from '../../shared/structured-input.js';
 import { boundedClaudeArgs, boundedClaudeEnv, BOUNDED_SYSTEM_PROMPT, UnsupportedBoundedInputError, verifyBoundedCli } from './bounded-input.js';
 import { ModelResponseShapeError } from './model-call-error.js';
+import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
 
 const log = getLogger('cli-provider');
 
@@ -179,6 +180,8 @@ export interface CliProviderOpts {
 	/** Run claude against this Ollama server (claude kind with a model only).
 	 *  Absent: the CLI runs exactly as before. */
 	readonly ollama?: OllamaTarget | undefined;
+	/** The pre-run check of an Ollama-targeted provider (tests pass a stub). Default checkOllamaTarget. */
+	readonly ollamaCheck?: ((target: OllamaTarget, model: string) => Promise<void>) | undefined;
 }
 
 
@@ -227,6 +230,7 @@ export class CliProvider implements LLMProvider {
 	private readonly embedDelegate: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
 	/** The Ollama server claude runs against, when this provider serves an Ollama-hosted family. */
 	readonly ollama: OllamaTarget | undefined;
+	private readonly ollamaCheck: (target: OllamaTarget, model: string) => Promise<void>;
 
 	readonly capabilities: ProviderCapabilities;
 
@@ -236,6 +240,7 @@ export class CliProvider implements LLMProvider {
 			throw new Error(`cli-provider: an Ollama target needs the claude CLI and a model (kind '${opts.kind}', model '${opts.model ?? ''}')`);
 		}
 		this.ollama = opts.ollama;
+		this.ollamaCheck = opts.ollamaCheck ?? checkOllamaTarget;
 		this.kind = opts.kind;
 		this.inputBudgetChars = opts.inputBudgetChars;
 		this.defaultModel = opts.model;
@@ -310,6 +315,8 @@ export class CliProvider implements LLMProvider {
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
 				if (err instanceof InputTooLargeError) throw err;
+				// An Ollama server that cannot serve the run is reported, not retried.
+				if (err instanceof OllamaTargetError) throw err;
 				// A cancelled call ends at once; it is never retried (Epic 8315a11f s1).
 				if (isAbortError(err)) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
@@ -384,6 +391,7 @@ export class CliProvider implements LLMProvider {
 			verifyBoundedCli(this.kind, this.binPath, dir);
 			if (this.kind !== 'claude') throw new UnsupportedBoundedInputError('No verified tool-free invocation is available for this CLI');
 			const args = boundedClaudeArgs(wireSchema, this.modelArgs(opts));
+			await this.checkOllama();
 			const out = await runInProcessGroup(this.binPath, args, {
 				cwd: dir, stdin: serialiseMessages(messages), env: this.withOllama(boundedClaudeEnv()) ?? boundedClaudeEnv(),
 				timeoutMs: opts.timeoutMs ?? this.timeoutMs,
@@ -571,6 +579,7 @@ export class CliProvider implements LLMProvider {
 					if (attempt < maxAttempts) continue;
 					throw err;
 				}
+				if (err instanceof OllamaTargetError) throw err;
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
@@ -719,7 +728,22 @@ export class CliProvider implements LLMProvider {
 		return env;
 	}
 
-	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
+	/** Before a claude run of an Ollama-targeted provider: the server answers,
+	 *  has the model and (cloud model) is signed in; a failure starts no run. */
+	private async checkOllama(): Promise<void> {
+		if (this.ollama === undefined) return;
+		try {
+			await this.ollamaCheck(this.ollama, this.defaultModel!);
+		} catch (err) {
+			if (err instanceof OllamaTargetError) {
+				log.warn({ model: err.model, host: err.host, cause: err.cause }, `claude on Ollama: pre-run check failed (${err.cause}); the run was not started`);
+			}
+			throw err;
+		}
+	}
+
+	private async runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
+		await this.checkOllama();
 		return new Promise((resolve, reject) => {
 			const env = exec?.env ?? this.withOllama(process.env);
 			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal, env);

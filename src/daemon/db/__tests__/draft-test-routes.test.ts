@@ -62,7 +62,7 @@ test('CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate 
   assert.deepEqual(await b.call('db.connections.v2.cancelTest',{requestId:editing.requestId}),{canceled:false});
   assert.deepEqual(await a.call('db.connections.v2.cancelTest',{requestId:editing.requestId}),{canceled:true});
   assert.equal(parseDraftTestResult(await pending).status,'canceled');release();
-  const disabled=await connectionManagementRpc('db.connections.v2.capabilities',{}, {connectionIdentity:'fixture',daemonEpoch:'epoch'}) as {features:string[]};assert.equal(disabled.features.includes('draft-test'),false);
+  const disabled=await connectionManagementRpc('db.connections.v2.capabilities',{}, {connectionIdentity:'fixture',daemonEpoch:'epoch'},{enabled:async()=>false}) as {features:string[]};assert.equal(disabled.features.includes('draft-test'),false);
 	} finally { release(); a.socket.destroy(); b.socket.destroy(); await server.close(); await runtime.close(); await env.cleanup(); }
 });
 

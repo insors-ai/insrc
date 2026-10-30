@@ -37,3 +37,8 @@ Details: UI-FEEDBACK.md. Earlier acceptance results remain historical.
 - Cancel Browse, edit the path while a dialog is open, or hide/close the manager: a delayed selection must not overwrite the current draft.
 - Leave Label blank. Enter Connection ID and file path. On an enabled isolated daemon, Test and Save enable; successful Save shows Connection ID as the list name.
 - Missing inputs get specific messages. On the current production daemon, each action explains that creation/testing is not enabled; changing Label cannot resolve a backend capability restriction.
+
+
+## Default enablement (supersedes historical production-gate restrictions above)
+
+The user explicitly enabled this feature by default. After updating/restarting the daemon, a fresh registered repository should advertise sessions, Test and Saved creation/update/removal; completed inputs should enable Test and Save. No special test daemon or release-evidence flag is required. Existing legacy registries still require their offline migration, and corrupt/partial state still requires recovery. Earlier acceptance failures and pending service coverage remain historical evidence.

@@ -1,4 +1,4 @@
-/** Release evidence is generated only after the S001 build/test gates pass. */
+/** Runtime availability is independent of the historical release-evidence audit. */
 import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { canonicalRequestJson } from './management-tickets.js';
@@ -59,7 +59,7 @@ async function releaseDocument(bundle: URL, name: unknown, expected: string): Pr
 	return value as Record<string, unknown>;
 }
 const SESSION_RELEASE_PROOFS = ['INVENTORY', 'AUTH', 'RECONNECT', 'STREAM', 'MEMORY', 'REPLAY', 'COLLISION', 'NAMESPACE', 'LEASE', 'ISOLATION', 'DRIVER-LOGS', 'FILES', 'COMPAT', 'MCP', 'CLIENT-EGRESS', 'CONTEXT', 'SCOPE', 'FREEFORM', 'CACHE', 'RECURSION', 'PROVIDER', 'CONSUMER-LOGS', 'EMBED-DENY', 'ADHERENCE-CACHE', 'EXPIRY', 'GATE', 'SWEEP'] as const;
-export async function connectionManagementEnablement(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url), additionalScopes: readonly string[] = []): Promise<ManagementEnablement> {
+export async function verifyConnectionManagementRelease(evidenceUrl: URL = new URL('../../assets/connection-management-gates.json', import.meta.url), additionalScopes: readonly string[] = []): Promise<ManagementEnablement> {
 	try {
 		const evidence = JSON.parse(await readFile(evidenceUrl, 'utf8')) as {
 			version: number;
@@ -120,4 +120,13 @@ export async function connectionManagementEnablement(evidenceUrl: URL = new URL(
 	catch {
 		return { ready: false, digest: '0'.repeat(64) };
 	}
+}
+
+/** Enabled by default by explicit product policy. This is not release-audit evidence.
+ * The identity pins this runtime policy for managed owners; request authorization,
+ * registry ownership, credentials, signed tickets and worker checks remain separate.
+ */
+export async function connectionManagementEnablement(_evidenceUrl?: undefined, scopes: readonly string[] = []): Promise<ManagementEnablement> {
+ if(scopes.some(scope=>!['sc1','sc2','sc3','sc4','sc5','sc6','sc7','sc8'].includes(scope)))return {ready:false,digest:'0'.repeat(64)};
+ return {ready:true,digest:createHash('sha256').update('insrc:connection-management:default-enabled:v2').digest('hex')};
 }

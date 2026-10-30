@@ -124,6 +124,10 @@
     "src/daemon/db-rpc.ts": {
       "classification": "full-use-lease",
       "rationale": "S004 reviewed: legacy persisted-config probes retain the existing Saved resolver lease through actual worker drain, including cancellation. Unsaved drafts do not invent a lease."
+    },
+    "src/daemon/db/management-defaults.ts": {
+      "classification": "non-driver-owner-initialization",
+      "rationale": "User-authorized default enablement: ManagementOwnerLease.acquire is the exclusive filesystem owner claim, not a driver factory. Fresh registries use signed protected state; activation and drivers still pass through openManagedRoot and its full-use leases."
     }
   },
   "sites": [
@@ -635,6 +639,11 @@
     {
       "file": "src/daemon/db/management-adoption.ts",
       "expression": "ManagementOwnerLease.acquire(join(directory, 'owner.json'), root)",
+      "boundary": "acquire-call"
+    },
+    {
+      "file": "src/daemon/db/management-defaults.ts",
+      "expression": "ManagementOwnerLease.acquire(join(directory,'owner.json'),root)",
       "boundary": "acquire-call"
     },
     {

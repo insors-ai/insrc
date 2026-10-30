@@ -12,7 +12,7 @@ import { _resetCacheForTests } from '../pool-cache.js';
 import { _setKeystoreForTests } from '../secrets.js';
 import type { OperationTicket, MutationOutcome, ManagementCapabilities, SafeConnection } from '../../../shared/connection-management.js';
 const transport = { connectionIdentity: 'fixture-socket', daemonEpoch: 'fixture-epoch' };
-const call = (method: typeof CONNECTION_V2_METHODS[number], params: unknown) => connectionManagementRpc(method, params, transport);
+const call = (method: typeof CONNECTION_V2_METHODS[number], params: unknown) => connectionManagementRpc(method, params, transport,{removalEnabled:async()=>false});
 async function create(f: Awaited<ReturnType<Awaited<ReturnType<typeof environment>>['rootFixture']>>, id = 'fixture') {
 	const key = { repoRoot: f.root, scope: 'saved' as const, id };
 	const ticket = await call('db.connections.v2.ticket', { key, mode: 'create' }) as OperationTicket;
@@ -29,7 +29,8 @@ test('CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and 
 	try {
 		assert.deepEqual(Object.keys(connectionManagementHandlers()).sort(), [...CONNECTION_V2_METHODS].sort());
 		const capabilities = await call('db.connections.v2.capabilities', { repoRoot: root }) as ManagementCapabilities;
-		assert.deepEqual(capabilities.features, ['safe-read', 'driver-descriptors']);
+		assert.deepEqual(capabilities.features, ['safe-read','driver-descriptors','workbench-sessions','session-delegation','draft-test','test-cancellation']);
+        assert.ok(!capabilities.features.includes('saved-create'),'an unregistered root is not initialized');
 		assert.equal(capabilities.daemonEpoch, transport.daemonEpoch);
 		assert.equal(managementHandshake(capabilities).status, 'ready');
 		const denied = await call('db.connections.v2.ticket', { key: { repoRoot: root, scope: 'saved', id: 'fixture' }, mode: 'create' });

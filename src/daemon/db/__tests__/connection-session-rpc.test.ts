@@ -62,7 +62,7 @@ test('CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before 
   assert.throws(() => parseSessionDelegate({ repoRoot: '/root', audience: 'trusted-by-client' }));
   assert.throws(() => parseSessionEmpty({ sessionHandle: token.sessionHandle }));
   assert.equal(reads, 0); assert.equal(eligibility, 0); assert.equal(allocations, 0);
-  assert.equal((await connectionManagementEnablement(undefined, ['sc5'])).ready, false, 'release stays disabled');
+  assert.equal((await connectionManagementEnablement(undefined, ['sc5'])).ready, true, 'runtime sessions are enabled independently of release evidence');
  } finally { await runtime.close(); }
 });
 
@@ -174,7 +174,7 @@ test('CM-S4-RPC/GATE: actual sockets keep both removal scopes on main and refuse
  const directory=realpathSync(mkdtempSync(join(tmpdir(),'cm-remove-route-'))),root=join(directory,'root');mkdirSync(root);
  const registry=new TargetRegistry(),{port1,port2}=new MessageChannel();let workers=0;
  registry.register({threadId:19,cls:'session'});port2.on('message',request=>{workers++;port2.postMessage({kind:'reply',requestId:request.requestId,result:'worker'});});
- const router=new Router({classOf:method=>methodClasses.classOf(method),registry,routed:new Set(['session']),local:directDispatch(connectionManagementHandlers())});router.attach(19,port1);
+ const router=new Router({classOf:method=>methodClasses.classOf(method),registry,routed:new Set(['session']),local:directDispatch(connectionManagementHandlers({removalEnabled:async()=>false}))});router.attach(19,port1);
  const server=new IpcServer(router.forward,Date.now,join(directory,'d.sock'));await server.listen();const socket=await client(join(directory,'d.sock'));
  try{
   const capabilities=await socket.call('db.connections.v2.capabilities',{});

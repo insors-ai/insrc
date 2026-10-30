@@ -2,7 +2,7 @@
   "uxDefinition": {
     "type": "AdaptiveCard",
     "version": "1.5",
-    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence. File sources put File path first, explain optional Label, and use a native Browse dialog. Separate persistent Save/Test messages distinguish missing inputs from disabled daemon capabilities; delayed picker results cannot replace an edited or hidden draft.",
+    "narrative": "VS Code implementation schematic after manual feedback: registration editor above the connections list at every width, dedicated themed tab icon, and icon-only Add/Refresh/Previous/Next/Delete-or-Discard/Close buttons with accessible names and tooltips. The shared model and capability checks also back JetBrains; its native layout is unchanged by this VS Code correction. Valid v2 safe-read/driver metadata permits local draft editing even when workbench sessions are unavailable. Save/Test/Remove retain independent advertised-capability admission and daemon authorization. Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence. File sources put File path first, explain optional Label, and use a native Browse dialog. Separate persistent Save/Test messages distinguish missing inputs from disabled daemon capabilities; delayed picker results cannot replace an edited or hidden draft. User policy correction: the daemon enables connection management by default; pending release-audit evidence no longer controls runtime capabilities. Real authorization, registry recovery, signed revisions/tickets and session ownership still apply. Existing unavailable-state examples remain compatibility/recovery alternatives.",
     "body": [
       {
         "type": "TextBlock",
@@ -399,7 +399,7 @@
   },
   "componentDependencyDefinition": {
     "id": "s005-live-client-boundaries",
-    "narrative": "Native TypeScript and Kotlin consumers share protocol/scenario fixtures, not executable source. Only each workbench/project transport adapter reaches existing daemon owners. Deprecated insrc-ide is excluded. One owner per extension workbench or actual JetBrains Project; manager views do not own sessions. Legacy application gateway stays stateless.",
+    "narrative": "Native TypeScript and Kotlin consumers share protocol/scenario fixtures, not executable source. Only each workbench/project transport adapter reaches existing daemon owners. Deprecated insrc-ide is excluded. One owner per extension workbench or actual JetBrains Project; manager views do not own sessions. Legacy application gateway stays stateless. Runtime feature availability is enabled by default independently of historical release audit; the daemon owns exclusive fresh-root initialization and signed Saved state.",
     "components": [
       {
         "id": "vscode",
@@ -435,6 +435,12 @@
         "label": "Backend sc1\u2013sc6/sc8",
         "path": "src/daemon/connection-session-rpc.ts",
         "description": "Existing daemon owns authority, receipts, configurations and cleanup."
+      },
+      {
+        "id": "default-owner",
+        "label": "Default Saved root initialization",
+        "path": "src/daemon/db/management-defaults.ts",
+        "description": "Only registered fresh roots can initialize; signed protected state and exclusive publication precede normal owner startup. Existing legacy/corrupt roots retain offline adoption/recovery."
       }
     ],
     "dependencies": [
@@ -467,6 +473,11 @@
         "from": "jhost",
         "to": "daemon",
         "label": "isolated project lanes"
+      },
+      {
+        "from": "daemon",
+        "to": "default-owner",
+        "label": "startup or selected-root capability request"
       }
     ]
   }

@@ -4,7 +4,7 @@ import { mkdir, writeFile, readFile, symlink, chmod } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { MessageChannel } from 'node:worker_threads';
 import { DatabaseSync } from 'node:sqlite';
-import { ConnectionSessionRpc } from '../../../connection-session-rpc.js';
+import { ConnectionSessionRpc,connectionSessionRuntime } from '../../../connection-session-rpc.js';
 import { connectionManagementHandlers } from '../../../connection-management-rpc.js';
 import { saveConnectionRpc } from '../../../db-rpc.js';
 import { IpcServer, directDispatch } from '../../../server.js';
@@ -39,7 +39,9 @@ async function draft(client: Awaited<ReturnType<typeof sessionRpcClient>>, root:
 }
 
 test('CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate', async () => {
-	const env = await environment(), root = join(env.directory, 'root'), alias = join(env.directory, 'alias'); await mkdir(root); await symlink(root, alias);
+	// This fixture owns its registration/session authority; exclude the production singleton.
+    await connectionSessionRuntime.close();
+    const env = await environment(), root = join(env.directory, 'root'), alias = join(env.directory, 'alias'); await mkdir(root); await symlink(root, alias);
 	const savedPath = join(root, 'saved.sqlite'), temporaryPath = join(root, 'temporary.sqlite');
 	for (const [path, marker] of [[savedPath, 'saved-alias'], [temporaryPath, 'temporary-canonical']] as const) { const db = new DatabaseSync(path); db.exec(`CREATE TABLE data(marker TEXT); INSERT INTO data VALUES ('${marker}');`); db.close(); }
 	for (const [target, connections] of [[root, []], [alias, [{ id: 'common', kind: 'sqlite', path: join(alias, 'saved.sqlite') }]]] as const) { const path = connectionsPath(target); await mkdir(dirname(path), { recursive: true }); await writeFile(path, JSON.stringify({ connections, namespace: target }) + '\n'); }

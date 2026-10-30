@@ -9,6 +9,7 @@ import { canonicalRequestJson } from './db/management-tickets.js';
 import { ManagementServiceError, managementRejection, savedManagementFor } from './db/management.js';
 import { connectionTestSupervisor, DraftTestAdmissionError } from './db/draft-test.js';
 import { prepareRuntimeConfig } from './db/runtime-config.js';
+import { ensureDefaultManagedRoot } from './db/management-defaults.js';
 import { connectionManagementEnablement } from './db/management-enablement.js';
 import { lookupRepoId } from '../db/repos.js';
 import { driverDescriptors, materializeDraft } from './db/driver-profiles.js';
@@ -107,11 +108,14 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		if (method === 'db.connections.v2.capabilities') {
 			const params = object(value, [], ['repoRoot']);
 			const features = ['safe-read', 'driver-descriptors'];
-			if(await (testPorts.sessionRuntime??connectionSessionRuntime).removalReady?.())features.push('temporary-remove','removal-state','removal-cleanup-retry');
+			if(await removalReady()&&await (testPorts.sessionRuntime??connectionSessionRuntime).removalReady?.())features.push('temporary-remove','removal-state','removal-cleanup-retry');
    if (await (testPorts.sessionRuntime ?? connectionSessionRuntime).ready()) features.push('workbench-sessions', 'session-delegation');
 			if(await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())features.push('draft-test','test-cancellation');
 			if (params.repoRoot !== undefined) {
-				const repoRoot = await root(params.repoRoot), service = savedManagementFor(repoRoot);
+				const repoRoot = await root(params.repoRoot);
+     // Registered-root initialization is independent of release-audit completion.
+     if(!savedManagementFor(repoRoot)&&!testPorts.sessionRuntime){try{await ensureDefaultManagedRoot(repoRoot);}catch{/* Existing legacy data or damaged metadata still needs recovery. */}}
+     const service = savedManagementFor(repoRoot);
 				if (service) {
 					try {
 						await service.list(managementContext(repoRoot, context));

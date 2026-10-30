@@ -20,7 +20,7 @@ interface Active {readonly requestId:string;readonly epoch:string;readonly stop:
 /** Explicit projection excludes saved references and runtime authority from private config. */
 function workerConfig(config:ConnectionConfig):ConnectionConfig {
  const {id,kind,family,label,url,path,schemaSource,namespace,pii,options,recursive,partitioning}=config;
- return JSON.parse(JSON.stringify({id,kind,family,label,url,path,schemaSource,namespace,pii,options,recursive,partitioning})) as ConnectionConfig;
+ return JSON.parse(JSON.stringify({id,kind,family,label:label?.trim()?label:undefined,url,path,schemaSource,namespace,pii,options,recursive,partitioning})) as ConnectionConfig;
 }
 export function probeWorkerEnvironment():NodeJS.ProcessEnv {
  const env:NodeJS.ProcessEnv={INSRC_MODE:'probe-worker',TSX_DISABLE_CACHE:'1'};

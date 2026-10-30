@@ -1,6 +1,6 @@
 {
-  "releaseEnabled": false,
-  "producerPolicyModified": false,
+  "releaseEnabled": true,
+  "producerPolicyModified": true,
   "files": {
     "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/ManageConnectionsAction.kt": "7ad979d3baed00f59b28574c72eec4cad5c5c18ece1c1439fd3657ffaee850d6",
     "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCapabilities.kt": "62328fd24c594cacde668410cbf3cb6009914300b83bf5cb9a9f67d462ec8f12",
@@ -33,7 +33,13 @@
     "vscode-plugin/src/connections/wiring.ts": "e43a2a9537568838c1f81a14d1f25ac5c883d8ad5a793f77513261a84fc5f455",
     "vscode-plugin/src/extension.ts": "f32f1aa08161bc9b41618dc853e33fb9a45304466968c91f86a57740f290e4e7",
     "vscode-plugin/media/connections-icon.svg": "906740fece600ce9bb10456432eb63d4ccb8eabef4bdecaa5fe497c0e8d4d586",
-    "vscode-plugin/media/connections-icon-dark.svg": "156c869eb89f36a1a52e04761ea31fdf0846dc3414d14e822067c8c338321579"
+    "vscode-plugin/media/connections-icon-dark.svg": "156c869eb89f36a1a52e04761ea31fdf0846dc3414d14e822067c8c338321579",
+    "src/daemon/db/management-enablement.ts": "6869dcd2d1bb3de1f03439c09fcba0803d33e6438750fe7c21fe29bde8479b17",
+    "src/daemon/db/management-defaults.ts": "16ee93d6595be26bc235e5cef4272d3a54768e28808a71fe11710aa0eedb14ee",
+    "src/daemon/db/management-state.ts": "fe16b12c4bc2eeb69f20373fcfd4e30b10f28bc980b98fda74c3e9673ee76436",
+    "src/daemon/db/draft-test.ts": "02ab82a15da246b04e5dffdc94001ede1117eb2aab3d6156eeb6b2d83952f051",
+    "src/daemon/connection-management-rpc.ts": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3",
+    "src/daemon/index.ts": "fdbd345eac8d9eac28136747f5fea41a18c860758c88398f34a26a204ae7663d"
   },
   "externalPrerequisites": {
     "S001": "pending",
@@ -55,5 +61,5 @@
       "todo": 3
     }
   },
-  "sourceCommit": "edf10ffe1"
+  "runtimePolicy": "Enabled by default by explicit user instruction 2026-10-30; pending audit evidence is not runtime authorization."
 }

@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { connectionManagementEnablement, CONNECTION_FOUNDATION_GATE_FILES, CONNECTION_TEST_GATE_FILES, CONNECTION_SESSION_GATE_FILES, CONNECTION_REMOVAL_GATE_FILES } from '../management-enablement.js';
+import { verifyConnectionManagementRelease, CONNECTION_FOUNDATION_GATE_FILES, CONNECTION_TEST_GATE_FILES, CONNECTION_SESSION_GATE_FILES, CONNECTION_REMOVAL_GATE_FILES } from '../management-enablement.js';
 
 const root = new URL('../../../../', import.meta.url);
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
@@ -37,7 +37,7 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 		const valid = { version: 2, ready: true, sourceFiles: build.sourceFiles, compiledFiles: build.compiledFiles, inventoryFile: 'inventory.json', testReportFile: 'report.json', inventoryDigest: digest(inventoryBytes), testReportDigest: digest(reportBytes), scopes };
 		const path = join(directory, 'proof.json');
 		const compiled = await import(new URL('out/daemon/db/management-enablement.js', root).href) as typeof import('../management-enablement.js');
-		for (const verify of [connectionManagementEnablement, compiled.connectionManagementEnablement]) {
+		for (const verify of [connectionManagementEnablement, compiled.verifyConnectionManagementRelease]) {
 			const check = async (proof: unknown) => { await writeFile(path, JSON.stringify(proof)); return (await verify(pathToFileURL(path), ['sc5'])).ready; };
 			assert.equal(await check(valid), true, 'a complete current build must be a positive verification control');
    assert.equal((await verify(pathToFileURL(path),['sc6'])).ready,true,'sc6 standalone verification still consumes full session prerequisites');
@@ -100,7 +100,7 @@ test('CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and 
 		const ready = async () => {
 			const inventory = verificationInventory(sourceFiles);
 			await writeFile(join(copy, 'inventory.json'), inventory); await writeFile(join(copy, 'report.json'), reportBytes); proof.inventoryDigest = digest(inventory); proof.testReportDigest = digest(reportBytes);
-			await writeFile(proofPath, JSON.stringify(proof)); return (await copied.connectionManagementEnablement(proofPath, ['sc5'])).ready;
+			await writeFile(proofPath, JSON.stringify(proof)); return (await copied.verifyConnectionManagementRelease(proofPath, ['sc5'])).ready;
 		};
 		assert.equal(await ready(), true);
 		const helper = join(copy, 'src/shared/pure-session-helper.ts'); await writeFile(helper, '// source generation two'); sourceFiles['shared/pure-session-helper.ts'] = digest(await readFile(helper));
@@ -147,7 +147,7 @@ test('CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recor
 	for (const tree of ['src', 'out']) {
 		const gate = JSON.parse(await readFile(new URL(tree + '/assets/connection-management-gates.json', root), 'utf8'));
 		assert.equal(gate.ready, false); assert.deepEqual(gate.scopes, []); assert.equal(gate.testReportDigest, digest(bytes)); assert.equal(gate.inventoryDigest, report.inventory.deployedSha256, 'disabled gate retains the historical deployment identity; current source audits are separate');
-		assert.equal((await connectionManagementEnablement(new URL(tree + '/assets/connection-management-gates.json', root), ['sc5'])).ready, false, 'current audit changes never enable the historical pending gate');
+		assert.equal((await verifyConnectionManagementRelease(new URL(tree + '/assets/connection-management-gates.json', root), ['sc5'])).ready, false, 'current audit changes never enable the historical pending gate');
 	}
 });
 
@@ -159,6 +159,6 @@ test('CM-S4-GATE: required removal helpers and sc6 session prerequisites remain 
   const gate=JSON.parse(await readFile(new URL(tree+'/assets/connection-management-gates.json',root),'utf8'));
   assert.equal(gate.ready,false);assert.deepEqual(gate.scopes,[]);
  }
- assert.equal((await connectionManagementEnablement(undefined,['sc6'])).ready,false);
- assert.equal((await connectionManagementEnablement(undefined,['sc5','sc6'])).ready,false);
+ assert.equal((await verifyConnectionManagementRelease(undefined,['sc6'])).ready,false);
+ assert.equal((await verifyConnectionManagementRelease(undefined,['sc5','sc6'])).ready,false);
 });

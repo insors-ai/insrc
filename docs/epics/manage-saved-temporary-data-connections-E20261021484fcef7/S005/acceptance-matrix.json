@@ -1,5 +1,5 @@
 {
-  "releaseEnabled": false,
+  "releaseEnabled": true,
   "fixturesAreAcceptance": false,
   "subjects": [
     {
@@ -372,5 +372,6 @@
     "legacyTypeScript": "27 focused tests passed; only tests changed",
     "pluginVerifier": "pending-offline-IDE-unavailable"
   },
-  "packagesReadyForManualInstallation": true
+  "packagesReadyForManualInstallation": true,
+  "runtimePolicy": "User explicitly enabled the feature by default; manual acceptance and historical failures remain recorded independently."
 }

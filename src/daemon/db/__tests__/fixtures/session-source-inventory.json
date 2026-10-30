@@ -8205,7 +8205,7 @@
     },
     "src/daemon/connection-management-rpc.ts": {
       "classification": "owner-rpc-boundary",
-      "rationale": "S004: exact ticket-only sc6 state/retry endpoints and existing remove intent require capability readiness before ticket/owner work. Presented session authority is never stripped to reach Saved. Fixed error projection; no legacy-delete fallback.",
+      "rationale": "Default features retain per-action admission. Capability selection lazily opens only registered fresh roots, deduplicated under daemon ownership; existing legacy or corrupted registries fail closed. Removed the historical audit dependency, not ticket, session, root or privacy authorization.",
       "sites": [
         [
           "serialization",
@@ -8238,7 +8238,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "d7a58fa450f9ed84da8ae39b19921469bfad880b57c128d6d0b26c4df836a8da",
+      "sourceDigest": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",
@@ -8742,7 +8742,7 @@
     },
     "src/daemon/db/draft-test.ts": {
       "classification": "saved-foundation-boundary",
-      "rationale": "S004: the existing supervisor supplies its private true-drain promise to preparation. It resolves only after preparation and actual child close or failed spawn, preserving timeout/cancel response independence and allowing the existing revision lease to remain held. No new wire or persisted lifetime field.",
+      "rationale": "Real Parquet default-enabled coverage found blank optional Label rejected by the private probe codec. Omit empty cosmetic labels in worker projection; credentials/config remain allowlisted, isolated, memory-only and redacted, with cancellation and true drain unchanged.",
       "sites": [
         [
           "serialization",
@@ -8767,7 +8767,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "9e25ab3ec86f99a18d65a942b93fda8d8b722bfa011f995c6a1fd50326647c9e",
-      "sourceDigest": "6e477ef30876fe9e32da4e867e3aca709896d0d1e8eef6f57fed0b34cc21a95c",
+      "sourceDigest": "02ab82a15da246b04e5dffdc94001ede1117eb2aab3d6156eeb6b2d83952f051",
       "boundaries": [
         "serialization"
       ]
@@ -10794,7 +10794,7 @@
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
-      "rationale": "S004: source/compiled verification explicitly requires both removal helpers and all session prerequisites for sc6, including sc6-only verifier calls. Full deployed-source/build linkage still applies. Only private synthetic positive fixtures are permitted; shipped ready=false and pending external/client/affinity evidence remain unchanged.",
+      "rationale": "User explicitly enabled the feature by default. Runtime policy identity is separate from the retained strict source/compiled release audit; historical pending evidence is not fabricated as verified. Actual session, signed-ticket, root, secret and worker authorization remains enforced.",
       "sites": [
         [
           "serialization",
@@ -10847,7 +10847,7 @@
       ],
       "siteCount": 12,
       "sitesDigest": "795faa1b9cbbfbb92dd3379dfde92e8aad730d5848e17fa990242014615a7d50",
-      "sourceDigest": "544958c37a664d48cdd3d1492472f06d5bf32aa2d7756df145febd6bf83397ae",
+      "sourceDigest": "6869dcd2d1bb3de1f03439c09fcba0803d33e6438750fe7c21fe29bde8479b17",
       "boundaries": [
         "filesystem-read",
         "serialization"
@@ -11076,7 +11076,7 @@
     },
     "src/daemon/db/management-state.ts": {
       "classification": "saved-foundation-boundary",
-      "rationale": "S001/S002 saved or probe foundation. Session path may use only documented readonly/profile/preparation ports; saved storage is forbidden for temporary data and writes require shared reservation guard.",
+      "rationale": "Fresh initialization has a distinct signed initializedBy origin, mutually exclusive with stopped-daemon adoption proof and allowed only for a missing baseline with no rollback refs. Existing version-2 adopted states retain validation and checkpoint anchors; no stopped evidence is fabricated.",
       "sites": [
         [
           "serialization",
@@ -11113,7 +11113,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "f003bca9da59475cff18dec9520eef2e493efddf033502f6f3e899288825fcd8",
-      "sourceDigest": "d42b6f5d4bf6fcd58f0f6a26690d3ef69080a784a6bc7605295d31f309a53e1a",
+      "sourceDigest": "fe16b12c4bc2eeb69f20373fcfd4e30b10f28bc980b98fda74c3e9673ee76436",
       "boundaries": [
         "filesystem-write",
         "serialization"
@@ -13779,7 +13779,7 @@
     },
     "src/daemon/index.ts": {
       "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
+      "rationale": "Default startup initializes fresh registered roots and reopens signed managed state through the existing owner checks. Shutdown includes all startup and lazily created Saved owners; session and driver ownership boundaries and transport authority remain unchanged.",
       "sites": [
         [
           "storage-call",
@@ -14060,7 +14060,7 @@
       ],
       "siteCount": 69,
       "sitesDigest": "e6680b56d4d6ee92ffe8354434a007d7a96d53d491e3660b7edcd89ae8e596f2",
-      "sourceDigest": "2bd83506fc450a826c19ad834af862f66f1ca2fc3cb10cb4d672f568ef9fcb6e",
+      "sourceDigest": "fdbd345eac8d9eac28136747f5fea41a18c860758c88398f34a26a204ae7663d",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -37488,13 +37488,86 @@
         "filesystem-write",
         "serialization"
       ]
+    },
+    "src/daemon/db/management-defaults.ts": {
+      "classification": "default-managed-root-owner",
+      "rationale": "User-authorized default policy: registered, canonical fresh roots only. Exclusive marker, current owner lease, signed missing baseline, protected inode link with no overwrite, real startup validation and shutdown ownership. No existing legacy state adoption, source-data modification, provider call or credential disclosure.",
+      "sites": [
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "storage-call",
+          "lookupRepoId"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "filesystem-read",
+          "lstat"
+        ],
+        [
+          "acquisition:acquire-call",
+          "ManagementOwnerLease.acquire(join(directory,'owner.json'),root)"
+        ],
+        [
+          "filesystem-write",
+          "mkdir"
+        ],
+        [
+          "filesystem-write",
+          "mkdir"
+        ],
+        [
+          "filesystem-read",
+          "realpath"
+        ],
+        [
+          "filesystem-write",
+          "unlink"
+        ],
+        [
+          "filesystem-write",
+          "unlink"
+        ],
+        [
+          "serialization",
+          "writeProtected"
+        ],
+        [
+          "serialization",
+          "writeProtected"
+        ],
+        [
+          "serialization",
+          "writeProtected"
+        ]
+      ],
+      "siteCount": 16,
+      "sitesDigest": "b95e5aa395d1b067c555d11538e8bca63b13fd8d75a99d30e3ffebb9f827eaa3",
+      "sourceDigest": "16ee93d6595be26bc235e5cef4272d3a54768e28808a71fe11710aa0eedb14ee"
     }
   },
   "sc6Sources": {
     "src/daemon/connection-management-rpc.ts": {
       "classification": "owner-rpc-boundary",
-      "rationale": "S004: exact ticket-only sc6 state/retry endpoints and existing remove intent require capability readiness before ticket/owner work. Presented session authority is never stripped to reach Saved. Fixed error projection; no legacy-delete fallback.",
-      "sourceDigest": "d7a58fa450f9ed84da8ae39b19921469bfad880b57c128d6d0b26c4df836a8da"
+      "rationale": "Default features retain per-action admission. Capability selection lazily opens only registered fresh roots, deduplicated under daemon ownership; existing legacy or corrupted registries fail closed. Removed the historical audit dependency, not ticket, session, root or privacy authorization.",
+      "sourceDigest": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3"
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
@@ -37508,8 +37581,8 @@
     },
     "src/daemon/db/draft-test.ts": {
       "classification": "saved-foundation-boundary",
-      "rationale": "S004: the existing supervisor supplies its private true-drain promise to preparation. It resolves only after preparation and actual child close or failed spawn, preserving timeout/cancel response independence and allowing the existing revision lease to remain held. No new wire or persisted lifetime field.",
-      "sourceDigest": "6e477ef30876fe9e32da4e867e3aca709896d0d1e8eef6f57fed0b34cc21a95c"
+      "rationale": "Real Parquet default-enabled coverage found blank optional Label rejected by the private probe codec. Omit empty cosmetic labels in worker projection; credentials/config remain allowlisted, isolated, memory-only and redacted, with cancellation and true drain unchanged.",
+      "sourceDigest": "02ab82a15da246b04e5dffdc94001ede1117eb2aab3d6156eeb6b2d83952f051"
     },
     "src/daemon/db/management.ts": {
       "classification": "saved-foundation-boundary",
@@ -37573,8 +37646,8 @@
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
-      "rationale": "S004: source/compiled verification explicitly requires both removal helpers and all session prerequisites for sc6, including sc6-only verifier calls. Full deployed-source/build linkage still applies. Only private synthetic positive fixtures are permitted; shipped ready=false and pending external/client/affinity evidence remain unchanged.",
-      "sourceDigest": "544958c37a664d48cdd3d1492472f06d5bf32aa2d7756df145febd6bf83397ae"
+      "rationale": "User explicitly enabled the feature by default. Runtime policy identity is separate from the retained strict source/compiled release audit; historical pending evidence is not fabricated as verified. Actual session, signed-ticket, root, secret and worker authorization remains enforced.",
+      "sourceDigest": "6869dcd2d1bb3de1f03439c09fcba0803d33e6438750fe7c21fe29bde8479b17"
     }
   }
 }

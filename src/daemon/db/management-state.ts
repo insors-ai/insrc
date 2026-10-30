@@ -33,7 +33,9 @@ export interface ManagementState {
 		readonly missing: boolean;
 		readonly mode: number;
 	};
-	readonly oldDaemon: StoppedDaemonEvidence;
+	readonly oldDaemon?: StoppedDaemonEvidence | undefined;
+	/** Fresh initialization has no prior daemon or legacy registry to migrate. */
+	readonly initializedBy?: { readonly pid:number; readonly processIdentity:string; readonly createdAt:string } | undefined;
 	readonly rollback: readonly RollbackReference[];
 	readonly releaseDigest: string;
 	readonly committed: RegistryAnchor;
@@ -54,14 +56,17 @@ function parse(value: unknown, root: string): ManagementState {
 		const state = value as ManagementState;
 		if (!state || state.version !== 2 || state.root !== root || !uuid.test(state.registryId) || !uuid.test(state.initialGeneration) || !['adopting', 'managed'].includes(state.phase)
 			|| !state.parent || !Number.isSafeInteger(state.parent.inode) || !Number.isSafeInteger(state.parent.device) || !state.baseline || !/^snapshot-[a-f0-9-]{36}\.json$/.test(state.baseline.name) || !/^[a-f0-9]{64}$/.test(state.baseline.digest) || typeof state.baseline.missing !== 'boolean' || !Number.isInteger(state.baseline.mode)
-			|| !state.oldDaemon || state.oldDaemon.source !== 'safe-stop-control' || !Number.isSafeInteger(state.oldDaemon.pid) || state.oldDaemon.pid <= 0 || !/^[a-f0-9]{64}$/.test(state.oldDaemon.processIdentity) || !Number.isFinite(Date.parse(state.oldDaemon.stoppedAt))
+			|| (!!state.oldDaemon === !!state.initializedBy)
+			|| (state.oldDaemon !== undefined && (state.oldDaemon.source !== 'safe-stop-control' || !Number.isSafeInteger(state.oldDaemon.pid) || state.oldDaemon.pid <= 0 || !/^[a-f0-9]{64}$/.test(state.oldDaemon.processIdentity) || !Number.isFinite(Date.parse(state.oldDaemon.stoppedAt))))
+			|| (state.initializedBy !== undefined && (!Number.isSafeInteger(state.initializedBy.pid) || state.initializedBy.pid <= 0 || !/^[a-f0-9]{64}$/.test(state.initializedBy.processIdentity) || !Number.isFinite(Date.parse(state.initializedBy.createdAt)) || !state.baseline.missing || state.rollback?.length !== 0))
 			|| !Array.isArray(state.rollback) || state.rollback.some(ref => typeof ref.sourceRef !== 'string' || typeof ref.copyRef !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(ref.valueMac))
 			|| !/^[a-f0-9]{64}$/.test(state.releaseDigest) || !validAnchor(state.committed) || (state.pending !== undefined && !validAnchor(state.pending))
 			|| (state.pendingTemp !== undefined && !/^\.db-connections-[a-f0-9-]{36}\.tmp$/.test(state.pendingTemp)))
 			throw new Error();
-		if (Object.keys(state).some(key => !['version', 'root', 'registryId', 'phase', 'initialGeneration', 'parent', 'baseline', 'oldDaemon', 'rollback', 'releaseDigest', 'committed', 'pending', 'pendingTemp'].includes(key))
+		if (Object.keys(state).some(key => !['version', 'root', 'registryId', 'phase', 'initialGeneration', 'parent', 'baseline', 'oldDaemon', 'initializedBy', 'rollback', 'releaseDigest', 'committed', 'pending', 'pendingTemp'].includes(key))
 			|| Object.keys(state.parent).sort().join(',') !== 'device,inode' || Object.keys(state.baseline).sort().join(',') !== 'digest,missing,mode,name'
-			|| Object.keys(state.oldDaemon).sort().join(',') !== 'pid,processIdentity,source,stoppedAt'
+			|| (state.oldDaemon !== undefined && Object.keys(state.oldDaemon).sort().join(',') !== 'pid,processIdentity,source,stoppedAt')
+			|| (state.initializedBy !== undefined && Object.keys(state.initializedBy).sort().join(',') !== 'createdAt,pid,processIdentity')
 			|| state.rollback.some(ref => Object.keys(ref).sort().join(',') !== 'copyRef,sourceRef,valueMac' || ref.sourceRef.length > 16384 || ref.copyRef.length > 16384))
 			throw new Error();
 		if (state.phase === 'managed' && (!state.committed.registryId || state.committed.registryId !== state.registryId || state.committed.mode !== 0o400 || state.committed.missing))

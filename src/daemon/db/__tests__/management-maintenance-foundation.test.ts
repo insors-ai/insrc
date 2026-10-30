@@ -8,7 +8,7 @@ import { ManagementOwnerLease } from '../management-owner-lease.js';
 import type { ProcessObservation } from '../management-owner-lease.js';
 import { privateDirectory, writeProtected, readProtected } from '../management-files.js';
 import { proveWriterFence, proveProtectedRegistry, assertUnmanagedWrite } from '../managed-store.js';
-import { connectionManagementEnablement, CONNECTION_TEST_GATE_FILES, CONNECTION_FOUNDATION_GATE_FILES } from '../management-enablement.js';
+import { verifyConnectionManagementRelease, CONNECTION_TEST_GATE_FILES, CONNECTION_FOUNDATION_GATE_FILES } from '../management-enablement.js';
 async function fixture(use: (directory: string) => Promise<void>) {
 	const dir = await mkdtemp(join(tmpdir(), 'cm-maintenance-'));
 	try {
@@ -56,9 +56,9 @@ test('target filesystem denies legacy subprocess writes and isolates detached de
 test('release evidence remains disabled until the completed build supplies verified gates', async () => fixture(async (dir) => {
 	const path = join(dir, 'disabled.json');
 	await writeFile(path, JSON.stringify({ version: 2, ready: false }));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, false);
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).ready, false);
 	await writeFile(path, JSON.stringify({ version: 2, ready: true, sourceFiles: {}, compiledFiles: {}, inventoryDigest: 'a'.repeat(64), testReportDigest: 'a'.repeat(64), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] }));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, false);
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).ready, false);
 	const { createHash } = await import('node:crypto');
 	const names = ['management-enablement', 'management-files', 'management-owner-lease', 'management-state', 'management-adoption', 'management-startup', 'managed-store', 'management-tickets', 'management', 'driver-profiles'];
 	const sourceFiles: Record<string, string> = {};
@@ -73,22 +73,22 @@ test('release evidence remains disabled until the completed build supplies verif
 	await writeFile(join(dir, 'inventory.json'), inventory); await writeFile(join(dir, 'report.json'), report);
 	const valid = { version: 2, ready: true, sourceFiles, compiledFiles, inventoryFile: 'inventory.json', testReportFile: 'report.json', inventoryDigest: hash(inventory), testReportDigest: hash(report), scopes: ['sc1', 'sc2', 'sc3', 'sc4', 'sc8'] };
 	await writeFile(path, JSON.stringify(valid));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, true);
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).ready, true);
 	await writeFile(path,JSON.stringify({...valid,scopes:['sc1','sc2','sc3','sc8']}));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready,false,'S001-only evidence cannot enable testing');
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).ready,false,'S001-only evidence cannot enable testing');
 	await writeFile(path,JSON.stringify(valid));
 	await writeFile(path,JSON.stringify({...valid,sourceFiles:Object.fromEntries(CONNECTION_TEST_GATE_FILES.map(name=>[name+'.ts',sourceFiles[name+'.ts']]))}));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready,false,'S002-only hashes cannot enable missing foundation evidence');
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).ready,false,'S002-only hashes cannot enable missing foundation evidence');
 	await writeFile(path,JSON.stringify(valid));
-	const initial = (await connectionManagementEnablement(pathToFileURL(path))).digest;
+	const initial = (await verifyConnectionManagementRelease(pathToFileURL(path))).digest;
 	const updatedReport = JSON.stringify({ releaseReady: true, recordedAt: 'later' }); await writeFile(join(dir, 'report.json'), updatedReport);
 	await writeFile(path, JSON.stringify({ ...valid, testReportDigest: hash(updatedReport) }));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).digest, initial, 'report timestamps do not change running code identity');
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).digest, initial, 'report timestamps do not change running code identity');
 	await writeFile(join(dir, 'report.json'), report);
 	await writeFile(path, JSON.stringify({ ...valid, sourceFiles: { ...sourceFiles, 'daemon/db/management.ts': '0'.repeat(64) } }));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, false);
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).ready, false);
 	await writeFile(path, JSON.stringify({ ...valid, scopes: ['sc1', 'sc2', 'sc3'] }));
-	assert.equal((await connectionManagementEnablement(pathToFileURL(path))).ready, false);
+	assert.equal((await verifyConnectionManagementRelease(pathToFileURL(path))).ready, false);
 }));
 test('signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys', async () => fixture(async (dir) => {
 	const { SavedTicketAuthority } = await import('../management-tickets.js');

@@ -50,6 +50,7 @@ import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
 import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler } from './panels/repo-config.js';
+import { renderModelTiers, createModelTiersWriteHandler } from './panels/model-tiers.js';
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
@@ -469,6 +470,20 @@ export function activate(context: vscode.ExtensionContext): void {
       registerProviders: (repoPath, steering) => client.rpc('mcp.register', { path: repoPath, steering }),
       refresh: () => panelHost.openRepoConfiguration(),
     }),
+    // Story S001: the Model Tiers panel body — one card per tier (core/mid/cheap)
+    // from the daemon's model catalog + the global insrc.models.* raw config.
+    modelTiersRenderer: renderModelTiers({
+      modelDefinitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+      rawConfig: () => configGateway.rawConfig(),
+    }),
+    // Story S001: the Model Tiers write sink. Reuses the sc8 writeKeyPath ARRAY
+    // form (config.write) — no new daemon capability, no per-repo consent (tiers
+    // and the core floor are global, k6); the panel re-renders from fresh config.
+    onModelTiersWrite: createModelTiersWriteHandler({
+      writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
+      logger: panelLog,
+      refresh: () => panelHost.openModelTiers(),
+    }),
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2
   // StatusBarHandle carries no `command` field and is left untouched).
@@ -479,6 +494,9 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   commands.register({ id: 'insrc.status.repoConfig', title: 'Open Repo Configuration' }, async () => {
     panelHost.openRepoConfiguration();
+  });
+  commands.register({ id: 'insrc.status.modelTiers', title: 'Open Model Tiers' }, async () => {
+    panelHost.openModelTiers();
   });
 
   // S003-model-picker sc2 consumer: the 'insrc: Set model tier' guided command. A

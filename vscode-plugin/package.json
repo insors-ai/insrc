@@ -84,6 +84,11 @@
         "category": "insrc"
       },
       {
+        "command": "insrc.status.modelTiers",
+        "title": "Open Model Tiers",
+        "category": "insrc"
+      },
+      {
         "command": "insrc.models.setTier",
         "title": "Set model tier",
         "category": "insrc"

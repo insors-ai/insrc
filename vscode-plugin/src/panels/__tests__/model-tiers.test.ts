@@ -107,3 +107,16 @@ test('createModelTiersWriteHandler: refresh() runs on an accepted write and on a
   assert.equal(rejected.refreshes(), 0, 'a rejected write does not refresh');
   assert.match(rejected.warnings[0] ?? '', /the model-tiers write failed/);
 });
+
+test("createModelTiersWriteHandler: refresh wired exactly as extension.ts does (refresh: () => panelHost.openModelTiers()) invokes openModelTiers after a resolved write", async () => {
+  let opens = 0;
+  const panelHost = { openModelTiers: () => { opens += 1; } };
+  const handler = createModelTiersWriteHandler({
+    writeKeyPath: async () => ({ ok: true }),
+    logger: { warn: () => {} },
+    refresh: () => panelHost.openModelTiers(),
+  });
+  handler({ kind: 'coreFloor', value: 'mid' });
+  await Promise.resolve();
+  assert.equal(opens, 1, "the extension.ts-style refresh callback re-opens (re-renders) the Model Tiers panel after a resolved write");
+});

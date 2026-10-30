@@ -23,6 +23,7 @@ export type InsrcCommandId =
   | 'insrc.status.menu'
   | 'insrc.status.detailed'
   | 'insrc.status.repoConfig'
+  | 'insrc.status.modelTiers'
   | 'insrc.models.setTier'
   | 'insrc.chat.open'
   | 'insrc.chat.docsReview'

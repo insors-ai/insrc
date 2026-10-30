@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s2",
     "createdAt": "2026-10-30T05:35:31.740Z",
-    "updatedAt": "2026-10-30T05:46:03.459Z",
+    "updatedAt": "2026-10-30T05:50:08.655Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -432,6 +432,104 @@
               },
               {
                 "title": "cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "437c25b2a",
+        "ranAt": "2026-10-30T05:50:08.655Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/provider-from-registry.test.ts",
+                "title": "provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "provider-from-registry.test.ts: an effort a host model does not list is not forwarded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/provider-from-registry.test.ts",
+                "title": "provider-from-registry.test.ts: an effort a host model does not list is not forwarded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/provider-from-registry.test.ts",
+                "title": "provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/provider-from-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 880,
+            "titles": [
+              {
+                "title": "provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: an Ollama shaper never runs a CLI family's model, and the run label names what buildShaperProvider builds",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: the router's summariser resolution names the model its provider runs",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: a refused ollama-claude cheap tier makes the summariser refuse with model-not-supported, never substitute",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: the run label of an ollama-claude shaper names the host family, and attribution maps it there",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: an effort a host model does not list is not forwarded",
+                "result": "pass"
+              },
+              {
+                "title": "provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError",
                 "result": "pass"
               }
             ],

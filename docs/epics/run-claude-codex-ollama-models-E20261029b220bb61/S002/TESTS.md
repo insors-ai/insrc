@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -115,3 +115,31 @@ Run at 2026-10-30T05:46:03.459Z on commit `5388b6197`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/agent/providers/__tests__/cli-ollama.test.ts` | 0 | 7 | 3.6 s |  |
+
+## t4
+
+Run at 2026-10-30T05:50:08.655Z on commit `437c25b2a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none | `src/analyze/context/__tests__/provider-from-registry.test.ts` |
+
+**unit: provider-from-registry.test.ts: an effort a host model does not list is not forwarded**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | provider-from-registry.test.ts: an effort a host model does not list is not forwarded | `src/analyze/context/__tests__/provider-from-registry.test.ts` |
+
+**unit: provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError | `src/analyze/context/__tests__/provider-from-registry.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/provider-from-registry.test.ts` | 0 | 10 | 0.9 s |  |

@@ -262,6 +262,8 @@ two selector variants
 
 - `q1bbb76e1` — readable-scale formula extremes (default clamp >=16px)
   - **resolved**: Configurable clamp bounds (default floor 16px) — Satisfies the LLD >=16px label floor by default and stays simple/deterministic; the ceiling stays unset so huge diagrams just pan instead of scaling absurdly. _(2026-10-30T19:27:16.182Z)_
+- `qa4ccd42c` — persistence scope (localStorage per origin)
+  - **resolved**: Per-origin localStorage (webview default) — The artifacts are standalone self-contained HTML files with no extension host, so webview/file-origin localStorage is the only persistence available; the theme choice is per-artifact-view and non-critical. _(2026-10-30T19:28:12.106Z)_
 
 ## Citations
 

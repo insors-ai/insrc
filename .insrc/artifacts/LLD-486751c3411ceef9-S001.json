@@ -220,6 +220,13 @@
         "choice": "Configurable clamp bounds (default floor 16px)",
         "rationale": "Satisfies the LLD >=16px label floor by default and stays simple/deterministic; the ceiling stays unset so huge diagrams just pan instead of scaling absurdly.",
         "resolvedAt": "2026-10-30T19:27:16.182Z"
+      },
+      "qa4ccd42c": {
+        "question": "persistence scope (localStorage per origin)",
+        "status": "resolved",
+        "choice": "Per-origin localStorage (webview default)",
+        "rationale": "The artifacts are standalone self-contained HTML files with no extension host, so webview/file-origin localStorage is the only persistence available; the theme choice is per-artifact-view and non-critical.",
+        "resolvedAt": "2026-10-30T19:28:12.106Z"
       }
     }
   },

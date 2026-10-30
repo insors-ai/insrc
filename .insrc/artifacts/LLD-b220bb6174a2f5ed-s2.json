@@ -1,0 +1,912 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793336320642-dkgtj5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T05:06:50.694Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 490044,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicHash": "b220bb6174a2f5ed",
+    "epicSlug": "run-claude-codex-ollama-models",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1793292978249-2ujf5k",
+    "hldEffectiveHash": "ca5bac7aee6017131c5204a57baa27e41f2e27c7cfda243bf4d4fdb1d0a3748a",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S002's DEF acceptance criteria ac1-ac4 (Ollama-targeted run succeeds; a failure names its cause and never waits indefinitely; calls stay serial per caller; vendor runs unaffected) are each addressed by a named LLD element.",
+          "evidence": "DEF-b220bb6174a2f5ed.json body.stories[s2].acceptanceCriteria ac1-ac4 map 1:1 onto the LLD's §6 error-path entries, §2.3 checkOllamaTarget, the open-questions resolution on ac3 (serial-per-caller scope), and §2.1's 'vendor runs unchanged' postcondition plus the test strategy's acceptance-mapping table. [files: .insrc/artifacts/DEF-b220bb6174a2f5ed.json]",
+          "action": "verified by reading DEF-b220bb6174a2f5ed.json and cross-checking against LLD §6/§7",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD builds nothing from the DEF's non-goals (GPU contention, installer defaults, Ollama auto-discovery, direct cloud REST) or from the adjacent stories' owned scope (s1/s3/s4/s5).",
+          "evidence": "The LLD's own §1 'Adjacent scope' table explicitly excludes s1/s3/s4/s5 work, and its changed files (cli-provider.ts, a new ollama-target.ts, shaper-provider.ts, ollama.ts's export) touch none of the s1/s3/s4/s5-owned files (model-catalog.ts, model-registry.ts, model-check.ts, model-definitions.ts, the three client pickers) per HLD's componentDependencyDefinition. [files: .insrc/artifacts/HLD-b220bb6174a2f5ed.json]",
+          "action": "cross-checked LLD §1 against HLD component-dependency ownership",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today every claude invocation except the bounded tool-free path goes through the private runClaude, which calls runSubprocess with NO env argument, so the child inherits the daemon's environment unchanged.",
+          "evidence": "src/agent/providers/cli-provider.ts:696-698: `runClaude` calls `runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal)` — 7 positional args, env omitted — versus `runVibe`'s call at :674-678 which passes an explicit 8th `env` arg, confirming runClaude's env slot is unset. [files: src/agent/providers/cli-provider.ts]",
+          "action": "read cli-provider.ts:600-747 directly",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today familyProvider builds a plain CliProvider for any family with a CLI kind (including the new host family ollama-claude, whose cliKind is 'claude'), with no Ollama target and no refusal when model is undefined — so a refused host-family tier currently runs the vendor CLI's own default model.",
+          "evidence": "src/analyze/context/shaper-provider.ts:220-246 `familyProvider`: `if (kind !== undefined) { ... return new CliProvider({kind, ...(model !== undefined ? {model: model.id} : {})...}) }` — no ollama option exists and an undefined model is simply omitted rather than refused; src/daemon/model-catalog.ts:163 confirms `ollama-claude`'s cliKind is 'claude', so it takes this exact branch today. [files: src/analyze/context/shaper-provider.ts, src/daemon/model-catalog.ts]",
+          "action": "read shaper-provider.ts:190-246 and model-catalog.ts:139-165",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "OllamaTarget, OllamaTargetError, the ollama-target.ts module, and the two new test files (cli-ollama.test.ts, cli-ollama.live.test.ts) genuinely do not exist yet — they are new, not a mislabeled reuse.",
+          "evidence": "Glob for src/agent/providers/ollama-target.ts and src/agent/providers/__tests__/cli-ollama*.test.ts returned no matches; CliProviderOpts (cli-provider.ts:153-172) has no ollama field today. [files: src/agent/providers/cli-provider.ts]",
+          "action": "Glob + read of CliProviderOpts",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "What the LLD calls reuse — ollama-claude's FamilyId/ModelHosting/registry.host()/ModelNotSupportedError/TierResolution.fallback (s1's sc1/sc2) — already exists with the exact shape the LLD depends on.",
+          "evidence": "src/daemon/model-catalog.ts:39,163 (`FamilyId` includes 'ollama-claude'; `ModelHosting = 'cloud'|'local'`); src/daemon/model-registry.ts:70-79,81-88,110 (`ModelNotSupportedError`, `TierResolution.fallback`, `host(family): 'ollama'|undefined`); :294-296 resolveTier already returns `{model: undefined, fallback: {reason: 'model-not-supported', ...}}` for a host family's undeclared model. [files: src/daemon/model-catalog.ts, src/daemon/model-registry.ts]",
+          "action": "read model-catalog.ts and model-registry.ts directly",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test file src/analyze/context/__tests__/provider-from-registry.test.ts the LLD says it will extend is a real, existing, extensible fixture-based test of familyProvider/buildShaperProvider/resolveValidateProvider, not an invented path.",
+          "evidence": "The file exists (read lines 1-60) and already imports buildShaperProvider, buildSummariserProvider, resolveValidateProvider and CliProvider against a fixture definitions file with its own FamilyId/cliKind — exactly the harness the LLD's new tests would extend. [files: src/analyze/context/__tests__/provider-from-registry.test.ts]",
+          "action": "read provider-from-registry.test.ts:1-60",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "familyProvider, boundedClaudeEnv, and the two CliProviderOpts call sites named in §3.2 (shaper-provider.ts, and the two vendor callers in controller-review.ts / workflow.ts) are the complete, accurate set of sites the new optional field must stay compatible with.",
+          "evidence": "src/mcp/controller-review.ts:46 and src/cli/services/workflow.ts:276-281 both construct `new CliProvider({...})` without an `ollama` field, so the new optional field is additive there; src/agent/providers/bounded-input.ts:31-37 confirms boundedClaudeEnv() is the allow-list copy the bounded path already uses at cli-provider.ts:372. [files: src/mcp/controller-review.ts, src/cli/services/workflow.ts, src/agent/providers/bounded-input.ts]",
+          "action": "read controller-review.ts:35-48, workflow.ts:265-284, bounded-input.ts:1-38",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "familyProvider is the single construction path for the shaper, every RoleRouter role, and the build-step validate provider, so one change there covers all of them as claimed in §5/§6.",
+          "evidence": "shaper-provider.ts:316 `buildShaperProvider` → `familyProvider(...)`; role-router.ts:180-191 `materialize` → `buildShaperProvider` (used by `resolveProviderForRole`); build-step/phases/validate.ts:200 `resolveValidateProvider` → `familyProvider(registry, chosen.family, chosen.model, ...)` directly; summariserSelection (shaper-provider.ts:336-351) already throws ModelNotSupportedError for a host family, matching the LLD's 'summariser path already refuses' claim. [files: src/analyze/context/role-router.ts, src/analyze/context/shaper-provider.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "read role-router.ts:150-209 and shaper-provider.ts:296-358",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Stored tier settings and CliProviderOpts' existing callers need no migration: the new ollama field is optional and additive, and TierSetting/FallbackReason already carry the host-family shape this Story depends on without any stored-shape change.",
+          "evidence": "TierSetting (model-registry.ts:90-94) is unchanged by this Story; both external CliProviderOpts construction sites omit the new field and keep compiling/behaving as today (see change-sites finding above); the HLD's own data-compatibility review finding (claimId data-compatibility.1, HLD-b220bb6174a2f5ed.json) already confirmed no migration is needed for the broader Epic. [files: src/daemon/model-registry.ts, .insrc/artifacts/HLD-b220bb6174a2f5ed.json]",
+          "action": "cross-checked LLD §8 Migration against model-registry.ts:90-94 and the two caller sites already read",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This LLD's changed files are exactly the files the HLD assigns to s2 ('factory' and 'cli' components) and touch none of the files the HLD assigns to s1/s3/s4/s5.",
+          "evidence": "HLD-b220bb6174a2f5ed.json body.componentDependencyDefinition.components lists 'factory' (src/analyze/context/shaper-provider.ts) and 'cli' (src/agent/providers/cli-provider.ts) as s2's, versus 'defs'/'catalog'/'registry'/'answer' (s1) and 'tui'/'vscode'/'jetbrains' (s3/s4/s5); the LLD's §2-§3 changes are confined to cli-provider.ts, a new ollama-target.ts, ollama.ts (one export keyword) and shaper-provider.ts. [files: .insrc/artifacts/HLD-b220bb6174a2f5ed.json]",
+          "action": "cross-checked LLD change list against HLD componentDependencyDefinition",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each DEF-S002 error scenario (Ollama unreachable, model unavailable, cloud model not signed in, timeout, non-zero exit) has a concrete detection + response + user-impact statement in the LLD, and the detection points at real, existing hooks (runSubprocess timeout, cliExitError, the existing CLI time limit).",
+          "evidence": "The LLD's §6 table matches DEF ac2 verbatim in intent ('fails with a message naming which of these is the cause, nothing waits indefinitely'); the timeout/exit-code paths it reuses (CliProvider's existing timeoutMs default 600000, cliExitError, runInProcessGroup kill) are the same mechanisms already read in cli-provider.ts:674-746 for vendor runs, so the new error paths graft onto real existing machinery rather than inventing new infrastructure. [files: src/agent/providers/cli-provider.ts, .insrc/artifacts/DEF-b220bb6174a2f5ed.json]",
+          "action": "cross-checked LLD §6 against DEF ac2/ac3/ac4 and the already-read runClaude/runCodex/runVibe exit-code handling",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The specific Ollama HTTP behaviours checkOllamaTarget relies on (/api/tags listing, /api/show 404 for an unlisted model, /api/me 200-with-account-id for sign-in, the ':cloud' tag convention) behave exactly as described against a real Ollama server.",
+          "evidence": "These are claims about the external Ollama server's HTTP API, not about this repository's own code — no file in this repo defines or constrains Ollama's /api/me or /api/show response shape, so a repo-grounded probe cannot confirm or refute them; the HLD cites this as citation c3 'analyze-bundle' output (an external research finding) rather than a code citation, and the LLD's own §11 open questions already flags that the signed-out /api/me response was never actually probed live.",
+          "action": "flagged as an external, repo-ungroundable claim; the LLD itself discloses the same gap in its open questions",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each DEF-S002 acceptance criterion (ac1-ac4) maps to at least one concretely named test in the LLD's §7 acceptance-mapping table, and the named test files are either real existing files being extended or newly-created files consistent with the new/reuse findings above.",
+          "evidence": "LLD §7's table maps ac1→cli-ollama.test.ts+provider-from-registry.test.ts+cli-ollama.live.test.ts, ac2→cli-ollama.test.ts+provider-from-registry.test.ts+cli-subprocess.test.ts, ac3→cli-ollama.test.ts (serial-per-caller, with the scope note matching the LLD's own open-questions resolution), ac4→cli-ollama.test.ts+provider-from-registry.test.ts+cli-vibe.test.ts+bounded-input.test.ts; provider-from-registry.test.ts and the regression suites (cli-vibe.test.ts, bounded-input.test.ts, cli-subprocess.test.ts, cli-failure-message.test.ts) were confirmed to exist in prior premises, and cli-ollama.test.ts/cli-ollama.live.test.ts were confirmed new.",
+          "action": "cross-checked §7's acceptance-mapping table against DEF ac1-ac4 and the file-existence checks already performed",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-30T05:17:56.463Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story makes a tier on the ollama-claude family actually run on Ollama. The daemon starts the same claude command-line tool it uses today, but for this family it points that one process at the local Ollama server through three environment variables, with the chosen Ollama model and effort. Before each run it checks that Ollama answers, that the model is available, and for a cloud model that Ollama is signed in, and fails with a message naming the cause. A tier whose model the definitions refused is never run on anything else.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Model the new runner as a new family in the model definitions (alternative a1). The definitions file, its validator and the definitions answer gain one family, 'ollama-claude', with the CLI kind 'claude' and a host mark 'ollama'; every model of that family carries a hosting mark, 'cloud' or 'local'. Tier settings, effort filtering and provider construction keep their one per-family path. A family with the Ollama host mark builds the existing CLI provider with an Ollama target applied to that subprocess only, and clients use the host mark to show cloud/local and to never offer unlisted model ids for that family. Scope change 2026-10-29 (user decision): the Codex-on-Ollama family is withdrawn, because Ollama's cloud models ignore a requested output format and the Codex tool depends on it (DEF non-goal, citation c9 of the DEF).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Ollama-hosted CLI families in the definitions answer",
+          "purpose": "The wire shape every consumer reads to know the new family, that it runs a CLI on Ollama, and which of its models are cloud or local.",
+          "interfaceSketch": "type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama' | 'ollama-claude';\ntype FamilyHost = 'ollama';\ntype ModelHosting = 'cloud' | 'local';\ninterface FamilyDefinitionEntry {\n  readonly id: FamilyId;\n  readonly displayName: string;\n  readonly cliKind?: 'claude' | 'codex';\n  /** Present only on the new family: the CLI runs against Ollama. */\n  readonly host?: FamilyHost;\n  readonly models: readonly ModelDefinitionEntry[];\n}\ninterface ModelDefinitionEntry {\n  readonly id: string;\n  readonly displayName: string;\n  readonly aliases?: readonly string[];\n  readonly efforts: readonly string[];\n  readonly inputLimit?: { readonly unit: 'chars' | 'tokens'; readonly max: number };\n  /** Required on every model of a family with host; absent elsewhere. */\n  readonly hosting?: ModelHosting;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c5"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Tier resolution on an Ollama-hosted family",
+          "purpose": "How the daemon reports the tier it actually runs when the tier names a host family, including a model the definitions do not declare, so the run layer and every settings surface show the same outcome.",
+          "interfaceSketch": "type FallbackReason = /* existing reasons */ string | 'model-not-supported';\ninterface TierResolution {\n  readonly family: FamilyId;\n  /** undefined when the configured model is not declared for a host family. */\n  readonly model: ResolvedModel | undefined;\n  readonly effort: string | undefined;\n  readonly fallback?: { readonly reason: FallbackReason; readonly configured: string };\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "How the CLI provider points a run at Ollama (the claude environment, applied only to that subprocess), the pre-run checks that Ollama answers and the model is available or signed in for a cloud model, the failure messages that name the cause, and the time limit that keeps a run from waiting forever stay inside s2."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "The shipped definitions entry for the new family and its models (which cloud and local models are supported), the catalog validator's four-member check and the 'hosting required on host families' rule, the registry's mapping from a CLI client to its direct family only, and the refusal of the unknown-model check and the approved-model store for host families stay inside s1."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The terminal UI's runner list, model list with cloud/local labels, effort step and the withheld 'enter another id' path for host families, and its display of the resolved tier, stay inside s3."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The VS Code tier picker's family and model steps, the settings write validation that refuses an undeclared model for a host family, the cloud/local labels and the withheld 'enter another id' item stay inside s4."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The JetBrains Settings page's family and model selectors, the cloud/local labels, the filter that keeps host families out of the model-check flow, and its display of the resolved tier stay inside s5."
+        }
+      ],
+      "rolloutPhase": "Phase B — run on Ollama and expose in settings",
+      "nonFunctional": {
+        "performance": "No added cost on today's runners. A run on a host family adds one Ollama reachability and model-availability check before the CLI starts; a run never waits beyond the existing CLI time limit.",
+        "security": "The Ollama settings are applied only to the started subprocess's environment or arguments; the user's own CLI configuration files and the daemon's environment are never changed. No API key is stored; the claude CLI gets the placeholder token Ollama accepts locally.",
+        "observability": "The daemon logs the family, model, hosting and Ollama target of each host-family run, and a failed pre-run check logs which check failed; the tier resolution reported to clients names a 'model-not-supported' fallback.",
+        "durability": "Nothing new is persisted: tier settings keep their stored shape, and the new families live in the shipped definitions file."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "CliProvider",
+          "signature": "new CliProvider(opts: CliProviderOpts): CliProvider  // CliProviderOpts gains: readonly ollama?: OllamaTarget | undefined",
+          "parameters": [
+            {
+              "name": "opts.ollama",
+              "type": "OllamaTarget | undefined",
+              "purpose": "When present, every claude subprocess this provider starts runs against the given Ollama server; absent, the provider behaves exactly as today.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "CliProvider",
+            "meaning": "A provider whose claude runs (complete, completeStructured including the bounded tool-free path, runEditSession, runReviewSession) carry ANTHROPIC_BASE_URL=<host>, ANTHROPIC_AUTH_TOKEN=ollama and an empty ANTHROPIC_API_KEY in a per-run copy of the environment, with CLAUDE_CODE_OAUTH_TOKEN removed from that copy."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "opts.ollama is given with a kind other than 'claude' or without a model."
+            }
+          ],
+          "preconditions": [
+            "opts.ollama.host is an http(s) URL (models.local.host)."
+          ],
+          "postconditions": [
+            "process.env of the daemon is never modified; the variables exist only in the child's environment.",
+            "Without opts.ollama, runSubprocess receives no env and the bounded path receives boundedClaudeEnv() unchanged."
+          ]
+        },
+        {
+          "name": "CliProvider.completeStructured",
+          "signature": "completeStructured<T>(messages: LLMMessage[], schema: StructuredSchema, opts?: StructuredCompletionOpts): Promise<T>",
+          "parameters": [
+            {
+              "name": "messages",
+              "type": "LLMMessage[]",
+              "purpose": "The conversation, as today.",
+              "optional": false
+            },
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "The requested structure, passed to claude --json-schema as today.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "StructuredCompletionOpts",
+              "purpose": "cwd, timeout, signal, as today.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "The schema-checked structured answer, as today; for an Ollama-targeted provider it comes from the Ollama model."
+          },
+          "errors": [
+            {
+              "type": "OllamaTargetError",
+              "condition": "Ollama-targeted provider only: before the claude process starts, the pre-run check finds Ollama not answering at the host (cause 'ollama-unreachable'), the model not available in Ollama (cause 'model-unavailable'), or, for a cloud model, Ollama not signed in to ollama.com (cause 'not-signed-in'); each check is bounded by OLLAMA_LIST_TIMEOUT_MS."
+            },
+            {
+              "type": "ReviewSessionTimeoutError | CLI exit error",
+              "condition": "The claude run exceeds the provider's existing time limit or exits non-zero, exactly as today."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The same pre-run check runs before complete, runEditSession and runReviewSession on an Ollama-targeted provider.",
+            "A failed check starts no claude process."
+          ]
+        },
+        {
+          "name": "checkOllamaTarget",
+          "signature": "function checkOllamaTarget(target: OllamaTarget, model: string, deps?: { readonly fetch?: typeof fetch; readonly timeoutMs?: number }): Promise<void>",
+          "parameters": [
+            {
+              "name": "target",
+              "type": "OllamaTarget",
+              "purpose": "The Ollama server address and the model's hosting; hosting 'cloud' adds the sign-in check.",
+              "optional": false
+            },
+            {
+              "name": "model",
+              "type": "string",
+              "purpose": "The Ollama model id the run will pass to claude --model.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "{ readonly fetch?: typeof fetch; readonly timeoutMs?: number }",
+              "purpose": "Test seams: the HTTP function (undici fetch by default) and the per-request limit (OLLAMA_LIST_TIMEOUT_MS by default).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves when Ollama answers, the model is available and, for a cloud model, Ollama is signed in."
+          },
+          "errors": [
+            {
+              "type": "OllamaTargetError",
+              "condition": "cause 'ollama-unreachable': GET <host>/api/tags fails to connect, answers non-2xx or does not answer within the limit."
+            },
+            {
+              "type": "OllamaTargetError",
+              "condition": "cause 'model-unavailable': the model id is not among /api/tags names and POST <host>/api/show { model } answers 404."
+            },
+            {
+              "type": "OllamaTargetError",
+              "condition": "cause 'not-signed-in': hosting is 'cloud' and POST <host>/api/me (JSON body {}) does not answer 200 with an account id."
+            }
+          ],
+          "preconditions": [
+            "target.host is an http(s) URL."
+          ],
+          "postconditions": [
+            "At most three local HTTP requests, each bounded by the limit; the check never waits longer than three limits in total.",
+            "Exported from a new module src/agent/providers/ollama-target.ts. It calls the three endpoints with plain fetch (the ollama npm client offers list and show but no /api/me, so one HTTP path is used for all three); OLLAMA_LIST_TIMEOUT_MS (4000 ms, src/agent/providers/ollama.ts:43) becomes an exported constant and is reused as the default limit.",
+            "CliProvider calls it before every claude spawn of an Ollama-targeted provider; vendor providers never call it."
+          ]
+        },
+        {
+          "name": "familyProvider",
+          "signature": "function familyProvider(registry: ModelRegistry, family: FamilyId, model: ResolvedModel | undefined, opts?: { readonly effort?: EffortLevel | undefined; readonly cliTimeoutMs?: number | undefined }, execution?: ConnectionExecutionContext): LLMProvider",
+          "parameters": [
+            {
+              "name": "family",
+              "type": "FamilyId",
+              "purpose": "The tier's family; registry.host(family) decides whether an Ollama target is set.",
+              "optional": false
+            },
+            {
+              "name": "model",
+              "type": "ResolvedModel | undefined",
+              "purpose": "The declared model; for a host family it must be present and its hosting is passed in the target.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "LLMProvider",
+            "meaning": "For a host family: a CliProvider of the family's CLI kind with the model, accepted effort and ollama: { host: loadLocalProviderConfig().host, hosting: model.hosting }. For every other family: exactly today's provider."
+          },
+          "errors": [
+            {
+              "type": "ModelNotSupportedError",
+              "condition": "registry.host(family) is 'ollama' and model is undefined (a 'model-not-supported' tier reached the run layer); no provider is built."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "A host family never yields a CliProvider without an Ollama target or without a model.",
+            "The daemon logs family, model, hosting and Ollama host when it builds a host-family provider."
+          ]
+        },
+        {
+          "name": "boundedClaudeEnv",
+          "signature": "function boundedClaudeEnv(): NodeJS.ProcessEnv",
+          "parameters": [],
+          "returns": {
+            "type": "NodeJS.ProcessEnv",
+            "meaning": "Unchanged allow-list copy; the Ollama-targeted provider merges the three Anthropic variables into this copy (and drops CLAUDE_CODE_OAUTH_TOKEN) for the bounded tool-free path."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The function itself and its output for vendor runs are unchanged."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "OllamaTarget (new)",
+        "change": "new",
+        "details": "{ readonly host: string; readonly hosting: ModelHosting } — where an Ollama-targeted claude run goes and whether its model is a cloud model (decides the sign-in check). Lives with CliProviderOpts in src/agent/providers/cli-provider.ts; ModelHosting is imported from s1's model catalog types.",
+        "schemaDiff": "+ export interface OllamaTarget { readonly host: string; readonly hosting: ModelHosting }",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:153-172"
+        ]
+      },
+      {
+        "entity": "CliProviderOpts",
+        "change": "field-add",
+        "details": "Adds ollama?: OllamaTarget. Absent for every existing caller, so vendor runs keep today's arguments and environment.",
+        "schemaDiff": "+ readonly ollama?: OllamaTarget | undefined;",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:153-172",
+          "src/analyze/context/shaper-provider.ts:220-246"
+        ]
+      },
+      {
+        "entity": "OllamaTargetError (new)",
+        "change": "new",
+        "details": "Error thrown by the pre-run check: name 'OllamaTargetError', cause 'ollama-unreachable' | 'model-unavailable' | 'not-signed-in', host and model fields, and a message naming the cause and its fix (start Ollama / pull the model / run `ollama signin`).",
+        "schemaDiff": "+ export class OllamaTargetError extends Error { readonly cause: 'ollama-unreachable' | 'model-unavailable' | 'not-signed-in'; readonly host: string; readonly model: string }",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:248-254",
+          "src/agent/providers/cli-provider.ts:356-400",
+          "src/agent/providers/cli-provider.ts:484-490",
+          "src/agent/providers/cli-provider.ts:588-589"
+        ]
+      },
+      {
+        "entity": "OLLAMA_LIST_TIMEOUT_MS",
+        "change": "field-modify",
+        "details": "The module-private 4000 ms limit for an Ollama list call becomes exported so checkOllamaTarget reuses it as its per-request default; its value and its use in listLocalModels are unchanged.",
+        "schemaDiff": "- const OLLAMA_LIST_TIMEOUT_MS = 4_000;\n+ export const OLLAMA_LIST_TIMEOUT_MS = 4_000;",
+        "callSites": [
+          "src/agent/providers/ollama.ts:43",
+          "src/agent/providers/ollama.ts:357"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "familyProvider reads registry.host(family) (s1) to decide whether to set an Ollama target, and the resolved model's hosting ('cloud' | 'local') to decide whether the pre-run check includes the ollama.com sign-in check. The five-family union (including cli-vibe) is consumed as shipped; vendor and plain Ollama families never get a target."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "A tier resolved with model undefined and fallback 'model-not-supported' (s1) reaches familyProvider through shaperSelection with no model for a host family; familyProvider throws s1's ModelNotSupportedError instead of building a provider, so neither the vendor CLI default nor any other model runs. This covers the shaper, the RoleRouter roles and the build-step validate path, which all build through familyProvider; the summariser path already refuses (s1)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Ollama is not running, or not reachable at models.local.host, when work is routed to an ollama-claude tier.",
+          "detection": "checkOllamaTarget's GET <host>/api/tags (plain fetch, bounded by OLLAMA_LIST_TIMEOUT_MS) fails to connect, answers non-2xx or times out.",
+          "response": "Throw OllamaTargetError with cause 'ollama-unreachable', naming the host and saying to start Ollama; no claude process is started. The daemon logs family, model, host and the failed check.",
+          "userImpact": "The step fails within a few seconds with 'Ollama is not running at <host>' instead of a long claude timeout or an Anthropic error.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tier's model is declared in the definitions but not available in the local Ollama (never pulled, or removed).",
+          "detection": "The model id is absent from the /api/tags names and checkOllamaTarget's POST <host>/api/show for it answers 404 ('model ... not found').",
+          "response": "Throw OllamaTargetError with cause 'model-unavailable', naming the model and the fix (`ollama pull <id>`); no claude process is started.",
+          "userImpact": "The step fails with a message naming the missing model.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A cloud model is chosen and Ollama is not signed in to ollama.com.",
+          "detection": "For hosting 'cloud' only: checkOllamaTarget's POST <host>/api/me (JSON body {}) does not answer 200 with an account id.",
+          "response": "Throw OllamaTargetError with cause 'not-signed-in', saying to run `ollama signin`; no claude process is started.",
+          "userImpact": "The step fails with a message naming the sign-in as the cause.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A tier on ollama-claude names a model the definitions do not declare (s1 resolved it as 'model-not-supported') and work is routed to it.",
+          "detection": "familyProvider receives a host family (registry.host(family) === 'ollama') with model undefined from shaperSelection.",
+          "response": "Throw s1's ModelNotSupportedError naming the family and requested model; no provider is built, so neither the vendor CLI default nor another model runs.",
+          "userImpact": "The step fails with 'model <id> is not supported by ollama-claude (model-not-supported)'.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The claude process on Ollama hangs, runs too long, or the Ollama model answers too slowly.",
+          "detection": "The existing per-invocation time limit (CliProvider timeoutMs, default 600000 ms, or the caller's timeout) in runSubprocess / runInProcessGroup expires.",
+          "response": "The process group is killed and the existing timeout error is raised, exactly as for vendor runs.",
+          "userImpact": "The run never waits beyond the existing CLI limit.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The claude process on Ollama exits non-zero or returns an error envelope (for example Ollama answers 401/500 mid-run, or the model fails to call the structured-output tool).",
+          "detection": "runClaude sees a non-zero exit code or envelope.is_error / missing structured_output, as today.",
+          "response": "The existing cliExitError / structured-output errors are raised with the CLI's own words; the structured path keeps its existing retry.",
+          "userImpact": "Same failure reporting as vendor runs, with the Ollama model named in the log.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A local-hosting model (hosting 'local') on ollama-claude.",
+          "expected": "The pre-run check skips the ollama.com sign-in check; Ollama reachability and model availability are still checked."
+        },
+        {
+          "input": "A declared host model with an effort it does not list.",
+          "expected": "familyProvider drops the effort with its existing warning; claude runs with --model and no --effort."
+        },
+        {
+          "input": "models.local.host set to a non-default address (for example a remote Ollama).",
+          "expected": "ANTHROPIC_BASE_URL and the pre-run check both use that address."
+        },
+        {
+          "input": "The daemon's own environment already contains ANTHROPIC_BASE_URL, ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN.",
+          "expected": "An Ollama-targeted run overrides the three Anthropic variables and drops CLAUDE_CODE_OAUTH_TOKEN in the child's copy only; vendor runs still inherit the daemon's environment unchanged."
+        },
+        {
+          "input": "The bounded tool-free structured path on an Ollama-targeted provider.",
+          "expected": "The child gets boundedClaudeEnv()'s allow-list plus the three Anthropic variables (minus CLAUDE_CODE_OAUTH_TOKEN); every other bounded flag is unchanged."
+        },
+        {
+          "input": "A cloud model listed in /api/tags under its '<name>:cloud' tag.",
+          "expected": "Counts as available without an /api/show call."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A vendor claude, codex or vibe run starts with exactly today's arguments and environment: runClaude passes no env to runSubprocess, vibe keeps envForModel, and the bounded path keeps boundedClaudeEnv() unchanged.",
+          "source": "c1"
+        },
+        {
+          "text": "The daemon's process.env and the user's CLI configuration files are never modified; per-run environment is always a copy, as the vibe precedent does.",
+          "source": "c1"
+        },
+        {
+          "text": "The per-invocation time limit and process-group kill apply to every claude run, including Ollama-targeted ones.",
+          "source": "c1"
+        },
+        {
+          "text": "Every role, the shaper and the build-step validate path build providers through familyProvider, so one change there covers all of them; the summariser's existing refusal (s1) is unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "Provider calls stay serial per caller (no Promise.all over provider calls); this Story adds no concurrency.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (src/**/__tests__/*.test.ts); live suites gated behind INSRC_LIVE_TESTS=1 and named *.live.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The Ollama target on CliProvider: per-run environment and arguments for every claude entry point, vendor runs unchanged, and the pre-run check's named causes, using a fake claude binary and a fake Ollama HTTP server.",
+          "subjects": [
+            "src/agent/providers/__tests__/cli-ollama.test.ts: complete, completeStructured, runEditSession and runReviewSession on an Ollama-targeted provider start claude with --model <id> (and --effort when accepted) and an environment carrying ANTHROPIC_BASE_URL=<host>, ANTHROPIC_AUTH_TOKEN=ollama and ANTHROPIC_API_KEY='' with CLAUDE_CODE_OAUTH_TOKEN removed; the daemon's process.env is unchanged after the run.",
+            "src/agent/providers/__tests__/cli-ollama.test.ts: the bounded tool-free structured path on an Ollama-targeted provider gets boundedClaudeEnv()'s allow-list plus the three Anthropic variables and its other flags unchanged.",
+            "src/agent/providers/__tests__/cli-ollama.test.ts: a provider without an Ollama target (claude and codex) passes the same arguments and no Ollama variables as before; the fake binary records the daemon's environment untouched.",
+            "src/agent/providers/__tests__/cli-ollama.test.ts: the pre-run check against a fake Ollama server throws OllamaTargetError with cause 'ollama-unreachable' (server down or not answering within the check's limit), 'model-unavailable' (model absent from /api/tags and /api/show 404), and 'not-signed-in' (cloud model, /api/me not 200), naming the host, model and fix; no claude process is started; a local-hosting model skips the sign-in check; a listed '<name>:cloud' model passes without /api/show.",
+            "src/agent/providers/__tests__/cli-ollama.test.ts: constructing a CliProvider with an Ollama target and kind 'codex' or no model throws."
+          ],
+          "fixturesNeeded": [
+            "A fake claude script (as cli-vibe.test.ts does for vibe) that records argv, stdin and the ANTHROPIC_* and CLAUDE_CODE_OAUTH_TOKEN variables, and prints a valid claude JSON envelope with structured_output.",
+            "A fake Ollama HTTP server on an ephemeral port answering /api/tags, /api/show and /api/me, configurable per test (down, slow, model missing, signed out)."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Provider construction for the host family and refusal of a refused tier.",
+          "subjects": [
+            "src/analyze/context/__tests__/provider-from-registry.test.ts: familyProvider for ollama-claude with a declared model builds a claude CliProvider with the model and an Ollama target whose host is models.local.host and whose hosting is the model's; vendor families get no target.",
+            "src/analyze/context/__tests__/provider-from-registry.test.ts: a tier on ollama-claude with an undeclared model makes buildShaperProvider, RoleRouter.resolveProviderForRole and resolveValidateProvider throw ModelNotSupportedError; no CliProvider is built."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Existing CLI behaviour stays as it was.",
+          "subjects": [
+            "src/agent/providers/__tests__/cli-vibe.test.ts, src/agent/providers/__tests__/bounded-input.test.ts, src/agent/providers/__tests__/cli-subprocess.test.ts and src/agent/providers/__tests__/cli-failure-message.test.ts stay green unchanged."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "A real structured answer from an Ollama cloud model through the claude CLI.",
+          "subjects": [
+            "src/agent/providers/__tests__/cli-ollama.live.test.ts (INSRC_LIVE_TESTS=1, needs Ollama running and signed in): completeStructured on an Ollama-targeted provider with glm-5.3:cloud returns an answer that passes the requested schema; a provider with a missing model fails with cause 'model-unavailable'."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "cli-ollama.test.ts: every claude entry point on an Ollama-targeted provider starts claude with --model <id> and the three Ollama variables",
+            "provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target",
+            "cli-ollama.live.test.ts: completeStructured on glm-5.3:cloud returns a schema-valid answer"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "cli-ollama.test.ts: the pre-run check names 'ollama-unreachable', 'model-unavailable' and 'not-signed-in' and starts no claude process",
+            "cli-ollama.test.ts: an unresponsive Ollama fails within the check's limit",
+            "provider-from-registry.test.ts: a refused ollama-claude tier throws ModelNotSupportedError and builds no provider",
+            "cli-subprocess.test.ts stays green (the existing time limit and process-group kill)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap (the fake claude records start and end times). Scope (user decision 2026-10-30): ac3 is met as serial per caller, as for today's runners; separate daemon sessions may each run an Ollama-targeted claude at the same time, and no cross-session gate is built."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables",
+            "provider-from-registry.test.ts: vendor families get no Ollama target",
+            "cli-vibe.test.ts and bounded-input.test.ts stay green unchanged"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "CliProviderOpts has no server target and every claude run inherits the daemon's environment (runClaude passes no env to runSubprocess, src/agent/providers/cli-provider.ts:696-712; the bounded path uses boundedClaudeEnv(), src/agent/providers/bounded-input.ts:31-37). familyProvider (src/analyze/context/shaper-provider.ts:220-246) builds a plain claude CliProvider for any family with a CLI kind, so an ollama-claude tier would run on Anthropic's service with an Ollama model id, and a refused host-family tier would run the vendor CLI's default model (shaperSelection leaves the model undefined, :264-281). There is no pre-run check of Ollama for CLI runs.",
+      "stateAfter": "CliProviderOpts accepts an optional Ollama target. With it, every claude run (complete, structured including bounded, edit and review sessions) first passes a bounded pre-run check of the Ollama server, model and (for cloud models) sign-in, then starts with ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY pointed at Ollama in a per-run environment copy. familyProvider sets the target for a host family from models.local.host and the model's hosting, and refuses a host family without a model with ModelNotSupportedError. Vendor runs are byte-for-byte unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the OllamaTarget type, the optional ollama field on CliProviderOpts and the OllamaTargetError class; reject the option for a non-claude kind or a missing model at construction.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Build the per-run environment for an Ollama-targeted provider (a copy of the daemon's environment, or of the bounded allow-list, with the three Anthropic variables set and CLAUDE_CODE_OAUTH_TOKEN removed) and pass it at the two claude spawn sites; leave the no-target path passing nothing extra.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the bounded pre-run check (Ollama answers, model available, signed in for a cloud model) before every claude call of an Ollama-targeted provider.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Make familyProvider set the Ollama target for a host family and refuse a host family without a model; log family, model, hosting and host.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "CliProviderOpts gains an optional field only; every existing caller (familyProvider for vendor and plain Ollama families, src/mcp/controller-review.ts:46, src/cli/services/workflow.ts:276) omits it and keeps today's arguments and environment. Stored tier settings are untouched. Before this Story an ollama-claude tier could not run correctly at all, so no working behaviour changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Ollama target option on CliProvider, set by familyProvider",
+        "oneLineSummary": "CliProviderOpts gains an optional Ollama target; when present, every claude spawn gets the three Anthropic variables pointed at Ollama in a per-run environment copy, a bounded pre-run check runs before each call, and familyProvider sets the target only for a host family and refuses a host family without a declared model.",
+        "approach": "CliProviderOpts gains `ollama?: { host: string; hosting: ModelHosting }` (accepted only with kind 'claude' and a model). When it is present, the provider builds the child's environment per run as a copy, never touching process.env: runClaude passes `{ ...process.env, ANTHROPIC_BASE_URL: host, ANTHROPIC_AUTH_TOKEN: 'ollama', ANTHROPIC_API_KEY: '' }` (and drops CLAUDE_CODE_OAUTH_TOKEN so the vendor login is not used) to runSubprocess, and the bounded tool-free path merges the same three variables into its boundedClaudeEnv() allow-list copy. Without the option every argument and environment is exactly as today (runSubprocess still gets no env).\n\nBefore each call the provider runs one bounded pre-run check against the target (a small checker in src/agent/providers, using the Ollama HTTP API through the existing ollama client): /api/tags answers (else 'Ollama is not running at <host>'), the model is listed or /api/show finds it (else 'model <id> is not available in Ollama; pull it'), and for a cloud model POST /api/me answers with an account (else 'Ollama is not signed in to ollama.com; run ollama signin'). Each failure throws a named OllamaTargetError with a cause field; the check has its own short time limit and the run keeps the existing CLI time limit, so nothing waits forever. familyProvider (src/analyze/context/shaper-provider.ts:220-246) sets the option from loadLocalProviderConfig().host and the model's hosting when registry.host(family) is 'ollama', and throws s1's ModelNotSupportedError when a host family reaches it without a model, so a refused tier never runs the vendor default. Calls stay serial by the existing caller convention; the provider adds no concurrency.",
+        "pros": [
+          "Reuses the one CliProvider and the one per-family provider path the HLD fixes; vendor families are untouched because the option is absent for them (ac4).",
+          "Follows the existing per-run environment precedent (vibe's envForModel) and the existing bounded env allow-list, so lc1 holds by construction.",
+          "Every claude entry point (complete, structured, edit session, review session, bounded) gets the target through two spawn sites."
+        ],
+        "cons": [
+          "The pre-run check adds two or three local HTTP requests before every call on a host family.",
+          "Serial calls across separate daemon sessions (worker threads) rely on the caller convention and Ollama's own request handling, not on a gate."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "a1 plus a process-wide one-at-a-time gate for host-family runs",
+        "oneLineSummary": "As a1, with a gate that admits one Ollama-hosted CLI run at a time across the daemon, so concurrent sessions queue instead of running in parallel.",
+        "approach": "Same option, environment, pre-run check and familyProvider change as a1. In addition, every host-family CLI call waits on a gate before it spawns and releases it when the child exits (or is killed). Because the daemon runs sessions on worker threads with separate module state, an in-module promise chain would only serialise one thread; a process-wide gate needs a shared primitive (an Atomics-based lock on a SharedArrayBuffer handed to every worker, or routing host-family calls through the main thread), registered in the module-state inventory.\n\nThe gate's wait counts against the run's time limit so a queued call still cannot wait forever.",
+        "pros": [
+          "ac3 holds across sessions, not only within one caller's sequence.",
+          "Protects a local Ollama model from parallel requests that could evict it under memory pressure (observed in the probe)."
+        ],
+        "cons": [
+          "A cross-thread gate is new infrastructure (shared memory or main-thread routing) and new module state that the inventory guard must classify; much more than the Story's run-on-Ollama scope.",
+          "Serialises cloud-model runs too, where Ollama's service handles parallel requests, slowing concurrent workflows for no accuracy gain.",
+          "Waiting on the gate competes with the existing CLI time limit and adds a new failure mode (gate timeout)."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Fully satisfies ac3, but at the cost of new cross-thread shared-memory or main-thread routing infrastructure and new module state, a partial on ac2 from the gate wait, and serialising cloud runs that do not need it; larger than the Story warrants unless the user wants cross-session serialisation."
+      },
+      {
+        "id": "a3",
+        "name": "Start the CLI through `ollama launch claude`",
+        "oneLineSummary": "For a host family, CliProvider runs `ollama launch claude --model <id> --yes -- <claude args>` and lets Ollama's launcher set up the environment.",
+        "approach": "CliProviderOpts gains a launcher mode: instead of spawning `claude` with the Anthropic variables, the provider spawns the `ollama` binary with `launch claude --model <id> --yes --` followed by the usual claude arguments, so Ollama configures the CLI itself. The pre-run check, error naming and familyProvider change are as in a1.\n\nThe bounded tool-free path would have to verify the launcher passes its allow-listed environment and flags through unchanged.",
+        "pros": [
+          "Uses Ollama's supported integration, which tracks future changes to how claude talks to Ollama."
+        ],
+        "cons": [
+          "`ollama launch` writes a CLI profile (`--config`, profile files), which changes the user's own tool configuration and breaks lc1.",
+          "Adds a second process between the daemon and claude, so the process-group kill, stall watching, stdin handling and exit-code classification must be re-verified through the launcher.",
+          "The bounded path's allow-listed environment and safe-mode flags may not survive the launcher, risking the tool-free guarantee."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "`ollama launch` writes a CLI profile, which violates lc1 (never change the user's tool configuration), and leaves ac1 and ac2 partial through the extra process layer."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Item alt2: alternatives were scored against ac1-ac4, sc1 and sc2; Epic constraints k1-k6 are reflected in the notes but not as separate score entries (partial), as in the s1 LLD where k1-k6 were treated as a pre-filter gate.",
+      "Resolved 2026-10-30 (user decision): ac3 means serial per caller, as for today's runners; separate daemon sessions may run Ollama-targeted claude at the same time. Alternative a2's process-wide gate is not built.",
+      "The signed-out answer of POST /api/me was not probed (Ollama was signed in); checkOllamaTarget treats any non-200 answer, or a 200 without an account id, as not signed in. /api/me is reached with plain fetch because the ollama npm client has no call for it (it offers list and show)."
+    ],
+    "sequenceDefinition": {
+      "id": "s2-ollama-run",
+      "narrative": "How a tier on ollama-claude becomes a claude run against Ollama: the provider is built with an Ollama target, a bounded pre-run check runs before each call, and only then is claude started with the Ollama variables in its own environment.",
+      "participants": [
+        {
+          "id": "router",
+          "label": "RoleRouter / buildShaperProvider",
+          "description": "Resolves the tier and asks familyProvider for a provider."
+        },
+        {
+          "id": "fp",
+          "label": "familyProvider",
+          "description": "Builds the provider for the tier's family; sets the Ollama target for a host family or refuses a missing model."
+        },
+        {
+          "id": "cli",
+          "label": "CliProvider (Ollama target)",
+          "description": "Runs the pre-run check, then starts claude with a per-run environment."
+        },
+        {
+          "id": "ollama",
+          "label": "Ollama server (models.local.host)",
+          "description": "Answers the pre-run check and serves the model for claude."
+        },
+        {
+          "id": "claude",
+          "label": "claude CLI subprocess",
+          "description": "The same claude binary as today, pointed at Ollama by ANTHROPIC_BASE_URL."
+        }
+      ],
+      "messages": [
+        {
+          "from": "router",
+          "to": "fp",
+          "label": "familyProvider(registry, 'ollama-claude', model, effort)",
+          "kind": "call",
+          "description": "The resolved tier's family, declared model and effort."
+        },
+        {
+          "from": "fp",
+          "to": "router",
+          "label": "ModelNotSupportedError (model undefined)",
+          "kind": "return",
+          "description": "A refused tier builds no provider."
+        },
+        {
+          "from": "fp",
+          "to": "cli",
+          "label": "new CliProvider({ kind: 'claude', model, ollama: { host, hosting } })",
+          "kind": "call",
+          "description": "Host and hosting come from models.local.host and the model's definition."
+        },
+        {
+          "from": "cli",
+          "to": "ollama",
+          "label": "GET /api/tags, POST /api/show, POST /api/me (cloud only)",
+          "kind": "call",
+          "description": "Bounded pre-run check; a failure throws OllamaTargetError naming the cause and starts no claude process."
+        },
+        {
+          "from": "cli",
+          "to": "claude",
+          "label": "spawn claude --model <id> [--effort] --json-schema ... with ANTHROPIC_BASE_URL/AUTH_TOKEN/API_KEY",
+          "kind": "call",
+          "description": "Per-run environment copy; the daemon's own environment is unchanged."
+        },
+        {
+          "from": "claude",
+          "to": "ollama",
+          "label": "POST /v1/messages",
+          "kind": "call",
+          "description": "claude talks to Ollama's Anthropic-compatible endpoint."
+        },
+        {
+          "from": "claude",
+          "to": "cli",
+          "label": "JSON envelope with structured_output",
+          "kind": "return",
+          "description": "Checked against the requested schema as today; the existing time limit applies."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/run-claude-codex-ollama-models-E20261029b220bb61/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: How CliProvider starts the claude CLI subprocess and where its environment is set",
+      "quotedText": "Every claude invocation except the tool-free bounded path goes through the private runClaude (:696-712), which calls runSubprocess (:1078-1094) with NO env argument"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: How a tier on a family becomes a provider, and what happens today for an ollama-claude tier",
+      "quotedText": "familyProvider builds CliProvider({ kind: registry.cliKind(family), model, effort, inputBudgetChars, timeoutMs }) for any family with a CLI kind"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: Ollama host configuration and the calls available for a pre-run check",
+      "quotedText": "POST /api/me with a JSON body answers 200 with the signed-in ollama.com account"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle: One-at-a-time model calls and the existing test patterns for CliProvider subprocesses",
+      "quotedText": "No process-wide gate serialises CLI or Ollama calls in src/agent/providers or src/analyze/context; serial calls are a caller convention"
+    }
+  ]
+}

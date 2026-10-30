@@ -66,6 +66,8 @@ import { runClaudeInvestigationSession, claudeInvestigationAdapter } from './cla
 import { runCodexInvestigationSession, codexInvestigationAdapter } from './codex-investigation-session.js';
 import { runNativeInvestigationProbe } from './native-investigation-probe.js';
 import { collectClaudeProbeObservations } from './claude-investigation-probe.js';
+import { readClaudeInvestigationResult } from './claude-investigation-events.js';
+import { PROBE_OBSERVATION_BYTES } from '../../shared/review-investigation-probe.js';
 import { collectCodexProbeObservations } from './codex-investigation-probe.js';
 import type { InvestigationProbeOptions, InvestigationProbeExport } from '../../shared/review-investigation-probe.js';
 
@@ -599,14 +601,21 @@ export class CliProvider implements LLMProvider {
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
 		return new Promise((resolve, reject) => {
 			const stall=exec?.nativeInvestigation&&exec.stallMs!==undefined?{ms:exec.stallMs,started:()=>false,silence:true}:undefined;
-			const r = runSubprocess(exec?.qualifiedBinPath??this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal,exec?.env);
+			const r = exec?.nativeInvestigation
+        ? runInProcessGroup(exec.qualifiedBinPath ?? resolveBin(this.binPath), args, { stdin: prompt, timeoutMs: exec.timeoutMs ?? this.timeoutMs,
+          cwd: exec.cwd, stall, signal: exec.signal, env: exec.env, maxOutputBytes: PROBE_OBSERVATION_BYTES }).then(out => {
+          if (out.aborted) throw abortError();
+          if (out.outputLimitExceeded || out.observerFailed) throw new ModelResponseShapeError('review-native-output-bound');
+          return { ...out, exitCode: out.timedOut || out.stalled ? -9 : out.exitCode };
+        })
+        : runSubprocess(exec?.qualifiedBinPath??this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall, exec?.signal,exec?.env);
 			r.then(out => {
 				if(out.stalled===true&&exec?.nativeInvestigation)return reject(new CliStallError('claude',exec.stallMs??300000,undefined));
 				if (out.exitCode !== 0) {
 					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr, undefined, exec?.reviewScoped));
 				}
 				let envelope: ClaudeEnvelope;
-				try { envelope = JSON.parse(out.stdout) as ClaudeEnvelope; }
+				try { envelope = (exec?.nativeInvestigation ? readClaudeInvestigationResult(out.stdout) : JSON.parse(out.stdout)) as unknown as ClaudeEnvelope; }
 				catch (err) {
 					if (exec?.reviewScoped) return reject(new ModelResponseShapeError('review-envelope-invalid'));
 					return reject(new Error(`claude stdout was not parseable JSON envelope: ${(err as Error).message}. stdout=${out.stdout.slice(0, 500)}`));

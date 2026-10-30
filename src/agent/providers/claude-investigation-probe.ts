@@ -4,6 +4,8 @@ import type { InvestigationProbeObservation } from '../../shared/review-investig
 import type { NativeProbeInvocationIdentity } from './native-investigation-probe.js';
 import { createHash } from 'node:crypto';
 import { PROBE_OBSERVATION_BYTES } from '../../shared/review-investigation-probe.js';
+import { scopedReviewToolCatalog } from '../../shared/review-investigation-catalog.js';
+import { readClaudeInvestigationEvents } from './claude-investigation-events.js';
 
 export const CLAUDE_PROBE_TELEMETRY_VERSION = '2.1.310 (Claude Code)';
 
@@ -19,11 +21,10 @@ export function collectClaudeProbeObservations(result: ProcessGroupResult, ident
     return missing('Unsupported Claude telemetry version; no isolation inferred from version or flags');
   if (result.outputLimitExceeded || result.observerFailed || Buffer.byteLength(result.stdout) > PROBE_OBSERVATION_BYTES)
     return missing('Incomplete or over-limit native output cannot establish isolation');
-  let parsed: unknown;
-  try { parsed = JSON.parse(result.stdout); } catch { return missing('No recognized complete Claude runtime inventory event'); }
-  const events = Array.isArray(parsed) ? parsed : [parsed];
-  const init = events.find((event): event is Record<string, unknown> => !!event && typeof event === 'object' &&
-    (event as Record<string, unknown>)['type'] === 'system' && (event as Record<string, unknown>)['subtype'] === 'init');
+  let events: readonly Record<string, unknown>[];
+  try { events = readClaudeInvestigationEvents(result.stdout, result.aborted === true && result.exitSignal === 'SIGKILL'); }
+  catch { return missing('Malformed, conflicting or incomplete Claude native event stream'); }
+  const init = events.find(event => event['type'] === 'system' && event['subtype'] === 'init');
   if (!init) return missing('Claude result envelope does not expose complete effective inventory or independent denial probes');
   const observations = missing('Claude init hints do not prove hooks, instruction/config sources, credential handling and every required denial');
   const add = (check: InvestigationProbeObservation['check'], detail: string) => {
@@ -38,6 +39,21 @@ export function collectClaudeProbeObservations(result: ProcessGroupResult, ident
     if (tools.includes('WebFetch') || tools.includes('WebSearch')) add('network', 'Native init advertises unscoped network tools');
   }
   if (Array.isArray(init['plugins']) && init['plugins'].length) add('plugins', 'Native init advertises loaded plugins');
-  // Absence, even in a recognized init event, never manufactures a denied row.
+  for (const event of events) if (event['type'] === 'system' &&
+    ['hook_started', 'hook_response', 'hook_progress'].includes(String(event['subtype'])))
+    add('hooks', 'Native stream reports a hook running in the restricted launch');
+  // A version-pinned complete inventory establishes tool exposure only. It
+  // does not assert OS sandboxing or absence of unreported instruction sources.
+  if (identity.sourceMode !== undefined && typeof init['session_id'] === 'string' &&
+    Array.isArray(init['tools']) && init['tools'].every(t => typeof t === 'string')) {
+    const actual = init['tools'] as string[];
+    const expected = scopedReviewToolCatalog(identity.sourceMode === 'indexed-impact').map(t => `mcp__insrc-scoped-review__${t.name}`);
+    if (actual.length === expected.length && expected.every(t => actual.includes(t))) {
+      for (const check of ['builtin-tools', 'shell', 'raw-filesystem', 'network'] as const)
+        observations.push({ ...common, check, verdict: 'observed-denied', detail: 'Complete native startup tool inventory exposes only the pinned scoped bridge; no OS-level sandbox claim' });
+    }
+  }
+  // Complete configuration provenance and active canary evidence are separate:
+  // no overall inventory, hook, plugin or instruction denial from mere silence.
   return observations;
 }

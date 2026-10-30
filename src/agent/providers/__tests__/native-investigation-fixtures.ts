@@ -33,7 +33,7 @@ const first=await call('progress',{progress:progress('block-1',0)});await call('
 const mode=readFileSync(new URL('./mode.txt',import.meta.url),'utf8');if(mode==='cancel'||mode==='stall')await new Promise(r=>setTimeout(r,10000));
 const second=await call('progress',{progress:progress('block-2',1)});
 const reply={runId:turn.runId,subjectDigest:turn.subjectDigest,generation:turn.generation,attemptId:turn.attemptId,acceptedBlockReceiptIds:[first.progressId,second.progressId],lastAcceptedSequence:2,inspectedEvidenceIds:[],coverageUpdates:[],findings:[],next:{kind:'pause',remainingWork:[],reason:'Fixture requires more evidence'}};
-await call('reply',{reply});const final=mode==='bad-final'?{...reply,generation:turn.generation+1}:reply;process.stdout.write(codex?JSON.stringify({type:'item.completed',item:{type:'agent_message',text:JSON.stringify(final)}})+'\\n':JSON.stringify({structured_output:final,is_error:false}));
+await call('reply',{reply});const final=mode==='bad-final'?{...reply,generation:turn.generation+1}:reply;process.stdout.write(codex?JSON.stringify({type:'item.completed',item:{type:'agent_message',text:JSON.stringify(final)}})+'\\n':JSON.stringify({type:'result',structured_output:final,is_error:false})+'\\n');
 `;
 export async function exerciseNativeInvestigationSessions(kind:'claude'|'codex'){
  for(const mode of ['complete','cancel','stall','bad-final'] as const){
@@ -47,7 +47,7 @@ export async function exerciseNativeInvestigationSessions(kind:'claude'|'codex')
    const schema=JSON.parse(JSON.stringify(InvestigationReplySchema)),modelArgs:string[]=[],args=buildArgs(schema,modelArgs,cwd,false),mcp=nativeReviewMcpConfiguration(cwd,false);
    if(codex){assert.ok(args.includes('--ignore-user-config'));assert.ok(args.includes('--ignore-rules'));assert.ok(args.includes('--strict-config'));for(const name of CODEX_INVESTIGATION_DISABLED_FEATURES)assert.ok(args.includes(name));
     const table=args.find(a=>a.startsWith('mcp_servers='))!;const parsed=JSON.parse(execFileSync('python3',['-c','import tomllib,json,sys; print(json.dumps(tomllib.loads(sys.stdin.read())))'],{input:table,encoding:'utf8'}));assert.deepEqual(parsed.mcp_servers['insrc-scoped-review'].args,mcp.mcpServers['insrc-scoped-review'].args);
-   }else{assert.ok(!args.includes('--safe-mode'));assert.ok(!args.includes('--bare'));assert.ok(args.includes('--strict-mcp-config'));assert.equal(args[args.indexOf('--tools')+1],'');assert.equal(args[args.indexOf('--setting-sources')+1],'');assert.equal(args[args.indexOf('--permission-mode')+1],'dontAsk');}
+   }else{assert.equal(args[args.indexOf('--output-format')+1],'stream-json');assert.ok(args.includes('--verbose'));assert.ok(args.includes('--include-hook-events'));assert.ok(!args.includes('--safe-mode'));assert.ok(!args.includes('--bare'));assert.ok(args.includes('--strict-mcp-config'));assert.equal(args[args.indexOf('--tools')+1],'');assert.equal(args[args.indexOf('--setting-sources')+1],'');assert.equal(args[args.indexOf('--permission-mode')+1],'dontAsk');}
    const settings=join(cwd,'investigation-settings.json'),mcpFile=join(cwd,'investigation-mcp.json');if(!codex)writeFileSync(settings,'{}',{mode:0o600});writeFileSync(mcpFile,JSON.stringify(mcp),{mode:0o600});
    const file=(path:string)=>({path:realpathSync(path),digest:investigationFileDigest(realpathSync(path))});
    const command=mcp.mcpServers['insrc-scoped-review'],entry=command.args.find(p=>p.endsWith('/insrc-review-bridge.ts')||p.endsWith('/insrc-review-bridge.js'))!;

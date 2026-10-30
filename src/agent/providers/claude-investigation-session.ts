@@ -11,7 +11,7 @@ export function claudeInvestigationArgs(schema:StructuredSchema,modelArgs:readon
  const allowed=scopedReviewToolCatalog(indexed).map(t=>`mcp__insrc-scoped-review__${t.name}`).join(',');
  // Safe mode disables even explicitly configured MCP servers, including our bridge.
  // Keep launch restrictions explicit; qualification still requires runtime evidence.
- return ['--print','--output-format','json','--json-schema',JSON.stringify(schema),'--setting-sources','',
+ return ['--print','--output-format','stream-json','--verbose','--include-hook-events','--json-schema',JSON.stringify(schema),'--setting-sources','',
   '--settings',join(cwd,'investigation-settings.json'),'--strict-mcp-config','--mcp-config',join(cwd,'investigation-mcp.json'),
   '--tools','','--allowedTools',allowed,'--disable-slash-commands','--permission-mode','dontAsk','--permission-prompts','none',
   '--no-session-persistence','--system-prompt',INVESTIGATION_SYSTEM_PROMPT,...modelArgs];

@@ -30,6 +30,7 @@ export interface NativeProbeInvocation {
 export interface NativeProbeInvocationIdentity {
   readonly attemptId: string; readonly launchDigest: string; readonly effectiveDigest: string;
   readonly binaryVersion: string;
+  readonly sourceMode?: 'source-only' | 'indexed-impact' | undefined;
 }
 
 /** A distinct synthetic-only bootstrap. Never calls production qualification
@@ -96,7 +97,7 @@ export async function runNativeInvestigationProbe(input: NativeProbeInvocation):
       check: 'cancellation-exit', verdict: 'observed-allowed', observationDigest: digestValue({ aborted: result.aborted, exitSignal: result.exitSignal, durationMs: result.durationMs }),
       detail: 'Host cancellation followed by actual process-group exit' });
     if (!rawOverflow && !result.outputLimitExceeded && !result.observerFailed && !fixture.error())
-      observations.push(...(input.collect?.(result, { ...provenance, binaryVersion: context.identity.binaryVersion }) ?? []));
+      observations.push(...(input.collect?.(result, { ...provenance, binaryVersion: context.identity.binaryVersion, sourceMode: context.sourceMode }) ?? []));
     for (const observation of observations) await context.observe(observation);
     const expected = (check: string) => check === 'durable-progress' || check === 'cancellation-exit' ? 'observed-allowed' : 'observed-denied';
     const observed = new Set(observations.filter(o => o.verdict === expected(o.check)).map(o => o.check));

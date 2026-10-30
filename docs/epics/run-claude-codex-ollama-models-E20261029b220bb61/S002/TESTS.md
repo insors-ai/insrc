@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -53,3 +53,37 @@ Run at 2026-10-30T05:37:12.338Z on commit `e7074cb44`. Tests check: **passed**. 
 | `src/agent/providers/__tests__/cli-ollama.test.ts` | 0 | 4 | 1.4 s |  |
 | `src/agent/providers/__tests__/cli-subprocess.test.ts` | 0 | 6 | 4.3 s |  |
 | `src/agent/providers/__tests__/cli-vibe.test.ts` | 0 | 9 | 7.7 s |  |
+
+## t2
+
+Run at 2026-10-30T05:41:21.989Z on commit `15155ec65`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: ollama-target.test.ts: a down or silent Ollama gives 'ollama-unreachable' within the limit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ollama-target.test.ts: a down or silent Ollama gives 'ollama-unreachable' within the limit | `src/agent/providers/__tests__/ollama-target.test.ts` |
+
+**unit: ollama-target.test.ts: a model absent from /api/tags with /api/show 404 gives 'model-unavailable'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ollama-target.test.ts: a model absent from /api/tags with /api/show 404 gives 'model-unavailable' | `src/agent/providers/__tests__/ollama-target.test.ts` |
+
+**unit: ollama-target.test.ts: a cloud model with /api/me 401 gives 'not-signed-in' and /api/me 503 gives 'account-unavailable'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ollama-target.test.ts: a cloud model with /api/me 401 gives 'not-signed-in' and /api/me 503 gives 'account-unavailable' | `src/agent/providers/__tests__/ollama-target.test.ts` |
+
+**unit: ollama-target.test.ts: a local model skips /api/me, a listed model skips /api/show, and every request goes to target.host**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ollama-target.test.ts: a local model skips /api/me, a listed model skips /api/show, and every request goes to target.host | `src/agent/providers/__tests__/ollama-target.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/ollama-target.test.ts` | 0 | 4 | 1 s |  |

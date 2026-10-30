@@ -4,7 +4,7 @@
     "epicHash": "b220bb6174a2f5ed",
     "storyId": "s2",
     "createdAt": "2026-10-30T05:35:31.740Z",
-    "updatedAt": "2026-10-30T05:37:12.338Z",
+    "updatedAt": "2026-10-30T05:41:21.989Z",
     "epicCreatedAt": "2026-10-29T16:20:04.352Z",
     "epicSlug": "run-claude-codex-ollama-models"
   },
@@ -259,6 +259,93 @@
               },
               {
                 "title": "a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "15155ec65",
+        "ranAt": "2026-10-30T05:41:21.989Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ollama-target.test.ts: a down or silent Ollama gives 'ollama-unreachable' within the limit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-target.test.ts",
+                "title": "ollama-target.test.ts: a down or silent Ollama gives 'ollama-unreachable' within the limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ollama-target.test.ts: a model absent from /api/tags with /api/show 404 gives 'model-unavailable'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-target.test.ts",
+                "title": "ollama-target.test.ts: a model absent from /api/tags with /api/show 404 gives 'model-unavailable'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ollama-target.test.ts: a cloud model with /api/me 401 gives 'not-signed-in' and /api/me 503 gives 'account-unavailable'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-target.test.ts",
+                "title": "ollama-target.test.ts: a cloud model with /api/me 401 gives 'not-signed-in' and /api/me 503 gives 'account-unavailable'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ollama-target.test.ts: a local model skips /api/me, a listed model skips /api/show, and every request goes to target.host",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-target.test.ts",
+                "title": "ollama-target.test.ts: a local model skips /api/me, a listed model skips /api/show, and every request goes to target.host",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-target.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 983,
+            "titles": [
+              {
+                "title": "ollama-target.test.ts: a down or silent Ollama gives 'ollama-unreachable' within the limit",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-target.test.ts: a model absent from /api/tags with /api/show 404 gives 'model-unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-target.test.ts: a cloud model with /api/me 401 gives 'not-signed-in' and /api/me 503 gives 'account-unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-target.test.ts: a local model skips /api/me, a listed model skips /api/show, and every request goes to target.host",
                 "result": "pass"
               }
             ],

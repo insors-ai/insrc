@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1793365514295-asvqwi",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T13:07:37.143Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 142833,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s7",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "scope": "L",
+    "notify": "Extends Epic c32aa60534232f36 — one remediation Story builds on the existing review subject, evidence, recovery and publication code; no new epic or storage platform.",
+    "addedStory": {
+      "id": "s7",
+      "title": "Make scoped reviews usable with simple assessments and durable progress",
+      "userValue": "A developer obtains an independent, useful review of the exact built changes, sees progress survive interruption, and can enable a proven review mode without repeated evidence-approval ceremonies. Existing safeguards remain intact and unavailable evidence is clear.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "A built Story and an explicitly selected immutable review scope",
+          "when": "an independent reviewer investigates the change",
+          "then": "the reviewer can read the selected changes and surrounding pinned context and submit a block assessment without constructing internal run digests, ownership generations, sequence counters or complete coverage-row objects; host-owned binding, provenance and scope checks remain authoritative.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "Added, deleted or insertion-only changes and a rejected evidence request",
+          "when": "navigation is presented and source is inspected",
+          "then": "supplied references are valid for their actual source spans, contextual reads are clearly distinguished from changed scope, and safe actionable refusal details identify how to correct a request; bounded diagnostics retain the failed operation's cause without leaking private source or credentials.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "A review has established a block assessment and further investigation remains",
+          "when": "the reviewer moves on, its attempt approaches the existing budget/time cap, or the run is cancelled or interrupted",
+          "then": "useful assessed progress is durably acknowledged promptly, unfinished work yields explicitly, and compatible resume retains accepted work without repeating it; cross-file investigation stays possible and one current owner controls updates.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "Approved tasks, applicable design expectations and selected changes include related requirements or missing evidence",
+          "when": "coverage and results are presented",
+          "then": "the reviewer and user receive concise grouped expectations with traceability to all applicable obligations, no fabricated satisfaction and an explicit useful inconclusive report when evidence is missing; inconclusive work never becomes a successful complete review or automatic BUILD approval.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac5",
+          "given": "A qualified installed backend and an operator considering a bounded pilot or default adoption",
+          "when": "readiness is checked or ordinary review implementation code changes",
+          "then": "one understandable operational decision exposes actual compatibility, test and live-review evidence without repeated standalone approval workflows for fixture outputs; isolation qualification follows the actual execution boundary, source/contract freshness remains enforced, and default activation still requires explicit human signoff.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac6",
+          "given": "The qualified Claude source-only path is the first deployment target",
+          "when": "representative real clean-change and known-defect reviews and a cancel/resume/concurrent-owner scenario are exercised",
+          "then": "the existing engine produces useful durable progress and a correct final result or explicit limitation through normal admission, recorded evidence supports the activation decision, and indexed enrichment and other backends can be enabled separately only after their own capability checks.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac7",
+          "given": "The implementation is ready for independent final Story review",
+          "when": "build validation and Story completion are performed",
+          "then": "task validation precedes final code review and final code review precedes completion approval, with no circular prerequisite, no silent review bypass and no relabelling of earlier failed acceptance as passed; existing legacy/design-review compatibility, accuracy policy, CLI-only cloud access and cancellation/budget controls remain preserved.",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-c32aa60534232f36-2",
+    "evidence": [
+      {
+        "kind": "doc",
+        "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/DEF.md"
+      },
+      {
+        "kind": "doc",
+        "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/HLD.md"
+      },
+      {
+        "kind": "code",
+        "ref": "src/daemon/review-investigation-repository.ts"
+      },
+      {
+        "kind": "code",
+        "ref": "src/daemon/review-investigation-adoption.ts"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"c32aa60534232f36\",\"storyId\":\"s7\"}",
+      "description": "Approve the HLD amendment (`AMD-c32aa60534232f36-2`) and the updated Epic, then run `design.story` for the new Story `s7` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-repository.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-adoption.ts"
+    }
+  ]
+}

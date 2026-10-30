@@ -21,45 +21,45 @@
     "epicHash": "c32aa60534232f36",
     "epicSlug": "review-planned-changes-through-agent-investigation",
     "authoredBy": "controller",
-    "revision": 6,
+    "revision": 8,
     "envelope": {
       "description": "PLAN-directed independent code review using scope-selected commit packets, on-demand evidence, complete coverage and durable recovery.",
       "references": [],
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 6,
-        "contentHash": "33b0f638e21067b647bcdd1eb1c70efb7b9046189ffd7adb0a7d00df6ea5a1a6",
-        "at": "2026-10-28T07:32:57.938Z",
+        "number": 8,
+        "contentHash": "7a7fd40e7a2bb11167366f834c58179081f8bfb252705116cd56f6451f6b4645",
+        "at": "2026-10-30T13:20:19.059Z",
         "by": {
-          "id": "insrc:controller",
+          "id": "codex:controller",
           "kind": "agent",
           "properties": {}
         }
       },
       "signoffs": [],
       "review": {
-        "revision": 6,
+        "revision": 7,
         "reviewer": {
           "id": "insrc:daemon",
           "kind": "agent",
           "properties": {}
         },
         "party": "daemon",
-        "verdict": "pass",
+        "verdict": "block",
         "counts": {
-          "high": 0,
-          "med": 5,
+          "high": 1,
+          "med": 2,
           "low": 13
         },
-        "at": "2026-10-28T07:45:28.427Z",
+        "at": "2026-10-30T13:17:29.757Z",
         "report": {
           "entityId": "DEF-c32aa60534232f36",
           "type": "change-log-entry",
           "relation": "reviews",
-          "fragment": "review-ef5dd80652dd782730e14607339bb176"
+          "fragment": "review-71760d57916aa3fafaa4663cb1e0a66c"
         }
       },
       "approval": {
@@ -115,7 +115,7 @@
         "source": "c6"
       },
       {
-        "text": "Existing CLI reviewer sessions have read-only execution support: codexReviewSessionArgs in src/agent/providers/cli-provider.ts:138-140 selects the read-only sandbox. This is a reusable provider seam, not proof that every new review permission boundary is already implemented.",
+        "text": "Existing CLI reviewer sessions have read-only execution support: codexReviewSessionArgs in src/agent/providers/cli-provider.ts:148-150 selects the read-only sandbox. This is a reusable provider seam, not proof that every new review permission boundary is already implemented.",
         "confidence": "high",
         "source": "c11"
       },
@@ -177,7 +177,7 @@
         "id": "k8",
         "text": "A successor may replace predecessor code-review chunking only after staged accuracy/coverage and recovery validation; design-document review remains compatible. Ambiguous concurrent-change attribution must be surfaced rather than silently including foreign work.",
         "type": "contract",
-        "source": "c5"
+        "source": "c13"
       },
       {
         "id": "k9",
@@ -554,6 +554,62 @@
             "statement": "The system can adopt or roll back the new mechanism only with explicit compatibility and quality evidence."
           }
         ]
+      },
+      {
+        "id": "s7",
+        "title": "Make scoped reviews usable with simple assessments and durable progress",
+        "userValue": "A developer obtains an independent, useful review of the exact built changes, sees progress survive interruption, and can enable a proven review mode without repeated evidence-approval ceremonies. Existing safeguards remain intact and unavailable evidence is clear.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A built Story and an explicitly selected immutable review scope",
+            "when": "an independent reviewer investigates the change",
+            "then": "the reviewer can read the selected changes and surrounding pinned context and submit a block assessment without constructing internal run digests, ownership generations, sequence counters or complete coverage-row objects; host-owned binding, provenance and scope checks remain authoritative.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "Added, deleted or insertion-only changes and a rejected evidence request",
+            "when": "navigation is presented and source is inspected",
+            "then": "supplied references are valid for their actual source spans, contextual reads are clearly distinguished from changed scope, and safe actionable refusal details identify how to correct a request; bounded diagnostics retain the failed operation's cause without leaking private source or credentials.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "A review has established a block assessment and further investigation remains",
+            "when": "the reviewer moves on, its attempt approaches the existing budget/time cap, or the run is cancelled or interrupted",
+            "then": "useful assessed progress is durably acknowledged promptly, unfinished work yields explicitly, and compatible resume retains accepted work without repeating it; cross-file investigation stays possible and one current owner controls updates.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "Approved tasks, applicable design expectations and selected changes include related requirements or missing evidence",
+            "when": "coverage and results are presented",
+            "then": "the reviewer and user receive concise grouped expectations with traceability to all applicable obligations, no fabricated satisfaction and an explicit useful inconclusive report when evidence is missing; inconclusive work never becomes a successful complete review or automatic BUILD approval.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "A qualified installed backend and an operator considering a bounded pilot or default adoption",
+            "when": "readiness is checked or ordinary review implementation code changes",
+            "then": "one understandable operational decision exposes actual compatibility, test and live-review evidence without repeated standalone approval workflows for fixture outputs; isolation qualification follows the actual execution boundary, source/contract freshness remains enforced, and default activation still requires explicit human signoff.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "The qualified Claude source-only path is the first deployment target",
+            "when": "representative real clean-change and known-defect reviews and a cancel/resume/concurrent-owner scenario are exercised",
+            "then": "the existing engine produces useful durable progress and a correct final result or explicit limitation through normal admission, recorded evidence supports the activation decision, and indexed enrichment and other backends can be enabled separately only after their own capability checks.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac7",
+            "given": "The implementation is ready for independent final Story review",
+            "when": "build validation and Story completion are performed",
+            "then": "task validation precedes final code review and final code review precedes completion approval, with no circular prerequisite, no silent review bypass and no relabelling of earlier failed acceptance as passed; existing legacy/design-review compatibility, accuracy policy, CLI-only cloud access and cancellation/budget controls remain preserved.",
+            "operationalizes": []
+          }
+        ]
       }
     ],
     "openQuestions": [],
@@ -693,12 +749,18 @@
     {
       "id": "c11",
       "kind": "code",
-      "ref": "src/agent/providers/cli-provider.ts:138-140"
+      "ref": "src/agent/providers/cli-provider.ts:148-150"
     },
     {
       "id": "c12",
       "kind": "code",
       "ref": "src/workflow/review-pipeline/budget.ts:86-149"
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "Conversation: user requires real-life validation and explicit activation signoff before legacy code-review deletion",
+      "quotedText": "ok, we need to test this in real life by updating the daemon and then signoff for activation. post that the legacy review engine needs to be deleted"
     }
   ]
 }

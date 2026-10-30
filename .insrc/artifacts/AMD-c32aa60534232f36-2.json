@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-bd856953-1d8f-489f-8713-aa4987e5b26c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T13:07:37.142Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f0221fed801990daf42d6d6100e55712023e67aff6a194a4aef33fc4ff539b8b",
+        "at": "2026-10-30T13:07:37.142Z",
+        "by": {
+          "id": "insrc:define",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-c32aa60534232f36-2",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s7",
+      "internal": "Private implementation of s7: Make scoped reviews usable with simple assessments and durable progress"
+    },
+    "rationale": "Extends Epic c32aa60534232f36 — one remediation Story builds on the existing review subject, evidence, recovery and publication code; no new epic or storage platform.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1793365514295-asvqwi",
+      "storyId": "s7",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-10-30T13:07:37.141Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-repository.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/review-investigation-adoption.ts"
+    }
+  ]
+}

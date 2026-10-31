@@ -16,7 +16,7 @@ export interface SelectedChange {
  readonly before: PinnedBlob | null; readonly after: PinnedBlob | null; readonly limitations: readonly string[];
 }
 export interface PreparedReviewPacket {
- readonly packet: ReviewPacket; readonly changes: readonly SelectedChange[]; readonly tasks: readonly PlanTask[];
+ readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly SelectedChange[]; readonly tasks: readonly PlanTask[];
  readonly documents: Readonly<Record<'story' | 'lld' | 'plan', string>>;
 }
 function head(text: string): Record<string, unknown> {
@@ -109,7 +109,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   for (const revision of revisions) if (await sources.file(revision, test.file)) { found = true; break; }
   requireReview(found, 'tests', 'Test file is absent from the supplied committed source');
  }
- return { packet, changes, tasks, documents: { story: docs.story.text, lld: docs.lld.text, plan: docs.plan.text } };
+ return { epicHash: hash, packet, changes, tasks, documents: { story: docs.story.text, lld: docs.lld.text, plan: docs.plan.text } };
 }
 /** Internal derivation output, not additional submitter input or a model-facing persistence protocol. */
 export interface TaskAttribution { taskId: string; changeIndexes: readonly number[]; testIndexes: readonly number[]; }

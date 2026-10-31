@@ -583,3 +583,18 @@ test('review-scoped provider and driver logs redact sentinel content on all fail
 		for (const reset of restore.reverse()) reset();
 	}
 });
+
+
+test('code-task command grants reach the native CLI without changing later design sessions', async () => {
+ const f = fakeCli([{ out: claudeOk({ ok: true }) }]);
+ try {
+  const provider = new CliProvider({ kind: 'claude', binPath: f.bin });
+  await provider.runReviewSession('Inspect pinned code and tests', SCHEMA, { cwd: f.dir, deadlineMs: 300000, stallMs: 300000, internalRetry: false, codeTaskCommands: ['git show aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:source.ts', 'node --test test.ts'] });
+  await provider.runReviewSession('Inspect design', SCHEMA, { cwd: f.dir, deadlineMs: 300000, internalRetry: false });
+  const [code, design] = f.calls();
+  assert.equal(code!.argv[code!.argv.indexOf('--tools') + 1], 'Read,Grep,Glob,Bash');
+  assert.match(code!.argv[code!.argv.indexOf('--allowedTools') + 1]!, /Bash\(node --test test.ts\)/);
+  assert.equal(design!.argv[design!.argv.indexOf('--tools') + 1], 'Read,Grep,Glob');
+  assert.ok(!design!.argv.join(' ').includes('Bash('));
+ } finally { f.cleanup(); }
+});

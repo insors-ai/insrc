@@ -99,16 +99,15 @@ export const REVIEW_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 'Gl
 /** The insrc analyze tools a reviewer session may call for drill-down. */
 export const REVIEW_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step'];
 
-/** claude arguments for a reviewer session. `--tools` restricts the built-in
- *  tools to reading, so nothing that can write or run a command exists in the
- *  session at all; no `--permission-mode` is passed. */
-export function claudeReviewSessionArgs(schema: StructuredSchema, modelArgs: readonly string[]): string[] {
+/** Design reviewers retain read-only tools. Code tasks may additionally receive
+ * exact host-generated read/test command grants; no edit permission is granted. */
+export function claudeReviewSessionArgs(schema: StructuredSchema, modelArgs: readonly string[], commands?: readonly string[]): string[] {
 	return [
 		'--print',
 		'--output-format', 'json',
 		'--json-schema', JSON.stringify(schema),
-		'--tools', REVIEW_SESSION_READ_TOOLS.join(','),
-		'--allowedTools', [...REVIEW_SESSION_READ_TOOLS, ...REVIEW_SESSION_ANALYZE_TOOLS].join(','),
+		'--tools', [...REVIEW_SESSION_READ_TOOLS, ...(commands ? ['Bash'] : [])].join(','),
+		'--allowedTools', [...REVIEW_SESSION_READ_TOOLS, ...REVIEW_SESSION_ANALYZE_TOOLS, ...(commands?.map(command => `Bash(${command})`) ?? [])].join(','),
 		...modelArgs,
 	];
 }
@@ -466,7 +465,7 @@ export class CliProvider implements LLMProvider {
 			}
 			try {
 				return await this.reviewSessionOnce<T>(prompt, schema, {
-					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, reviewScoped: opts.reviewBudget !== undefined,
+					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, codeTaskCommands: opts.codeTaskCommands, reviewScoped: opts.reviewBudget !== undefined,
 					...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}),
 					...(opts.signal !== undefined ? { signal: opts.signal } : {}),
 				});
@@ -492,7 +491,7 @@ export class CliProvider implements LLMProvider {
 
 	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
 		if (this.kind === 'claude') {
-			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
+			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs(), exec.codeTaskCommands), prompt, exec);
 			if (envelope.is_error) {
 				// A size refusal is classified as completeStructured classifies it, so the
 				// pipeline re-divides the call instead of resending it (Epic 8315a11f s1).
@@ -660,6 +659,7 @@ interface SubprocessResult {
  *  working directory (edit sessions run inside the repo) and/or a tighter
  *  timeout. Absent fields fall back to the provider defaults. */
 interface ExecOverride {
+	readonly codeTaskCommands?: readonly string[] | undefined;
 	readonly reviewScoped?: boolean | undefined;
 	readonly cwd?:       string | undefined;
 	readonly timeoutMs?: number | undefined;

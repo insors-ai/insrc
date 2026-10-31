@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "dc0bd8089ce15fcd",
+    "storyId": "S001",
+    "createdAt": "2026-10-31T13:16:01.626Z",
+    "updatedAt": "2026-10-31T13:16:01.626Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Filed bugfix ISSUE, magnitude small.",
+    "epicCreatedAt": "2026-10-29T15:06:42.265Z",
+    "epicSlug": "keep-idle-sweep-release-from-abandoning",
+    "approvedAt": "2026-10-31T13:31:52.187Z",
+    "reviewOverride": {
+      "reason": "Code-review framework is being rewritten; manual code review via independent subagent completed with no findings (verdict: safe to approve) per standing project rule.",
+      "at": "2026-10-31T13:31:52.187Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Removed the redundant created()===live.length count term from MaintenanceController's beforeRename check, leaving the identity-based live.every(...) check; added a test proving a released-but-acknowledged worker no longer abandons compaction while created() still lags.",
+    "testRecord": {
+      "md": "docs/standalone/keep-idle-sweep-release-from-abandoning-E20261029dc0bd808/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/maintenance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T13:16:01.626Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/maintenance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T13:16:01.626Z"
+      }
+    ],
+    "commit": "387ca945e"
+  }
+}

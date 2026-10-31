@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "dc0bd8089ce15fcd",
+    "storyId": "S001",
+    "createdAt": "2026-10-31T13:16:01.626Z",
+    "updatedAt": "2026-10-31T13:16:01.626Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T15:06:42.265Z",
+    "epicSlug": "keep-idle-sweep-release-from-abandoning"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "387ca945e",
+        "ranAt": "2026-10-31T13:16:01.626Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "maintenance.ts MaintenanceController.compactUnderLock's beforeRename callback",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the pre-rename check no longer abandons the compaction when a worker the idle sweep released has already acknowledged graph.close, even though the supervisor has not yet seen its exit (ISSUE-dc0bd808)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the pre-rename check is by worker identity: a worker that exited and was replaced between the close acknowledgements and the rename fails it, though the count is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5074,
+            "titles": [
+              {
+                "title": "lane work that starts and ends between two ticks restarts the idle window: the board records when a lane was last busy",
+                "result": "pass"
+              },
+              {
+                "title": "with idleMs 0, a non-admin request in flight or a busy lane still means not idle: tick does not compact",
+                "result": "pass"
+              },
+              {
+                "title": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
+                "result": "pass"
+              },
+              {
+                "title": "the pre-rename check is by worker identity: a worker that exited and was replaced between the close acknowledgements and the rename fails it, though the count is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the pre-rename check no longer abandons the compaction when a worker the idle sweep released has already acknowledged graph.close, even though the supervisor has not yet seen its exit (ISSUE-dc0bd808)",
+                "result": "pass"
+              },
+              {
+                "title": "graph.close is asked of every worker at once: unresponsive workers cost one acknowledgement timeout, not one each",
+                "result": "pass"
+              },
+              {
+                "title": "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
+                "result": "pass"
+              },
+              {
+                "title": "the idle time, both thresholds and the pause limit are config schema keys with the design's defaults",
+                "result": "pass"
+              },
+              {
+                "title": "unit",
+                "result": "pass"
+              },
+              {
+                "title": "maintenance: with idle forced and the threshold met, requests sent during compaction are refused with the maintenance activity and reason, a running request finishes first, daemon.status reports compacting, every row is kept and the file shrank",
+                "result": "pass"
+              },
+              {
+                "title": "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work, and does not wait on a hold of its own",
+                "result": "pass"
+              },
+              {
+                "title": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted",
+                "result": "pass"
+              },
+              {
+                "title": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+                "result": "pass"
+              },
+              {
+                "title": "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held",
+                "result": "pass"
+              },
+              {
+                "title": "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment",
+                "result": "pass"
+              },
+              {
+                "title": "integration",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

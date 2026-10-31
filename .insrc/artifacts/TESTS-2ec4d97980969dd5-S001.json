@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2ec4d97980969dd5",
+    "storyId": "S001",
+    "createdAt": "2026-10-31T13:01:46.992Z",
+    "updatedAt": "2026-10-31T13:01:46.992Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T15:07:57.250Z",
+    "epicSlug": "make-router-session-test-ts-type"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "3f62d9dfa",
+        "ranAt": "2026-10-31T13:01:46.992Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/router-session.test.ts (whole-file typecheck)",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Verified directly via a temporary including tsconfig (tsconfig extends the real one, includes only this file, exclude cleared) run with npx tsc -p --noEmit: 0 errors (was 6 TS2345 errors before the fix)."
+            }
+          },
+          {
+            "name": "src/daemon/threads/__tests__/router-session.test.ts (full file run)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1163,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker",
+                "result": "pass"
+              },
+              {
+                "title": "router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today's behavior for a genuinely unknown run",
+                "result": "pass"
+              },
+              {
+                "title": "router-session.test.ts: an unrelated workflow.run.poll / analyze.run.status request is routed exactly as before (no new fan-out) — the broadcast is scoped to workflow.run.abort only",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

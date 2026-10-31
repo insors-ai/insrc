@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2ec4d97980969dd5",
+    "storyId": "S001",
+    "createdAt": "2026-10-31T13:01:46.992Z",
+    "updatedAt": "2026-10-31T13:01:46.992Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Filed bugfix ISSUE, magnitude small.",
+    "epicCreatedAt": "2026-10-29T15:07:57.250Z",
+    "epicSlug": "make-router-session-test-ts-type",
+    "approvedAt": "2026-10-31T13:03:20.201Z",
+    "reviewOverride": {
+      "reason": "insrc_code_review_step is not used while the code-review framework is being rewritten (standing project rule). This is a trivial, zero-behavior-change type-annotation fix (2 call sites cast to their variable's own declared type), self-reviewed directly given the triviality, already triple-verified (0 TS errors against a temporary including tsconfig, 21/21 existing tests pass unchanged). User explicitly said \"approved, continue\" / \"continue to the next 2, fix both and then run a full sweep\".",
+      "at": "2026-10-31T13:03:20.201Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/make-router-session-test-ts-type-E202610292ec4d979/S001/TESTS.md"
+    },
+    "changeLog": [],
+    "commit": "3f62d9dfa"
+  }
+}

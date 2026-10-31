@@ -3,6 +3,45 @@
 All notable changes to the insrc VS Code extension. The Marketplace shows this file
 on the extension's Changelog tab.
 
+## 0.5.24 - 2026-10-31
+
+Everything since 0.5.16.
+
+### Status bar menu
+
+- **Delivery Board.** *insrc status menu* gains a fifth entry, Delivery Board, opening the
+  same board the `insrc: Open delivery board` command already does.
+- **Manage Connections.** A fourth entry delegates to the Connections panel.
+
+### Connections
+
+- **File picker for schema/root paths.** Icon-only Browse buttons replace path reset controls,
+  validate the selected root/schema path, and populate the fixed schema-source format from
+  either the picker or manual input.
+- **List-first manager feedback.** A message history popup, a datasource icon picker, and
+  per-row removal, while preserving in-progress draft and revision safeguards.
+- **Smarter repository discovery.** Defaults to the currently opened repository and adds a
+  SQLite sample; an empty discovery recovers on Refresh, shown in the message footer.
+- **Clearer cleanup state.** A probe rejection reads differently from an uncertain cleanup
+  outcome.
+- **Product icons.** Datasource badges are now the upstream product's own icon instead of a
+  generic badge.
+
+### Repo Configuration panel
+
+- **Roles grouped by criticality.** Role tiers render inside two collapsible groups (critical,
+  open by default; peripheral, closed) instead of one flat table, with the core floor in its
+  own section.
+- **Providers as status cards.** Each provider row shows a status chip (registered /
+  available-unregistered / unavailable) instead of a checkbox variant.
+- **Readable status chips.** Fixed a contrast bug where the ok/warn chip text rendered in the
+  theme's bright chart color instead of the intended readable foreground.
+
+### Daemon
+
+- `mcp.status` also checks a repository's own project-layer vibe registration, not only the
+  global layer.
+
 ## 0.5.16 - 2026-10-29
 
 Everything since 0.5.15.

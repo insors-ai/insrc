@@ -143,10 +143,10 @@ Run at 2026-10-30T22:10:55.190Z on commit `bdf2ff3ca`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-10-31T04:34:58.752Z on commit `b0ee1536f`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-31T05:05:21.897Z on commit `ba08c1806`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: regen smoke**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/smoke2.log 8/8 both shells; /tmp/fix4.log 311/0; /tmp/build-t6.log build exit 0; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log; /tmp/inv2.mts classified-consistent
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/full-mine-final.log + /tmp/fullmine-fails.txt (35) vs /tmp/pristine-union2.txt (covers all 35 via /tmp/disputed-pristine.log /tmp/extra-pristine.log /tmp/root-pristine.log; per-file current /tmp/disputed-mine2.log /tmp/extra-mine.log /tmp/root-mine.log identical); /tmp/inv2.out both true; /tmp/fix4.log 311/0; /tmp/smoke2.log 8/8; /tmp/build-t6.log exit 0

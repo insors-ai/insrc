@@ -4,7 +4,7 @@
     "epicHash": "486751c3411ceef9",
     "storyId": "S001",
     "createdAt": "2026-10-30T19:37:31.977Z",
-    "updatedAt": "2026-10-31T04:34:58.752Z",
+    "updatedAt": "2026-10-31T05:05:21.897Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T19:19:13.160Z",
     "epicSlug": "shared-insors-branded-light-dark-mermaid"
@@ -589,8 +589,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "b0ee1536f",
-        "ranAt": "2026-10-31T04:34:58.752Z",
+        "commit": "ba08c1806",
+        "ranAt": "2026-10-31T05:05:21.897Z",
         "testsPassed": true,
         "tests": [
           {
@@ -601,7 +601,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/smoke2.log 8/8 both shells; /tmp/fix4.log 311/0; /tmp/build-t6.log build exit 0; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log; /tmp/inv2.mts classified-consistent"
+              "evidence": "/tmp/full-mine-final.log + /tmp/fullmine-fails.txt (35) vs /tmp/pristine-union2.txt (covers all 35 via /tmp/disputed-pristine.log /tmp/extra-pristine.log /tmp/root-pristine.log; per-file current /tmp/disputed-mine2.log /tmp/extra-mine.log /tmp/root-mine.log identical); /tmp/inv2.out both true; /tmp/fix4.log 311/0; /tmp/smoke2.log 8/8; /tmp/build-t6.log exit 0"
             }
           }
         ],

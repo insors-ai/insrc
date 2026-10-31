@@ -189,11 +189,16 @@ export class ArtifactStore {
 		id: string, by: Actor,
 		mutate: (current: Artifact<HeadPayload> & { readonly changeLog: ChangeLogEntry[] }) => Promise<UpdateResult | undefined> | UpdateResult | undefined,
 		options: WriteOptions = {},
+		/** Optional initial envelope, read and merged under this same queue. */
+		create?: (() => Artifact<HeadPayload>) | undefined,
 	): Promise<{ readonly wrote: boolean; readonly entry?: ChangeLogEntry | undefined }> {
 		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
 		return this.enqueue(id, async () => {
 			await this.completePending(id, artifactJsonPath(this.deps.repoPath, id));
-			const current = { ...(await this.read(id)), changeLog: await this.deps.history.log(id) };
+			let head: Artifact<HeadPayload>;
+			try { head = await this.read(id); }
+			catch (error) { if (!(error instanceof ArtifactNotFoundError) || !create) throw error; head = create(); }
+			const current = { ...head, changeLog: await this.deps.history.log(id) };
 			const result = await mutate(current);
 			if (result === undefined) return { wrote: false };
 			if (result.next.id !== id) throw new ArtifactShapeError(`update of ${id} was given the artifact ${result.next.id}`);
@@ -294,7 +299,7 @@ export class ArtifactStore {
 		const cascadeFrom = options.cascade === true && operation === 'complete' && prior !== undefined && !TERMINAL.includes(prior.artifact.lifecycle.status)
 			? prior.artifact.lifecycle.status : undefined;
 		const lifecycle = cascadeFrom === undefined ? source.lifecycle : { ...source.lifecycle, status: cascadeFrom };
-		const reconciled = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, envelope, lifecycle } }, 'content', { by, at: timestamp });
+		const reconciled = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, ...codec.contentMeta?.(source.payload, base.meta), envelope, lifecycle } }, 'content', { by, at: timestamp });
 		// A cascading complete freezes a member as it is: it may not carry a content change, which would have returned the head to draft.
 		if (cascadeFrom !== undefined && reconciled.contentChanged && prior !== undefined) {
 			throw new IllegalTransitionError(`${a.id} cannot be completed with a content change`);

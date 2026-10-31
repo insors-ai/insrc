@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { Type } from '@sinclair/typebox';
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
@@ -13,6 +13,8 @@ import type { ReviewSources } from './sources.js';
 import { aggregateTaskStatus, normalizeTaskResult } from './results.js';
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
+import { artifactJsonPath, buildArtifactId } from '../../storage.js';
+import { reviewedBuildFingerprint } from '../build-freshness.js';
 import { assignmentResultSchema } from './result-schema.js';
 
 const log = getLogger('task-review');
@@ -21,6 +23,7 @@ export interface TaskReviewDeps {
  readonly sources: ReviewSources;
  readonly provider: () => LLMProvider;
  readonly save?: typeof saveCheckpoint;
+ readonly publish?: ((project: string, reviewId: string, epicHash: string) => Promise<unknown>) | undefined;
  readonly now?: () => number;
  readonly timer?: (callback: () => void, ms: number) => () => void;
 }
@@ -44,6 +47,10 @@ export class TaskReviewCoordinator {
    const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
    const entry: ReviewAttempt = { header: { attempt: 1, reviewer: 'daemon', status: 'pending', createdAt: new Date().toISOString(), selectedTaskIds: selected.map(task => task.id) }, submitted: prepared.packet,
     'review-response': { summary: 'Review admitted; CR publication pending.', tasks: [], crPublication: 'pending' } };
+   if (!prepared.packet.taskId) {
+    try { entry.header.buildFingerprint = reviewedBuildFingerprint(JSON.parse(await readFile(artifactJsonPath(project, buildArtifactId(prepared.epicHash, prepared.packet.storyId.replace(/^STORY-[a-f0-9]{16}-/, ''))), 'utf8'))); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+   }
    const checkpoint: ReviewCheckpoint = { schemaVersion: 1, reviewId, project, storyId: prepared.packet.storyId, ...(prepared.packet.taskId ? { taskId: prepared.packet.taskId } : {}), attempts: [entry] };
    await (this.deps.save ?? saveCheckpoint)(path, checkpoint);
    const done = new Promise<void>(resolve => setImmediate(() => {
@@ -57,6 +64,7 @@ export class TaskReviewCoordinator {
   } catch (error) { this.active.delete(path); throw error; }
  }
  /** Used by shutdown/tests, never awaited by start or attached to a caller's cancellation. */
+ isActive(project: string, reviewId: string): boolean { return this.active.has(checkpointPath(project, reviewId)); }
  async settled(project: string, reviewId: string): Promise<void> { await this.active.get(checkpointPath(project, reviewId))?.done; }
  private async run(path: string, checkpoint: ReviewCheckpoint, entry: ReviewAttempt, prepared: PreparedReviewPacket, resolveProvider: () => LLMProvider): Promise<void> {
   const save = this.deps.save ?? saveCheckpoint;
@@ -122,10 +130,19 @@ export class TaskReviewCoordinator {
    delete entry.header.activeTaskId;
    await save(path, checkpoint); // Never begin the next task before this succeeds.
   }
-  entry.header.status = aggregateTaskStatus(entry['review-response'].tasks);
   entry.header.completedAt = new Date().toISOString();
-  entry['review-response'].summary = 'All selected task assessments are terminal. CR publication pending until task-based publication is available.';
+  entry['review-response'].summary = 'All selected task assessments are terminal. CR publication pending.';
   await save(path, checkpoint);
+  if (this.deps.publish) {
+   try { await this.deps.publish(checkpoint.project, checkpoint.reviewId, prepared.epicHash); }
+   catch (error) {
+    entry['review-response'].error = `CR publication failed: ${error instanceof Error ? error.message : String(error)}`;
+    await save(path, checkpoint);
+   }
+  } else {
+   entry.header.status = aggregateTaskStatus(entry['review-response'].tasks);
+   await save(path, checkpoint);
+  }
  }
  private async references(prepared: PreparedReviewPacket, assignment: TaskAssignment): Promise<string[]> {
   const refs = Object.values(prepared.packet.documents).map(doc => `${doc.commit}:${doc.path}`);

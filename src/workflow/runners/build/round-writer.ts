@@ -13,6 +13,7 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
+import type { ArtifactStore } from '../../artifact-core/store.js';
 import type { HeadPayload } from '../../artifact-core/codecs.js';
 import { decodeArtifactHead } from '../../artifact-core/decode.js';
 import type { ContentWriteOptions } from '../../artifact-core/lifecycle-service.js';
@@ -27,6 +28,8 @@ export interface BuildContentWriter {
 export interface RoundWriter {
 	readonly writer: BuildContentWriter;
 	readonly actor:  Actor;
+	/** Canonical store for a queued read/merge/write round (new task-based CRs). */
+	readonly store?: ArtifactStore | undefined;
 }
 
 const log = getLogger('workflow:build:round-writer');

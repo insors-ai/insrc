@@ -15,8 +15,9 @@ import { randomUUID } from 'node:crypto';
 
 import { ArtifactIds } from '../artifact-ids.js';
 import type { ArtifactIdKind, ArtifactKey } from '../artifact-ids.js';
-import { requireEpicAnchor, stampRootAnchor } from '../storage.js';
+import { requireEpicAnchor, stampRootAnchor, storyRecordFolderArgs, folderIdentityMeta } from '../storage.js';
 import { ArtifactShapeError, UnknownArtifactKindError } from './types.js';
+import { validateTaskBody } from '../code-review/task-review/record.js';
 import { checkTaskBody, checkTasksBody } from './task-bodies.js';
 
 /** The stored head, as `writeArtifact` and every raw reader see it. */
@@ -59,6 +60,8 @@ export interface KindCodec {
 	readonly kind:     ArtifactIdKind;
 	/** The `meta.workflow` of a head of this kind. */
 	readonly workflow: string;
+	/** Metadata derived from content, updated under the same journalled write. */
+	contentMeta?(payload: HeadPayload, meta: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>>;
 	decode(head: HeadFile): HeadPayload;
 	encode(payload: HeadPayload, key: ArtifactKey, ctx: CodecContext): HeadFile;
 }
@@ -94,6 +97,13 @@ function codec(kind: ArtifactIdKind, workflow: string): KindCodec {
 	return {
 		kind,
 		workflow,
+		...(kind === 'CR' ? { contentMeta: (payload: HeadPayload, meta: Readonly<Record<string, unknown>>): Readonly<Record<string, unknown>> => {
+			if (payload.body['format'] === 'task-based') {
+				const body = validateTaskBody(payload.body);
+				return { schemaVersion: 2, reviewedBy: body.reviews.at(-1)!.reviewer, ...folderIdentityMeta(storyRecordFolderArgs(String(meta['repoPath']), String(meta['epicHash']), String(meta['storyId']), {}, { kind: 'read' })) };
+			}
+			return { schemaVersion: 1 };
+		} } : {}),
 		decode: head => {
 			// An amendment stored before the s9 conversion is a flat record with no meta and body; refuse it here as well as in the decoder.
 			if (kind === 'AMD' && (typeof head.meta !== 'object' || head.meta === null || typeof head.body !== 'object' || head.body === null)) {

@@ -29,6 +29,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
+import { inspectTaskCompletion } from './task-review/completion.js';
 import { reviewBuildGap } from './build-freshness.js';
 import type { ReviewVerdict } from '../review/types.js';
 
@@ -83,7 +84,20 @@ export function enforceCodeReviewGate(
 	let counts: GateCounts;
 	let review: unknown;
 	try {
-		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as { body?: { verdict?: unknown; counts?: unknown } };
+		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { schemaVersion?: unknown }; body?: { format?: unknown; verdict?: unknown; counts?: unknown } };
+		const version = parsed.meta?.schemaVersion;
+		if (version === 2 || parsed.body?.format === 'task-based' || version !== undefined && version !== 1) {
+			let message: string | undefined;
+			let taskCounts: GateCounts = { high: 0, med: 0, low: 0 };
+			try {
+				const build = existsSync(artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId))) ? JSON.parse(readFileSync(artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId)), 'utf8')) : undefined;
+				const result = inspectTaskCompletion(parsed, build, epicHash, storyId);
+				taskCounts = result.counts; message = result.gap;
+			} catch (error) { message = `Unsupported or invalid task-based CR: ${error instanceof Error ? error.message : String(error)}`; }
+			if (!message) return { status: 'pass', counts: taskCounts };
+			if (opts?.overrideReview?.trim()) return { status: 'overridden', verdict: 'block', counts: taskCounts, overrideReason: opts.overrideReview, at: new Date().toISOString() };
+			return { status: 'blocked', verdict: 'block', counts: taskCounts, message };
+		}
 		review = parsed;
 		const body = parsed.body;
 		if (body === undefined || body === null) throw new Error('record has no body');

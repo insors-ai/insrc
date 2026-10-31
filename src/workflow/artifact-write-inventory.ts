@@ -57,6 +57,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', via: 'both', note: 'the BUILD record is regenerated on each persist' },
 	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
 	{ file: 'src/daemon/steps/code-review-step/handler.ts', class: 'content', via: 'injected', note: 'injects the runner\'s revision-minting writer (writeRecordFile) into the runner; it has no raw writer of its own' },
+	{ file: 'src/workflow/code-review/task-review/publication.ts', class: 'render', via: 'raw', note: 'task-based CR JSON is merged and journalled through the canonical artifact store queue; writeAtomic refreshes only its markdown projection' },
 	{ file: 'src/workflow/code-review/runner.ts', class: 'content', via: 'both', note: 'the code-review record is signoff-covered: its default writer (writeRecordFile) writes the json as content; the step handler uses the same writer' },
 
 	// --- meta-only: stamps, review stamps, tracker patches, resolutions -------------
@@ -103,6 +104,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/daemon/steps/workflow-step/resume.ts', class: 'migration', via: 'raw', note: 'a resume puts a parker\'s draft files back byte for byte, meta.revision included: it restores, it does not author, so it mints no revision' },
 
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
+	{ file: 'src/workflow/code-review/run-events.ts', class: 'non-artifact', via: 'raw', note: 'append-only review-run diagnostics; these logs are not canonical CR heads or approval evidence' },
 	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact; appendRunLog and appendProgressLog append to the jsonl run traces' },
 	{ file: 'src/workflow/artifact-core/sidecar.ts', class: 'non-artifact', via: 'raw', note: 'appendSidecarLine, the one function that appends a history record as a JSON line to the path it is given; the lines are history, not an artifact head' },
 	{ file: 'src/workflow/artifact-core/repo-schema.ts', class: 'non-artifact', via: 'raw', note: 'writeRepoSchema replaces .insrc/schema.json (the version marker) atomically; only the conversion calls it' },

@@ -72,5 +72,6 @@ export const BUILD_ACTOR: Actor = { id: 'insrc:build', kind: 'system', propertie
 
 /** The repository's round writer: its service and the actor the round is recorded under. */
 export function roundWriterFor(repoPath: string, actor: Actor = BUILD_ACTOR): RoundWriter {
-	return { writer: lifecycleFor(repoPath).service, actor };
+	const { service, store } = lifecycleFor(repoPath);
+	return { writer: service, actor, store };
 }

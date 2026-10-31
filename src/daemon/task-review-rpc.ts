@@ -8,6 +8,8 @@ import { createRoleRouter } from '../analyze/context/role-router.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
 import { familyForClient } from './model-registry.js';
 import type { LLMProvider } from '../shared/types.js';
+import { publishTaskCheckpoint } from '../workflow/code-review/task-review/publication.js';
+import { roundWriterFor } from './lifecycle-registry.js';
 import { repoSchemaRefusal } from './repo-schema-guard.js';
 
 const coordinators = new Map<string, TaskReviewCoordinator>();
@@ -30,9 +32,25 @@ export async function startTaskReview(raw: unknown): Promise<unknown> {
  // One coordinator per repository; provider selection remains the established critical-role path.
  let coordinator = coordinators.get(repo);
  if (!coordinator) {
-  coordinator = new TaskReviewCoordinator({ sources: new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review', requestId: 0, send: () => {} }), provider: () => { throw new Error('Review provider context missing'); } });
+  coordinator = new TaskReviewCoordinator({ sources: new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review', requestId: 0, send: () => {} }), provider: () => { throw new Error('Review provider context missing'); }, publish: (project, id, hash) => publishTaskCheckpoint(project, hash, id, publicationDeps(project)) });
   coordinators.set(repo, coordinator);
  }
  let provider: LLMProvider | undefined;
  return coordinator.start(repo, p['reviewId'], 1, packet, { epicHash: p['epicHash'], provider: () => provider ??= createRoleRouter({ clientDefault: familyForClient(client), cliTimeoutMs: 900000 }).resolveProviderForRole('review', loadAnalyzeConfig(), repo).provider });
+}
+
+
+function publicationDeps(repo: string) {
+ return { sources: new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review-publication', requestId: 0, send: () => {} }), through: roundWriterFor(repo, { id: 'insrc:code-review', kind: 'system', properties: {} }) };
+}
+/** Explicit publication retry consumes only saved feedback, never a provider. */
+export async function publishStoredTaskReview(raw: unknown): Promise<unknown> {
+ requireReview(raw && typeof raw === 'object', 'request', 'Expected publication request');
+ const p = raw as Record<string, unknown>;
+ requireReview(typeof p['repo'] === 'string' && p['repo'].startsWith('/'), 'repo', 'Expected absolute project');
+ const repo = await realpath(p['repo']);
+ requireReview(!repoSchemaRefusal(repo), 'repo', 'Repository schema must be current');
+ requireReview(typeof p['reviewId'] === 'string' && typeof p['epicHash'] === 'string' && /^[a-f0-9]{16}$/.test(p['epicHash']), 'request', 'Expected reviewId and canonical epicHash');
+ requireReview(!coordinators.get(repo)?.isActive(repo, p['reviewId']), 'reviewId', 'already-running');
+ return publishTaskCheckpoint(repo, p['epicHash'], p['reviewId'], publicationDeps(repo));
 }

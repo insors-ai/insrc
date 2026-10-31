@@ -208,6 +208,10 @@ export type HostToWebview =
       // re-read. `changed`: the re-read was started by a change to the document's files.
       readonly reveal?: boolean | undefined;
       readonly changed?: boolean | undefined;
+      // ISSUE-7fa297efd4bd1c59 (additive): the artifact ids the chat presented for review in
+      // this pane since it opened (quiet opens), so the webview can show every presented
+      // document and let the reviewer move between them. Absent when none was presented.
+      readonly presented?: readonly string[] | undefined;
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

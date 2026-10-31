@@ -1,0 +1,380 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 4,
+        "contentHash": "4c01889ce6e815a43ace4506f99bd9a2766be05325ef7e288493f60c0112c90b",
+        "at": "2026-10-31T20:22:32.041Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s2",
+    "createdAt": "2026-10-31T19:49:45.900Z",
+    "updatedAt": "2026-10-31T20:22:31.980Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "revision": 4
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b383f6103",
+        "ranAt": "2026-10-31T19:49:45.900Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "title": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "attempt schema compatibility: optional origins and old checkpoint/CR meaning",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "title": "attempt schema compatibility: optional origins and old checkpoint/CR meaning",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1646,
+            "titles": [
+              {
+                "title": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections",
+                "result": "pass"
+              },
+              {
+                "title": "attempt schema compatibility: optional origins and old checkpoint/CR meaning",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8704eaecf",
+        "ranAt": "2026-10-31T19:58:37.601Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "title": "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "title": "controller recovery preserves every terminal outcome and selects missing task IDs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "title": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "title": "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "title": "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3217,
+            "titles": [
+              {
+                "title": "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped",
+                "result": "pass"
+              },
+              {
+                "title": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+                "result": "pass"
+              },
+              {
+                "title": "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
+                "result": "pass"
+              },
+              {
+                "title": "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs",
+                "result": "pass"
+              },
+              {
+                "title": "controller recovery preserves every terminal outcome and selects missing task IDs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "92e535dd8",
+        "ranAt": "2026-10-31T20:10:57.638Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+                "title": "reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+                "title": "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+                "title": "all-reuse attempts and invalid attribution preserve route parity without extra task calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "history prompts: actual fresh-task reviewers can consult relevant prior feedback and complete attempt history",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+                "title": "history prompts: actual fresh-task reviewers can consult relevant prior feedback and complete attempt history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CR provenance: exact retained outcomes, origin labels, latest aggregation and replay conflict handling",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+                "title": "CR provenance: exact retained outcomes, origin labels, latest aggregation and replay conflict handling",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4237,
+            "titles": [
+              {
+                "title": "reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength",
+                "result": "pass"
+              },
+              {
+                "title": "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters",
+                "result": "pass"
+              },
+              {
+                "title": "history prompts: actual fresh-task reviewers can consult relevant prior feedback and complete attempt history",
+                "result": "pass"
+              },
+              {
+                "title": "CR provenance: exact retained outcomes, origin labels, latest aggregation and replay conflict handling",
+                "result": "pass"
+              },
+              {
+                "title": "all-reuse attempts and invalid attribution preserve route parity without extra task calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2850809c9",
+        "ranAt": "2026-10-31T20:22:31.980Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "recovery end-to-end: real IPC/Git, both adapters, interruption boundaries and correct attempt metadata",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "title": "recovery end-to-end: real IPC/Git, both adapters, interruption boundaries and correct attempt metadata",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "title": "unavailable pinned source rejects recovery without mutation or provider use and releases reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "title": "committed test-record evidence receives exact native read grants without widening design defaults",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "title": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+                "title": "migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/review-s2-t4-build.log: npm run build completed successfully (Node22.22.1); /tmp/review-s2-t4-regressions.log:123 passed,0 failed/skipped. Explicit task-review tests plus cli-review-session, code-review-rpc, workflow-review-rpc, code-review gate, MCP review-rule-text and artifact-write-inventory suites. Existing accepted S1 native evidence /tmp/review-t2-isolated-live-evidence.json and /tmp/review-t3-live-publication-evidence.json retained, not rerun or relabelled as new S2 live proof."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2311,
+            "titles": [
+              {
+                "title": "recovery end-to-end: real IPC/Git, both adapters, interruption boundaries and correct attempt metadata",
+                "result": "pass"
+              },
+              {
+                "title": "unavailable pinned source rejects recovery without mutation or provider use and releases reservation",
+                "result": "pass"
+              },
+              {
+                "title": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment",
+                "result": "pass"
+              },
+              {
+                "title": "migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers",
+                "result": "pass"
+              },
+              {
+                "title": "committed test-record evidence receives exact native read grants without widening design defaults",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

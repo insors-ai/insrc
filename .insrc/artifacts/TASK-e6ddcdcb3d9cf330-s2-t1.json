@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c1bd6d20-2813-4e50-b8ed-b269abfa06ae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T19:41:38.316Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Validate recovery requests and immutable attempt history",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cbf580b196e28b0be5248bee7dce442ffe25b79cc2ad00650099ccb14b8d5c1a",
+        "at": "2026-10-31T19:41:38.316Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T19:41:38.317Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate recovery requests and immutable attempt history",
+    "summary": "Extend the existing task-review checkpoint/request/summary validators with explicit start/resume semantics and optional reuse provenance. Build a testable internal admission path for saved pinned input and sequential attempts; do not expose an unfinished recovery route before t2 integrates execution.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Existing attempt1 requests remain compatible; request operation defaults to start. Validate positive safe ordinals, canonical project/epic/story/task identity and bounded stored checkpoint data before mutation/provider use.",
+      "Resume uses the latest saved packet; a supplied packet must equal normalized saved input. New attempts require latest+1 and a terminal, durably published predecessor; missing files, conflicting pins, replayed/skipped ordinals and corrupt history refuse explicitly.",
+      "Preserve every earlier header/input/terminal result and original buildFingerprint. Add only optional reassessmentSummary/origins metadata; old checkpoints and v2 CRs without it keep their meaning.",
+      "Reuse existing active reservation and atomic writer; refused admission releases only its own reservation, invokes no provider and leaves persisted history unchanged. No automatic startup recovery, new storage collection, lease or trust system."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections"
+      },
+      {
+        "level": "unit",
+        "name": "attempt schema compatibility: optional origins and old checkpoint/CR meaning"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

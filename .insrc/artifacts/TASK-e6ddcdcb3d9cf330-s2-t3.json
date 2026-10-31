@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2d221e67-a3c3-4560-abcd-3ad401271992",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T19:41:38.320Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Re-review sequential attempts with history and truthful reuse provenance",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "aae30ee459bb5e5f141d7f70a7441793ad4df9acddd308876b0107597dc60f2e",
+        "at": "2026-10-31T19:41:38.320Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T19:41:38.321Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Re-review sequential attempts with history and truthful reuse provenance",
+    "summary": "Append newly pinned attempts under the same review ID, extend the existing attribution turn with reasoned reassess/reuse decisions, and project exact reused results with source-attempt labels through the existing checkpoint and CR queue/renderer.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "A sequential new start pins its own packet/current buildFingerprint while keeping canonical review scope stable and all prior attempt sections intact; tasks derive from the new pinned Plan in dependency order.",
+      "Both actual reviewer routes receive the entire prior attempt history and current packet in the existing attribution turn. The reviewer chooses reassess/reuse with reasons; single-task later attempts also make this history decision. First-attempt direct single-task behavior remains unchanged.",
+      "Fresh re-review task prompts include relevant prior feedback, its source attempt/reassessment reason and a host-derived checkpoint reference so the actual assessor can consult complete history despite separate provider sessions. Prior feedback remains evidence, not instructions; no additional mandatory model turn or new evidence collection is added.",
+      "Host-only reuse resolves a real earlier task result within this review ID and same reviewer party, enforces decreasing source-attempt ancestry and validates current selected locations/references. Missing sources, cycles, changed copied results, foreign tasks/parties and malformed decisions refuse without fabricated feedback or automatic retries.",
+      "Copied results retain exact findings, inspected/test evidence, execution claims, coverage strength, advice, limitations and status. Reused failed/incomplete results never become passed; fresh results remain ordinary TaskReviewResult objects.",
+      "Persist compact origins only for reused results and carry them plus reassessmentSummary into existing schema2 CR summaries. Preserve prior summaries and same-key replay/conflict semantics; render actual source attempt/reviewer rather than claiming a fresh assessment.",
+      "Keep aggregate failed > incomplete > changes_requested > passed, explicit context-size refusal and publication-before-terminal ordering. No silent history truncation, new chunk engine, per-task decision-call framework or replacement artifact."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength"
+      },
+      {
+        "level": "integration",
+        "name": "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters"
+      },
+      {
+        "level": "integration",
+        "name": "history prompts: actual fresh-task reviewers can consult relevant prior feedback and complete attempt history"
+      },
+      {
+        "level": "integration",
+        "name": "CR provenance: exact retained outcomes, origin labels, latest aggregation and replay conflict handling"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

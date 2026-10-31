@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ef5d1960-8dfd-424a-af59-1b371d8c8927",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T19:41:38.321Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Verify recovery, re-review and compatibility end to end",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "78e1b00fed7cc5f74a70c57e1a18391f7513364dd158f45dcf61bf9ab039f6e4",
+        "at": "2026-10-31T19:41:38.322Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T19:41:38.322Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify recovery, re-review and compatibility end to end",
+    "summary": "Complete focused production-IPC/Git fixtures across both reviewer routes, failure boundaries, metadata and CR ancestry; run the production build and affected compatibility regressions without a broad live model sweep.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Production IpcServer fixtures with real temporary Git repositories and deterministic providers prove explicit interrupted recovery, immutable pins, no repeat of terminal failed/incomplete work, and no startup auto-resume.",
+      "A two-attempt whole-story/task scenario proves stable review identity, new pins, full history, fresh versus reused results, explicit source provenance and correct acknowledgement/frame/checkpoint metadata through both actual adapters.",
+      "Crash/save/render/source-validation failure fixtures prove task-boundary durability, zero-provider publication recovery, idempotent replay, duplicate rejection and no false pass from unresolved reused evidence.",
+      "Existing first attempts, checkpoints without optional fields, legacy CR interpretation, design-review/provider defaults and Story completion gating remain compatible; generated CR output displays origin labels and all feedback accurately.",
+      "Migration/rollback fixtures show old records remain readable and unsupported older readers fail explicitly after origin-bearing data exists; never strip provenance/history to downgrade. Deployment uses the normal user-managed daemon update/restart when requested.",
+      "Production build and affected narrow regression subset pass. Use explicit test files and bounded/force-exit runners to avoid leaked test handles. Retain accepted S1 live evidence as historical provider evidence; deterministic fixtures are not labelled new live model proof.",
+      "No timeout-policy implementation, normal-entry/thread migration, approval cleanup, broad benchmark, automatic extra review rounds or legacy-engine deletion enters S2."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "recovery end-to-end: real IPC/Git, both adapters, interruption boundaries and correct attempt metadata"
+      },
+      {
+        "level": "unit",
+        "name": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment"
+      },
+      {
+        "level": "integration",
+        "name": "migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers"
+      },
+      {
+        "level": "smoke",
+        "name": "S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

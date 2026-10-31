@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7b2e7fe8-4541-4e0c-95dc-184d323ba027",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T19:41:38.318Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Resume only unfinished work through both reviewer routes",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "afac724c179779b5e82643542facb54194f4927d93251f720d494d12b39946b0",
+        "at": "2026-10-31T19:41:38.318Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T19:41:38.319Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resume only unfinished work through both reviewer routes",
+    "summary": "Integrate validated explicit recovery into the current coordinator, actual controller exchange and opt-in task-review RPC. Retain saved terminal task results, rebind actual controller connections, and repair pending publication without repeating review work.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Explicit latest-attempt resume with an empty active map restores pinned input/order and schedules only selected tasks with no terminal result. Passed, changes_requested, incomplete and failed results all remain unchanged and are never retried in that attempt.",
+      "Daemon continuation acknowledges promptly and outlives the submitting connection. Controller continuation binds a new trusted current owner, rejects foreign/old owners, stops on disconnect and retains completed work.",
+      "Acknowledgements, controller frames and polled checkpoint agree on reviewId, actual attempt, reviewer, derived path, status and preserved/completed task IDs for attempt1 recovery, later attempts and terminal replay.",
+      "Each new terminal result is atomically saved before the next task. Existing S/M/L allowance and conservative failure classification remain; unfinished work may restart on explicit resume, but terminal outcomes require a later attempt.",
+      "All-terminal publication-pending recovery invokes no provider and replays canonical CR publication idempotently. A published terminal resume returns existing completion metadata; source/persistence/publication failures remain explicit and preserve feedback.",
+      "Only the existing explicit task-review route is extended; full normal MCP/session-thread migration and Story-approval cleanup remain S3."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped"
+      },
+      {
+        "level": "integration",
+        "name": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction"
+      },
+      {
+        "level": "integration",
+        "name": "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay"
+      },
+      {
+        "level": "integration",
+        "name": "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 4,
+        "contentHash": "43fc743972902910da2f47f003a2855a732309d8192fc4461a6823efcf0e1890",
+        "at": "2026-10-31T20:26:16.711Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-879eee4f-491c-426e-b6f9-b110c32eaff9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T19:49:45.900Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s2",
+    "revision": 4,
+    "updatedAt": "2026-10-31T20:22:31.980Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-committed-work-task-checkpoints"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented S2 explicit pinned recovery and sequential history-aware re-review on both actual reviewer routes, preserving all terminal work and exact reused feedback/provenance through canonical CR. Final real IPC/Git fixtures cover interruption after reuse, failed durable writes, unavailable immutable commits, zero-model publication repair and old/frozen strict-reader compatibility. Added exact immutable test-record read grants without widening design defaults. All123 affected reviewer/provider/backend/design/CR/inventory regressions and production build passed. Deterministic fixtures are not new live model proof; accepted S1 live evidence is retained historically. Timeout-policy changes and S3 normal-entry/thread/cleanup integration remain deferred.",
+    "testRecord": {
+      "md": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/admission.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/controller-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/controller.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/history.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/packet.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/history-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T20:22:31.980Z"
+      }
+    ],
+    "commit": "2850809c9"
+  },
+  "citations": []
+}

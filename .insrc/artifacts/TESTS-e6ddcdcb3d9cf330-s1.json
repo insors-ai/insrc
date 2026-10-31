@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "cf2a25ef597bc8dc4bb9e68805ff3b974648027ac8f38da8d11ad5e6056c8af6",
-        "at": "2026-10-31T03:29:15.174Z",
+        "number": 8,
+        "contentHash": "9ad4585db2a47e328e5ece1cd1d7630aedf4aad2617b8332927a6a483ac130ba",
+        "at": "2026-10-31T15:52:06.426Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "e6ddcdcb3d9cf330",
     "storyId": "s1",
     "createdAt": "2026-10-31T03:25:16.622Z",
-    "updatedAt": "2026-10-31T03:29:15.124Z",
+    "updatedAt": "2026-10-31T15:52:06.369Z",
     "epicCreatedAt": "2026-10-30T18:42:58.122Z",
     "epicSlug": "review-committed-work-task-checkpoints",
-    "revision": 2
+    "revision": 8
   },
   "body": {
     "tasks": [
@@ -102,6 +102,521 @@
               },
               {
                 "title": "ordinary results: required evidence, coverage strength, supported severity and nonblocking advice",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8233a1bd1",
+        "ranAt": "2026-10-31T14:14:28.548Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "task execution: checkpoint before next task, one size-based deadline, failure continuation and no automatic retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "task execution: checkpoint before next task, one size-based deadline, failure continuation and no automatic retry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "checkpoint write failure stops scheduling and retains the last complete JSON",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "native provider timeout is incomplete even when it returns just before the host timer",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "malformed provider result is saved as failed without retrying the task",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "optimistic native status with limitations retains the assessment as incomplete instead of failed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "code-task provider tools: committed reads, permitted target tests and unchanged design-review defaults",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "code-task provider tools: committed reads, permitted target tests and unchanged design-review defaults",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "code-task command grants reach the native CLI without changing later design sessions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "early installed review: useful evidence-backed task assessment and durable checkpoint with CR publication explicitly pending",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "UNMODIFIED END-TO-END LIVE CANDIDATE RESULT, replacing earlier recovered-feedback evidence. /tmp/review-t2-live-candidate-ipc.mjs deploys the freshly compiled production IpcServer + directDispatch + startTaskReview on a real isolated Unix socket and invokes it through real rpc(). No mocked provider, clock, Git source or result; native installed CLI selected by production critical-review RoleRouter. Candidate source 8233a1bd1. Fresh committed regression fixture /tmp/insrc-task-review-live-ytutif5a, review-id live-total-regression, attempt1. Production coordinator acknowledged in 62ms, continued after client close, independently executed node --test total.test.js and persisted a HIGH finding exactly at selected total.js:2 (addition instead of multiplication; actual13 expected30), status changes_requested, coverage verified, limitations empty, unrelated.txt excluded from findings, CR publication pending. Completed in31seconds. Checkpoint /tmp/insrc-task-review-live-ytutif5a/.insrc/tmp/code-review/live-total-regression.json was NEVER manually edited. Evidence /tmp/review-t2-isolated-live-evidence.json; runlog /tmp/review-t2-isolated-live-run.log. Main daemon installation remains on 8ca7039db; this isolated deployment uses actual updated production modules and installed CLI, not a mock or offline replay. Earlier manual diagnostic repair is NOT being used to satisfy this live test."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35218,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "title": "provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+                "result": "pass"
+              },
+              {
+                "title": "review-scoped provider and driver logs redact sentinel content on all failure paths",
+                "result": "pass"
+              },
+              {
+                "title": "code-task command grants reach the native CLI without changing later design sessions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 593,
+            "titles": [
+              {
+                "title": "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+                "result": "pass"
+              },
+              {
+                "title": "task execution: checkpoint before next task, one size-based deadline, failure continuation and no automatic retry",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint write failure stops scheduling and retains the last complete JSON",
+                "result": "pass"
+              },
+              {
+                "title": "code-task provider tools: committed reads, permitted target tests and unchanged design-review defaults",
+                "result": "pass"
+              },
+              {
+                "title": "native provider timeout is incomplete even when it returns just before the host timer",
+                "result": "pass"
+              },
+              {
+                "title": "malformed provider result is saved as failed without retrying the task",
+                "result": "pass"
+              },
+              {
+                "title": "native task output refuses placeholder references and foreign locations before host completion",
+                "result": "pass"
+              },
+              {
+                "title": "optimistic native status with limitations retains the assessment as incomplete instead of failed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "b32fcb3f6",
+        "ranAt": "2026-10-31T14:41:57.576Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "task-based CR: version-2 validation/rendering and version-1 compatibility without fabricated dimensions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "title": "task-based CR: version-2 validation/rendering and version-1 compatibility without fabricated dimensions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "title": "canonical story aliases retain original submitted scope while using one CR identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CR publication: idempotent scoped summary and retained checkpoint on publication failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "title": "CR publication: idempotent scoped summary and retained checkpoint on publication failure",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "title": "concurrent canonical publications preserve both summaries and the latest readable projection",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "title": "coordinator marks an attempt terminal only after canonical CR publication is durable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CR readers: partial task scope, incomplete/failed results and unknown versions cannot satisfy story review",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "title": "CR readers: partial task scope, incomplete/failed results and unknown versions cannot satisfy story review",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "title": "publication refuses an unknown stored CR version without overwriting future data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "early installed review publication: saved actual assessment becomes canonical CR without another model review",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Actual real CLI assessment from live-total-regression was published through compiled production IpcServer/directDispatch/publishStoredTaskReview and canonical artifact-store queue, on an isolated real Unix socket. /tmp/review-t3-live-publication.mjs and /tmp/review-t3-live-publication-evidence.json show schemaVersion2, reviewer daemon, one summary, original finding HIGH total.js:2 retained, unchanged task feedback and pinned submitted input, crPublication complete, replay adds no revision, native transcript files unchanged (zero model calls), no fabricated legacy dimensions. Canonical CR: /tmp/insrc-task-review-live-ytutif5a/.insrc/artifacts/CR-f17e20261031c0de-s1.json; readable markdown /tmp/insrc-task-review-live-ytutif5a/docs/epics/f17e20261031c0de-E20261031f17e2026/S001/CR.md. Uses untouched fixture checkpoint, not earlier manual diagnostic repairs. Production build pass /tmp/review-t3-final-build.log, focused47-pass regression log /tmp/review-t3-final-tests.log."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1828,
+            "titles": [
+              {
+                "title": "task-based CR: version-2 validation/rendering and version-1 compatibility without fabricated dimensions",
+                "result": "pass"
+              },
+              {
+                "title": "CR publication: idempotent scoped summary and retained checkpoint on publication failure",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent canonical publications preserve both summaries and the latest readable projection",
+                "result": "pass"
+              },
+              {
+                "title": "CR readers: partial task scope, incomplete/failed results and unknown versions cannot satisfy story review",
+                "result": "pass"
+              },
+              {
+                "title": "coordinator marks an attempt terminal only after canonical CR publication is durable",
+                "result": "pass"
+              },
+              {
+                "title": "publication refuses an unknown stored CR version without overwriting future data",
+                "result": "pass"
+              },
+              {
+                "title": "canonical story aliases retain original submitted scope while using one CR identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "3cd738412",
+        "ranAt": "2026-10-31T15:45:08.868Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "controller parity: actual independent-party routing and equivalent assignment/result/CR semantics",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts",
+                "title": "controller parity: actual independent-party routing and equivalent assignment/result/CR semantics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "controller submissions: replay idempotency, conflicting/foreign result refusal and missing-checkpoint errors",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts",
+                "title": "controller submissions: replay idempotency, conflicting/foreign result refusal and missing-checkpoint errors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review disconnect: stop controller work and retain completed tasks while daemon reviewer outlives submitter",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts",
+                "title": "review disconnect: stop controller work and retain completed tasks while daemon reviewer outlives submitter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1430,
+            "titles": [
+              {
+                "title": "controller parity: actual independent-party routing and equivalent assignment/result/CR semantics",
+                "result": "pass"
+              },
+              {
+                "title": "controller submissions: replay idempotency, conflicting/foreign result refusal and missing-checkpoint errors",
+                "result": "pass"
+              },
+              {
+                "title": "review disconnect: stop controller work and retain completed tasks while daemon reviewer outlives submitter",
+                "result": "pass"
+              },
+              {
+                "title": "controller deadlines remain task-local and accepted replays cannot reset the next budget",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a55158e2c",
+        "ranAt": "2026-10-31T15:52:06.369Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "deployable task review: production build and affected provider/backend/CR regressions with legacy/design routing preserved",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/review-t5-build.log (production build passed); /tmp/review-t5-regressions.log (96 passed, zero failed/skipped). Accepted real native daemon evidence: /tmp/review-t2-isolated-live-evidence.json and /tmp/review-t3-live-publication-evidence.json; untouched live checkpoint /tmp/insrc-task-review-live-ytutif5a/.insrc/tmp/code-review/live-total-regression.json."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2456,
+            "titles": [
+              {
+                "title": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage",
+                "result": "pass"
+              },
+              {
+                "title": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback",
+                "result": "pass"
+              },
+              {
+                "title": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes",
                 "result": "pass"
               }
             ],

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "6f2519ca9179955d5f9d1dd76cb4810d1256a792a240ef21033ff3a0c8d0d9df",
-        "at": "2026-10-31T03:30:46.296Z",
+        "number": 8,
+        "contentHash": "118f318229798beb8410d69f75efdf1e8b54cd64842e490ec5b697cacd641c55",
+        "at": "2026-10-31T15:54:11.275Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "e6ddcdcb3d9cf330",
     "storyId": "s1",
-    "revision": 2,
-    "updatedAt": "2026-10-31T03:29:15.124Z",
+    "revision": 8,
+    "updatedAt": "2026-10-31T15:52:06.369Z",
     "authoredBy": "controller",
     "epicSlug": "review-committed-work-task-checkpoints"
   },
@@ -39,9 +39,25 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "Implemented selected-change packet, pinned document/Plan and ordinary task-result validation, with host-bound evidence and finding scope. Added a reproduced regression and correction so joined Git hunks cannot include unchanged context in selected changed ranges. No runtime review execution or checkpoint writes are introduced in Task 1.",
+    "summary": "Verified common review evidence policy and both actual adapters with Python/JS/TS/Go/JVM committed-input fixtures; conservative incomplete handling, supported findings and optional advice remain distinct. Production build and 96 focused reviewer/provider/backend/CR/legacy-design regressions passed. Preserved accepted untouched live daemon evidence without another model sweep; full normal-entry/session integration remains S3.",
     "testRecord": {
       "md": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S001/TESTS.md"
     },
@@ -51,38 +67,220 @@
           "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-31T03:29:15.124Z"
+        "timestamp": "2026-10-31T15:52:06.369Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-31T03:29:15.124Z"
+        "timestamp": "2026-10-31T15:52:06.369Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/packet.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-31T03:29:15.124Z"
+        "timestamp": "2026-10-31T15:52:06.369Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/results.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-31T03:29:15.124Z"
+        "timestamp": "2026-10-31T15:52:06.369Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/sources.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-31T03:29:15.124Z"
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-review-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/result-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/lifecycle-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/codecs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-write-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/completion.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/round-writer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/controller.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/execution.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T15:52:06.369Z"
       }
     ],
-    "commit": "71e57f57c"
+    "commit": "a55158e2c"
   },
   "citations": []
 }

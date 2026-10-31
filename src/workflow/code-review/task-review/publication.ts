@@ -6,6 +6,7 @@ import { emptyLifecycle } from '../../artifact-core/decode.js';
 import type { RoundWriter } from '../../runners/build/round-writer.js';
 import { decodeReview, CheckpointSchema, requireReview, reviewPath } from './contracts.js';
 import type { ReviewCheckpoint, CompletedReviewSummary } from './contracts.js';
+import { canonicalReviewStory } from './admission.js';
 import { prepareReviewPacket } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
@@ -22,7 +23,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  validateResultOrigins(checkpoint.attempts.map(entry => ({ attempt:entry.header.attempt, reviewer:entry.header.reviewer, tasks:entry['review-response'].tasks, origins:entry['review-response'].origins })));
  const attempt = checkpoint.attempts.at(-1)!;
  const prepared = await prepareReviewPacket(attempt.submitted, deps.sources);
- requireReview(prepared.epicHash === epicHash && checkpoint.storyId === prepared.packet.storyId && checkpoint.taskId === prepared.packet.taskId, 'scope', 'Checkpoint belongs to another review subject');
+ requireReview(prepared.epicHash === epicHash && canonicalReviewStory(checkpoint.storyId,epicHash) === canonicalReviewStory(prepared.packet.storyId,epicHash) && checkpoint.taskId === prepared.packet.taskId, 'scope', 'Checkpoint belongs to another review subject');
  const expected = prepared.tasks.filter(t=>!prepared.packet.taskId || t.id===prepared.packet.taskId).map(t=>t.id).sort();
  requireReview(isDeepStrictEqual([...attempt.header.selectedTaskIds].sort(),expected) && isDeepStrictEqual(attempt['review-response'].tasks.map(t=>t.taskId).sort(),expected), 'tasks', 'Selected tasks have not all completed');
  requireReview(attempt.header.completedAt, 'attempt', 'Assessment completion timestamp is missing');
@@ -59,7 +60,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
    const record=await store.read(id);
    (deps.renderWrite??writeAtomic)(paths.md,`${artifactIdMarker(id)}\n\n${renderTaskReview(validateTaskBody(record.payload.body))}`);
   });
-  attempt['review-response'].crPath=paths.md; attempt['review-response'].crPublication='complete';
+  attempt['review-response'].crPath=paths.md; attempt['review-response'].crPublication='complete'; delete attempt['review-response'].error;
   attempt['review-response'].summary='All selected task assessments are terminal. CR publication complete.';
   // Keep the completed feedback summary immutable; publication metadata is separate.
   attempt.header.status=summary.status;

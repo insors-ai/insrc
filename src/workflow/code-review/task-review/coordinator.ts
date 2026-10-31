@@ -1,15 +1,14 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { readFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider, ReviewSessionOpts } from '../../../shared/types.js';
 import { decodeReview, requireReview } from './contracts.js';
-import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult } from './contracts.js';
+import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult, ReviewOperation, ReviewStatus } from './contracts.js';
 import { deriveTaskAssignments } from './packet.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
-import { checkpointPath, saveCheckpoint } from './checkpoint.js';
+import { checkpointPath, saveCheckpoint, loadCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
 import { prepareReviewAdmission } from './admission.js';
 import { assignmentResultSchema } from './result-schema.js';
@@ -29,16 +28,18 @@ export interface TaskReviewDeps {
  readonly now?: () => number;
  readonly timer?: (callback: () => void, ms: number) => () => void;
 }
-export interface ReviewAcknowledgement { reviewId: string; attempt: 1; path: string; status: 'pending'; crPublication: 'pending'; }
+export interface ReviewAcknowledgement { reviewId: string; attempt: number; reviewer: 'daemon'; path: string; status: ReviewStatus; crPublication: 'pending' | 'complete'; completedTaskIds: readonly string[]; pendingTaskIds: readonly string[]; }
 interface ActiveReview { checkpoint: ReviewCheckpoint; attempt: ReviewAttempt; done: Promise<void>; }
-/** Daemon-owned lifetime, intentionally independent of the submitting socket. S2 adds explicit recovery. */
+/** Daemon-owned lifetime with explicit pinned recovery, independent of the submitting socket. */
 export class TaskReviewCoordinator {
  private readonly active = new Map<string, ActiveReview | null>();
  private readonly controllers = new Map<string, ControllerTaskReview>();
  constructor(private readonly deps: TaskReviewDeps) {}
- async start(project: string, reviewId: string, attempt: number, input: unknown, context?: { provider?: () => LLMProvider; epicHash?: string }): Promise<ReviewAcknowledgement> {
-  const admitted = await this.admit(project, reviewId, attempt, input, 'daemon', context?.epicHash);
+ async start(project: string, reviewId: string, attempt: number, input?: unknown, context?: { provider?: () => LLMProvider; epicHash?: string; operation?: ReviewOperation }): Promise<ReviewAcknowledgement> {
+  const admitted = await this.admit(project, reviewId, attempt, input, 'daemon', context?.epicHash, context?.operation);
   const { path, checkpoint, attempt: entry, prepared } = admitted;
+  const metadata = (): ReviewAcknowledgement => ({ reviewId, attempt: entry.header.attempt, reviewer: 'daemon', path, status: entry.header.status, crPublication: entry['review-response'].crPublication, completedTaskIds: entry['review-response'].tasks.map(task => task.taskId), pendingTaskIds: entry.header.selectedTaskIds.filter(id => !entry['review-response'].tasks.some(task => task.taskId === id)) });
+  if (entry['review-response'].crPublication === 'complete') { this.active.delete(path); return metadata(); }
   try {
    const done = new Promise<void>(resolve => setImmediate(() => {
     void this.run(path, checkpoint, entry, prepared, context?.provider ?? this.deps.provider).catch(error => {
@@ -47,13 +48,13 @@ export class TaskReviewCoordinator {
     }).finally(() => { this.active.delete(path); resolve(); });
    }));
    this.active.set(path, { checkpoint, attempt: entry, done });
-   return { reviewId, attempt: 1, path, status: 'pending', crPublication: 'pending' };
+   return metadata();
   } catch (error) { this.active.delete(path); throw error; }
  }
- async startController(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,epicHash?:string):Promise<ControllerFrame>{
+ async startController(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,epicHash?:string,operation?:ReviewOperation):Promise<ControllerFrame>{
   requireReview(owner.signal instanceof AbortSignal&&!owner.signal.aborted&&!owner.requestSignal?.aborted,'reviewer','Disconnected or unsupported controller lifetime');owner.assertReviewer?.();
-  const admitted=await this.admit(project,id,attempt,input,'controller',epicHash);
-  const controller=new ControllerTaskReview(admitted,owner,{...this.deps,release:drop=>{this.active.delete(admitted.path);if(drop)this.controllers.delete(admitted.path);}});
+  const admitted=await this.admit(project,id,attempt,input,'controller',epicHash,operation);
+  const controller=new ControllerTaskReview(admitted,owner,{...this.deps,release:drop=>{if(this.active.get(admitted.path)?.done===controller.done)this.active.delete(admitted.path);if(drop&&this.controllers.get(admitted.path)===controller)this.controllers.delete(admitted.path);}});
   this.controllers.set(admitted.path,controller);this.active.set(admitted.path,{checkpoint:admitted.checkpoint,attempt:admitted.attempt,done:controller.done});
   return controller.assignment(owner);
  }
@@ -62,19 +63,21 @@ export class TaskReviewCoordinator {
  async controllerResult(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).submit(input,owner);}
  private async controller(project:string,id:string,attempt:number):Promise<ControllerTaskReview>{
   const path=checkpointPath(project,id);
-  let saved:ReviewCheckpoint;
-  try{saved=JSON.parse(await readFile(path,'utf8')) as ReviewCheckpoint;}catch(error){requireReview(false,'checkpoint',(error as NodeJS.ErrnoException).code==='ENOENT'?'missing-checkpoint':'Unreadable checkpoint');}
+  const saved=await loadCheckpoint(path);requireReview(saved,'checkpoint','missing-checkpoint');
   requireReview(saved.attempts.at(-1)?.header.reviewer==='controller','reviewer','wrong-reviewer');
   requireReview(saved.attempts.at(-1)?.header.attempt===attempt,'attempt','Attempt mismatch');
   const controller=this.controllers.get(path);requireReview(controller,'checkpoint','Controller state unavailable; explicit retrigger is required');return controller;
  }
- private async admit(project: string, reviewId: string, attempt: number, input: unknown, reviewer: 'daemon' | 'controller', epicHash?: string): Promise<AdmittedReview> {
+ private async admit(project: string, reviewId: string, attempt: number, input: unknown, reviewer: 'daemon' | 'controller', epicHash?: string, operation?: ReviewOperation): Promise<AdmittedReview> {
   const path = checkpointPath(project, reviewId);
-  requireReview(attempt === 1, 'attempt', 'Fresh first attempts only; recovery is not implemented here');
   requireReview(!this.active.has(path), 'reviewId', 'already-running');
   this.active.set(path, null); // Reserve before any awaited admission or provider use.
   try {
-   const admitted = await prepareReviewAdmission(project, reviewId, attempt, input, reviewer, this.deps.sources, { epicHash });
+   const admitted = await prepareReviewAdmission(project, reviewId, attempt, input, reviewer, this.deps.sources, { epicHash, operation });
+   if (operation === 'resume' && admitted.attempt['review-response'].crPublication === 'complete') return admitted;
+   if (operation === 'resume' && admitted.attempt.header.selectedTaskIds.some(id => !admitted.attempt['review-response'].tasks.some(task => task.taskId === id))) {
+    admitted.attempt.header.status = 'pending'; delete admitted.attempt.header.interrupted; delete admitted.attempt.header.activeTaskId; delete admitted.attempt.header.completedAt;
+   }
    await (this.deps.save ?? saveCheckpoint)(admitted.path, admitted.checkpoint);
    return admitted;
   } catch (error) { this.active.delete(path); throw error; }
@@ -90,6 +93,7 @@ export class TaskReviewCoordinator {
   let assignments: readonly TaskAssignment[] | undefined;
   let attributionFailure: { error: unknown; timedOut: boolean } | undefined;
   for (const task of selected.sort((a, b) => a.order - b.order)) {
+   if (entry['review-response'].tasks.some(result => result.taskId === task.id)) continue;
    entry.header.status = 'running'; entry.header.activeTaskId = task.id;
    await save(path, checkpoint);
    const started = now(), allowance = { S: 300000, M: 600000, L: 900000 }[task.size];

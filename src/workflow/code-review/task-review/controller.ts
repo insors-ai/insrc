@@ -11,6 +11,8 @@ import type { PlanTask } from '../../artifacts/plan.js';
 import type { TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import { assessTaskResult, AttributionSchema, attributionPrompt, directAssignments, taskFailure, taskReferences } from './assessment.js';
+import { normalizeTaskResult } from './results.js';
+import { resultReferences } from './record.js';
 import { assignmentPrompt } from './policy.js';
 import { assignmentResultSchema } from './result-schema.js';
 import { completeReview, persistReview } from './execution.js';
@@ -20,6 +22,7 @@ import type { AdmittedReview, ReviewPersistence } from './execution.js';
 export interface ControllerReviewOwner { readonly id:string; readonly signal:AbortSignal; readonly requestSignal?:AbortSignal|undefined; readonly assertReviewer?:(()=>void)|undefined; }
 export interface ControllerFrame {
  reviewId:string;attempt:number;path:string;reviewer:'controller';status:ReviewStatus;kind:'scope'|'task'|'done';crPublication:'pending'|'complete';
+ completedTaskIds:readonly string[];pendingTaskIds:readonly string[];
  taskId?:string|undefined;prompt?:string|undefined;schema?:TSchema|undefined;remainingMs?:number|undefined;crPath?:string|undefined;error?:string|undefined;
 }
 export interface ControllerDeps extends ReviewPersistence {
@@ -54,20 +57,20 @@ export class ControllerTaskReview {
  submit(input:unknown,owner:ControllerReviewOwner):Promise<ControllerFrame>{return this.queue(owner,async()=>{
   const raw=decodeReview(TaskResultSchema,input);
   const existing=this.review.attempt['review-response'].tasks.find(result=>result.taskId===raw.taskId);
+  if(existing){const result=normalizeTaskResult(raw,{taskId:raw.taskId,changes:this.review.prepared.changes,evidenceReferences:resultReferences(existing)});requireReview(isDeepStrictEqual(existing,result),'result','Conflicting accepted submission replay');return this.frame(owner);}
   const assignment=this.assignments?.find(task=>task.taskId===raw.taskId);
   requireReview(assignment,'taskId','Wrong or unassigned task');
-  if(!existing){requireReview(this.current()?.id===raw.taskId,'taskId','Result is not for the current task');this.checkTime();}
+  requireReview(this.current()?.id===raw.taskId,'taskId','Result is not for the current task');this.checkTime();
   const refs=await taskReferences(this.deps.sources,this.review.prepared,assignment);
   const result=await assessTaskResult(this.deps.sources,assignment,raw,refs);
   this.assertOwner(owner);
-  if(existing){requireReview(isDeepStrictEqual(existing,result),'result','Conflicting accepted submission replay');return this.frame(owner);}
   this.checkTime();this.cancelTimer?.();this.cancelTimer=undefined;
   this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,result];
   delete this.review.attempt.header.activeTaskId;this.started=undefined;
   await persistReview(this.review,this.deps);
   return this.frame(owner);
  });}
- private current(){return this.selected[this.review.attempt['review-response'].tasks.length];}
+ private current(){return this.selected.find(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id));}
  private assertOwner(owner:ControllerReviewOwner):void{
   requireReview(!this.stopped&&owner.id===this.owner.id&&owner.signal===this.owner.signal&&!owner.signal.aborted&&!owner.requestSignal?.aborted,'reviewer','wrong-reviewer or disconnected controller');
   this.owner.assertReviewer?.();
@@ -87,7 +90,7 @@ export class ControllerTaskReview {
  private async frame(owner:ControllerReviewOwner):Promise<ControllerFrame>{
   const task=this.current();
   if(!task){
-   if(!this.finished){this.finished=true;this.cancelTimer?.();await completeReview(this.review,this.deps);this.retire(false);}
+   if(!this.finished){this.finished=true;this.cancelTimer?.();if(this.review.attempt['review-response'].crPublication!=='complete')await completeReview(this.review,this.deps);this.retire(false);}
    else{const saved=JSON.parse(await readFile(this.review.path,'utf8')) as ReviewCheckpoint;this.review.checkpoint=saved;this.review.attempt=saved.attempts.at(-1)!;}
    return this.base('done');
   }
@@ -109,7 +112,7 @@ export class ControllerTaskReview {
  }
  private base(kind:ControllerFrame['kind']):ControllerFrame{
   const response=this.review.attempt['review-response'];
-  return{reviewId:this.review.checkpoint.reviewId,attempt:this.review.attempt.header.attempt,path:this.review.path,reviewer:'controller',status:this.review.attempt.header.status,kind,crPublication:response.crPublication,...(response.crPath?{crPath:response.crPath}:{}),...(response.error?{error:response.error}:{})};
+  return{reviewId:this.review.checkpoint.reviewId,attempt:this.review.attempt.header.attempt,path:this.review.path,reviewer:'controller',status:this.review.attempt.header.status,kind,crPublication:response.crPublication,completedTaskIds:response.tasks.map(task=>task.taskId),pendingTaskIds:this.selected.filter(task=>!response.tasks.some(result=>result.taskId===task.id)).map(task=>task.id),...(response.crPath?{crPath:response.crPath}:{}),...(response.error?{error:response.error}:{})};
  }
  private async expire():Promise<void>{
   if(this.stopped||this.finished||this.started===undefined)return;
@@ -119,7 +122,7 @@ export class ControllerTaskReview {
   const timedOut=taskFailure(task.id,`Task exceeded its ${task.size} allowance (${{S:300000,M:600000,L:900000}[task.size]}ms).`,true);
   this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,timedOut];
   if(!this.assignments){
-   for(const remaining of this.selected.slice(this.review.attempt['review-response'].tasks.length))this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(remaining.id,'Task attribution did not complete within the first task allowance.',false)];
+   for(const remaining of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id)))this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(remaining.id,'Task attribution did not complete within the first task allowance.',true)];
   }
   this.started=undefined;delete this.review.attempt.header.activeTaskId;
   await persistReview(this.review,this.deps);

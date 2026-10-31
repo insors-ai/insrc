@@ -3,6 +3,7 @@ import { realpath } from 'node:fs/promises';
 import { TaskReviewCoordinator } from '../workflow/code-review/task-review/coordinator.js';
 import { RegistryReviewSources } from '../workflow/code-review/task-review/sources.js';
 import { parsePacket, requireReview } from '../workflow/code-review/task-review/contracts.js';
+import { checkpointPath, loadCheckpoint } from '../workflow/code-review/task-review/checkpoint.js';
 import { buildAuthorParty } from '../workflow/code-review/author.js';
 import { createRoleRouter } from '../analyze/context/role-router.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
@@ -15,7 +16,7 @@ import { roundWriterFor } from './lifecycle-registry.js';
 import { repoSchemaRefusal } from './repo-schema-guard.js';
 
 const coordinators = new Map<string, TaskReviewCoordinator>();
-/** Explicit opt-in first-attempt route. Normal entrypoint migration is owned by S3. */
+/** Explicit task-review start/resume route. Normal entrypoint migration is owned by S3. */
 export interface TaskReviewRpcDeps { readonly provider?: ((repo: string, client: 'claude' | 'codex' | undefined) => LLMProvider) | undefined; }
 export async function startTaskReview(raw: unknown, trusted?: TrustedRpcContext, deps: TaskReviewRpcDeps = {}): Promise<unknown> {
  requireReview(raw && typeof raw === 'object', 'request', 'Expected task review request');
@@ -23,10 +24,15 @@ export async function startTaskReview(raw: unknown, trusted?: TrustedRpcContext,
  requireReview(typeof p['repo'] === 'string' && p['repo'].startsWith('/'), 'repo', 'Expected absolute project path');
  const repo = await realpath(p['repo']);
  requireReview(!repoSchemaRefusal(repo), 'repo', 'Repository schema must be current');
- requireReview(typeof p['reviewId'] === 'string' && p['attempt'] === 1, 'request', 'Fresh reviewId and attempt=1 required');
+ requireReview(typeof p['reviewId'] === 'string' && Number.isSafeInteger(p['attempt']) && Number(p['attempt']) > 0, 'request', 'Expected reviewId and positive safe attempt');
+ requireReview(p['operation'] === undefined || p['operation'] === 'start' || p['operation'] === 'resume', 'operation', 'Expected start or resume');
+ const operation = p['operation'] === 'resume' ? 'resume' : 'start', attempt = Number(p['attempt']);
  requireReview(typeof p['epicHash'] === 'string' && /^[0-9a-f]{16}$/.test(p['epicHash']), 'epicHash', 'Expected canonical epic hash');
  const epicHash = p['epicHash'];
- const packet = parsePacket(p['packet']);
+ const stored = operation === 'resume' ? await loadCheckpoint(checkpointPath(repo, p['reviewId'])) : undefined;
+ if (operation === 'resume') requireReview(stored, 'checkpoint', 'missing-checkpoint');
+ const packet = parsePacket(operation === 'resume' ? stored!.attempts.at(-1)!.submitted : p['packet']);
+ const input = operation === 'resume' ? p['packet'] : packet;
  const story = /^s\d+$/.test(packet.storyId) ? packet.storyId : /^STORY-[0-9a-f]{16}-(s\d+)$/.exec(packet.storyId)?.[1];
  requireReview(story, 'storyId', 'Expected canonical story identity');
  requireReview(packet.documents.plan.path.endsWith(`PLAN-${epicHash}-${story}.json`) || packet.documents.plan.path.endsWith('/PLAN.md'), 'documents.plan', 'Plan identity must match review subject');
@@ -34,10 +40,10 @@ export async function startTaskReview(raw: unknown, trusted?: TrustedRpcContext,
  const client = p['client'] as 'claude' | 'codex' | undefined;
  const coordinator = coordinatorFor(repo);
  if (buildAuthorParty(repo, epicHash, story) === 'daemon') {
-  return coordinator.startController(repo, p['reviewId'], 1, packet, controllerOwner(trusted, () => requireReview(buildAuthorParty(repo, epicHash, story) === 'daemon', 'reviewer', 'wrong-reviewer: current build is not daemon-authored')), epicHash);
+  return coordinator.startController(repo, p['reviewId'], attempt, input, controllerOwner(trusted, () => requireReview(buildAuthorParty(repo, epicHash, story) === 'daemon', 'reviewer', 'wrong-reviewer: current build is not daemon-authored')), epicHash, operation);
  }
  let provider: LLMProvider | undefined;
- return coordinator.start(repo, p['reviewId'], 1, packet, { epicHash, provider: () => provider ??= deps.provider?.(repo, client) ?? createRoleRouter({ clientDefault: familyForClient(client), cliTimeoutMs: 900000 }).resolveProviderForRole('review', loadAnalyzeConfig(), repo).provider });
+ return coordinator.start(repo, p['reviewId'], attempt, input, { epicHash, operation, provider: () => provider ??= deps.provider?.(repo, client) ?? createRoleRouter({ clientDefault: familyForClient(client), cliTimeoutMs: 900000 }).resolveProviderForRole('review', loadAnalyzeConfig(), repo).provider });
 }
 
 function coordinatorFor(repo: string): TaskReviewCoordinator {

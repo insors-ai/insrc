@@ -359,7 +359,7 @@
   "limits": "Coverage pointers do not convert fixtures or headless tests into live acceptance. Original 12 conceptual transcripts remain reference examples; the 16 production-model scenarios and 18 wire decisions are compared directly across actual consumers.",
   "manualAcceptance": {
     "owner": "user",
-    "status": "partial",
+    "status": "completed-with-deferral",
     "instruction": "For UI validations, I will do it manually. Complete the full build, then install the plugins for manual testing.",
     "tasks": [
       "t26",
@@ -378,10 +378,12 @@
         "scope": "VS Code manual connection-manager test session; individual checklist cases are not all independently documented."
       },
       "jetbrains": {
-        "status": "pending-user-manual"
+        "status": "deferred-user",
+        "deferredAt": "2026-10-31",
+        "statement": "mark the JetBrains validation as deferred and go with completion review"
       }
     },
-    "remaining": "JetBrains and any outstanding cross-client lifecycle/service evidence; no automatic release or Story-completion approval."
+    "remaining": "Any outstanding lifecycle/service evidence and independent completion review; JetBrains manual validation is deferred by explicit user instruction."
   },
   "frozenSourceCommit": "b4f7a82cb44550ef55e522966c2237417bd15307",
   "frozenSourceDrift": [],

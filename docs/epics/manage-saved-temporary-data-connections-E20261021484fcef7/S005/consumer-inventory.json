@@ -50,7 +50,7 @@
     "positiveSavedWorkerAffinity": "pending",
     "SQLServer": "pending",
     "VSCodeLiveUI": "completed-user-reported",
-    "JetBrainsLiveUI": "pending-user-manual"
+    "JetBrainsLiveUI": "deferred-user"
   },
   "historicalFailures": {
     "S003": {

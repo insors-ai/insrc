@@ -91,3 +91,8 @@ Product-icon source commit b09162a00. Version 0.5.23 VSIX built from a clean sna
 ## User manual-test completion — 2026-10-31
 
 After the 0.5.23 product-icon correction was installed, the user reported: “ok, manual test of connection manager done”. VS Code manual-session status is completed-user-reported. See MANUAL-ACCEPTANCE.md for the installed artifact identity and limits of this evidence. JetBrains/service/SQL Server coverage, historical automated failures and independent completion-review status are unchanged. No BUILD approval or release certification is implied.
+
+
+## JetBrains manual-validation deferral — 2026-10-31
+
+The user explicitly instructed: “mark the JetBrains validation as deferred and go with completion review”. JetBrainsLiveUI is now deferred-user, and manual acceptance is completed-with-deferral (VS Code user-reported complete; JetBrains deferred). No JetBrains pass, service proof, audit release or BUILD approval is inferred. Proceed to independent completion review of the current committed Story build.

@@ -18,9 +18,9 @@ test('CM-S5-GATE: default runtime policy preserves authorization and independent
   // The shared activation file also has independently owned in-flight changes.
   if(file!=='vscode-plugin/src/extension.ts')assert.equal(createHash('sha256').update(readFileSync(file)).digest('hex'),digest,file);
  }
- for(const [name,state] of Object.entries(inventory.externalPrerequisites))if(name!=='VSCodeLiveUI')assert.match(String(state),/^pending/);
+ for(const [name,state] of Object.entries(inventory.externalPrerequisites))if(!['VSCodeLiveUI','JetBrainsLiveUI'].includes(name))assert.match(String(state),/^pending/);
  assert.equal(inventory.externalPrerequisites.VSCodeLiveUI,'completed-user-reported');
- const matrix=json('acceptance-matrix.json');assert.equal(matrix.subjects.length,20);assert.equal(matrix.manualAcceptance.owner,'user');assert.equal(matrix.manualAcceptance.status,'partial');assert.equal(matrix.manualAcceptance.clients.vscode.status,inventory.externalPrerequisites.VSCodeLiveUI);assert.equal(matrix.manualAcceptance.clients.vscode.version,'0.5.23');assert.ok(matrix.manualAcceptance.clients.vscode.statement);assert.equal(matrix.manualAcceptance.clients.jetbrains.status,'pending-user-manual');assert.equal(matrix.releaseEnabled,false);assert.equal(matrix.runtimeEnabled,true);
+ const matrix=json('acceptance-matrix.json');assert.equal(matrix.subjects.length,20);assert.equal(matrix.manualAcceptance.owner,'user');assert.equal(matrix.manualAcceptance.status,'completed-with-deferral');assert.equal(matrix.manualAcceptance.clients.vscode.status,inventory.externalPrerequisites.VSCodeLiveUI);assert.equal(matrix.manualAcceptance.clients.vscode.version,'0.5.23');assert.ok(matrix.manualAcceptance.clients.vscode.statement);assert.equal(matrix.manualAcceptance.clients.jetbrains.status,'deferred-user');assert.equal(inventory.externalPrerequisites.JetBrainsLiveUI,matrix.manualAcceptance.clients.jetbrains.status);assert.ok(matrix.manualAcceptance.clients.jetbrains.statement);assert.equal(matrix.releaseEnabled,false);assert.equal(matrix.runtimeEnabled,true);
  assert.equal((await connectionManagementEnablement()).ready,true);
  assert.equal((await connectionManagementEnablement(undefined,['sc5','sc6'])).ready,true);
  const temporary=mkdtempSync(join(tmpdir(),'s5-gate-'));
@@ -37,5 +37,5 @@ test('CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerat
  for(const component of definitions.componentDependencyDefinition.components)if(component.path)assert.ok(existsSync(component.path),component.path);
  const refs=json('implementation-companions.json');assert.equal(refs.length,3);
  for(const ref of refs){const html=readFileSync(ref.relPath,'utf8');assert.match(html,/Live acceptance pending user manual testing/);assert.match(html,/implementation-definitions.json/);assert.ok(html.length>1000);}
- assert.match(readFileSync(join(directory,'MANUAL-ACCEPTANCE.md'),'utf8'),/JetBrains manual testing remains pending/);
+ assert.match(readFileSync(join(directory,'MANUAL-ACCEPTANCE.md'),'utf8'),/JetBrains manual testing is deferred by explicit user instruction/);
 });

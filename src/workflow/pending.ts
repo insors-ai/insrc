@@ -33,11 +33,12 @@ const log = getLogger('workflow-pending');
 // sc1 contract types
 // ---------------------------------------------------------------------------
 
-/** The reviewer-approvable artifact kinds the pending list surfaces. A BUILD
- *  record is listed once its Story's code review has run (Story
- *  E20261013dd277f9c:S001): its approval is the Story's completion. EXTEND /
- *  STUB / AMD stay excluded — they are not artifacts a reviewer approves in
- *  the review panel. */
+/** The reviewer-approvable artifact kinds the pending list surfaces. A
+ *  tracked-epic BUILD record is listed once its Story's code review has run
+ *  (Story E20261013dd277f9c:S001): its approval is the Story's completion. A
+ *  standalone Story's BUILD record has no CR sibling and is listed on its own
+ *  meta.standalone marker (ISSUE-16b8d3d50f14fc1d). EXTEND / STUB / AMD stay
+ *  excluded — they are not artifacts a reviewer approves in the review panel. */
 export const PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'BUILD', 'CR'] as const;
 export type PendingKind = typeof PENDING_KINDS[number];
 
@@ -117,10 +118,6 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 	for (const file of files) {
 		const kind = kindFromFilename(file);
 		if (!PENDING_KIND_SET.has(kind)) continue;   // non-reviewer-approvable kind
-		// A BUILD record exists from its Story's first validated task. It awaits
-		// approval only once the Story's code review has run: its CR record, the
-		// same name under the CR prefix, is then in this directory.
-		if (kind === 'BUILD' && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;
 
 		let art: ArtifactShape;
 		try {
@@ -134,6 +131,14 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 		// Pending = neither stamped: the SAME fields approve/reject write (k5).
 		if (typeof meta['approvedAt'] === 'string' && meta['approvedAt'].length > 0) continue;
 		if (typeof meta['rejectedAt'] === 'string' && meta['rejectedAt'].length > 0) continue;
+
+		// A tracked-epic BUILD record exists from its Story's first validated
+		// task, but awaits approval only once the Story's code review has run:
+		// its CR record, the same name under the CR prefix, is then in this
+		// directory. A STANDALONE Story's build never writes a CR sibling (the
+		// automated code-review path does not run for it), so its BUILD record
+		// is listed on its own meta.standalone marker (ISSUE-16b8d3d50f14fc1d).
+		if (kind === 'BUILD' && meta['standalone'] !== true && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;
 
 		out.push(toDescriptor(repoPath, file, kind as PendingKind, art));
 	}

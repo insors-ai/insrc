@@ -1,0 +1,537 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793455544722-kt28ib",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-31T14:10:40.770Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 296036,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7b6a5fa936278e5d",
+    "epicSlug": "add-delivery-board-insrc-status-bar",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793455544722-kt28ib",
+    "hldEffectiveHash": "7b6a5fa936278e5d674eeddfde8de934e5f3bf638fc8e9fbe7b0014c31008760",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "The change is an exact structural mirror of an existing, already-shipped pattern (the 'Manage Connections' menu item), touching 2 files with 1-2 small localized additions each and one obvious approach: add a MenuItem action literal, a MenuItem entry, a showStatusMenu() branch, a new optional callback field on the deps interface, and one wiring call in extension.ts. No new contract type, no storage/schema change, no new subsystem.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's single intent — add a fifth 'Delivery Board' entry to the status menu, wired through a new optional callback mirroring onOpenConnections, with registerDeliveryBoard returning {open()} — is fully covered by the contract/data-model/migration sections, and no non-goal (e.g. duplicate-panel de-dup, the a3 generic hook) is built.",
+          "evidence": "The 5 acceptance criteria (ac1-ac5) each map 1:1 to a migration step and a test; a2/a3 alternatives are explicitly rejected and not implemented; the 'rapid second invocation' edge case is explicitly called out of scope.",
+          "action": "Read the design's AC table, migration steps and alternatives sections.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "MENU_ITEMS today holds exactly 4 entries (detailed/repoConfig/modelTiers/connections) and showStatusMenu's dispatch uses 'connections' as the else-fallthrough, as stated in section 3.3/6.",
+          "evidence": "vscode-plugin/src/panels/webview-host.ts:52-57 shows exactly the 4 MENU_ITEMS entries claimed; lines 545-559 show `if/else if/else if/else` with `else this.openConnections()` as the catch-all, matching the design's 'connections as else-fallthrough' claim. [files: vscode-plugin/src/panels/webview-host.ts]",
+          "action": "Read webview-host.ts lines 1-170 and 510-561.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "MenuItem.action is today the closed union 'detailed'|'repoConfig'|'modelTiers'|'connections' at types.ts:226-230, and WebviewPanelHostDeps.onOpenConnections?: (()=>void)|undefined exists at types.ts:319, exactly as cited.",
+          "evidence": "types.ts:226-230 literally defines `action: 'detailed' | 'repoConfig' | 'modelTiers' | 'connections'`; types.ts:319 literally defines `readonly onOpenConnections?: (() => void) | undefined;` right after the field-319 doc comment block starting at 312. [files: vscode-plugin/src/panels/types.ts]",
+          "action": "Read panels/types.ts lines 200-332.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "registerDeliveryBoard() today returns void (host kept local), and the command handler at board-wiring.ts:73-75 calls host.open() directly — the design's claimed pre-state for 2.5/3.4.",
+          "evidence": "board-wiring.ts:54 `export function registerDeliveryBoard(deps): void {` and lines 73-75 register the command calling `host.open()`; there is no return statement, confirming the void return the design says it is changing. [files: vscode-plugin/src/delivery/board-wiring.ts]",
+          "action": "Read delivery/board-wiring.ts lines 1-77.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "extension.ts's existing registerDeliveryBoard() call site is at line 897 with closing `});` at line 910, and panelHost is constructed starting at line 398 with onOpenConnections wired at line 500 — the exact line anchors the design migration step relies on.",
+          "evidence": "extension.ts:398 `const panelHost = createWebviewPanelHost({`; extension.ts:500 `onOpenConnections: () => {`; extension.ts:897 `registerDeliveryBoard({` ... closing `});` at line 910 — all three anchors match exactly. [files: vscode-plugin/src/extension.ts]",
+          "action": "Read extension.ts lines 390-525 and 880-911.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "openConnections()'s structure (undefined-check -> warn -> return; else try/catch-and-log) that openDeliveryBoard() is modeled on, and the claim that `logger` is a destructured closure variable rather than a `this` property, both hold as stated.",
+          "evidence": "webview-host.ts:528-543 shows exactly that shape for openConnections(); line 147 `const { panels, pickMenu, gateway, logger } = deps;` destructures logger from deps in the enclosing closure — the returned host object (object literal starting ~line 175 onward) has no `logger` field of its own, confirming 'no logger property on this'. [files: vscode-plugin/src/panels/webview-host.ts]",
+          "action": "Read webview-host.ts lines 145-170 and 528-543.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test-strategy citations (webview-host.test.ts:122-129 four-item assertion; 154-159 unwired-onOpenConnections test; 161-171 throw-caught test) are byte-accurate to real line numbers and content, so the 'extend this exact pattern' plan is executable as described.",
+          "evidence": "Read webview-host.test.ts:122-171 verbatim: line 122 test title matches, line 128 label array matches exactly ['Detailed Status','Repo Configuration','Model Tiers','Manage Connections'], line 154-159 and 161-171 match the design's quoted test names/assertions character-for-character. [files: vscode-plugin/src/panels/__tests__/webview-host.test.ts]",
+          "action": "Read vscode-plugin/src/panels/__tests__/webview-host.test.ts lines 122-171.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "board-icon.test.ts:42's regex and board-wiring.test.ts:75-77,144-145's indexOf calls scan extension.ts's raw text for the literal `registerDeliveryBoard({` ... `\\n  });` shape, as the design claims, so the migration's 'never chain .open onto the call' constraint is real and necessary.",
+          "evidence": "board-icon.test.ts:42 `const block = /registerDeliveryBoard\\(\\{([\\s\\S]*?)\\n  \\}\\);/.exec(ext);`; board-wiring.test.ts:75 `const call = EXT.indexOf('registerDeliveryBoard({');` and :77 `const args = EXT.slice(call, EXT.indexOf('\\n  });', call));`; lines 144-145 repeat the same indexOf pattern for the reviewPane assertion — both exactly as the design quotes them. [files: vscode-plugin/src/delivery/__tests__/board-icon.test.ts, vscode-plugin/src/delivery/__tests__/board-wiring.test.ts]",
+          "action": "Grep + read board-icon.test.ts and board-wiring.test.ts around the cited lines.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This is a standalone Story with no parent HLD/Epic shared contracts (section 1 states 'no HLD shared contracts to honour'), so there is no cross-Story ownership boundary for this design to violate.",
+          "evidence": "Section 1 'HLD context' explicitly states 'Standalone feature — no parent HLD... There are no HLD shared contracts to honour'; the repo shows no sibling Story under this Epic hash (E202610317b6a5fa9) touching the same files.",
+          "action": "Read the design's section 1 and check for an Epic/HLD artifact under the same hash.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The two stated error cases (unwired dep logs-and-no-ops; wired dep throw is caught-and-logged without surfacing) are each detectable and handled exactly as described, mirroring the real openConnections() implementation one-for-one.",
+          "evidence": "webview-host.ts:534-537 (unwired check + warn + return) and :538-542 (try/catch + warn on throw) for openConnections() are the real precedent; the design's openDeliveryBoard() error-path section describes an identical shape, and the corresponding tests at webview-host.test.ts:154-170 prove this shape is already verified for the sibling sink. [files: vscode-plugin/src/panels/webview-host.ts]",
+          "action": "Cross-check webview-host.ts:528-543 against the design's section 4 error cases.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1-ac5 each map to a concrete, locatable test (existing or to-be-extended), and ac5 specifically depends on two already-existing unmodified tests (board-icon.test.ts:42, board-wiring.test.ts:75-77,144-145) continuing to pass unchanged — verified above to be real, line-accurate tests.",
+          "evidence": "All five acceptance-mapping rows name real test files and, where quoted, real line numbers/assertions that were independently confirmed by reading the test files (see change-sites premises above). [files: vscode-plugin/src/panels/__tests__/webview-host.test.ts, vscode-plugin/src/delivery/__tests__/board-icon.test.ts, vscode-plugin/src/delivery/__tests__/board-wiring.test.ts]",
+          "action": "Cross-reference the Test Strategy / Acceptance mapping table against the actual test files.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-31T14:35:01.690Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-31T14:42:02.298Z",
+    "rangeBase": "3e9f1d260374699f2a1f237d1c9a424365b5a540"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds a fifth entry, Delivery Board, to the VS Code plugin's status-bar click menu, alongside the existing Detailed Status, Repo Configuration, Model Tiers and Manage Connections items. Choosing it opens the same Delivery Board that is today only reachable via its own separate command. The new entry is wired through a new optional callback on the panel host's dependencies, structurally identical to the existing Manage Connections wiring, so the panel host stays free of any direct dependency on the delivery board's own module.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Add Delivery Board to the insrc status-bar click menu"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "MenuItem",
+          "signature": "interface MenuItem { readonly label: string; readonly action: 'detailed' | 'repoConfig' | 'modelTiers' | 'connections' | 'deliveryBoard'; }",
+          "parameters": [],
+          "returns": {
+            "type": "MenuItem",
+            "meaning": "A status-menu choice; action gains the new 'deliveryBoard' literal alongside the four existing ones."
+          },
+          "errors": [],
+          "preconditions": [
+            "Existing callers pattern-match or compare against the closed action union; adding a literal is additive and does not break existing exhaustive switches that have a default/else branch (showStatusMenu's own dispatch does)."
+          ],
+          "postconditions": [
+            "MENU_ITEMS gains a 5th entry { label: 'Delivery Board', action: 'deliveryBoard' }."
+          ]
+        },
+        {
+          "name": "WebviewPanelHostDeps.onOpenDeliveryBoard",
+          "signature": "onOpenDeliveryBoard?: (() => void) | undefined",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "No return; a fire-and-forget sink the host invokes to open the Delivery Board."
+          },
+          "errors": [],
+          "preconditions": [
+            "Optional, mirroring onOpenConnections?: (() => void) | undefined exactly (vscode-plugin/src/panels/types.ts:319)."
+          ],
+          "postconditions": [
+            "When undefined, the menu's Delivery Board choice logs a warning and opens nothing (no throw). When set, it is invoked inside the same try/catch-and-log shape as openConnections()."
+          ]
+        },
+        {
+          "name": "showStatusMenu",
+          "signature": "showStatusMenu(): Promise<void>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the chosen menu action (now including Delivery Board) has been dispatched; unchanged resolution shape from today (vscode-plugin/src/panels/webview-host.ts:545-559)."
+          },
+          "errors": [],
+          "preconditions": [
+            "chosen is undefined (Esc) remains a no-op, unchanged (ac1 precedent)."
+          ],
+          "postconditions": [
+            "chosen.action === 'deliveryBoard' now routes to the new openDeliveryBoard() branch, alongside the unchanged detailed/repoConfig/modelTiers/connections branches."
+          ]
+        },
+        {
+          "name": "openDeliveryBoard",
+          "signature": "openDeliveryBoard(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "No return; opens the Delivery Board via deps.onOpenDeliveryBoard when wired."
+          },
+          "errors": [
+            {
+              "type": "caught-and-logged",
+              "condition": "deps.onOpenDeliveryBoard() throws synchronously — caught in a try/catch and logged via the closure-captured logger.warn(...) (destructured from deps at webview-host.ts:147; there is no logger property on this), never surfaced (mirrors openConnections(), vscode-plugin/src/panels/webview-host.ts:538-542)."
+            }
+          ],
+          "preconditions": [
+            "New method, structurally identical to the existing openConnections() (vscode-plugin/src/panels/webview-host.ts:528-543): same undefined-check + warn + no-op shape, same try/catch-and-log shape."
+          ],
+          "postconditions": [
+            "If deps.onOpenDeliveryBoard is undefined, logs a warning ('insrc: Delivery Board is unavailable — onOpenDeliveryBoard is not wired') and returns without opening anything."
+          ]
+        },
+        {
+          "name": "registerDeliveryBoard",
+          "signature": "registerDeliveryBoard(deps: DeliveryBoardWiringDeps): { open(): void }",
+          "parameters": [],
+          "returns": {
+            "type": "{ open(): void }",
+            "meaning": "Exposes the created board host's own open() so a caller elsewhere in extension.ts can invoke it; previously returned void with host kept entirely local (vscode-plugin/src/delivery/board-wiring.ts:54-76)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Same deps shape as today; this is a return-value change only, not a parameter change."
+          ],
+          "postconditions": [
+            "The returned object's open() calls the same host.open() the 'insrc.delivery.openBoard' command already calls (vscode-plugin/src/delivery/board-host.ts:64-65,726) — both paths open the identical board."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "MenuItem.action (vscode-plugin/src/panels/types.ts:226-230)",
+        "change": "field-modify",
+        "details": "The closed string-literal union gains one new member: 'deliveryBoard', alongside the existing 'detailed' | 'repoConfig' | 'modelTiers' | 'connections'. No other field changes; label stays string.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:226-230",
+          "vscode-plugin/src/panels/webview-host.ts:52-56"
+        ]
+      },
+      {
+        "entity": "WebviewPanelHostDeps (vscode-plugin/src/panels/types.ts)",
+        "change": "field-add",
+        "details": "Adds one new optional field, onOpenDeliveryBoard?: (() => void) | undefined, directly beside the existing onOpenConnections?: (() => void) | undefined field (vscode-plugin/src/panels/types.ts:319). The callback assigned at extension.ts:500 is a closure (() => { deliveryBoardOpen?.(); }), not a direct reference to host.open, because registerDeliveryBoard() (extension.ts:897) runs ~500 lines after the panelHost deps object is constructed (extension.ts:398) — see the module-scope-binding entry below.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:319",
+          "vscode-plugin/src/extension.ts:500"
+        ]
+      },
+      {
+        "entity": "showStatusMenu dispatch (vscode-plugin/src/panels/webview-host.ts:545-559)",
+        "change": "invariant-change",
+        "details": "The dispatch invariant widens from 'chosen.action is one of four known values, else Manage Connections' to 'chosen.action is one of five known values, with an explicit deliveryBoard branch before the Manage Connections else-fallthrough' — the else branch stays specific to 'connections' rather than becoming a catch-all for two actions.",
+        "callSites": [
+          "vscode-plugin/src/panels/webview-host.ts:545-559"
+        ]
+      },
+      {
+        "entity": "extension.ts module-scope binding",
+        "change": "new",
+        "details": "A new module-scope mutable binding, let deliveryBoardOpen: (() => void) | undefined;, declared before the panelHost construction (extension.ts:398) so it is in scope for the onOpenDeliveryBoard closure assigned there. At extension.ts:897, the call is rewritten as `const deliveryBoard = registerDeliveryBoard({ ... });` (identical arguments, identical closing `});` line) with a new statement on the next line, `deliveryBoardOpen = deliveryBoard.open;` — the call itself is never chained (never `registerDeliveryBoard({...}).open`), so its own `registerDeliveryBoard({` ... `\\n  });` textual shape is preserved byte-for-byte. This is required: board-icon.test.ts:42 regex-matches /registerDeliveryBoard\\(\\{([\\s\\S]*?)\\n  \\}\\);/ against extension.ts's raw source, and board-wiring.test.ts:75-77,144-145 does EXT.indexOf('registerDeliveryBoard({') then slices to EXT.indexOf('\\n  });', call) — both break if the call's closing line becomes anything other than `  });`. The closure captures deliveryBoardOpen by reference, so reading it after assignment resolves correctly even though the closure was created ~500 lines earlier.",
+        "callSites": [
+          "vscode-plugin/src/extension.ts:398",
+          "vscode-plugin/src/extension.ts:500",
+          "vscode-plugin/src/extension.ts:897",
+          "vscode-plugin/src/delivery/__tests__/board-icon.test.ts:42",
+          "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts:75-77,144-145"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The Delivery Board menu item is chosen but the panel host was constructed without onOpenDeliveryBoard wired (extension.ts omitted it).",
+          "detection": "openDeliveryBoard() checks `if (deps.onOpenDeliveryBoard === undefined)`.",
+          "response": "Logs a warning (e.g. 'insrc: Delivery Board is unavailable — onOpenDeliveryBoard is not wired') and returns; no panel opens, no throw.",
+          "userImpact": "The menu dismisses with no visible panel; the warning is only in the extension's output channel/logs, matching today's unwired-onOpenConnections behavior exactly.",
+          "recoverable": true
+        },
+        {
+          "scenario": "deps.onOpenDeliveryBoard is wired but throws synchronously when invoked (e.g. the delivery board's open() call fails).",
+          "detection": "openDeliveryBoard() wraps the call in a try/catch.",
+          "response": "The catch block logs the error via the closure-captured logger.warn and swallows it; showStatusMenu()'s returned Promise still resolves normally.",
+          "userImpact": "The menu dismisses with no visible panel; no unhandled rejection or crash reaches the user.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The status menu is dismissed (Esc) while Delivery Board is one of the five offered items.",
+          "expected": "chosen is undefined; showStatusMenu() returns without calling any open*() method, unchanged from today's ac1 no-op behavior for a dismissed menu."
+        },
+        {
+          "input": "A second rapid status-menu invocation picks Delivery Board again before the first board panel finishes opening.",
+          "expected": "Out of scope for this Story: openDeliveryBoard() simply re-invokes deps.onOpenDeliveryBoard() each time, exactly as openConnections() does today for Manage Connections; any single-instance/reveal-vs-duplicate behavior lives inside the delivery board's own host (board-host.ts), not in this Story's dispatch."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A dismissed status menu (chosen === undefined) is a no-op: no open*() method is invoked, regardless of how many items the menu now offers.",
+          "source": "c1"
+        },
+        {
+          "text": "Every open*() sink method (openDetailedStatus/openRepoConfiguration/openModelTiers/openConnections, and now openDeliveryBoard) never throws out of showStatusMenu(): an unwired dep logs a warning and no-ops, a wired dep's throw is caught and logged — this never-throw contract is unchanged by adding a fifth sink.",
+          "source": "c1"
+        },
+        {
+          "text": "webview-host.ts stays free of any direct dependency on vscode or on delivery/board-wiring.ts; the new Delivery Board open behavior crosses the seam only through the optional callback field on WebviewPanelHostDeps, exactly like every other open*() sink.",
+          "source": "c1"
+        },
+        {
+          "text": "The registerDeliveryBoard() call site in extension.ts (line 897) keeps its exact textual shape (registerDeliveryBoard({ ... \\n  });) byte-for-byte: board-icon.test.ts:42 and board-wiring.test.ts:75-77,144-145 both scan extension.ts's raw source text for this literal shape; the return-value capture is a separate next-line statement, never chained onto the call itself.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify the menu now offers five items including Delivery Board, and that choosing it dispatches to the new onOpenDeliveryBoard sink with the same never-throw/unwired-warns shape as every other sink.",
+          "subjects": [
+            "vscode-plugin/src/panels/webview-host.ts showStatusMenu()",
+            "vscode-plugin/src/panels/webview-host.ts openDeliveryBoard()",
+            "vscode-plugin/src/panels/webview-host.ts MENU_ITEMS"
+          ],
+          "fixturesNeeded": [
+            "makeHost() test helper extended with an onOpenDeliveryBoard opt, mirroring its existing onOpenConnections opt (vscode-plugin/src/panels/__tests__/webview-host.test.ts:73-116)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Confirm the registerDeliveryBoard() call site's unchanged literal text shape (required by migration step 7) keeps two pre-existing, unmodified tests passing.",
+          "subjects": [
+            "vscode-plugin/src/delivery/__tests__/board-icon.test.ts:42",
+            "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts:75-77,144-145"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "webview-host.test.ts: showStatusMenu offers EXACTLY five items, including Delivery Board, updating the existing 'offers EXACTLY four items' assertion (webview-host.test.ts:122-129) to the five-item label list ['Detailed Status','Repo Configuration','Model Tiers','Manage Connections','Delivery Board']"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "webview-host.test.ts: choosing Delivery Board invokes the wired onOpenDeliveryBoard sink exactly once"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "webview-host.test.ts: openDeliveryBoard(): unwired onOpenDeliveryBoard logs a warning and opens nothing (no throw), mirroring webview-host.test.ts:154-159's onOpenConnections-unwired test"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "webview-host.test.ts: openDeliveryBoard(): a synchronous throw from a wired onOpenDeliveryBoard fake is caught and logged, mirroring webview-host.test.ts:161-171's onOpenConnections-throw test"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-icon.test.ts:42 and board-wiring.test.ts:75-77,144-145 (existing tests, unmodified) continue to pass after the migration, confirming the registerDeliveryBoard() call site's literal text shape was preserved"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), extending vscode-plugin/src/panels/__tests__/webview-host.test.ts's existing makeHost()/MenuItem test pattern"
+    },
+    "migration": {
+      "stateBefore": "MenuItem.action is a closed union of 'detailed' | 'repoConfig' | 'modelTiers' | 'connections' (vscode-plugin/src/panels/types.ts:226-230); MENU_ITEMS holds exactly four entries (vscode-plugin/src/panels/webview-host.ts:52-56); showStatusMenu() dispatches four ways, with 'connections' as the else-fallthrough (vscode-plugin/src/panels/webview-host.ts:545-559); WebviewPanelHostDeps has no onOpenDeliveryBoard field; the Delivery Board is opened only via its own independently-registered 'insrc.delivery.openBoard' command (registerDeliveryBoard, vscode-plugin/src/delivery/board-wiring.ts:54-76), unreachable from the status menu.",
+      "stateAfter": "MenuItem.action gains 'deliveryBoard'; MENU_ITEMS holds five entries, the new one labeled 'Delivery Board'; showStatusMenu() gains an explicit branch for 'deliveryBoard' calling the new openDeliveryBoard() method, with 'connections' remaining its own explicit branch (no longer the catch-all else); WebviewPanelHostDeps gains an optional onOpenDeliveryBoard?: (() => void) | undefined field; registerDeliveryBoard() now returns { open(): void } instead of void; extension.ts declares a module-scope deliveryBoardOpen binding before the panelHost deps object, wires onOpenDeliveryBoard: () => { deliveryBoardOpen?.(); } into that deps object, and at the existing registerDeliveryBoard() call site captures its return value into a new const on the unchanged call followed by a new next-line assignment statement (deliveryBoardOpen = deliveryBoard.open;) — never chaining .open onto the call itself, preserving the call's literal text shape for board-icon.test.ts and board-wiring.test.ts — so choosing Delivery Board from the status menu opens the same board the existing command opens.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add 'deliveryBoard' to MenuItem's action union in panels/types.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add onOpenDeliveryBoard?: (() => void) | undefined to WebviewPanelHostDeps in panels/types.ts, beside the existing onOpenConnections field.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add { label: 'Delivery Board', action: 'deliveryBoard' } to MENU_ITEMS in webview-host.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add an openDeliveryBoard() method to the panel host, structurally identical to openConnections(): unwired warns + no-op, wired call caught-and-logged on throw.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add a 'deliveryBoard' branch to showStatusMenu()'s dispatch calling this.openDeliveryBoard(), keeping the 'connections' branch explicit rather than the remaining else-fallthrough.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Change registerDeliveryBoard()'s return type from void to { open(): void }, returning the created host's own open method.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "In extension.ts, declare let deliveryBoardOpen: (() => void) | undefined; before the panelHost construction (line 398), wire onOpenDeliveryBoard: () => { deliveryBoardOpen?.(); } into panelHost's deps, and at the existing registerDeliveryBoard() call site (line 897) capture its return value into a new local const on the same, unchanged call (const deliveryBoard = registerDeliveryBoard({...});, closing }); unchanged) followed by a new next-line statement deliveryBoardOpen = deliveryBoard.open; — never chaining .open directly onto the call, so the call's own textual shape stays exactly what board-icon.test.ts:42 and board-wiring.test.ts:75-77,144-145 already regex/indexOf-scan for.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Purely additive: the action union gains one literal (existing exhaustive consumers with an else/default branch are unaffected), WebviewPanelHostDeps gains one optional field (existing callers that omit it are unaffected, matching every other optional sink field), and the existing 'insrc.delivery.openBoard' command plus its direct wiring in extension.ts are untouched — the Delivery Board remains reachable exactly as it is today, with the status menu now offering a second path to the same board.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Mirror the existing onOpenConnections optional-callback pattern",
+        "oneLineSummary": "Add 'deliveryBoard' to MenuItem's action union, a 5th MENU_ITEMS entry, an onOpenDeliveryBoard?: (() => void) | undefined field on the deps interface, and an openDeliveryBoard() method structurally identical to openConnections().",
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "showStatusMenu calls vscode.commands.executeCommand('insrc.delivery.openBoard') directly",
+        "oneLineSummary": "Skip the new callback; have the menu's 'deliveryBoard' branch invoke VS Code's command-execution API directly by the already-registered command id.",
+        "costEstimate": "XS",
+        "reasonRejected": "Violates webview-host.ts's documented and tested vscode-free boundary, and diverges from the established sink pattern used for every other menu action in the same dispatch."
+      },
+      {
+        "id": "a3",
+        "name": "Generic 'custom action' extensibility hook on MenuItem",
+        "oneLineSummary": "Replace the closed action union with an open-ended action id + a map of registered handlers.",
+        "costEstimate": "M",
+        "reasonRejected": "Over-engineers a generic extensibility mechanism nobody asked for, forces migrating every existing menu action, and loses compile-time exhaustiveness checking — far exceeds the Story's one-item scope."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/types.ts:226-230"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/types.ts:319"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/webview-host.ts:528-559"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts:500"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-wiring.ts:54-76"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/__tests__/board-icon.test.ts:42"
+    }
+  ]
+}

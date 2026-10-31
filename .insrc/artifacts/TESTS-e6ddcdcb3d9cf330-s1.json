@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "cf2a25ef597bc8dc4bb9e68805ff3b974648027ac8f38da8d11ad5e6056c8af6",
+        "at": "2026-10-31T03:29:15.174Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s1",
+    "createdAt": "2026-10-31T03:25:16.622Z",
+    "updatedAt": "2026-10-31T03:29:15.124Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "71e57f57c",
+        "ranAt": "2026-10-31T03:29:15.124Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+                "title": "selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+                "title": "selected-change packet preserves deletion rename and non-textual limits without invented ranges",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "derived tasks: pinned dependencies, S/M/L sizes and complete selected-change attribution",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+                "title": "derived tasks: pinned dependencies, S/M/L sizes and complete selected-change attribution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ordinary results: required evidence, coverage strength, supported severity and nonblocking advice",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+                "title": "ordinary results: required evidence, coverage strength, supported severity and nonblocking advice",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 980,
+            "titles": [
+              {
+                "title": "selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes",
+                "result": "pass"
+              },
+              {
+                "title": "selected-change packet preserves deletion rename and non-textual limits without invented ranges",
+                "result": "pass"
+              },
+              {
+                "title": "derived tasks: pinned dependencies, S/M/L sizes and complete selected-change attribution",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary results: required evidence, coverage strength, supported severity and nonblocking advice",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

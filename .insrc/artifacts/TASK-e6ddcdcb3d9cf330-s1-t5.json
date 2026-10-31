@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87546dcd-7f3e-4731-a5ad-edb10fa258a3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T03:14:09.432Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify review evidence policy and focused compatibility",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ae4fa495ed347a39d011a02fd91aa29945bdcd60051f5240dd1e42139bc89cef",
+        "at": "2026-10-31T03:14:09.432Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T03:14:09.433Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify review evidence policy and focused compatibility",
+    "summary": "Complete shared prompt/result-policy fixtures and focused first-attempt failure/compatibility checks. Cover meaningful implementation, test coverage and target-convention evidence in both reviewer routes; do not expand into coding or build-validation changes, coverage instrumentation or broad live benchmarks.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "Body-only regressions require implementation evidence; missing graph/run records and unsupported verification remain limitations, not fabricated HIGH/MED or false pass.",
+      "Passing files with unused helpers do not prove executed assertions. Revision-mismatched test results cannot establish reviewed behavior.",
+      "Review fixtures cover Python/JS/TS/Go/JVM conventions/verification limits, encapsulation and responsibility boundaries, readability extremes, local/fallback naming and approved-framework/native fallback; optional taste/framework advice does not request changes. These are focused review-input/result fixtures, not a language execution benchmark or new test adapters.",
+      "Shared prompt and result normalization apply equivalently across daemon/controller and supported planned/standalone/bugfix entrypoints; no separate coding/build validation adapter changes are included.",
+      "Affected backend/provider/CR regression checks and production build pass. Preserve early actual live evidence unless a changed prerequisite or failure requires a targeted rerun; no repeated broad model sweep, automatic extra review rounds or legacy-engine deletion."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage"
+      },
+      {
+        "level": "unit",
+        "name": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback"
+      },
+      {
+        "level": "integration",
+        "name": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes"
+      },
+      {
+        "level": "smoke",
+        "name": "deployable task review: production build and affected provider/backend/CR regressions with legacy/design routing preserved"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

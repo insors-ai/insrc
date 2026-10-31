@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f7027f33-3856-49f8-9c03-2ea44689e1b2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T03:14:09.430Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish task-based CR records with version-aware readers",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d86e6a0ce51a3dc004002123ddd343f59f68c67d10f823ad384d7c368ec02811",
+        "at": "2026-10-31T03:14:09.430Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T03:14:09.430Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish task-based CR records with version-aware readers",
+    "summary": "Reuse the existing CR identity and canonical round writer for a version-2 task-based body, with its own validation/rendering and version-aware read/gate handling. Complete publication of the early task assessment without another model call where its checkpoint is compatible.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "New task-based CRs validate without fabricated DimensionResult fields or invocation of the legacy dimension/chunk engine; version-1 records keep their existing interpretation.",
+      "Permanent summaries retain selected scope, reviewer provenance, source-attempt attribution, findings, coverage strength, limitations and advice without copying full tool transcripts.",
+      "Publish idempotently by review-id/attempt and mark the attempt terminal only after the CR is durable; failures retain task results and pending publication.",
+      "New-format failed/incomplete/changes_requested results and unknown versions cannot become pass/no-review success; task-only pass is not whole-story signoff. Do not implement S3 approval cleanup. S1 changes only version/scope interpretation; approval-event wiring and deletion remain S3.",
+      "Show the early real assessment and its checkpoint projected into a readable canonical CR; reuse the recorded result rather than automatically re-review the subject."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "task-based CR: version-2 validation/rendering and version-1 compatibility without fabricated dimensions"
+      },
+      {
+        "level": "integration",
+        "name": "CR publication: idempotent scoped summary and retained checkpoint on publication failure"
+      },
+      {
+        "level": "integration",
+        "name": "CR readers: partial task scope, incomplete/failed results and unknown versions cannot satisfy story review"
+      },
+      {
+        "level": "live",
+        "name": "early installed review publication: saved actual assessment becomes canonical CR without another model review"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

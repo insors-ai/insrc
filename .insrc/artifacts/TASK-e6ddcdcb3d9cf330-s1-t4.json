@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-592b73ae-7f17-424e-b3e9-492cf82cefdb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T03:14:09.431Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Connect controller review to the same task coordinator",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4162f1148ff8a6204c5a6a6741f234a126f4925851df7e8ddcba0145609a285f",
+        "at": "2026-10-31T03:14:09.431Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T03:14:09.432Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Connect controller review to the same task coordinator",
+    "summary": "Add controller assignment/result exchange over the same admission, result validation, checkpoint and CR contracts. Preserve actual other-party routing and the explicit disconnect distinction; leave full multi-worker integration to S3.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Controller-built code routes to daemon review; daemon-built code routes to the actual controller. Caller-provided party labels cannot bypass that selection.",
+      "Controller receives one assignment at a time and submits ordinary feedback through daemon validation/writes; a valid result returns the next assignment or completed metadata.",
+      "An identical accepted submission replay is idempotent; wrong-party/task, conflicting replay and missing-checkpoint requests produce actionable errors without mutation.",
+      "Controller disconnect retains completed tasks and stops its unfinished execution; daemon reviewer work outlives the submitting request. Explicit recovery selection remains S2, actual session-thread integration/concurrency cleanup remains S3.",
+      "Equivalent assessments on both routes produce equivalent status, scoped results and CR content, with actual reviewer provenance retained."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "controller parity: actual independent-party routing and equivalent assignment/result/CR semantics"
+      },
+      {
+        "level": "integration",
+        "name": "controller submissions: replay idempotency, conflicting/foreign result refusal and missing-checkpoint errors"
+      },
+      {
+        "level": "integration",
+        "name": "review disconnect: stop controller work and retain completed tasks while daemon reviewer outlives submitter"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

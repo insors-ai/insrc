@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "6f2519ca9179955d5f9d1dd76cb4810d1256a792a240ef21033ff3a0c8d0d9df",
+        "at": "2026-10-31T03:30:46.296Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-6db03d8b-45d3-40e3-b1b6-322180c8436a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T03:25:16.622Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s1",
+    "revision": 2,
+    "updatedAt": "2026-10-31T03:29:15.124Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-committed-work-task-checkpoints"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented selected-change packet, pinned document/Plan and ordinary task-result validation, with host-bound evidence and finding scope. Added a reproduced regression and correction so joined Git hunks cannot include unchanged context in selected changed ranges. No runtime review execution or checkpoint writes are introduced in Task 1.",
+    "testRecord": {
+      "md": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:29:15.124Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:29:15.124Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/packet.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:29:15.124Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:29:15.124Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/sources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:29:15.124Z"
+      }
+    ],
+    "commit": "71e57f57c"
+  },
+  "citations": []
+}

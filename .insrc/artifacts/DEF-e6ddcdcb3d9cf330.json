@@ -1,0 +1,434 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1793385636843-f7iv6d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-30T18:42:58.122Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 141278,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2fea8b8d28cea7a783b137294d447318cf9aa55ed7a3e940201bda6e317b07f7",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 3,
+          "low": 11
+        },
+        "at": "2026-10-30T18:54:02.162Z",
+        "report": {
+          "entityId": "DEF-e6ddcdcb3d9cf330",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-7ac90eb5a5736f2efee2d10781799f9d"
+        }
+      },
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-30T18:54:02.164Z"
+      }
+    }
+  },
+  "body": {
+    "title": "Review committed work with task checkpoints",
+    "flavor": "enhancement",
+    "problem": "Code review is difficult to complete reliably when its scope is inferred from repository state, its execution depends on a long-lived request, and interrupted or repeated reviews cannot clearly distinguish completed work from work still outstanding. Developers need useful feedback on the changes they submitted, correlated with the intended behavior and tests, without losing progress or replaying completed work after a disconnection. The prior replacement was rolled back before proving that basic review interaction, leaving an existing review path that does not provide the newly agreed task-oriented execution and recovery behavior.",
+    "summary": {
+      "prose": "Review a story or task against its submitted committed changes, requirements and tests without holding a connection open. Preserve completed task feedback across interruptions and re-reviews, publish the result in the existing code-review record, and clean up temporary history when the story build is approved.",
+      "audience": "product"
+    },
+    "nonGoals": [
+      {
+        "text": "Reintroduce the rolled-back investigation engine, evidence ledgers, native qualification or activation proof machinery.",
+        "rationale": "The user explicitly requested a fresh, simpler review design after complete rollback."
+      },
+      {
+        "text": "Build a replacement session-threading framework or assume another branch is already merged.",
+        "rationale": "The user identified session-per-thread work in another branch; this epic integrates with its actual lifecycle contract."
+      },
+      {
+        "text": "Review uncommitted changes, infer scope from generic HEAD differences, or save partial-task checkpoints.",
+        "rationale": "The user requires a committed review set, submitted scope and completed-task checkpoints."
+      },
+      {
+        "text": "Replace design-artifact review, add a new artifact type, or automatically approve builds.",
+        "rationale": "This change concerns code review and reuses the existing CR and human BUILD approval flow."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Existing review providers and task contracts are reuse candidates; exact API changes are design work, not established compatibility.",
+        "confidence": "high",
+        "source": "c2"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Submitter supplies a functional summary, committed Story/LLD/Plan references, a mandatory commit packet with explicit review commits and scoped files/segments, and complete test files/cases/results. Every submitted change belongs to the review set. Submitted changes alone define scope; surrounding reads and test execution are at reviewer discretion. Derive dependencies and attribution from existing documents rather than duplicating input.",
+        "type": "stakeholder",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "A review-id identifies one story/task scope across fixes; attempts are sequential. Each attempt pins its committed code/documents and stores header metadata, submitted packet and review-response in one project-local .insrc/tmp/.../<review-id>.json file containing all attempts.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k3",
+        "text": "Return promptly and review in the background independently of controller connection lifetime. The controller polls the checkpoint. Process tasks serially in dependency order within a review; allow concurrent different review-ids and reject a second active request for the same id.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k4",
+        "text": "Checkpoint only completed tasks. Explicit controller retrigger recovers an interrupted attempt without repeating completed tasks. Terminal failed/incomplete tasks are reconsidered only in subsequent attempts, whose scope the reviewer assesses using full history. Review continues to remaining tasks after findings, failures or incomplete results.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k5",
+        "text": "Per-task S/M/L time limits are 5/10/15 minutes; timeout is incomplete and does not stop remaining tasks. Task and attempt statuses are pending, running, passed, changes_requested, incomplete, failed. HIGH/MED request changes and LOW-only may pass; terminal aggregate precedence is failed, incomplete, changes_requested, passed.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k6",
+        "text": "Preserve builder/reviewer independence with identical behavior for daemon and controller reviewer routes. Update existing CR after each completed attempt, retaining findings and required scope/result data. Delete all story-related review checkpoints only upon that story BUILD approval after permanent CR preservation.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k7",
+        "text": "Reuse existing provider/task/artifact infrastructure and integrate the separately developed session-thread lifecycle. Do not reintroduce the retired engine as a prerequisite. Prove one useful installed end-to-end review before expanding recovery and integration work.",
+        "type": "stakeholder",
+        "source": "c3"
+      },
+      {
+        "id": "k8",
+        "text": "Cloud model calls continue through installed CLI providers; preserve existing daemon-owned storage and IPC boundaries.",
+        "type": "convention",
+        "source": "c4"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Get a useful background review of submitted committed work",
+        "userValue": "Submit a story or task, receive independent feedback correlated with requirements and tests, and observe progress without waiting on a long request.",
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A submitter has a story/task summary, committed requirements/design/plan references, complete test details and an explicit commit packet",
+            "when": "the review is submitted",
+            "then": "only specified changes belonging to those review commits are admitted; missing or inconsistent scope fails explicitly without a HEAD-based fallback or redundant dependency input.",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "An admitted review identifies its scope and pinned input",
+            "when": "execution begins",
+            "then": "submission promptly returns its review-id, attempt, checkpoint path and status; work runs independently of the submitting connection, and a controller can poll the JSON file.",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "A story review contains multiple Plan tasks or a per-task review selects one",
+            "when": "the reviewer proceeds",
+            "then": "tasks are derived and reviewed serially in dependency order; the reviewer correlates changes with pinned requirements/design, assesses submitted test coverage, and may inspect surrounding context or execute tests.",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "A task is being reviewed",
+            "when": "it completes or reaches its S/M/L limit",
+            "then": "a completed-task result is saved atomically under the attempt's header/submitted/review-response sections; S/M/L limits are 5/10/15 minutes, timeout records incomplete and review continues, and no partial-task checkpoint is treated as completed work.",
+            "operationalizes": [
+              "k2",
+              "k4",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "Review tasks produce findings or execution outcomes",
+            "when": "the attempt finishes",
+            "then": "task/attempt results use the agreed enum, HIGH/MED require changes, LOW-only can pass, aggregate precedence is failed then incomplete then changes_requested then passed, and the existing CR captures required results and findings.",
+            "operationalizes": [
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "Either the controller or daemon built the reviewed code",
+            "when": "the other party performs a real end-to-end review",
+            "then": "both reviewer routes use the same scope, task order, statuses, checkpoints and CR behavior; one actual useful evidence-backed review is demonstrated before downstream expansion, without bringing back qualification machinery.",
+            "operationalizes": [
+              "k6",
+              "k7",
+              "k8"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Obtain an independent, scoped review that assesses functional correctness and test coverage without keeping a request open."
+          },
+          {
+            "statement": "Observe durable progress at completed-task boundaries and an honest terminal result."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Recover interruptions and re-review fixes using the same review history",
+        "userValue": "Keep completed review work after interruption and use earlier feedback to focus subsequent reviews of fixes.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "An attempt is interrupted after one or more task checkpoints",
+            "when": "the controller explicitly retriggers that review-id and attempt",
+            "then": "review uses the original pinned code/documents and saved packet, preserves completed task results, and restarts only unfinished work without automatically resuming after daemon startup.",
+            "operationalizes": [
+              "k2",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A completed attempt includes feedback, failed or incomplete tasks",
+            "when": "a sequential new attempt is submitted for the same story/task scope",
+            "then": "the review-id stays stable, the new attempt pins its own submitted commits/documents, prior attempt sections remain available, and the reviewer assesses re-review scope using the entire history.",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "A task already ended as failed or incomplete in an attempt",
+            "when": "same-attempt recovery or subsequent-task execution occurs",
+            "then": "that terminal task is not retried within the same attempt; only a later attempt can reconsider it and remaining tasks continue.",
+            "operationalizes": [
+              "k4",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "An attempt is retriggered or re-review finishes",
+            "when": "the controller reads progress and the CR",
+            "then": "the returned metadata and checkpoint identify the correct attempt and preserved/completed work, and each completed attempt refreshes the existing CR without presenting old feedback as a new review.",
+            "operationalizes": [
+              "k2",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Recover only interrupted work and retain the original attempt input."
+          },
+          {
+            "statement": "Re-review fixes with prior feedback while preserving distinct attempt history."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Run independent reviews concurrently and clean up after story approval",
+        "userValue": "Multiple sessions can review independent work safely, and temporary review history is removed only after permanent results are retained and the story build is approved.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "One review-id is active",
+            "when": "another request targets the same review-id",
+            "then": "the second request receives an explicit already-running error and cannot create duplicate task execution or checkpoint writers.",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "Different sessions submit different review-ids",
+            "when": "reviews execute concurrently and a submitting session disconnects",
+            "then": "independent reviews can continue without shared checkpoint corruption or a global review queue; execution integrates with the actual session-thread lifecycle rather than reimplementing it, and disconnect does not stop admitted work.",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "A story has task-review and story-review checkpoint files and preserved CR results",
+            "when": "the story BUILD approval succeeds",
+            "then": "all checkpoints belonging to that story are deleted only after required permanent CR data is retained; earlier task validation/approval, review completion, or rejected BUILD approval does not trigger cleanup.",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "The new review flow is ready to replace normal code-review execution",
+            "when": "entrypoints and BUILD lifecycle are exercised",
+            "then": "both reviewer parties behave identically through normal requests and CR/approval integration, design-artifact review remains unaffected, and tests prove committed scope, interruption/re-review, duplicate rejection and disconnect behavior without reviving the retired engine.",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k3",
+              "k4",
+              "k5",
+              "k6",
+              "k7",
+              "k8"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Allow concurrent independent reviews while rejecting duplicate execution of one review-id."
+          },
+          {
+            "statement": "Retain permanent code-review results and remove temporary checkpoints on story BUILD approval."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261030e6ddcdcb:S001:FR001",
+          "statement": "Obtain an independent, scoped review that assesses functional correctness and test coverage without keeping a request open.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261030e6ddcdcb:S001:FR002",
+          "statement": "Observe durable progress at completed-task boundaries and an honest terminal result.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261030e6ddcdcb:S002:FR001",
+          "statement": "Recover only interrupted work and retain the original attempt input.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261030e6ddcdcb:S002:FR002",
+          "statement": "Re-review fixes with prior feedback while preserving distinct attempt history.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261030e6ddcdcb:S003:FR001",
+          "statement": "Allow concurrent independent reviews while rejecting duplicate execution of one review-id.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261030e6ddcdcb:S003:FR002",
+          "statement": "Retain permanent code-review results and remove temporary checkpoints on story BUILD approval.",
+          "scope": "item",
+          "itemRef": "s3"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "stakeholder",
+      "ref": "Current conversation: sequential code-review design clarifications accepted by the user through 2026-10-31",
+      "quotedText": "make it mandatory to create a commit packet before calling code review."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "Scope discovery: existing code-review runner, task contracts, request handler and review-session providers",
+      "quotedText": "Existing task lookup and provider review sessions are available; some lifecycle symbols require later source inspection."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/ROLLBACK.md",
+      "quotedText": "prior approvals do not authorize restarting the abandoned implementation."
+    },
+    {
+      "id": "c4",
+      "kind": "convention",
+      "ref": "AGENTS.md",
+      "quotedText": "No direct cloud REST calls from our process."
+    }
+  ]
+}

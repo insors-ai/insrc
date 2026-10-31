@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-31d0566c-62f3-4e3f-a986-0e54171f015e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T03:14:09.428Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run a useful task review with a durable checkpoint",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a95bacfefc15eca009168bd9a61ae352933d4a53d14a00713c8600ef4b837fc7",
+        "at": "2026-10-31T03:14:09.428Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T03:14:09.429Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run a useful task review with a durable checkpoint",
+    "summary": "Implement the smallest host-owned task execution path over existing reviewer providers: short admission, atomic JSON, per-task deadline and serial continuation. Exercise an actual useful installed review early, recording its assessment/checkpoint; permanent CR completion remains explicitly pending until t3. Keep code-task tool access distinct from unchanged design-review defaults.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "A fresh request writes initial header/submitted input and returns id/attempt/path/status without waiting for model review; duplicate active id refuses before provider use.",
+      "One task assessment is validated and atomically saved before the next task begins; the controller can read valid JSON while daemon work runs.",
+      "One deadline covers exploration/tests/output validation: S/M/L 5/10/15 minutes; timeout is incomplete, provider/invalid-result error failed, remaining tasks continue and no automatic full-task retry occurs.",
+      "Code-task evidence access reads supplied committed references and permits relevant target tests through supported existing permissions; unsupported routes remain explicit and design-review defaults are not relaxed.",
+      "Obtain one real evidence-backed assessment/checkpoint on a small selected committed subject. Label CR publication pending until t3; do not claim completed review or task approval from a mock. If daemon deployment is required, stop at that operational prerequisite rather than building downstream machinery to avoid the live test. The t3 publication seam consumes this retained result without implementing S2 recovery selection."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion"
+      },
+      {
+        "level": "integration",
+        "name": "task execution: checkpoint before next task, one size-based deadline, failure continuation and no automatic retry"
+      },
+      {
+        "level": "integration",
+        "name": "code-task provider tools: committed reads, permitted target tests and unchanged design-review defaults"
+      },
+      {
+        "level": "live",
+        "name": "early installed review: useful evidence-backed task assessment and durable checkpoint with CR publication explicitly pending"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

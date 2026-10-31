@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bf75a457-4a18-4d96-ba93-ac1a0e81ed58",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T03:14:09.425Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate selected-change packets and ordinary task results",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2dca3cdc6b07ec91b806d72c190ab532fb7d9bb5c7d75e0467c6091bc06a6850",
+        "at": "2026-10-31T03:14:09.426Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T03:14:09.427Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate selected-change packets and ordinary task results",
+    "summary": "Add the minimal S1-owned sc1/sc2/sc3 types and validators, committed document/change lookup and derived task assignments. Keep the submitted file/segment selection authoritative; commits are lookup pointers. Validate ordinary findings, coverage strength, limitations and advice without introducing ledger aliases or proof machinery.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Selected segments resolve through their supplied commit/parent pointers; unrelated same-commit changes never enter scope, and no final/head commit is required.",
+      "Committed Story/LLD/Plan and complete tests are validated once; assignments derive task order, S/M/L size and attribution from pinned inputs without losing selected changes.",
+      "Ordinary task-result validation prevents an empty findings list or missing evidence from becoming a false pass; optional advice remains separate.",
+      "Types retain a single attempt collection and version-2 CR distinction; no additional persisted authority or coding/build-validation changes."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes"
+      },
+      {
+        "level": "unit",
+        "name": "derived tasks: pinned dependencies, S/M/L sizes and complete selected-change attribution"
+      },
+      {
+        "level": "unit",
+        "name": "ordinary results: required evidence, coverage strength, supported severity and nonblocking advice"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

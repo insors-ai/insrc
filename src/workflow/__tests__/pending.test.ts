@@ -152,6 +152,28 @@ test("listPendingArtifacts lists a pending BUILD record whose Story has a code r
 	}
 });
 
+test('ISSUE-6dbf14435972af7a: EXT and AMD records are listed while pending (AMD with no mdPath, decided via its own status)', () => {
+	const repo = fixtureRepo({
+		[`EXT-${HASH}-s1.json`]: { meta: buildMeta(), body: { scope: 'more' } },
+		[`AMD-${HASH}-1.json`]: { id: `AMD-${HASH}-1`, epicHash: HASH, status: 'pending' },
+		[`AMD-${HASH}-2.json`]: { id: `AMD-${HASH}-2`, epicHash: HASH, status: 'applied' },
+		[`CR-${HASH}-s1.json`]: crRecord(),
+	});
+	try {
+		const list = listPendingArtifacts(repo);
+		const ids = list.map(a => a.artifactId);
+		assert.ok(ids.includes(`EXT-${HASH}-s1`), 'a pending EXT is listed');
+		assert.ok(ids.includes(`AMD-${HASH}-1`), 'a pending AMD is listed');
+		assert.ok(!ids.includes(`AMD-${HASH}-2`), 'an applied AMD is not pending');
+		const amd = list.find(a => a.artifactId === `AMD-${HASH}-1`)!;
+		assert.equal(amd.kind, 'AMD');
+		assert.equal(amd.mdPath, '', 'an AMD has no document: the pane opens it by id');
+		assert.equal(amd.title, `Amendment AMD-${HASH}-1`);
+		const ext = list.find(a => a.artifactId === `EXT-${HASH}-s1`)!;
+		assert.match(ext.mdPath, /S?001[\\/]EXT\.md$/, 'an EXT resolves its EXT.md');
+	} finally { cleanup(repo); }
+});
+
 test('ISSUE-16b8d3d50f14fc1d: a standalone BUILD record is listed WITHOUT a CR sibling, and resolves its BUILD.md path; the CR-sibling gate still binds non-standalone BUILDs', () => {
 	// Standalone, no CR sibling: listed, with its md path resolved via the marker.
 	const solo = fixtureRepo({
@@ -195,11 +217,10 @@ test('listPendingArtifacts leaves out a tracked-epic BUILD record with no code r
 			assert.deepEqual(listPendingArtifacts(done).map(a => a.kind), ['CR'], JSON.stringify(stamp));
 		} finally { cleanup(done); }
 	}
-	// The kinds that stay out, unapproved and with a code review record of the same suffix.
+	// The kinds that stay out, unapproved and with a code review record of the same suffix:
+	// STUB and TESTS stay excluded (ISSUE-6dbf14435972af7a now lists EXT and AMD).
 	const others = fixtureRepo({
-		[`EXT-${HASH}-s1.json`]: { meta: buildMeta(), body: {} },
 		[`STUB-${HASH}-s1.json`]: { meta: buildMeta(), body: {} },
-		[`AMD-${HASH}-1.json`]: { id: `AMD-${HASH}-1`, status: 'pending' },
 		[`TESTS-${HASH}-s1.json`]: { meta: buildMeta(), body: {} },
 		[`CR-${HASH}-s1.json`]: crRecord(),
 	});

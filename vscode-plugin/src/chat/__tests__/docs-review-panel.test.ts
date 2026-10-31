@@ -5660,6 +5660,36 @@ test('ISSUE-7fa297efd4bd1c59: quiet (chat-presented) opens accumulate and ride `
   assert.equal(renderShellFor(SHELL_BASELINE.nonce).includes('insrc-rv-presented'), true, 'the shell carries the presented strip element');
 });
 
+test('ISSUE-6dbf14435972af7a: the pane polls the pending list and re-renders the open document when its pending membership changes externally (e.g. approved from the chat)', async () => {
+  const timers: Array<() => void> = [];
+  const setTimer = (fn: () => void): { cancel(): void } => {
+    timers.push(fn);
+    return { cancel: () => { const i = timers.indexOf(fn); if (i >= 0) timers.splice(i, 1); } };
+  };
+  let pendingList: DocsArtifactSummary[] = [{ id: 'LLD-abc-s7', kind: 'LLD', title: 't', status: 'pending' }];
+  const fc = fakeChannel();
+  const { client } = fakeClient({ pending: () => pendingList });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client, pollTimer: setTimer, pollMs: 10 });
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' });
+  await tick(); await tick();
+  const before = fc.posted.filter((p) => p.payload.type === 'docs-content').length;
+  assert.ok(before >= 1);
+  // An external decision removes the artifact from the pending list; fire the poll tick.
+  pendingList = [];
+  timers.splice(0).forEach((fn) => fn());
+  await tick(); await tick(); await tick(); await tick();
+  const contents = fc.posted.filter((p) => p.payload.type === 'docs-content');
+  assert.ok(contents.length > before, 'the open document was re-read when its pending membership changed');
+  const last = contents.at(-1)!;
+  assert.equal(last.payload.artifactId, 'LLD-abc-s7');
+  assert.equal(last.payload['readOnly'], true, 'decided elsewhere: the outcome is shown, no decision buttons');
+  // The list was re-posted without the decided artifact.
+  const lists = fc.posted.filter((p) => p.payload.type === 'docs-list');
+  assert.deepEqual((lists.at(-1)!.payload as { artifacts: unknown[] }).artifacts, []);
+  host.dispose();
+  assert.equal(timers.length, 0, 'dispose cancels the poll');
+});
+
 test('ISSUE-7fa297efd4bd1c59: the shell renders the presented strip only for more than one presented document (rvPresented guard)', () => {
   const html = renderShellFor(SHELL_BASELINE.nonce);
   assert.ok(html.includes('function rvPresented(list)'), 'the strip renderer ships in the shell script');

@@ -1214,8 +1214,11 @@ export async function handleInsrcPresent(
 	try {
 		const pending = await pendingWorkflow({ repo }, deps);
 		if ('error' in pending) return err(`insrc_present: ${pending.error}`);
-		// A record with no document file (an empty mdPath) cannot be shown, so it is not presentable.
-		const openable = pending.artifacts.filter((a) => a.mdPath !== '');
+		// Every pending record is presentable: document-backed ones (a non-empty mdPath) by
+		// path, and document-less ones (an empty mdPath, e.g. an AMD amendment) by artifact
+		// id — the review pane opens those through the daemon's evidence read
+		// (ISSUE-6dbf14435972af7a).
+		const openable = pending.artifacts;
 		// A name that matches more than one document (a bare `PLAN.md` among several Stories') is
 		// ambiguous: it is reported as not presented rather than guessed at.
 		const presented = names.filter((n) => openable.filter((a) => namesPending(n, a)).length === 1);

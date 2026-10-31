@@ -60,6 +60,18 @@ export interface DocsReviewHostDeps {
   readonly watchDocument?: ((relPaths: readonly string[], onChange: () => void) => { dispose(): void }) | undefined;
   /** The timer for the quiet period after a file change; setTimeout by default. */
   readonly setTimer?: ((fn: () => void, ms: number) => { cancel(): void }) | undefined;
+  /**
+   * ISSUE-6dbf14435972af7a: how often the pending list is re-read while the pane is alive,
+   * so a decision made on another surface (e.g. insrc_workflow_approve in the chat) is
+   * reflected in the list and in the open document's buttons. Default 5000 ms; 0 disables.
+   */
+  readonly pollMs?: number | undefined;
+  /**
+   * ISSUE-6dbf14435972af7a: the timer the pending-list poll runs on. Separate from
+   * `setTimer` (the quiet period) so the two never share a test's timer queue; defaults to
+   * a real timer, NOT to `setTimer`.
+   */
+  readonly pollTimer?: ((fn: () => void, ms: number) => { cancel(): void }) | undefined;
 }
 
 /** How long the open document's files must be quiet before it is read again. */
@@ -1288,6 +1300,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // pane opened, in order. The openSeq guard below still shows the LAST presented document;
   // this list is what keeps the earlier ones reachable (the webview renders them as a strip).
   let presentedIds: string[] = [];
+  // ISSUE-6dbf14435972af7a: the pending-list poll (see startPoll below) and the pending ids
+  // it saw on the previous tick, so a change in the OPEN document's membership re-renders it.
+  let pollTimer: { cancel(): void } | undefined;
+  let prevPendingIds: ReadonlySet<string> | undefined;
   // The nonce of the shell last rendered: an HTML companion's scripts run in its frame only
   // when they carry it.
   let shellNonce = '';
@@ -1321,6 +1337,41 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq !== refreshSeq) return;
       postUnavailable(err);
     }
+  }
+
+  /**
+   * ISSUE-6dbf14435972af7a: decisions made outside the pane (the chat's
+   * insrc_workflow_approve, an HLD amendment through approveAmendmentById) reach this pane
+   * only through the file watch on the OPEN document. While the pane is alive, poll the
+   * pending list so the list itself and the open document's buttons always follow the
+   * artifact's current state, whichever surface decided. When the open document's
+   * membership changes, it is re-read once, which flips its bar to the outcome.
+   */
+  function startPoll(): void {
+    pollTimer?.cancel();
+    const ms = deps.pollMs ?? 5000;
+    if (ms <= 0) return;
+    const schedule = deps.pollTimer ?? ((fn: () => void, wait: number) => {
+      const t = setTimeout(fn, wait);
+      return { cancel: () => clearTimeout(t) };
+    });
+    const tickPoll = (): void => {
+      pollTimer = schedule(() => {
+        if (disposed) return;
+        // Snapshot BEFORE the refresh: the first tick then compares the open-time
+        // membership (still in `pending`) with the post-refresh one.
+        const before = prevPendingIds ?? new Set(pending.keys());
+        void refreshPending().then(() => {
+          if (disposed) return;
+          const now = new Set(pending.keys());
+          prevPendingIds = now;
+          const o = opened;
+          if (o !== undefined && now.has(o.artifactId) !== before.has(o.artifactId)) void reopen();
+          tickPoll();
+        });
+      }, ms);
+    };
+    tickPoll();
   }
 
   /** A failed pending read: an empty list plus the inline unavailable notice. */
@@ -2410,6 +2461,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     channel.onDidDispose(() => {
       disposed = true;
       channel = undefined;
+      pollTimer?.cancel();
+      pollTimer = undefined;
       pending.clear();
       setOpened(undefined);
     });
@@ -2418,6 +2471,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     // The webview boot ping also triggers refreshPending; post one now so a fast
     // consumer (test double) sees the list without waiting for the ping.
     void refreshPending();
+    startPoll();
   }
 
   const host: DocsReviewHost = {
@@ -2433,6 +2487,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     },
     dispose(): void {
       disposed = true;
+      pollTimer?.cancel();
+      pollTimer = undefined;
       channel?.dispose();
       channel = undefined;
       pending.clear();

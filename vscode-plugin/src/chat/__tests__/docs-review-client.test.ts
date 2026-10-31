@@ -34,6 +34,42 @@ const PENDING = {
   ],
 };
 
+test('ISSUE-6dbf14435972af7a: content() of a document-less artifact id (no mdPath, e.g. AMD) falls back to workflow.deliveryEvidence; pendingDocuments() keeps it', async () => {
+  const pending = {
+    artifacts: [
+      ...PENDING.artifacts,
+      { artifactId: 'AMD-abc123-1', kind: 'AMD', title: 'Amendment AMD-abc123-1', mdPath: '', openQuestionCount: 0, state: 'pending' },
+    ],
+  };
+  const ev = { artifactId: 'AMD-abc123-1', kind: 'AMD', meta: {}, body: {}, renderedMarkdown: '# Amendment\n' };
+  const view = { renderedMarkdown: '# lld', openQuestions: [], approvable: true };
+  const { client, calls } = fakeIpc((m, params) => {
+    if (m === 'workflow.pending') return pending;
+    if (m === 'workflow.deliveryEvidence') return ev;
+    if (m === 'workflow.artifactContent') {
+      // A document-less id must never reach artifactContent.
+      if (typeof (params as { mdPath?: unknown }).mdPath === 'string' && /^[A-Z]+-[0-9a-f]+/i.test((params as { mdPath: string }).mdPath)) {
+        return { error: 'artifactContent must not be called with a bare artifact id' };
+      }
+      return view;
+    }
+    return { error: 'x' };
+  });
+  const c = createDocsReviewClient(client, { repo: () => '/repo' });
+  const docs = await c.pendingDocuments();
+  assert.ok(docs.some((d) => d.id === 'AMD-abc123-1' && d.mdPath === ''), 'a document-less pending record is presented (by id)');
+  await c.pending(); // populate the id->mdPath map (AMD has none)
+  const out = await c.content('AMD-abc123-1');
+  assert.equal(out.markdown, '# Amendment\n');
+  assert.equal(out.state, 'pending');
+  assert.ok(calls.some((x) => x.method === 'workflow.deliveryEvidence' && (x.params as { artifactId: string }).artifactId === 'AMD-abc123-1'));
+  assert.ok(!calls.some((x) => x.method === 'workflow.artifactContent'), 'artifactContent is not called for a document-less id');
+  // A document-backed id still goes through artifactContent.
+  const lld = await c.content('LLD-abc-s7');
+  assert.equal(lld.markdown, '# lld');
+  assert.ok(calls.some((x) => x.method === 'workflow.artifactContent' && (x.params as { mdPath: string }).mdPath === 'docs/epics/x/S007/LLD.md'));
+});
+
 test('pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)', async () => {
   const { client } = fakeIpc((m) => (m === 'workflow.pending' ? PENDING : { error: 'x' }));
   const c = createDocsReviewClient(client);
@@ -139,18 +175,22 @@ test("docs review client: decide calls 'workflow.reviewDecision' once with the g
   for (const key of ['docPath', 'contentVersion', 'feedback', 'reviewer', 'state']) assert.equal(key in bare, false, `${key} is an absent key`);
 });
 
-test('MED-2: an empty mdPath (unresolvable sentinel) is NOT cached, so content falls back to the raw id (never send "")', async () => {
+test('MED-2: an empty mdPath (unresolvable sentinel) is NOT cached as a path; the id is remembered as document-less and content takes the evidence read (never send "")', async () => {
+  // ISSUE-6dbf14435972af7a: a pending id with an empty mdPath is read through
+  // workflow.deliveryEvidence, not artifactContent with a bare id or an empty string.
   const EMPTY = { artifacts: [{ artifactId: 'LLD-legacy', kind: 'LLD', title: 'legacy', mdPath: '', openQuestionCount: 0, state: 'pending' }] };
   const { client, calls } = fakeIpc((m) => {
     if (m === 'workflow.pending') return EMPTY;
-    if (m === 'workflow.artifactContent') return { artifactId: 'LLD-legacy', kind: 'LLD', renderedMarkdown: 'b', openQuestions: [], approvable: true };
+    if (m === 'workflow.deliveryEvidence') return { artifactId: 'LLD-legacy', kind: 'LLD', meta: {}, body: {}, renderedMarkdown: 'b' };
+    if (m === 'workflow.artifactContent') return { error: 'artifactContent must not be called with a bare or empty id' };
     return { error: 'x' };
   });
   const c = createDocsReviewClient(client);
   await c.pending();
-  await c.content('LLD-legacy');
-  const ac = calls.find((x) => x.method === 'workflow.artifactContent')!.params as { mdPath: string };
-  assert.equal(ac.mdPath, 'LLD-legacy', 'content falls back to the raw id, not ""');
+  const out = await c.content('LLD-legacy');
+  assert.equal(out.markdown, 'b');
+  assert.ok(calls.some((x) => x.method === 'workflow.deliveryEvidence' && (x.params as { artifactId: string }).artifactId === 'LLD-legacy'));
+  assert.ok(!calls.some((x) => x.method === 'workflow.artifactContent'), 'artifactContent is never sent a bare id or ""');
 });
 
 test('every method throws on the daemon { error } arm (never a silent empty result)', async () => {
@@ -234,7 +274,7 @@ test('t2: content() still throws on the daemon { error } arm — unavailable sta
   assert.equal(empty.blocked, false);
 });
 
-test('t2: source-scan — docs-review-client calls exactly its three daemon methods', async () => {
+test('t2: source-scan — docs-review-client calls exactly its four daemon methods', async () => {
   const src = readFileSync(
     join(import.meta.dirname, '..', 'docs-review-client.ts'),
     'utf8',
@@ -242,8 +282,8 @@ test('t2: source-scan — docs-review-client calls exactly its three daemon meth
   const methods = [...src.matchAll(/'(workflow\.[A-Za-z.]+)'/g)].map((m) => m[1]).sort();
   assert.deepEqual(
     [...new Set(methods)],
-    ['workflow.artifactContent', 'workflow.pending', 'workflow.reviewDecision'],
-    'the list, the content and the one decision call; approve and resolveComment are no longer called from here',
+    ['workflow.artifactContent', 'workflow.deliveryEvidence', 'workflow.pending', 'workflow.reviewDecision'],
+    'the list, the content, the evidence read for document-less ids (ISSUE-6dbf14435972af7a) and the one decision call; approve and resolveComment are no longer called from here',
   );
 });
 
@@ -364,7 +404,7 @@ test('docs review client: pending forwards openQuestions and workItemId when the
 });
 
 // Story E20261013e62a9269:S001: what the review presenter reads.
-test("docs review client: pendingDocuments returns each pending document's id and path and skips one with no path", async () => {
+test("docs review client: pendingDocuments returns each pending document's id and path, keeping one with no path (presented by id, ISSUE-6dbf14435972af7a)", async () => {
   const LIST = {
     artifacts: [
       { artifactId: 'LLD-abc-s7', kind: 'LLD', title: 'A', mdPath: '/repo/docs/epics/x/S007/LLD.md', openQuestionCount: 1, state: 'pending' },
@@ -376,6 +416,7 @@ test("docs review client: pendingDocuments returns each pending document's id an
   const c = createDocsReviewClient(client, { repo: () => '/repo' });
   assert.deepEqual(await c.pendingDocuments(), [
     { id: 'LLD-abc-s7', mdPath: '/repo/docs/epics/x/S007/LLD.md' },
+    { id: 'CR-abc-s7', mdPath: '' },
     { id: 'PLAN-abc-s7', mdPath: '/repo/docs/epics/x/S007/PLAN.md' },
   ], "in the daemon's order, the one with no path skipped");
   assert.deepEqual(calls, [{ method: 'workflow.pending', params: { repo: '/repo' } }], 'one call, naming the workspace folder');

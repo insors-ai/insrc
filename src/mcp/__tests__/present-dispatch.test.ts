@@ -91,12 +91,13 @@ test('insrc_present with a resolver that finds no repo answers an error and pres
 	} finally { await daemon.close(); }
 });
 
-test('a pending record with no document file is reported as not pending by the tool and by the chat', async () => {
-	// The tool side: BUILD-abc-S001 is pending but has no .md (an empty mdPath), so it cannot be shown.
+test('ISSUE-6dbf14435972af7a: a pending record with no document file is presented BY ID (the pane opens it through the evidence read)', async () => {
+	// The tool side: BUILD-abc-S001 is pending but has no .md (an empty mdPath) — it is still
+	// presentable by its artifact id, which is how the review pane opens document-less records.
 	const daemon = await fakeDaemon(PENDING);
 	try {
 		const out = await handleInsrcPresent({ documents: ['BUILD-abc-S001'] }, { connect: daemon.connect, resolveRepo: repoIs('/repo') });
-		assert.deepEqual(JSON.parse(text(out)), { presented: [], notPending: ['BUILD-abc-S001'] });
+		assert.deepEqual(JSON.parse(text(out)), { presented: ['BUILD-abc-S001'], notPending: [] });
 	} finally { await daemon.close(); }
 });
 

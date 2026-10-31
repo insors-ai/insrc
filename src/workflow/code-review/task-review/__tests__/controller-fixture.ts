@@ -13,7 +13,7 @@ export async function channel(path:string){
  return{socket,call:<T=unknown>(method:string,params:unknown):Promise<T>=>new Promise((resolve,reject)=>{const id=++next;pending.set(String(id),{resolve:value=>resolve(value as T),reject});socket.write(JSON.stringify({id,method,params,client:{label:'controller-test',pid:process.pid}})+'\n');}),close:()=>socket.destroy()};
 }
 export async function eventually(check:()=>boolean):Promise<void>{const end=Date.now()+10000;while(!check()){if(Date.now()>end)throw new Error('Condition did not complete');await new Promise(resolve=>setTimeout(resolve,10));}}
-export function provider(run:()=>Promise<unknown>):LLMProvider{return{runReviewSession:run} as unknown as LLMProvider;}
+export function provider(run:(prompt:string)=>Promise<unknown>):LLMProvider{return{runReviewSession:run} as unknown as LLMProvider;}
 export async function serve(repo:string,resolveProvider:()=>LLMProvider){
  const path=join(repo,'controller.sock');
  const server=new IpcServer(directDispatch({

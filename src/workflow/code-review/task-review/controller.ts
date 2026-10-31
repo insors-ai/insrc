@@ -6,11 +6,10 @@ import type { TSchema } from '@sinclair/typebox';
 import { getLogger } from '../../../shared/logger.js';
 import { decodeReview, requireReview, TaskReviewInputError, TaskResultSchema } from './contracts.js';
 import type { ReviewCheckpoint, ReviewStatus } from './contracts.js';
-import { deriveTaskAssignments } from './packet.js';
 import type { PlanTask } from '../../artifacts/plan.js';
 import type { TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
-import { assessTaskResult, AttributionSchema, attributionPrompt, directAssignments, taskFailure, taskReferences } from './assessment.js';
+import { assessTaskResult, attributionSchema, attributionPrompt, directReviewAssignments, reviewAssignments, reuseAssessment, taskFailure, taskReferences } from './assessment.js';
 import { normalizeTaskResult } from './results.js';
 import { resultReferences } from './record.js';
 import { assignmentPrompt } from './policy.js';
@@ -49,9 +48,18 @@ export class ControllerTaskReview {
  }
  assignment(owner:ControllerReviewOwner):Promise<ControllerFrame>{return this.queue(owner,()=>this.frame(owner));}
  scope(input:unknown,owner:ControllerReviewOwner):Promise<ControllerFrame>{return this.queue(owner,async()=>{
-  requireReview(!this.assignments&&!directAssignments(this.review.prepared),'scope','Task attribution is not awaiting a response');
+  requireReview(!this.assignments&&!directReviewAssignments(this.review),'scope','Task attribution is not awaiting a response');
   this.checkTime();
-  const assignments=deriveTaskAssignments(this.review.prepared,decodeReview(AttributionSchema,input).tasks);this.checkTime();this.assignments=assignments;
+  let assignments:readonly TaskAssignment[];
+  try{assignments=reviewAssignments(this.review,input);}catch(error){
+   this.cancelTimer?.();this.cancelTimer=undefined;this.started=undefined;delete this.review.attempt.header.activeTaskId;
+   for(const task of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id))){
+    this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(task.id,`Task attribution failed: ${error instanceof Error?error.message:String(error)}`,false)];
+    await persistReview(this.review,this.deps);
+   }
+   this.finished=true;await completeReview(this.review,this.deps);this.retire(false);return this.base('done');
+  }
+  this.checkTime();this.assignments=assignments;
   return this.frame(owner);
  });}
  submit(input:unknown,owner:ControllerReviewOwner):Promise<ControllerFrame>{return this.queue(owner,async()=>{
@@ -96,7 +104,7 @@ export class ControllerTaskReview {
   }
   this.assertOwner(owner);
   if(this.started===undefined){
-   this.started=this.clock();this.assignments??=directAssignments(this.review.prepared);
+   this.started=this.clock();this.assignments??=directReviewAssignments(this.review);
    this.review.attempt.header.status='running';this.review.attempt.header.activeTaskId=task.id;
    await persistReview(this.review,this.deps);
    const expire=()=>{void this.queue(undefined,async()=>{if(this.current()?.id===task.id)await this.expire();}).catch(error=>log.warn({error:String(error)},'Controller deadline could not be persisted'));};
@@ -104,11 +112,23 @@ export class ControllerTaskReview {
    if(this.deps.timer)this.cancelTimer=this.deps.timer(expire,ms);else{const timer=setTimeout(expire,ms);this.cancelTimer=()=>clearTimeout(timer);}
   }
   if(this.remaining()<=0){await this.expire();return this.frame(owner);}
-  if(!this.assignments)return{...this.base('scope'),prompt:attributionPrompt(this.review.prepared,this.review.checkpoint.project),schema:AttributionSchema,remainingMs:this.remaining()};
+  if(!this.assignments)return{...this.base('scope'),prompt:attributionPrompt(this.review.prepared,this.review.checkpoint.project,this.review),schema:attributionSchema(this.review),remainingMs:this.remaining()};
   const assignment=this.assignments.find(value=>value.taskId===task.id)!;
   const refs=await taskReferences(this.deps.sources,this.review.prepared,assignment);this.assertOwner(owner);
   if(this.remaining()<=0){await this.expire();return this.frame(owner);}
-  return{...this.base('task'),taskId:task.id,prompt:assignmentPrompt(this.review.prepared,assignment,refs,this.review.checkpoint.project),schema:assignmentResultSchema(assignment),remainingMs:this.remaining()};
+  if(assignment.reassessment?.action==='reuse'){
+   try{
+    const reused=await reuseAssessment(this.review,assignment,this.deps.sources,refs);this.assertOwner(owner);this.checkTime();
+    this.review.attempt['review-response'].origins=[...(this.review.attempt['review-response'].origins??[]),reused.origin];
+    this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,reused.result];
+   }catch(error){
+    this.assertOwner(owner);this.checkTime();
+    this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(task.id,`Reuse failed: ${error instanceof Error?error.message:String(error)}`,false)];
+   }
+   this.cancelTimer?.();this.cancelTimer=undefined;this.started=undefined;delete this.review.attempt.header.activeTaskId;
+   await persistReview(this.review,this.deps);return this.frame(owner);
+  }
+  return{...this.base('task'),taskId:task.id,prompt:assignmentPrompt(this.review.prepared,assignment,refs,this.review.checkpoint.project,this.review),schema:assignmentResultSchema(assignment),remainingMs:this.remaining()};
  }
  private base(kind:ControllerFrame['kind']):ControllerFrame{
   const response=this.review.attempt['review-response'];

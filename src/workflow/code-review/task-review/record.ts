@@ -67,7 +67,12 @@ export function renderTaskReview(bodyInput: unknown): string {
   if (review.reassessmentSummary) lines.push('', review.reassessmentSummary);
   for (const task of review.tasks) {
    const origin = review.origins?.find(item => item.taskId === task.taskId);
-   if (origin) lines.push('', `Reused task ${task.taskId} feedback from attempt ${origin.sourceAttempt} (${review.reviewer}); not a fresh assessment. ${origin.reason}`);
+   if (origin) {
+    let source=body.reviews.find(candidate=>candidate.reviewId===review.reviewId&&candidate.attempt===origin.sourceAttempt)!;
+    let earlier=source.origins?.find(item=>item.taskId===task.taskId);
+    while(earlier){source=body.reviews.find(candidate=>candidate.reviewId===review.reviewId&&candidate.attempt===earlier!.sourceAttempt)!;earlier=source.origins?.find(item=>item.taskId===task.taskId);}
+    lines.push('', `Reused task ${task.taskId} feedback from attempt ${origin.sourceAttempt} (${source.reviewer}); original assessment attempt ${source.attempt}; not a fresh assessment. ${origin.reason}`);
+   }
    lines.push('', `### ${task.taskId}: ${task.status}`, '', task.summary, '', `Coverage: **${task.testCoverage.assessment}** — ${task.testCoverage.explanation}`, '');
    for (const finding of task.findings) lines.push(`- **${finding.severity}** \`${finding.location}\`: ${finding.message}`, `  ${finding.rationale}`, `  Evidence: ${finding.evidenceReferences.map(ref=>`\`${ref}\``).join(', ')}`);
    if (task.limitations.length) lines.push('', 'Limitations:', '', ...task.limitations.map(note=>`- ${note}`));

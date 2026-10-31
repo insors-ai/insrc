@@ -3,16 +3,15 @@ import { performance } from 'node:perf_hooks';
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider, ReviewSessionOpts } from '../../../shared/types.js';
-import { decodeReview, requireReview } from './contracts.js';
-import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult, ReviewOperation, ReviewStatus } from './contracts.js';
-import { deriveTaskAssignments } from './packet.js';
+import { requireReview } from './contracts.js';
+import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult, ReviewOperation, ReviewStatus, TaskResultOrigin } from './contracts.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import { checkpointPath, saveCheckpoint, loadCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
 import { prepareReviewAdmission } from './admission.js';
 import { assignmentResultSchema } from './result-schema.js';
-import { AttributionSchema, attributionPrompt, directAssignments, taskReferences, assessTaskResult, taskFailure } from './assessment.js';
+import { attributionSchema, attributionPrompt, directReviewAssignments, reviewAssignments, reuseAssessment, taskReferences, assessTaskResult, taskFailure } from './assessment.js';
 import { ControllerTaskReview } from './controller.js';
 import type { ControllerReviewOwner, ControllerFrame } from './controller.js';
 import { completeReview } from './execution.js';
@@ -86,6 +85,7 @@ export class TaskReviewCoordinator {
  isActive(project: string, reviewId: string): boolean { return this.active.has(checkpointPath(project, reviewId)); }
  async settled(project: string, reviewId: string): Promise<void> { await this.active.get(checkpointPath(project, reviewId))?.done; }
  private async run(path: string, checkpoint: ReviewCheckpoint, entry: ReviewAttempt, prepared: PreparedReviewPacket, resolveProvider: () => LLMProvider): Promise<void> {
+  const review:AdmittedReview={path,checkpoint,attempt:entry,prepared};
   const save = this.deps.save ?? saveCheckpoint;
   const now = this.deps.now ?? (() => performance.now());
   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
@@ -108,27 +108,31 @@ export class TaskReviewCoordinator {
    const options = (): ReviewSessionOpts => {
     const remaining = allowance - (now() - started);
     if (remaining <= 0 || cancellation.signal.aborted) throw timeout;
-    return { cwd: checkpoint.project, deadlineMs: remaining, stallMs: remaining, internalRetry: false, signal: cancellation.signal, codeTaskCommands: codeTaskCommands(prepared) };
+    return { cwd: checkpoint.project, deadlineMs: remaining, stallMs: remaining, internalRetry: false, signal: cancellation.signal, codeTaskCommands: codeTaskCommands(prepared, review) };
    };
    let result: TaskReviewResult;
+   let origin:TaskResultOrigin|undefined;
    try {
     result = await Promise.race([expired, (async () => {
      const provider = resolveProvider();
      requireReview(provider.runReviewSession, 'provider', 'Reviewer sessions are unsupported');
      if (!assignments) {
       if (attributionFailure) throw attributionFailure.error;
-      const direct = directAssignments(prepared);
+      const direct = directReviewAssignments(review);
       if (direct) assignments = direct;
       else {
-       const rawScope = await provider.runReviewSession(attributionPrompt(prepared, checkpoint.project), AttributionSchema, options());
+       const rawScope = await provider.runReviewSession(attributionPrompt(prepared, checkpoint.project, review), attributionSchema(review), options());
        options();
-       const derived = deriveTaskAssignments(prepared, decodeReview(AttributionSchema, rawScope).tasks);
+       const derived = reviewAssignments(review, rawScope);
        options(); assignments = derived;
       }
      }
      const assignment = assignments.find(a => a.taskId === task.id)!;
      const references = await taskReferences(this.deps.sources, prepared, assignment);
-     const raw = await provider.runReviewSession(assignmentPrompt(prepared, assignment, references, checkpoint.project), assignmentResultSchema(assignment), options());
+     if(assignment.reassessment?.action==='reuse'){
+      const reused=await reuseAssessment(review,assignment,this.deps.sources,references);options();origin=reused.origin;return reused.result;
+     }
+     const raw = await provider.runReviewSession(assignmentPrompt(prepared, assignment, references, checkpoint.project, review), assignmentResultSchema(assignment), options());
      options();
      const assessed = await assessTaskResult(this.deps.sources, assignment, raw, references);
      options(); // Source resolution and output validation share the same clock.
@@ -141,6 +145,7 @@ export class TaskReviewCoordinator {
     const message = inheritedTimeout ? 'Task could not be attributed because the shared attribution deadline expired.' : timedOut ? `Task exceeded its ${task.size} allowance (${allowance}ms).` : `Reviewer failed: ${error instanceof Error ? error.message : String(error)}`;
     result = taskFailure(task.id, message, timedOut);
    } finally { cancelTimer(); cancellation.abort(); }
+   if(origin)entry['review-response'].origins=[...(entry['review-response'].origins??[]),origin];
    entry['review-response'].tasks = [...entry['review-response'].tasks, result];
    delete entry.header.activeTaskId;
    await save(path, checkpoint); // Never begin the next task before this succeeds.

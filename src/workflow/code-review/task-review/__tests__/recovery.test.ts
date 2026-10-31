@@ -83,13 +83,13 @@ test('publication recovery: saved feedback projects once with zero provider call
 test('retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs',async()=>{
  const f=await fixture();let calls=0;
  try{
-  const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async()=>{calls++;return structuredClone(f.result);}),publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
+  const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async prompt=>{calls++;return prompt.startsWith('Derive task attribution')?{summary:'Assess current input',tasks:[{taskId:'t1',changeIndexes:[0],testIndexes:[0],action:'reassess',reason:'New attempt requires fresh assessment'}]}:structuredClone(f.result);}),publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
   const first=await coordinator.start(f.repo,'metadata',1,f.packet);assert.equal(first.reviewer,'daemon');assert.deepEqual(first.pendingTaskIds,['t1']);await coordinator.settled(f.repo,'metadata');
   const prior=structuredClone(f.read(first.path).attempts[0]);
   const packet={...f.packet,storyId:`STORY-${hash}-s1`,functionalSummary:'New pinned attempt summary'};
   const second=await coordinator.start(f.repo,'metadata',2,packet);assert.equal(second.attempt,2);assert.equal(second.reviewId,first.reviewId);assert.equal(second.path,first.path);assert.equal(second.status,'pending');assert.deepEqual(second.completedTaskIds,[]);await coordinator.settled(f.repo,'metadata');
   const saved=f.read(first.path);assert.deepEqual(saved.attempts[0],prior);assert.equal(saved.attempts[1]!.header.attempt,2);assert.equal(saved.attempts[1]!.header.status,'passed');
-  const done=await coordinator.start(f.repo,'metadata',2,undefined,{operation:'resume'});assert.equal(done.attempt,2);assert.equal(done.status,'passed');assert.deepEqual(done.completedTaskIds,['t1']);assert.equal(calls,2);assert.equal(f.readRecord(`${f.repo}/.insrc/artifacts/CR-${hash}-s1.json`).body.reviews.length,2);
+  const done=await coordinator.start(f.repo,'metadata',2,undefined,{operation:'resume'});assert.equal(done.attempt,2);assert.equal(done.status,'passed');assert.deepEqual(done.completedTaskIds,['t1']);assert.equal(calls,3);assert.equal(f.readRecord(`${f.repo}/.insrc/artifacts/CR-${hash}-s1.json`).body.reviews.length,2);
  }finally{f.cleanup();}
 });
 

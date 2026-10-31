@@ -143,10 +143,10 @@ Run at 2026-10-30T22:10:55.190Z on commit `bdf2ff3ca`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-10-30T22:17:15.855Z on commit `91547cf7e`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-31T04:34:58.752Z on commit `b0ee1536f`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: regen smoke**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/smoke2.log 8/8 branded both shells; /tmp/fix3.log 313 pass, only pre-existing CM-S3/CM-S4 inventory failures (also at pristine /tmp/pristine5); /tmp/build-t6.log build exit 0; /tmp/inv2.mts artifact-theme entries classified-consistent; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/smoke2.log 8/8 both shells; /tmp/fix4.log 311/0; /tmp/build-t6.log build exit 0; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log; /tmp/inv2.mts classified-consistent

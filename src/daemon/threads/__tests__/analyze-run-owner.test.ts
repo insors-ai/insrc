@@ -94,6 +94,7 @@ test("router: analyze.run.status and analyze.run.purge from another session reac
 		sharedWorker: async () => ({ threadId: worker('shared') }),
 		started: () => {}, ended: () => {}, setQueued: () => {},
 		startedOn: id => busy.push(id), endedOn: () => {},
+		liveThreadIds: () => [...workers.values()],
 	};
 	const owners = new Map<string, number>();
 	router.useSessions(sessions, undefined, runId => owners.get(runId));

@@ -123,6 +123,11 @@ export class SessionPool {
 		return [...this.entries.values()].map(e => e.started);
 	}
 
+	/** Every live pool worker's thread id (ISSUE-e587866e: the Router's abort broadcast fallback). */
+	liveThreadIds(): readonly number[] {
+		return this.liveWorkers().map(w => w.threadId);
+	}
+
 	/** One entry per live worker, for status and the idle sweep. */
 	sessions(): readonly SessionWorkerInfo[] {
 		return [...this.entries.values()].map(e => this.info(e));

@@ -154,6 +154,7 @@ test("router thread view: a session worker's queued equals its FIFO length; deta
 		const sessions: RouterSessions = {
 			workerFor: async () => ({ threadId: 721 }), sharedWorker: async () => ({ threadId: 721 }),
 			started: () => {}, ended: () => {}, setQueued: () => {}, startedOn: () => {}, endedOn: () => {},
+			liveThreadIds: () => [721],
 		};
 		h.router.useSessions(sessions);
 		const one = h.ask('x.order', 'q1', { session: A });

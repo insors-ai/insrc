@@ -129,6 +129,7 @@ function harness(): Harness {
 		setQueued: (_s, n) => pool.queued.push(n),
 		startedOn: id => pool.startedOn.push(id),
 		endedOn: id => pool.endedOn.push(id),
+		liveThreadIds: () => [...workers.values(), ...(sharedId >= 0 ? [sharedId] : [])],
 	};
 	router.useSessions(sessions);
 	sharedId = startWorker('shared');
@@ -269,6 +270,88 @@ test("router: workflow.run.abort reaches a worker-owned run's owner as a busy re
 		await h.ask('a2', 'workflow.run.abort', { runId: 'main-run' }, { session: A }).done;
 		assert.deepEqual(h.log.slice(1), ['local workflow.run.abort'], 'a run owned by this thread is aborted here');
 		assert.deepEqual(h.pool.started, [], 'neither went to the session worker');
+	} finally { h.close(); }
+});
+
+/** A minimal router + in-thread fake worker set for the ISSUE-e587866e broadcast tests
+ *  (not the shared harness(): its workers all answer workflow.run.abort unconditionally
+ *  {ok:true}, which cannot exercise a genuinely-unknown-run {ok:false} case). */
+function broadcastHarness(): { router: Router; attach(owns: boolean): number; close(): void } {
+	const registry = new TargetRegistry();
+	const local: RpcHandlers = { 'workflow.run.abort': async () => ({ ok: false }) };
+	const router = new Router({ classOf, registry, routed: new Set<MethodClass>(['session']), local: directDispatch(local), sessions: undefined as never });
+	const ports: MessageChannel[] = [];
+	const stops: (() => void)[] = [];
+	let nextThread = 9000;
+	return {
+		router,
+		attach(owns: boolean): number {
+			const channel = new MessageChannel();
+			ports.push(channel);
+			const rpc: RpcHandlers = { 'workflow.run.abort': async () => ({ ok: owns }) };
+			stops.push(serveRequests(channel.port2, directDispatch(rpc)));
+			const id = nextThread++;
+			router.attach(id, channel.port1);
+			return id;
+		},
+		close(): void {
+			for (const s of stops) s();
+			for (const c of ports) { c.port1.close(); c.port2.close(); }
+		},
+	};
+}
+
+const askOnce = (router: Router, runId: string): Promise<unknown> => new Promise(resolve => {
+	router.forward(
+		{ kind: 'request', requestId: `b-${runId}`, method: 'workflow.run.abort', params: { runId }, stream: false, session: { label: 'mcp', pid: 9999 } },
+		e => { if (e.kind === 'reply') resolve(e.result); },
+	);
+});
+
+test("router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker", { timeout: 10_000 }, async () => {
+	const h = broadcastHarness();
+	try {
+		const strangerAsking = h.attach(false);
+		const owner = h.attach(true);
+		h.router.useSessions({
+			workerFor: async () => ({ threadId: strangerAsking }),
+			sharedWorker: async () => ({ threadId: strangerAsking }),
+			started: () => {}, ended: () => {}, setQueued: () => {}, startedOn: () => {}, endedOn: () => {},
+			liveThreadIds: () => [strangerAsking, owner],
+		}, () => undefined); // board never names an owner
+		assert.deepEqual(await askOnce(h.router, 'ghost'), { ok: true }, 'the owner worker answered true, not the asking session\'s own worker');
+	} finally { h.close(); }
+});
+
+test('router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today\'s behavior for a genuinely unknown run', { timeout: 10_000 }, async () => {
+	const h = broadcastHarness();
+	try {
+		const a = h.attach(false);
+		const b = h.attach(false);
+		h.router.useSessions({
+			workerFor: async () => ({ threadId: a }),
+			sharedWorker: async () => ({ threadId: a }),
+			started: () => {}, ended: () => {}, setQueued: () => {}, startedOn: () => {}, endedOn: () => {},
+			liveThreadIds: () => [a, b],
+		}, () => undefined);
+		assert.deepEqual(await askOnce(h.router, 'nobody-has-this'), { ok: false }, 'no live worker holds it');
+
+		h.router.useSessions({
+			workerFor: async () => ({ threadId: a }),
+			sharedWorker: async () => ({ threadId: a }),
+			started: () => {}, ended: () => {}, setQueued: () => {}, startedOn: () => {}, endedOn: () => {},
+			liveThreadIds: () => [],
+		}, () => undefined);
+		assert.deepEqual(await askOnce(h.router, 'nobody-is-even-live'), { ok: false }, 'zero live targets resolves to false at once');
+	} finally { h.close(); }
+});
+
+test('router-session.test.ts: an unrelated workflow.run.poll / analyze.run.status request is routed exactly as before (no new fan-out) — the broadcast is scoped to workflow.run.abort only', { timeout: 10_000 }, async () => {
+	const h = harness();
+	try {
+		h.router.useSessions(h.sessions, undefined, () => undefined);
+		await h.ask('p1', 'workflow.run.poll', { runId: 'w' }, { session: A }).done;
+		assert.deepEqual(h.log, ['mcp:1001 workflow.run.poll'], "workflow.run.poll still goes to the asking session's own worker, unaffected");
 	} finally { h.close(); }
 });
 

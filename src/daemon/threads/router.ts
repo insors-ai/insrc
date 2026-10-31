@@ -85,6 +85,9 @@ export interface RouterSessions {
 	/** A request sent straight to a pool worker's thread (an abort to its run's owner) started, and ended. */
 	startedOn(threadId: number): void;
 	endedOn(threadId: number): void;
+	/** Every currently-live pool-managed worker thread id (per-session, shared-state, and unattributed alike) —
+	 *  ISSUE-e587866e: the broadcast fallback for an abort whose board-derived owner is unknown. */
+	liveThreadIds(): readonly number[];
 }
 
 /** One request in a session's FIFO. */
@@ -269,6 +272,10 @@ export class Router {
 					finally { if (!ended && isTerminal(envelope)) { ended = true; sessions.endedOn(owner); } }
 				});
 			}
+			// ISSUE-e587866e: the board forgot this run's owner (its own eviction cap can fire
+			// sooner than the owning worker's), but a live worker may still hold it — ask every
+			// live pool worker directly rather than only the asking session's own worker.
+			if (request.method === 'workflow.run.abort') return this.broadcastAbort(request, deliver);
 		}
 		const shared = servedOnSharedState(request.method, request.params);
 		const send = (d: DeliverEnvelope, onAck?: () => void): () => void => shared
@@ -276,6 +283,37 @@ export class Router {
 			: this.toSessionWorker(request.session, request, d, dropped, onAck);
 		if (request.session === undefined || FIFO_EXEMPT_METHODS.has(request.method)) return send(deliver);
 		return this.enqueue(request.session, request, deliver, send, dropped);
+	}
+
+	/**
+	 * ISSUE-e587866e: a workflow.run.abort whose board-derived owner is unknown — ask every
+	 * live pool worker directly. Answers {ok:true} on the first {ok:true} reply (a live worker
+	 * still holds the run), else {ok:false} once every target has replied (including at once,
+	 * with no live targets) — matching the single-thread daemon's one shared registry.
+	 */
+	private broadcastAbort(request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
+		const targets = this.sessions!.liveThreadIds().filter(id => this.ports.has(id));
+		let settled = false;
+		let remaining = targets.length;
+		const cancels: (() => void)[] = [];
+		const finish = (ok: boolean): void => {
+			if (settled) return;
+			settled = true;
+			for (const c of cancels) c();
+			deliver({ kind: 'reply', requestId: request.requestId, result: { ok } });
+		};
+		if (targets.length === 0) { finish(false); return () => {}; }
+		for (const id of targets) {
+			const sub: LocalRequestEnvelope = { ...request, requestId: `internal-${++this.seq}` };
+			cancels.push(this.send(id, sub, envelope => {
+				if (settled || envelope.kind !== 'reply') return;
+				const ok = envelope.error === undefined && (envelope.result as { ok?: boolean } | undefined)?.ok === true;
+				if (ok) { finish(true); return; }
+				remaining -= 1;
+				if (remaining <= 0) finish(false);
+			}));
+		}
+		return () => { if (!settled) { settled = true; for (const c of cancels) c(); } };
 	}
 
 	/** To the shared-state worker, which the pool starts (again, after an exit) when there is none. */

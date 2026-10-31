@@ -90,6 +90,15 @@ test('session pool: concurrent workerFor calls for one session start one worker'
 	assert.equal(p.sessions().length, 2);
 });
 
+test('session pool: liveThreadIds() names every live worker (ISSUE-e587866e), matching liveWorkers().map(w => w.threadId)', async () => {
+	const { p } = pool();
+	assert.deepEqual(p.liveThreadIds(), [], 'no live workers yet');
+	const a = await p.workerFor({ label: 'mcp', pid: 1 });
+	const b = await p.sharedWorker();
+	assert.deepEqual(new Set(p.liveThreadIds()), new Set([a.threadId, b.threadId]));
+	assert.deepEqual(p.liveThreadIds(), p.liveWorkers().map(w => w.threadId));
+});
+
 test('session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight', async () => {
 	let clock = 0;
 	const runs = new Map<number, number>();

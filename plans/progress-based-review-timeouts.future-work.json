@@ -1,0 +1,36 @@
+{
+  "id": "FUTURE-progress-based-review-timeouts",
+  "type": "story",
+  "title": "Preserve useful review work with permissive progress-based timeouts",
+  "status": "backlog",
+  "implementationAuthorized": false,
+  "sizeEstimate": "M",
+  "createdAt": "2026-10-31T18:26:17.252806+00:00",
+  "requestedBy": "user",
+  "relatedArtifact": "DEF-e6ddcdcb3d9cf330",
+  "userValue": "Slow but progressing reviews survive remote model/network delays and local machine load without wasting completed model work.",
+  "scope": [
+    "Replace size-based 5/10/15-minute hard review cutoffs with expected-duration reporting and permissive progress monitoring.",
+    "Use observable model output, tool starts/completions and submitted feedback as progress signals; distinguish a live process from meaningful progress.",
+    "Track long-running tools separately with appropriate limits so hung commands cannot keep a review alive forever.",
+    "Represent remote waiting with unknown progress honestly; allow generous inactivity grace and record diagnostics before intervention.",
+    "Capture and validate complete submitted feedback durably before process termination; recover available results before considering another attempt.",
+    "Keep controller-triggered subsequent attempts, per-task checkpoints, independent review and identical Claude/Codex behavior."
+  ],
+  "acceptanceCriteria": [
+    "Active but slow reviews are not killed merely because a size-based expected duration elapsed.",
+    "Remote silence, ongoing tool execution, local contention, tool hangs and genuine inactivity have distinguishable diagnostics and tested intervention behavior.",
+    "A complete valid assessment submitted near termination can be retained without rerunning the model or accepting unvalidated transcript content.",
+    "No automatic whole-review retries or repeated completed tasks; incomplete work stays explicit.",
+    "Both supported CLI providers preserve the same policy and approval safeguards."
+  ],
+  "evidence": [
+    "/tmp/review-s1-t4-timeout-analysis.json",
+    "Review review-e6ddcdcb3d9cf330-s1-final: Task4 submitted StructuredOutput at 16:35:48 UTC, but its 600000ms host deadline elapsed before the final CLI envelope returned."
+  ],
+  "openDesignDecisions": [
+    "Meaningful progress signals, grace periods and per-tool limits across Claude/Codex.",
+    "Safe early-feedback capture and validation without treating transcript/tool acknowledgements as completed host results."
+  ],
+  "currentWork": "Backlog only. Continue existing S1 code-review findings; do not implement this policy change in S1."
+}

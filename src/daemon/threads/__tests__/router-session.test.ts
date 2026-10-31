@@ -21,7 +21,7 @@ import { TargetRegistry } from '../registry.js';
 import { Router } from '../router.js';
 import type { RouterSessions } from '../router.js';
 import { serveRequests } from '../worker-requests.js';
-import type { LocalRequestEnvelope, MethodClass, SessionId } from '../channel.js';
+import type { FrameEnvelope, LocalRequestEnvelope, MethodClass, ReplyEnvelope, SessionId } from '../channel.js';
 
 /** x.* test methods are session-class; everything else as the daemon classifies it. */
 const classOf = (m: string): MethodClass | undefined => m.startsWith('x.') ? 'session' : methodClasses.classOf(m);
@@ -505,7 +505,10 @@ test("router: a pool start failure, a missing worker port and a cancel before th
 		const replies: unknown[] = [];
 		paths.toSessionWorker(failing, drainRequest('f1'), e => { replies.push(e); }, () => {}, () => { acks.push('f1'); });
 		await until(() => acks.length === 1, 'a start failure acks');
-		assert.deepEqual(replies, [{ kind: 'reply', requestId: 'f1', error: 'the worker could not start' }]);
+		// ISSUE-2ec4d979: `expected`'s literal type would otherwise narrow `replies`
+		// (via assert.deepEqual's `asserts actual is T` signature) to a shape too
+		// narrow for the later ReplyEnvelope | FrameEnvelope pushes below.
+		assert.deepEqual(replies, [{ kind: 'reply', requestId: 'f1', error: 'the worker could not start' }] as (ReplyEnvelope | FrameEnvelope)[]);
 		paths.toSessionWorker(portless, drainRequest('p1'), e => { replies.push(e); }, () => {}, () => { acks.push('p1'); });
 		await until(() => acks.length === 2, 'a missing port acks');
 		assert.deepEqual(replies[1], { kind: 'reply', requestId: 'p1', error: "the session's worker thread is not available" });
@@ -547,7 +550,9 @@ test("router: a shared-state request sent with an ack waits for the shared-state
 		paths.toShared(drainRequest('s1'), deliver, () => {}, () => { acks.push('s1'); });
 		await until(() => replies.includes('s1'), 's1 replied');
 		await tick(30);
-		assert.deepEqual(acks, [], 'no ack past the reply while its work drains');
+		// ISSUE-2ec4d979: an empty-literal `expected` would otherwise narrow `acks`
+		// (via assert.deepEqual's `asserts actual is T` signature) to `never[]`.
+		assert.deepEqual(acks, [] as string[], 'no ack past the reply while its work drains');
 		h.gates.open('drain s1');
 		await until(() => acks.includes('s1'), 's1 acked');
 		assert.ok(h.log.includes('shared drained s1'), 'the ack came after the drained work');

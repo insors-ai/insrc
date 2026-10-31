@@ -34,7 +34,7 @@ import {
 } from './fallback.js';
 import { renderNarrativeBand } from './narrative.js';
 import {
-	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, asDiagramRole, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageCssFor, viewerBootScript,
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, asDiagramRole, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageStyleTags, viewerBootScript,
 } from '../../artifact-theme/theme.js';
 
 /** The single source of truth for where the docgen runtime assets live
@@ -207,10 +207,9 @@ function docgenPageStyle(): string {
 		'.insrc-viewer [data-insrc-path]{cursor:pointer}',
 		'.insrc-viewer .iv-narr{max-width:1180px;margin:0 auto;padding:20px 28px;color:var(--iv-text)}',
 	].join('\n');
-	return `${fontFaceCssForArtifacts()}
-<style data-iv-mode="light">${pageCssFor('light')}${base}</style>
-<style data-iv-mode="dark" disabled>${pageCssFor('dark')}${base}</style>
-<style>${DIAGRAM_OVERRIDES_CSS}</style>`;
+	// The branded page chrome is composed by the ONE shared helper (R1), so the
+	// docgen shell cannot drift from the companion shell.
+	return pageStyleTags(base);
 }
 
 function buildHtml(

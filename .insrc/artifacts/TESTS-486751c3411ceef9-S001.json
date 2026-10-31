@@ -4,7 +4,7 @@
     "epicHash": "486751c3411ceef9",
     "storyId": "S001",
     "createdAt": "2026-10-30T19:37:31.977Z",
-    "updatedAt": "2026-10-30T22:10:56.037Z",
+    "updatedAt": "2026-10-30T22:17:15.855Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T19:19:13.160Z",
     "epicSlug": "shared-insors-branded-light-dark-mermaid"
@@ -589,8 +589,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "bdf2ff3ca",
-        "ranAt": "2026-10-30T22:10:54.708Z",
+        "commit": "91547cf7e",
+        "ranAt": "2026-10-30T22:17:15.855Z",
         "testsPassed": true,
         "tests": [
           {
@@ -601,7 +601,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/smoke2.log companion+docgen 8/8 branded checks each; /tmp/fix2.log 310/0 affected suites; /tmp/build-t6.log build exit 0; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log"
+              "evidence": "/tmp/smoke2.log 8/8 branded both shells; /tmp/fix3.log 313 pass, only pre-existing CM-S3/CM-S4 inventory failures (also at pristine /tmp/pristine5); /tmp/build-t6.log build exit 0; /tmp/inv2.mts artifact-theme entries classified-consistent; pristine reconciliation /tmp/disputed-pristine.log vs /tmp/disputed-mine.log"
             }
           }
         ],

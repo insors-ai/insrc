@@ -4,7 +4,7 @@
     "epicHash": "486751c3411ceef9",
     "storyId": "S001",
     "createdAt": "2026-10-30T19:37:31.977Z",
-    "updatedAt": "2026-10-30T22:10:54.708Z",
+    "updatedAt": "2026-10-30T22:17:15.855Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-30T19:19:13.160Z",
@@ -34,10 +34,10 @@
       },
       {
         "id": "t6",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "t6 re-validate after code-review round 1: typecheck clean (tsc exit 0), build green, regen smoke 8/8 branded on both shells (/tmp/smoke2.log), full affected-suite run 310 pass / 0 fail exit 0 (/tmp/fix2.log) covering artifact-theme, companion (shell + code-ref-script), docgen (shell, fallback, narrative-band, extract/narrative). Sweep reconciliation stands: per-file pristine-vs-mine runs show zero failures unique to this Story (/tmp/dm2.txt vs /tmp/dp2.txt); SIGTERM/summary-link pass in isolation on both trees.",
+    "summary": "t6 re-validate after code-review round 1 + inventory fix (commits bdf2ff3ca, latest): typecheck clean, build green, regen smoke 8/8 branded both shells (/tmp/smoke2.log), affected suites 313 pass with only the 3 pre-existing CM-S3/CM-S4 db-inventory failures that also fail at pristine HEAD (/tmp/fix3.log; /tmp/pristine5 run confirms). The Story's own new files are now explicitly classified in session-source-inventory.json and verified digest-consistent (/tmp/inv2.mts: both true); the remaining unclassified files (ollama-target.ts, connection-manager/*) exist at pristine HEAD and are not this Story's. R14 regeneration route now spelled out in plans/mermaid-theme-and-readability-requirements.md. Sweep reconciliation stands: zero failures unique to this Story (/tmp/dm2.txt vs /tmp/dp2.txt).",
     "testRecord": {
       "md": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/TESTS.md"
     },
@@ -47,247 +47,254 @@
           "file": ".insrc/artifacts/ISSUE-2ec4d97980969dd5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-dc0bd8089ce15fcd.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-e587866ef17ae15a.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-e587866ef17ae15a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-486751c3411ceef9-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": ".vibe/config.toml"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "docs/standalone/answer-abort-finished-run-status-board-E20261029e587866e/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "plans/mermaid-theme-and-readability-requirements.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/artifact-theme/__tests__/contrast.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/artifact-theme/__tests__/fonts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/artifact-theme/__tests__/perf.integration.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/artifact-theme/__tests__/theme.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/artifact-theme/__tests__/viewer-script.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/artifact-theme/fonts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/artifact-theme/theme.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/assets/artifacts/companion/panzoom.js"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/assets/fonts/poppins/OFL.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/assets/fonts/poppins/poppins-400.woff2"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/assets/fonts/poppins/poppins-600.woff2"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/assets/fonts/poppins/poppins-700.woff2"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/debug-mcp.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/admin-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/docgen/render/__tests__/fallback.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/docgen/render/__tests__/narrative-band.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/docgen/render/__tests__/shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/docgen/render/fallback.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/docgen/render/shell.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/companion/shell.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/CR-486751c3411ceef9-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
       },
       {
         "target": {
           "file": "src/docgen/extract/__tests__/narrative.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-30T22:10:54.708Z"
+        "timestamp": "2026-10-30T22:17:15.855Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T22:17:15.855Z"
       }
     ],
-    "commit": "bdf2ff3ca"
+    "commit": "91547cf7e"
   }
 }

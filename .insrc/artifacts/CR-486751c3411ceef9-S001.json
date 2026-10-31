@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1793397413231-e4wq83",
+    "runId": "cr-1793420712263-22f3ii",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-30T21:56:52.500Z",
+    "createdAt": "2026-10-31T04:25:10.856Z",
     "model": "claude:claude-sonnet-5",
-    "elapsedMs": 188201,
+    "elapsedMs": 311425,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "486751c3411ceef9",
@@ -17,11 +17,11 @@
       "epicHash": "486751c3411ceef9",
       "storyId": "S001",
       "author": "controller",
-      "sourceDigest": "d681402a74abfcdf9e6b3ae5aa609c495a96ec24f6e707d7c4865892a04844eb",
+      "sourceDigest": "32b57806f1f4d91d800132ac9ed20bb2bb1957b52f21dbc52c7595748458d756",
       "contractDigest": "fff3661103c0294b89da4ce3a94d43c52409d388ed456231aaa80be3e5956f66",
-      "buildDigest": "a61a424a329643d4aee85785f19d75eab4395088eb8e39cff03bb86858be944c",
-      "testsDigest": "3277f687a622e0eb7cd2044ec867a090105d59c001ee70a587f147281fb0a871",
-      "digest": "e9296e2a7642a0510d8bbfe4c0a9f00e101504b8381424d6d9544bea97eae9c6"
+      "buildDigest": "aa380fe5449dc6854da1b95e8c39fcf3cd70fbf3369abcfa2b8a839368bc1e14",
+      "testsDigest": "fc2587c911684edbfe44b0d9a3b29b0faec9ca4971dde7fc56d5f870f96cca37",
+      "digest": "601437e314dc8f94d979dab9a17e3364a468e8de57ba2909d8199fb7928b95ce"
     },
     "reviewInputSchemaVersion": 1,
     "epicCreatedAt": "2026-10-30T19:19:13.160Z",
@@ -59,10 +59,15 @@
         "src/docgen/render/shell.ts",
         "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts",
         "src/workflow/artifacts/companion/__tests__/shell.test.ts",
-        "src/workflow/artifacts/companion/shell.ts"
+        "src/workflow/artifacts/companion/shell.ts",
+        "src/docgen/extract/__tests__/narrative.test.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
       ],
       "changeSetAttribution": "story-trailer",
-      "sharedWithExcluded": []
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "src/daemon/threads/__tests__/router-session.test.ts"
+      ]
     },
     "dimensions": [
       {
@@ -71,16 +76,16 @@
           {
             "dimension": "adherence",
             "severity": "HIGH",
-            "location": "src/artifact-theme/theme.ts:736699",
-            "message": "legendHtml has zero callers (not invoked from src/workflow/artifacts/companion/shell.ts's bootScript/renderCompanionPage nor from src/docgen/render/shell.ts's buildHtml) and zero testsReaching. R4 ('role palette + legend only when roles exist') and the LLD's dataModelChanges entry ('ROLE_PALETTE+legend iff roles') require the legend to be wired into both shells' rendered output, but no call site injects it into either shell.",
-            "expectationRef": "LLD acceptanceMapping R4 / dataModelChanges(ArtifactThemePolicy).details ('ROLE_PALETTE+legend iff roles')"
+            "location": "src/daemon/threads/__tests__/admin-worker.test.ts:1",
+            "message": "The Story's changed set includes src/daemon/threads/__tests__/admin-worker.test.ts, src/daemon/threads/__tests__/indexing-worker.test.ts, and src/cli/services/__tests__/debug-mcp.test.ts — all concerning daemon worker-thread lifecycle and CLI MCP debug status, with no corresponding source-file changes and no theme/shell/viewer symbols touched. None of the six approved PLAN tasks (t1 fonts, t2 theme module, t3 companion shell, t4 docgen shell/fallback, t5 viewer tests, t6 sweep/build/regen-smoke) or any LLD contract/dataModelChange entry calls for changes to daemon worker threading or CLI debug tooling. This looks like unrelated/leftover work bundled into a Story whose approved scope is the shared Mermaid theme policy.",
+            "expectationRef": "PLAN tasks t1-t6 (scope limited to src/artifact-theme, companion shell, docgen shell/fallback, viewer tests, fonts) and LLD boundary.internal (theme policy + Poppins fonts only)"
           },
           {
             "dimension": "adherence",
-            "severity": "HIGH",
-            "location": "src/artifact-theme/theme.ts:736705",
-            "message": "exportableSvg has zero callers (not used by companion/shell.ts, docgen/render/shell.ts, or docgen/render/fallback.ts) and zero testsReaching, despite R12 ('export full svg + font style + background rect') being an explicit acceptance criterion mapped to viewer-script/theme tests and to viewerBootScript's export control.",
-            "expectationRef": "LLD acceptanceMapping R12 / errorPaths.errorCases 'export' scenario ('full svg + font style + background rect')"
+            "severity": "LOW",
+            "location": ".vibe/config.toml:1",
+            "message": ".vibe/config.toml is part of the Story's changed set but is not named or implied by any approved PLAN task or LLD data-model/contract entry — it appears to be an unplanned, out-of-scope config edit riding along with this Story's commit.",
+            "expectationRef": "PLAN tasks t1-t6 scope (no tooling/config changes listed)"
           }
         ]
       },
@@ -94,35 +99,72 @@
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "src/docgen/render/fallback.ts",
-            "message": "assembleFallbackShell is reached only by src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts, but that test file does not appear in the gate's test-record results at all, so its pass-state cannot be confirmed — present but unverified, not confirmed passing.",
+            "location": "src/docgen/render/fallback.ts:1",
+            "message": "assembleFallbackShell is reached by fallback.test.ts, narrative-band.test.ts and code-ref-script.test.ts, but none of those three test files appear in the test-record's files list for this run, so its pass state is unverified rather than confirmed passing.",
             "expectationRef": "assembleFallbackShell",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
-            "symbolId": "736739"
+            "symbolId": "771574"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/docgen/render/fallback.ts:1",
+            "message": "oversized is reached only by fallback.test.ts, which is not present in the test-record's files list for this run — present but unverified, not confirmed passing.",
+            "expectationRef": "oversized",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "771564"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/docgen/render/fallback.ts:1",
+            "message": "toGraphvizDot is reached only by fallback.test.ts, which is not present in the test-record's files list for this run — present but unverified, not confirmed passing.",
+            "expectationRef": "toGraphvizDot",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "771566"
           },
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "src/docgen/render/shell.ts",
-            "message": "assembleShell is reached only by src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts, but that test file does not appear in the gate's test-record results at all, so its pass-state cannot be confirmed — present but unverified, not confirmed passing.",
-            "expectationRef": "assembleShell",
+            "location": "src/docgen/render/shell.ts:1",
+            "message": "docgenAssetDir is reached only by asset-validator.test.ts, which is not present in the test-record's files list for this run — present but unverified, not confirmed passing.",
+            "expectationRef": "docgenAssetDir",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
-            "symbolId": "736756"
+            "symbolId": "771581"
           }
         ]
       },
       {
         "dimension": "quality",
-        "findings": []
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/artifacts/companion/shell.ts:1",
+            "message": "pageStyle() has the exact same callee pair (pageCssFor + fontFaceCssForArtifacts) as docgenPageStyle() in src/docgen/render/shell.ts. The Story's stated goal is a *shared* theme policy across the companion and docgen shells, but the page-style composition itself was re-written per-shell instead of being lifted into one shared helper (e.g. in src/artifact-theme/theme.ts) that both renderCompanionPage and buildHtml call. This is exactly the kind of drift that produced the prior 'wire legendHtml + exportableSvg into both shells' fix — the next time pageCssFor's output changes, one of the two copies is likely to be missed.",
+            "counterpartRef": "docgenPageStyle",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/docgen/render/fallback.ts:1",
+            "message": "assembleFallbackShell(ir, svg, svgPanZoom, svgPanZoomVersion) calls pageCssFor and fontFaceCssForArtifacts directly rather than going through docgenPageStyle (used by the primary buildHtml path) or pageStyle (used by the companion path). Because assembleFallbackShell takes no ThemeMode parameter, it is calling pageCssFor with a single hardcoded mode rather than composing both the light and dark variants the way docgenPageStyle does — so the Graphviz degraded-fallback shell risks rendering without the light/dark theme switch that this Story exists to guarantee, while the primary mermaid shell gets it correctly.",
+            "counterpartRef": "docgenPageStyle",
+            "confidence": "observation"
+          }
+        ]
       }
     ],
     "verdict": "block",
     "counts": {
-      "high": 2,
-      "med": 2,
-      "low": 0
+      "high": 1,
+      "med": 4,
+      "low": 3
     }
   }
 }

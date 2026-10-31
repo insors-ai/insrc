@@ -30,7 +30,7 @@ import { spawn } from 'node:child_process';
 import type { DocumentIR, RenderedDocumentShell } from '../types.js';
 import { renderNarrativeBand } from './narrative.js';
 import {
-	DIAGRAM_OVERRIDES_CSS, SURFACES, THEME_VERSION, diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendSlotHtml, pageCssFor,
+	DIAGRAM_OVERRIDES_CSS, SURFACES, THEME_VERSION, diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendSlotHtml, pageStyleTags,
 } from '../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from './code-ref-script.js';
 
@@ -258,20 +258,15 @@ export function assembleFallbackShell(
     a.download='diagram.svg';a.click();
   });
 })();`;
-	const pageCss = `${fontFaceCssForArtifacts()}
-<style data-iv-mode="light">${pageCssFor('light')}
+	// The branded page chrome (both light AND dark variants) is composed by the
+	// ONE shared helper (R1) — the degraded fallback shell gets the same theme
+	// switch as the primary shell, not a single hardcoded mode.
+	const pageCss = pageStyleTags(`
   html, body { margin: 0; height: 100%; }
   #docgen-diagram { width: 100%; height: 100vh; background: var(--iv-bg); }
   #docgen-diagram svg { width: 100%; height: 100%; }
   [data-insrc-path] { cursor: pointer; }
-</style>
-<style data-iv-mode="dark" disabled>${pageCssFor('dark')}
-  html, body { margin: 0; height: 100%; }
-  #docgen-diagram { width: 100%; height: 100vh; background: var(--iv-bg); }
-  #docgen-diagram svg { width: 100%; height: 100%; }
-  [data-insrc-path] { cursor: pointer; }
-</style>
-<style>${DIAGRAM_OVERRIDES_CSS}</style>`;
+`);
 	const html = `<!doctype html>
 <html lang="en">
 <head>

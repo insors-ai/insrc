@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import { docgenAssetDir } from '../../../docgen/render/shell.js';
 import {
-	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageCssFor, viewerBootScript,
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageStyleTags, viewerBootScript,
 } from '../../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from '../../../docgen/render/code-ref-script.js';
 import { DiagramGenerationError } from './render.js';
@@ -189,11 +189,9 @@ function pageStyle(): string {
 		'.insrc-viewer .pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--iv-active-bg);color:var(--iv-active-text);font-size:10px;font-weight:700;text-align:center}',
 		'.insrc-viewer footer.ft{margin-top:30px;padding-top:10px;border-top:1px dashed var(--iv-border);font-size:12px;color:var(--iv-muted);display:flex;justify-content:space-between}',
 	].join('');
-	const fonts = fontFaceCssForArtifacts();
-	const light = `<style data-iv-mode="light">${pageCssFor('light')}${structural}</style>`;
-	const dark = `<style data-iv-mode="dark" disabled>${pageCssFor('dark')}${structural}</style>`;
-	const overrides = `<style>${DIAGRAM_OVERRIDES_CSS}</style>`;
-	return `${fonts}${light}${dark}${overrides}`;
+	// The branded page chrome is composed by the ONE shared helper (R1), so the
+	// companion shell cannot drift from the docgen shells.
+	return pageStyleTags(structural);
 }
 
 /** The export CSS carried on the root for the SVG serializer (R12). */

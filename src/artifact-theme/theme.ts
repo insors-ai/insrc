@@ -300,6 +300,21 @@ export function pageCssFor(mode: ThemeMode): string {
 	].join('\n');
 }
 
+/**
+ * The ONE shared page-style composition (R1): packaged Poppins @font-face +
+ * one `<style data-iv-mode>` per mode (`pageCssFor(mode)` + the caller's own
+ * structural CSS) + the diagram overrides. Every shell — companion,
+ * docgen primary, docgen fallback — composes through this helper so the
+ * branded page chrome cannot drift between rendering paths.
+ */
+export function pageStyleTags(structuralCss: string): string {
+	const fonts = fontFaceCssForArtifacts();
+	const light = `<style data-iv-mode="light">${pageCssFor('light')}${structuralCss}</style>`;
+	const dark = `<style data-iv-mode="dark" disabled>${pageCssFor('dark')}${structuralCss}</style>`;
+	const overrides = `<style>${DIAGRAM_OVERRIDES_CSS}</style>`;
+	return `${fonts}${light}${dark}${overrides}`;
+}
+
 /** The legend CSS (shared, mode-agnostic — swatches carry their own colors). */
 export const LEGEND_CSS = [
 	'.insrc-viewer .insrc-legend{display:flex;gap:14px;flex-wrap:wrap;padding:6px 10px;border-top:1px solid var(--iv-border);background:var(--iv-inset);font-size:12px;color:var(--iv-text)}',

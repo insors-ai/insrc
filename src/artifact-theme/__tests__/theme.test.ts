@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
 	BRAND, CONTRAST_PAIRS, DIAGRAM_OVERRIDES_CSS, LEGEND_CSS, ROLE_PALETTE, SURFACES, THEME_VERSION,
-	diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendHtml, legendSlotHtml, mermaidConfigFor, pageCssFor, viewerBootScript,
+	diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendHtml, legendSlotHtml, mermaidConfigFor, pageCssFor, pageStyleTags, viewerBootScript,
 } from '../theme.js';
 
 test('theme.test.ts: THEME_VERSION is stamped and brand tokens are exact', () => {
@@ -125,6 +125,19 @@ test('theme.test.ts: legendSlotHtml wraps both modes for the boot script to togg
 	assert.match(slot, /data-iv-legend="dark" hidden/);
 	assert.match(slot, new RegExp(ROLE_PALETTE.light.external.replace('#', '#')));
 	assert.match(slot, new RegExp(ROLE_PALETTE.dark.note.replace('#', '#')));
+});
+
+test('theme.test.ts: pageStyleTags is the one shared page-style composition for every shell (R1)', () => {
+	const tags = pageStyleTags('.my-structural{}');
+	assert.match(tags, /@font-face\{font-family:'Poppins'/);
+	assert.match(tags, /<style data-iv-mode="light">/);
+	assert.match(tags, /<style data-iv-mode="dark" disabled>/);
+	assert.ok(tags.indexOf('<style data-iv-mode="light">') < tags.indexOf('<style data-iv-mode="dark"'), 'light before dark');
+	// both mode tags carry pageCssFor(mode) AND the caller's structural CSS
+	const light = tags.slice(tags.indexOf('<style data-iv-mode="light">'), tags.indexOf('</style>'));
+	assert.ok(light.includes('.my-structural{}'), 'structural CSS inside the light variant');
+	assert.ok(light.includes('--iv-bg:'), 'brand surface tokens inside the light variant');
+	assert.match(tags, /<style>\.insrc-viewer-diagram/, 'diagram overrides appended once');
 });
 
 test('theme.test.ts: the boot script embeds the tested exportableSvg and toggles the legend with the theme (R4/R12)', () => {

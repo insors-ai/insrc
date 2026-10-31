@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "e587866ef17ae15a",
+    "storyId": "S001",
+    "createdAt": "2026-10-31T03:18:04.236Z",
+    "updatedAt": "2026-10-31T03:33:33.781Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T15:05:47.642Z",
+    "epicSlug": "answer-abort-finished-run-status-board"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "0b79d0161",
+        "ranAt": "2026-10-31T03:33:33.781Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "router.ts Router.dispatchSession (the new owner===undefined fan-out branch for workflow.run.abort)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today's behavior for a genuinely unknown run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router.ts RouterSessions.liveThreadIds (new interface member)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: liveThreadIds() names every live worker (ISSUE-e587866e), matching liveWorkers().map(w => w.threadId)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session-routing.ts startSessionRouting's wiring of liveThreadIds to pool.liveWorkers().map(w => w.threadId)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: liveThreadIds() names every live worker (ISSUE-e587866e), matching liveWorkers().map(w => w.threadId)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1071,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker",
+                "result": "pass"
+              },
+              {
+                "title": "router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today's behavior for a genuinely unknown run",
+                "result": "pass"
+              },
+              {
+                "title": "router-session.test.ts: an unrelated workflow.run.poll / analyze.run.status request is routed exactly as before (no new fan-out) — the broadcast is scoped to workflow.run.abort only",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 398,
+            "titles": [
+              {
+                "title": "session pool: concurrent workerFor calls for one session start one worker",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: liveThreadIds() names every live worker (ISSUE-e587866e), matching liveWorkers().map(w => w.threadId)",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a worker that exits is unregistered and disconnected from its main-thread services",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: close waits for a start under way, releases that worker too, and refuses any later start",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

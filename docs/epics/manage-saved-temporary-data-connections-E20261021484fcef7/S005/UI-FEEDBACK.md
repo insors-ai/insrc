@@ -86,3 +86,8 @@ User correction: datasource icons must be recognizable product icons, not genera
 All 41 Connections tests passed, including exact coverage, original asset byte hashes, absence of monogram text and internal-reference isolation. The rendered icon contact sheet was inspected on light/dark backgrounds; it is asset verification, not live native UI acceptance. Original layout, row-removal protections and repository-recovery behavior remain covered.
 
 Product-icon source commit b09162a00. Version 0.5.23 VSIX built from a clean snapshot, including 24 original SVG assets covering 29 datasource types and all upstream licenses. ZIP/version/asset hashes and installed bundle identity verified. Package SHA256 bf217b50c93006473054928da8e01a17199eca01c3552dfed49b1ee63b5eec24. Installed with the VS Code CLI; no daemon restart. Task t18 validation passed both typechecks, acceptance checks and mapped product-icon/main UI tests. Final 117-file extension sweep: 1353 complete tests, 1338 pass, 3 historical failures, 12 skip, plus chat-panel timeout without final totals; exact logs archived. Backend/JetBrains implementation is unchanged and was not swept wholesale again. Native UI acceptance and independent Story-completion review remain pending.
+
+
+## User manual-test completion — 2026-10-31
+
+After the 0.5.23 product-icon correction was installed, the user reported: “ok, manual test of connection manager done”. VS Code manual-session status is completed-user-reported. See MANUAL-ACCEPTANCE.md for the installed artifact identity and limits of this evidence. JetBrains/service/SQL Server coverage, historical automated failures and independent completion-review status are unchanged. No BUILD approval or release certification is implied.

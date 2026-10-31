@@ -49,7 +49,7 @@
     "providerService": "pending",
     "positiveSavedWorkerAffinity": "pending",
     "SQLServer": "pending",
-    "VSCodeLiveUI": "pending-user-manual",
+    "VSCodeLiveUI": "completed-user-reported",
     "JetBrainsLiveUI": "pending-user-manual"
   },
   "historicalFailures": {

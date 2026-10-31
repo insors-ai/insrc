@@ -1,6 +1,14 @@
 # Manual acceptance after installation
 
-The user will perform live UI validation after the full build and plugin installation. Tasks 26–29 remain pending manual acceptance; the failed automated task-26 attempt remains historical evidence. This instruction permits continuing the build and full sweep without converting pending checks into passes. Installation is the next step after package delivery.
+## Current acceptance status — 2026-10-31
+
+VS Code connection-manager manual testing is complete, reported by the user after installation of version 0.5.23: “ok, manual test of connection manager done”. This records completion of the VS Code manual test session; it does not claim that every case in the historical checklist was individually evidenced.
+
+JetBrains manual testing remains pending. Tasks 26–29 retain any outstanding JetBrains, lifecycle/service and cross-client evidence requirements; the failed automated task-26 attempt remains historical evidence. SQL Server, provider-service coverage, positive Saved worker-affinity proof and independent Story-completion review are not completed by this report. Automated failures/skips and release-audit status are unchanged.
+
+Installed package: `vscode-plugin/insrc-vscode-0.5.23-s005-b09162a00.vsix`; source `b09162a00`; SHA256 `bf217b50c93006473054928da8e01a17199eca01c3552dfed49b1ee63b5eec24`. The installed bundle was verified against that archive. The manual feedback cycle covered reported form/path/control issues, saved-versus-temporary behavior, recovery of repository discovery, list-first layout, message history, per-row removal and the correction to product icons. The user's final completion statement is the manual-session evidence; it is not a detailed per-scenario pass ledger.
+
+The historical instructions and version-specific rechecks below are retained as history. Later default-enablement, list-first layout and product-icon corrections supersede conflicting earlier instructions.
 
 Use only VS Code and JetBrains. Test with disposable repositories and sources. Production connection-management admission currently remains closed by upstream prerequisites; unsupported controls should show upgrade guidance. Positive feature testing requires the separately isolated signed test daemon, with its socket protected from startup provisioning. Do not enable production gates to obtain a positive UI result.
 

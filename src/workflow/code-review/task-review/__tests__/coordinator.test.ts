@@ -174,3 +174,29 @@ test('optimistic native status with limitations retains the assessment as incomp
   assert.equal(result.error, undefined);
  } finally { await f.cleanup(); }
 });
+
+
+test('shared attribution timeout remains incomplete for every remaining task without retry', async () => {
+ const f = await fixture(false); let clock = 0, calls = 0, expire: (() => void) | undefined;
+ const coordinator = new TaskReviewCoordinator({ sources: f.sources, now: () => clock,
+  timer: callback => { expire = callback; return () => {}; },
+  provider: () => provider(async () => { calls++; clock += 300000; expire!(); return new Promise(() => {}); }) });
+ try {
+  const ack = await coordinator.start(f.project, 'attribution-timeout', 1, f.packet); await coordinator.settled(f.project, 'attribution-timeout');
+  const complete = await f.read(ack.path);
+  assert.deepEqual(complete.attempts[0]!['review-response'].tasks.map(task => task.status), ['incomplete', 'incomplete', 'incomplete']);
+  assert.equal(complete.attempts[0]!.header.status, 'incomplete'); assert.equal(calls, 1);
+  assert.match(complete.attempts[0]!['review-response'].tasks[1]!.summary, /shared attribution deadline/);
+ } finally { await f.cleanup(); }
+});
+
+test('shared attribution provider failure remains failed for every remaining task without retry', async () => {
+ const f = await fixture(false); let calls = 0;
+ const coordinator = new TaskReviewCoordinator({ sources: f.sources, provider: () => provider(async () => { calls++; throw new Error('Attribution provider failed'); }) });
+ try {
+  const ack = await coordinator.start(f.project, 'attribution-failure', 1, f.packet); await coordinator.settled(f.project, 'attribution-failure');
+  const complete = await f.read(ack.path);
+  assert.deepEqual(complete.attempts[0]!['review-response'].tasks.map(task => task.status), ['failed', 'failed', 'failed']);
+  assert.equal(complete.attempts[0]!.header.status, 'failed'); assert.equal(calls, 1);
+ } finally { await f.cleanup(); }
+});

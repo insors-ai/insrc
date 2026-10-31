@@ -13,6 +13,7 @@ export function checkpointPath(project: string, id: string): string {
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint): Promise<void> {
  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
  const temporary = `${path}.${randomUUID()}.tmp`;
+ let failed = false;
  try {
   const file = await open(temporary, 'wx', 0o600);
   try { await file.writeFile(JSON.stringify(checkpoint, null, 2) + '\n'); await file.sync(); }
@@ -22,5 +23,6 @@ export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint)
   try { await directory.sync(); }
   catch (error) { if (!['EINVAL', 'ENOTSUP', 'EISDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error; }
   finally { await directory.close(); }
- } finally { await unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; }); }
+ } catch (error) { failed = true; throw error; }
+ finally { await unlink(temporary).catch(error => { if (!failed && error.code !== 'ENOENT') throw error; }); }
 }

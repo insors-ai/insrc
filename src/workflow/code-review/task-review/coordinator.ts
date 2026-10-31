@@ -101,7 +101,7 @@ export class TaskReviewCoordinator {
   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
   // Derive once from the pinned Plan, not submitter-supplied task mappings. All model calls are serial.
   let assignments: readonly TaskAssignment[] | undefined;
-  let attributionFailure: unknown;
+  let attributionFailure: { error: unknown; timedOut: boolean } | undefined;
   for (const task of selected.sort((a, b) => a.order - b.order)) {
    entry.header.status = 'running'; entry.header.activeTaskId = task.id;
    await save(path, checkpoint);
@@ -125,8 +125,7 @@ export class TaskReviewCoordinator {
      const provider = resolveProvider();
      requireReview(provider.runReviewSession, 'provider', 'Reviewer sessions are unsupported');
      if (!assignments) {
-      if (attributionFailure) throw attributionFailure;
-      try {
+      if (attributionFailure) throw attributionFailure.error;
       const direct = directAssignments(prepared);
       if (direct) assignments = direct;
       else {
@@ -135,7 +134,6 @@ export class TaskReviewCoordinator {
        const derived = deriveTaskAssignments(prepared, decodeReview(AttributionSchema, rawScope).tasks);
        options(); assignments = derived;
       }
-      } catch (error) { attributionFailure = error; throw error; }
      }
      const assignment = assignments.find(a => a.taskId === task.id)!;
      const references = await taskReferences(this.deps.sources, prepared, assignment);
@@ -146,9 +144,10 @@ export class TaskReviewCoordinator {
      return assessed;
     })()]);
    } catch (error) {
-    if (!assignments) attributionFailure = error;
-    const timedOut = error instanceof ReviewSessionTimeoutError || error === timeout || cancellation.signal.aborted || now() - started >= allowance;
-    const message = timedOut ? `Task exceeded its ${task.size} allowance (${allowance}ms).` : `Reviewer failed: ${error instanceof Error ? error.message : String(error)}`;
+    const inheritedTimeout = attributionFailure?.timedOut === true && error === attributionFailure.error;
+    const timedOut = inheritedTimeout || error instanceof ReviewSessionTimeoutError || error === timeout || cancellation.signal.aborted || now() - started >= allowance;
+    if (!assignments) attributionFailure = { error, timedOut };
+    const message = inheritedTimeout ? 'Task could not be attributed because the shared attribution deadline expired.' : timedOut ? `Task exceeded its ${task.size} allowance (${allowance}ms).` : `Reviewer failed: ${error instanceof Error ? error.message : String(error)}`;
     result = taskFailure(task.id, message, timedOut);
    } finally { cancelTimer(); cancellation.abort(); }
    entry['review-response'].tasks = [...entry['review-response'].tasks, result];

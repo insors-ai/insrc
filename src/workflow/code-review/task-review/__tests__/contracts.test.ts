@@ -48,6 +48,7 @@ test('selected-change packet: commit pointers, exact ranges, committed documents
   assert.equal(Buffer.from(prepared.changes[0]!.after!.bytes).toString(), 'FIRST\nsecond\nthird\nfourth\nFIFTH\n');
   assert.ok(!prepared.changes.some(c => c.path === 'unrelated.ts'));
   const original = f.packet.functionalSummary; const parsed = parsePacket(f.packet); f.packet.functionalSummary = 'mutated'; assert.equal(parsed.functionalSummary, original);
+  f.git('config', 'diff.interHunkContext', '10'); // Joined hunks must not turn context into changed scope.
   const badRange = structuredClone(f.packet); badRange.reviewSet[0]!.files[0]!.segments[0] = { after: [2, 2] };
   await assert.rejects(prepareReviewPacket(badRange, f.sources), /changed hunk/);
   const crossed = structuredClone(f.packet); crossed.reviewSet[0]!.files[0]!.segments[0] = { before: [1, 1], after: [5, 5] };

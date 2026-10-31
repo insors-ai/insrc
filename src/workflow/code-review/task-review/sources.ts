@@ -13,6 +13,31 @@ export interface ReviewSources {
  changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]>;
 }
 export interface ChangedRange { readonly before?: readonly [number, number]; readonly after?: readonly [number, number]; }
+/** Hunk counts can include unchanged lines (diff.interHunkContext); retain only +/- runs. */
+function changedRuns(section: string): readonly ChangedRange[] {
+ const ranges: ChangedRange[] = [];
+ let oldLine = 0, newLine = 0, active = false;
+ let change: { before?: [number, number]; after?: [number, number] } = {};
+ const flush = () => {
+  if (change.before || change.after) ranges.push(change);
+  change = {};
+ };
+ for (const line of section.split('\n')) {
+  const hunk = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+  if (hunk) { flush(); oldLine = Number(hunk[1]); newLine = Number(hunk[2]); active = true; continue; }
+  if (!active || line.startsWith('\\')) continue;
+  if (line.startsWith('-')) {
+   if (change.before) change.before[1] = oldLine; else change.before = [oldLine, oldLine];
+   oldLine++;
+  } else if (line.startsWith('+')) {
+   if (change.after) change.after[1] = newLine; else change.after = [newLine, newLine];
+   newLine++;
+  } else if (line.startsWith(' ')) { flush(); oldLine++; newLine++; }
+  else { flush(); active = false; }
+ }
+ flush();
+ return ranges;
+}
 /** Existing typed tools retain daemon execution authority and isolated object reads. */
 export class RegistryReviewSources implements ReviewSources {
  constructor(private readonly deps: ToolDeps) {}
@@ -49,11 +74,7 @@ export class RegistryReviewSources implements ReviewSources {
    const oldMatches = header('---', `a/${oldPath}`, section) || header('---', '/dev/null', section);
    const newMatches = header('+++', `b/${newPath}`, section) || header('+++', '/dev/null', section);
    if (!oldMatches || !newMatches) continue;
-   for (const match of section.matchAll(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/gm)) {
-   const beforeCount = Number(match[2] ?? 1), afterCount = Number(match[4] ?? 1);
-   ranges.push({ ...(beforeCount ? { before: [Number(match[1]), Number(match[1]) + beforeCount - 1] as const } : {}),
-    ...(afterCount ? { after: [Number(match[3]), Number(match[3]) + afterCount - 1] as const } : {}) });
-   }
+   ranges.push(...changedRuns(section));
   }
   return ranges;
  }

@@ -41,6 +41,8 @@ export interface WebviewPanelHost {
   openModelTiers(): void;
   /** Open the separate, already-complete Connections panel (Story S001, E202610302ab0484d). */
   openConnections(): void;
+  /** Open the separate, already-complete Delivery Board panel (Story S001, E202610317b6a5fa9). */
+  openDeliveryBoard(): void;
   /** Show the status-bar menu and route the choice to the matching open method. */
   showStatusMenu(): Promise<void>;
 }
@@ -226,7 +228,7 @@ export interface RepoProviderRegistration {
 export interface MenuItem {
   readonly label: string;
   /** Which host action this item maps to (kept out of the visible label). */
-  readonly action: 'detailed' | 'repoConfig' | 'modelTiers' | 'connections';
+  readonly action: 'detailed' | 'repoConfig' | 'modelTiers' | 'connections' | 'deliveryBoard';
 }
 
 /**
@@ -317,6 +319,14 @@ export interface WebviewPanelHostDeps {
    * opening anything (no placeholder exists for an externally-owned panel).
    */
   readonly onOpenConnections?: (() => void) | undefined;
+  /**
+   * OPTIONAL sink for the Delivery Board menu entry (Story S001,
+   * E202610317b6a5fa9). The Delivery Board is a separate, already-complete
+   * webview owned by extension.ts's own registerDeliveryBoard() host — this
+   * host renders no body for it. A host built without it logs a warning
+   * instead of opening anything, matching onOpenConnections.
+   */
+  readonly onOpenDeliveryBoard?: (() => void) | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

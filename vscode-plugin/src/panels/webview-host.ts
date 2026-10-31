@@ -48,12 +48,13 @@ const MODEL_TIERS_VIEW_TYPE = 'insrc.modelTiers';
 /** The fixed tab order of the Detailed Status panel (daemon first — ac2 default). */
 const DETAIL_TABS: readonly DetailTab[] = ['daemon', 'workflows', 'debug'];
 
-/** The four menu choices, in order. */
+/** The five menu choices, in order. */
 const MENU_ITEMS: readonly MenuItem[] = [
   { label: 'Detailed Status', action: 'detailed' },
   { label: 'Repo Configuration', action: 'repoConfig' },
   { label: 'Model Tiers', action: 'modelTiers' },
   { label: 'Manage Connections', action: 'connections' },
+  { label: 'Delivery Board', action: 'deliveryBoard' },
 ];
 
 /** The tier/core-floor value set a Model Tiers write message is validated against. */
@@ -542,6 +543,22 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       }
     },
 
+    openDeliveryBoard(): void {
+      // The Delivery Board is a separate, already-complete webview owned by
+      // extension.ts's own registerDeliveryBoard() host — this host renders no
+      // body for it, so there is no placeholder fallback. A sink throw must not
+      // surface (never-throw), matching openConnections().
+      if (deps.onOpenDeliveryBoard === undefined) {
+        logger.warn('insrc: Delivery Board is unavailable — onOpenDeliveryBoard is not wired');
+        return;
+      }
+      try {
+        deps.onOpenDeliveryBoard();
+      } catch (err) {
+        logger.warn(`insrc: opening the Delivery Board failed — ${errText(err)}`);
+      }
+    },
+
     async showStatusMenu(): Promise<void> {
       let chosen: MenuItem | undefined;
       try {
@@ -555,6 +572,7 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       if (chosen.action === 'detailed') this.openDetailedStatus();
       else if (chosen.action === 'repoConfig') this.openRepoConfiguration();
       else if (chosen.action === 'modelTiers') this.openModelTiers();
+      else if (chosen.action === 'deliveryBoard') this.openDeliveryBoard();
       else this.openConnections();
     },
   };

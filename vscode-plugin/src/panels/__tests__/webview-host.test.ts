@@ -82,6 +82,7 @@ function makeHost(opts: {
   modelTiersRenderer?: WebviewPanelHostDeps['modelTiersRenderer'];
   onModelTiersWrite?: WebviewPanelHostDeps['onModelTiersWrite'];
   onOpenConnections?: WebviewPanelHostDeps['onOpenConnections'];
+  onOpenDeliveryBoard?: WebviewPanelHostDeps['onOpenDeliveryBoard'];
 } = {}): {
   host: ReturnType<typeof createWebviewPanelHost>;
   created: FakePanel[];
@@ -112,6 +113,7 @@ function makeHost(opts: {
     modelTiersRenderer: opts.modelTiersRenderer,
     onModelTiersWrite: opts.onModelTiersWrite,
     onOpenConnections: opts.onOpenConnections,
+    onOpenDeliveryBoard: opts.onOpenDeliveryBoard,
   };
   return { host: createWebviewPanelHost(deps), created, offered, warns };
 }
@@ -119,13 +121,13 @@ function makeHost(opts: {
 /** Flush pending microtasks/timers so the host's async render lands. */
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
-test("showStatusMenu offers EXACTLY four items, including Manage Connections, and routes each choice to the matching panel", async () => {
+test("showStatusMenu offers EXACTLY five items, including Manage Connections and Delivery Board, and routes each choice to the matching panel", async () => {
   // Detailed Status choice → opens the detailed panel.
   const detailed = makeHost({ pick: { label: 'Detailed Status', action: 'detailed' } });
   await detailed.host.showStatusMenu();
   await tick();
   assert.equal(detailed.offered.length, 1);
-  assert.deepEqual(detailed.offered[0]!.map((i) => i.label), ['Detailed Status', 'Repo Configuration', 'Model Tiers', 'Manage Connections']);
+  assert.deepEqual(detailed.offered[0]!.map((i) => i.label), ['Detailed Status', 'Repo Configuration', 'Model Tiers', 'Manage Connections', 'Delivery Board']);
   assert.equal(detailed.created.length, 1, 'the detailed panel was created');
   assert.equal(detailed.created[0]!.viewType, 'insrc.detailedStatus');
 
@@ -149,6 +151,14 @@ test("showStatusMenu offers EXACTLY four items, including Manage Connections, an
   await connections.host.showStatusMenu();
   assert.equal(opened, 1, 'the connections sink was invoked exactly once');
   assert.equal(connections.created.length, 0, 'no panel is created by this host for Connections');
+
+  // Delivery Board choice → invokes the injected onOpenDeliveryBoard sink,
+  // not a panel created by THIS host (the Delivery Board is externally owned).
+  let boardOpened = 0;
+  const board = makeHost({ pick: { label: 'Delivery Board', action: 'deliveryBoard' }, onOpenDeliveryBoard: () => { boardOpened += 1; } });
+  await board.host.showStatusMenu();
+  assert.equal(boardOpened, 1, 'the delivery board sink was invoked exactly once');
+  assert.equal(board.created.length, 0, 'no panel is created by this host for Delivery Board');
 });
 
 test('openConnections(): unwired onOpenConnections logs a warning and opens nothing (no throw)', () => {
@@ -167,6 +177,24 @@ test('openConnections(): a synchronous throw from a wired onOpenConnections fake
   assert.doesNotThrow(() => host.openConnections(), 'a sink throw must not surface (never-throw)');
   assert.equal(warns.length, 1, 'the throw is logged, not swallowed silently');
   assert.match(warns[0]!, /opening Connections failed.*boom/);
+});
+
+test('openDeliveryBoard(): unwired onOpenDeliveryBoard logs a warning and opens nothing (no throw)', () => {
+  const { host, warns } = makeHost();
+  host.openDeliveryBoard();
+  assert.equal(warns.length, 1, 'a warning is logged when onOpenDeliveryBoard is not wired');
+  assert.match(warns[0]!, /onOpenDeliveryBoard is not wired/);
+});
+
+test('openDeliveryBoard(): a synchronous throw from a wired onOpenDeliveryBoard fake is caught and logged, matching the onOpenConnections sink precedent', () => {
+  const { host, warns } = makeHost({
+    onOpenDeliveryBoard: () => {
+      throw new Error('boom');
+    },
+  });
+  assert.doesNotThrow(() => host.openDeliveryBoard(), 'a sink throw must not surface (never-throw)');
+  assert.equal(warns.length, 1, 'the throw is logged, not swallowed silently');
+  assert.match(warns[0]!, /opening the Delivery Board failed.*boom/);
 });
 
 test('Cancel path: a dismissed menu (undefined) opens no panel (ac1)', async () => {

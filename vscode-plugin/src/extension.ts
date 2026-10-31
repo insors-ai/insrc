@@ -395,6 +395,10 @@ export function activate(context: vscode.ExtensionContext): void {
     managedPid,
     platform: process.platform,
   });
+  // S001 (E202610317b6a5fa9): bridges the gap between panelHost's construction
+  // (here) and registerDeliveryBoard()'s call, ~500 lines below — the closure
+  // below reads this by reference, so it resolves correctly once assigned.
+  let deliveryBoardOpen: (() => void) | undefined;
   const panelHost = createWebviewPanelHost({
     panels: ({ viewType, title }): PanelHandle => {
       // S005: enableScripts:true so the Detailed Status tab strip + Refresh can
@@ -501,6 +505,11 @@ export function activate(context: vscode.ExtensionContext): void {
       connectionManager.open().catch((err: unknown) => {
         panelLog.warn(`opening Connections failed — ${err instanceof Error ? err.message : String(err)}`);
       });
+    },
+    // S001 (E202610317b6a5fa9): deliveryBoardOpen is assigned once
+    // registerDeliveryBoard() runs below; this closure reads it by reference.
+    onOpenDeliveryBoard: () => {
+      deliveryBoardOpen?.();
     },
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2
@@ -894,7 +903,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // E2 s1: the delivery board — a read-only editor tab over the daemon's workflow.delivery
   // snapshot for the first workspace folder. Not gated on insrc.chat.enabled.
-  registerDeliveryBoard({
+  const deliveryBoard = registerDeliveryBoard({
     commands,
     subscriptions: context.subscriptions,
     createWebviewPanel: (viewType, title) =>
@@ -908,6 +917,9 @@ export function activate(context: vscode.ExtensionContext): void {
     logger: panelLog,
     reviewPane: docsReviewHost,
   });
+  // S001 (E202610317b6a5fa9): feeds the status-bar menu's Delivery Board entry,
+  // wired above at panelHost's construction (onOpenDeliveryBoard).
+  deliveryBoardOpen = deliveryBoard.open;
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

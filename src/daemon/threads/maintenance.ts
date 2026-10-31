@@ -234,12 +234,15 @@ export class MaintenanceController {
 				const closed = await this.closeWorkerHandles();
 				stopIfUnhealthy('before compacting');
 				const result = await this.deps.compact({
-					// Every worker closed its handle and none was started since: the environment is really closed.
-					// By identity, not count: a worker that exited and was replaced keeps the count unchanged.
+					// Every live worker closed its handle: the environment is really closed. By
+					// identity, not count (ISSUE-dc0bd808): a worker released after acknowledging
+					// (the idle sweep can do this mid-compaction) simply drops out of live() and
+					// does not abandon the rename; a replacement/new worker not in the acknowledged
+					// set still fails this check regardless of count.
 					beforeRename: async () => {
 						if (!closed.allClosed) return false;
 						const live = this.deps.workers.live();
-						return this.deps.workers.created() === live.length && live.every(w => closed.acknowledged.has(w.threadId));
+						return live.every(w => closed.acknowledged.has(w.threadId));
 					},
 				});
 				log.info({ ...result, reason }, 'maintenance: compaction done');

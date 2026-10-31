@@ -190,6 +190,34 @@ describe('unit', () => {
 		for (const w of [a, b, replacement]) w.close();
 	});
 
+	test('the pre-rename check no longer abandons the compaction when a worker the idle sweep released has already acknowledged graph.close, even though the supervisor has not yet seen its exit (ISSUE-dc0bd808)', async () => {
+		const fakeWorker = (threadId: number) => {
+			const { port1, port2 } = new MessageChannel();
+			port2.on('message', (m: { op?: string; args?: unknown }) => {
+				if (m.op === GRAPH_CLOSE_OP) { (m.args as MessagePort).postMessage('closed'); (m.args as MessagePort).close(); }
+			});
+			return { threadId, port: port1, close: () => { port1.close(); port2.close(); } };
+		};
+		const a = fakeWorker(104), b = fakeWorker(105);
+		let live = [a, b];
+		let created = 2; // the supervisor's own created count, independent of live() -- lags behind release until the worker's 'exit' event
+		const decisions: boolean[] = [];
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined,
+			workers: { live: () => live, created: () => created },
+			compact: async opts => {
+				decisions.push(await opts.beforeRename());          // both live and acknowledged
+				live = [a];                                          // the idle sweep released b; created() has not decremented yet
+				decisions.push(await opts.beforeRename());
+				return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 };
+			},
+		});
+		await c.runNow();
+		assert.deepEqual(decisions, [true, true], 'a released-but-acknowledged worker does not abandon the compaction, even with created() still ahead of live().length');
+		for (const w of [a, b]) w.close();
+	});
+
 	test('graph.close is asked of every worker at once: unresponsive workers cost one acknowledgement timeout, not one each', async () => {
 		const deaf = (threadId: number) => { const { port1, port2 } = new MessageChannel(); return { threadId, port: port1, close: () => { port1.close(); port2.close(); } }; };
 		const workers = [deaf(201), deaf(202), deaf(203)];

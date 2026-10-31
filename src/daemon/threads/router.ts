@@ -292,7 +292,8 @@ export class Router {
 	 * with no live targets) — matching the single-thread daemon's one shared registry.
 	 */
 	private broadcastAbort(request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
-		const targets = this.sessions!.liveThreadIds().filter(id => this.ports.has(id));
+		const sessions = this.sessions!;
+		const targets = sessions.liveThreadIds().filter(id => this.ports.has(id));
 		let settled = false;
 		let remaining = targets.length;
 		const cancels: (() => void)[] = [];
@@ -304,9 +305,17 @@ export class Router {
 		};
 		if (targets.length === 0) { finish(false); return () => {}; }
 		for (const id of targets) {
+			// Keep each fan-out target busy (not idle-released) until its reply, mirroring the
+			// known-owner path above — without this, the idle sweep could release the very
+			// worker that still holds the run while this broadcast is in flight (ISSUE-e587866e).
+			sessions.startedOn(id);
+			let ended = false;
+			const end = (): void => { if (!ended) { ended = true; sessions.endedOn(id); } };
 			const sub: LocalRequestEnvelope = { ...request, requestId: `internal-${++this.seq}` };
 			cancels.push(this.send(id, sub, envelope => {
-				if (settled || envelope.kind !== 'reply') return;
+				if (envelope.kind !== 'reply') return;
+				end();
+				if (settled) return;
 				const ok = envelope.error === undefined && (envelope.result as { ok?: boolean } | undefined)?.ok === true;
 				if (ok) { finish(true); return; }
 				remaining -= 1;

@@ -32,7 +32,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 2,
         "contentHash": "c41e12e801a62d0d746870c4a4f7c2d78f40ad1794797bb14ecd9d0862abbb41",
@@ -65,6 +65,15 @@
           "relation": "reviews",
           "fragment": "review-61a20b86b67b1ebee65e603c466f040a"
         }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-31T19:35:07.565Z"
       }
     }
   },

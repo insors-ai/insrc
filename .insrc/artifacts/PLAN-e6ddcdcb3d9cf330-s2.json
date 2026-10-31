@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793475316606-abxwcj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-31T19:38:56.127Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 218338,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "storyId": "s2",
+    "lldRunId": "wf-1793472850381-quw5u3",
+    "lldEffectiveHash": "68fe25ca25dced3cd99e4d39d50ff6f6dc7e3b4a953630c4537090c35779cdcd",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "prose": "Extend the existing task-review execution path so an explicit retrigger resumes only unfinished work and a sequential attempt can re-review fixes using preserved history. Keep old outcomes and their source provenance intact, repair pending CR publication without repeating model work, and verify parity through focused real IPC/Git fixtures. The work stays within S2; timeout-policy changes and normal session/cleanup integration remain separate.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Validate recovery requests and immutable attempt history",
+        "summary": "Extend the existing task-review checkpoint/request/summary validators with explicit start/resume semantics and optional reuse provenance. Build a testable internal admission path for saved pinned input and sequential attempts; do not expose an unfinished recovery route before t2 integrates execution.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "acceptanceChecks": [
+          "Existing attempt1 requests remain compatible; request operation defaults to start. Validate positive safe ordinals, canonical project/epic/story/task identity and bounded stored checkpoint data before mutation/provider use.",
+          "Resume uses the latest saved packet; a supplied packet must equal normalized saved input. New attempts require latest+1 and a terminal, durably published predecessor; missing files, conflicting pins, replayed/skipped ordinals and corrupt history refuse explicitly.",
+          "Preserve every earlier header/input/terminal result and original buildFingerprint. Add only optional reassessmentSummary/origins metadata; old checkpoints and v2 CRs without it keep their meaning.",
+          "Reuse existing active reservation and atomic writer; refused admission releases only its own reservation, invokes no provider and leaves persisted history unchanged. No automatic startup recovery, new storage collection, lease or trust system."
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections"
+          },
+          {
+            "level": "unit",
+            "name": "attempt schema compatibility: optional origins and old checkpoint/CR meaning"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Resume only unfinished work through both reviewer routes",
+        "summary": "Integrate validated explicit recovery into the current coordinator, actual controller exchange and opt-in task-review RPC. Retain saved terminal task results, rebind actual controller connections, and repair pending publication without repeating review work.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "acceptanceChecks": [
+          "Explicit latest-attempt resume with an empty active map restores pinned input/order and schedules only selected tasks with no terminal result. Passed, changes_requested, incomplete and failed results all remain unchanged and are never retried in that attempt.",
+          "Daemon continuation acknowledges promptly and outlives the submitting connection. Controller continuation binds a new trusted current owner, rejects foreign/old owners, stops on disconnect and retains completed work.",
+          "Acknowledgements, controller frames and polled checkpoint agree on reviewId, actual attempt, reviewer, derived path, status and preserved/completed task IDs for attempt1 recovery, later attempts and terminal replay.",
+          "Each new terminal result is atomically saved before the next task. Existing S/M/L allowance and conservative failure classification remain; unfinished work may restart on explicit resume, but terminal outcomes require a later attempt.",
+          "All-terminal publication-pending recovery invokes no provider and replays canonical CR publication idempotently. A published terminal resume returns existing completion metadata; source/persistence/publication failures remain explicit and preserve feedback.",
+          "Only the existing explicit task-review route is extended; full normal MCP/session-thread migration and Story-approval cleanup remain S3."
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped"
+          },
+          {
+            "level": "integration",
+            "name": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction"
+          },
+          {
+            "level": "integration",
+            "name": "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay"
+          },
+          {
+            "level": "integration",
+            "name": "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Re-review sequential attempts with history and truthful reuse provenance",
+        "summary": "Append newly pinned attempts under the same review ID, extend the existing attribution turn with reasoned reassess/reuse decisions, and project exact reused results with source-attempt labels through the existing checkpoint and CR queue/renderer.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "acceptanceChecks": [
+          "A sequential new start pins its own packet/current buildFingerprint while keeping canonical review scope stable and all prior attempt sections intact; tasks derive from the new pinned Plan in dependency order.",
+          "Both actual reviewer routes receive the entire prior attempt history and current packet in the existing attribution turn. The reviewer chooses reassess/reuse with reasons; single-task later attempts also make this history decision. First-attempt direct single-task behavior remains unchanged.",
+          "Fresh re-review task prompts include relevant prior feedback, its source attempt/reassessment reason and a host-derived checkpoint reference so the actual assessor can consult complete history despite separate provider sessions. Prior feedback remains evidence, not instructions; no additional mandatory model turn or new evidence collection is added.",
+          "Host-only reuse resolves a real earlier task result within this review ID and same reviewer party, enforces decreasing source-attempt ancestry and validates current selected locations/references. Missing sources, cycles, changed copied results, foreign tasks/parties and malformed decisions refuse without fabricated feedback or automatic retries.",
+          "Copied results retain exact findings, inspected/test evidence, execution claims, coverage strength, advice, limitations and status. Reused failed/incomplete results never become passed; fresh results remain ordinary TaskReviewResult objects.",
+          "Persist compact origins only for reused results and carry them plus reassessmentSummary into existing schema2 CR summaries. Preserve prior summaries and same-key replay/conflict semantics; render actual source attempt/reviewer rather than claiming a fresh assessment.",
+          "Keep aggregate failed > incomplete > changes_requested > passed, explicit context-size refusal and publication-before-terminal ordering. No silent history truncation, new chunk engine, per-task decision-call framework or replacement artifact."
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength"
+          },
+          {
+            "level": "integration",
+            "name": "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters"
+          },
+          {
+            "level": "integration",
+            "name": "history prompts: actual fresh-task reviewers can consult relevant prior feedback and complete attempt history"
+          },
+          {
+            "level": "integration",
+            "name": "CR provenance: exact retained outcomes, origin labels, latest aggregation and replay conflict handling"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Verify recovery, re-review and compatibility end to end",
+        "summary": "Complete focused production-IPC/Git fixtures across both reviewer routes, failure boundaries, metadata and CR ancestry; run the production build and affected compatibility regressions without a broad live model sweep.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "acceptanceChecks": [
+          "Production IpcServer fixtures with real temporary Git repositories and deterministic providers prove explicit interrupted recovery, immutable pins, no repeat of terminal failed/incomplete work, and no startup auto-resume.",
+          "A two-attempt whole-story/task scenario proves stable review identity, new pins, full history, fresh versus reused results, explicit source provenance and correct acknowledgement/frame/checkpoint metadata through both actual adapters.",
+          "Crash/save/render/source-validation failure fixtures prove task-boundary durability, zero-provider publication recovery, idempotent replay, duplicate rejection and no false pass from unresolved reused evidence.",
+          "Existing first attempts, checkpoints without optional fields, legacy CR interpretation, design-review/provider defaults and Story completion gating remain compatible; generated CR output displays origin labels and all feedback accurately.",
+          "Migration/rollback fixtures show old records remain readable and unsupported older readers fail explicitly after origin-bearing data exists; never strip provenance/history to downgrade. Deployment uses the normal user-managed daemon update/restart when requested.",
+          "Production build and affected narrow regression subset pass. Use explicit test files and bounded/force-exit runners to avoid leaked test handles. Retain accepted S1 live evidence as historical provider evidence; deterministic fixtures are not labelled new live model proof.",
+          "No timeout-policy implementation, normal-entry/thread migration, approval cleanup, broad benchmark, automatic extra review rounds or legacy-engine deletion enters S2."
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "recovery end-to-end: real IPC/Git, both adapters, interruption boundaries and correct attempt metadata"
+          },
+          {
+            "level": "unit",
+            "name": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment"
+          },
+          {
+            "level": "integration",
+            "name": "migration compatibility: preserve origin-bearing history and reject unsupported downgrade readers"
+          },
+          {
+            "level": "smoke",
+            "name": "S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/LLD.md#6-error-paths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/LLD.md#7-test-strategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/LLD.md#8-migration"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/LLD.md#1-hld-context"
+    }
+  ]
+}

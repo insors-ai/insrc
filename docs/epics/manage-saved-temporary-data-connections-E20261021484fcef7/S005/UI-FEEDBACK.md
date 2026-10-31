@@ -77,3 +77,10 @@ Runtime source commit: eb6dc3067. Clean-snapshot package: vscode-plugin/insrc-vs
 Final extension sweep: 117 files; complete TAP totals {'tests': 1351, 'pass': 1336, 'fail': 3, 'skipped': 12}. Failures/timeouts are retained in evidence/feedback-batch/sweep-summary.json and sweep-logs.tar.gz. The prior cli-adapter macOS /proc, detail-renderer message-set and workspace activation assertions still fail; chat-panel reaches its deadline without complete totals. Backend/native product code is unchanged, so those suites were not repeated wholesale for this UI correction.
 
 The t18 validation gate passed root/extension typechecks, all four mapped cases and the task acceptance verdict on source commit eb6dc3067. This is task validation, not independent Story-completion review or live visual acceptance. The actual current implementation is stacked list-first as requested; historical task terminology still calls its list/detail sections two panes.
+
+
+## Product icon correction — 2026-10-31
+
+User correction: datasource icons must be recognizable product icons, not generated badges. VS Code 0.5.23 replaces monogram artwork with pinned upstream SVGs from Simple Icons, Devicon, SVG Logos and vscode-icons. All 29 supported types remain covered in the dropdown, list and Edit view; file formats share established format artwork where appropriate. Original assets, per-icon provenance/hashes and license texts are bundled locally; no runtime downloads or external icon font. The offline compiler validates SVG primitives and local-only references, and the renderer namespaces IDs per instance to avoid cross-icon gradient/mask collisions. No HTML injection or privilege/message changes.
+
+All 41 Connections tests passed, including exact coverage, original asset byte hashes, absence of monogram text and internal-reference isolation. The rendered icon contact sheet was inspected on light/dark backgrounds; it is asset verification, not live native UI acceptance. Original layout, row-removal protections and repository-recovery behavior remain covered.

@@ -1,0 +1,350 @@
+{
+  "purpose": "Product marks and established format icons for datasource identification. Trademarks belong to their owners; no endorsement implied. Original SVG bytes retained. BSON uses the MongoDB product mark; Feather uses Apache Arrow. CSV/TSV and JSON-family formats share their established format artwork.",
+  "icons": [
+    {
+      "file": "postgresql.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/postgresql.svg",
+      "kinds": [
+        "postgres"
+      ],
+      "title": "PostgreSQL",
+      "license": "CC0-1.0",
+      "brandSource": "https://wiki.postgresql.org/wiki/Logo",
+      "color": "#4169E1",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/postgresql.svg",
+      "sha256": "c8ccadbd88c9312c2ad3734c4861b31d3485ce179ee91d64793143f83cfa745c"
+    },
+    {
+      "file": "mysql.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/mysql.svg",
+      "kinds": [
+        "mysql"
+      ],
+      "title": "MySQL",
+      "license": "CC0-1.0",
+      "brandSource": "https://www.mysql.com/about/legal/logos.html",
+      "color": "#4479A1",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/mysql.svg",
+      "sha256": "67c144cc3e44ad14062a3f20ebe29c5e7eeb2c2c9c0f43cf48d87fe6291a8b2d"
+    },
+    {
+      "file": "mariadb.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/mariadb.svg",
+      "kinds": [
+        "mariadb"
+      ],
+      "title": "MariaDB",
+      "license": "CC0-1.0",
+      "brandSource": "https://mariadb.com/about-us/logos/",
+      "color": "#003545",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/mariadb.svg",
+      "sha256": "477435746bb2024048c7b71529f615fb70d7e679618f37bac49f78fd07e67dfe"
+    },
+    {
+      "file": "sqlite.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/sqlite.svg",
+      "kinds": [
+        "sqlite"
+      ],
+      "title": "SQLite",
+      "license": "CC0-1.0",
+      "brandSource": "https://github.com/sqlite/sqlite/blob/43e862723ec680542ca6f608f9963c0993dd7324/art/sqlite370.eps",
+      "color": "#003B57",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/sqlite.svg",
+      "sha256": "71d4153bc9661dfe6b92dad70f737ec2b6c7c839311e502b4ca66fe664fe12b6"
+    },
+    {
+      "file": "redis.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/redis.svg",
+      "kinds": [
+        "redis"
+      ],
+      "title": "Redis",
+      "license": "CC0-1.0",
+      "brandSource": "https://redis.io/brand-guidelines",
+      "color": "#FF4438",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/redis.svg",
+      "sha256": "428b86deb14c8bdacdcdf75987fe454f367bcd078a7e4ae3f84de29aa5bdf136"
+    },
+    {
+      "file": "cockroachlabs.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/cockroachlabs.svg",
+      "kinds": [
+        "cockroachdb"
+      ],
+      "title": "Cockroach Labs",
+      "license": "CC0-1.0",
+      "brandSource": "https://www.cockroachlabs.com",
+      "color": "#6933FF",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/cockroachlabs.svg",
+      "sha256": "f7cb07444e7a4c0a93546a974b42fea77dda63c1e669061647c179673b7cd35e"
+    },
+    {
+      "file": "apachecassandra.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/apachecassandra.svg",
+      "kinds": [
+        "cassandra"
+      ],
+      "title": "Apache Cassandra",
+      "license": "Apache-2.0",
+      "brandSource": "https://www.apache.org/logos",
+      "color": "#1287B1",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/apachecassandra.svg",
+      "sha256": "d13ce7537c308b71b8254a2dc879c3781d3358074c02a621b89d70ead36af5ce"
+    },
+    {
+      "file": "clickhouse.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/clickhouse.svg",
+      "kinds": [
+        "clickhouse"
+      ],
+      "title": "ClickHouse",
+      "license": "CC0-1.0",
+      "brandSource": "https://github.com/ClickHouse/ClickHouse/blob/12bd453a43819176d25ecf247033f6cb1af54beb/website/images/logo-clickhouse.svg",
+      "color": "#FFCC01",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/clickhouse.svg",
+      "sha256": "9fa7c12613763111ca26bbc1fe10994960028bc3da9faf47247de231a0b27589"
+    },
+    {
+      "file": "mongodb.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/mongodb.svg",
+      "kinds": [
+        "mongodb",
+        "bson"
+      ],
+      "title": "MongoDB",
+      "license": "CC0-1.0",
+      "brandSource": "https://www.mongodb.com/pressroom",
+      "color": "#47A248",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/mongodb.svg",
+      "sha256": "6698757ee85997e8167b2eacaff8395d6987954185488f2e90b88ef387fec6c7"
+    },
+    {
+      "file": "natsdotio.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/natsdotio.svg",
+      "kinds": [
+        "nats"
+      ],
+      "title": "NATS.io",
+      "license": "CC0-1.0",
+      "brandSource": "https://github.com/cncf/artwork/blob/88bc5e7a0cc7f3770ba6edddc92e1ab8a6006171/projects/nats/icon/black/nats-icon-black.svg",
+      "color": "#27AAE1",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/natsdotio.svg",
+      "sha256": "01d7c0dbc74b250b3ea7e30186fed0d353d5632a254669f5219b525bfb61ff12"
+    },
+    {
+      "file": "etcd.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/etcd.svg",
+      "kinds": [
+        "etcd"
+      ],
+      "title": "etcd",
+      "license": "CC0-1.0",
+      "brandSource": "https://cncf-branding.netlify.app/projects/etcd/",
+      "color": "#419EDA",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/etcd.svg",
+      "sha256": "547451df94e413731a7d45f6d62bce98d4085e9a9c8462570c0f43d744054e44"
+    },
+    {
+      "file": "apachearrow.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/apachearrow.svg",
+      "kinds": [
+        "arrow",
+        "feather"
+      ],
+      "title": "Apache Arrow",
+      "license": "Apache-2.0",
+      "brandSource": "https://arrow.apache.org/visual_identity",
+      "color": "#000000",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/apachearrow.svg",
+      "sha256": "ad07fa0b330acdc12dfa8e08973d8902fd06af0f5cbb29f34aad068e120ad825"
+    },
+    {
+      "file": "apacheavro.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/apacheavro.svg",
+      "kinds": [
+        "avro"
+      ],
+      "title": "Apache Avro",
+      "license": "Apache-2.0",
+      "brandSource": "https://apache.org/logos",
+      "color": "#30638E",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/apacheavro.svg",
+      "sha256": "367cc4cbf3161316dc9beba7f0c5d7d2ee8f68bc05787ed0c04f4dc149371543"
+    },
+    {
+      "file": "apacheparquet.svg",
+      "repo": "simple-icons/simple-icons",
+      "commit": "90646e4bf7f3b89df6c37e65baf3e7bc759a517c",
+      "path": "icons/apacheparquet.svg",
+      "kinds": [
+        "parquet"
+      ],
+      "title": "Apache Parquet",
+      "license": "Apache-2.0",
+      "brandSource": "https://apache.org/logos",
+      "color": "#50ABF1",
+      "url": "https://raw.githubusercontent.com/simple-icons/simple-icons/90646e4bf7f3b89df6c37e65baf3e7bc759a517c/icons/apacheparquet.svg",
+      "sha256": "6ab5025044fab7e92b6845f212fe1125109cda39ac8b64514389a7e0480f47c6"
+    },
+    {
+      "file": "memcached.svg",
+      "repo": "devicons/devicon",
+      "commit": "32fe1d3b3f36ad11f90ab94f7db59738139c2bf6",
+      "path": "icons/memcached/memcached-original.svg",
+      "kinds": [
+        "memcached"
+      ],
+      "title": "Memcached",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/devicons/devicon/32fe1d3b3f36ad11f90ab94f7db59738139c2bf6/icons/memcached/memcached-original.svg",
+      "sha256": "4b8dbfce52441072e0f13f9691971c351333638f71c5e878e7acf78440fb44ff"
+    },
+    {
+      "file": "microsoftsqlserver.svg",
+      "repo": "devicons/devicon",
+      "commit": "32fe1d3b3f36ad11f90ab94f7db59738139c2bf6",
+      "path": "icons/microsoftsqlserver/microsoftsqlserver-original.svg",
+      "kinds": [
+        "mssql"
+      ],
+      "title": "Microsoft SQL Server",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/devicons/devicon/32fe1d3b3f36ad11f90ab94f7db59738139c2bf6/icons/microsoftsqlserver/microsoftsqlserver-original.svg",
+      "sha256": "f52b63cb5ff8c17efc079ae93eb7e2f1a04ca34eb736310c3576b19c0b9db21d"
+    },
+    {
+      "file": "oracle.svg",
+      "repo": "devicons/devicon",
+      "commit": "32fe1d3b3f36ad11f90ab94f7db59738139c2bf6",
+      "path": "icons/oracle/oracle-original.svg",
+      "kinds": [
+        "oracle"
+      ],
+      "title": "Oracle",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/devicons/devicon/32fe1d3b3f36ad11f90ab94f7db59738139c2bf6/icons/oracle/oracle-original.svg",
+      "sha256": "6afd3872d2ecb9a619fc10048b6a18bc3b948dfd7c97d1a694af26c6a7153cbf"
+    },
+    {
+      "file": "dynamodb.svg",
+      "repo": "devicons/devicon",
+      "commit": "32fe1d3b3f36ad11f90ab94f7db59738139c2bf6",
+      "path": "icons/dynamodb/dynamodb-original.svg",
+      "kinds": [
+        "dynamodb"
+      ],
+      "title": "Amazon DynamoDB",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/devicons/devicon/32fe1d3b3f36ad11f90ab94f7db59738139c2bf6/icons/dynamodb/dynamodb-original.svg",
+      "sha256": "91f337c176f2d6f2bb26274d1aac7cb5cebcbca84869271261cc18c9f69b3ea4"
+    },
+    {
+      "file": "csv.svg",
+      "repo": "vscode-icons/vscode-icons",
+      "commit": "fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2",
+      "path": "icons/file_type_csv.svg",
+      "kinds": [
+        "csv",
+        "tsv"
+      ],
+      "title": "Delimited data file",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/vscode-icons/vscode-icons/fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2/icons/file_type_csv.svg",
+      "sha256": "d9ae79508947257e90fa245ecffb550bab7837a6561da27841a701514003dd2c"
+    },
+    {
+      "file": "json_official.svg",
+      "repo": "vscode-icons/vscode-icons",
+      "commit": "fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2",
+      "path": "icons/file_type_json_official.svg",
+      "kinds": [
+        "json",
+        "jsonl",
+        "ndjson"
+      ],
+      "title": "JSON data file",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/vscode-icons/vscode-icons/fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2/icons/file_type_json_official.svg",
+      "sha256": "8ac70c2cb5df7b319a278667836bd91e48c92d39ea59b50ee90257bb6cfdb22c"
+    },
+    {
+      "file": "text.svg",
+      "repo": "vscode-icons/vscode-icons",
+      "commit": "fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2",
+      "path": "icons/file_type_text.svg",
+      "kinds": [
+        "fixed-width"
+      ],
+      "title": "Text data file",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/vscode-icons/vscode-icons/fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2/icons/file_type_text.svg",
+      "sha256": "b8f380ee5bf76befed8c6fdae524f0c6a99a8370a14effb566dedebc878f4cbc"
+    },
+    {
+      "file": "excel.svg",
+      "repo": "vscode-icons/vscode-icons",
+      "commit": "fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2",
+      "path": "icons/file_type_excel.svg",
+      "kinds": [
+        "xlsx"
+      ],
+      "title": "Microsoft Excel",
+      "license": "MIT",
+      "url": "https://raw.githubusercontent.com/vscode-icons/vscode-icons/fe2c6f4b02457da2b3c8c5c7518d257cf739c1f2/icons/file_type_excel.svg",
+      "sha256": "eb813b25b79444c6af9f77048129bf21705df600d5fe56ea932712de277e1955"
+    },
+    {
+      "file": "keydb.svg",
+      "repo": "gilbarbara/logos",
+      "commit": "d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+      "path": "logos/keydb-icon.svg",
+      "kinds": [
+        "keydb"
+      ],
+      "title": "Keydb",
+      "license": "CC0-1.0",
+      "url": "https://raw.githubusercontent.com/gilbarbara/logos/d6960edc1b7309d392c76e40d3a320df7f9ff85c/logos/keydb-icon.svg",
+      "sha256": "52fa5a7addd82a5c09ea222f36ca8c44fc2e49e429d7033e25b70a5c56cf0c32"
+    },
+    {
+      "file": "valkey.svg",
+      "repo": "gilbarbara/logos",
+      "commit": "d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+      "path": "logos/valkey-icon.svg",
+      "kinds": [
+        "valkey"
+      ],
+      "title": "Valkey",
+      "license": "CC0-1.0",
+      "url": "https://raw.githubusercontent.com/gilbarbara/logos/d6960edc1b7309d392c76e40d3a320df7f9ff85c/logos/valkey-icon.svg",
+      "sha256": "eb3ff18e355a1bcd8fead43019cc9dd69618dda16f472bb67767c85425177f72"
+    }
+  ]
+}

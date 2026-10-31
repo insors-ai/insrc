@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { managementFixture } from './fixtures/management.js';
 import { FakeConnectionPanel } from './fixtures/renderer.js';
 import { ConnectionsManagerHost } from '../host.js';
 import { createConnectionsDraftTests } from '../gateway.js';
 import { ConnectionRemovals } from '../../../../src/shared/connection-manager/removal.js';
-import { DATASOURCE_MARKS } from '../datasource-icons.js';
+import { DATASOURCE_ICONS } from '../datasource-icons.js';
 import { loadConnectionCorpus } from '../../../../src/shared/__tests__/fixtures/connection-corpus.js';
 import { parseConnectionIntent } from '../types.js';
 
@@ -17,13 +19,21 @@ async function fixture(){
  return {f,host,panels,close:async()=>{host.dispose();removals.dispose();probes.dispose();await f.close();}};
 }
 
-test('CM-S5-RENDER-TS: datasource badges cover every driver and the icon picker supports selection and keyboard navigation',async()=>{
+test('CM-S5-RENDER-TS: product icons cover every driver and the icon picker supports selection and keyboard navigation',async()=>{
  const f=await fixture();try{
   const panel=f.panels[0]!,dom=panel.dom!;dom.click('add');
-  assert.deepEqual(Object.keys(DATASOURCE_MARKS).sort(),loadConnectionCorpus().driverDescriptors.map(d=>d.kind).sort());
-  assert.equal(new Set(Object.values(DATASOURCE_MARKS)).size,29);
+  assert.deepEqual(Object.keys(DATASOURCE_ICONS).sort(),loadConnectionCorpus().driverDescriptors.map(d=>d.kind).sort());
+  for(const icon of Object.values(DATASOURCE_ICONS)){assert.ok(icon.nodes.length);assert.ok(icon.sourceFile.endsWith('.svg'));assert.ok(!JSON.stringify(icon).includes('text-anchor'));}
   dom.click('kind');assert.equal(dom.el('kind-options').hidden,false);assert.equal(dom.el('kind').getAttribute('aria-expanded'),'true');
   const options=dom.el('kind-options').children;assert.equal(options.length,29);
+  const manifest=JSON.parse(readFileSync(new URL('../../../media/datasources/sources.json',import.meta.url),'utf8')) as {icons:{file:string;sha256:string;url:string}[]};
+  for(const asset of manifest.icons){const bytes=readFileSync(new URL('../../../media/datasources/'+asset.file,import.meta.url));assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);assert.match(asset.url,/^https:\/\/raw\.githubusercontent\.com\//);}
+  const allIds:string[]=[];
+  for(const option of options){const svg=option.children[0]!,nodes=dom.all(svg),ids=new Set(nodes.map(n=>n.getAttribute('id')).filter((id):id is string=>!!id));allIds.push(...ids);
+   assert.equal(nodes.some(n=>n.tag==='text'),false,'product artwork must not become a generated letter badge');
+   for(const node of nodes)for(const [key,value] of Object.entries(node.attrs)){if(key==='href')assert.ok(ids.has(value.slice(1)));for(const match of value.matchAll(/url\(#([^)]+)\)/g))assert.ok(ids.has(match[1]!));}
+  }
+  assert.equal(new Set(allIds).size,allIds.length,'repeated product/file icons have isolated SVG references');
   for(const option of options){assert.equal(option.getAttribute('role'),'option');assert.equal(option.children[0]!.tag,'svg');assert.equal(option.children[0]!.getAttribute('data-datasource'),option.value);}
   dom.el('kind-options').fire('keydown',{key:'End'});assert.equal(dom.activeElement,options.at(-1));
   dom.el('kind-options').fire('keydown',{key:'Home'});assert.equal(dom.activeElement,options[0]);

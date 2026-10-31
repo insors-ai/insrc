@@ -25,7 +25,48 @@
     "hldEffectiveHash": "68fe25ca25dced3cd99e4d39d50ff6f6dc7e3b4a953630c4537090c35779cdcd",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "c41e12e801a62d0d746870c4a4f7c2d78f40ad1794797bb14ecd9d0862abbb41",
+        "at": "2026-10-31T19:24:15.005Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 14
+        },
+        "at": "2026-10-31T19:27:14.274Z",
+        "report": {
+          "entityId": "LLD-e6ddcdcb3d9cf330-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-61a20b86b67b1ebee65e603c466f040a"
+        }
+      }
+    }
   },
   "body": {
     "summary": {
@@ -221,9 +262,10 @@
         "change": "invariant-change",
         "details": "Checkpoint owns 1..N ordered ReviewAttempt sections for one canonical project/epic/story/task scope. Attempt numbers start at1 and are contiguous; only the latest may be resumed or extended, with at most one active writer through the existing in-process reservation. Earlier attempt input and terminal feedback are immutable. Decode/validate before mutation; honor existing bounded JSON/provider inputs and reject oversized history explicitly rather than truncate or invent another recovery file.",
         "callSites": [
-          "src/daemon/task-review-rpc.ts",
           "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/checkpoint.ts",
           "src/workflow/code-review/task-review/controller.ts",
+          "src/workflow/code-review/task-review/execution.ts",
           "src/workflow/code-review/task-review/publication.ts"
         ]
       },
@@ -404,12 +446,14 @@
             "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped",
             "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters",
             "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
-            "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction"
+            "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+            "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs"
           ],
           "fixturesNeeded": [
             "Production IpcServer on an isolated local socket and real temporary Git repositories; fake provider only for deterministic decision/result outputs.",
             "Injected save failures between task result and publication; reload coordinator with empty active map to simulate process loss.",
-            "Two attempts sharing stable review scope with one changed task, one reused passing task and one unresolved retained task."
+            "Two attempts sharing stable review scope with one changed task, one reused passing task and one unresolved retained task.",
+            "Assert actual acknowledgement/controller frames and polled checkpoint agree on reviewId, attempt, reviewer, path, status and preserved/completed task IDs for resumed attempt1, fresh attempt2 and terminal replay."
           ]
         },
         {
@@ -452,7 +496,8 @@
           "provingTests": [
             "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
             "old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment",
-            "S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset"
+            "S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset",
+            "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs"
           ]
         }
       ],

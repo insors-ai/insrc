@@ -102,9 +102,10 @@ publishTaskCheckpoint(project: string, epicHash: string, reviewId: string, deps:
 Checkpoint owns 1..N ordered ReviewAttempt sections for one canonical project/epic/story/task scope. Attempt numbers start at1 and are contiguous; only the latest may be resumed or extended, with at most one active writer through the existing in-process reservation. Earlier attempt input and terminal feedback are immutable. Decode/validate before mutation; honor existing bounded JSON/provider inputs and reject oversized history explicitly rather than truncate or invent another recovery file.
 
 **Call sites:**
-- `src/daemon/task-review-rpc.ts`
 - `src/workflow/code-review/task-review/coordinator.ts`
+- `src/workflow/code-review/task-review/checkpoint.ts`
 - `src/workflow/code-review/task-review/controller.ts`
+- `src/workflow/code-review/task-review/execution.ts`
 - `src/workflow/code-review/task-review/publication.ts`
 
 ### 3.2 `ReviewAttempt` — field-add
@@ -221,8 +222,8 @@ origins?: readonly { taskId: string; sourceAttempt: number; reason: string }[]; 
   - Subjects: `recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections`, `reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength`, `old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment`
   - Fixtures: `Existing real-Git task-review publication fixture with three dependency-ordered tasks.`, `Schema1 checkpoints with passed/changes_requested/incomplete/failed terminal results, one absent result and corrupt/conflicting variants.`
 - **integration** — Exercise real coordinator/controller/checkpoint/CR boundaries with deterministic reviewer responses and count calls; do not substitute mock results for claimed live model acceptance.
-  - Subjects: `interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped`, `sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters`, `publication recovery: saved feedback projects once with zero provider calls and conflict-free replay`, `controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction`
-  - Fixtures: `Production IpcServer on an isolated local socket and real temporary Git repositories; fake provider only for deterministic decision/result outputs.`, `Injected save failures between task result and publication; reload coordinator with empty active map to simulate process loss.`, `Two attempts sharing stable review scope with one changed task, one reused passing task and one unresolved retained task.`
+  - Subjects: `interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped`, `sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters`, `publication recovery: saved feedback projects once with zero provider calls and conflict-free replay`, `controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction`, `retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs`
+  - Fixtures: `Production IpcServer on an isolated local socket and real temporary Git repositories; fake provider only for deterministic decision/result outputs.`, `Injected save failures between task result and publication; reload coordinator with empty active map to simulate process loss.`, `Two attempts sharing stable review scope with one changed task, one reused passing task and one unresolved retained task.`, `Assert actual acknowledgement/controller frames and polled checkpoint agree on reviewId, attempt, reviewer, path, status and preserved/completed task IDs for resumed attempt1, fresh attempt2 and terminal replay.`
 - **smoke** — Preserve build and affected legacy/provider/CR behavior using narrow regressions, not a broad live model benchmark.
   - Subjects: `S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset`
   - Fixtures: `Retain accepted S1 live evidence as historical adapter evidence; do not rerun it solely for unchanged provider behavior.`, `Use node --import tsx --test with explicit files and a bounded/force-exit runner where production runtime handles otherwise keep tests alive.`
@@ -234,7 +235,7 @@ origins?: readonly { taskId: string; sourceAttempt: number; reason: string }[]; 
 | `ac1` | `recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections`, `interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped`, `controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction` |
 | `ac2` | `sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters`, `reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength` |
 | `ac3` | `interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped`, `reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength` |
-| `ac4` | `publication recovery: saved feedback projects once with zero provider calls and conflict-free replay`, `old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment`, `S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset` |
+| `ac4` | `publication recovery: saved feedback projects once with zero provider calls and conflict-free replay`, `old checkpoint and CR compatibility: absent origin fields mean containing-attempt assessment`, `S2 deployability: production build, shared controller/daemon policy and version-aware CR/approval regression subset`, `retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs` |
 
 ## 8. Migration
 
@@ -277,3 +278,21 @@ Keep the same checkpoint and start/resume boundary, but replace each subsequent-
 - **[[c4]]** `prior-artifact` `.insrc/artifacts/DEF-e6ddcdcb3d9cf330.json`
 - **[[c5]]** `stakeholder` `User: move on to the next story; permissive progress-based timeouts are logged separately and deferred.`
 - **[[c6]]** `code` `src/workflow/code-review/task-review/completion.ts`
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-31T19:24:24.173Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

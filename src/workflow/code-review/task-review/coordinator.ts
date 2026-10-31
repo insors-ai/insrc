@@ -13,6 +13,7 @@ import type { ReviewSources } from './sources.js';
 import { aggregateTaskStatus, validateTaskResult } from './results.js';
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
+import { assignmentResultSchema } from './result-schema.js';
 
 const log = getLogger('task-review');
 const AttributionSchema = Type.Object({ tasks: Type.Array(Type.Object({ taskId: Type.String(), changeIndexes: Type.Array(Type.Integer({ minimum: 0 })), testIndexes: Type.Array(Type.Integer({ minimum: 0 })) }, { additionalProperties: false })) }, { additionalProperties: false });
@@ -97,7 +98,7 @@ export class TaskReviewCoordinator {
      }
      const assignment = assignments.find(a => a.taskId === task.id)!;
      const references = await this.references(prepared, assignment);
-     const raw = await provider.runReviewSession(assignmentPrompt(prepared, assignment, references), TaskResultSchema, options());
+     const raw = await provider.runReviewSession(assignmentPrompt(prepared, assignment, references), assignmentResultSchema(assignment), options());
      const parsed = decodeReview(TaskResultSchema, raw);
      // Additional context is allowed, but every claimed source reference must resolve at an explicit commit.
      for (const reference of [...parsed.inspectedReferences, ...parsed.findings.flatMap(f => f.evidenceReferences), ...parsed.testCoverage.evidenceReferences, ...parsed.executedTests.flatMap(t => t.evidenceReferences)]) {

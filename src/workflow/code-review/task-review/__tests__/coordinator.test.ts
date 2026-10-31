@@ -1,5 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
+import { Value } from '@sinclair/typebox/value';
+import { assignmentResultSchema } from '../result-schema.js';
+import { TASK_REVIEW_POLICY } from '../policy.js';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -135,5 +138,27 @@ test('malformed provider result is saved as failed without retrying the task', a
   const ack = await coordinator.start(f.project, 'invalid-answer', 1, f.packet); await coordinator.settled(f.project, 'invalid-answer');
   const result = (await f.read(ack.path)).attempts[0]!['review-response'].tasks[0]!;
   assert.equal(result.status, 'failed'); assert.ok(result.error); assert.equal(calls, 1);
+ } finally { await f.cleanup(); }
+});
+
+
+test('native task output refuses placeholder references and foreign locations before host completion', async () => {
+ const f = await fixture();
+ try {
+  const prepared = await prepareReviewPacket(f.packet, f.sources);
+  const assignment = deriveTaskAssignments(prepared, [{ taskId: 't1', changeIndexes: [0], testIndexes: [0] }])[0]!;
+  const schema = assignmentResultSchema(assignment), valid = assessment('t1');
+  assert.equal(Value.Check(schema, valid), true);
+  assert.equal(Value.Check(schema, { ...valid, taskId: 'other' }), false);
+  assert.equal(Value.Check(schema, { ...valid, inspectedReferences: ['d'] }), false);
+  const finding = { severity: 'HIGH', location: 'source.ts:1', message: 'Behavior fails', rationale: 'Changed condition contradicts the requirement', evidenceReferences: [`${commit}:source.ts`] };
+  assert.equal(Value.Check(schema, { ...valid, status: 'changes_requested', findings: [finding] }), true);
+  assert.equal(Value.Check(schema, { ...valid, findings: [{ ...finding, location: 'source.ts:1 (commit abc)' }] }), false);
+  assert.equal(Value.Check(schema, { ...valid, findings: [{ ...finding, location: 'foreign.ts:1' }] }), false);
+  assert.equal(Value.Check(schema, { ...valid, findings: [{ ...finding, evidenceReferences: ['d'] }] }), false);
+  const missing = { ...valid } as Partial<TaskReviewResult>; delete missing.findings;
+  assert.equal(Value.Check(schema, missing), false);
+  assert.match(TASK_REVIEW_POLICY, /never encoded in summary/);
+  assert.match(TASK_REVIEW_POLICY, /status MUST be incomplete/);
  } finally { await f.cleanup(); }
 });

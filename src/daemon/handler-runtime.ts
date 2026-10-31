@@ -606,7 +606,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
 		'codeReview.task.publish': async params => (await import('./task-review-rpc.js')).publishStoredTaskReview(params),
-		'codeReview.task.start': async params => (await import('./task-review-rpc.js')).startTaskReview(params),
+		'codeReview.task.start': async (params, context) => (await import('./task-review-rpc.js')).startTaskReview(params, context),
+		'codeReview.task.assignment': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'assignment'),
+		'codeReview.task.scope': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'scope'),
+		'codeReview.task.result': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'result'),
 		'codeReview.grounding': async (params) => {
 			const p = (params ?? {}) as { repo?: string; epicHash?: string; storyId?: string };
 			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';

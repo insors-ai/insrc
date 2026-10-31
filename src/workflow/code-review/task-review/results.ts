@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { isDeepStrictEqual } from 'node:util';
 import { decodeReview, requireReview, TaskResultSchema } from './contracts.js';
-import type { TaskReviewResult } from './contracts.js';
+import type { TaskReviewResult, TaskResultOrigin, ReviewerParty } from './contracts.js';
 import type { SelectedChange } from './packet.js';
 
 export interface TaskResultScope {
@@ -61,4 +62,18 @@ export function normalizeTaskResult(input: unknown, scope: TaskResultScope): Tas
   }
  }
  return validateTaskResult(result, scope);
+}
+
+/** Source attempts are local to one review history. Strictly decreasing ordinals also rule out cycles. */
+export function validateResultOrigins(history: readonly { attempt: number; reviewer: ReviewerParty; tasks: readonly TaskReviewResult[]; origins?: readonly TaskResultOrigin[] | undefined }[]): void {
+ for (const entry of history) {
+  const seen = new Set<string>();
+  for (const origin of entry.origins ?? []) {
+   requireReview(!seen.has(origin.taskId), 'origins', 'Duplicate task origin'); seen.add(origin.taskId);
+   requireReview(origin.sourceAttempt < entry.attempt, 'origins', 'Origin must reference an earlier attempt');
+   const source = history.find(candidate => candidate.attempt === origin.sourceAttempt);
+   const result = entry.tasks.find(task => task.taskId === origin.taskId), prior = source?.tasks.find(task => task.taskId === origin.taskId);
+   requireReview(source && source.reviewer === entry.reviewer && result && prior && isDeepStrictEqual(result, prior), 'origins', 'Origin is missing, foreign-party or changes the saved result');
+  }
+ }
 }

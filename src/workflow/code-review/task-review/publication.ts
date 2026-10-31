@@ -1,23 +1,17 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
-import { Type } from '@sinclair/typebox';
 import { artifactIdMarker, codeReviewArtifactId, codeReviewArtifactPaths, storyRecordFolderArgs, writeAtomic } from '../../storage.js';
 import { emptyLifecycle } from '../../artifact-core/decode.js';
 import type { RoundWriter } from '../../runners/build/round-writer.js';
-import { decodeReview, PacketSchema, requireReview, reviewPath, TaskResultSchema } from './contracts.js';
+import { decodeReview, CheckpointSchema, requireReview, reviewPath } from './contracts.js';
 import type { ReviewCheckpoint, CompletedReviewSummary } from './contracts.js';
 import { prepareReviewPacket } from './packet.js';
 import type { ReviewSources } from './sources.js';
-import { aggregateTaskStatus, validateTaskResult } from './results.js';
+import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
 import { mergeTaskSummary, renderTaskReview, resultReferences, validateTaskBody } from './record.js';
 
-const text = Type.String({ minLength:1 });
-const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
- header:Type.Object({ attempt:Type.Integer({ minimum:1 }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), buildFingerprint:Type.Optional(text) },{additionalProperties:false}),
- submitted:PacketSchema, 'review-response':Type.Object({ summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text) },{additionalProperties:false})
- },{additionalProperties:false}),{minItems:1}) },{additionalProperties:false});
 export interface PublicationDeps { readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly renderWrite?:typeof writeAtomic; }
 
 /** No reviewer invocation: project completed task feedback through the canonical queued store. */
@@ -25,6 +19,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  const canonical = await realpath(project), path = checkpointPath(canonical, reviewId);
  const checkpoint:ReviewCheckpoint = decodeReview(CheckpointSchema, JSON.parse(await readFile(path,'utf8')));
  requireReview(checkpoint.project === canonical && checkpoint.reviewId === reviewId && checkpoint.schemaVersion === 1, 'checkpoint', 'Checkpoint identity mismatch');
+ validateResultOrigins(checkpoint.attempts.map(entry => ({ attempt:entry.header.attempt, reviewer:entry.header.reviewer, tasks:entry['review-response'].tasks, origins:entry['review-response'].origins })));
  const attempt = checkpoint.attempts.at(-1)!;
  const prepared = await prepareReviewPacket(attempt.submitted, deps.sources);
  requireReview(prepared.epicHash === epicHash && checkpoint.storyId === prepared.packet.storyId && checkpoint.taskId === prepared.packet.taskId, 'scope', 'Checkpoint belongs to another review subject');
@@ -42,7 +37,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
   validateTaskResult(result,{taskId:result.taskId,changes:prepared.changes,evidenceReferences:refs});
  }
  const storyId=prepared.packet.storyId.replace(/^STORY-[a-f0-9]{16}-/,'');
- const summary:CompletedReviewSummary={ reviewId,attempt:attempt.header.attempt,storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),reviewer:attempt.header.reviewer,status:aggregateTaskStatus(attempt['review-response'].tasks),scope:{storyId:prepared.packet.storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),documents:prepared.packet.documents,reviewSet:prepared.packet.reviewSet},tasks:attempt['review-response'].tasks,summary:`${attempt['review-response'].tasks.length} selected task assessment(s): ${aggregateTaskStatus(attempt['review-response'].tasks)}.`,completedAt:attempt.header.completedAt,...(attempt.header.buildFingerprint?{buildFingerprint:attempt.header.buildFingerprint}:{}) };
+ const summary:CompletedReviewSummary={ ...(attempt['review-response'].origins ? { origins:attempt['review-response'].origins } : {}), ...(attempt.header.reassessmentSummary ? { reassessmentSummary:attempt.header.reassessmentSummary } : {}), reviewId,attempt:attempt.header.attempt,storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),reviewer:attempt.header.reviewer,status:aggregateTaskStatus(attempt['review-response'].tasks),scope:{storyId:prepared.packet.storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),documents:prepared.packet.documents,reviewSet:prepared.packet.reviewSet},tasks:attempt['review-response'].tasks,summary:`${attempt['review-response'].tasks.length} selected task assessment(s): ${aggregateTaskStatus(attempt['review-response'].tasks)}.`,completedAt:attempt.header.completedAt,...(attempt.header.buildFingerprint?{buildFingerprint:attempt.header.buildFingerprint}:{}) };
  const store=deps.through.store; requireReview(store,'publication','Canonical round-writer store is required');
  const id=codeReviewArtifactId(epicHash,storyId), folder=storyRecordFolderArgs(canonical,epicHash,storyId,{},{kind:'read'});
  const paths=codeReviewArtifactPaths(canonical,epicHash,storyId,folder.epicCreatedAt,folder.workItemKind,folder.epicSlug);

@@ -6,6 +6,7 @@ import { Value } from '@sinclair/typebox/value';
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const strings = Type.Array(text, { maxItems: 10000 });
+export const MAX_REVIEW_JSON_BYTES = 4 * 1024 * 1024;
 const oid = Type.String({ pattern: '^(?:[0-9a-f]{40}|[0-9a-f]{64})$' });
 const range = Type.Tuple([Type.Integer({ minimum: 1 }), Type.Integer({ minimum: 1 })]);
 export const DocumentSchema = object({ path: text, commit: oid });
@@ -22,6 +23,11 @@ export const TaskResultSchema = object({ taskId: text,
   message: text, rationale: text, evidenceReferences: Type.Array(text, { minItems: 1, maxItems: 10000 }) }), { maxItems: 10000 }),
  testCoverage: object({ assessment: Type.Union((['verified', 'partial', 'unverified', 'unsupported'] as const).map(s => Type.Literal(s))), explanation: text, evidenceReferences: strings }),
  limitations: strings, advice: strings, inspectedReferences: strings, executedTests: Type.Array(TestDetailSchema, { maxItems: 10000 }), error: Type.Optional(text) });
+export const TaskOriginSchema = object({ taskId: text, sourceAttempt: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }), reason: text });
+export type TaskResultOrigin = Static<typeof TaskOriginSchema>;
+export const ReviewRequestSchema = object({ reviewId: text, attempt: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
+ operation: Type.Optional(Type.Union([Type.Literal('start'), Type.Literal('resume')])), packet: Type.Optional(PacketSchema) });
+export type ReviewOperation = 'start' | 'resume';
 export type ReviewPacket = Static<typeof PacketSchema>;
 export type CommittedDocument = Static<typeof DocumentSchema>;
 export type TaskReviewResult = Static<typeof TaskResultSchema>;
@@ -37,7 +43,7 @@ export function requireReview(condition: unknown, field: string, message: string
 /** Snapshot untrusted input once; callers cannot mutate an admitted packet through their original object. */
 export function decodeReview<T extends TSchema>(schema: T, input: unknown): Static<T> {
  let value: unknown;
- try { const bytes = JSON.stringify(input); requireReview(bytes && Buffer.byteLength(bytes) <= 4 * 1024 * 1024, 'input', 'JSON exceeds limit'); value = JSON.parse(bytes); }
+ try { const bytes = JSON.stringify(input); requireReview(bytes && Buffer.byteLength(bytes) <= MAX_REVIEW_JSON_BYTES, 'input', 'JSON exceeds limit'); value = JSON.parse(bytes); }
  catch { throw new TaskReviewInputError('input', 'Expected bounded JSON'); }
  const errors = [...Value.Errors(schema, value)];
  requireReview(errors.length === 0, errors[0]?.path ?? 'input', errors[0]?.message ?? 'Invalid schema');
@@ -66,17 +72,22 @@ export function parsePacket(input: unknown): ReviewPacket {
  return packet;
 }
 export interface ReviewAttempt {
- header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; buildFingerprint?: string };
+ header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; buildFingerprint?: string; reassessmentSummary?: string };
  submitted: ReviewPacket;
- 'review-response': { summary: string; tasks: readonly TaskReviewResult[]; crPath?: string; crPublication: 'pending' | 'complete'; error?: string };
+ 'review-response': { summary: string; tasks: readonly TaskReviewResult[]; crPath?: string; crPublication: 'pending' | 'complete'; error?: string; origins?: readonly TaskResultOrigin[] };
 }
 export interface ReviewCheckpoint { schemaVersion: 1; reviewId: string; project: string; storyId: string; taskId?: string; attempts: readonly ReviewAttempt[]; }
 export interface CompletedReviewSummary {
  reviewId: string; attempt: number; storyId: string; taskId?: string; reviewer: ReviewerParty; status: TaskReviewResult['status'];
- scope: Pick<ReviewPacket, 'storyId' | 'taskId' | 'documents' | 'reviewSet'>; tasks: readonly TaskReviewResult[]; summary: string; completedAt: string; buildFingerprint?: string;
+ scope: Pick<ReviewPacket, 'storyId' | 'taskId' | 'documents' | 'reviewSet'>; tasks: readonly TaskReviewResult[]; summary: string; completedAt: string; buildFingerprint?: string; reassessmentSummary?: string; origins?: readonly TaskResultOrigin[];
 }
 /** Publication is deliberately distinct from the legacy dimension-shaped version-1 CR. */
 export interface TaskBasedCodeReviewRecord {
  meta: { workflow: 'code-review'; schemaVersion: 2 };
  body: { kind: 'code-review'; format: 'task-based'; storyId: string; status: TaskReviewResult['status']; reviews: readonly CompletedReviewSummary[] };
 }
+
+export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
+ header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), buildFingerprint:Type.Optional(text), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
+ submitted:PacketSchema, 'review-response':Type.Object({ summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text), origins:Type.Optional(Type.Array(TaskOriginSchema, {maxItems:10000})) },{additionalProperties:false})
+ },{additionalProperties:false}),{minItems:1}) },{additionalProperties:false});

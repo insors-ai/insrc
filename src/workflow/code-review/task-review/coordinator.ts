@@ -1,18 +1,17 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { access, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider, ReviewSessionOpts } from '../../../shared/types.js';
 import { decodeReview, requireReview } from './contracts.js';
 import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult } from './contracts.js';
-import { deriveTaskAssignments, prepareReviewPacket } from './packet.js';
+import { deriveTaskAssignments } from './packet.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
-import { artifactJsonPath, buildArtifactId } from '../../storage.js';
-import { reviewedBuildFingerprint } from '../build-freshness.js';
+import { prepareReviewAdmission } from './admission.js';
 import { assignmentResultSchema } from './result-schema.js';
 import { AttributionSchema, attributionPrompt, directAssignments, taskReferences, assessTaskResult, taskFailure } from './assessment.js';
 import { ControllerTaskReview } from './controller.js';
@@ -75,21 +74,9 @@ export class TaskReviewCoordinator {
   requireReview(!this.active.has(path), 'reviewId', 'already-running');
   this.active.set(path, null); // Reserve before any awaited admission or provider use.
   try {
-   let exists = false;
-   try { await access(path); exists = true; } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-   requireReview(!exists, 'reviewId', 'attempt-conflict: checkpoint already exists');
-   const prepared = await prepareReviewPacket(input, this.deps.sources);
-   requireReview(!epicHash || epicHash === prepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
-   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
-   const entry: ReviewAttempt = { header: { attempt: 1, reviewer, status: 'pending', createdAt: new Date().toISOString(), selectedTaskIds: selected.map(task => task.id) }, submitted: prepared.packet,
-    'review-response': { summary: 'Review admitted; CR publication pending.', tasks: [], crPublication: 'pending' } };
-   if (!prepared.packet.taskId) {
-    try { entry.header.buildFingerprint = reviewedBuildFingerprint(JSON.parse(await readFile(artifactJsonPath(project, buildArtifactId(prepared.epicHash, prepared.packet.storyId.replace(/^STORY-[a-f0-9]{16}-/, ''))), 'utf8'))); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-   }
-   const checkpoint: ReviewCheckpoint = { schemaVersion: 1, reviewId, project, storyId: prepared.packet.storyId, ...(prepared.packet.taskId ? { taskId: prepared.packet.taskId } : {}), attempts: [entry] };
-   await (this.deps.save ?? saveCheckpoint)(path, checkpoint);
-   return { path, checkpoint, attempt: entry, prepared };
+   const admitted = await prepareReviewAdmission(project, reviewId, attempt, input, reviewer, this.deps.sources, { epicHash });
+   await (this.deps.save ?? saveCheckpoint)(admitted.path, admitted.checkpoint);
+   return admitted;
   } catch (error) { this.active.delete(path); throw error; }
  }
  /** Used by shutdown/tests, never awaited by start or attached to a caller's cancellation. */

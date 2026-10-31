@@ -1,8 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { open, mkdir, rename, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { constants } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { requireReview } from './contracts.js';
+import { CheckpointSchema, decodeReview, MAX_REVIEW_JSON_BYTES, requireReview } from './contracts.js';
 import type { ReviewCheckpoint } from './contracts.js';
 
 export function checkpointPath(project: string, id: string): string {
@@ -11,12 +12,14 @@ export function checkpointPath(project: string, id: string): string {
 }
 /** A poller always sees an entire file; a completed task is flushed before advancing. */
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint): Promise<void> {
+ const serialized = JSON.stringify(decodeReview(CheckpointSchema, checkpoint), null, 2) + '\n';
+ requireReview(Buffer.byteLength(serialized) <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'JSON exceeds limit');
  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
  const temporary = `${path}.${randomUUID()}.tmp`;
  let failed = false;
  try {
   const file = await open(temporary, 'wx', 0o600);
-  try { await file.writeFile(JSON.stringify(checkpoint, null, 2) + '\n'); await file.sync(); }
+  try { await file.writeFile(serialized); await file.sync(); }
   finally { await file.close(); }
   await rename(temporary, path);
   const directory = await open(dirname(path), 'r');
@@ -25,4 +28,16 @@ export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint)
   finally { await directory.close(); }
  } catch (error) { failed = true; throw error; }
  finally { await unlink(temporary).catch(error => { if (!failed && error.code !== 'ENOENT') throw error; }); }
+}
+
+/** Missing is valid for first admission; symlinks and oversized/corrupt files are not. */
+export async function loadCheckpoint(path: string): Promise<ReviewCheckpoint | undefined> {
+ let file;
+ try { file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW); }
+ catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
+ try {
+  const stat = await file.stat();
+  requireReview(stat.isFile() && stat.size <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'Expected bounded checkpoint file');
+  return decodeReview(CheckpointSchema, JSON.parse(await file.readFile('utf8')));
+ } finally { await file.close(); }
 }

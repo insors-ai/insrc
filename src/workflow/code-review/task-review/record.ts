@@ -1,14 +1,15 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { Type } from '@sinclair/typebox';
 import { isDeepStrictEqual } from 'node:util';
-import { decodeReview, PacketSchema, requireReview, TaskResultSchema } from './contracts.js';
+import { decodeReview, PacketSchema, requireReview, TaskResultSchema, TaskOriginSchema } from './contracts.js';
 import type { CompletedReviewSummary, TaskBasedCodeReviewRecord, TaskReviewResult } from './contracts.js';
-import { aggregateTaskStatus, validateTaskResult } from './results.js';
+import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const status = TaskResultSchema.properties.status;
 export const SummarySchema = Type.Object({ reviewId: text, attempt: Type.Integer({ minimum: 1 }), storyId: text, taskId: Type.Optional(text), reviewer: Type.Union([Type.Literal('daemon'), Type.Literal('controller')]), status,
  scope: Type.Pick(PacketSchema, ['storyId', 'taskId', 'documents', 'reviewSet']), tasks: Type.Array(TaskResultSchema, { minItems: 1, maxItems: 10000 }), summary: text, completedAt: text,
+ origins: Type.Optional(Type.Array(TaskOriginSchema, { maxItems:10000 })), reassessmentSummary: Type.Optional(text),
  buildFingerprint: Type.Optional(Type.String({ pattern: '^[a-f0-9]{64}$' })) }, { additionalProperties: false });
 export const TaskBodySchema = Type.Object({ kind: Type.Literal('code-review'), format: Type.Literal('task-based'), storyId: text, status, reviews: Type.Array(SummarySchema, { minItems: 1, maxItems: 10000 }) }, { additionalProperties: false });
 export type TaskReviewBody = TaskBasedCodeReviewRecord['body'];
@@ -38,6 +39,7 @@ export function validateTaskBody(input: unknown): TaskReviewBody {
   for (const task of review.tasks) validateTaskResult(task, { taskId:task.taskId, changes, evidenceReferences:resultReferences(task) });
   requireReview(review.status === aggregateTaskStatus(review.tasks), 'status', 'Summary disagrees with task outcomes');
  }
+ for (const id of new Set(body.reviews.map(review => review.reviewId))) validateResultOrigins(body.reviews.filter(review => review.reviewId === id));
  requireReview(body.status === latestReviewStatus(body.reviews), 'status', 'CR status disagrees with latest attempt outcomes');
  return body;
 }
@@ -62,7 +64,10 @@ export function renderTaskReview(bodyInput: unknown): string {
  for (const review of body.reviews) {
   lines.push(`## ${review.reviewId} — attempt ${review.attempt}`, '', `Scope: ${review.taskId ? `task ${review.taskId}` : 'whole story'} · reviewer: ${review.reviewer} · ${review.completedAt}`, '', review.summary, '', '### Submitted scope', '');
   for (const pointer of review.scope.reviewSet) for (const file of pointer.files) lines.push(`- \`${pointer.commit}:${file.path}\` — ${JSON.stringify(file.segments)}`);
+  if (review.reassessmentSummary) lines.push('', review.reassessmentSummary);
   for (const task of review.tasks) {
+   const origin = review.origins?.find(item => item.taskId === task.taskId);
+   if (origin) lines.push('', `Reused task ${task.taskId} feedback from attempt ${origin.sourceAttempt} (${review.reviewer}); not a fresh assessment. ${origin.reason}`);
    lines.push('', `### ${task.taskId}: ${task.status}`, '', task.summary, '', `Coverage: **${task.testCoverage.assessment}** — ${task.testCoverage.explanation}`, '');
    for (const finding of task.findings) lines.push(`- **${finding.severity}** \`${finding.location}\`: ${finding.message}`, `  ${finding.rationale}`, `  Evidence: ${finding.evidenceReferences.map(ref=>`\`${ref}\``).join(', ')}`);
    if (task.limitations.length) lines.push('', 'Limitations:', '', ...task.limitations.map(note=>`- ${note}`));

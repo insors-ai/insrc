@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 8,
-        "contentHash": "9ad4585db2a47e328e5ece1cd1d7630aedf4aad2617b8332927a6a483ac130ba",
-        "at": "2026-10-31T15:52:06.426Z",
+        "number": 9,
+        "contentHash": "2ac8f3c2b0470f7bf459461ed03fe972468d66f15f782b487a6111674d45ffee",
+        "at": "2026-10-31T18:29:18.139Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "e6ddcdcb3d9cf330",
     "storyId": "s1",
     "createdAt": "2026-10-31T03:25:16.622Z",
-    "updatedAt": "2026-10-31T15:52:06.369Z",
+    "updatedAt": "2026-10-31T18:29:18.091Z",
     "epicCreatedAt": "2026-10-30T18:42:58.122Z",
     "epicSlug": "review-committed-work-task-checkpoints",
-    "revision": 8
+    "revision": 9
   },
   "body": {
     "tasks": [
@@ -111,8 +111,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "8233a1bd1",
-        "ranAt": "2026-10-31T14:14:28.548Z",
+        "commit": "ae19d2169",
+        "ranAt": "2026-10-31T18:29:18.091Z",
         "testsPassed": true,
         "tests": [
           {
@@ -196,7 +196,7 @@
             "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 35218,
+            "durationMs": 35273,
             "titles": [
               {
                 "title": "claude reviewer-session arguments allow reading and insrc analyze only",
@@ -313,7 +313,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 593,
+            "durationMs": 567,
             "titles": [
               {
                 "title": "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
@@ -345,6 +345,14 @@
               },
               {
                 "title": "optimistic native status with limitations retains the assessment as incomplete instead of failed",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution timeout remains incomplete for every remaining task without retry",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution provider failure remains failed for every remaining task without retry",
                 "result": "pass"
               }
             ],

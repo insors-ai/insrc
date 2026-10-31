@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-31T03:25:16.622Z  ·  **Updated:** 2026-10-31T15:52:06.369Z
+**Standalone:** no  ·  **Created:** 2026-10-31T03:25:16.622Z  ·  **Updated:** 2026-10-31T18:29:18.091Z
 
-**Commit:** a55158e2c
+**Commit:** ae19d2169
 
 ## Summary
 
-Verified common review evidence policy and both actual adapters with Python/JS/TS/Go/JVM committed-input fixtures; conservative incomplete handling, supported findings and optional advice remain distinct. Production build and 96 focused reviewer/provider/backend/CR/legacy-design regressions passed. Preserved accepted untouched live daemon evidence without another model sweep; full normal-entry/session integration remains S3.
+Fixed round-one MED by retaining the shared attribution failure's timeout classification across remaining tasks, with accurate inherited-timeout diagnostics and no retries. Fixed LOW by preserving the original checkpoint failure if temporary-file cleanup also fails. New regression failed before the MED fix and passes after; 21 focused coordinator/controller/publication tests and production build passed. Existing accepted untouched real native CLI evidence is retained, not rerun: /tmp/review-t2-isolated-live-evidence.json, /tmp/review-t2-final-validation-pass.json, /tmp/review-t3-live-publication-evidence.json. Progress-based permissive timeouts are logged separately in plans/progress-based-review-timeouts.future-work.json and not implemented here.
 
 ## Tasks validated
 
@@ -22,34 +22,35 @@ Verified common review evidence policy and both actual adapters with Python/JS/T
 
 ## Changes
 
-- `src/workflow/code-review/task-review/__tests__/contracts.test.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/contracts.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/packet.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/results.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/sources.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/agent/providers/__tests__/cli-review-session.test.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/daemon/handler-runtime.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/daemon/task-review-rpc.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/shared/types.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/checkpoint.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/coordinator.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/policy.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/result-schema.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/daemon/lifecycle-registry.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/artifact-core/codecs.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/gate.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/__tests__/publication.test.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/completion.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/publication.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/record.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/runners/build/round-writer.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/__tests__/controller.test.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/__tests__/publication-fixture.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/assessment.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/controller.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/execution.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
-- `src/workflow/code-review/task-review/__tests__/policy.test.ts` — **insrc-build** (2026-10-31T15:52:06.369Z)
+- `src/workflow/code-review/task-review/__tests__/contracts.test.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/contracts.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/packet.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/results.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/sources.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/agent/providers/__tests__/cli-review-session.test.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/daemon/handler-runtime.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/daemon/task-review-rpc.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/shared/types.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/checkpoint.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/coordinator.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/policy.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/result-schema.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/daemon/lifecycle-registry.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/artifact-core/codecs.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/gate.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/__tests__/publication.test.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/completion.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/publication.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/record.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/runners/build/round-writer.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/__tests__/controller.test.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/__tests__/publication-fixture.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/assessment.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/controller.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/execution.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `src/workflow/code-review/task-review/__tests__/policy.test.ts` — **insrc-build** (2026-10-31T18:29:18.091Z)
+- `.insrc/artifacts/TASKS-e6ddcdcb3d9cf330-s1.log.jsonl` — **insrc-build** (2026-10-31T18:29:18.091Z)

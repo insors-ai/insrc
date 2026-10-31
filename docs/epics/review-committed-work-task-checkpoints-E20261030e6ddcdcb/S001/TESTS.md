@@ -37,7 +37,7 @@ Run at 2026-10-31T03:29:15.124Z on commit `71e57f57c`. Tests check: **passed**. 
 
 ## t2
 
-Run at 2026-10-31T14:14:28.548Z on commit `8233a1bd1`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-31T18:29:18.091Z on commit `ae19d2169`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: task review admission: short acknowledgement, initial atomic JSON and same-id exclusion**
 
@@ -70,8 +70,8 @@ Reported by the builder, not run by the gate: **pass**. Evidence: UNMODIFIED END
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/agent/providers/__tests__/cli-review-session.test.ts` | 0 | 27 | 35.2 s |  |
-| `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` | 0 | 8 | 0.6 s |  |
+| `src/agent/providers/__tests__/cli-review-session.test.ts` | 0 | 27 | 35.3 s |  |
+| `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` | 0 | 10 | 0.6 s |  |
 
 ## t3
 

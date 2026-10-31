@@ -27,6 +27,10 @@ export function codeTaskCommands(prepared: PreparedReviewPacket, review?: Admitt
    if (!/\s/.test(test.file) && safe.test(read)) commands.push(read);
   }
  }
+ // Submitted committed test records are focused read evidence, not executable commands.
+ for (const test of prepared.packet.tests) for (const reference of test.evidenceReferences) {
+  if (/^(?:[a-f0-9]{40}|[a-f0-9]{64}):[A-Za-z0-9_.@/+=-]+$/.test(reference)) commands.push(`git show ${reference}`);
+ }
  // Prior pinned context is readable for re-review, but old execution commands are not re-granted.
  for (const entry of review?.checkpoint.attempts.filter(entry => entry.header.attempt < review.attempt.header.attempt) ?? []) {
   const refs = Object.values(entry.submitted.documents).map(doc => `${doc.commit}:${doc.path}`);

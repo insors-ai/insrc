@@ -162,3 +162,15 @@ test('native task output refuses placeholder references and foreign locations be
   assert.match(TASK_REVIEW_POLICY, /status MUST be incomplete/);
  } finally { await f.cleanup(); }
 });
+
+test('optimistic native status with limitations retains the assessment as incomplete instead of failed', async () => {
+ const f = await fixture();
+ const coordinator = new TaskReviewCoordinator({ sources: f.sources, provider: () => provider(async () => ({ ...assessment('t1'), limitations: ['Required evidence has a limitation'], advice: ['Optional cleanup observation'] })) });
+ try {
+  const ack = await coordinator.start(f.project, 'normalize-feedback', 1, f.packet); await coordinator.settled(f.project, 'normalize-feedback');
+  const result = (await f.read(ack.path)).attempts[0]!['review-response'].tasks[0]!;
+  assert.equal(result.status, 'incomplete'); assert.equal(result.testCoverage.assessment, 'verified');
+  assert.ok(result.inspectedReferences.length > 0); assert.deepEqual(result.advice, ['Optional cleanup observation']);
+  assert.equal(result.error, undefined);
+ } finally { await f.cleanup(); }
+});

@@ -10,7 +10,7 @@ import { RegistryReviewSources } from '../sources.js';
 import { parsePacket } from '../contracts.js';
 import type { ReviewPacket, TaskReviewResult } from '../contracts.js';
 import { prepareReviewPacket, deriveTaskAssignments } from '../packet.js';
-import { validateTaskResult, aggregateTaskStatus } from '../results.js';
+import { validateTaskResult, aggregateTaskStatus, normalizeTaskResult } from '../results.js';
 
 registerGitTools();
 const hash = '1234567890abcdef';
@@ -115,4 +115,22 @@ test('ordinary results: required evidence, coverage strength, supported severity
  assert.equal(aggregateTaskStatus([result, incomplete, failed]), 'failed');
  assert.equal(aggregateTaskStatus([result, incomplete]), 'incomplete');
  assert.throws(() => aggregateTaskStatus([]), /cannot pass/);
+});
+
+
+test('ordinary result normalization retains feedback and conservatively derives incomplete status', () => {
+ const scope = { taskId: 't1', changes: [{ path: 'src/a.ts', previousPath: 'src/a.ts', segments: [{ after: [1, 1] as [number, number] }] }], evidenceReferences: ['commit:src/a.ts:1', 'commit:test.ts:1'] };
+ const input = { ...passed(), limitations: ['Reviewer recorded an evidence limitation'], advice: ['Optional cleanup improvement'] };
+ const result = normalizeTaskResult(input, scope);
+ assert.equal(result.status, 'incomplete'); assert.deepEqual(result.advice, input.advice); assert.deepEqual(result.inspectedReferences, input.inspectedReferences);
+ assert.equal(input.status, 'passed', 'normalization does not mutate the received object');
+ const unsupported = normalizeTaskResult({ ...passed(), testCoverage: { ...passed().testCoverage, assessment: 'unsupported' } }, scope);
+ assert.equal(unsupported.status, 'incomplete'); assert.ok(unsupported.limitations.length);
+ const finding = { severity: 'MED' as const, location: 'src/a.ts:1', message: 'Wrong branch', rationale: 'Changed condition contradicts requirement', evidenceReferences: ['commit:src/a.ts:1'] };
+ assert.equal(normalizeTaskResult({ ...passed(), findings: [finding] }, scope).status, 'changes_requested');
+ const retained = normalizeTaskResult({ ...input, findings: [finding] }, scope);
+ assert.equal(retained.status, 'incomplete'); assert.deepEqual(retained.findings, [finding]);
+ assert.equal(normalizeTaskResult(passed(), scope).status, 'passed', 'correctly placed optional advice never blocks');
+ assert.throws(() => normalizeTaskResult({ ...input, inspectedReferences: ['foreign'] }, scope), /not resolved/);
+ assert.throws(() => normalizeTaskResult({ ...input, findings: [{ ...finding, location: 'foreign.ts:1' }] }, scope), /outside/);
 });

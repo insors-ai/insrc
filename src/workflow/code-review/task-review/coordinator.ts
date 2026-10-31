@@ -10,7 +10,7 @@ import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult } from './contra
 import { deriveTaskAssignments, prepareReviewPacket } from './packet.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
-import { aggregateTaskStatus, validateTaskResult } from './results.js';
+import { aggregateTaskStatus, normalizeTaskResult } from './results.js';
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
 import { assignmentResultSchema } from './result-schema.js';
@@ -110,7 +110,7 @@ export class TaskReviewCoordinator {
       references.push(reference);
      }
      options(); // Output resolution and validation share the same clock.
-     return validateTaskResult(parsed, { taskId: task.id, changes: assignment.changes, evidenceReferences: references });
+     return normalizeTaskResult(parsed, { taskId: task.id, changes: assignment.changes, evidenceReferences: references });
     })()]);
    } catch (error) {
     if (!assignments) attributionFailure = error;

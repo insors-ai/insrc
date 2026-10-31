@@ -45,3 +45,20 @@ export function aggregateTaskStatus(results: readonly TaskReviewResult[]): TaskR
  for (const status of ['failed', 'incomplete', 'changes_requested', 'passed'] as const) if (results.some(r => r.status === status)) return status;
  throw new Error('Unreachable task status');
 }
+
+/** Derive conservative completion status without discarding otherwise valid feedback.
+ * A model's optimistic status is not a transport failure. Unknown required evidence
+ * remains incomplete, with all supported findings/advice preserved. Never promote
+ * an explicit failed/incomplete assessment to a completed one. */
+export function normalizeTaskResult(input: unknown, scope: TaskResultScope): TaskReviewResult {
+ const result = decodeReview(TaskResultSchema, input);
+ if (result.status === 'passed' || result.status === 'changes_requested') {
+  if (result.limitations.length > 0 || result.testCoverage.assessment !== 'verified') {
+   result.status = 'incomplete';
+   if (result.limitations.length === 0) result.limitations = [`Required coverage remains ${result.testCoverage.assessment}: ${result.testCoverage.explanation}`];
+  } else {
+   result.status = result.findings.some(finding => finding.severity === 'HIGH' || finding.severity === 'MED') ? 'changes_requested' : 'passed';
+  }
+ }
+ return validateTaskResult(result, scope);
+}

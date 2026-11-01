@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -244,3 +244,23 @@ Run at 2026-11-01T10:49:57.271Z on commit `6a343240e`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/repo-ignore-filter.test.ts` | 0 | 6 | 0.9 s |  |
 | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.5 s |  |
+
+## t12
+
+Run at 2026-11-01T11:16:25.089Z on commit `7c661c378`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/index.ts (full walk, single file event, clean-up pass, registration)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac1/ac3: FileFilter lists exactly the files real git includes, over anchored, nested, negation, precedence, directory-only and globstar rules | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
+| pass | FileFilter.includes agrees with git check-ignore for every file of the fixture, tracked override included | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
+| pass | ac9: a non-git folder holding the same tree leaves out the same files its ignore files leave out in the git repository | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
+| pass | on a mixed fixture the full index selects the files it selected before, less only the lock file and the oversized JSON the artifact parser skipped | `src/indexer/__tests__/file-selection.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/file-filter-git-conformance.test.ts` | 0 | 3 | 0.8 s |  |
+| `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.4 s |  |

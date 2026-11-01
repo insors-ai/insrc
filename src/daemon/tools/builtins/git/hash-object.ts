@@ -16,6 +16,7 @@ export const gitHashObjectTool = {
   inputSchema: Type.Object({
     cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
     path: Type.String({ description: 'The file to hash, relative to cwd or absolute.' }),
+    type: Type.Optional(Type.String({ enum: ['blob', 'tree', 'commit', 'tag'], description: 'The object type to hash the content as (-t). Default blob.' })),
   }, { additionalProperties: false }),
   outputSchema: GitHashObjectDataSchema,
 
@@ -24,7 +25,8 @@ export const gitHashObjectTool = {
     const path = str(input, 'path');
     if (path === undefined) { return rejectInput('git_hash_object', 'missing path'); }
     assertSafeArg(path, 'path');
-    const read = await readGit('git_hash_object', ['git', 'hash-object', '--', path], cwd, 15_000);
+    const type = str(input, 'type');
+    const read = await readGit('git_hash_object', ['git', 'hash-object', ...(type !== undefined ? ['-t', type] : []), '--', path], cwd, 15_000);
     if (!read.ok) { return read.failure; }
     const cut = parseOutput('git_hash_object', read.r, raw => raw.trim());   // a cut capture is a failure, before the name check
     if (!cut.ok) { return cut.failure; }

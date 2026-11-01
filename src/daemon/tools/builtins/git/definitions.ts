@@ -42,7 +42,9 @@ import { gitRevParseTool } from './rev-parse.js';
 import { gitFetchRefsTool } from './fetch-refs.js';
 import { gitPathHistoryTool } from './path-history.js';
 import { gitHashObjectTool } from './hash-object.js';
+import { gitDiffTreeTool } from './diff-tree.js';
 import { gitMergeBaseTool } from './merge-base.js';
+import { gitMergeTreeTool } from './merge-tree.js';
 import { gitShowRefTool } from './show-ref.js';
 import { gitSymbolicRefTool } from './symbolic-ref.js';
 import { gitConfigTool } from './config.js';
@@ -89,4 +91,6 @@ export const gitToolDefinitions = [
   gitLsRemoteTool,
   gitUpdateRefTool,
   gitRmTool,
+  gitDiffTreeTool,
+  gitMergeTreeTool,
 ] as const satisfies readonly TypedTool[];

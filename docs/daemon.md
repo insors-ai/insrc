@@ -1453,6 +1453,7 @@ and a test keeps this copy equal to it.
 | commit |  | covered | git_commit, git_amend |
 | config |  | covered | git_config (built by s7) |
 | diff |  | covered | git_diff |
+| diff-tree |  | covered | git_diff_tree (built by s9) |
 | fetch |  | covered | git_fetch, git_fetch_refs |
 | for-each-ref |  | covered | git_for_each_ref |
 | hash-object |  | covered | git_hash_object |
@@ -1462,6 +1463,7 @@ and a test keeps this copy equal to it.
 | ls-tree |  | covered | git_ls_tree |
 | merge |  | covered | git_merge |
 | merge-base |  | covered | git_merge_base |
+| merge-tree |  | covered | git_merge_tree (built by s9) |
 | pickaxe |  | covered | git_path_history |
 | pull |  | covered | git_pull |
 | push |  | covered | git_push |
@@ -1573,7 +1575,6 @@ and a test keeps this copy equal to it.
 | diff-files |  | assigned | s8 |
 | diff-index |  | assigned | s8 |
 | diff-pairs |  | assigned | s8 |
-| diff-tree |  | assigned | s8 |
 | fast-export |  | assigned | s8 |
 | fast-import |  | assigned | s8 |
 | fmt-merge-msg |  | assigned | s8 |
@@ -1599,7 +1600,6 @@ and a test keeps this copy equal to it.
 | merge-recursive-theirs |  | assigned | s8 |
 | merge-resolve |  | assigned | s8 |
 | merge-subtree |  | assigned | s8 |
-| merge-tree |  | assigned | s8 |
 | mktag |  | assigned | s8 |
 | mktree |  | assigned | s8 |
 | multi-pack-index |  | assigned | s8 |

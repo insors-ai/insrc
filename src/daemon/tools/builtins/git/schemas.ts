@@ -386,6 +386,15 @@ export const GitMergeBaseDataSchema = Type.Union([
 ]);
 export type GitMergeBaseData = Static<typeof GitMergeBaseDataSchema>;
 
+export const GitDiffTreeDataSchema = Type.Object({ paths: Type.Array(Type.String()) });
+export type GitDiffTreeData = Static<typeof GitDiffTreeDataSchema>;
+
+export const GitMergeTreeDataSchema = Type.Object({
+  tree: Type.String({ description: 'The name of the merged tree, written to the object store.' }),
+  clean: Type.Boolean({ description: 'False when the merge has conflicts (the tree then holds conflict markers).' }),
+});
+export type GitMergeTreeData = Static<typeof GitMergeTreeDataSchema>;
+
 export const GitHashObjectDataSchema = Type.Object({ sha: Type.String() });
 export type GitHashObjectData = Static<typeof GitHashObjectDataSchema>;
 

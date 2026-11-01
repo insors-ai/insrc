@@ -26,6 +26,7 @@ export const gitRevParseTool = {
     showToplevel: Type.Optional(Type.Boolean({ description: 'Report the repository root (--show-toplevel).' })),
     isInsideWorkTree: Type.Optional(Type.Boolean({ description: 'Report whether cwd is inside a work tree (--is-inside-work-tree).' })),
     isShallow: Type.Optional(Type.Boolean({ description: 'Report whether the repository is shallow (--is-shallow-repository).' })),
+    gitPath: Type.Optional(Type.String({ minLength: 1, description: 'Report where git keeps this file of the git dir, e.g. SQUASH_MSG (--git-path); relative to cwd unless git prints it absolute.' })),
   }, { additionalProperties: false }),
   outputSchema: GitRevParseDataSchema,
 
@@ -37,7 +38,9 @@ export const gitRevParseTool = {
     if (input['showToplevel'] === true) { facts.push('--show-toplevel'); }
     if (input['isInsideWorkTree'] === true) { facts.push('--is-inside-work-tree'); }
     if (input['isShallow'] === true) { facts.push('--is-shallow-repository'); }
-    if (rev === undefined && facts.length === 0) { return rejectInput('git_rev_parse', 'give a rev or one of gitDir, showToplevel, isInsideWorkTree, isShallow'); }
+    const gitPath = str(input, 'gitPath');
+    if (gitPath !== undefined) { assertSafeArg(gitPath, 'ref'); facts.push('--git-path', gitPath); }
+    if (rev === undefined && facts.length === 0) { return rejectInput('git_rev_parse', 'give a rev or one of gitDir, showToplevel, isInsideWorkTree, isShallow, gitPath'); }
 
     const argv = ['git', 'rev-parse'];
     if (rev !== undefined) {

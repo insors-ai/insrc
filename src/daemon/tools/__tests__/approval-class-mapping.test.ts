@@ -161,8 +161,8 @@ test('approval-class-mapping.test.ts: the twelve git tools of Story s4 are regis
 			assert.ok(schema.properties['maxBytes'] !== undefined, 'git_ls_files has the maxBytes input');
 			delete schema.properties['maxBytes'];
 		}
-		// Story s9 (task t24) adds one optional input each to git_rev_list (parents) and git_ls_tree (fullTree), set aside the same way
-		for (const [id, input] of [['git_rev_list', 'parents'], ['git_ls_tree', 'fullTree']] as const) {
+		// Story s9 (tasks t24 and t2) adds one optional input each to git_rev_list (parents), git_ls_tree (fullTree), git_hash_object (type) and git_rev_parse (gitPath), set aside the same way
+		for (const [id, input] of [['git_rev_list', 'parents'], ['git_ls_tree', 'fullTree'], ['git_hash_object', 'type'], ['git_rev_parse', 'gitPath']] as const) {
 			if (rec.id === id) {
 				assert.ok(schema.properties[input] !== undefined, `${id} has the s9 ${input} input`);
 				delete schema.properties[input];

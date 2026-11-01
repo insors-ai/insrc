@@ -38,7 +38,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 38, '22 existing, 12 from s4 and 4 from s7');
+	assert.equal(registered.size, 40, '22 existing, 12 from s4, 4 from s7 and 2 from s9');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -135,6 +135,8 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 	'ls-files': async c => { const r = await c.ok('git_ls_files', {}); assert.deepEqual((r.data as { files: string[] }).files, ['a.txt']); },
 	'ls-tree': async c => { const r = await c.ok('git_ls_tree', { rev: 'HEAD' }); assert.equal((r.data as { entries: { path: string }[] }).entries[0]?.path, 'a.txt'); },
 	'merge': async c => { c.git('stash', 'drop', '-q'); c.git('checkout', '-q', '--', 'a.txt'); await c.ok('git_merge', { ref: 'b' }); assert.equal(sha(c, 'HEAD'), sha(c, 'b')); },
+	'diff-tree': async c => { const r = await c.ok('git_diff_tree', { rev: 'HEAD' }); assert.deepEqual(r.data, { paths: ['a.txt'] }); },
+	'merge-tree': async c => { const r = await c.ok('git_merge_tree', { a: 'main', b: 'b' }); assert.deepEqual(r.data, { tree: c.git('rev-parse', 'main^{tree}').trim(), clean: true }); },
 	'merge-base': async c => { const r = await c.ok('git_merge_base', { a: 'main', b: 'b' }); assert.deepEqual((r.data as { bases: string[] }).bases, [sha(c, 'main')]); },
 	'pickaxe': async c => { const r = await c.ok('git_path_history', { pickaxe: 'two' }); assert.equal((r.data as { commits: { subject: string }[] }).commits[0]?.subject, 'second'); },
 	'whatchanged': async c => { const r = await c.ok('git_path_history', { path: 'a.txt', limit: 1 }); assert.equal((r.data as { commits: { sha: string }[] }).commits[0]?.sha, sha(c, 'HEAD')); },
@@ -247,6 +249,19 @@ test('git_config, git_ls_remote, git_update_ref and git_rm are marked as built b
 		assert.ok(ids.has(tool), `${tool} is in gitToolDefinitions`);
 	}
 	assert.match(renderCoverageTable(), /\| config \|  \| covered \| git_config \(built by s7\) \|/);
+});
+
+test('git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions', async () => {
+	const { gitToolDefinitions } = await import('../definitions.js');
+	const ids = new Set(gitToolDefinitions.map(t => t.id));
+	for (const [command, tool] of [['diff-tree', 'git_diff_tree'], ['merge-tree', 'git_merge_tree']] as const) {
+		const row = GIT_COVERAGE.find(r => r.command === command && r.operation === undefined)!;
+		assert.equal(row.owner, 'covered', `${command} is covered, no longer assigned to s8`);
+		assert.equal(row.builtBy, 's9', `${command} is marked as built by s9`);
+		assert.deepEqual(row.toolIds, [tool]);
+		assert.ok(ids.has(tool), `${tool} is in gitToolDefinitions`);
+	}
+	assert.match(renderCoverageTable(), /\| diff-tree \|  \| covered \| git_diff_tree \(built by s9\) \|/);
 });
 
 test('git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes', async () => {

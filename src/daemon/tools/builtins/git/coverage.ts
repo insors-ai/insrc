@@ -210,6 +210,9 @@ const covered = (command: string, toolIds: readonly string[], cases?: readonly C
 /** A row of a tool Story s7 built (the commands s4 left to s8 that the refresh, handoff and identity code needed first). */
 const coveredByS7 = (command: string, toolId: string): CoverageRow =>
   ({ command, owner: 'covered', toolIds: [toolId], cases: [{ id: command, tool: toolId }], builtBy: 's7' });
+/** A row of a tool Story s9 built (the commands s8 would have built, that the build runners needed first). */
+const coveredByS9 = (command: string, toolId: string): CoverageRow =>
+  ({ command, owner: 'covered', toolIds: [toolId], cases: [{ id: command, tool: toolId }], builtBy: 's9' });
 const assigned = (command: string, operation?: string): CoverageRow => ({ command, ...(operation !== undefined ? { operation } : {}), owner: 'assigned' });
 const excluded = (command: string, reason: string, operation?: string): CoverageRow => ({ command, ...(operation !== undefined ? { operation } : {}), owner: 'excluded', reason });
 
@@ -225,6 +228,7 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('commit', ['git_commit', 'git_amend'], [{ id: 'commit', tool: 'git_commit' }, { id: 'commit-amend', tool: 'git_amend' }]),
   coveredByS7('config', 'git_config'),
   covered('diff', ['git_diff'], [{ id: 'diff', tool: 'git_diff' }]),
+  coveredByS9('diff-tree', 'git_diff_tree'),
   covered('fetch', ['git_fetch', 'git_fetch_refs'], [{ id: 'fetch', tool: 'git_fetch' }, { id: 'fetch-refs', tool: 'git_fetch_refs' }]),
   covered('for-each-ref', ['git_for_each_ref'], [{ id: 'for-each-ref', tool: 'git_for_each_ref' }]),
   covered('hash-object', ['git_hash_object'], [{ id: 'hash-object', tool: 'git_hash_object' }]),
@@ -234,6 +238,7 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('ls-tree', ['git_ls_tree'], [{ id: 'ls-tree', tool: 'git_ls_tree' }]),
   covered('merge', ['git_merge'], [{ id: 'merge', tool: 'git_merge' }]),
   covered('merge-base', ['git_merge_base'], [{ id: 'merge-base', tool: 'git_merge_base' }]),
+  coveredByS9('merge-tree', 'git_merge_tree'),
   covered('pickaxe', ['git_path_history'], [{ id: 'pickaxe', tool: 'git_path_history' }]),
   covered('pull', ['git_pull'], [{ id: 'pull', tool: 'git_pull' }]),
   covered('push', ['git_push'], [{ id: 'push', tool: 'git_push' }]),
@@ -348,7 +353,6 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   assigned('diff-files'),
   assigned('diff-index'),
   assigned('diff-pairs'),
-  assigned('diff-tree'),
   assigned('fast-export'),
   assigned('fast-import'),
   assigned('fmt-merge-msg'),
@@ -374,7 +378,6 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   assigned('merge-recursive-theirs'),
   assigned('merge-resolve'),
   assigned('merge-subtree'),
-  assigned('merge-tree'),
   assigned('mktag'),
   assigned('mktree'),
   assigned('multi-pack-index'),

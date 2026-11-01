@@ -2833,7 +2833,7 @@
    ],
    "siteCount": 8,
    "sitesDigest": "b2db2a52c817f7d98ea4b29c295c25fa02e3be55688f92f7024ffcddd3607269",
-   "sourceDigest": "6b4e3db58884513145c244695d293c3b9ab49fa2b052a7701837182037a2cad0",
+   "sourceDigest": "2647f76c3e27fb014531bbd10e32915716ac7ad25c04c64c9917e1483048b8f7",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -3601,7 +3601,7 @@
    ],
    "siteCount": 10,
    "sitesDigest": "d4d8df638b11d8c5302074a5fd0186e7c2221adf6e553e4fa84a36061f7e2c4e",
-   "sourceDigest": "1d9e720d9ddcb258fb7eededdbbf181e1482c1add3ac031bd49243741062c5d0",
+   "sourceDigest": "3b60e57e8620a33e97adc78076e1f75ee3a18565ce5b9eb7d1ae8a6ced51546d",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -5381,7 +5381,7 @@
    ],
    "siteCount": 1,
    "sitesDigest": "0450d0635cd4880a1b91ab4c340118815c6ae4314cc91fdb9be583b93d2f0d8d",
-   "sourceDigest": "215d7fb0aaacbd6061f6b20728978252b407c214ae5dcfcec399f5e2d717ea1f",
+   "sourceDigest": "da1d5a82a5a1f444f2133a689676f38afae0ecf03733331e9bb8784118c393e5",
    "boundaries": [
     "filesystem-read"
    ]
@@ -14178,7 +14178,7 @@
    ],
    "siteCount": 69,
    "sitesDigest": "e6680b56d4d6ee92ffe8354434a007d7a96d53d491e3660b7edcd89ae8e596f2",
-   "sourceDigest": "fdbd345eac8d9eac28136747f5fea41a18c860758c88398f34a26a204ae7663d",
+   "sourceDigest": "093080bb71e13b22b873dab141e44e646d7fc0f4636df6e628a05b28e7cd44f4",
    "boundaries": [
     "diagnostic",
     "filesystem-write",
@@ -16343,7 +16343,7 @@
    ],
    "siteCount": 9,
    "sitesDigest": "4a7c3bf8701abefbb1ccfcb3f0b522b13122f18c8551c415d02af22be429cce0",
-   "sourceDigest": "2296eee8b98b8ea6b574297fb1b5626b3d311ec84bd0b972b5498b2c7452c47e",
+   "sourceDigest": "9a5d0b1653d230b730bccec82f9e7c071d6e3bd5001a613d00317b42ec0e60c7",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -30571,7 +30571,7 @@
    ],
    "siteCount": 52,
    "sitesDigest": "21a428a04001f915e3621721a3f1f9b4935bbb5a80887ee5ab15a7715bbc5c9d",
-   "sourceDigest": "c5c851a2541ae161a71c692ac294f7107f66b628e8efe269ccc15b0335fced25",
+   "sourceDigest": "e0f57c9ad9a7bd333e482e619e943beeaf59260932653759cdb93345f9659359",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -30895,6 +30895,61 @@
     "storage-call"
    ]
   },
+  "src/indexer/file-filter.ts": {
+   "classification": "background-indexing",
+   "rationale": "FileFilter reads a registered repository's own ignore files and git's tracked-file list to decide what the index holds, and proposeIgnoreFile writes a missing root .gitignore at repository add; no session configuration or result passes through it.",
+   "sites": [
+    [
+     "diagnostic",
+     "getLogger"
+    ],
+    [
+     "diagnostic",
+     "log.debug"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "filesystem-read",
+     "readdirSync"
+    ],
+    [
+     "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "filesystem-read",
+     "statSync"
+    ],
+    [
+     "filesystem-write",
+     "writeFileSync"
+    ],
+    [
+     "serialization",
+     "writeFileSync"
+    ]
+   ],
+   "siteCount": 10,
+   "sitesDigest": "1a118420756a104e676d4b0fd85c0e516d02324b1592aead011f6c01764f7926",
+   "sourceDigest": "8e13b1e8cab30c5d037d4f0d397ca8d1c029a4a21cce2ccd8d34413484caceab",
+   "boundaries": [
+    "diagnostic",
+    "filesystem-read",
+    "filesystem-write",
+    "serialization"
+   ]
+  },
   "src/indexer/file-selection.ts": {
    "classification": "background-indexing",
    "rationale": "Indexer consumes registered repository files independently, never temporary session configurations/results. Session material must not be queued or serialized here; background source indexing is unchanged.",
@@ -30910,9 +30965,25 @@
    ],
    "siteCount": 2,
    "sitesDigest": "58eefe6203c292d94a363cc3f1d989f8c3239d2c4480260d7060184f9bed15c3",
-   "sourceDigest": "fbd887f95853a4ab67cc92078fee29f77ad75d6e8a0745db9482a2ddfcfcd74e",
+   "sourceDigest": "3e7b09a5b80717706482ab89931b649df3554435766458ae6efcde5c8f274bf1",
    "boundaries": [
     "filesystem-read"
+   ]
+  },
+  "src/indexer/ignore-proposal-model.ts": {
+   "classification": "background-indexing",
+   "rationale": "Builds the cheap-tier model the indexer asks for a missing root ignore file at repository add, the same way the background summariser's provider is built; it never carries session material.",
+   "sites": [
+    [
+     "provider-factory",
+     "buildSummariserProvider"
+    ]
+   ],
+   "siteCount": 1,
+   "sitesDigest": "f547d604a20b130a44d67cf501d34fca9bb11d27dfac2ef50f93588cbb473414",
+   "sourceDigest": "aa32ebe80a3f39339bbceaf53340b66a56936669cc264a8c567c56135c0a0291",
+   "boundaries": [
+    "provider-factory"
    ]
   },
   "src/indexer/index.ts": {
@@ -31141,10 +31212,6 @@
     ],
     [
      "diagnostic",
-     "log.debug"
-    ],
-    [
-     "diagnostic",
      "log.error"
     ],
     [
@@ -31286,10 +31353,6 @@
     [
      "diagnostic",
      "log.info"
-    ],
-    [
-     "diagnostic",
-     "log.warn"
     ],
     [
      "diagnostic",
@@ -31374,10 +31437,6 @@
     [
      "storage-call",
      "optimizeEntityVecIndex"
-    ],
-    [
-     "filesystem-read",
-     "readdirSync"
     ],
     [
      "filesystem-read",
@@ -31472,9 +31531,9 @@
      "upsertRelations"
     ]
    ],
-   "siteCount": 138,
-   "sitesDigest": "e3aa3dff0a1afff74766eadf8b0b5b877047124b0cdaf53912c5e5377316e689",
-   "sourceDigest": "26a68f37234f2dfbc55254b7608a12f74fae34b7f1cb53b0891d637abd0278c7",
+   "siteCount": 135,
+   "sitesDigest": "93ee7357e574fa171fe79b522e25f7a5041fecd47e050b32454a0e5abd10376e",
+   "sourceDigest": "f0379caa5fea3fe057aacce817e15e4454361b249686d1ada2e1104b96d92e23",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -31713,56 +31772,6 @@
     "unresolved-call"
    ]
   },
-  "src/indexer/repo-ignore-config.ts": {
-   "classification": "background-indexing",
-   "rationale": "Indexer consumes registered repository files independently, never temporary session configurations/results. Session material must not be queued or serialized here; background source indexing is unchanged.",
-   "sites": [
-    [
-     "diagnostic",
-     "getLogger"
-    ],
-    [
-     "serialization",
-     "JSON.parse"
-    ],
-    [
-     "serialization",
-     "JSON.stringify"
-    ],
-    [
-     "diagnostic",
-     "log.info"
-    ],
-    [
-     "diagnostic",
-     "log.warn"
-    ],
-    [
-     "diagnostic",
-     "log.warn"
-    ],
-    [
-     "filesystem-read",
-     "readFileSync"
-    ],
-    [
-     "filesystem-read",
-     "readFileSync"
-    ],
-    [
-     "serialization",
-     "writeAtomic"
-    ]
-   ],
-   "siteCount": 9,
-   "sitesDigest": "71579d91fe879684e71e12c092946b5b709b4ff6007eda8012140c5913ced21e",
-   "sourceDigest": "bce57c17a9d3ce53d764ea5fe9469376e3cbade0529e796074354e3cc2797998",
-   "boundaries": [
-    "diagnostic",
-    "filesystem-read",
-    "serialization"
-   ]
-  },
   "src/indexer/run-record.ts": {
    "classification": "background-indexing",
    "rationale": "Indexer consumes registered repository files independently, never temporary session configurations/results. Session material must not be queued or serialized here; background source indexing is unchanged.",
@@ -31810,7 +31819,7 @@
    ],
    "siteCount": 6,
    "sitesDigest": "9458184d283c1ef796fde4bc4bf39b3d2d6cee4c9fdfa25eabf35a1b12ca984e",
-   "sourceDigest": "75aff6f65d0e4634ed7b7ca73688a608c5e6ea1197a1d23574ad5f7169308570",
+   "sourceDigest": "163b287769ec3e84fbf2c6bfe7078c6a46ca010c411d45476450e4ecf3ff20a8",
    "boundaries": [
     "filesystem-read",
     "serialization"
@@ -33409,7 +33418,7 @@
    ],
    "siteCount": 2,
    "sitesDigest": "a7878ae6422fecdcaecec63258678e55efecb718c4162cd36f9d188d5047f098",
-   "sourceDigest": "9bad8fbb6de8e4b24e12abcbbb350542a83e44b130033b48921a96288b8459b7",
+   "sourceDigest": "4a0db25272c01e4ef58e8fa1eeefd341ec09242e7a0686ca547613b19c387120",
    "boundaries": [
     "filesystem-read",
     "serialization"

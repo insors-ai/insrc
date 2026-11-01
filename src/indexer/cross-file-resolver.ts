@@ -233,17 +233,15 @@ async function runPass0(opts: CrossFileResolveOpts, mode: CrossFileMode, index: 
  * 'full' mode classes the repository's rows, 'settle' mode the committed files'.
  */
 async function classifyFileTargets(opts: CrossFileResolveOpts, mode: CrossFileMode): Promise<void> {
-  // FileFilter is the one rule now (Epic c2ba6fa6 s6); selectFile's own
-  // ignore check is bypassed here (empty list) so the ignore decision
-  // below comes from the same filter the full walk and file event use.
+  // FileFilter is the one rule (Epic c2ba6fa6 s6): the same filter the full
+  // walk and the file event use decides 'excluded-by-ignore'.
   const filter = createFileFilter(opts.repoRoot);
   const updates: { id: string; meta: Record<string, unknown> }[] = [];
   for (const row of await rowsInScope({ ...opts, scopeFile: undefined }, mode)) {
     const target = row.meta['targetFile'];
     if (row.meta['awaitsId'] !== true || typeof target !== 'string') continue;
     if (await entityU64ForId(row.rawTo) !== undefined) continue;
-    const rawSelection = selectFile(target, opts.repoRoot, []);
-    const selection: FileSelection = rawSelection === 'not-code' ? 'not-code' : (filter.includes(target) ? 'selected' : 'excluded-by-ignore');
+    const selection: FileSelection = selectFile(target, filter);
     const meta = selection === 'not-code'
       ? { class: 'no-candidate', reason: 'target-not-code' }
       : { class: 'awaiting-target', reason: selection === 'excluded-by-ignore' ? 'target-excluded-by-ignore' : 'target-not-committed' };

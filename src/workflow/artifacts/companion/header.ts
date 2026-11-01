@@ -28,7 +28,7 @@ import { readFileSync } from 'node:fs';
 import { userInfo } from 'node:os';
 import { basename } from 'node:path';
 
-import { repoConfigPath } from '../../../indexer/repo-ignore-config.js';
+import { repoConfigPath } from '../../../config/paths.js';
 import { epicWorkflowId, safeCanonical, storyIdToOrdinal, storyWorkflowId } from '../../id.js';
 import type { CompanionHeader } from './types.js';
 

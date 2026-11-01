@@ -647,14 +647,14 @@ export class IndexerService {
       log.info({ repo: repoPath, returnedToPending, carriedDocSummaries }, 'full index: repository rows deleted');
 
       // FileFilter (Epic c2ba6fa6 s6) is the one rule for what the walk
-      // holds; listRepoFiles() already excludes everything it would -- an
-      // empty ignore list here means selectFile() classes only not-code /
-      // generated / artifact, never 'excluded-by-ignore' a second time.
-      const files = listRepoFiles(this.refreshedFileFilter(repoPath));
+      // holds; selectFile() asks the same filter, so a listed file is never
+      // 'excluded-by-ignore' -- only not-code / generated / artifact remain.
+      const filter = this.refreshedFileFilter(repoPath);
+      const files = listRepoFiles(filter);
       const supported: string[] = [];
       let notCode = 0;
       for (const filePath of files) {
-        if (selectFile(filePath, repoPath, []) === 'selected') supported.push(filePath);
+        if (selectFile(filePath, filter) === 'selected') supported.push(filePath);
         else notCode++;
       }
       setIndexRunSelected(repoPath, supported.length);

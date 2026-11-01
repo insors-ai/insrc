@@ -31,7 +31,7 @@ The original fs-ext asynchronous callback crashed under concurrent worker isolat
 
 The first Linux run [41343237150](https://github.com/insors-ai/insrc/actions/runs/41343237150) failed because the worker source loader did not resolve a TypeScript .js import outside the repository. Peers now consume the actual built JavaScript entry. The successful rerun used an isolated S1 branch to exclude another stream's unpushed commit; its package/workflow source is identical to the current implementation.
 
-The first root-build attempt and t9 validation overlapped incomplete changes in the other stream and saw missing evidence/origin fields in analyze outputs. Those files were not changed by this story. After the other stream's edits settled, the root build passed; t9 validation is retried against that corrected tree.
+The first root-build attempt and t9 validation overlapped incomplete changes in the other stream and saw missing evidence/origin fields in analyze outputs. Those files were not changed by this story. After the other stream's edits settled, the root build passed; t9 validation then passed against that corrected tree.
 
 Filesystem qualification is local APFS/macOS and ext4/Linux only. ext-family statfs magic alone does not identify an exact Linux subtype, so deployment retains the documented ext4 precondition. Uncooperative external mutation of a live directory and overlapping external cleanup roots remain unsupported host-precondition violations. Native compilation requires the documented toolchain. No tests invoke real LLMs or cloud REST.
 

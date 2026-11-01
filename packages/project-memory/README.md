@@ -15,7 +15,7 @@ const memory = await MemoryFactory.open({
   dataDirectory: '/absolute/private/project-memory',
   models, // Host-owned complete/embed port plus embeddingModel/embeddingDimension
   policy, // Host-owned bind(projectId) and admit(binding, event) port
-  logger, // Host-owned write(level, message, safeFields?) port
+  logger, // Host-owned write(level, event, fields) port
   limits: {
     maxEventBytes: 64 * 1024,
     segmentBytes: 4 * 1024 * 1024,

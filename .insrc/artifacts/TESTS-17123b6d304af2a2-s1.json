@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T19:50:58.195Z",
+    "updatedAt": "2026-11-01T19:52:31.152Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -504,6 +504,38 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "14cf172cc",
+        "ranAt": "2026-11-01T19:52:31.152Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "combined-s1-acceptance-evidence-and-boundary-check",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/FOUNDATION-EVIDENCE.md; evidence/macos-combined.tap: 18 pass, 0 fail/skip; Linux run 41343486195: 13 pass, 0 fail/skip"
+            }
+          },
+          {
+            "name": "preserved-root-package-first-build",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/root-build.txt; npm run build exit 0, package tsc then backend tsc/model validation/asset copy"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

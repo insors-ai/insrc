@@ -1,0 +1,519 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793560988617-vu6v8b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:26:31.724Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 202142,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "epicSlug": "reject-file-modifying-daemon-calls-do",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793560988617-vu6v8b",
+    "hldEffectiveHash": "4a3b2b22714461ed2bc4bb1f04e5e85efd1fa438706533d7bafcdcd73599bfe0",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The daemon gets one gate, run before a file-modifying RPC method or step phase is dispatched. A table lists those methods and where each keeps its repo and file paths. The gate refuses a call that names no repo, or one that is relative, not registered or not a directory, and it resolves every file path against the named repo and refuses one that leaves it. Handlers no longer fall back to the daemon's INSRC_REPO or working directory. A test compares the table with the registered methods so a new modifying method cannot be added without a row. The MCP server and the terminal client always send an absolute repo."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Reject file-modifying daemon calls that do not name their repo"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "requireRepoForCall",
+          "signature": "requireRepoForCall(method: string, params: unknown, registered: ReadonlySet<string>): RepoCallCheck",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "the RPC method or step phase being dispatched",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "the call's params as the client sent them",
+              "optional": false
+            },
+            {
+              "name": "registered",
+              "type": "ReadonlySet<string>",
+              "purpose": "the absolute paths of the registered repositories (repo.list)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RepoCallCheck",
+            "meaning": "{ ok: true, repo, params } with every path param rewritten to an absolute path inside repo, or { ok: false, code, message } naming the first problem"
+          },
+          "errors": [
+            {
+              "type": "RepoCallRefusal",
+              "condition": "returned as ok:false with code repo-missing, repo-not-absolute, repo-not-registered, repo-not-directory or path-outside-repo; never thrown"
+            }
+          ],
+          "preconditions": [
+            "method is a key of FILE_MODIFYING_METHODS; for any other method the function is not called"
+          ],
+          "postconditions": [
+            "no handler runs when ok is false",
+            "a relative path param is joined to repo, never to the daemon's working directory",
+            "the daemon's INSRC_REPO and cwd are never read"
+          ]
+        },
+        {
+          "name": "FILE_MODIFYING_METHODS",
+          "signature": "const FILE_MODIFYING_METHODS: Readonly<Record<string, { repoParam: string; pathParams: readonly string[]; repoFromRunToken?: boolean }>>",
+          "parameters": [],
+          "returns": {
+            "type": "Readonly<Record<string, RepoCallRule>>",
+            "meaning": "for each file-modifying RPC method or step phase: the param holding the repo, the params holding file or artifact paths, and whether a later phase may take the repo from its run token"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "lists at least workflow.approve, workflow.approvePipeline, workflow.reviewArtifact, workflow.resolveFinding, workflow.resolveComment, workflow.reviewDecision, tracker.sync, tracker.setup, tracker.attach, tracker.syncComments, repo.convert, team.refresh, team.claim, team.release, artifact.feedback.append, artifact.feedback.add and the modifying phases of the workflow, build, review and code-review steps; the plan stage completes the list by reading the registry"
+          ]
+        },
+        {
+          "name": "handleWorkflowApprove",
+          "signature": "handleWorkflowApprove(params: unknown, deps?: WorkflowApproveDeps): Promise<WorkflowApproveResult | { error: string }>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "{ repo, artifactPath | epicHash, overrideReview } with repo and a path already checked by the gate",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "WorkflowApproveDeps",
+              "purpose": "test seams; the repoEnv argument is removed",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult | { error: string }>",
+            "meaning": "as today"
+          },
+          "errors": [
+            {
+              "type": "none thrown for a missing repo",
+              "condition": "the gate has refused the call before this handler runs"
+            }
+          ],
+          "preconditions": [
+            "repo is absolute and registered; artifactPath is inside repo"
+          ],
+          "postconditions": [
+            "the repository whose store is written is the named repo, never the one found by walking up from the path (repoOfArtifactPath is no longer used for the target of a write)"
+          ]
+        },
+        {
+          "name": "repoSchemaRefusal",
+          "signature": "repoSchemaRefusal(repo: string | undefined): string | undefined",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string | undefined",
+              "purpose": "the repository to check",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "as today"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "runs after the gate, so it never sees a missing repo from a file-modifying call"
+          ]
+        },
+        {
+          "name": "approveWorkflow",
+          "signature": "approveWorkflow(req: { repo: string; artifactPath?: string; epicHash?: string; overrideReview?: string }, deps?: UnaryRpcDeps): Promise<WorkflowApproveResult>",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "{ repo: string; ... }",
+              "purpose": "the request the MCP server forwards; repo is now always an absolute path, never ''",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "UnaryRpcDeps",
+              "purpose": "test seams",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult>",
+            "meaning": "as today"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "the daemon refused the call (code and message of the gate)"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the MCP handler (handleWorkflowApprove in src/mcp/server.ts) refuses with the same message before calling when it cannot resolve an absolute repo, and sends artifactPath made absolute against that repo"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "RepoCallRule",
+        "change": "new",
+        "details": "One row of FILE_MODIFYING_METHODS: repoParam (the name of the param holding the repo), pathParams (names of params holding a file or artifact path, which the gate rewrites to absolute paths inside the repo), repoFromRunToken (true for a step phase after the first, whose run token records the repo the run started on).",
+        "callSites": [
+          "src/daemon/handler-runtime.ts:446-456",
+          "src/daemon/steps/resolve-repo.ts"
+        ]
+      },
+      {
+        "entity": "RepoCallCheck",
+        "change": "new",
+        "details": "The result of the gate: ok with the checked repo and the rewritten params, or a refusal with a code (repo-missing, repo-not-absolute, repo-not-registered, repo-not-directory, path-outside-repo) and a message that names the method and the param.",
+        "callSites": [
+          "src/daemon/repo-schema-guard.ts:28-47"
+        ]
+      },
+      {
+        "entity": "workflow.approve and the other file-modifying RPC methods",
+        "change": "invariant-change",
+        "details": "A call whose params carry no repo used to fall back to the daemon process's INSRC_REPO (and, for a single artifact, to the repository found from the path). It is now refused. The invariant that changes is 'a missing repo is resolved by the daemon'. Callers that relied on it (cron or headless scripts that set only INSRC_REPO in the daemon's environment) must send repo.",
+        "callSites": [
+          "src/daemon/handler-runtime.ts:424-425",
+          "src/daemon/handler-runtime.ts:446-456",
+          "src/daemon/handler-runtime.ts:479-493",
+          "src/daemon/workflow-approve.ts:28-62",
+          "src/daemon/lifecycle-registry.ts:60-68"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A file-modifying call names no repo",
+          "detection": "requireRepoForCall finds the rule's repo param absent, not a string, or empty",
+          "response": "the call is refused with code repo-missing and a message naming the method and the param; the handler does not run",
+          "userImpact": "The caller is told which param to send; nothing is written anywhere",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo is relative, or is not a directory",
+          "detection": "the gate checks isAbsolute(repo) and a directory stat",
+          "response": "refused with repo-not-absolute or repo-not-directory",
+          "userImpact": "A clear error instead of a write relative to the daemon's working directory",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo is not registered",
+          "detection": "the absolute path is not in the set built from the registry (repo.list)",
+          "response": "refused with repo-not-registered, naming repo.add",
+          "userImpact": "A write into a checkout the daemon does not manage (for example its own install directory) cannot happen",
+          "recoverable": true
+        },
+        {
+          "scenario": "An artifact path leaves the repo",
+          "detection": "after joining a relative path to the repo and normalising, the path is not inside the repo (a relative path with .. or an absolute path elsewhere)",
+          "response": "refused with path-outside-repo naming the param",
+          "userImpact": "The approval or write is not applied to another repository's file",
+          "recoverable": true
+        },
+        {
+          "scenario": "A step phase after the first carries only a run token",
+          "detection": "the rule has repoFromRunToken and the params carry state but no repo",
+          "response": "the repo is the one the run's token recorded when the run started, and the gate still checks it is registered; a token that records no repo is refused with repo-missing",
+          "userImpact": "A multi-turn run continues without resending the repo, and cannot be redirected to another repository",
+          "recoverable": true
+        },
+        {
+          "scenario": "A file-modifying method is added without a row in the table",
+          "detection": "the test that lists the registered RPC methods and step phases and compares them with FILE_MODIFYING_METHODS and a reviewed list of read-only methods fails",
+          "response": "the build fails until the method is classified",
+          "userImpact": "No user impact; the omission is caught before release",
+          "recoverable": true
+        },
+        {
+          "scenario": "The registry is unreachable when the gate looks up the registered repos",
+          "detection": "repo.list throws or times out inside the gate",
+          "response": "the call is refused with repo-not-registered and the cause; it is never allowed through, and never falls back to INSRC_REPO",
+          "userImpact": "A broken registry stops writes rather than allowing a misrouted one",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An absolute artifactPath inside the named repo",
+          "expected": "accepted unchanged"
+        },
+        {
+          "input": "A relative artifactPath such as .insrc/artifacts/X.json with an absolute registered repo",
+          "expected": "joined to the repo and accepted; the daemon's working directory is not consulted"
+        },
+        {
+          "input": "A symlink inside the repo that points outside it",
+          "expected": "the real path is checked, so it is refused with path-outside-repo"
+        },
+        {
+          "input": "A repo given with a trailing slash or a different case on a case-insensitive file system",
+          "expected": "normalised before the registry comparison"
+        },
+        {
+          "input": "An epicHash batch with a repo",
+          "expected": "accepted; there is no path param to rewrite"
+        },
+        {
+          "input": "A read-only method (workflow.pending, search.query, artifact.get) with no repo",
+          "expected": "not in the table, so the gate is not applied and the call behaves as today"
+        },
+        {
+          "input": "A client that sets only INSRC_REPO in the daemon's environment",
+          "expected": "its file-modifying calls are refused with repo-missing; the error text says to send repo"
+        },
+        {
+          "input": "repo.convert",
+          "expected": "in the table; it names the repo it converts and is exempt only from the unconverted-repo schema guard, not from this gate"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A call that names an absolute registered repo and paths inside it behaves exactly as before",
+          "source": "c1"
+        },
+        {
+          "text": "The repo-schema guard still refuses an unconverted repo for every artifact entry point except repo.convert",
+          "source": "c4"
+        },
+        {
+          "text": "Read-only calls keep their session-aware repo resolution (explicit repo, then the registered repo containing the caller's cwd, then INSRC_REPO)",
+          "source": "c4"
+        },
+        {
+          "text": "The MCP server keeps resolving the session workspace on its own side to fill in repo, so an agent in a registered repo does not have to pass it",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test), tests co-located in __tests__",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The gate and its table",
+          "subjects": [
+            "requireRepoForCall: a missing, empty, relative, non-directory and unregistered repo are each refused with their code; a relative path is joined to the repo; a path with .. or an absolute path elsewhere and a symlink that leaves the repo are refused; a run-token phase takes the recorded repo; a registry failure refuses",
+            "FILE_MODIFYING_METHODS against the registered RPC methods and step phases: every registered method is either a row or on a reviewed read-only list, and every row names a registered method"
+          ],
+          "fixturesNeeded": [
+            "temp directories as registered and unregistered repos",
+            "a fake registry set"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The daemon dispatch, the handlers and the MCP forward",
+          "subjects": [
+            "a daemon started with INSRC_REPO set and its working directory inside a registered repo: workflow.approve with a relative artifactPath and no repo is refused and writes nothing in either repository (the 2026-11-01 case)",
+            "workflow.approve with an absolute registered repo and a relative path approves the artifact in that repo's store only",
+            "each method in the table called with no repo is refused and leaves the file system unchanged",
+            "insrc_workflow_approve through the MCP handler sends an absolute repo and an absolute artifactPath, and refuses when it cannot resolve one",
+            "the terminal client's approve, tracker sync and attach calls send repo"
+          ],
+          "fixturesNeeded": [
+            "a daemon dispatcher with the real gate and a stub handler per method",
+            "two temp repos, one registered as the daemon's cwd"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "each method in the table called with no repo is refused and leaves the file system unchanged (integration)",
+            "requireRepoForCall refuses a missing and an empty repo (unit)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a daemon with INSRC_REPO set and its cwd inside a registered repo refuses workflow.approve with no repo (integration)",
+            "requireRepoForCall never reads the daemon's INSRC_REPO or cwd (unit)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "requireRepoForCall refuses a relative, non-directory or unregistered repo, a path outside the repo and a symlink that leaves it (unit)",
+            "workflow.approve with an absolute registered repo and a relative path approves in that repo only (integration)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "every registered RPC method and step phase is a table row or on the reviewed read-only list, and every row names a registered method (unit)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The daemon's RPC registry passes its own INSRC_REPO as the fallback repo to the file-modifying methods, each handler repeats its own check and message, handleWorkflowApprove takes the repository of a single artifact from the path (walking up from dirname with existsSync, so a relative path resolves against the daemon's working directory), and the MCP server forwards repo ?? '' and the path as given (s1 bundles 1 to 3).",
+      "stateAfter": "A table names every file-modifying method; one gate before dispatch refuses a call with no absolute registered repo and rewrites or refuses every path against it; handlers receive the checked repo; the MCP server and the terminal client always send an absolute repo and absolute paths; a test keeps the table and the registered methods in step.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the gate, the table and their unit tests, with the table built from the registry and the gate not yet called by the dispatcher",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Make the MCP server and the terminal client send an absolute repo and absolute artifact paths for every method in the table (they already resolve the session workspace, so an agent in a registered repo sends the same repo as before)",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Switch the dispatcher to call the gate for every method in the table and remove the process.env['INSRC_REPO'] argument from those handlers and their own fallback checks",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2 released in the MCP server and the terminal client"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Apply the gate to the modifying phases of the workflow, build, review and code-review steps, taking the repo of a later phase from its run token",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Reset the daemon clone's stray artifact changes left by earlier misrouted approvals and verify that the installed daemon's checkout has no uncommitted .insrc/artifacts files",
+          "rollbackable": false
+        }
+      ],
+      "backwardCompat": "The RPC and MCP input shapes do not change: repo already exists as a param. What changes is that an omitted or empty repo, which was accepted, is refused for the listed methods. Clients that send repo are unaffected. A cron or headless script that relied on INSRC_REPO in the daemon's environment must send repo; the refusal message says so. Read-only methods keep their session-aware resolution.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One declared table and one gate before dispatch",
+        "oneLineSummary": "A table lists every file-modifying daemon method with where its repo and file paths are in the params; one gate runs before the handler, refuses a call with no absolute registered repo, and resolves or checks every path against it.",
+        "approach": "A module in src/daemon holds FILE_MODIFYING_METHODS, a table keyed by RPC method name. Each row says which param is the repo, which params are file or artifact paths, and whether the repo may come from a run token (state) instead. The RPC dispatcher calls one function, requireRepoForCall(method, params), before it runs the handler. The function refuses when the repo is missing, empty, not absolute or not in the registry (repo.list), and rewrites every named path: a relative path is joined to the repo, and an absolute or resolved path outside the repo is refused. The handlers lose their process.env['INSRC_REPO'] fallback and receive the checked repo. A test lists every registered method and fails when a method that is not in the table writes a file (the table is the source, the registry is checked against it), so a new handler cannot skip the rule. Step handlers (workflow-step, build-step, review and code-review steps) get the same gate for their modifying phases; a later phase that carries only a run token takes the repo the run started on. The MCP server and the terminal client always send the repo they resolved (the MCP session workspace stays a convenience on the client side only).",
+        "pros": [
+          "The daemon, not each client, enforces the rule, as the issue asks",
+          "One place to read to know which calls modify files; a registry-versus-table test catches a new unlisted method",
+          "Relative and out-of-repo paths are handled by the same gate for every method, which fixes the approve case at its root"
+        ],
+        "cons": [
+          "Every modifying handler and its tests change",
+          "The table has to be kept right by a test, not by the type system, for methods whose params differ in shape",
+          "Clients that relied on the daemon's INSRC_REPO (cron, headless scripts) must now send the repo"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "A shared helper each handler calls",
+        "oneLineSummary": "Replace each INSRC_REPO fallback with a call to one requireRepo helper inside the handler.",
+        "approach": "Add requireRepo(params, opts) next to the repo schema guard. It refuses a missing, relative or unregistered repo and resolves paths against it. Each file-modifying handler calls it as its first line in place of its own check, and handler-runtime.ts stops passing process.env['INSRC_REPO']. There is no table and no dispatcher gate.",
+        "pros": [
+          "Smaller: no dispatcher change and no table",
+          "Each handler stays self-contained"
+        ],
+        "cons": [
+          "Nothing stops a new or forgotten handler from skipping the call, which is how the fallback spread to this many files",
+          "The list of file-modifying calls the issue asks for is not recorded anywhere that a test can check"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Meets the rule for the handlers it is applied to, but nothing keeps a new or forgotten handler honest."
+      },
+      {
+        "id": "a3",
+        "name": "Take the repo away from the daemon process",
+        "oneLineSummary": "Start the daemon with no INSRC_REPO and a neutral working directory so nothing resolves against its clone.",
+        "approach": "The daemon launcher unsets INSRC_REPO and starts the process in a directory that is not a repository. A relative path then finds no .insrc/artifacts and fails.",
+        "pros": [
+          "A very small change",
+          "Removes the specific misrouting seen on 2026-11-01"
+        ],
+        "cons": [
+          "Does not make the repo mandatory: a call can still fall back to whatever the caller's session supplies",
+          "A relative path that happens to match another directory still resolves silently",
+          "Does not meet the issue's rule that the daemon rejects a call with no repo"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "A mitigation, not the rule: it does not make the repo mandatory."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Which RPC methods and step phases modify files was taken from the registry listing in handler-runtime.ts and not checked method by method (sbdry4, partial); the plan stage completes and verifies the table.",
+      "The Story has no acceptance criteria of its own; ac1 to ac4 in the test mapping stand for the four requirements of ISSUE-64703b708590bd68 (ts1, partial)."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: how a repo is chosen for a daemon RPC today (src/daemon/handler-runtime.ts:424-425; src/daemon/handler-runtime.ts:446-456; src/daemon/handler-runtime.ts:479-493; src/daemon/repo-convert.ts:37; src/daemon/tracker-attach.ts:34; src/daemon/tracker-sync-comments.ts:35; src/daemon/workflow-rpc.ts:418-420)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: how workflow.approve turns an artifact path into a repository (src/daemon/workflow-approve.ts:28-62; src/daemon/lifecycle-registry.ts:60-68)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: what the MCP server sends for an approval (src/mcp/server.ts:773-860; src/mcp/server.ts:985-1014; src/mcp/resolve-repo.ts; src/mcp/daemon-stream.ts:306-313)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1: the existing shared guards (src/daemon/repo-schema-guard.ts:28-47; src/daemon/steps/resolve-repo.ts; src/shared/resolve-repo-core.ts)"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/standalone/reject-file-modifying-daemon-calls-do-E2026110164703b70/ISSUE.md"
+    }
+  ]
+}

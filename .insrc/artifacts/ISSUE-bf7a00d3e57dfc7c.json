@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793563081127-hqoh4e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:59:01.755Z",
+    "epicCreatedAt": "2026-11-01T19:59:01.755Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 60628,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "bf7a00d3e57dfc7c",
+    "epicSlug": "allow-active-native-reviews-outlive-duplicate",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "80e2cec1682b5b2db35466e72f85be77173c50cf6a1fb1913d6f6a0f88d92d7d",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T20:09:33.671Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "bf7a00d3e57dfc7c",
+      "slug": "EPIC-bf7a00d3e57dfc7c"
+    }
+  },
+  "body": {
+    "title": "Allow active native reviews to outlive duplicate-tracking capacity",
+    "reproduction": "S2 review review-e6ddcdcb3d9cf330-s2-final attempt 3 completed attribution and passed tasks t1, t3 and t4, but t2 failed after about eight minutes with 'Review native event identity limit exceeded'. Independently reproduce by feeding ReviewActivityStream more than 4096 valid frames with distinct UUIDs before a valid final assessment.",
+    "rootCause": "src/agent/providers/review-activity-stream.ts retains every native UUID in a session-wide Set. Its lines() decoder throws once that Set already contains 4096 identities, before processing the next new event. This converts a memory bound into a cumulative event quota that kills useful active reviews. src/agent/providers/cli-provider.ts constructs this decoder for native review sessions. Streaming activity can produce many events within a single model session; event count is not model-call count or inactivity.",
+    "fixIntent": "Keep duplicate-event memory bounded without imposing a maximum number of events over the review lifetime. Continue processing valid long Claude and Codex streams and accepting valid final feedback, while suppressing duplicate events within the retained window. Preserve tool lifecycle bookkeeping, candidate finality/acceptance, event identity length limits, frame/candidate byte limits, malformed event errors, and inactivity supervision. Add focused regressions beyond multiple tracking-window lengths, repeated recent IDs, tool start/completion across window turnover, final feedback acceptance, and genuine malformed/oversized input failures. Do not launch a new S2 review or rewrite existing results as part of this correction."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/review-activity-stream.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/CR.md"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "User instruction: yes, fix it."
+    }
+  ]
+}

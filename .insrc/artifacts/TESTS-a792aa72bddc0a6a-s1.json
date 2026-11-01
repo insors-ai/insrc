@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c3c431c4b8bc7920140feec88a0c357a5bdbbf93477724ff8b7b933944b2db36",
+        "at": "2026-11-01T20:12:54.975Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a792aa72bddc0a6a",
+    "storyId": "s1",
+    "createdAt": "2026-11-01T20:12:54.887Z",
+    "updatedAt": "2026-11-01T20:12:54.887Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-01T20:09:43.003Z",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "7cb6b7e2e",
+        "ranAt": "2026-11-01T20:12:54.887Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/review-activity-stream.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1238,
+            "titles": [
+              {
+                "title": "Claude fragmented UTF-8 streams expose metadata and complete structured candidates, not partial input or acknowledgements",
+                "result": "pass"
+              },
+              {
+                "title": "Codex completed messages wait for successful turn finality and duplicate native IDs do not renew",
+                "result": "pass"
+              },
+              {
+                "title": "invalid and oversized candidate/frame data fail explicitly without accepting truncated feedback",
+                "result": "pass"
+              },
+              {
+                "title": "activity subprocess has no fixed timer, serializes observers and bounds retained output",
+                "result": "pass"
+              },
+              {
+                "title": "CLI activity mode ignores bounded provider timers and uses stream flags; durable accepted output survives wrapper failure",
+                "result": "pass"
+              },
+              {
+                "title": "a non-JSON final Codex message cannot promote earlier JSON and terminal failure cannot accept later feedback",
+                "result": "pass"
+              },
+              {
+                "title": "long Claude and Codex streams keep bounded recent-ID deduplication and accept final feedback",
+                "result": "pass"
+              },
+              {
+                "title": "tool state survives event-ID window turnover and duplicate completions remain harmless",
+                "result": "pass"
+              },
+              {
+                "title": "event-window rollover retains malformed-event and UUID-length errors",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

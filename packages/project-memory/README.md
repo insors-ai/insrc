@@ -4,7 +4,7 @@ Independent Node 22 ESM project-memory module. The S1 foundation provides public
 
 The public import performs no I/O. Host policy, models, logging, limits and a dedicated data directory are supplied explicitly. No daemon, index store or backend source is required.
 
-Native ownership uses fs-ext 2.1.1. Building from source requires Python, make, a C++ compiler, Node 22 headers and C++17. On macOS use `CXXFLAGS=-std=c++17 npm ci` (or `CXXFLAGS=-std=c++17 npm rebuild fs-ext`) under Node 22; the compiler default is insufficient on the qualification machine. The external-consumer test must reproduce this documented prerequisite. Linux/ext4 qualification passed on Node 22.22.1 in [run 41345031980](https://github.com/insors-ai/insrc/actions/runs/41345031980), covering native ownership/lifecycle and packed consumption.
+Native ownership uses fs-ext 2.1.1. Building from source requires Python, make, a C++ compiler, Node 22 headers and C++17. On macOS use `CXXFLAGS=-std=c++17 npm ci` (or `CXXFLAGS=-std=c++17 npm rebuild fs-ext`) under Node 22; the compiler default is insufficient on the qualification machine. The external-consumer test must reproduce this documented prerequisite. Linux/ext4 qualification passed on Node 22.22.1 in [run 41346411241](https://github.com/insors-ai/insrc/actions/runs/41346411241), covering native ownership/lifecycle and packed consumption.
 
 Use the public entry in an ESM host:
 

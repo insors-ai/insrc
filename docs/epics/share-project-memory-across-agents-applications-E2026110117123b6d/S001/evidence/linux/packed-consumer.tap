@@ -6,19 +6,19 @@ TAP version 13
 # Subtest: packed-isolated-node22-consumer
 ok 1 - packed-isolated-node22-consumer
   ---
-  duration_ms: 3319.134492
+  duration_ms: 3363.02402
   type: 'test'
   ...
 # Subtest: packed-native-missing-import-versus-open
 ok 2 - packed-native-missing-import-versus-open
   ---
-  duration_ms: 54.895415
+  duration_ms: 48.314463
   type: 'test'
   ...
 # Subtest: tarball-public-dependency-and-asset-allowlist
 ok 3 - tarball-public-dependency-and-asset-allowlist
   ---
-  duration_ms: 1.759288
+  duration_ms: 1.676505
   type: 'test'
   ...
 1..3
@@ -29,4 +29,4 @@ ok 3 - tarball-public-dependency-and-asset-allowlist
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 3525.685335
+# duration_ms 3577.353962
